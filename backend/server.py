@@ -174,7 +174,7 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     existing_entry = await db.time_entries.find_one({
         "user_id": current_user["sub"],
         "date": today
-    })
+    }, {"_id": 0})
     
     if existing_entry and existing_entry["status"] != "completed":
         raise HTTPException(status_code=400, detail="Já existe um registo ativo para hoje")
@@ -193,7 +193,9 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     entry_dict['created_at'] = entry_dict['created_at'].isoformat()
     
     await db.time_entries.insert_one(entry_dict)
-    return {"message": "Relógio iniciado", "entry": entry_dict}
+    
+    # Return entry without MongoDB's _id field
+    return {"message": "Relógio iniciado", "entry": {k: v for k, v in entry_dict.items() if k != '_id'}}
 
 @api_router.post("/time-entries/pause/{entry_id}")
 async def pause_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
