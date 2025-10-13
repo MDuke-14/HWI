@@ -10,7 +10,8 @@ const Navigation = ({ user, onLogout, activePage }) => {
     { name: 'Histórico', path: '/history', icon: History, key: 'history' },
     { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' },
     { name: 'Horas Extras', path: '/overtime', icon: TrendingUp, key: 'overtime' },
-    { name: 'Férias', path: '/vacations', icon: Palmtree, key: 'vacations' }
+    { name: 'Férias', path: '/vacations', icon: Palmtree, key: 'vacations' },
+    { name: 'Faltas', path: '/absences', icon: FileText, key: 'absences' }
   ];
   
   const adminNavItem = { name: 'Admin', path: '/admin', icon: Shield, key: 'admin' };
