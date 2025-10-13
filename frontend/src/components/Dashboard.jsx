@@ -57,9 +57,15 @@ const Dashboard = ({ user, onLogout }) => {
   const handleStart = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API}/time-entries/start`, { observations });
+      await axios.post(`${API}/time-entries/start`, { 
+        observations,
+        outside_residence_zone: outsideResidenceZone,
+        location_description: outsideResidenceZone ? locationDescription : null
+      });
       toast.success('Relógio iniciado!');
       setObservations('');
+      setOutsideResidenceZone(false);
+      setLocationDescription('');
       fetchTodayEntry();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao iniciar');
