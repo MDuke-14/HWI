@@ -225,15 +225,30 @@ const Dashboard = ({ user, onLogout }) => {
                 </Button>
               </div>
             ) : entry.status === 'active' ? (
-              <Button
-                data-testid="end-button"
-                onClick={handleEnd}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
-              >
-                <Square className="w-6 h-6 mr-2" />
-                Finalizar Relógio
-              </Button>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="end-observations" className="text-gray-300 mb-2 block">
+                    Observações ao Finalizar (opcional)
+                  </Label>
+                  <Textarea
+                    data-testid="end-observations-input"
+                    id="end-observations"
+                    value={endObservations}
+                    onChange={(e) => setEndObservations(e.target.value)}
+                    placeholder="Ex: Trabalho concluído, reunião realizada..."
+                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[100px]"
+                  />
+                </div>
+                <Button
+                  data-testid="end-button"
+                  onClick={handleEnd}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
+                >
+                  <Square className="w-6 h-6 mr-2" />
+                  Finalizar Relógio
+                </Button>
+              </div>
             ) : null}
           </div>
 
