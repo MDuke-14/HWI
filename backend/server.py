@@ -553,7 +553,8 @@ async def end_time_entry(
                         "end_time": midnight.isoformat(),
                         "total_hours": day_hours,
                         "regular_hours": regular_hours,
-                        "overtime_hours": overtime_hours
+                        "overtime_hours": overtime_hours,
+                        "observations": final_observations
                     }}
                 )
                 entries_created.append({"date": current_start.strftime("%Y-%m-%d"), "hours": day_hours})
