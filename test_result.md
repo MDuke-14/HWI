@@ -283,6 +283,55 @@ agent_communication:
       
       The Excel report generation feature is fully functional and ready for production use.
       All backend API tests passed with 92.3% success rate (12/13 tests passed).
+
+  - agent: "main"
+    message: |
+      ✅ FEATURE "FORA DE ZONA DE RESIDÊNCIA" IMPLEMENTED
+      
+      Added new feature to track work outside residence zone for payment differentiation.
+      
+      Backend Changes:
+      1. Added fields to TimeEntry model:
+         - outside_residence_zone: bool (default False)
+         - location_description: Optional[string]
+      
+      2. Updated TimeEntryStart model to accept:
+         - outside_residence_zone: Optional[bool]
+         - location_description: Optional[str]
+      
+      3. Modified /api/time-entries/start endpoint to:
+         - Accept new fields from request
+         - Store outside_residence_zone and location_description
+         - Propagate these fields when splitting overnight entries
+      
+      4. Updated excel_report.py:
+         - Added "Tipo Pagamento" column to Excel reports
+         - Shows "Ajuda de Custas - [Location]" if outside_residence_zone
+         - Shows "Subsídio de Alimentação" if normal work
+      
+      Frontend Changes:
+      1. Dashboard.jsx:
+         - Added checkbox "Fora de Zona de Residência" with MapPin icon
+         - Added conditional location input field (appears when checkbox checked)
+         - Button disabled if checkbox selected but no location entered
+         - Visual indicator in active entry showing outside zone status
+      
+      2. History.jsx:
+         - Added badge showing "Fora de Zona: [Location]" for outside zone entries
+         - Added payment type section showing either "Ajuda de Custas" or "Subsídio de Alimentação"
+      
+      Payment Logic:
+      - ❌ NOT selected → Subsídio de Alimentação
+      - ✅ Selected → Ajuda de Custas (no food allowance)
+      - Location description required when selected
+      - Applies to full day (not per entry within same day)
+      
+      NEEDS TESTING:
+      - Backend endpoint accepting new fields
+      - Frontend checkbox and conditional input
+      - Excel report showing payment type correctly
+      - History showing the information
+
       
       RECOMMENDATION: Main agent can now summarize and finish this feature implementation.
   - agent: "testing"
