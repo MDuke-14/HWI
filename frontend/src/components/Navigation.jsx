@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Clock, History, TrendingUp, LogOut, User, Palmtree, Shield, FileText } from 'lucide-react';
+import { Clock, History, TrendingUp, LogOut, User, Palmtree, Shield, FileText, CalendarDays } from 'lucide-react';
 
 const Navigation = ({ user, onLogout, activePage }) => {
   const location = useLocation();
@@ -11,7 +11,8 @@ const Navigation = ({ user, onLogout, activePage }) => {
     { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' },
     { name: 'Horas Extras', path: '/overtime', icon: TrendingUp, key: 'overtime' },
     { name: 'Férias', path: '/vacations', icon: Palmtree, key: 'vacations' },
-    { name: 'Faltas', path: '/absences', icon: FileText, key: 'absences' }
+    { name: 'Faltas', path: '/absences', icon: FileText, key: 'absences' },
+    { name: 'Calendário', path: '/calendar', icon: CalendarDays, key: 'calendar' }
   ];
   
   const adminNavItem = { name: 'Admin', path: '/admin', icon: Shield, key: 'admin' };
