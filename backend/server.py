@@ -605,6 +605,68 @@ async def get_reports(
         "entries": entries
     }
 
+@api_router.get("/time-entries/reports/excel")
+async def download_excel_report(
+    user_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Generate and download Excel report for billing period
+    - Admins can specify user_id to get reports for any user
+    - Regular users can only get their own reports
+    - If no dates provided, uses current billing period (26th to 25th)
+    """
+    # Determine target user
+    target_user_id = user_id if user_id and current_user.get("is_admin") else current_user["sub"]
+    
+    # Get user data
+    user_data = await db.users.find_one({"id": target_user_id}, {"_id": 0})
+    if not user_data:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    # Determine date range
+    now = datetime.now(timezone.utc)
+    if not start_date or not end_date:
+        # Use current billing period
+        start_dt, end_dt = get_billing_period_dates(now.date())
+        start_date = start_dt.strftime("%Y-%m-%d")
+        end_date = end_dt.strftime("%Y-%m-%d")
+    
+    # Get time entries for the period
+    entries = await db.time_entries.find({
+        "user_id": target_user_id,
+        "date": {"$gte": start_date, "$lte": end_date},
+        "status": "completed"
+    }, {"_id": 0}).sort("date", 1).to_list(1000)
+    
+    # Get vacation data
+    vacation_data = await db.vacations.find_one({"user_id": target_user_id}, {"_id": 0})
+    
+    # Determine month and year from start_date for report title
+    start_dt_obj = datetime.fromisoformat(start_date)
+    month = start_dt_obj.month
+    year = start_dt_obj.year
+    
+    # Generate Excel workbook
+    wb = generate_monthly_report(user_data, entries, vacation_data or {}, month, year)
+    
+    # Save to BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Generate filename
+    filename = f"Folha_Ponto_{user_data.get('username', 'user')}_{month}_{year}.xlsx"
+    
+    # Return as streaming response
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 @api_router.put("/time-entries/{entry_id}")
 async def update_time_entry(
     entry_id: str,
