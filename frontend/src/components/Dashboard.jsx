@@ -91,7 +91,6 @@ const Dashboard = ({ user, onLogout }) => {
     
     const badges = {
       active: { text: 'Ativo', class: 'status-active', icon: <Play className="w-4 h-4" /> },
-      paused: { text: 'Em Pausa', class: 'status-paused pulse', icon: <Pause className="w-4 h-4" /> },
       completed: { text: 'Concluído', class: 'status-completed', icon: <Square className="w-4 h-4" /> }
     };
 
