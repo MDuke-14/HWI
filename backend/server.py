@@ -58,6 +58,13 @@ class UserCreate(BaseModel):
     company_start_date: Optional[str] = None  # YYYY-MM-DD
     vacation_days_taken: int = 0
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = None
+    is_admin: Optional[bool] = None
+
 class UserLogin(BaseModel):
     username: str
     password: str
