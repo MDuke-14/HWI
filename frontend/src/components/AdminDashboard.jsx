@@ -10,6 +10,7 @@ import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle } from 'lucid
 const AdminDashboard = ({ user, onLogout }) => {
   const [users, setUsers] = useState([]);
   const [pendingVacations, setPendingVacations] = useState([]);
+  const [allAbsences, setAllAbsences] = useState([]);
   const [reports, setReports] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userEntries, setUserEntries] = useState([]);
@@ -18,6 +19,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   useEffect(() => {
     fetchUsers();
     fetchPendingVacations();
+    fetchAllAbsences();
     fetchReports();
   }, []);
 
