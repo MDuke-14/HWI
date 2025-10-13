@@ -4,9 +4,11 @@ import { API } from '@/App';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Clock, Play, Pause, Square, Coffee } from 'lucide-react';
+import { Clock, Play, Pause, Square, Coffee, MapPin } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
