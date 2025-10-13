@@ -95,7 +95,7 @@ const Login = ({ onLogin }) => {
                 <div>
                   <Label htmlFor="email" className="text-gray-300 mb-2 block">
                     <Mail className="w-4 h-4 inline mr-2" />
-                    Email (opcional)
+                    Email
                   </Label>
                   <Input
                     data-testid="email-input"
@@ -104,6 +104,7 @@ const Login = ({ onLogin }) => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500"
+                    required
                   />
                 </div>
 
