@@ -335,14 +335,14 @@ async def check_holiday(date: str):
 async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depends(get_current_user)):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     
-    # Check if there's already an active entry for today
-    existing_entry = await db.time_entries.find_one({
+    # Check if there's already an active (not completed) entry for this user
+    existing_active = await db.time_entries.find_one({
         "user_id": current_user["sub"],
-        "date": today
+        "status": "active"
     }, {"_id": 0})
     
-    if existing_entry and existing_entry["status"] != "completed":
-        raise HTTPException(status_code=400, detail="Já existe um registo ativo para hoje")
+    if existing_active:
+        raise HTTPException(status_code=400, detail="Por favor finalize o registo anterior antes de iniciar um novo")
     
     # Check if today is overtime day
     today_date = datetime.now(timezone.utc).date()
