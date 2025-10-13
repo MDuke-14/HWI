@@ -114,6 +114,63 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleCreateUser = async () => {
+    setLoading(true);
+    try {
+      await axios.post(`${API}/admin/users/create`, createForm);
+      toast.success('Utilizador criado com sucesso!');
+      setShowCreateDialog(false);
+      setCreateForm({ username: '', email: '', full_name: '', password: '', company_start_date: '', vacation_days_taken: 0 });
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao criar utilizador');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      username: user.username,
+      email: user.email,
+      full_name: user.full_name || '',
+      password: '',
+      is_admin: user.is_admin || false
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateUser = async () => {
+    setLoading(true);
+    try {
+      const updateData = { ...editForm };
+      if (!updateData.password) delete updateData.password;
+      
+      await axios.put(`${API}/admin/users/${editingUser.id}`, updateData);
+      toast.success('Utilizador atualizado!');
+      setShowEditDialog(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId, username) => {
+    if (!window.confirm(`Tem certeza que deseja eliminar o utilizador ${username}? Todos os seus dados serão perdidos!`)) return;
+    
+    try {
+      await axios.delete(`${API}/admin/users/${userId}`);
+      toast.success('Utilizador eliminado!');
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Navigation user={user} onLogout={onLogout} activePage="admin" />
