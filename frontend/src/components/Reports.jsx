@@ -35,6 +35,44 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  const downloadExcelReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/time-entries/reports/excel`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from headers or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Folha_Ponto.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename=(.+)/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Relatório Excel exportado com sucesso!');
+    } catch (error) {
+      console.error('Excel download error:', error);
+      toast.error('Erro ao exportar relatório Excel');
+    }
+  };
+
   const ReportCard = ({ report, title, icon: Icon }) => {
     if (!report) return null;
 
