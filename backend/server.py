@@ -51,8 +51,10 @@ class User(BaseModel):
 class UserCreate(BaseModel):
     username: str
     password: str
-    email: Optional[EmailStr] = None
+    email: EmailStr
     full_name: Optional[str] = None
+    company_start_date: Optional[str] = None  # YYYY-MM-DD
+    vacation_days_taken: int = 0
 
 class UserLogin(BaseModel):
     username: str
