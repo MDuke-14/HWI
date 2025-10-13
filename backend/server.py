@@ -238,7 +238,7 @@ async def register(user_data: UserCreate):
         raise HTTPException(status_code=400, detail="Email já está registado")
     
     # Determine if user is admin
-    admin_emails = ["pedro.duarte@hwi.pt"]
+    admin_emails = ["pedro.duarte@hwi.pt", "miguel.moreira@hwi.pt"]
     is_admin = user_data.email in admin_emails
     
     # Create user
