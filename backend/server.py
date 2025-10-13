@@ -237,6 +237,89 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return current_user
 
+async def send_service_email(technician_emails: List[str], service_data: dict, action_type: str):
+    """Send email notification about service appointment"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM')
+        
+        # Email subject based on action
+        subjects = {
+            "created": "Novo Serviço Agendado",
+            "updated": "Serviço Atualizado",
+            "cancelled": "Serviço Cancelado"
+        }
+        subject = subjects.get(action_type, "Notificação de Serviço")
+        
+        # Build email body
+        time_info = f" às {service_data.get('time_slot', 'Dia inteiro')}" if service_data.get('time_slot') else " (Dia inteiro)"
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333;">
+                <h2 style="color: #0066cc;">{subject}</h2>
+                <p>Foi {action_type == 'created' and 'agendado um novo serviço' or action_type == 'updated' and 'atualizado um serviço' or 'cancelado um serviço'} para o qual foi atribuído como técnico:</p>
+                
+                <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Cliente:</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('client_name', '')}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Localidade:</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('location', '')}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Motivo:</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('service_reason', '')}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Data:</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('date', '')}{time_info}</td>
+                    </tr>
+                    {f'<tr><td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Observações:</td><td style="padding: 10px; border: 1px solid #ddd;">{service_data.get("observations", "")}</td></tr>' if service_data.get('observations') else ''}
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Estado:</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('status', 'scheduled')}</td>
+                    </tr>
+                </table>
+                
+                <p style="margin-top: 20px;">Aceda ao sistema de gestão para mais detalhes.</p>
+                
+                <p style="color: #666; font-size: 12px; margin-top: 30px;">
+                    Esta é uma mensagem automática. Por favor não responda a este email.
+                </p>
+            </body>
+        </html>
+        """
+        
+        # Send to each technician
+        for email in technician_emails:
+            message = MIMEMultipart('alternative')
+            message['Subject'] = subject
+            message['From'] = smtp_from
+            message['To'] = email
+            
+            html_part = MIMEText(html_body, 'html')
+            message.attach(html_part)
+            
+            await aiosmtplib.send(
+                message,
+                hostname=smtp_host,
+                port=smtp_port,
+                username=smtp_user,
+                password=smtp_password,
+                start_tls=True
+            )
+            
+        logging.info(f"Service email sent to {len(technician_emails)} technicians")
+    except Exception as e:
+        logging.error(f"Failed to send service email: {str(e)}")
+        # Don't raise exception, just log - email failure shouldn't break service creation
+
 def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
     """Calculate vacation days based on company start date"""
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
