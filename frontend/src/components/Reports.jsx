@@ -19,12 +19,14 @@ const Reports = ({ user, onLogout }) => {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const [weekResponse, monthResponse] = await Promise.all([
+      const [weekResponse, monthResponse, billingResponse] = await Promise.all([
         axios.get(`${API}/time-entries/reports`, { params: { period: 'week' } }),
-        axios.get(`${API}/time-entries/reports`, { params: { period: 'month' } })
+        axios.get(`${API}/time-entries/reports`, { params: { period: 'month' } }),
+        axios.get(`${API}/time-entries/reports`, { params: { period: 'billing' } })
       ]);
       setWeeklyReport(weekResponse.data);
       setMonthlyReport(monthResponse.data);
+      setBillingReport(billingResponse.data);
     } catch (error) {
       toast.error('Erro ao carregar relatórios');
     } finally {
