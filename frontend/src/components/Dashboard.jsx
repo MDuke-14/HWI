@@ -27,49 +27,11 @@ const Dashboard = ({ user, onLogout }) => {
       const interval = setInterval(() => {
         const start = new Date(entry.start_time);
         const now = new Date();
-        let elapsed = (now - start) / 1000;
-
-        // Subtract pause time
-        if (entry.pauses) {
-          entry.pauses.forEach((pause) => {
-            const pauseStart = new Date(pause.pause_start);
-            const pauseEnd = pause.pause_end ? new Date(pause.pause_end) : now;
-            elapsed -= (pauseEnd - pauseStart) / 1000;
-          });
-        }
-
+        const elapsed = (now - start) / 1000;
         setElapsedTime(elapsed);
       }, 1000);
 
       return () => clearInterval(interval);
-    } else if (entry && entry.status === 'paused') {
-      // Check pause duration and show notification after 1 hour
-      const pauses = entry.pauses || [];
-      if (pauses.length > 0) {
-        const lastPause = pauses[pauses.length - 1];
-        if (!lastPause.pause_end) {
-          const pauseStart = new Date(lastPause.pause_start);
-          const checkPauseDuration = () => {
-            const now = new Date();
-            const pauseDuration = (now - pauseStart) / 1000 / 60; // minutes
-            
-            if (pauseDuration >= 60) {
-              toast.warning('Atenção: Está em pausa há mais de 1 hora!', {
-                duration: 10000,
-              });
-            }
-          };
-
-          pauseNotificationRef.current = setInterval(checkPauseDuration, 60000); // Check every minute
-          checkPauseDuration(); // Check immediately
-        }
-      }
-
-      return () => {
-        if (pauseNotificationRef.current) {
-          clearInterval(pauseNotificationRef.current);
-        }
-      };
     }
   }, [entry]);
 
