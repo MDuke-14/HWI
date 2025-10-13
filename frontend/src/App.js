@@ -141,6 +141,16 @@ function App() {
             }
           />
           <Route
+            path="/calendar"
+            element={
+              isAuthenticated ? (
+                <Calendar user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
             path="/admin"
             element={
               isAuthenticated && user?.is_admin ? (
