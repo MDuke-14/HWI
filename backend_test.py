@@ -653,25 +653,24 @@ class HWITimeTrackerTester:
             return False
 
 def main():
-    print("🚀 Starting HWI Time Tracker API Tests")
-    print("=" * 50)
+    print("🚀 Starting HWI Time Tracker API Tests - Outside Residence Zone Feature")
+    print("=" * 70)
     
     tester = HWITimeTrackerTester()
     
-    # Test sequence - focusing on Excel report functionality
+    # Test sequence - focusing on Outside Residence Zone functionality
     test_sequence = [
-        ("Admin Login", tester.test_admin_login),
+        ("Outside Zone Test Login", tester.test_outside_zone_login),
         ("Get Current User", tester.test_get_current_user),
-        ("Excel Report (No Parameters)", tester.test_excel_report_no_params),
-        ("Excel Report (With Dates)", tester.test_excel_report_with_dates),
-        ("Excel Report (Unauthorized)", tester.test_excel_report_unauthorized),
-        ("Start Time Entry", tester.test_start_time_entry),
-        ("Get Today Entry", tester.test_get_today_entry),
-        ("End Time Entry", tester.test_end_time_entry),
+        ("Start Entry (Normal Zone)", tester.test_start_entry_normal_zone),
+        ("End Current Entry", tester.test_end_current_entry),
+        ("Start Entry (Outside Zone)", tester.test_start_entry_outside_zone),
+        ("Verify Entries in List", tester.test_verify_entries_in_list),
+        ("End Current Entry", tester.test_end_current_entry),
+        ("Excel Report (Payment Types)", tester.test_excel_report_payment_types),
         ("List Time Entries", tester.test_list_time_entries),
         ("Weekly Report", tester.test_weekly_report),
         ("Monthly Report", tester.test_monthly_report),
-        ("Invalid Login Test", tester.test_invalid_login),
     ]
     
     failed_tests = []
