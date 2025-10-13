@@ -456,6 +456,202 @@ class HWITimeTrackerTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False
 
+    def test_outside_zone_login(self):
+        """Test login with specific test credentials for outside zone testing"""
+        success, response = self.run_test(
+            "Outside Zone Test Login",
+            "POST",
+            "auth/login",
+            200,
+            data={
+                "username": "miguel.moreira@hwi.pt",
+                "password": "password123"
+            }
+        )
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_id = response['user']['id']
+            self.username = response['user']['username']
+            print(f"   Logged in as: {self.username}")
+            print(f"   Is admin: {response['user'].get('is_admin', False)}")
+            return True
+        return False
+
+    def test_start_entry_normal_zone(self):
+        """Test starting a time entry WITHOUT outside residence zone"""
+        success, response = self.run_test(
+            "Start Entry (Normal Zone)",
+            "POST",
+            "time-entries/start",
+            200,
+            data={
+                "observations": "Normal work day"
+            }
+        )
+        if success and 'entry' in response:
+            entry = response['entry']
+            self.current_entry_id = entry['id']
+            
+            # Verify outside_residence_zone is false
+            outside_zone = entry.get('outside_residence_zone', None)
+            location_desc = entry.get('location_description', None)
+            
+            print(f"   Entry ID: {self.current_entry_id}")
+            print(f"   Outside residence zone: {outside_zone}")
+            print(f"   Location description: {location_desc}")
+            
+            # Validate expected values
+            if outside_zone is False and location_desc is None:
+                print("   ✅ Correct values for normal zone entry")
+                return True
+            else:
+                print(f"   ❌ Incorrect values - Expected: outside_residence_zone=False, location_description=None")
+                print(f"       Got: outside_residence_zone={outside_zone}, location_description={location_desc}")
+                return False
+        return False
+
+    def test_end_current_entry(self):
+        """Test ending the current active entry"""
+        if not self.current_entry_id:
+            print("❌ No active entry to end")
+            return False
+            
+        success, response = self.run_test(
+            "End Current Entry",
+            "POST",
+            f"time-entries/end/{self.current_entry_id}",
+            200
+        )
+        if success and 'total_hours' in response:
+            print(f"   Total hours worked: {response['total_hours']}")
+            self.current_entry_id = None  # Clear the entry ID
+        return success
+
+    def test_start_entry_outside_zone(self):
+        """Test starting a time entry WITH outside residence zone"""
+        success, response = self.run_test(
+            "Start Entry (Outside Zone)",
+            "POST",
+            "time-entries/start",
+            200,
+            data={
+                "observations": "Travel day",
+                "outside_residence_zone": True,
+                "location_description": "Lisboa"
+            }
+        )
+        if success and 'entry' in response:
+            entry = response['entry']
+            self.current_entry_id = entry['id']
+            
+            # Verify outside_residence_zone is true and location is set
+            outside_zone = entry.get('outside_residence_zone', None)
+            location_desc = entry.get('location_description', None)
+            
+            print(f"   Entry ID: {self.current_entry_id}")
+            print(f"   Outside residence zone: {outside_zone}")
+            print(f"   Location description: {location_desc}")
+            
+            # Validate expected values
+            if outside_zone is True and location_desc == "Lisboa":
+                print("   ✅ Correct values for outside zone entry")
+                return True
+            else:
+                print(f"   ❌ Incorrect values - Expected: outside_residence_zone=True, location_description='Lisboa'")
+                print(f"       Got: outside_residence_zone={outside_zone}, location_description={location_desc}")
+                return False
+        return False
+
+    def test_verify_entries_in_list(self):
+        """Test verifying entries in the list contain correct outside zone information"""
+        success, response = self.run_test(
+            "Verify Entries in List",
+            "GET",
+            "time-entries/list",
+            200
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} entries")
+            
+            # Look for entries with outside zone information
+            outside_zone_entries = []
+            normal_zone_entries = []
+            
+            for entry in response:
+                if entry.get('outside_residence_zone') is True:
+                    outside_zone_entries.append(entry)
+                    print(f"   ✅ Outside zone entry found: {entry.get('date')} - {entry.get('location_description')}")
+                elif entry.get('outside_residence_zone') is False:
+                    normal_zone_entries.append(entry)
+                    print(f"   ✅ Normal zone entry found: {entry.get('date')}")
+            
+            print(f"   Total outside zone entries: {len(outside_zone_entries)}")
+            print(f"   Total normal zone entries: {len(normal_zone_entries)}")
+            
+            return True
+        return False
+
+    def test_excel_report_payment_types(self):
+        """Test Excel report generation and verify it includes payment type information"""
+        print(f"\n🔍 Testing Excel Report (Payment Types)...")
+        url = f"{self.base_url}/api/time-entries/reports/excel"
+        headers = {
+            'Authorization': f'Bearer {self.token}' if self.token else ''
+        }
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                expected_content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                if expected_content_type in content_type:
+                    print(f"   ✅ Correct Content-Type: {content_type}")
+                else:
+                    print(f"   ⚠️  Unexpected Content-Type: {content_type}")
+                
+                # Check Content-Disposition header
+                content_disposition = response.headers.get('Content-Disposition', '')
+                if 'attachment' in content_disposition and 'filename=' in content_disposition:
+                    filename = content_disposition.split('filename=')[1].strip()
+                    print(f"   ✅ Content-Disposition header present: {filename}")
+                else:
+                    print(f"   ⚠️  Missing or invalid Content-Disposition: {content_disposition}")
+                
+                # Check if response contains Excel file data
+                content_length = len(response.content)
+                print(f"   📊 File size: {content_length} bytes")
+                
+                # Check Excel file signature (first few bytes)
+                if response.content[:4] == b'PK\x03\x04':
+                    print(f"   ✅ Valid Excel file signature detected")
+                    print(f"   📋 Excel file should include 'Tipo Pagamento' column with:")
+                    print(f"       - 'Subsídio de Alimentação' for normal entries")
+                    print(f"       - 'Ajuda de Custas - Lisboa' for outside zone entries")
+                else:
+                    print(f"   ⚠️  Invalid file signature: {response.content[:10]}")
+                
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
 def main():
     print("🚀 Starting HWI Time Tracker API Tests")
     print("=" * 50)
