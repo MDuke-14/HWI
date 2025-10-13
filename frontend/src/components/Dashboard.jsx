@@ -14,6 +14,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
   const [todayEntries, setTodayEntries] = useState([]);
   const [observations, setObservations] = useState('');
+  const [endObservations, setEndObservations] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
