@@ -166,6 +166,39 @@ class AbsenceCreate(BaseModel):
     is_justified: bool = True
     reason: Optional[str] = None
 
+class ServiceAppointment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    client_name: str
+    location: str
+    service_reason: str
+    technician_ids: List[str]  # List of user IDs
+    date: str  # YYYY-MM-DD
+    time_slot: Optional[str] = None  # Optional time like "09:00-12:00"
+    observations: Optional[str] = None
+    status: str = "scheduled"  # scheduled, in_progress, completed, cancelled
+    created_by: str  # Admin user ID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ServiceAppointmentCreate(BaseModel):
+    client_name: str
+    location: str
+    service_reason: str
+    technician_ids: List[str]
+    date: str
+    time_slot: Optional[str] = None
+    observations: Optional[str] = None
+
+class ServiceAppointmentUpdate(BaseModel):
+    client_name: Optional[str] = None
+    location: Optional[str] = None
+    service_reason: Optional[str] = None
+    technician_ids: Optional[List[str]] = None
+    date: Optional[str] = None
+    time_slot: Optional[str] = None
+    observations: Optional[str] = None
+    status: Optional[str] = None
+
 # ============ Auth Functions ============
 
 def verify_password(plain_password, hashed_password):
