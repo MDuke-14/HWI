@@ -320,10 +320,23 @@ const Dashboard = ({ user, onLogout }) => {
                   </div>
                 )}
                 {entry.total_hours && (
-                  <div className="flex justify-between pt-3 border-t border-gray-700">
-                    <span className="font-semibold">Total de Horas:</span>
-                    <span className="font-bold text-green-400 text-lg">{entry.total_hours}h</span>
-                  </div>
+                  <>
+                    {entry.is_overtime_day ? (
+                      <div className="flex justify-between pt-3 border-t border-gray-700">
+                        <span className="font-semibold">Horas Extras:</span>
+                        <span className="font-bold text-amber-400 text-lg">{entry.overtime_hours || entry.total_hours}h</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between pt-3 border-t border-gray-700">
+                        <span className="font-semibold">Horas Normais:</span>
+                        <span className="font-bold text-green-400 text-lg">{entry.regular_hours || entry.total_hours}h</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-400">Total:</span>
+                      <span className="font-semibold text-white">{entry.total_hours}h</span>
+                    </div>
+                  </>
                 )}
                 {entry.observations && (
                   <div className="pt-3 border-t border-gray-700">
