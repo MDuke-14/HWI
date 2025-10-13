@@ -1409,6 +1409,182 @@ async def review_absence(
     
     return {"message": f"Falta {'aprovada' if approved else 'rejeitada'} com sucesso"}
 
+# ============ Service Appointment Routes ============
+
+@api_router.post("/services")
+async def create_service(service_data: ServiceAppointmentCreate, current_user: dict = Depends(get_current_admin)):
+    """Create new service appointment (admin only)"""
+    # Validate technicians exist
+    for tech_id in service_data.technician_ids:
+        tech = await db.users.find_one({"id": tech_id}, {"_id": 0})
+        if not tech:
+            raise HTTPException(status_code=404, detail=f"Técnico com ID {tech_id} não encontrado")
+    
+    service = ServiceAppointment(
+        **service_data.model_dump(),
+        created_by=current_user["sub"]
+    )
+    
+    service_dict = service.model_dump()
+    service_dict['created_at'] = service_dict['created_at'].isoformat()
+    
+    await db.service_appointments.insert_one(service_dict)
+    
+    # Get technician emails for notification
+    technician_emails = []
+    for tech_id in service_data.technician_ids:
+        tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "email": 1})
+        if tech and tech.get('email'):
+            technician_emails.append(tech['email'])
+    
+    # Send email notifications
+    if technician_emails:
+        await send_service_email(technician_emails, service_dict, "created")
+    
+    return {"message": "Serviço criado com sucesso", "service": {k: v for k, v in service_dict.items() if k != '_id'}}
+
+@api_router.get("/services")
+async def get_services(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all service appointments"""
+    query = {}
+    if start_date and end_date:
+        query["date"] = {"$gte": start_date, "$lte": end_date}
+    elif start_date:
+        query["date"] = {"$gte": start_date}
+    elif end_date:
+        query["date"] = {"$lte": end_date}
+    
+    services = await db.service_appointments.find(query, {"_id": 0}).sort("date", 1).to_list(1000)
+    
+    # Enrich with technician names
+    for service in services:
+        tech_names = []
+        for tech_id in service.get("technician_ids", []):
+            tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "username": 1})
+            if tech:
+                tech_names.append(tech["username"])
+        service["technician_names"] = tech_names
+    
+    return services
+
+@api_router.get("/services/calendar")
+async def get_calendar_data(
+    month: int,
+    year: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get calendar data including services and vacations for a specific month"""
+    # Calculate start and end dates for the month
+    start_date = f"{year}-{month:02d}-01"
+    if month == 12:
+        end_date = f"{year + 1}-01-01"
+    else:
+        end_date = f"{year}-{month + 1:02d}-01"
+    
+    # Get services
+    services = await db.service_appointments.find({
+        "date": {"$gte": start_date, "$lt": end_date}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Enrich with technician info
+    for service in services:
+        tech_details = []
+        for tech_id in service.get("technician_ids", []):
+            tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "username": 1, "email": 1})
+            if tech:
+                tech_details.append({"id": tech_id, "username": tech["username"]})
+        service["technicians"] = tech_details
+    
+    # Get approved vacations
+    vacations = await db.vacation_requests.find({
+        "status": "approved",
+        "$or": [
+            {"start_date": {"$lte": end_date}, "end_date": {"$gte": start_date}}
+        ]
+    }, {"_id": 0}).to_list(1000)
+    
+    # Enrich with user info
+    for vacation in vacations:
+        user = await db.users.find_one({"id": vacation["user_id"]}, {"_id": 0, "username": 1})
+        if user:
+            vacation["username"] = user["username"]
+    
+    return {
+        "services": services,
+        "vacations": vacations
+    }
+
+@api_router.put("/services/{service_id}")
+async def update_service(
+    service_id: str,
+    update_data: ServiceAppointmentUpdate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Update service appointment (admin only)"""
+    service = await db.service_appointments.find_one({"id": service_id})
+    
+    if not service:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+    
+    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    
+    if update_dict:
+        # Validate technicians if being updated
+        if "technician_ids" in update_dict:
+            for tech_id in update_dict["technician_ids"]:
+                tech = await db.users.find_one({"id": tech_id}, {"_id": 0})
+                if not tech:
+                    raise HTTPException(status_code=404, detail=f"Técnico com ID {tech_id} não encontrado")
+        
+        await db.service_appointments.update_one({"id": service_id}, {"$set": update_dict})
+        
+        # Get updated service
+        updated_service = await db.service_appointments.find_one({"id": service_id}, {"_id": 0})
+        
+        # Send email notifications if technicians changed
+        if "technician_ids" in update_dict:
+            technician_emails = []
+            for tech_id in updated_service["technician_ids"]:
+                tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "email": 1})
+                if tech and tech.get('email'):
+                    technician_emails.append(tech['email'])
+            
+            if technician_emails:
+                await send_service_email(technician_emails, updated_service, "updated")
+    
+    return {"message": "Serviço atualizado com sucesso"}
+
+@api_router.delete("/services/{service_id}")
+async def delete_service(service_id: str, current_user: dict = Depends(get_current_admin)):
+    """Delete/cancel service appointment (admin only)"""
+    service = await db.service_appointments.find_one({"id": service_id}, {"_id": 0})
+    
+    if not service:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+    
+    # Get technician emails before deletion
+    technician_emails = []
+    for tech_id in service.get("technician_ids", []):
+        tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "email": 1})
+        if tech and tech.get('email'):
+            technician_emails.append(tech['email'])
+    
+    # Send cancellation emails
+    if technician_emails:
+        await send_service_email(technician_emails, service, "cancelled")
+    
+    # Delete the service
+    result = await db.service_appointments.delete_one({"id": service_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+    
+    return {"message": "Serviço cancelado com sucesso"}
+
 # ============ Include Router ============
 
 app.include_router(api_router)
