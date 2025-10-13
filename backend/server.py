@@ -842,6 +842,214 @@ async def get_unread_count(current_user: dict = Depends(get_current_user)):
     })
     return {"unread_count": count}
 
+# ============ Absence Routes ============
+
+# Create uploads directory
+UPLOAD_DIR = Path("/app/uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+@api_router.post("/absences/create")
+async def create_absence(absence_data: AbsenceCreate, current_user: dict = Depends(get_current_user)):
+    """Create an absence entry"""
+    # Check if already has entry for this date
+    existing_entry = await db.time_entries.find_one({
+        "user_id": current_user["sub"],
+        "date": absence_data.date
+    })
+    
+    if existing_entry:
+        raise HTTPException(status_code=400, detail="Já existe um registo de ponto para este dia")
+    
+    # Check if absence already exists
+    existing_absence = await db.absences.find_one({
+        "user_id": current_user["sub"],
+        "date": absence_data.date
+    })
+    
+    if existing_absence:
+        raise HTTPException(status_code=400, detail="Já existe uma falta registada para este dia")
+    
+    absence = Absence(
+        user_id=current_user["sub"],
+        username=current_user["username"],
+        date=absence_data.date,
+        absence_type=absence_data.absence_type,
+        hours=absence_data.hours,
+        is_justified=absence_data.is_justified,
+        reason=absence_data.reason,
+        status="pending"
+    )
+    
+    abs_dict = absence.model_dump()
+    abs_dict['created_at'] = abs_dict['created_at'].isoformat()
+    await db.absences.insert_one(abs_dict)
+    
+    # Notify admins
+    admins = await db.users.find({"is_admin": True}, {"_id": 0, "id": 1}).to_list(100)
+    for admin in admins:
+        await create_notification(
+            admin["id"],
+            "absence_created",
+            f"Nova falta registada por {current_user['username']}: {absence_data.hours}h em {absence_data.date}",
+            absence.id
+        )
+    
+    return {"message": "Falta registada com sucesso", "absence_id": absence.id}
+
+@api_router.post("/absences/{absence_id}/upload")
+async def upload_justification(
+    absence_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload justification file for absence"""
+    absence = await db.absences.find_one({"id": absence_id, "user_id": current_user["sub"]})
+    
+    if not absence:
+        raise HTTPException(status_code=404, detail="Falta não encontrada")
+    
+    # Validate file type
+    allowed_extensions = [".pdf", ".jpg", ".jpeg", ".png"]
+    file_ext = Path(file.filename).suffix.lower()
+    
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Apenas PDF, JPG e PNG são permitidos")
+    
+    # Save file
+    file_name = f"{absence_id}_{file.filename}"
+    file_path = UPLOAD_DIR / file_name
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Update absence with filename
+    await db.absences.update_one(
+        {"id": absence_id},
+        {"$set": {"justification_file": file_name}}
+    )
+    
+    return {"message": "Ficheiro carregado com sucesso", "filename": file_name}
+
+@api_router.get("/absences/file/{filename}")
+async def get_justification_file(filename: str, current_user: dict = Depends(get_current_user)):
+    """Download justification file"""
+    file_path = UPLOAD_DIR / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
+    
+    # Extract absence_id from filename
+    absence_id = filename.split("_")[0]
+    
+    # Check if user owns this absence or is admin
+    user = await db.users.find_one({"id": current_user["sub"]})
+    absence = await db.absences.find_one({"id": absence_id})
+    
+    if not absence:
+        raise HTTPException(status_code=404, detail="Falta não encontrada")
+    
+    if absence["user_id"] != current_user["sub"] and not user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Sem permissão para aceder a este ficheiro")
+    
+    return FileResponse(file_path)
+
+@api_router.get("/absences/my-absences")
+async def get_my_absences(current_user: dict = Depends(get_current_user)):
+    """Get current user's absences"""
+    absences = await db.absences.find(
+        {"user_id": current_user["sub"]},
+        {"_id": 0}
+    ).sort("date", -1).to_list(100)
+    return absences
+
+@api_router.get("/absences/check-late")
+async def check_late_arrival(current_user: dict = Depends(get_current_user)):
+    """Check if user is late (after 9am on weekday) and send notification"""
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    current_time = now.time()
+    
+    # Only check on weekdays after 9am
+    is_ot, _ = is_overtime_day(now.date())
+    if is_ot:  # Weekend or holiday
+        return {"is_late": False, "message": "Fim de semana ou feriado"}
+    
+    cutoff_time = time(9, 0)  # 9:00 AM
+    
+    if current_time < cutoff_time:
+        return {"is_late": False, "message": "Ainda não passou das 9h"}
+    
+    # Check if already has time entry today
+    entry = await db.time_entries.find_one({
+        "user_id": current_user["sub"],
+        "date": today
+    })
+    
+    if entry:
+        return {"is_late": False, "message": "Ponto já iniciado"}
+    
+    # Check if already notified today
+    existing_notif = await db.notifications.find_one({
+        "user_id": current_user["sub"],
+        "type": "late_arrival",
+        "created_at": {"$gte": today}
+    })
+    
+    if existing_notif:
+        return {"is_late": True, "message": "Já foi notificado", "already_notified": True}
+    
+    # Send notification
+    await create_notification(
+        current_user["sub"],
+        "late_arrival",
+        "Ainda não iniciou o ponto hoje. Se não estiver presente, por favor registe a falta.",
+        None
+    )
+    
+    return {"is_late": True, "message": "Notificação enviada", "already_notified": False}
+
+# ============ Admin Absence Routes ============
+
+@api_router.get("/admin/absences/all")
+async def get_all_absences(current_user: dict = Depends(get_current_admin)):
+    """Get all absences (admin only)"""
+    absences = await db.absences.find({}, {"_id": 0}).sort("date", -1).to_list(1000)
+    return absences
+
+@api_router.post("/admin/absences/{absence_id}/review")
+async def review_absence(
+    absence_id: str,
+    approved: bool,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Review absence (admin only)"""
+    absence = await db.absences.find_one({"id": absence_id})
+    
+    if not absence:
+        raise HTTPException(status_code=404, detail="Falta não encontrada")
+    
+    new_status = "approved" if approved else "rejected"
+    
+    await db.absences.update_one(
+        {"id": absence_id},
+        {"$set": {
+            "status": new_status,
+            "reviewed_by": current_user["username"],
+            "reviewed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify user
+    message = f"A sua falta de {absence['date']} foi {'aprovada' if approved else 'rejeitada'} por {current_user['username']}"
+    await create_notification(
+        absence["user_id"],
+        f"absence_{'approved' if approved else 'rejected'}",
+        message,
+        absence_id
+    )
+    
+    return {"message": f"Falta {'aprovada' if approved else 'rejeitada'} com sucesso"}
+
 # ============ Include Router ============
 
 app.include_router(api_router)
