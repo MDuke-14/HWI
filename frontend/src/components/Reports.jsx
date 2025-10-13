@@ -171,8 +171,16 @@ const Reports = ({ user, onLogout }) => {
           {loading && !weeklyReport && !monthlyReport ? (
             <div className="text-center text-gray-400 py-12">A carregar relatórios...</div>
           ) : (
-            <Tabs defaultValue="week" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-[#1a1a1a] mb-8">
+            <Tabs defaultValue="billing" className="w-full">
+              <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-3 bg-[#1a1a1a] mb-8">
+                <TabsTrigger
+                  data-testid="billing-tab"
+                  value="billing"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Faturação (26-25)
+                </TabsTrigger>
                 <TabsTrigger
                   data-testid="week-tab"
                   value="week"
@@ -190,6 +198,10 @@ const Reports = ({ user, onLogout }) => {
                   Último Mês
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="billing">
+                <ReportCard report={billingReport} title="Relatório de Faturação (Dia 26 a 25)" icon={TrendingUp} />
+              </TabsContent>
 
               <TabsContent value="week">
                 <ReportCard report={weeklyReport} title="Relatório Semanal" icon={Clock} />
