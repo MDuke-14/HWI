@@ -10,11 +10,11 @@ import { Clock, Play, Pause, Square, Coffee } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
+  const [todayEntries, setTodayEntries] = useState([]);
   const [observations, setObservations] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
-  const pauseNotificationRef = useRef(null);
 
   useEffect(() => {
     fetchTodayEntry();
