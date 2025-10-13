@@ -507,13 +507,23 @@ async def end_time_entry(entry_id: str, current_user: dict = Depends(get_current
 
 @api_router.get("/time-entries/today")
 async def get_today_entry(current_user: dict = Depends(get_current_user)):
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    entry = await db.time_entries.find_one({
+    # Get active entry (regardless of date)
+    active_entry = await db.time_entries.find_one({
         "user_id": current_user["sub"],
-        "date": today
+        "status": "active"
     }, {"_id": 0})
     
-    return entry
+    if active_entry:
+        return active_entry
+    
+    # If no active entry, get today's completed entries
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_entries = await db.time_entries.find({
+        "user_id": current_user["sub"],
+        "date": today
+    }, {"_id": 0}).sort("created_at", -1).to_list(10)
+    
+    return {"entries": today_entries, "has_active": False}
 
 @api_router.get("/time-entries/list")
 async def list_time_entries(
