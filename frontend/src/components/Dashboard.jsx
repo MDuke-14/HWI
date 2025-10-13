@@ -279,6 +279,17 @@ const Dashboard = ({ user, onLogout }) => {
           {entry && (
             <div className="glass-effect p-6">
               <h3 className="text-xl font-semibold text-white mb-4">Informações de Hoje</h3>
+              
+              {entry.is_overtime_day && (
+                <div className="mb-4 p-3 bg-amber-900/30 border border-amber-600 rounded-lg flex items-center gap-2">
+                  <Coffee className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <div className="text-amber-400 font-semibold">Horas Extras</div>
+                    <div className="text-amber-300 text-sm">{entry.overtime_reason}</div>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-3 text-gray-300">
                 <div className="flex justify-between">
                   <span>Início:</span>
