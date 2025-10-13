@@ -303,6 +303,12 @@ const History = ({ user, onLogout }) => {
                     </div>
                   </div>
 
+                  {entry.is_overtime_day && (
+                    <div className="mb-3 inline-block px-3 py-1 bg-amber-900/30 border border-amber-600 rounded-full text-amber-400 text-xs font-semibold">
+                      {entry.overtime_reason}
+                    </div>
+                  )}
+
                   <div className="grid md:grid-cols-2 gap-4 text-gray-300">
                     <div>
                       <div className="text-sm text-gray-400">Início</div>
@@ -316,6 +322,18 @@ const History = ({ user, onLogout }) => {
                         {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT') : '-'}
                       </div>
                     </div>
+                    {entry.regular_hours > 0 && (
+                      <div>
+                        <div className="text-sm text-gray-400">Horas Normais</div>
+                        <div className="font-bold text-blue-400 text-lg">{entry.regular_hours}h</div>
+                      </div>
+                    )}
+                    {entry.overtime_hours > 0 && (
+                      <div>
+                        <div className="text-sm text-gray-400">Horas Extras</div>
+                        <div className="font-bold text-amber-400 text-lg">{entry.overtime_hours}h</div>
+                      </div>
+                    )}
                     {entry.total_hours && (
                       <div>
                         <div className="text-sm text-gray-400">Total</div>
