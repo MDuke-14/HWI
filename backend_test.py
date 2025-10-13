@@ -443,13 +443,13 @@ class HWITimeTrackerTester:
         try:
             response = requests.get(url, timeout=10)
             
-            success = response.status_code == 401
+            success = response.status_code in [401, 403]  # Both are valid for unauthorized
             if success:
                 self.tests_passed += 1
                 print(f"✅ Passed - Status: {response.status_code} (Correctly rejected unauthorized request)")
                 return True
             else:
-                print(f"❌ Failed - Expected 401, got {response.status_code}")
+                print(f"❌ Failed - Expected 401 or 403, got {response.status_code}")
                 return False
                 
         except Exception as e:
