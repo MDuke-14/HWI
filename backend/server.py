@@ -553,6 +553,270 @@ async def delete_time_entry(entry_id: str, current_user: dict = Depends(get_curr
     
     return {"message": "Registo eliminado com sucesso"}
 
+# ============ Vacation Routes ============
+
+@api_router.get("/vacations/balance")
+async def get_vacation_balance(current_user: dict = Depends(get_current_user)):
+    """Get current user's vacation balance"""
+    balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]}, {"_id": 0})
+    
+    if not balance:
+        return {"days_earned": 0, "days_taken": 0, "days_available": 0, "message": "Configure a data de início na empresa"}
+    
+    # Recalculate based on current date
+    calc = calculate_vacation_days(balance["company_start_date"], balance.get("days_taken", 0))
+    
+    # Update in database
+    await db.vacation_balances.update_one(
+        {"user_id": current_user["sub"]},
+        {"$set": {
+            "days_earned": calc["days_earned"],
+            "days_available": calc["days_available"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {**balance, **calc}
+
+@api_router.post("/vacations/request")
+async def request_vacation(request_data: VacationRequestCreate, current_user: dict = Depends(get_current_user)):
+    """Request vacation days"""
+    # Calculate days requested
+    start = datetime.strptime(request_data.start_date, "%Y-%m-%d").date()
+    end = datetime.strptime(request_data.end_date, "%Y-%m-%d").date()
+    
+    if start > end:
+        raise HTTPException(status_code=400, detail="Data de início deve ser anterior à data de fim")
+    
+    # Count only weekdays
+    days_requested = 0
+    current_date = start
+    while current_date <= end:
+        if current_date.weekday() < 5:  # Monday to Friday
+            days_requested += 1
+        current_date += timedelta(days=1)
+    
+    # Check available days
+    balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]})
+    if balance:
+        calc = calculate_vacation_days(balance["company_start_date"], balance.get("days_taken", 0))
+        if days_requested > calc["days_available"]:
+            raise HTTPException(status_code=400, detail=f"Dias insuficientes. Disponível: {calc['days_available']} dias")
+    
+    # Create vacation request
+    vac_request = VacationRequest(
+        user_id=current_user["sub"],
+        username=current_user["username"],
+        start_date=request_data.start_date,
+        end_date=request_data.end_date,
+        days_requested=days_requested,
+        reason=request_data.reason,
+        status="pending"
+    )
+    
+    req_dict = vac_request.model_dump()
+    req_dict['created_at'] = req_dict['created_at'].isoformat()
+    await db.vacation_requests.insert_one(req_dict)
+    
+    # Notify all admins
+    admins = await db.users.find({"is_admin": True}, {"_id": 0, "id": 1}).to_list(100)
+    for admin in admins:
+        await create_notification(
+            admin["id"],
+            "vacation_request",
+            f"Novo pedido de férias de {current_user['username']}: {days_requested} dias",
+            vac_request.id
+        )
+    
+    return {"message": "Pedido de férias submetido", "request_id": vac_request.id, "days_requested": days_requested}
+
+@api_router.get("/vacations/my-requests")
+async def get_my_vacation_requests(current_user: dict = Depends(get_current_user)):
+    """Get current user's vacation requests"""
+    requests = await db.vacation_requests.find(
+        {"user_id": current_user["sub"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return requests
+
+@api_router.post("/vacations/update-start-date")
+async def update_company_start_date(
+    company_start_date: str,
+    vacation_days_taken: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update or create company start date for vacation calculation"""
+    existing = await db.vacation_balances.find_one({"user_id": current_user["sub"]})
+    
+    calc = calculate_vacation_days(company_start_date, vacation_days_taken)
+    
+    if existing:
+        await db.vacation_balances.update_one(
+            {"user_id": current_user["sub"]},
+            {"$set": {
+                "company_start_date": company_start_date,
+                "days_taken": vacation_days_taken,
+                "days_earned": calc["days_earned"],
+                "days_available": calc["days_available"],
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    else:
+        balance = VacationBalance(
+            user_id=current_user["sub"],
+            company_start_date=company_start_date,
+            days_earned=calc["days_earned"],
+            days_taken=vacation_days_taken,
+            days_available=calc["days_available"]
+        )
+        bal_dict = balance.model_dump()
+        bal_dict['updated_at'] = bal_dict['updated_at'].isoformat()
+        await db.vacation_balances.insert_one(bal_dict)
+    
+    return {"message": "Data atualizada com sucesso", **calc}
+
+# ============ Admin Routes ============
+
+@api_router.get("/admin/users")
+async def get_all_users(current_user: dict = Depends(get_current_admin)):
+    """Get all users (admin only)"""
+    users = await db.users.find({}, {"_id": 0, "hashed_password": 0}).to_list(1000)
+    return users
+
+@api_router.get("/admin/user/{user_id}/time-entries")
+async def get_user_time_entries(user_id: str, current_user: dict = Depends(get_current_admin)):
+    """Get all time entries for a specific user (admin only)"""
+    entries = await db.time_entries.find({"user_id": user_id}, {"_id": 0}).sort("date", -1).to_list(1000)
+    return entries
+
+@api_router.get("/admin/vacations/pending")
+async def get_pending_vacation_requests(current_user: dict = Depends(get_current_admin)):
+    """Get all pending vacation requests (admin only)"""
+    requests = await db.vacation_requests.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return requests
+
+@api_router.post("/admin/vacations/{request_id}/approve")
+async def approve_vacation(
+    request_id: str,
+    approved: bool,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Approve or reject vacation request (admin only)"""
+    vac_request = await db.vacation_requests.find_one({"id": request_id})
+    
+    if not vac_request:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+    
+    if vac_request["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Pedido já foi processado")
+    
+    new_status = "approved" if approved else "rejected"
+    
+    await db.vacation_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": new_status,
+            "reviewed_by": current_user["username"],
+            "reviewed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # If approved, update days taken
+    if approved:
+        await db.vacation_balances.update_one(
+            {"user_id": vac_request["user_id"]},
+            {"$inc": {"days_taken": vac_request["days_requested"]}}
+        )
+    
+    # Notify user
+    message = f"O seu pedido de férias foi {'aprovado' if approved else 'rejeitado'} por {current_user['username']}"
+    await create_notification(
+        vac_request["user_id"],
+        f"vacation_{'approved' if approved else 'rejected'}",
+        message,
+        request_id
+    )
+    
+    return {"message": f"Pedido {'aprovado' if approved else 'rejeitado'} com sucesso"}
+
+@api_router.get("/admin/reports/all")
+async def get_all_reports(
+    period: str = "billing",
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get consolidated reports for all users (admin only)"""
+    now = datetime.now(timezone.utc)
+    
+    if period == "billing":
+        start_dt, end_dt = get_billing_period_dates(now.date())
+        start_date = start_dt.strftime("%Y-%m-%d")
+        end_date = end_dt.strftime("%Y-%m-%d")
+    elif period == "week":
+        start_date = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+        end_date = now.strftime("%Y-%m-%d")
+    else:
+        start_date = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+        end_date = now.strftime("%Y-%m-%d")
+    
+    # Get all entries in period
+    entries = await db.time_entries.find({
+        "date": {"$gte": start_date, "$lte": end_date},
+        "status": "completed"
+    }, {"_id": 0}).to_list(10000)
+    
+    # Group by user
+    user_stats = {}
+    for entry in entries:
+        user_id = entry["user_id"]
+        if user_id not in user_stats:
+            user_stats[user_id] = {
+                "username": entry["username"],
+                "total_hours": 0,
+                "regular_hours": 0,
+                "overtime_hours": 0,
+                "days_worked": 0
+            }
+        user_stats[user_id]["total_hours"] += entry.get("total_hours", 0)
+        user_stats[user_id]["regular_hours"] += entry.get("regular_hours", 0)
+        user_stats[user_id]["overtime_hours"] += entry.get("overtime_hours", 0)
+        user_stats[user_id]["days_worked"] += 1
+    
+    return {
+        "period": period,
+        "start_date": start_date,
+        "end_date": end_date,
+        "users": list(user_stats.values())
+    }
+
+# ============ Notifications Routes ============
+
+@api_router.get("/notifications")
+async def get_notifications(current_user: dict = Depends(get_current_user)):
+    """Get user notifications"""
+    notifications = await db.notifications.find(
+        {"user_id": current_user["sub"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return notifications
+
+@api_router.post("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark notification as read"""
+    await db.notifications.update_one(
+        {"id": notification_id, "user_id": current_user["sub"]},
+        {"$set": {"read": True}}
+    )
+    return {"message": "Notificação marcada como lida"}
+
+@api_router.get("/notifications/unread/count")
+async def get_unread_count(current_user: dict = Depends(get_current_user)):
+    """Get count of unread notifications"""
+    count = await db.notifications.count_documents({
+        "user_id": current_user["sub"],
+        "read": False
+    })
+    return {"unread_count": count}
+
 # ============ Include Router ============
 
 app.include_router(api_router)
