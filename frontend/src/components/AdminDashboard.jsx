@@ -63,11 +63,30 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const fetchAllAbsences = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/absences/all`);
+      setAllAbsences(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar faltas');
+    }
+  };
+
   const handleVacationApproval = async (requestId, approved) => {
     try {
       await axios.post(`${API}/admin/vacations/${requestId}/approve?approved=${approved}`);
       toast.success(approved ? 'Férias aprovadas!' : 'Férias rejeitadas');
       fetchPendingVacations();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao processar');
+    }
+  };
+
+  const handleAbsenceReview = async (absenceId, approved) => {
+    try {
+      await axios.post(`${API}/admin/absences/${absenceId}/review?approved=${approved}`);
+      toast.success(approved ? 'Falta aprovada!' : 'Falta rejeitada');
+      fetchAllAbsences();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao processar');
     }
