@@ -168,11 +168,53 @@ const Dashboard = ({ user, onLogout }) => {
                     className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[100px]"
                   />
                 </div>
+
+                {/* Outside Residence Zone Checkbox */}
+                <div className="flex items-start space-x-3 p-4 bg-[#1a1a1a] rounded-lg border border-gray-700">
+                  <Checkbox
+                    data-testid="outside-zone-checkbox"
+                    id="outside-zone"
+                    checked={outsideResidenceZone}
+                    onCheckedChange={setOutsideResidenceZone}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="outside-zone"
+                      className="text-gray-300 font-medium cursor-pointer flex items-center gap-2"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Fora de Zona de Residência
+                    </Label>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Ativa Ajuda de Custas (em vez de Subsídio de Alimentação)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Location Input - Only shown when checkbox is checked */}
+                {outsideResidenceZone && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label htmlFor="location" className="text-gray-300 mb-2 block">
+                      Local da Deslocação *
+                    </Label>
+                    <Input
+                      data-testid="location-input"
+                      id="location"
+                      value={locationDescription}
+                      onChange={(e) => setLocationDescription(e.target.value)}
+                      placeholder="Ex: Lisboa, Madrid, Porto..."
+                      className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500"
+                      required={outsideResidenceZone}
+                    />
+                  </div>
+                )}
+
                 <Button
                   data-testid="start-button"
                   onClick={handleStart}
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg"
+                  disabled={loading || (outsideResidenceZone && !locationDescription.trim())}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Play className="w-6 h-6 mr-2" />
                   Iniciar Relógio
