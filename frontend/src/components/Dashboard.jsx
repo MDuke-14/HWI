@@ -184,7 +184,7 @@ const Dashboard = ({ user, onLogout }) => {
           {/* Today's Entry Info */}
           {entry && (
             <div className="glass-effect p-6">
-              <h3 className="text-xl font-semibold text-white mb-4">Informações de Hoje</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">Registo Ativo</h3>
               
               {entry.is_overtime_day && (
                 <div className="mb-4 p-3 bg-amber-900/30 border border-amber-600 rounded-lg flex items-center gap-2">
@@ -203,53 +203,41 @@ const Dashboard = ({ user, onLogout }) => {
                     {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT') : '-'}
                   </span>
                 </div>
-                {entry.end_time && (
-                  <div className="flex justify-between">
-                    <span>Fim:</span>
-                    <span className="font-semibold text-white">
-                      {new Date(entry.end_time).toLocaleTimeString('pt-PT')}
-                    </span>
-                  </div>
-                )}
-                {entry.pauses && entry.pauses.length > 0 && (
-                  <div>
-                    <div className="text-gray-400 mb-2">Pausas ({entry.pauses.length}):</div>
-                    {entry.pauses.map((pause, idx) => (
-                      <div key={idx} className="flex justify-between text-sm ml-4">
-                        <span>Pausa {idx + 1}:</span>
-                        <span>
-                          {new Date(pause.pause_start).toLocaleTimeString('pt-PT')} - {' '}
-                          {pause.pause_end ? new Date(pause.pause_end).toLocaleTimeString('pt-PT') : 'Em curso'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {entry.total_hours && (
-                  <>
-                    {entry.is_overtime_day ? (
-                      <div className="flex justify-between pt-3 border-t border-gray-700">
-                        <span className="font-semibold">Horas Extras:</span>
-                        <span className="font-bold text-amber-400 text-lg">{entry.overtime_hours || entry.total_hours}h</span>
-                      </div>
-                    ) : (
-                      <div className="flex justify-between pt-3 border-t border-gray-700">
-                        <span className="font-semibold">Horas Normais:</span>
-                        <span className="font-bold text-green-400 text-lg">{entry.regular_hours || entry.total_hours}h</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="font-semibold text-gray-400">Total:</span>
-                      <span className="font-semibold text-white">{entry.total_hours}h</span>
-                    </div>
-                  </>
-                )}
                 {entry.observations && (
                   <div className="pt-3 border-t border-gray-700">
                     <div className="text-gray-400 mb-1">Observações:</div>
                     <div className="text-white italic">{entry.observations}</div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+          
+          {/* Today's Completed Entries */}
+          {todayEntries.length > 0 && (
+            <div className="glass-effect p-6 mt-6">
+              <h3 className="text-xl font-semibold text-white mb-4">Registos de Hoje ({todayEntries.length})</h3>
+              <div className="space-y-3">
+                {todayEntries.map((e, idx) => (
+                  <div key={e.id || idx} className="bg-[#1a1a1a] p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div className="text-gray-300">
+                        <div className="text-sm">
+                          {e.start_time ? new Date(e.start_time).toLocaleTimeString('pt-PT') : '-'} → {' '}
+                          {e.end_time ? new Date(e.end_time).toLocaleTimeString('pt-PT') : '-'}
+                        </div>
+                        {e.is_overtime_day && (
+                          <div className="text-xs text-amber-400 mt-1">{e.overtime_reason}</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-bold text-lg ${e.is_overtime_day ? 'text-amber-400' : 'text-green-400'}`}>
+                          {e.total_hours}h
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
