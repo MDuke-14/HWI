@@ -274,6 +274,158 @@ class HWITimeTrackerTester:
         )
         return success
 
+    def test_admin_login(self):
+        """Test login with admin credentials"""
+        success, response = self.run_test(
+            "Admin Login",
+            "POST",
+            "auth/login",
+            200,
+            data={
+                "username": "miguel.moreira@hwi.pt",
+                "password": "password123"
+            }
+        )
+        if success and 'access_token' in response:
+            self.token = response['access_token']
+            self.user_id = response['user']['id']
+            self.username = response['user']['username']
+            print(f"   Logged in as admin: {self.username}")
+            print(f"   Is admin: {response['user'].get('is_admin', False)}")
+            return True
+        return False
+
+    def test_excel_report_no_params(self):
+        """Test Excel report generation without parameters (current billing period)"""
+        print(f"\n🔍 Testing Excel Report (No Parameters)...")
+        url = f"{self.base_url}/api/time-entries/reports/excel"
+        headers = {
+            'Authorization': f'Bearer {self.token}' if self.token else ''
+        }
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                expected_content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                if expected_content_type in content_type:
+                    print(f"   ✅ Correct Content-Type: {content_type}")
+                else:
+                    print(f"   ⚠️  Unexpected Content-Type: {content_type}")
+                
+                # Check Content-Disposition header
+                content_disposition = response.headers.get('Content-Disposition', '')
+                if 'attachment' in content_disposition and 'filename=' in content_disposition:
+                    filename = content_disposition.split('filename=')[1].strip()
+                    print(f"   ✅ Content-Disposition header present: {filename}")
+                else:
+                    print(f"   ⚠️  Missing or invalid Content-Disposition: {content_disposition}")
+                
+                # Check if response contains Excel file data
+                content_length = len(response.content)
+                print(f"   📊 File size: {content_length} bytes")
+                
+                # Check Excel file signature (first few bytes)
+                if response.content[:4] == b'PK\x03\x04':
+                    print(f"   ✅ Valid Excel file signature detected")
+                else:
+                    print(f"   ⚠️  Invalid file signature: {response.content[:10]}")
+                
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_excel_report_with_dates(self):
+        """Test Excel report generation with specific date range"""
+        from datetime import datetime, timedelta
+        
+        # Use a date range from last month
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        print(f"\n🔍 Testing Excel Report (With Dates: {start_date} to {end_date})...")
+        url = f"{self.base_url}/api/time-entries/reports/excel?start_date={start_date}&end_date={end_date}"
+        headers = {
+            'Authorization': f'Bearer {self.token}' if self.token else ''
+        }
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                expected_content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                if expected_content_type in content_type:
+                    print(f"   ✅ Correct Content-Type: {content_type}")
+                else:
+                    print(f"   ⚠️  Unexpected Content-Type: {content_type}")
+                
+                # Check file size
+                content_length = len(response.content)
+                print(f"   📊 File size: {content_length} bytes")
+                
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_excel_report_unauthorized(self):
+        """Test Excel report generation without authentication"""
+        print(f"\n🔍 Testing Excel Report (Unauthorized)...")
+        url = f"{self.base_url}/api/time-entries/reports/excel"
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, timeout=10)
+            
+            success = response.status_code == 401
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code} (Correctly rejected unauthorized request)")
+                return True
+            else:
+                print(f"❌ Failed - Expected 401, got {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
 def main():
     print("🚀 Starting HWI Time Tracker API Tests")
     print("=" * 50)
