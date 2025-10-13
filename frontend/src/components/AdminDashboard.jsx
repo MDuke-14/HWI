@@ -137,6 +137,51 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
           </TabsContent>
 
+          <TabsContent value="absences">
+            <div className="glass-effect p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-white mb-6">Todas as Faltas ({allAbsences.length})</h2>
+              {allAbsences.length > 0 ? (
+                <div className="space-y-4">
+                  {allAbsences.map((absence) => (
+                    <div key={absence.id} className="bg-[#1a1a1a] p-5 rounded-lg">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="text-white font-semibold text-lg">{absence.username}</div>
+                          <div className="text-gray-400 text-sm">{new Date(absence.date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
+                          <div className="text-amber-400 font-semibold mt-1">{absence.hours}h - {absence.is_justified ? 'Justificada' : 'Injustificada'}</div>
+                          {absence.reason && <div className="text-gray-300 text-sm mt-1">Motivo: {absence.reason}</div>}
+                          {absence.justification_file && <div className="text-blue-400 text-xs mt-1">📎 Tem ficheiro anexo</div>}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            absence.status === 'approved' ? 'bg-green-700 text-green-200' :
+                            absence.status === 'rejected' ? 'bg-red-700 text-red-200' :
+                            'bg-amber-700 text-amber-200'
+                          }`}>
+                            {absence.status === 'approved' ? 'Aprovado' : absence.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
+                          </span>
+                          {absence.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button onClick={() => handleAbsenceReview(absence.id, true)} className="bg-green-600 hover:bg-green-700 text-white rounded-full text-xs" size="sm">
+                                <CheckCircle className="w-3 h-3 mr-1" />Aprovar
+                              </Button>
+                              <Button onClick={() => handleAbsenceReview(absence.id, false)} className="bg-red-600 hover:bg-red-700 text-white rounded-full text-xs" size="sm">
+                                <XCircle className="w-3 h-3 mr-1" />Rejeitar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {absence.reviewed_by && <div className="text-gray-500 text-xs mt-2 pt-2 border-t border-gray-700">Revisto por: {absence.reviewed_by}</div>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-12">Não há faltas registadas</div>
+              )}
+            </div>
+          </TabsContent>
+
           <TabsContent value="users">
             <div className="glass-effect p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-white mb-6">Utilizadores ({users.length})</h2>
