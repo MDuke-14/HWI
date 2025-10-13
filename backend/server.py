@@ -362,7 +362,9 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         status="active",
         observations=entry_data.observations,
         is_overtime_day=is_ot,
-        overtime_reason=ot_reason if is_ot else None
+        overtime_reason=ot_reason if is_ot else None,
+        outside_residence_zone=entry_data.outside_residence_zone or False,
+        location_description=entry_data.location_description if entry_data.outside_residence_zone else None
     )
     
     entry_dict = entry.model_dump()
