@@ -7,6 +7,8 @@ import Dashboard from '@/components/Dashboard';
 import History from '@/components/History';
 import Reports from '@/components/Reports';
 import Overtime from '@/components/Overtime';
+import Vacations from '@/components/Vacations';
+import AdminDashboard from '@/components/AdminDashboard';
 import { Toaster } from '@/components/ui/sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
