@@ -124,6 +124,19 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
             # Horas extras de fim de semana
             if current_date.weekday() in [5, 6] and day_overtime > 0:
                 overtime_weekend_hours += day_overtime
+            
+            # Tipo de Pagamento (coluna 15)
+            # Verifica se alguma entrada do dia está fora de zona
+            is_outside_zone = any(e.get('outside_residence_zone', False) for e in day_entries)
+            if is_outside_zone:
+                # Pega a descrição da localização da primeira entrada fora de zona
+                location = next((e.get('location_description', '') for e in day_entries if e.get('outside_residence_zone')), '')
+                payment_info = f"Ajuda de Custas - {location}"
+            else:
+                payment_info = "Subsídio de Alimentação"
+            
+            ws.cell(row=row, column=15).value = payment_info
+            ws.cell(row=row, column=15).border = border_thin
         
         # Colunas SA, ADT, AC (vazias por enquanto)
         for col in [12, 13, 14]:
