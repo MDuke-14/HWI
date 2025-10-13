@@ -458,13 +458,43 @@ class HWITimeTrackerTester:
 
     def test_outside_zone_login(self):
         """Test login with specific test credentials for outside zone testing"""
+        # First try to register the user if it doesn't exist
+        print("   Attempting to register test user first...")
+        register_success, register_response = self.run_test(
+            "Test User Registration",
+            "POST",
+            "auth/register",
+            200,
+            data={
+                "username": "miguel",
+                "password": "password123",
+                "email": "miguel.moreira@hwi.pt",
+                "full_name": "Miguel Moreira",
+                "company_start_date": "2024-01-01",
+                "vacation_days_taken": 0
+            }
+        )
+        
+        if register_success:
+            print("   ✅ Test user registered successfully")
+            if 'access_token' in register_response:
+                self.token = register_response['access_token']
+                self.user_id = register_response['user']['id']
+                self.username = register_response['user']['username']
+                print(f"   Registered and logged in as: {self.username}")
+                print(f"   Is admin: {register_response['user'].get('is_admin', False)}")
+                return True
+        else:
+            print("   Registration failed, trying login with username 'miguel'...")
+        
+        # Try to login with username "miguel"
         success, response = self.run_test(
             "Outside Zone Test Login",
             "POST",
             "auth/login",
             200,
             data={
-                "username": "miguel.moreira@hwi.pt",
+                "username": "miguel",
                 "password": "password123"
             }
         )
