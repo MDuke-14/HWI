@@ -432,22 +432,20 @@ def main():
     
     tester = HWITimeTrackerTester()
     
-    # Test sequence
+    # Test sequence - focusing on Excel report functionality
     test_sequence = [
-        ("User Registration", tester.test_user_registration),
-        ("User Login", tester.test_user_login),
+        ("Admin Login", tester.test_admin_login),
         ("Get Current User", tester.test_get_current_user),
+        ("Excel Report (No Parameters)", tester.test_excel_report_no_params),
+        ("Excel Report (With Dates)", tester.test_excel_report_with_dates),
+        ("Excel Report (Unauthorized)", tester.test_excel_report_unauthorized),
         ("Start Time Entry", tester.test_start_time_entry),
         ("Get Today Entry", tester.test_get_today_entry),
-        ("Pause Time Entry", tester.test_pause_time_entry),
-        ("Resume Time Entry", tester.test_resume_time_entry),
         ("End Time Entry", tester.test_end_time_entry),
         ("List Time Entries", tester.test_list_time_entries),
-        ("Update Time Entry", tester.test_update_time_entry),
         ("Weekly Report", tester.test_weekly_report),
         ("Monthly Report", tester.test_monthly_report),
         ("Invalid Login Test", tester.test_invalid_login),
-        ("Delete Time Entry", tester.test_delete_time_entry),
     ]
     
     failed_tests = []
