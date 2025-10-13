@@ -361,6 +361,22 @@ const History = ({ user, onLogout }) => {
                       <div className="text-white italic">{entry.observations}</div>
                     </div>
                   )}
+
+                  {/* Payment Type Info */}
+                  <div className="mt-4 pt-4 border-t border-gray-700">
+                    <div className="text-sm text-gray-400 mb-1">Tipo de Pagamento</div>
+                    <div className="text-white font-semibold">
+                      {entry.outside_residence_zone ? (
+                        <span className="text-blue-400">
+                          ✓ Ajuda de Custas - {entry.location_description}
+                        </span>
+                      ) : (
+                        <span className="text-green-400">
+                          ✓ Subsídio de Alimentação
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
