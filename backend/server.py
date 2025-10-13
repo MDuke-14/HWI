@@ -82,8 +82,7 @@ class TimeEntry(BaseModel):
     date: str  # YYYY-MM-DD format
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    pauses: List[dict] = []  # [{"pause_start": datetime, "pause_end": datetime}]
-    status: str = "not_started"  # not_started, active, paused, completed
+    status: str = "not_started"  # not_started, active, completed
     observations: Optional[str] = None
     is_overtime_day: bool = False
     overtime_reason: Optional[str] = None  # "Sábado", "Domingo", "Feriado: Nome"
