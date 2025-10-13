@@ -310,8 +310,14 @@ const Dashboard = ({ user, onLogout }) => {
                   <MapPin className="w-5 h-5 text-blue-400" />
                   <div className="flex-1">
                     <div className="text-blue-400 font-semibold">Fora de Zona de Residência</div>
-                    <div className="text-blue-300 text-sm">{entry.location_description}</div>
-                    <div className="text-xs text-gray-400 mt-1">Ajuda de Custas aplicável</div>
+                    <div className="text-blue-300 text-sm">
+                      {entry.location_description}
+                      {entry.country && <span> • {entry.country}</span>}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Ajuda de Custas aplicável
+                      {entry.country && <span> • Horário registado em fuso {entry.country}</span>}
+                    </div>
                   </div>
                 </div>
               )}
