@@ -1,0 +1,174 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API } from '@/App';
+import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { Clock, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
+
+const Overtime = ({ user, onLogout }) => {
+  const [overtimeSummary, setOvertimeSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchOvertimeSummary();
+  }, []);
+
+  const fetchOvertimeSummary = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/time-entries/overtime`);
+      setOvertimeSummary(response.data);
+    } catch (error) {
+      toast.error('Erro ao carregar horas extras');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <Navigation user={user} onLogout={onLogout} activePage="overtime" />
+      
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="fade-in">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
+              <Clock className="w-10 h-10" />
+              Controlo de Horas Extras
+            </h1>
+            <Button
+              data-testid="refresh-overtime-button"
+              onClick={fetchOvertimeSummary}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+            >
+              {loading ? 'A atualizar...' : 'Atualizar'}
+            </Button>
+          </div>
+
+          {loading && !overtimeSummary ? (
+            <div className="text-center text-gray-400 py-12">A carregar...</div>
+          ) : overtimeSummary ? (
+            <>
+              {/* Summary Cards */}
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div className="glass-effect p-8 rounded-xl">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-xl">
+                      <TrendingUp className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-gray-400 text-sm">Total de Horas Extras</div>
+                      <div className="text-4xl font-bold text-amber-400" data-testid="total-overtime-hours">
+                        {overtimeSummary.total_overtime_hours}h
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-effect p-8 rounded-xl">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-4 rounded-xl">
+                      <Calendar className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-gray-400 text-sm">Dias Trabalhados</div>
+                      <div className="text-4xl font-bold text-purple-400" data-testid="total-overtime-days">
+                        {overtimeSummary.total_overtime_days}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Alert */}
+              <div className="glass-effect p-6 rounded-xl mb-8 border-l-4 border-amber-500">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
+                  <div>
+                    <h3 className="text-white font-semibold mb-2">Informação sobre Horas Extras</h3>
+                    <p className="text-gray-300 text-sm">
+                      São consideradas horas extras todo o trabalho realizado em <strong>Sábados</strong>, <strong>Domingos</strong> e <strong>Feriados</strong> nacionais portugueses.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Overtime Entries List */}
+              {overtimeSummary.entries && overtimeSummary.entries.length > 0 ? (
+                <div className="glass-effect p-6 rounded-xl">
+                  <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+                    <Calendar className="w-6 h-6" />
+                    Registos de Horas Extras
+                  </h2>
+                  <div className="space-y-4">
+                    {overtimeSummary.entries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="bg-[#1a1a1a] p-5 rounded-lg hover:bg-[#252525] transition-colors"
+                        data-testid="overtime-entry"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="text-white font-semibold text-lg mb-1">
+                              {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-700 text-amber-200">
+                                {entry.overtime_reason}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-amber-400 font-bold text-2xl">
+                              {entry.overtime_hours || entry.total_hours}h
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-400 mt-3">
+                          <div>
+                            <span className="text-gray-500">Início:</span>{' '}
+                            <span className="text-white">
+                              {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT') : '-'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Fim:</span>{' '}
+                            <span className="text-white">
+                              {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT') : '-'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {entry.observations && (
+                          <div className="mt-3 pt-3 border-t border-gray-700">
+                            <div className="text-gray-400 text-xs mb-1">Observações:</div>
+                            <div className="text-white text-sm italic">{entry.observations}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="glass-effect p-12 text-center">
+                  <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg">Ainda não há registos de horas extras</p>
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Overtime;
