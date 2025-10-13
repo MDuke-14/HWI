@@ -1,78 +1,58 @@
 """
-European countries and their timezone offsets
+European countries and their timezone offsets relative to Portugal
+Portugal is the reference (offset = 0)
 """
 
 EUROPEAN_COUNTRIES = {
-    # UTC+0 (Western European Time)
-    "Portugal": {"offset": 0, "dst_offset": 1},
-    "Reino Unido": {"offset": 0, "dst_offset": 1},
-    "Irlanda": {"offset": 0, "dst_offset": 1},
+    # Same timezone as Portugal
+    "Portugal": {"offset": 0},
+    "Reino Unido": {"offset": 0},
+    "Irlanda": {"offset": 0},
     
-    # UTC+1 (Central European Time)
-    "Espanha": {"offset": 1, "dst_offset": 2},
-    "França": {"offset": 1, "dst_offset": 2},
-    "Alemanha": {"offset": 1, "dst_offset": 2},
-    "Itália": {"offset": 1, "dst_offset": 2},
-    "Holanda": {"offset": 1, "dst_offset": 2},
-    "Bélgica": {"offset": 1, "dst_offset": 2},
-    "Áustria": {"offset": 1, "dst_offset": 2},
-    "Suíça": {"offset": 1, "dst_offset": 2},
-    "República Checa": {"offset": 1, "dst_offset": 2},
-    "Polónia": {"offset": 1, "dst_offset": 2},
-    "Dinamarca": {"offset": 1, "dst_offset": 2},
-    "Noruega": {"offset": 1, "dst_offset": 2},
-    "Suécia": {"offset": 1, "dst_offset": 2},
+    # +1 hour ahead of Portugal
+    "Espanha": {"offset": 1},
+    "França": {"offset": 1},
+    "Alemanha": {"offset": 1},
+    "Itália": {"offset": 1},
+    "Holanda": {"offset": 1},
+    "Bélgica": {"offset": 1},
+    "Áustria": {"offset": 1},
+    "Suíça": {"offset": 1},
+    "República Checa": {"offset": 1},
+    "Polónia": {"offset": 1},
+    "Dinamarca": {"offset": 1},
+    "Noruega": {"offset": 1},
+    "Suécia": {"offset": 1},
     
-    # UTC+2 (Eastern European Time)
-    "Grécia": {"offset": 2, "dst_offset": 3},
-    "Finlândia": {"offset": 2, "dst_offset": 3},
-    "Roménia": {"offset": 2, "dst_offset": 3},
-    "Bulgária": {"offset": 2, "dst_offset": 3},
+    # +2 hours ahead of Portugal
+    "Grécia": {"offset": 2},
+    "Finlândia": {"offset": 2},
+    "Roménia": {"offset": 2},
+    "Bulgária": {"offset": 2},
 }
 
 def get_country_offset(country: str, is_dst: bool = False) -> int:
     """
-    Get timezone offset for a country
+    Get timezone offset for a country relative to Portugal
     
     Args:
         country: Country name
-        is_dst: Whether daylight saving time is active
+        is_dst: Not used - kept for compatibility
         
     Returns:
-        Offset in hours from UTC
+        Offset in hours relative to Portugal
     """
     country_info = EUROPEAN_COUNTRIES.get(country)
     if not country_info:
-        return 0  # Default to UTC if country not found
+        return 0  # Default to Portugal timezone if country not found
     
-    return country_info["dst_offset"] if is_dst else country_info["offset"]
+    return country_info["offset"]
 
 def is_dst_active(dt) -> bool:
     """
-    Check if daylight saving time is active for European countries
-    DST in Europe: Last Sunday of March to last Sunday of October
-    
-    Args:
-        dt: datetime object
-        
-    Returns:
-        True if DST is active, False otherwise
+    Kept for compatibility - not used anymore
+    All offsets are now relative to Portugal
     """
-    month = dt.month
-    
-    # DST is active from end of March to end of October
-    if month < 3 or month > 10:
-        return False
-    if month > 3 and month < 10:
-        return True
-    
-    # For March and October, need to check the specific Sunday
-    # Simplified: assume DST starts mid-March and ends mid-October
-    if month == 3:
-        return dt.day >= 25
-    if month == 10:
-        return dt.day < 25
-    
     return False
 
 def get_countries_list():
