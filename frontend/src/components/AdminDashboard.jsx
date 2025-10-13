@@ -263,23 +263,100 @@ const AdminDashboard = ({ user, onLogout }) => {
 
           <TabsContent value="users">
             <div className="glass-effect p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-white mb-6">Utilizadores ({users.length})</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {users.map((u) => (
-                  <div key={u.id} className="bg-[#1a1a1a] p-4 rounded-lg hover:bg-[#252525] transition-colors cursor-pointer" onClick={() => fetchUserEntries(u.id)}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${u.is_admin ? 'bg-gradient-to-br from-red-500 to-pink-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
-                        <span className="text-white font-bold text-lg">{u.username.charAt(0).toUpperCase()}</span>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold text-white">Utilizadores ({users.length})</h2>
+                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full">
+                      <Plus className="w-4 h-4 mr-2" />Criar Utilizador
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                    <DialogHeader><DialogTitle>Criar Novo Utilizador</DialogTitle></DialogHeader>
+                    <div className="space-y-3 mt-4">
+                      <div>
+                        <Label>Username</Label>
+                        <Input value={createForm.username} onChange={(e) => setCreateForm({...createForm, username: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
                       </div>
                       <div>
+                        <Label>Email</Label>
+                        <Input type="email" value={createForm.email} onChange={(e) => setCreateForm({...createForm, email: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                      </div>
+                      <div>
+                        <Label>Nome Completo</Label>
+                        <Input value={createForm.full_name} onChange={(e) => setCreateForm({...createForm, full_name: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                      </div>
+                      <div>
+                        <Label>Password</Label>
+                        <Input type="password" value={createForm.password} onChange={(e) => setCreateForm({...createForm, password: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                      </div>
+                      <Button onClick={handleCreateUser} disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full">
+                        {loading ? 'A criar...' : 'Criar Utilizador'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                {users.map((u) => (
+                  <div key={u.id} className="bg-[#1a1a1a] p-4 rounded-lg">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${u.is_admin ? 'bg-gradient-to-br from-red-500 to-pink-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
+                        <span className="text-white font-bold text-lg">{u.username.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1">
                         <div className="text-white font-semibold">{u.username}{u.is_admin && <span className="ml-2 text-xs bg-red-600 px-2 py-1 rounded">ADMIN</span>}</div>
                         <div className="text-gray-400 text-sm">{u.email}</div>
+                        {u.full_name && <div className="text-gray-500 text-xs">{u.full_name}</div>}
                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={() => handleEditUser(u)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" size="sm">
+                        <Edit className="w-3 h-3 mr-1" />Editar
+                      </Button>
+                      <Button onClick={() => handleDeleteUser(u.id, u.username)} className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm" size="sm">
+                        <Trash2 className="w-3 h-3 mr-1" />Eliminar
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+            
+            {/* Edit User Dialog */}
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+              <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                <DialogHeader><DialogTitle>Editar Utilizador</DialogTitle></DialogHeader>
+                {editingUser && (
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <Label>Username</Label>
+                      <Input value={editForm.username} onChange={(e) => setEditForm({...editForm, username: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                    </div>
+                    <div>
+                      <Label>Email</Label>
+                      <Input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                    </div>
+                    <div>
+                      <Label>Nome Completo</Label>
+                      <Input value={editForm.full_name} onChange={(e) => setEditForm({...editForm, full_name: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                    </div>
+                    <div>
+                      <Label>Nova Password (deixar vazio para não alterar)</Label>
+                      <Input type="password" value={editForm.password} onChange={(e) => setEditForm({...editForm, password: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" placeholder="Deixar vazio para não alterar" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg">
+                      <Label className="cursor-pointer">Privilégios de Admin</Label>
+                      <Switch checked={editForm.is_admin} onCheckedChange={(checked) => setEditForm({...editForm, is_admin: checked})} />
+                    </div>
+                    <Button onClick={handleUpdateUser} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                      {loading ? 'A atualizar...' : 'Atualizar Utilizador'}
+                    </Button>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
             {selectedUser && userEntries.length > 0 && (
               <div className="glass-effect p-6 rounded-xl mt-6">
                 <h3 className="text-xl font-semibold text-white mb-4">Registos do Utilizador ({userEntries.length})</h3>
