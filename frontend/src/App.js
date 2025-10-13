@@ -106,6 +106,16 @@ function App() {
               )
             }
           />
+          <Route
+            path="/overtime"
+            element={
+              isAuthenticated ? (
+                <Overtime user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
