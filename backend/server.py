@@ -539,9 +539,9 @@ async def end_time_entry(
     # Adjust end time based on country timezone if specified
     end_time = end_time_utc
     if entry.get("country"):
-        # Get timezone offset for the country
-        offset = get_country_offset(entry["country"], is_dst_active(end_time_utc))
-        # Add offset to show local time of that country
+        # Get timezone offset for the country (relative to Portugal)
+        offset = get_country_offset(entry["country"])
+        # Add offset to adjust time
         end_time = end_time_utc + timedelta(hours=offset)
     
     start_time = datetime.fromisoformat(entry["start_time"])
