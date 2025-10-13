@@ -437,7 +437,9 @@ async def end_time_entry(entry_id: str, current_user: dict = Depends(get_current
                     overtime_reason=ot_reason if is_ot else None,
                     total_hours=day_hours,
                     regular_hours=regular_hours,
-                    overtime_hours=overtime_hours
+                    overtime_hours=overtime_hours,
+                    outside_residence_zone=entry.get("outside_residence_zone", False),
+                    location_description=entry.get("location_description")
                 )
                 new_dict = new_entry.model_dump()
                 new_dict['start_time'] = new_dict['start_time'].isoformat()
