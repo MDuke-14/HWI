@@ -234,9 +234,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Excel Report Generation Endpoint"
-    - "Excel Export Button in Reports"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
