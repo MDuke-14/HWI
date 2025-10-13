@@ -96,12 +96,14 @@ class TimeEntry(BaseModel):
     total_hours: Optional[float] = None
     outside_residence_zone: bool = False  # True if working outside residence zone
     location_description: Optional[str] = None  # Location when outside residence zone
+    country: Optional[str] = None  # Country for timezone adjustment
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TimeEntryStart(BaseModel):
     observations: Optional[str] = None
     outside_residence_zone: Optional[bool] = False
     location_description: Optional[str] = None
+    country: Optional[str] = None
 
 class TimeEntryEnd(BaseModel):
     observations: Optional[str] = None
