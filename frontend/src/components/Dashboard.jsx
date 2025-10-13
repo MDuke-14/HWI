@@ -66,32 +66,6 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  const handlePause = async () => {
-    setLoading(true);
-    try {
-      await axios.post(`${API}/time-entries/pause/${entry.id}`);
-      toast.success('Pausa iniciada');
-      fetchTodayEntry();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao pausar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResume = async () => {
-    setLoading(true);
-    try {
-      await axios.post(`${API}/time-entries/resume/${entry.id}`);
-      toast.success('Trabalho retomado!');
-      fetchTodayEntry();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao retomar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleEnd = async () => {
     setLoading(true);
     try {
