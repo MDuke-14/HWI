@@ -472,17 +472,16 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     # Get current time in UTC
     now_utc = datetime.now(timezone.utc)
     
-    # If country is specified, adjust the start time to match country's local time
+    # Adjust time based on country timezone if specified
+    start_time = now_utc
     if entry_data.country:
         # Get timezone offset for the country
         offset = get_country_offset(entry_data.country, is_dst_active(now_utc))
-        # Subtract offset to store UTC time that represents the local time
-        # Example: If it's 10:00 in Spain (UTC+1), we want to store 09:00 UTC
-        # But we want to display 10:00 when showing, so we actually don't adjust storage
-        # We just store the country for later display adjustment
-        pass  # Keep now_utc as is, country field will be used for display
+        # Add offset to show local time of that country
+        # Example: If it's 09:00 UTC and country is Spain (UTC+1), store 10:00
+        start_time = now_utc + timedelta(hours=offset)
     
-    today = now_utc.strftime("%Y-%m-%d")
+    today = start_time.strftime("%Y-%m-%d")
     
     # Check if there's already an active (not completed) entry for this user
     existing_active = await db.time_entries.find_one({
@@ -493,8 +492,8 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     if existing_active:
         raise HTTPException(status_code=400, detail="Por favor finalize o registo anterior antes de iniciar um novo")
     
-    # Check if today is overtime day
-    today_date = now_utc.date()
+    # Check if today is overtime day (use the adjusted date)
+    today_date = start_time.date()
     is_ot, ot_reason = is_overtime_day(today_date)
     
     entry = TimeEntry(
