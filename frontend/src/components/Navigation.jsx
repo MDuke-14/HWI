@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Clock, History, TrendingUp, LogOut, User } from 'lucide-react';
+import { Clock, History, TrendingUp, LogOut, User, Palmtree, Shield } from 'lucide-react';
 
 const Navigation = ({ user, onLogout, activePage }) => {
   const location = useLocation();
