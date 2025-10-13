@@ -8,6 +8,7 @@ import History from '@/components/History';
 import Reports from '@/components/Reports';
 import Overtime from '@/components/Overtime';
 import Vacations from '@/components/Vacations';
+import Absences from '@/components/Absences';
 import AdminDashboard from '@/components/AdminDashboard';
 import { Toaster } from '@/components/ui/sonner';
 
