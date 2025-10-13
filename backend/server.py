@@ -721,6 +721,114 @@ async def get_user_time_entries(user_id: str, current_user: dict = Depends(get_c
     entries = await db.time_entries.find({"user_id": user_id}, {"_id": 0}).sort("date", -1).to_list(1000)
     return entries
 
+@api_router.post("/admin/users/create")
+async def admin_create_user(user_data: UserCreate, current_user: dict = Depends(get_current_admin)):
+    """Create a new user (admin only)"""
+    # Check if user exists
+    existing_user = await db.users.find_one({"username": user_data.username})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Utilizador já existe")
+    
+    # Check if email already exists
+    existing_email = await db.users.find_one({"email": user_data.email})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email já está registado")
+    
+    # Determine if user is admin
+    admin_emails = ["pedro.duarte@hwi.pt", "miguel.moreira@hwi.pt"]
+    is_admin = user_data.email in admin_emails
+    
+    # Create user
+    hashed_password = get_password_hash(user_data.password)
+    user = User(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=hashed_password,
+        full_name=user_data.full_name,
+        is_admin=is_admin
+    )
+    
+    user_dict = user.model_dump()
+    user_dict['created_at'] = user_dict['created_at'].isoformat()
+    await db.users.insert_one(user_dict)
+    
+    # Create vacation balance if company start date provided
+    if user_data.company_start_date:
+        vacation_balance = VacationBalance(
+            user_id=user.id,
+            company_start_date=user_data.company_start_date,
+            days_earned=0,
+            days_taken=user_data.vacation_days_taken,
+            days_available=0
+        )
+        vac_dict = vacation_balance.model_dump()
+        vac_dict['updated_at'] = vac_dict['updated_at'].isoformat()
+        await db.vacation_balances.insert_one(vac_dict)
+    
+    return {"message": "Utilizador criado com sucesso", "user_id": user.id}
+
+@api_router.put("/admin/users/{user_id}")
+async def admin_update_user(
+    user_id: str,
+    update_data: UserUpdate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Update user data (admin only)"""
+    user = await db.users.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    update_dict = {}
+    
+    if update_data.username:
+        # Check if new username already exists
+        existing = await db.users.find_one({"username": update_data.username, "id": {"$ne": user_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Username já existe")
+        update_dict["username"] = update_data.username
+    
+    if update_data.email:
+        # Check if new email already exists
+        existing = await db.users.find_one({"email": update_data.email, "id": {"$ne": user_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email já está registado")
+        update_dict["email"] = update_data.email
+    
+    if update_data.full_name is not None:
+        update_dict["full_name"] = update_data.full_name
+    
+    if update_data.password:
+        update_dict["hashed_password"] = get_password_hash(update_data.password)
+    
+    if update_data.is_admin is not None:
+        update_dict["is_admin"] = update_data.is_admin
+    
+    if update_dict:
+        await db.users.update_one({"id": user_id}, {"$set": update_dict})
+    
+    return {"message": "Utilizador atualizado com sucesso"}
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, current_user: dict = Depends(get_current_admin)):
+    """Delete user and all their data (admin only)"""
+    user = await db.users.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    # Delete all user data
+    await db.time_entries.delete_many({"user_id": user_id})
+    await db.vacation_requests.delete_many({"user_id": user_id})
+    await db.vacation_balances.delete_many({"user_id": user_id})
+    await db.absences.delete_many({"user_id": user_id})
+    await db.notifications.delete_many({"user_id": user_id})
+    
+    # Delete user
+    await db.users.delete_one({"id": user_id})
+    
+    return {"message": f"Utilizador {user['username']} e todos os seus dados foram eliminados"}
+
 @api_router.get("/admin/vacations/pending")
 async def get_pending_vacation_requests(current_user: dict = Depends(get_current_admin)):
     """Get all pending vacation requests (admin only)"""
