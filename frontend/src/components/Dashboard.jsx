@@ -80,8 +80,11 @@ const Dashboard = ({ user, onLogout }) => {
   const handleEnd = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API}/time-entries/end/${entry.id}`);
+      const response = await axios.post(`${API}/time-entries/end/${entry.id}`, {
+        observations: endObservations
+      });
       toast.success(`Relógio finalizado! Total: ${response.data.total_hours}h`);
+      setEndObservations('');
       fetchTodayEntry();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao finalizar');
