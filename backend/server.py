@@ -368,47 +368,6 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     # Return entry without MongoDB's _id field
     return {"message": "Relógio iniciado", "entry": {k: v for k, v in entry_dict.items() if k != '_id'}}
 
-@api_router.post("/time-entries/pause/{entry_id}")
-async def pause_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
-    entry = await db.time_entries.find_one({"id": entry_id, "user_id": current_user["sub"]})
-    
-    if not entry:
-        raise HTTPException(status_code=404, detail="Registo não encontrado")
-    
-    if entry["status"] != "active":
-        raise HTTPException(status_code=400, detail="O registo não está ativo")
-    
-    pauses = entry.get("pauses", [])
-    pauses.append({"pause_start": datetime.now(timezone.utc).isoformat(), "pause_end": None})
-    
-    await db.time_entries.update_one(
-        {"id": entry_id},
-        {"$set": {"status": "paused", "pauses": pauses}}
-    )
-    
-    return {"message": "Pausa iniciada", "pauses": pauses}
-
-@api_router.post("/time-entries/resume/{entry_id}")
-async def resume_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
-    entry = await db.time_entries.find_one({"id": entry_id, "user_id": current_user["sub"]})
-    
-    if not entry:
-        raise HTTPException(status_code=404, detail="Registo não encontrado")
-    
-    if entry["status"] != "paused":
-        raise HTTPException(status_code=400, detail="O registo não está em pausa")
-    
-    pauses = entry.get("pauses", [])
-    if pauses and pauses[-1]["pause_end"] is None:
-        pauses[-1]["pause_end"] = datetime.now(timezone.utc).isoformat()
-    
-    await db.time_entries.update_one(
-        {"id": entry_id},
-        {"$set": {"status": "active", "pauses": pauses}}
-    )
-    
-    return {"message": "Trabalho retomado", "pauses": pauses}
-
 @api_router.post("/time-entries/end/{entry_id}")
 async def end_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
     entry = await db.time_entries.find_one({"id": entry_id, "user_id": current_user["sub"]})
