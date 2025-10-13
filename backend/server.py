@@ -166,26 +166,49 @@ async def register(user_data: UserCreate):
     if existing_user:
         raise HTTPException(status_code=400, detail="Utilizador já existe")
     
+    # Check if email already exists
+    existing_email = await db.users.find_one({"email": user_data.email})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email já está registado")
+    
+    # Determine if user is admin
+    admin_emails = ["pedro.duarte@hwi.pt"]
+    is_admin = user_data.email in admin_emails
+    
     # Create user
     hashed_password = get_password_hash(user_data.password)
     user = User(
         username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_password,
-        full_name=user_data.full_name
+        full_name=user_data.full_name,
+        is_admin=is_admin
     )
     
     user_dict = user.model_dump()
     user_dict['created_at'] = user_dict['created_at'].isoformat()
     await db.users.insert_one(user_dict)
     
+    # Create vacation balance if company start date provided
+    if user_data.company_start_date:
+        vacation_balance = VacationBalance(
+            user_id=user.id,
+            company_start_date=user_data.company_start_date,
+            days_earned=0,
+            days_taken=user_data.vacation_days_taken,
+            days_available=0
+        )
+        vac_dict = vacation_balance.model_dump()
+        vac_dict['updated_at'] = vac_dict['updated_at'].isoformat()
+        await db.vacation_balances.insert_one(vac_dict)
+    
     # Create token
-    access_token = create_access_token(data={"sub": user.id, "username": user.username})
+    access_token = create_access_token(data={"sub": user.id, "username": user.username, "is_admin": is_admin})
     
     return Token(
         access_token=access_token,
         token_type="bearer",
-        user={"id": user.id, "username": user.username, "full_name": user.full_name}
+        user={"id": user.id, "username": user.username, "full_name": user.full_name, "is_admin": is_admin}
     )
 
 @api_router.post("/auth/login", response_model=Token)
