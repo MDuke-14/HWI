@@ -91,6 +91,44 @@ class TimeEntryUpdate(BaseModel):
     end_time: Optional[datetime] = None
     observations: Optional[str] = None
 
+class VacationRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: str
+    start_date: str  # YYYY-MM-DD
+    end_date: str  # YYYY-MM-DD
+    days_requested: int
+    reason: Optional[str] = None
+    status: str = "pending"  # pending, approved, rejected
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class VacationRequestCreate(BaseModel):
+    start_date: str
+    end_date: str
+    reason: Optional[str] = None
+
+class VacationBalance(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    company_start_date: str  # YYYY-MM-DD
+    days_earned: float
+    days_taken: int
+    days_available: float
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Notification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    type: str  # vacation_request, vacation_approved, vacation_rejected
+    message: str
+    read: bool = False
+    related_id: Optional[str] = None  # ID of vacation request
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # ============ Auth Functions ============
 
 def verify_password(plain_password, hashed_password):
