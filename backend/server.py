@@ -469,7 +469,20 @@ async def get_countries():
 
 @api_router.post("/time-entries/start")
 async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depends(get_current_user)):
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # Get current time in UTC
+    now_utc = datetime.now(timezone.utc)
+    
+    # If country is specified, adjust the start time to match country's local time
+    if entry_data.country:
+        # Get timezone offset for the country
+        offset = get_country_offset(entry_data.country, is_dst_active(now_utc))
+        # Subtract offset to store UTC time that represents the local time
+        # Example: If it's 10:00 in Spain (UTC+1), we want to store 09:00 UTC
+        # But we want to display 10:00 when showing, so we actually don't adjust storage
+        # We just store the country for later display adjustment
+        pass  # Keep now_utc as is, country field will be used for display
+    
+    today = now_utc.strftime("%Y-%m-%d")
     
     # Check if there's already an active (not completed) entry for this user
     existing_active = await db.time_entries.find_one({
@@ -481,20 +494,21 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         raise HTTPException(status_code=400, detail="Por favor finalize o registo anterior antes de iniciar um novo")
     
     # Check if today is overtime day
-    today_date = datetime.now(timezone.utc).date()
+    today_date = now_utc.date()
     is_ot, ot_reason = is_overtime_day(today_date)
     
     entry = TimeEntry(
         user_id=current_user["sub"],
         username=current_user["username"],
         date=today,
-        start_time=datetime.now(timezone.utc),
+        start_time=now_utc,
         status="active",
         observations=entry_data.observations,
         is_overtime_day=is_ot,
         overtime_reason=ot_reason if is_ot else None,
         outside_residence_zone=entry_data.outside_residence_zone or False,
-        location_description=entry_data.location_description if entry_data.outside_residence_zone else None
+        location_description=entry_data.location_description if entry_data.outside_residence_zone else None,
+        country=entry_data.country if entry_data.outside_residence_zone else None
     )
     
     entry_dict = entry.model_dump()
