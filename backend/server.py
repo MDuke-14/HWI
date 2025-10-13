@@ -16,6 +16,9 @@ from passlib.context import CryptContext
 import shutil
 from io import BytesIO
 import sys
+import aiosmtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 sys.path.insert(0, str(Path(__file__).parent))
 from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates
 from excel_report import generate_monthly_report
