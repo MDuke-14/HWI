@@ -157,6 +157,47 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
 
+async def get_current_admin(current_user: dict = Depends(get_current_user)):
+    """Verify if current user is admin"""
+    user = await db.users.find_one({"id": current_user["sub"]})
+    if not user or not user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
+    return current_user
+
+def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
+    """Calculate vacation days based on company start date"""
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+    today = date.today()
+    
+    # Calculate months worked
+    months_worked = (today.year - start_date.year) * 12 + (today.month - start_date.month)
+    if today.day < start_date.day:
+        months_worked -= 1
+    
+    # 2 days per month, max 22 days per year
+    days_earned = min(months_worked * 2, 22)
+    days_available = max(0, days_earned - days_taken)
+    
+    return {
+        "days_earned": days_earned,
+        "days_taken": days_taken,
+        "days_available": days_available,
+        "months_worked": months_worked
+    }
+
+async def create_notification(user_id: str, notification_type: str, message: str, related_id: str = None):
+    """Create a notification for a user"""
+    notification = Notification(
+        user_id=user_id,
+        type=notification_type,
+        message=message,
+        related_id=related_id
+    )
+    notif_dict = notification.model_dump()
+    notif_dict['created_at'] = notif_dict['created_at'].isoformat()
+    await db.notifications.insert_one(notif_dict)
+    return notification
+
 # ============ Auth Routes ============
 
 @api_router.post("/auth/register", response_model=Token)
