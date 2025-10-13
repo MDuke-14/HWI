@@ -38,7 +38,15 @@ const Dashboard = ({ user, onLogout }) => {
   const fetchTodayEntry = async () => {
     try {
       const response = await axios.get(`${API}/time-entries/today`);
-      setEntry(response.data);
+      if (response.data.has_active === false) {
+        // Multiple entries for today
+        setEntry(null);
+        setTodayEntries(response.data.entries || []);
+      } else {
+        // Active entry
+        setEntry(response.data);
+        setTodayEntries([]);
+      }
     } catch (error) {
       console.error('Erro ao buscar entrada de hoje:', error);
     }
