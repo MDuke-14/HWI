@@ -640,7 +640,8 @@ async def end_time_entry(
                 "end_time": end_time.isoformat(),
                 "total_hours": total_hours,
                 "regular_hours": regular_hours,
-                "overtime_hours": overtime_hours
+                "overtime_hours": overtime_hours,
+                "observations": final_observations
             }}
         )
         
