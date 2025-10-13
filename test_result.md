@@ -101,3 +101,87 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Time tracking application for HWI Unipessoal, lda with simplified time tracking (start/end only),
+  overtime management, PWA capabilities, vacation/absence systems, admin privileges, and Excel report generation
+  matching a user-provided template format.
+
+backend:
+  - task: "Excel Report Generation Endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/backend/excel_report.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Added new endpoint GET /api/time-entries/reports/excel that:
+          - Generates Excel report in user-provided template format
+          - Works for both regular users (own reports) and admins (any user)
+          - Auto-fills date range with billing period (26th-25th) if not specified
+          - Returns StreamingResponse with Excel file
+          - Uses openpyxl via excel_report.py generate_monthly_report function
+          Needs backend testing to verify endpoint works correctly.
+
+frontend:
+  - task: "Excel Export Button in Reports"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/Reports.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Added "Exportar Excel" button to Reports page:
+          - Added FileDown icon import from lucide-react
+          - Created downloadExcelReport function using axios with blob responseType
+          - Added green export button next to refresh button
+          - Handles file download with proper filename extraction from headers
+          - Shows toast notifications for success/error
+          Frontend compiled successfully. Needs testing to verify download functionality.
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Excel Report Generation Endpoint"
+    - "Excel Export Button in Reports"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Excel report feature implemented:
+      
+      Backend: Added /api/time-entries/reports/excel endpoint that generates Excel files
+      using the generate_monthly_report function from excel_report.py. The endpoint:
+      - Accepts optional user_id (admin only), start_date, end_date parameters
+      - Defaults to current billing period (26th-25th) if dates not provided
+      - Returns Excel file as StreamingResponse
+      
+      Frontend: Added export button to Reports component that:
+      - Calls the backend endpoint with proper authentication
+      - Downloads blob response and triggers file download
+      - Shows success/error toasts
+      
+      Please test:
+      1. Backend endpoint with curl (login first to get token, then call excel endpoint)
+      2. Verify Excel file is generated with correct format
+      3. Test with different date ranges
+      4. Test admin accessing other user's reports (if applicable)
+      
+      Note: The excel_report.py already has the generate_monthly_report function implemented.
+      It creates an Excel workbook with proper formatting matching the template structure.
