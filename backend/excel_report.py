@@ -228,5 +228,6 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
     for col in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']:
         ws.column_dimensions[col].width = 8
     ws.column_dimensions['K'].width = 12
+    ws.column_dimensions['O'].width = 35  # Tipo de Pagamento
     
     return wb
