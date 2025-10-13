@@ -475,10 +475,10 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     # Adjust time based on country timezone if specified
     start_time = now_utc
     if entry_data.country:
-        # Get timezone offset for the country
-        offset = get_country_offset(entry_data.country, is_dst_active(now_utc))
-        # Add offset to show local time of that country
-        # Example: If it's 09:00 UTC and country is Spain (UTC+1), store 10:00
+        # Get timezone offset for the country (relative to Portugal)
+        offset = get_country_offset(entry_data.country)
+        # Add offset to adjust time
+        # Example: If it's 09:00 in Portugal and country is Spain (+1h), store 10:00
         start_time = now_utc + timedelta(hours=offset)
     
     today = start_time.strftime("%Y-%m-%d")
