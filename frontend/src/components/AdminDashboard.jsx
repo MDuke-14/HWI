@@ -19,6 +19,24 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userEntries, setUserEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [createForm, setCreateForm] = useState({
+    username: '',
+    email: '',
+    full_name: '',
+    password: '',
+    company_start_date: '',
+    vacation_days_taken: 0
+  });
+  const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
+    full_name: '',
+    password: '',
+    is_admin: false
+  });
 
   useEffect(() => {
     fetchUsers();
