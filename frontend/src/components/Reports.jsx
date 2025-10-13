@@ -47,18 +47,22 @@ const Reports = ({ user, onLogout }) => {
           <h2 className="text-2xl font-bold text-white">{title}</h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
           <div className="glass-effect p-6 rounded-xl">
             <div className="text-gray-400 text-sm mb-2">Total de Horas</div>
             <div className="text-3xl font-bold text-white" data-testid="total-hours">{report.total_hours}h</div>
           </div>
           <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Dias Trabalhados</div>
-            <div className="text-3xl font-bold text-white" data-testid="total-days">{report.total_days}</div>
+            <div className="text-gray-400 text-sm mb-2">Horas Normais</div>
+            <div className="text-3xl font-bold text-blue-400" data-testid="regular-hours">{report.regular_hours}h</div>
           </div>
           <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Média por Dia</div>
-            <div className="text-3xl font-bold text-green-400" data-testid="avg-hours">{report.avg_hours_per_day}h</div>
+            <div className="text-gray-400 text-sm mb-2">Horas Extras</div>
+            <div className="text-3xl font-bold text-amber-400" data-testid="overtime-hours">{report.overtime_hours}h</div>
+          </div>
+          <div className="glass-effect p-6 rounded-xl">
+            <div className="text-gray-400 text-sm mb-2">Dias Trabalhados</div>
+            <div className="text-3xl font-bold text-green-400" data-testid="total-days">{report.total_days}</div>
           </div>
         </div>
 
