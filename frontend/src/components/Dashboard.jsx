@@ -143,7 +143,7 @@ const Dashboard = ({ user, onLogout }) => {
 
           {/* Control Buttons */}
           <div className="glass-effect p-8 mb-6">
-            {!entry || entry.status === 'completed' ? (
+            {!entry ? (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="observations" className="text-gray-300 mb-2 block">
@@ -165,57 +165,20 @@ const Dashboard = ({ user, onLogout }) => {
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg"
                 >
                   <Play className="w-6 h-6 mr-2" />
-                  Iniciar Jornada
+                  Iniciar Relógio
                 </Button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {entry.status === 'active' && (
-                  <>
-                    <Button
-                      data-testid="pause-button"
-                      onClick={handlePause}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold py-4 rounded-full text-lg"
-                    >
-                      <Coffee className="w-6 h-6 mr-2" />
-                      Iniciar Pausa
-                    </Button>
-                    <Button
-                      data-testid="end-button"
-                      onClick={handleEnd}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
-                    >
-                      <Square className="w-6 h-6 mr-2" />
-                      Finalizar Jornada
-                    </Button>
-                  </>
-                )}
-                {entry.status === 'paused' && (
-                  <>
-                    <Button
-                      data-testid="resume-button"
-                      onClick={handleResume}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg"
-                    >
-                      <Play className="w-6 h-6 mr-2" />
-                      Retomar Trabalho
-                    </Button>
-                    <Button
-                      data-testid="end-button"
-                      onClick={handleEnd}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
-                    >
-                      <Square className="w-6 h-6 mr-2" />
-                      Finalizar Jornada
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
+            ) : entry.status === 'active' ? (
+              <Button
+                data-testid="end-button"
+                onClick={handleEnd}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
+              >
+                <Square className="w-6 h-6 mr-2" />
+                Finalizar Relógio
+              </Button>
+            ) : null}
           </div>
 
           {/* Today's Entry Info */}
