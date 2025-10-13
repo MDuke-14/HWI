@@ -42,9 +42,10 @@ class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     username: str
-    email: Optional[EmailStr] = None
+    email: EmailStr
     hashed_password: str
     full_name: Optional[str] = None
+    is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
