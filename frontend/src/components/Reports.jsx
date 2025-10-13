@@ -10,6 +10,7 @@ import { TrendingUp, Calendar, Clock, BarChart3 } from 'lucide-react';
 const Reports = ({ user, onLogout }) => {
   const [weeklyReport, setWeeklyReport] = useState(null);
   const [monthlyReport, setMonthlyReport] = useState(null);
+  const [billingReport, setBillingReport] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
