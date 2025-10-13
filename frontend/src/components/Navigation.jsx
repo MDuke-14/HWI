@@ -8,7 +8,8 @@ const Navigation = ({ user, onLogout, activePage }) => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: Clock, key: 'dashboard' },
     { name: 'Histórico', path: '/history', icon: History, key: 'history' },
-    { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' }
+    { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' },
+    { name: 'Horas Extras', path: '/overtime', icon: TrendingUp, key: 'overtime' }
   ];
 
   return (
