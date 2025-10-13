@@ -309,6 +309,13 @@ const History = ({ user, onLogout }) => {
                     </div>
                   )}
 
+                  {entry.outside_residence_zone && (
+                    <div className="mb-3 ml-2 inline-block px-3 py-1 bg-blue-900/30 border border-blue-600 rounded-full text-blue-400 text-xs font-semibold flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      Fora de Zona: {entry.location_description}
+                    </div>
+                  )}
+
                   <div className="grid md:grid-cols-2 gap-4 text-gray-300">
                     <div>
                       <div className="text-sm text-gray-400">Início</div>
