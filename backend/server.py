@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta, date, time
 import jwt
 from passlib.context import CryptContext
 import shutil
+from io import BytesIO
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates
