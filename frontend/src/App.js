@@ -118,6 +118,26 @@ function App() {
               )
             }
           />
+          <Route
+            path="/vacations"
+            element={
+              isAuthenticated ? (
+                <Vacations user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              isAuthenticated && user?.is_admin ? (
+                <AdminDashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
