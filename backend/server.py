@@ -103,6 +103,9 @@ class TimeEntryStart(BaseModel):
     outside_residence_zone: Optional[bool] = False
     location_description: Optional[str] = None
 
+class TimeEntryEnd(BaseModel):
+    observations: Optional[str] = None
+
 class TimeEntryUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
