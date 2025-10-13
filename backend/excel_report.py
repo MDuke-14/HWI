@@ -40,7 +40,7 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
     
     # Cabeçalhos da tabela (linha 3)
     headers = ['Data', 'Dia/Semana', 'Ent', 'Sai', 'Ent', 'Sai', 'Ent', 'Sai', 'Ent', 'Sai', 
-               'Horas trab.', 'SA', 'ADT', 'AC']
+               'Horas trab.', 'SA', 'ADT', 'AC', 'Tipo Pagamento']
     for idx, header in enumerate(headers, start=1):
         cell = ws.cell(row=3, column=idx)
         cell.value = header
