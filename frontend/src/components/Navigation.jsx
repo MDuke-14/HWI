@@ -5,12 +5,17 @@ import { Clock, History, TrendingUp, LogOut, User, Palmtree, Shield } from 'luci
 const Navigation = ({ user, onLogout, activePage }) => {
   const location = useLocation();
 
-  const navItems = [
+  const baseNavItems = [
     { name: 'Dashboard', path: '/', icon: Clock, key: 'dashboard' },
     { name: 'Histórico', path: '/history', icon: History, key: 'history' },
     { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' },
-    { name: 'Horas Extras', path: '/overtime', icon: TrendingUp, key: 'overtime' }
+    { name: 'Horas Extras', path: '/overtime', icon: TrendingUp, key: 'overtime' },
+    { name: 'Férias', path: '/vacations', icon: Palmtree, key: 'vacations' }
   ];
+  
+  const adminNavItem = { name: 'Admin', path: '/admin', icon: Shield, key: 'admin' };
+  
+  const navItems = user?.is_admin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   return (
     <nav className="glass-effect border-b border-gray-800">
