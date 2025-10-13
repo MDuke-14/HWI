@@ -123,11 +123,34 @@ class Notification(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    type: str  # vacation_request, vacation_approved, vacation_rejected
+    type: str  # vacation_request, vacation_approved, vacation_rejected, late_arrival, absence_reminder
     message: str
     read: bool = False
-    related_id: Optional[str] = None  # ID of vacation request
+    related_id: Optional[str] = None  # ID of vacation request or absence
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Absence(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: str
+    date: str  # YYYY-MM-DD
+    absence_type: str  # full_justified, full_unjustified, partial
+    hours: float  # 8 for full day, or specific hours for partial
+    is_justified: bool
+    reason: Optional[str] = None
+    justification_file: Optional[str] = None  # filename
+    status: str = "pending"  # pending, approved, rejected (for admin review)
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class AbsenceCreate(BaseModel):
+    date: str
+    absence_type: str  # full_justified, full_unjustified, partial
+    hours: float = 8.0
+    is_justified: bool = True
+    reason: Optional[str] = None
 
 # ============ Auth Functions ============
 
