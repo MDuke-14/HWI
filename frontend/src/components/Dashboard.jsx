@@ -15,6 +15,8 @@ const Dashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [outsideResidenceZone, setOutsideResidenceZone] = useState(false);
+  const [locationDescription, setLocationDescription] = useState('');
 
   useEffect(() => {
     fetchTodayEntry();
