@@ -499,7 +499,11 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     return {"message": "Relógio iniciado", "entry": {k: v for k, v in entry_dict.items() if k != '_id'}}
 
 @api_router.post("/time-entries/end/{entry_id}")
-async def end_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
+async def end_time_entry(
+    entry_id: str, 
+    end_data: TimeEntryEnd = TimeEntryEnd(),
+    current_user: dict = Depends(get_current_user)
+):
     entry = await db.time_entries.find_one({"id": entry_id, "user_id": current_user["sub"]})
     
     if not entry:
@@ -510,6 +514,14 @@ async def end_time_entry(entry_id: str, current_user: dict = Depends(get_current
     
     end_time = datetime.now(timezone.utc)
     start_time = datetime.fromisoformat(entry["start_time"])
+    
+    # Merge observations - keep start observations and add end observations if provided
+    final_observations = entry.get("observations", "")
+    if end_data.observations:
+        if final_observations:
+            final_observations = f"{final_observations}\n[Ao finalizar]: {end_data.observations}"
+        else:
+            final_observations = end_data.observations
     
     # Check if period crosses midnight
     start_date = start_time.date()
