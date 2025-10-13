@@ -284,7 +284,7 @@ class HWITimeTrackerTester:
             "auth/register",
             200,
             data={
-                "username": "miguel.moreira@hwi.pt",
+                "username": "miguel",
                 "password": "password123",
                 "email": "miguel.moreira@hwi.pt",
                 "full_name": "Miguel Moreira",
@@ -305,14 +305,14 @@ class HWITimeTrackerTester:
         else:
             print("   Registration failed, trying login...")
         
-        # Try to login
+        # Try to login with username "miguel"
         success, response = self.run_test(
             "Admin Login",
             "POST",
             "auth/login",
             200,
             data={
-                "username": "miguel.moreira@hwi.pt",
+                "username": "miguel",
                 "password": "password123"
             }
         )
