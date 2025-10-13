@@ -460,6 +460,11 @@ async def check_holiday(date: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de data inválido. Use YYYY-MM-DD")
 
+@api_router.get("/countries")
+async def get_countries():
+    """Get list of European countries for timezone selection"""
+    return {"countries": get_countries_list()}
+
 # ============ Time Entry Routes ============
 
 @api_router.post("/time-entries/start")
