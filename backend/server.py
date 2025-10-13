@@ -286,12 +286,12 @@ async def login(credentials: UserLogin):
     if not verify_password(credentials.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     
-    access_token = create_access_token(data={"sub": user["id"], "username": user["username"]})
+    access_token = create_access_token(data={"sub": user["id"], "username": user["username"], "is_admin": user.get("is_admin", False)})
     
     return Token(
         access_token=access_token,
         token_type="bearer",
-        user={"id": user["id"], "username": user["username"], "full_name": user.get("full_name")}
+        user={"id": user["id"], "username": user["username"], "full_name": user.get("full_name"), "is_admin": user.get("is_admin", False)}
     )
 
 @api_router.get("/auth/me")
