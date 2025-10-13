@@ -378,49 +378,132 @@ async def end_time_entry(entry_id: str, current_user: dict = Depends(get_current
     if entry["status"] == "completed":
         raise HTTPException(status_code=400, detail="O registo já foi finalizado")
     
-    # If paused, close the last pause
-    pauses = entry.get("pauses", [])
-    if entry["status"] == "paused" and pauses and pauses[-1]["pause_end"] is None:
-        pauses[-1]["pause_end"] = datetime.now(timezone.utc).isoformat()
-    
     end_time = datetime.now(timezone.utc)
     start_time = datetime.fromisoformat(entry["start_time"])
     
-    # Calculate total hours (excluding pauses)
-    total_seconds = (end_time - start_time).total_seconds()
+    # Check if period crosses midnight
+    start_date = start_time.date()
+    end_date = end_time.date()
     
-    for pause in pauses:
-        if pause["pause_end"]:
-            pause_start = datetime.fromisoformat(pause["pause_start"])
-            pause_end = datetime.fromisoformat(pause["pause_end"])
-            total_seconds -= (pause_end - pause_start).total_seconds()
-    
-    total_hours = round(total_seconds / 3600, 2)
-    
-    # Determine if hours are regular or overtime
-    is_ot = entry.get("is_overtime_day", False)
-    regular_hours = 0.0 if is_ot else total_hours
-    overtime_hours = total_hours if is_ot else 0.0
-    
-    await db.time_entries.update_one(
-        {"id": entry_id},
-        {"$set": {
-            "status": "completed",
-            "end_time": end_time.isoformat(),
-            "pauses": pauses,
+    if start_date != end_date:
+        # Split into multiple entries
+        entries_created = []
+        current_start = start_time
+        
+        while current_start.date() < end_date:
+            # Calculate end of current day (midnight)
+            midnight = datetime.combine(current_start.date() + timedelta(days=1), datetime.min.time(), timezone.utc)
+            day_seconds = (midnight - current_start).total_seconds()
+            day_hours = round(day_seconds / 3600, 2)
+            
+            day_date = current_start.date()
+            is_ot, ot_reason = is_overtime_day(day_date)
+            regular_hours = 0.0 if is_ot else day_hours
+            overtime_hours = day_hours if is_ot else 0.0
+            
+            # Create entry for this day
+            if current_start == start_time:
+                # Update the original entry
+                await db.time_entries.update_one(
+                    {"id": entry_id},
+                    {"$set": {
+                        "status": "completed",
+                        "end_time": midnight.isoformat(),
+                        "total_hours": day_hours,
+                        "regular_hours": regular_hours,
+                        "overtime_hours": overtime_hours
+                    }}
+                )
+                entries_created.append({"date": current_start.strftime("%Y-%m-%d"), "hours": day_hours})
+            else:
+                # Create new entry for additional day
+                new_entry = TimeEntry(
+                    user_id=current_user["sub"],
+                    username=current_user["username"],
+                    date=current_start.strftime("%Y-%m-%d"),
+                    start_time=current_start,
+                    end_time=midnight,
+                    status="completed",
+                    observations=f"Continuação do registo anterior",
+                    is_overtime_day=is_ot,
+                    overtime_reason=ot_reason if is_ot else None,
+                    total_hours=day_hours,
+                    regular_hours=regular_hours,
+                    overtime_hours=overtime_hours
+                )
+                new_dict = new_entry.model_dump()
+                new_dict['start_time'] = new_dict['start_time'].isoformat()
+                new_dict['end_time'] = new_dict['end_time'].isoformat()
+                new_dict['created_at'] = new_dict['created_at'].isoformat()
+                await db.time_entries.insert_one(new_dict)
+                entries_created.append({"date": current_start.strftime("%Y-%m-%d"), "hours": day_hours})
+            
+            current_start = midnight
+        
+        # Handle final day
+        final_seconds = (end_time - current_start).total_seconds()
+        final_hours = round(final_seconds / 3600, 2)
+        
+        final_date = end_time.date()
+        is_ot, ot_reason = is_overtime_day(final_date)
+        regular_hours = 0.0 if is_ot else final_hours
+        overtime_hours = final_hours if is_ot else 0.0
+        
+        final_entry = TimeEntry(
+            user_id=current_user["sub"],
+            username=current_user["username"],
+            date=end_time.strftime("%Y-%m-%d"),
+            start_time=current_start,
+            end_time=end_time,
+            status="completed",
+            observations=f"Continuação do registo anterior",
+            is_overtime_day=is_ot,
+            overtime_reason=ot_reason if is_ot else None,
+            total_hours=final_hours,
+            regular_hours=regular_hours,
+            overtime_hours=overtime_hours
+        )
+        final_dict = final_entry.model_dump()
+        final_dict['start_time'] = final_dict['start_time'].isoformat()
+        final_dict['end_time'] = final_dict['end_time'].isoformat()
+        final_dict['created_at'] = final_dict['created_at'].isoformat()
+        await db.time_entries.insert_one(final_dict)
+        entries_created.append({"date": end_time.strftime("%Y-%m-%d"), "hours": final_hours})
+        
+        total_hours = sum(e["hours"] for e in entries_created)
+        
+        return {
+            "message": "Relógio finalizado e dividido entre dias",
+            "total_hours": total_hours,
+            "entries_created": entries_created
+        }
+    else:
+        # Single day entry
+        total_seconds = (end_time - start_time).total_seconds()
+        total_hours = round(total_seconds / 3600, 2)
+        
+        is_ot = entry.get("is_overtime_day", False)
+        regular_hours = 0.0 if is_ot else total_hours
+        overtime_hours = total_hours if is_ot else 0.0
+        
+        await db.time_entries.update_one(
+            {"id": entry_id},
+            {"$set": {
+                "status": "completed",
+                "end_time": end_time.isoformat(),
+                "total_hours": total_hours,
+                "regular_hours": regular_hours,
+                "overtime_hours": overtime_hours
+            }}
+        )
+        
+        return {
+            "message": "Relógio finalizado",
             "total_hours": total_hours,
             "regular_hours": regular_hours,
-            "overtime_hours": overtime_hours
-        }}
-    )
-    
-    return {
-        "message": "Relógio finalizado",
-        "total_hours": total_hours,
-        "regular_hours": regular_hours,
-        "overtime_hours": overtime_hours,
-        "is_overtime_day": is_ot
-    }
+            "overtime_hours": overtime_hours,
+            "is_overtime_day": is_ot
+        }
 
 @api_router.get("/time-entries/today")
 async def get_today_entry(current_user: dict = Depends(get_current_user)):
