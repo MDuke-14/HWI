@@ -914,24 +914,19 @@ class HWITimeTrackerTester:
             return False
 
 def main():
-    print("🚀 Starting HWI Time Tracker API Tests - Outside Residence Zone Feature")
+    print("🚀 Starting HWI Time Tracker API Tests - PDF Monthly Report Generation")
     print("=" * 70)
     
     tester = HWITimeTrackerTester()
     
-    # Test sequence - focusing on Outside Residence Zone functionality
+    # Test sequence - focusing on PDF Monthly Report Generation endpoint
     test_sequence = [
-        ("Outside Zone Test Login", tester.test_outside_zone_login),
+        ("Admin Login (miguel/password123)", tester.test_admin_login),
         ("Get Current User", tester.test_get_current_user),
-        ("Start Entry (Normal Zone)", tester.test_start_entry_normal_zone),
-        ("End Current Entry", tester.test_end_current_entry),
-        ("Start Entry (Outside Zone)", tester.test_start_entry_outside_zone),
-        ("Verify Entries in List", tester.test_verify_entries_in_list),
-        ("End Current Entry", tester.test_end_current_entry),
-        ("Excel Report (Payment Types)", tester.test_excel_report_payment_types),
-        ("List Time Entries", tester.test_list_time_entries),
-        ("Weekly Report", tester.test_weekly_report),
-        ("Monthly Report", tester.test_monthly_report),
+        ("PDF Report (No Parameters)", tester.test_pdf_report_no_params),
+        ("PDF Report (With Parameters)", tester.test_pdf_report_with_params),
+        ("PDF Report (Unauthorized)", tester.test_pdf_report_unauthorized),
+        ("PDF Content Validation", tester.test_pdf_content_validation),
     ]
     
     failed_tests = []
