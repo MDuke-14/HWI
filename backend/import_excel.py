@@ -43,7 +43,9 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
         df = pd.read_excel(file_path, header=None)
         
         logging.info(f"Excel file loaded. Shape: {df.shape}")
-        logging.info(f"First 5 rows:\n{df.head()}")
+        logging.info(f"First row sample: {df.iloc[0].tolist()[:10]}")
+        logging.info(f"Column 0 sample values: {df[0].tolist()[:20]}")
+        logging.info(f"Column 1 sample values: {df[1].tolist()[:20]}")
         
         entries_list = []
         
