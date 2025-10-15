@@ -3,9 +3,13 @@ import axios from 'axios';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { TrendingUp, Calendar, Clock, BarChart3, FileText } from 'lucide-react';
+import { TrendingUp, Calendar, Clock, BarChart3, FileText, Edit, Upload } from 'lucide-react';
 
 const Reports = ({ user, onLogout }) => {
   const [weeklyReport, setWeeklyReport] = useState(null);
