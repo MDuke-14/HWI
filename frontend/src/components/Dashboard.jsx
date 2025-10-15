@@ -212,36 +212,13 @@ const Dashboard = ({ user, onLogout }) => {
                       className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500"
                       required={outsideResidenceZone}
                     />
-                    
-                    {/* Country Select */}
-                    <div className="mt-4">
-                      <Label htmlFor="country" className="text-gray-300 mb-2 block flex items-center gap-2">
-                        <Globe className="w-4 h-4" />
-                        País (para ajuste de fuso horário) *
-                      </Label>
-                      <Select value={country} onValueChange={setCountry}>
-                        <SelectTrigger className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500">
-                          <SelectValue placeholder="Selecione o país" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white max-h-[300px]">
-                          {countries.map((c) => (
-                            <SelectItem key={c} value={c} className="text-white hover:bg-[#2a2a2a]">
-                              {c}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-400 mt-1">
-                        O horário será registado no fuso horário do país selecionado
-                      </p>
-                    </div>
                   </div>
                 )}
 
                 <Button
                   data-testid="start-button"
                   onClick={handleStart}
-                  disabled={loading || (outsideResidenceZone && (!locationDescription.trim() || !country))}
+                  disabled={loading || (outsideResidenceZone && !locationDescription.trim())}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Play className="w-6 h-6 mr-2" />
