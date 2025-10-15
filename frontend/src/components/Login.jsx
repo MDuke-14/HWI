@@ -13,7 +13,8 @@ const Login = ({ onLogin }) => {
     username: '',
     password: '',
     email: '',
-    full_name: ''
+    full_name: '',
+    phone: ''
   });
   const [loading, setLoading] = useState(false);
 
