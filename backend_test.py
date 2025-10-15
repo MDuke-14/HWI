@@ -1880,10 +1880,58 @@ def test_timezone_fix():
     
     tester = HWITimeTrackerTester()
     
-    # Authenticate first
-    if not tester.test_miguel_credentials():
-        print("❌ Authentication failed - cannot test admin features")
-        return 1
+    # Try to authenticate as admin
+    print("\n🔐 Attempting admin authentication...")
+    
+    # Try existing miguel user first
+    success, response = tester.run_test(
+        "Miguel Login",
+        "POST",
+        "auth/login",
+        200,
+        data={
+            "username": "miguel",
+            "password": "password123"
+        }
+    )
+    
+    if success and 'access_token' in response:
+        tester.token = response['access_token']
+        tester.user_id = response['user']['id']
+        tester.username = response['user']['username']
+        print(f"   ✅ Logged in as existing user: {tester.username}")
+        print(f"   Is admin: {response['user'].get('is_admin', False)}")
+    else:
+        # Try to create admin user with admin email
+        print("   Creating admin user for testing...")
+        timestamp = datetime.now().strftime('%H%M%S')
+        admin_username = f"admin_{timestamp}"
+        
+        success, response = tester.run_test(
+            "Create Admin User",
+            "POST",
+            "auth/register",
+            200,
+            data={
+                "username": admin_username,
+                "password": "password123",
+                "email": "pedro.duarte@hwi.pt",  # Admin email
+                "full_name": "Test Admin",
+                "phone": "+351123456789",
+                "company_start_date": "2024-01-01",
+                "vacation_days_taken": 0
+            }
+        )
+        
+        if success and 'access_token' in response:
+            tester.token = response['access_token']
+            tester.user_id = response['user']['id']
+            tester.username = response['user']['username']
+            print(f"   ✅ Created admin user: {tester.username}")
+            print(f"   Is admin: {response['user'].get('is_admin', False)}")
+        else:
+            print("❌ Failed to create admin user - cannot test admin features")
+            return 1
     
     # Test 1: Basic manual entry creation
     print("\n🎯 Test 1: Basic Manual Entry Creation (8:00-17:00)")
