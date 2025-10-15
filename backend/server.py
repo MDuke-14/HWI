@@ -1461,6 +1461,20 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
     req_dict['created_at'] = req_dict['created_at'].isoformat()
     await db.vacation_requests.insert_one(req_dict)
     
+    # Get user details for email
+    user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    user_full_name = user.get("full_name", current_user["username"])
+    user_email = user.get("email", "")
+    
+    # Send email to team (geral@hwi.pt)
+    await send_vacation_request_email(
+        user_name=user_full_name,
+        user_email=user_email,
+        start_date=request_data.start_date,
+        end_date=request_data.end_date,
+        days_requested=days_requested
+    )
+    
     # Notify all admins
     admins = await db.users.find({"is_admin": True}, {"_id": 0, "id": 1}).to_list(100)
     for admin in admins:
