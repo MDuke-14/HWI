@@ -942,6 +942,8 @@ async def get_monthly_detailed_report(
         current_date += timedelta(days=1)
     
     return {
+        "username": username,
+        "full_name": full_name,
         "start_date": start_date.strftime("%Y-%m-%d"),
         "end_date": end_date.strftime("%Y-%m-%d"),
         "month": month,
