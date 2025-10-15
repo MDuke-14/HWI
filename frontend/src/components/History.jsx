@@ -313,8 +313,18 @@ const History = ({ user, onLogout }) => {
                               {/* Individual Entries */}
                               <div>
                                 <h3 className="text-lg font-semibold text-white mb-3">Registos Individuais</h3>
-                                <div className="space-y-3">
-                                  {entry.entries && entry.entries.map((individualEntry, idx) => (
+                                {(!entry.entries || entry.entries.length === 0) ? (
+                                  <div className="bg-red-900/20 border border-red-600 rounded-lg p-4 text-red-400">
+                                    ⚠️ Nenhum registo individual encontrado. Os dados podem estar num formato antigo.
+                                    <div className="text-sm mt-2">
+                                      Data: {entry.date}<br/>
+                                      Total Horas: {formatHours(entry.total_hours)}<br/>
+                                      Entry Count: {entry.entry_count || 'N/A'}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {entry.entries.map((individualEntry, idx) => (
                                     <div key={individualEntry.id || idx} className="bg-[#0a0a0a] border border-gray-700 rounded-lg p-4">
                                       <div className="flex justify-between items-start mb-2">
                                         <div className="text-sm font-semibold text-gray-400">
