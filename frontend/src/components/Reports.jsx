@@ -176,7 +176,7 @@ const Reports = ({ user, onLogout }) => {
                   </div>
                   <div className="text-right">
                     <div className="text-green-400 font-bold text-lg">
-                      {entry.total_hours}h
+                      {formatHours(entry.total_hours)}
                     </div>
                     {entry.pauses && entry.pauses.length > 0 && (
                       <div className="text-xs text-gray-500">
