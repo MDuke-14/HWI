@@ -353,12 +353,26 @@ const History = ({ user, onLogout }) => {
                                           </span>
                                         </div>
                                       )}
-                                      <Button
-                                        onClick={() => handleSaveIndividualEntry(individualEntry.id)}
-                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
-                                      >
-                                        Guardar Entrada #{idx + 1}
-                                      </Button>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <Button
+                                          onClick={() => handleSaveIndividualEntry(individualEntry.id)}
+                                          className="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
+                                        >
+                                          Guardar #{idx + 1}
+                                        </Button>
+                                        <Button
+                                          onClick={() => {
+                                            if (window.confirm('Tem a certeza que deseja apagar este registo?')) {
+                                              handleDelete(individualEntry.id);
+                                              setDialogOpen(false);
+                                            }
+                                          }}
+                                          className="bg-red-600 hover:bg-red-700 text-white text-sm py-2"
+                                        >
+                                          <Trash2 className="w-4 h-4 mr-1" />
+                                          Apagar
+                                        </Button>
+                                      </div>
                                     </div>
                                   ))}
                                   </div>
