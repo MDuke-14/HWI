@@ -1932,8 +1932,34 @@ def test_timezone_fix():
             print(f"   ✅ Created admin user: {tester.username}")
             print(f"   Is admin: {response['user'].get('is_admin', False)}")
         else:
-            print("❌ Failed to create admin user - cannot test admin features")
-            return 1
+            # Try creating with different admin email
+            print("   Trying alternative admin email...")
+            success, response = tester.run_test(
+                "Create Admin User (Alt)",
+                "POST",
+                "auth/register",
+                200,
+                data={
+                    "username": admin_username,
+                    "password": "password123",
+                    "email": "miguel.moreira@hwi.pt",  # Alternative admin email
+                    "full_name": "Test Admin",
+                    "phone": "+351123456789",
+                    "company_start_date": "2024-01-01",
+                    "vacation_days_taken": 0
+                }
+            )
+            
+            if success and 'access_token' in response:
+                tester.token = response['access_token']
+                tester.user_id = response['user']['id']
+                tester.username = response['user']['username']
+                print(f"   ✅ Created admin user: {tester.username}")
+                print(f"   Is admin: {response['user'].get('is_admin', False)}")
+            else:
+                print("❌ Failed to create admin user - cannot test admin features")
+                print("   Note: This test requires admin privileges to create manual time entries")
+                return 1
     
     # Test 1: Basic manual entry creation
     print("\n🎯 Test 1: Basic Manual Entry Creation (8:00-17:00)")
