@@ -24,6 +24,7 @@ from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_
 from excel_report import generate_monthly_report
 from pdf_report import generate_monthly_pdf_report
 from import_excel import parse_excel_timesheet
+from import_pdf import parse_pdf_timesheet
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
