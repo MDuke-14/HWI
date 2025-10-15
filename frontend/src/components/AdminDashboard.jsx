@@ -186,20 +186,29 @@ const AdminDashboard = ({ user, onLogout }) => {
   const handleCreateManualEntry = async () => {
     setLoading(true);
     try {
-      if (!manualEntryForm.user_id || !manualEntryForm.date || !manualEntryForm.start_time || !manualEntryForm.end_time) {
+      if (!manualEntryForm.user_id || !manualEntryForm.date || manualEntryForm.time_entries.length === 0) {
         toast.error('Preencha todos os campos obrigatórios');
         setLoading(false);
         return;
       }
       
+      // Validate all time entries
+      for (let i = 0; i < manualEntryForm.time_entries.length; i++) {
+        const entry = manualEntryForm.time_entries[i];
+        if (!entry.start_time || !entry.end_time) {
+          toast.error(`Entrada ${i+1}: preencha início e fim`);
+          setLoading(false);
+          return;
+        }
+      }
+      
       await axios.post(`${API}/admin/time-entries/manual`, manualEntryForm);
-      toast.success('Entrada adicionada com sucesso!');
+      toast.success('Entrada(s) adicionada(s) com sucesso!');
       setShowManualEntryDialog(false);
       setManualEntryForm({
         user_id: '',
         date: '',
-        start_time: '',
-        end_time: '',
+        time_entries: [{ start_time: '', end_time: '' }],
         observations: '',
         outside_residence_zone: false,
         location_description: ''
@@ -209,6 +218,32 @@ const AdminDashboard = ({ user, onLogout }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addTimeEntry = () => {
+    setManualEntryForm({
+      ...manualEntryForm,
+      time_entries: [...manualEntryForm.time_entries, { start_time: '', end_time: '' }]
+    });
+  };
+
+  const removeTimeEntry = (index) => {
+    if (manualEntryForm.time_entries.length > 1) {
+      const newEntries = manualEntryForm.time_entries.filter((_, i) => i !== index);
+      setManualEntryForm({
+        ...manualEntryForm,
+        time_entries: newEntries
+      });
+    }
+  };
+
+  const updateTimeEntry = (index, field, value) => {
+    const newEntries = [...manualEntryForm.time_entries];
+    newEntries[index][field] = value;
+    setManualEntryForm({
+      ...manualEntryForm,
+      time_entries: newEntries
+    });
   };
 
   const downloadJustificationFile = async (filename) => {
