@@ -1916,15 +1916,7 @@ def test_timezone_fix():
         else:
             print(f"   ❌ Failed to login as {creds['username']}")
     
-    if not success:
-    
-    if success and 'access_token' in response:
-        tester.token = response['access_token']
-        tester.user_id = response['user']['id']
-        tester.username = response['user']['username']
-        print(f"   ✅ Logged in as existing user: {tester.username}")
-        print(f"   Is admin: {response['user'].get('is_admin', False)}")
-    else:
+    if not success or not response['user'].get('is_admin', False):
         # Try to create admin user with admin email
         print("   Creating admin user for testing...")
         timestamp = datetime.now().strftime('%H%M%S')
