@@ -22,11 +22,20 @@ const Dashboard = ({ user, onLogout }) => {
   const [outsideResidenceZone, setOutsideResidenceZone] = useState(false);
   const [locationDescription, setLocationDescription] = useState('');
 
+  // Helper function to format decimal hours as HH:MM
+  const formatHours = (decimalHours) => {
+    if (!decimalHours) return '0h00m';
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.round((decimalHours - hours) * 60);
+    return `${hours}h${String(minutes).padStart(2, '0')}m`;
+  };
+
   useEffect(() => {
     fetchTodayEntry();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
 
   useEffect(() => {
     if (entry && entry.status === 'active') {
