@@ -392,7 +392,9 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "PDF Monthly Report Generation Endpoint"
+    - "PDF Export Button in Reports"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
