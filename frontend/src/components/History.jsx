@@ -21,6 +21,7 @@ const History = ({ user, onLogout }) => {
   const [endDate, setEndDate] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
   const [editForms, setEditForms] = useState({}); // Store edit state for each individual entry
+  const [dialogOpen, setDialogOpen] = useState(false); // Control dialog visibility
 
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
