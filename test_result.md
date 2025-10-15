@@ -639,6 +639,48 @@ agent_communication:
 
   - agent: "main"
     message: |
+      ✅ INDIVIDUAL TIME ENTRIES DISPLAY FEATURE IMPLEMENTED
+      
+      Modified the History view to display all individual time entries per day instead of just aggregated totals.
+      
+      Frontend Changes (History.jsx):
+      1. Replaced aggregated display with detailed breakdown:
+         - "Resumo do Dia" section with daily totals (regular hours, overtime, total)
+         - "Registos Individuais" section showing all individual clock-in/out entries
+      
+      2. Each individual entry card displays:
+         - Entry number (Entrada #1, #2, etc.)
+         - Start time in HH:MM format  
+         - End time in HH:MM format
+         - Total hours for that specific entry
+         - Observations (if provided)
+         - Overtime badge with reason (if applicable)
+      
+      3. Visual improvements:
+         - Dark boxes (#0f0f0f) for individual entries with border-gray-700
+         - Blue summary section for daily totals
+         - Clear hierarchy: summary → entries → payment type
+         - Fallback message if no individual entries exist
+      
+      Backend Support:
+      - No backend changes needed
+      - The /api/time-entries/list endpoint already returns the entries array with all individual time entries per day
+      
+      NEEDS TESTING:
+      1. Login flow and navigation to History page
+      2. Display of days with multiple clock-in/out entries
+      3. Verification that all individual entry details appear correctly
+      4. Time formatting (should show as HH:MM, e.g., "09:30")
+      5. Individual entry hours calculation
+      6. Observations and overtime badges display
+      
+      Test credentials: miguel/password123 (admin user)
+      
+      RECOMMENDATION: Use frontend testing agent to verify the complete History view functionality
+      with focus on days that have multiple time entries.
+
+  - agent: "main"
+    message: |
       ✅ PDF MONTHLY REPORT FEATURE IMPLEMENTED
       
       Added PDF export functionality for the detailed monthly report:
