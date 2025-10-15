@@ -122,7 +122,7 @@ const AdminDashboard = ({ user, onLogout }) => {
       await axios.post(`${API}/admin/users/create`, createForm);
       toast.success('Utilizador criado com sucesso!');
       setShowCreateDialog(false);
-      setCreateForm({ username: '', email: '', full_name: '', password: '', company_start_date: '', vacation_days_taken: 0 });
+      setCreateForm({ username: '', email: '', phone: '', full_name: '', password: '', company_start_date: '', vacation_days_taken: 0 });
       fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao criar utilizador');
