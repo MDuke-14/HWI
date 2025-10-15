@@ -457,7 +457,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                     </div>
                   </DialogContent>
                 </Dialog>
-              </div>
               
               <div className="grid md:grid-cols-2 gap-4">
                 {users.map((u) => (
