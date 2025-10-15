@@ -442,7 +442,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PDF Monthly Report Generation Endpoint"
     - "PDF Export Button in Reports"
   stuck_tasks: []
   test_all: false
