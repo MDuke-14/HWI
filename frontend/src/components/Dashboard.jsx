@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Clock, Play, Pause, Square, Coffee, MapPin, Globe } from 'lucide-react';
+import { Clock, Play, Pause, Square, Coffee, MapPin } from 'lucide-react';
 
 const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
