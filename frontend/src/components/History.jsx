@@ -55,6 +55,7 @@ const History = ({ user, onLogout }) => {
     console.log('handleEdit called with entry:', entry);
     console.log('entry.entries:', entry.entries);
     setEditingEntry(entry);
+    setDialogOpen(true); // Open dialog
     // Initialize edit forms for all individual entries
     const forms = {};
     if (entry.entries && Array.isArray(entry.entries)) {
