@@ -376,6 +376,10 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <Input type="email" value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
                     </div>
                     <div>
+                      <Label>Contacto Telefónico</Label>
+                      <Input type="tel" placeholder="+351 912 345 678" value={editForm.phone} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                    </div>
+                    <div>
                       <Label>Nome Completo</Label>
                       <Input value={editForm.full_name} onChange={(e) => setEditForm({...editForm, full_name: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
                     </div>
