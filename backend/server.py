@@ -119,8 +119,7 @@ class TimeEntryUpdate(BaseModel):
 class ManualTimeEntryCreate(BaseModel):
     user_id: str
     date: str  # YYYY-MM-DD
-    start_time: str  # HH:MM
-    end_time: str  # HH:MM
+    time_entries: List[dict]  # [{"start_time": "09:00", "end_time": "13:00"}, {"start_time": "14:00", "end_time": "18:00"}]
     observations: Optional[str] = None
     outside_residence_zone: Optional[bool] = False
     location_description: Optional[str] = None
