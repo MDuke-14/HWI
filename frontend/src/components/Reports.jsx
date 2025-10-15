@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { TrendingUp, Calendar, Clock, BarChart3, FileText, Edit, Upload, Plus, Minus, MapPin } from 'lucide-react';
+import { TrendingUp, Calendar, Clock, BarChart3, FileText, Edit, Upload, Plus, Minus, MapPin, Trash2 } from 'lucide-react';
 
 const Reports = ({ user, onLogout }) => {
   const [weeklyReport, setWeeklyReport] = useState(null);
