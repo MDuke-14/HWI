@@ -171,6 +171,25 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const downloadJustificationFile = async (filename) => {
+    try {
+      const response = await axios.get(`${API}/absences/file/${filename}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Ficheiro descarregado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao descarregar ficheiro');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Navigation user={user} onLogout={onLogout} activePage="admin" />
