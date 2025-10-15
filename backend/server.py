@@ -1085,18 +1085,30 @@ async def list_time_entries(
 
 @api_router.get("/time-entries/overtime")
 async def get_overtime_summary(current_user: dict = Depends(get_current_user)):
-    """Retorna resumo de todas as horas extras"""
+    """Retorna resumo de horas extras do período de faturação atual (26-25)"""
+    from datetime import date
+    
+    # Get current billing period (26th to 25th)
+    today = date.today()
+    start_date, end_date = get_billing_period_dates(today)
+    
+    # Filter entries within current billing period
     entries = await db.time_entries.find({
         "user_id": current_user["sub"],
-        "status": "completed"
+        "status": "completed",
+        "date": {"$gte": start_date, "$lte": end_date}
     }, {"_id": 0}).to_list(1000)
     
     total_overtime = sum(entry.get("overtime_hours", 0) for entry in entries)
+    total_special = sum(entry.get("special_hours", 0) for entry in entries)
     overtime_entries = [e for e in entries if e.get("is_overtime_day", False)]
     
     return {
         "total_overtime_hours": round(total_overtime, 2),
+        "total_special_hours": round(total_special, 2),
         "total_overtime_days": len(overtime_entries),
+        "billing_period_start": start_date,
+        "billing_period_end": end_date,
         "entries": overtime_entries
     }
 
