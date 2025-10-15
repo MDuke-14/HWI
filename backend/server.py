@@ -625,8 +625,9 @@ async def end_time_entry(
         
         final_date = end_time.date()
         is_ot, ot_reason = is_overtime_day(final_date)
-        regular_hours = 0.0 if is_ot else final_hours
-        overtime_hours = final_hours if is_ot else 0.0
+        
+        # Calculate hours breakdown using new logic
+        hours_breakdown = calculate_hours_breakdown(final_hours, is_ot)
         
         final_entry = TimeEntry(
             user_id=current_user["sub"],
@@ -639,8 +640,9 @@ async def end_time_entry(
             is_overtime_day=is_ot,
             overtime_reason=ot_reason if is_ot else None,
             total_hours=final_hours,
-            regular_hours=regular_hours,
-            overtime_hours=overtime_hours,
+            regular_hours=hours_breakdown["regular_hours"],
+            overtime_hours=hours_breakdown["overtime_hours"],
+            special_hours=hours_breakdown["special_hours"],
             outside_residence_zone=entry.get("outside_residence_zone", False),
             location_description=entry.get("location_description")
         )
