@@ -164,12 +164,23 @@ const Reports = ({ user, onLogout }) => {
   };
 
   const handleEdit = (day) => {
+    console.log('=== HANDLE EDIT DEBUG ===');
+    console.log('Day object:', day);
+    console.log('Day entries:', day.entries);
+    
     setEditingEntry(day);
     setDialogOpen(true);
     // Initialize edit forms for all individual entries
     const forms = {};
     if (day.entries && Array.isArray(day.entries)) {
-      day.entries.forEach(individualEntry => {
+      day.entries.forEach((individualEntry, idx) => {
+        console.log(`Entry ${idx + 1}:`, {
+          id: individualEntry.id,
+          start: individualEntry.start_time,
+          end: individualEntry.end_time,
+          obs: individualEntry.observations
+        });
+        
         // Convert ISO datetime to format compatible with datetime-local input (YYYY-MM-DDTHH:MM)
         let startTimeValue = '';
         let endTimeValue = '';
@@ -177,11 +188,13 @@ const Reports = ({ user, onLogout }) => {
         if (individualEntry.start_time) {
           const startDate = new Date(individualEntry.start_time);
           startTimeValue = startDate.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+          console.log(`  Start converted: ${individualEntry.start_time} -> ${startTimeValue}`);
         }
         
         if (individualEntry.end_time) {
           const endDate = new Date(individualEntry.end_time);
           endTimeValue = endDate.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+          console.log(`  End converted: ${individualEntry.end_time} -> ${endTimeValue}`);
         }
         
         forms[individualEntry.id] = {
@@ -191,6 +204,8 @@ const Reports = ({ user, onLogout }) => {
         };
       });
     }
+    console.log('Final forms object:', forms);
+    console.log('=== END DEBUG ===');
     // If no entries exist, initialize empty (admin can add manually via AdminDashboard)
     setEditForms(forms);
   };
