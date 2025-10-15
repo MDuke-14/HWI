@@ -136,6 +136,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     setEditForm({
       username: user.username,
       email: user.email,
+      phone: user.phone || '',
       full_name: user.full_name || '',
       password: '',
       is_admin: user.is_admin || false
