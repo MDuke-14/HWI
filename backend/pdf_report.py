@@ -98,7 +98,7 @@ def generate_monthly_pdf_report(report_data):
     
     # Daily table headers
     daily_data = [
-        ['Data', 'Dia', 'Entradas/Saídas', 'Total', 'H.Extra', 'Pagamento']
+        ['Data', 'Dia', 'Entradas/Saídas', 'Total', 'H.Extra', 'H.Especiais', 'Pagamento']
     ]
     
     # Add daily records
@@ -128,8 +128,11 @@ def generate_monthly_pdf_report(report_data):
         # Total hours
         total_text = format_hours(day['total_hours']) if day['total_hours'] > 0 else '-'
         
-        # Overtime hours
+        # Overtime hours (dias úteis)
         overtime_text = format_hours(day['overtime_hours']) if day['overtime_hours'] > 0 else '0h00m'
+        
+        # Special hours (fins de semana/feriados)
+        special_text = format_hours(day.get('special_hours', 0)) if day.get('special_hours', 0) > 0 else '0h00m'
         
         # Payment
         if day.get('payment_type'):
