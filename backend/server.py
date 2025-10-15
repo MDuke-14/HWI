@@ -846,6 +846,7 @@ async def get_reports(
     total_hours = sum(entry.get("total_hours", 0) for entry in entries)
     regular_hours = sum(entry.get("regular_hours", 0) for entry in entries)
     overtime_hours = sum(entry.get("overtime_hours", 0) for entry in entries)
+    special_hours = sum(entry.get("special_hours", 0) for entry in entries)
     total_days = len(entries)
     avg_hours = round(total_hours / total_days, 2) if total_days > 0 else 0
     
@@ -856,6 +857,7 @@ async def get_reports(
         "total_hours": round(total_hours, 2),
         "regular_hours": round(regular_hours, 2),
         "overtime_hours": round(overtime_hours, 2),
+        "special_hours": round(special_hours, 2),
         "total_days": total_days,
         "avg_hours_per_day": avg_hours,
         "entries": entries
