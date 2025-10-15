@@ -39,36 +39,50 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
     }
     """
     try:
-        # Read Excel file
+        # Read Excel file without header
         df = pd.read_excel(file_path, header=None)
+        
+        logging.info(f"Excel file loaded. Shape: {df.shape}")
+        logging.info(f"First 5 rows:\n{df.head()}")
         
         entries_list = []
         
-        # Try to find the data rows (usually starting around row 10-15)
-        # Look for rows with date serial numbers in the first column
+        # Iterate through all rows
         for idx, row in df.iterrows():
             try:
-                # Check if first column contains a date number (Excel serial date)
-                first_col = row[0]
+                # Convert row to list and check for date-like numbers
+                row_values = row.tolist()
                 
-                # Skip if not a number or if it's a header/label
-                if pd.isna(first_col) or not isinstance(first_col, (int, float)):
-                    continue
+                # Look for Excel date numbers (typically in first few columns)
+                date_found = None
+                date_col_idx = None
                 
-                # Check if it looks like an Excel date (typically between 40000-50000 for 2010-2040)
-                if first_col < 40000 or first_col > 50000:
+                for col_idx in range(min(5, len(row_values))):
+                    val = row_values[col_idx]
+                    
+                    # Check if it's a number that looks like an Excel date
+                    if isinstance(val, (int, float)) and not pd.isna(val):
+                        # Excel dates for 2020-2030 are roughly 43000-47000
+                        if 43000 <= val <= 48000:
+                            date_found = val
+                            date_col_idx = col_idx
+                            break
+                
+                if not date_found:
                     continue
                 
                 # Convert date
-                entry_date = excel_date_to_python(first_col)
+                entry_date = excel_date_to_python(date_found)
                 date_str = entry_date.strftime('%Y-%m-%d')
                 
-                # Look for location info (Madrid, Valencia, etc.)
+                # Log the row we're processing
+                logging.info(f"Processing row {idx} for date {date_str}")
+                
+                # Check for location info
                 location = None
                 outside_zone = False
+                row_str = ' '.join([str(x).upper() for x in row_values if pd.notna(x)])
                 
-                # Check columns for location names
-                row_str = ' '.join([str(x).upper() for x in row if pd.notna(x)])
                 if 'MADRID' in row_str:
                     location = 'Madrid'
                     outside_zone = True
@@ -78,33 +92,39 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                 
                 # Skip vacation days
                 if 'FERIAS' in row_str or 'FÉRIAS' in row_str:
+                    logging.info(f"  Skipping vacation day: {date_str}")
                     continue
                 
-                # Extract time entries (Ent/Sai pairs)
-                # Usually columns 2-9 contain time data
-                time_pairs = []
+                # Find time entries - look for decimal numbers between 0 and 1 after the date column
+                time_values = []
+                for col_idx in range(date_col_idx + 1, len(row_values)):
+                    val = row_values[col_idx]
+                    if isinstance(val, (int, float)) and not pd.isna(val):
+                        if 0 < val < 1:  # Time values are fractions of a day
+                            time_values.append(val)
                 
-                # Try to find pairs of Entry/Exit times
-                # Format: Usually columns with decimal numbers between 0 and 1
-                for i in range(1, min(len(row), 20)):
-                    col_val = row[i]
+                logging.info(f"  Found {len(time_values)} time values: {time_values}")
+                
+                # Create pairs of start/end times
+                time_pairs = []
+                i = 0
+                while i < len(time_values) - 1:
+                    start_time = excel_time_to_python(time_values[i])
+                    end_time = excel_time_to_python(time_values[i + 1])
                     
-                    # Check if this looks like a time value (0 < x < 1)
-                    if isinstance(col_val, (int, float)) and 0 < col_val < 1:
-                        # This might be a start time, look for the next time value
-                        start_time = excel_time_to_python(col_val)
+                    if start_time and end_time:
+                        # Validate that end > start
+                        start_h, start_m = map(int, start_time.split(':'))
+                        end_h, end_m = map(int, end_time.split(':'))
                         
-                        # Look for end time in next columns
-                        for j in range(i+1, min(i+4, len(row))):
-                            end_val = row[j]
-                            if isinstance(end_val, (int, float)) and 0 < end_val < 1:
-                                end_time = excel_time_to_python(end_val)
-                                if start_time and end_time:
-                                    time_pairs.append({
-                                        'start_time': start_time,
-                                        'end_time': end_time
-                                    })
-                                break
+                        if (end_h * 60 + end_m) > (start_h * 60 + start_m):
+                            time_pairs.append({
+                                'start_time': start_time,
+                                'end_time': end_time
+                            })
+                            logging.info(f"    Pair: {start_time} - {end_time}")
+                    
+                    i += 2  # Move to next pair
                 
                 # Only add if we found valid time entries
                 if time_pairs:
@@ -114,10 +134,15 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                         'outside_residence_zone': outside_zone,
                         'location_description': location
                     })
+                    logging.info(f"  ✓ Added {len(time_pairs)} entries for {date_str}")
+                else:
+                    logging.info(f"  ✗ No valid time pairs found for {date_str}")
                     
             except Exception as e:
                 logging.warning(f"Error processing row {idx}: {str(e)}")
                 continue
+        
+        logging.info(f"Total entries found: {len(entries_list)}")
         
         return {
             'success': True,
@@ -127,6 +152,8 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
         
     except Exception as e:
         logging.error(f"Error parsing Excel file: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
         return {
             'success': False,
             'error': str(e),
