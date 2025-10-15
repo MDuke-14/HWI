@@ -317,33 +317,40 @@ const History = ({ user, onLogout }) => {
                   )}
 
                   <div className="grid md:grid-cols-2 gap-4 text-gray-300">
+                    {entry.entry_count && entry.entry_count > 1 && (
+                      <div className="col-span-2">
+                        <div className="px-3 py-2 bg-blue-900/20 border border-blue-600 rounded-lg text-blue-400 text-sm">
+                          📊 Total do dia com {entry.entry_count} registos (múltiplas entradas agregadas)
+                        </div>
+                      </div>
+                    )}
                     <div>
-                      <div className="text-sm text-gray-400">Início</div>
+                      <div className="text-sm text-gray-400">Início (primeiro registo)</div>
                       <div className="font-semibold text-white">
                         {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT') : '-'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-400">Fim</div>
+                      <div className="text-sm text-gray-400">Fim (último registo)</div>
                       <div className="font-semibold text-white">
                         {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT') : '-'}
                       </div>
                     </div>
                     {entry.regular_hours > 0 && (
                       <div>
-                        <div className="text-sm text-gray-400">Horas Normais</div>
+                        <div className="text-sm text-gray-400">Horas Normais (Total do Dia)</div>
                         <div className="font-bold text-blue-400 text-lg">{entry.regular_hours}h</div>
                       </div>
                     )}
                     {entry.overtime_hours > 0 && (
                       <div>
-                        <div className="text-sm text-gray-400">Horas Extras</div>
+                        <div className="text-sm text-gray-400">Horas Extras (Total do Dia)</div>
                         <div className="font-bold text-amber-400 text-lg">{entry.overtime_hours}h</div>
                       </div>
                     )}
                     {entry.total_hours && (
                       <div>
-                        <div className="text-sm text-gray-400">Total</div>
+                        <div className="text-sm text-gray-400">Total do Dia</div>
                         <div className="font-bold text-green-400 text-lg">{entry.total_hours}h</div>
                       </div>
                     )}
