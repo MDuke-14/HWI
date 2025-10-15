@@ -93,6 +93,44 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  const downloadPdfReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/time-entries/reports/monthly-pdf`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+
+      // Create a download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from headers or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Relatorio_Mensal.pdf';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename=(.+)/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Relatório PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast.error('Erro ao exportar relatório PDF');
+    }
+  };
+
   const ReportCard = ({ report, title, icon: Icon }) => {
     if (!report) return null;
 
