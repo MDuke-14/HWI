@@ -58,29 +58,18 @@ const Dashboard = ({ user, onLogout }) => {
     }
   };
 
-  const fetchCountries = async () => {
-    try {
-      const response = await axios.get(`${API}/countries`);
-      setCountries(response.data.countries || []);
-    } catch (error) {
-      console.error('Erro ao buscar países:', error);
-    }
-  };
-
   const handleStart = async () => {
     setLoading(true);
     try {
       await axios.post(`${API}/time-entries/start`, { 
         observations,
         outside_residence_zone: outsideResidenceZone,
-        location_description: outsideResidenceZone ? locationDescription : null,
-        country: outsideResidenceZone ? country : null
+        location_description: outsideResidenceZone ? locationDescription : null
       });
       toast.success('Relógio iniciado!');
       setObservations('');
       setOutsideResidenceZone(false);
       setLocationDescription('');
-      setCountry('');
       fetchTodayEntry();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao iniciar');
