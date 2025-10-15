@@ -718,6 +718,7 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
     total_hours = sum(e.get("total_hours", 0) for e in today_entries)
     regular_hours = sum(e.get("regular_hours", 0) for e in today_entries)
     overtime_hours = sum(e.get("overtime_hours", 0) for e in today_entries)
+    special_hours = sum(e.get("special_hours", 0) for e in today_entries)
     
     return {
         "entries": today_entries,
@@ -727,6 +728,7 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
             "total_hours": round(total_hours, 2),
             "regular_hours": round(regular_hours, 2),
             "overtime_hours": round(overtime_hours, 2),
+            "special_hours": round(special_hours, 2),
             "entry_count": len(today_entries)
         }
     }
