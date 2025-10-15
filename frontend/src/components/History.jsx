@@ -318,39 +318,48 @@ const History = ({ user, onLogout }) => {
                                           {formatHours(individualEntry.total_hours)}
                                         </div>
                                       </div>
-                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                      <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                                         <div>
-                                          <div className="text-gray-500 text-xs">Início</div>
-                                          <div className="text-white font-semibold">
-                                            {individualEntry.start_time ? new Date(individualEntry.start_time).toLocaleTimeString('pt-PT', {
-                                              hour: '2-digit',
-                                              minute: '2-digit'
-                                            }) : '-'}
-                                          </div>
+                                          <Label className="text-gray-500 text-xs">Início</Label>
+                                          <Input
+                                            type="datetime-local"
+                                            value={editForms[individualEntry.id]?.start_time || ''}
+                                            onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'start_time', e.target.value)}
+                                            className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                                          />
                                         </div>
                                         <div>
-                                          <div className="text-gray-500 text-xs">Fim</div>
-                                          <div className="text-white font-semibold">
-                                            {individualEntry.end_time ? new Date(individualEntry.end_time).toLocaleTimeString('pt-PT', {
-                                              hour: '2-digit',
-                                              minute: '2-digit'
-                                            }) : '-'}
-                                          </div>
+                                          <Label className="text-gray-500 text-xs">Fim</Label>
+                                          <Input
+                                            type="datetime-local"
+                                            value={editForms[individualEntry.id]?.end_time || ''}
+                                            onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'end_time', e.target.value)}
+                                            className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                                          />
                                         </div>
                                       </div>
-                                      {individualEntry.observations && (
-                                        <div className="mt-3 pt-3 border-t border-gray-700">
-                                          <div className="text-gray-500 text-xs mb-1">Observações</div>
-                                          <div className="text-white text-sm italic">{individualEntry.observations}</div>
-                                        </div>
-                                      )}
+                                      <div className="mb-3">
+                                        <Label className="text-gray-500 text-xs">Observações</Label>
+                                        <Textarea
+                                          value={editForms[individualEntry.id]?.observations || ''}
+                                          onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'observations', e.target.value)}
+                                          className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                                          rows={2}
+                                        />
+                                      </div>
                                       {individualEntry.is_overtime_day && (
-                                        <div className="mt-2">
+                                        <div className="mb-3">
                                           <span className="text-xs px-2 py-1 bg-amber-900/30 border border-amber-600 rounded text-amber-400">
                                             {individualEntry.overtime_reason}
                                           </span>
                                         </div>
                                       )}
+                                      <Button
+                                        onClick={() => handleSaveIndividualEntry(individualEntry.id)}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
+                                      >
+                                        Guardar Entrada #{idx + 1}
+                                      </Button>
                                     </div>
                                   ))}
                                 </div>
