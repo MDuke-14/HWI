@@ -118,36 +118,6 @@ const History = ({ user, onLogout }) => {
     }
   };
 
-  const exportToCSV = () => {
-    if (entries.length === 0) {
-      toast.error('Não há dados para exportar');
-      return;
-    }
-
-    const headers = ['Data', 'Início', 'Fim', 'Total Horas', 'Status', 'Observações'];
-    const rows = entries.map(entry => [
-      entry.date,
-      entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT') : '',
-      entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT') : '',
-      entry.total_hours || '',
-      entry.status,
-      entry.observations || ''
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `registos_ponto_${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    link.click();
-    
-    toast.success('Ficheiro exportado!');
-  };
-
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <Navigation user={user} onLogout={onLogout} activePage="history" />
@@ -156,14 +126,6 @@ const History = ({ user, onLogout }) => {
         <div className="fade-in">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-white">Histórico de Registos</h1>
-            <Button
-              data-testid="export-button"
-              onClick={exportToCSV}
-              className="bg-green-600 hover:bg-green-700 text-white rounded-full"
-            >
-              <FileDown className="w-4 h-4 mr-2" />
-              Exportar CSV
-            </Button>
           </div>
 
           {/* Filters */}
