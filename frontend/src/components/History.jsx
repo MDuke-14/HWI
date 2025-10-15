@@ -396,7 +396,6 @@ const History = ({ user, onLogout }) => {
                               )}
                             </div>
                           </DialogContent>
-                        )}
                       </Dialog>
                       <Button
                         data-testid={`delete-button-${entry.id}`}
