@@ -378,7 +378,8 @@ const History = ({ user, onLogout }) => {
                                       </Button>
                                     </div>
                                   ))}
-                                </div>
+                                  </div>
+                                )}
                               </div>
 
                               {entry.observations && (
