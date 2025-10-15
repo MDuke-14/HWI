@@ -1241,8 +1241,10 @@ async def get_monthly_detailed_report(
             
             day_data["status"] = "TRABALHADO"
             day_data["entries"] = [{
+                "id": e.get("id"),  # IMPORTANTE: incluir o ID para edição
                 "start_time": e.get("start_time"),
                 "end_time": e.get("end_time"),
+                "total_hours": e.get("total_hours"),
                 "observations": e.get("observations")
             } for e in day_entries]
             day_data["total_hours"] = round(total_hours, 2)
@@ -1384,8 +1386,10 @@ async def download_monthly_pdf_report(
             
             day_data["status"] = "TRABALHADO"
             day_data["entries"] = [{
+                "id": e.get("id"),  # IMPORTANTE: incluir o ID para edição
                 "start_time": e.get("start_time"),
                 "end_time": e.get("end_time"),
+                "total_hours": e.get("total_hours"),
                 "observations": e.get("observations")
             } for e in day_entries]
             day_data["total_hours"] = round(total_hours, 2)
