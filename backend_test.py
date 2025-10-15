@@ -1367,18 +1367,18 @@ class HWITimeTrackerTester:
     def test_midnight_crossing_entry_outside_zone(self):
         """Test automatic splitting of time entries that cross midnight - Outside Zone"""
         print(f"\n🔍 Testing Midnight Crossing Entry (Outside Zone)...")
-        print("   Scenario: Start at 22:00 today outside zone, end at 02:00 tomorrow")
+        print("   Scenario: Test outside zone propagation in midnight crossing entries")
         
         # Step 1: Start entry outside residence zone
         success_start, response_start = self.run_test(
-            "Start Midnight Crossing Entry (Outside Zone)",
+            "Start Outside Zone Entry",
             "POST",
             "time-entries/start",
             200,
             data={
-                "observations": "Trabalho noturno fora da zona de residência",
+                "observations": "Trabalho fora da zona de residência - teste propagação",
                 "outside_residence_zone": True,
-                "location_description": "Porto"
+                "location_description": "Lisboa"
             }
         )
         
@@ -1394,13 +1394,13 @@ class HWITimeTrackerTester:
         print(f"   📍 Location description: {entry_data.get('location_description')}")
         
         # Verify the entry has correct outside zone information
-        if entry_data.get('outside_residence_zone') is True and entry_data.get('location_description') == "Porto":
-            print("   ✅ Outside zone information correctly stored")
+        if entry_data.get('outside_residence_zone') is True and entry_data.get('location_description') == "Lisboa":
+            print("   ✅ Outside zone information correctly stored in entry")
         else:
             print("   ❌ Outside zone information not correctly stored")
             return False
         
-        # Step 2: End the entry (this will be a normal end, not crossing midnight in real-time)
+        # Step 2: End the entry
         success_end, response_end = self.run_test(
             "End Outside Zone Entry",
             "POST",
@@ -1412,8 +1412,50 @@ class HWITimeTrackerTester:
             print(f"   ✅ Entry ended successfully")
             if 'total_hours' in response_end:
                 print(f"   ⏱️  Total hours: {response_end['total_hours']}")
+            
+            # Check if the response indicates multiple entries were created (midnight crossing)
+            if 'entries_created' in response_end:
+                entries_created = response_end['entries_created']
+                print(f"   🌙 Midnight crossing detected! Created {len(entries_created)} entries:")
+                for i, entry_info in enumerate(entries_created):
+                    print(f"      Entry {i+1}: Date {entry_info.get('date')}, Hours: {entry_info.get('hours')}")
+                
+                # Verify outside zone propagation in split entries
+                success_list, response_list = self.run_test(
+                    "Verify Outside Zone Propagation in Split Entries",
+                    "GET",
+                    "time-entries/list",
+                    200
+                )
+                
+                if success_list and isinstance(response_list, list):
+                    outside_zone_entries = 0
+                    continuation_entries = 0
+                    
+                    for daily_entry in response_list:
+                        if daily_entry.get('outside_residence_zone') is True:
+                            outside_zone_entries += 1
+                            print(f"   ✅ Daily entry with outside zone: {daily_entry.get('date')}")
+                            print(f"      Location: {daily_entry.get('location_description')}")
+                            
+                            # Check individual entries
+                            if daily_entry.get('entries'):
+                                for entry in daily_entry['entries']:
+                                    if 'Continuação do registo anterior' in entry.get('observations', ''):
+                                        continuation_entries += 1
+                                        print(f"      ✅ Continuation entry found with outside zone: {entry.get('outside_residence_zone')}")
+                                        print(f"         Location: {entry.get('location_description')}")
+                    
+                    if outside_zone_entries > 0:
+                        print(f"   ✅ Outside zone propagation verified in {outside_zone_entries} daily entries")
+                        if continuation_entries > 0:
+                            print(f"   ✅ Midnight crossing with outside zone propagation confirmed!")
+                        return True
+                    else:
+                        print(f"   ❌ Outside zone information not found in daily entries")
+                        return False
         
-        # Step 3: Verify the entry appears in the list with correct outside zone info
+        # Step 3: If no midnight crossing occurred, verify normal outside zone handling
         success_list, response_list = self.run_test(
             "Verify Outside Zone Entry in List",
             "GET",
@@ -1425,6 +1467,7 @@ class HWITimeTrackerTester:
             outside_zone_found = False
             
             for daily_entry in response_list:
+                # Check if this daily entry has outside zone information
                 if daily_entry.get('outside_residence_zone') is True:
                     outside_zone_found = True
                     print(f"   ✅ Found outside zone daily entry:")
@@ -1432,19 +1475,34 @@ class HWITimeTrackerTester:
                     print(f"      Location: {daily_entry.get('location_description')}")
                     print(f"      Total hours: {daily_entry.get('total_hours')}")
                     
-                    # Check individual entries
+                    # Check individual entries within this day
                     if daily_entry.get('entries'):
                         for entry in daily_entry['entries']:
                             if entry.get('outside_residence_zone') is True:
-                                print(f"      Individual entry outside zone: {entry.get('location_description')}")
+                                print(f"      ✅ Individual entry outside zone: {entry.get('location_description')}")
+                                print(f"         Entry ID: {entry.get('id')}")
+                                print(f"         Observations: {entry.get('observations', 'None')}")
             
             if outside_zone_found:
-                print(f"   ✅ Outside zone propagation verified")
+                print(f"   ✅ Outside zone information correctly stored and retrieved")
                 return True
             else:
-                print(f"   ⚠️  No outside zone entries found in list")
+                print(f"   ❌ Outside zone information not found in entries list")
+                
+                # Debug: Print all entries to see what we have
+                print(f"   🔍 Debug - All entries found:")
+                for daily_entry in response_list:
+                    print(f"      Date: {daily_entry.get('date')}")
+                    print(f"      Outside zone: {daily_entry.get('outside_residence_zone')}")
+                    print(f"      Location: {daily_entry.get('location_description')}")
+                    if daily_entry.get('entries'):
+                        for entry in daily_entry['entries']:
+                            print(f"         Entry outside zone: {entry.get('outside_residence_zone')}")
+                            print(f"         Entry location: {entry.get('location_description')}")
+                
+                return False
         
-        return True  # Consider passed if entry was created successfully
+        return False
 
     def test_verify_midnight_crossing_logic(self):
         """Test the logic and structure for midnight crossing entries"""
