@@ -20,11 +20,7 @@ const History = ({ user, onLogout }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [editForm, setEditForm] = useState({
-    start_time: '',
-    end_time: '',
-    observations: ''
-  });
+  const [editForms, setEditForms] = useState({}); // Store edit state for each individual entry
 
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
