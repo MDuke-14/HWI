@@ -428,7 +428,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <Plus className="w-4 h-4 mr-2" />Criar Utilizador
                       </Button>
                     </DialogTrigger>
-                  <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                    <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
                     <DialogHeader><DialogTitle>Criar Novo Utilizador</DialogTitle></DialogHeader>
                     <div className="space-y-3 mt-4">
                       <div>
