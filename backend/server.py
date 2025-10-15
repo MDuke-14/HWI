@@ -1838,6 +1838,66 @@ async def review_absence(
     
     return {"message": f"Falta {'aprovada' if approved else 'rejeitada'} com sucesso"}
 
+@api_router.post("/admin/recalculate-hours")
+async def recalculate_all_hours(current_user: dict = Depends(get_current_admin)):
+    """
+    Recalculate overtime and special hours for all completed entries using new logic.
+    Admin only endpoint.
+    """
+    try:
+        # Get all completed entries
+        entries = await db.time_entries.find({
+            "status": "completed"
+        }).to_list(10000)
+        
+        updated_count = 0
+        error_count = 0
+        
+        for entry in entries:
+            try:
+                total_hours = entry.get("total_hours", 0)
+                if total_hours <= 0:
+                    continue
+                
+                # Get the date to check if it's a special day
+                entry_date_str = entry.get("date")
+                if not entry_date_str:
+                    continue
+                
+                entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d").date()
+                is_special_day, _ = is_overtime_day(entry_date)
+                
+                # Calculate new breakdown
+                hours_breakdown = calculate_hours_breakdown(total_hours, is_special_day)
+                
+                # Update entry
+                await db.time_entries.update_one(
+                    {"id": entry.get("id")},
+                    {"$set": {
+                        "regular_hours": hours_breakdown["regular_hours"],
+                        "overtime_hours": hours_breakdown["overtime_hours"],
+                        "special_hours": hours_breakdown["special_hours"]
+                    }}
+                )
+                
+                updated_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                logging.error(f"Error recalculating entry {entry.get('id')}: {str(e)}")
+                continue
+        
+        return {
+            "message": "Recálculo concluído com sucesso",
+            "total_entries": len(entries),
+            "updated": updated_count,
+            "errors": error_count
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in recalculate_all_hours: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao recalcular horas: {str(e)}")
+
 # ============ Service Appointment Routes ============
 
 @api_router.post("/services")
