@@ -250,6 +250,76 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  // Functions for adding manual entries
+  const addManualTimeEntry = () => {
+    setManualEntryForm(prev => ({
+      ...prev,
+      time_entries: [...prev.time_entries, { start_time: '', end_time: '' }]
+    }));
+  };
+
+  const removeManualTimeEntry = (index) => {
+    if (manualEntryForm.time_entries.length > 1) {
+      const newEntries = manualEntryForm.time_entries.filter((_, i) => i !== index);
+      setManualEntryForm(prev => ({
+        ...prev,
+        time_entries: newEntries
+      }));
+    }
+  };
+
+  const updateManualTimeEntry = (index, field, value) => {
+    const newEntries = [...manualEntryForm.time_entries];
+    newEntries[index][field] = value;
+    setManualEntryForm(prev => ({
+      ...prev,
+      time_entries: newEntries
+    }));
+  };
+
+  const handleCreateManualEntry = async () => {
+    if (!editingEntry) return;
+    
+    setLoading(true);
+    try {
+      // Validate all time entries
+      for (let i = 0; i < manualEntryForm.time_entries.length; i++) {
+        const entry = manualEntryForm.time_entries[i];
+        if (!entry.start_time || !entry.end_time) {
+          toast.error(`Entrada ${i+1}: preencha início e fim`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Get user_id from report data (current logged user for non-admin)
+      const userId = user.id;
+      
+      await axios.post(`${API}/admin/time-entries/manual`, {
+        user_id: userId,
+        date: editingEntry.date,
+        time_entries: manualEntryForm.time_entries,
+        observations: manualEntryForm.observations,
+        outside_residence_zone: manualEntryForm.outside_residence_zone,
+        location_description: manualEntryForm.location_description
+      });
+      
+      toast.success('Entrada(s) adicionada(s) com sucesso!');
+      setDialogOpen(false);
+      setManualEntryForm({
+        time_entries: [{ start_time: '', end_time: '' }],
+        observations: '',
+        outside_residence_zone: false,
+        location_description: ''
+      });
+      fetchDetailedMonthlyReport(); // Refresh report
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao adicionar entrada');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const ReportCard = ({ report, title, icon: Icon }) => {
     if (!report) return null;
 
