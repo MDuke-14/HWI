@@ -1069,6 +1069,8 @@ async def download_monthly_pdf_report(
         current_date += timedelta(days=1)
     
     report_data = {
+        "username": username,
+        "full_name": full_name,
         "start_date": start_date.strftime("%Y-%m-%d"),
         "end_date": end_date.strftime("%Y-%m-%d"),
         "month": month,
@@ -1088,7 +1090,6 @@ async def download_monthly_pdf_report(
     pdf_buffer = generate_monthly_pdf_report(report_data)
     
     # Generate filename
-    username = current_user.get("username", "user")
     filename = f"Relatorio_Mensal_{username}_{month:02d}_{year}.pdf"
     
     # Return as streaming response
