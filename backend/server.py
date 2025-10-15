@@ -1693,6 +1693,22 @@ async def approve_vacation(
             {"$inc": {"days_taken": vac_request["days_requested"]}}
         )
     
+    # Get user details for email
+    user = await db.users.find_one({"id": vac_request["user_id"]}, {"_id": 0})
+    if user:
+        user_full_name = user.get("full_name", vac_request["username"])
+        user_email = user.get("email", "")
+        
+        # Send email to user
+        await send_vacation_decision_email(
+            user_name=user_full_name,
+            user_email=user_email,
+            start_date=vac_request["start_date"],
+            end_date=vac_request["end_date"],
+            approved=approved,
+            observations=None  # Can be extended to include observations
+        )
+    
     # Notify user
     message = f"O seu pedido de férias foi {'aprovado' if approved else 'rejeitado'} por {current_user['username']}"
     await create_notification(
