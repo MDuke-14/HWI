@@ -61,9 +61,24 @@ const History = ({ user, onLogout }) => {
     if (entry.entries && Array.isArray(entry.entries)) {
       entry.entries.forEach(individualEntry => {
         console.log('Processing individual entry:', individualEntry.id);
+        
+        // Convert ISO datetime to format compatible with datetime-local input (YYYY-MM-DDTHH:MM)
+        let startTimeValue = '';
+        let endTimeValue = '';
+        
+        if (individualEntry.start_time) {
+          const startDate = new Date(individualEntry.start_time);
+          startTimeValue = startDate.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+        }
+        
+        if (individualEntry.end_time) {
+          const endDate = new Date(individualEntry.end_time);
+          endTimeValue = endDate.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:MM
+        }
+        
         forms[individualEntry.id] = {
-          start_time: individualEntry.start_time ? individualEntry.start_time.split('.')[0] : '',
-          end_time: individualEntry.end_time ? individualEntry.end_time.split('.')[0] : '',
+          start_time: startTimeValue,
+          end_time: endTimeValue,
           observations: individualEntry.observations || ''
         };
       });
