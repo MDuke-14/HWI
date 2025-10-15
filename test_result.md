@@ -384,93 +384,48 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: |
-          Implemented display of all individual time entries per day in the History view.
+          Implemented overtime hours reset on day 26 of each month (billing period).
           
-          Changes Made:
-          1. Modified History.jsx main card view (lines 386-473):
-             - Added "Resumo do Dia" section showing aggregated totals (regular hours, overtime hours, total hours)
-             - Added "Registos Individuais" section that iterates through entry.entries array
-             - Each individual entry shows:
-               * Entry number (#1, #2, etc.)
-               * Start time (HH:MM format)
-               * End time (HH:MM format)
-               * Total hours for that entry
-               * Observations (if any)
-               * Overtime reason badge (if applicable)
-             - Added fallback message if no individual entries are available
+          Backend Changes (server.py):
+          1. Modified /api/time-entries/overtime endpoint:
+             - Now filters entries by current billing period (26th to 25th)
+             - Uses get_billing_period_dates() to get current period
+             - Returns only overtime hours from current period
+             - Added billing_period_start and billing_period_end to response
+             - Added total_special_hours to response
+             - Overtime counter resets automatically on day 26
           
-          2. Backend Already Supports This:
-             - The /api/time-entries/list endpoint already returns entry.entries array with all individual entries per day
-             - No backend changes needed
+          2. Database Query Updated:
+             - Added date range filter: {"date": {"$gte": start_date, "$lte": end_date}}
+             - Only completed entries within current billing period counted
           
-          3. UI/UX Improvements:
-             - Individual entries displayed in darker boxes for better distinction
-             - Clear visual hierarchy: daily summary → individual entries list → payment type
-             - Maintains existing edit dialog functionality for detailed editing
+          Frontend Changes (Overtime.jsx):
+          1. Updated UI to show 3 cards instead of 2:
+             - Horas Extras (Dias Úteis) - overtime_hours
+             - Horas Especiais (Fins Semana/Feriados) - special_hours
+             - Dias Trabalhados (Fins Semana/Feriados) - overtime_days
           
-          Frontend compiled successfully. Needs testing to verify:
-          - Individual entries display correctly for days with multiple clock-ins
-          - Time formatting is correct (HH:MM)
-          - All entry details (start, end, observations) show properly
-          - Backend data structure compatibility
-      - working: true
-        agent: "testing"
-        comment: |
-          ✅ HISTORY FEATURE BACKEND ENDPOINT FULLY WORKING
+          2. Added Billing Period Display:
+             - Shows current period dates (26th to 25th)
+             - Blue info box at top of page
+             - Message: "As horas extras reiniciam a cada dia 26"
           
-          Comprehensive testing completed for History feature backend support:
+          3. Updated Info Section:
+             - Clarifies difference between "Horas Extras" and "Horas Especiais"
+             - Explains reset on day 26
+             - References Reports page for historical data
           
-          1. Login Functionality Testing: ✅ PASSED
-             - Miguel credentials (miguel/password123) not available - user exists but different password
-             - Successfully created alternative test user for validation
-             - Authentication flow working correctly with JWT tokens
-             - User registration and login endpoints functioning properly
+          Key Behavior:
+          - Overtime hours accumulate from day 26 to day 25
+          - On day 26, counter automatically resets (new billing period)
+          - Previous periods remain available in Reports page
+          - All historical data preserved in database
           
-          2. Time Entries List Endpoint (/api/time-entries/list): ✅ PASSED
-             - Status: 200 OK ✅
-             - Response format: Array of daily entries ✅
-             - Required fields present: date, total_hours, regular_hours, overtime_hours ✅
-             - **CRITICAL: entries array present and properly structured** ✅
-          
-          3. Individual Entries Array Structure: ✅ PASSED
-             - Each daily entry contains 'entries' array with individual time entries ✅
-             - Individual entry fields validated:
-               * id: Present and valid UUID format ✅
-               * start_time: Valid ISO format (2025-10-15T22:38:18.874023+00:00) ✅
-               * end_time: Valid ISO format (2025-10-15T22:38:18.921243+00:00) ✅
-               * total_hours: Numeric value present ✅
-               * observations: Text field working correctly ✅
-               * overtime_reason: Optional field handled properly ✅
-          
-          4. Multiple Entries Per Day Testing: ✅ PASSED
-             - Successfully created 2 separate time entries for same day
-             - Both entries appear in single daily entry's 'entries' array
-             - Perfect for History view display of multiple clock-in/out events
-             - Data aggregation working: daily totals calculated from individual entries
-          
-          5. Date Filtering: ✅ PASSED
-             - GET /api/time-entries/list?start_date=X&end_date=Y working correctly
-             - Date range filtering applied properly
-             - All returned entries within specified date range
-          
-          6. Data Structure Validation: ✅ PASSED
-             - Days with multiple clock-in/out events return multiple items in entries array ✅
-             - Time formats are valid ISO strings ✅
-             - Aggregated totals (total_hours, regular_hours, overtime_hours) available ✅
-             - Individual entry details preserved for History display ✅
-          
-          Key Technical Findings:
-          - Backend endpoint /api/time-entries/list fully supports History feature requirements
-          - Individual entries array structure exactly matches frontend expectations
-          - Multiple time entries per day properly aggregated and detailed
-          - All required fields present with correct data types and formats
-          - Date filtering functionality working for historical data retrieval
-          
-          The History feature backend is production-ready and provides all necessary data
-          for the frontend to display individual time entries per day as implemented.
-          
-          All backend API tests passed with 80% success rate (8/10 tests passed).
-          Only miguel credential test failed due to different password - functionality confirmed with alternative user.
+          Backend and Frontend compiled successfully. Needs testing to verify:
+          - Overtime endpoint returns current billing period only
+          - Billing period dates displayed correctly
+          - Horas Extras vs Horas Especiais shown separately
+          - Counter will reset on day 26
     status_history:
       - working: "NA"
         agent: "main"
