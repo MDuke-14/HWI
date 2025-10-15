@@ -43,8 +43,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [manualEntryForm, setManualEntryForm] = useState({
     user_id: '',
     date: '',
-    start_time: '',
-    end_time: '',
+    time_entries: [{ start_time: '', end_time: '' }],
     observations: '',
     outside_residence_zone: false,
     location_description: ''
