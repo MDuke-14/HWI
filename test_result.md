@@ -365,6 +365,25 @@ frontend:
           
           The Excel export feature is production-ready and works exactly as specified.
           All frontend UI/UX and backend integration tests passed successfully.
+  - task: "PDF Export Button in Reports"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/Reports.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Added "Exportar PDF" button to Reports page:
+          - Added FileText icon import from lucide-react
+          - Created downloadPdfReport function using axios with blob responseType
+          - Added red export button next to Excel export button
+          - Handles file download with proper filename extraction from headers
+          - Shows toast notifications for success/error
+          - Endpoint: GET /api/time-entries/reports/monthly-pdf
+          Frontend compiled successfully. Needs testing to verify download functionality.
 
 metadata:
   created_by: "main_agent"
