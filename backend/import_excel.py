@@ -52,30 +52,28 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
         # Iterate through all rows
         for idx, row in df.iterrows():
             try:
-                # Convert row to list and check for date-like numbers
+                # Convert row to list
                 row_values = row.tolist()
                 
-                # Look for Excel date numbers (typically in first few columns)
+                # Look for date in first column - can be datetime object or Excel serial
                 date_found = None
-                date_col_idx = None
+                date_col_idx = 0
                 
-                for col_idx in range(min(5, len(row_values))):
-                    val = row_values[col_idx]
-                    
-                    # Check if it's a number that looks like an Excel date
-                    if isinstance(val, (int, float)) and not pd.isna(val):
-                        # Excel dates for 2020-2030 are roughly 43000-47000
-                        if 43000 <= val <= 48000:
-                            date_found = val
-                            date_col_idx = col_idx
-                            break
+                val = row_values[0]
+                
+                # Check if it's a datetime object
+                if isinstance(val, datetime):
+                    date_found = val
+                # Check if it's an Excel serial number
+                elif isinstance(val, (int, float)) and not pd.isna(val):
+                    if 43000 <= val <= 48000:
+                        date_found = excel_date_to_python(val)
                 
                 if not date_found:
                     continue
                 
-                # Convert date
-                entry_date = excel_date_to_python(date_found)
-                date_str = entry_date.strftime('%Y-%m-%d')
+                # Convert to date string
+                date_str = date_found.strftime('%Y-%m-%d')
                 
                 # Log the row we're processing
                 logging.info(f"Processing row {idx} for date {date_str}")
@@ -83,7 +81,7 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                 # Check for location info
                 location = None
                 outside_zone = False
-                row_str = ' '.join([str(x).upper() for x in row_values if pd.notna(x)])
+                row_str = ' '.join([str(x).upper() for x in row_values if pd.notna(x) and x != ''])
                 
                 if 'MADRID' in row_str:
                     location = 'Madrid'
@@ -93,17 +91,31 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                     outside_zone = True
                 
                 # Skip vacation days
-                if 'FERIAS' in row_str or 'FÉRIAS' in row_str:
-                    logging.info(f"  Skipping vacation day: {date_str}")
+                if 'FERIAS' in row_str or 'FÉRIAS' in row_str or 'FOLGA' in row_str:
+                    logging.info(f"  Skipping vacation/rest day: {date_str}")
                     continue
                 
-                # Find time entries - look for decimal numbers between 0 and 1 after the date column
+                # Find time entries - look for time values
+                # Time can be datetime.time objects or decimal numbers
                 time_values = []
-                for col_idx in range(date_col_idx + 1, len(row_values)):
+                for col_idx in range(2, len(row_values)):  # Start from column 2 (after date and day name)
                     val = row_values[col_idx]
-                    if isinstance(val, (int, float)) and not pd.isna(val):
-                        if 0 < val < 1:  # Time values are fractions of a day
-                            time_values.append(val)
+                    
+                    # Check if it's a time object
+                    if isinstance(val, time):
+                        # Convert time to HH:MM string
+                        time_str = val.strftime('%H:%M')
+                        time_values.append(time_str)
+                    # Check if it's a datetime object (sometimes Excel stores times as datetime)
+                    elif isinstance(val, datetime):
+                        time_str = val.strftime('%H:%M')
+                        time_values.append(time_str)
+                    # Check if it's a decimal (fraction of day)
+                    elif isinstance(val, (int, float)) and not pd.isna(val):
+                        if 0 < val < 1:
+                            time_str = excel_time_to_python(val)
+                            if time_str:
+                                time_values.append(time_str)
                 
                 logging.info(f"  Found {len(time_values)} time values: {time_values}")
                 
@@ -111,20 +123,19 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                 time_pairs = []
                 i = 0
                 while i < len(time_values) - 1:
-                    start_time = excel_time_to_python(time_values[i])
-                    end_time = excel_time_to_python(time_values[i + 1])
+                    start_time = time_values[i]
+                    end_time = time_values[i + 1]
                     
-                    if start_time and end_time:
-                        # Validate that end > start
-                        start_h, start_m = map(int, start_time.split(':'))
-                        end_h, end_m = map(int, end_time.split(':'))
-                        
-                        if (end_h * 60 + end_m) > (start_h * 60 + start_m):
-                            time_pairs.append({
-                                'start_time': start_time,
-                                'end_time': end_time
-                            })
-                            logging.info(f"    Pair: {start_time} - {end_time}")
+                    # Validate that end > start
+                    start_h, start_m = map(int, start_time.split(':'))
+                    end_h, end_m = map(int, end_time.split(':'))
+                    
+                    if (end_h * 60 + end_m) > (start_h * 60 + start_m):
+                        time_pairs.append({
+                            'start_time': start_time,
+                            'end_time': end_time
+                        })
+                        logging.info(f"    Pair: {start_time} - {end_time}")
                     
                     i += 2  # Move to next pair
                 
