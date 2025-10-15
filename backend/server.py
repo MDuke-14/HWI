@@ -1626,16 +1626,15 @@ async def create_manual_time_entry(
             start_time_parts = start_time_str.split(":")
             end_time_parts = end_time_str.split(":")
             
-            # Create datetime objects
+            # Create datetime objects WITHOUT timezone (will be treated as local time)
+            # The frontend sends local time (HH:MM), we keep it as is
             start_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
                 hour=int(start_time_parts[0]),
-                minute=int(start_time_parts[1]),
-                tzinfo=timezone.utc
+                minute=int(start_time_parts[1])
             )
             end_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
                 hour=int(end_time_parts[0]),
-                minute=int(end_time_parts[1]),
-                tzinfo=timezone.utc
+                minute=int(end_time_parts[1])
             )
             
             # Validate times
