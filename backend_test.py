@@ -951,7 +951,7 @@ def main():
     
     # Test sequence - focusing on PDF Monthly Report Generation endpoint
     test_sequence = [
-        ("Admin Login (miguel/password123)", tester.test_admin_login),
+        ("User Authentication", tester.test_admin_login),
         ("Get Current User", tester.test_get_current_user),
         ("PDF Report (No Parameters)", tester.test_pdf_report_no_params),
         ("PDF Report (With Parameters)", tester.test_pdf_report_with_params),
