@@ -125,6 +125,93 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  const handleImportReport = async () => {
+    if (!importFile) {
+      toast.error('Selecione um ficheiro');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      if (importUserId) {
+        formData.append('user_id', importUserId);
+      }
+      
+      const response = await axios.post(`${API}/admin/time-entries/import-excel`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast.success(
+        `Importação concluída!\n` +
+        `Importados: ${response.data.imported}\n` +
+        `Ignorados (já existiam): ${response.data.skipped}\n` +
+        `Erros: ${response.data.errors}`
+      );
+      
+      setShowImportDialog(false);
+      setImportFile(null);
+      setImportUserId('');
+      fetchDetailedMonthlyReport(); // Refresh report after import
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao importar ficheiro');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (day) => {
+    setEditingEntry(day);
+    setDialogOpen(true);
+    // Initialize edit forms for all individual entries
+    const forms = {};
+    if (day.entries && Array.isArray(day.entries)) {
+      day.entries.forEach(individualEntry => {
+        forms[individualEntry.id] = {
+          start_time: individualEntry.start_time ? individualEntry.start_time.split('.')[0] : '',
+          end_time: individualEntry.end_time ? individualEntry.end_time.split('.')[0] : '',
+          observations: individualEntry.observations || ''
+        };
+      });
+    }
+    setEditForms(forms);
+  };
+
+  const handleUpdateIndividualEntry = (entryId, field, value) => {
+    setEditForms(prev => ({
+      ...prev,
+      [entryId]: {
+        ...prev[entryId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveIndividualEntry = async (entryId) => {
+    try {
+      const formData = editForms[entryId];
+      const updateData = {
+        observations: formData.observations
+      };
+      
+      if (formData.start_time) {
+        updateData.start_time = new Date(formData.start_time).toISOString();
+      }
+      if (formData.end_time) {
+        updateData.end_time = new Date(formData.end_time).toISOString();
+      }
+
+      await axios.put(`${API}/time-entries/${entryId}`, updateData);
+      toast.success('Registo atualizado!');
+      fetchDetailedMonthlyReport(); // Refresh report after edit
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar');
+    }
+  };
+
   const ReportCard = ({ report, title, icon: Icon }) => {
     if (!report) return null;
 
