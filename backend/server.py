@@ -837,6 +837,14 @@ async def get_monthly_detailed_report(
         month = now.month
         year = now.year
     
+    # Get user data for report
+    user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    username = user.get("username", "user")
+    full_name = user.get("full_name", username)
+    
     # Get billing period dates (26th to 25th)
     start_date, end_date = get_billing_period_dates(date(year, month, 1))
     
