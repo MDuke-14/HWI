@@ -39,6 +39,16 @@ const AdminDashboard = ({ user, onLogout }) => {
     password: '',
     is_admin: false
   });
+  const [showManualEntryDialog, setShowManualEntryDialog] = useState(false);
+  const [manualEntryForm, setManualEntryForm] = useState({
+    user_id: '',
+    date: '',
+    start_time: '',
+    end_time: '',
+    observations: '',
+    outside_residence_zone: false,
+    location_description: ''
+  });
 
   useEffect(() => {
     fetchUsers();
