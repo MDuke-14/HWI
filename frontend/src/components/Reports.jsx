@@ -250,6 +250,24 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  const handleDeleteEntry = async (entryId) => {
+    if (!window.confirm('Tem a certeza que deseja apagar este registo?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/time-entries/${entryId}`);
+      toast.success('Registo apagado com sucesso!');
+      
+      // Close dialog and refresh report
+      setDialogOpen(false);
+      setEditingEntry(null);
+      fetchDetailedMonthlyReport();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao apagar registo');
+    }
+  };
+
   // Functions for adding manual entries
   const addManualTimeEntry = () => {
     setManualEntryForm(prev => ({
