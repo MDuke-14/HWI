@@ -270,6 +270,43 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleImportExcel = async () => {
+    if (!importFile) {
+      toast.error('Selecione um ficheiro Excel');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      if (importUserId) {
+        formData.append('user_id', importUserId);
+      }
+      
+      const response = await axios.post(`${API}/admin/time-entries/import-excel`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast.success(
+        `Importação concluída!\n` +
+        `Importados: ${response.data.imported}\n` +
+        `Ignorados (já existiam): ${response.data.skipped}\n` +
+        `Erros: ${response.data.errors}`
+      );
+      
+      setShowImportDialog(false);
+      setImportFile(null);
+      setImportUserId('');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao importar ficheiro');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const downloadJustificationFile = async (filename) => {
     try {
       const response = await axios.get(`${API}/absences/file/${filename}`, {
