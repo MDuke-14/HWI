@@ -11,6 +11,7 @@ const Reports = ({ user, onLogout }) => {
   const [weeklyReport, setWeeklyReport] = useState(null);
   const [monthlyReport, setMonthlyReport] = useState(null);
   const [billingReport, setBillingReport] = useState(null);
+  const [detailedMonthlyReport, setDetailedMonthlyReport] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Helper function to format decimal hours as HH:MM
@@ -23,6 +24,7 @@ const Reports = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchReports();
+    fetchDetailedMonthlyReport();
   }, []);
 
   const fetchReports = async () => {
