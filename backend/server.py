@@ -492,6 +492,136 @@ async def send_vacation_decision_email(user_name: str, user_email: str, start_da
     except Exception as e:
         logging.error(f"Failed to send vacation decision email: {str(e)}")
 
+async def send_absence_justification_email(user_name: str, user_email: str, absence_date: str, filename: str):
+    """Send email to team when justification document is uploaded"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+        
+        # Format date
+        date_formatted = datetime.strptime(absence_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+        
+        subject = f"Documento de Justificativa de Falta — {user_name}"
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>Olá,</p>
+                
+                <p>O(a) colaborador(a) <strong>{user_name}</strong> enviou um documento para justificar uma ausência.</p>
+                
+                <h3 style="color: #0066cc; margin-top: 20px;">Detalhes:</h3>
+                <table style="border-collapse: collapse; margin: 15px 0;">
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Data da falta:</td>
+                        <td style="padding: 8px 15px;">{date_formatted}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Documento enviado:</td>
+                        <td style="padding: 8px 15px;"><strong>{filename}</strong> (ver no painel)</td>
+                    </tr>
+                </table>
+                
+                <p style="margin-top: 25px;">Acesse o sistema para validar e aprovar ou recusar a justificativa.</p>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+                <p style="color: #666; font-size: 12px;">
+                    Sistema de Gestão de Ponto | Emergent
+                </p>
+            </body>
+        </html>
+        """
+        
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = smtp_from
+        message['To'] = smtp_from  # Send to geral@hwi.pt
+        
+        html_part = MIMEText(html_body, 'html')
+        message.attach(html_part)
+        
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True
+        )
+        
+        logging.info(f"Absence justification email sent to {smtp_from} for {user_name}")
+    except Exception as e:
+        logging.error(f"Failed to send absence justification email: {str(e)}")
+
+async def send_absence_decision_email(user_name: str, user_email: str, absence_date: str, approved: bool, observations: str = None):
+    """Send email to user when absence justification is approved/rejected"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+        
+        # Format date
+        date_formatted = datetime.strptime(absence_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+        
+        status_text = "Aprovada" if approved else "Recusada"
+        status_color = "#28a745" if approved else "#dc3545"
+        
+        subject = f"Justificativa de Falta — {status_text}"
+        
+        observations_html = ""
+        if observations:
+            observations_html = f"""
+                <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid {status_color}; margin: 20px 0;">
+                    <strong>Observações:</strong><br>
+                    {observations}
+                </div>
+            """
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>Olá <strong>{user_name}</strong>,</p>
+                
+                <p>Sua justificativa de ausência referente ao dia <strong>{date_formatted}</strong> foi <span style="color: {status_color}; font-weight: bold;">{status_text.upper()}</span>.</p>
+                
+                {observations_html}
+                
+                <p style="margin-top: 25px;">Agradecemos pela colaboração.</p>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+                <p style="color: #666; font-size: 12px;">
+                    Equipe HWI
+                </p>
+            </body>
+        </html>
+        """
+        
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = smtp_from
+        message['To'] = user_email
+        
+        html_part = MIMEText(html_body, 'html')
+        message.attach(html_part)
+        
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True
+        )
+        
+        logging.info(f"Absence decision email sent to {user_email} - Status: {status_text}")
+    except Exception as e:
+        logging.error(f"Failed to send absence decision email: {str(e)}")
+
 def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
     """Calculate vacation days based on company start date"""
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
