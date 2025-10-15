@@ -324,7 +324,7 @@ const Dashboard = ({ user, onLogout }) => {
                       </div>
                       <div className="text-right">
                         <div className={`font-bold text-lg ${e.is_overtime_day ? 'text-amber-400' : 'text-green-400'}`}>
-                          {e.total_hours}h
+                          {formatHours(e.total_hours)}
                         </div>
                       </div>
                     </div>
