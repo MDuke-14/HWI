@@ -60,6 +60,7 @@ class UserCreate(BaseModel):
     username: str
     password: str
     email: EmailStr
+    phone: str  # Required contact field
     full_name: Optional[str] = None
     company_start_date: Optional[str] = None  # YYYY-MM-DD
     vacation_days_taken: int = 0
@@ -68,6 +69,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
+    phone: Optional[str] = None
     password: Optional[str] = None
     is_admin: Optional[bool] = None
 
