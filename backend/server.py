@@ -965,6 +965,14 @@ async def download_monthly_pdf_report(
         month = now.month
         year = now.year
     
+    # Get user data for report
+    user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    username = user.get("username", "user")
+    full_name = user.get("full_name", username)
+    
     # Get the detailed monthly report data (reuse the same logic)
     start_date, end_date = get_billing_period_dates(date(year, month, 1))
     
