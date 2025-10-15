@@ -1538,6 +1538,27 @@ async def delete_time_entry(entry_id: str, current_user: dict = Depends(get_curr
     
     return {"message": "Registo eliminado com sucesso"}
 
+@api_router.delete("/admin/time-entries/date/{user_id}/{date}")
+async def delete_all_entries_for_date(
+    user_id: str,
+    date: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Delete all time entries for a specific user and date (Admin only)"""
+    result = await db.time_entries.delete_many({
+        "user_id": user_id,
+        "date": date,
+        "status": "completed"
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Nenhum registo encontrado para esta data")
+    
+    return {
+        "message": f"{result.deleted_count} registo(s) eliminado(s) com sucesso",
+        "deleted_count": result.deleted_count
+    }
+
 @api_router.post("/admin/time-entries/manual")
 async def create_manual_time_entry(
     entry_data: ManualTimeEntryCreate,
