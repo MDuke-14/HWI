@@ -22,7 +22,6 @@ from email.mime.multipart import MIMEMultipart
 sys.path.insert(0, str(Path(__file__).parent))
 from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates
 from excel_report import generate_monthly_report
-from timezones import get_country_offset, is_dst_active, get_countries_list
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
