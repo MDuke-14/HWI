@@ -93,7 +93,7 @@ const Dashboard = ({ user, onLogout }) => {
       const response = await axios.post(`${API}/time-entries/end/${entry.id}`, {
         observations: endObservations
       });
-      toast.success(`Relógio finalizado! Total: ${response.data.total_hours}h`);
+      toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
       setEndObservations('');
       fetchTodayEntry();
     } catch (error) {
