@@ -383,48 +383,91 @@ const History = ({ user, onLogout }) => {
                     </div>
                   )}
 
-                  <div className="grid md:grid-cols-2 gap-4 text-gray-300">
-                    {entry.entry_count && entry.entry_count > 1 && (
-                      <div className="col-span-2">
-                        <div className="px-3 py-2 bg-blue-900/20 border border-blue-600 rounded-lg text-blue-400 text-sm">
-                          📊 Total do dia com {entry.entry_count} registos (múltiplas entradas agregadas)
+                  {/* Daily Summary */}
+                  <div className="mb-4 p-4 bg-blue-900/10 border border-blue-600/30 rounded-lg">
+                    <h4 className="text-sm font-semibold text-blue-400 mb-3">Resumo do Dia</h4>
+                    <div className="grid md:grid-cols-3 gap-3 text-gray-300">
+                      {entry.regular_hours > 0 && (
+                        <div>
+                          <div className="text-xs text-gray-400">Horas Normais</div>
+                          <div className="font-bold text-blue-400 text-lg">{formatHours(entry.regular_hours)}</div>
                         </div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-sm text-gray-400">Início (primeiro registo)</div>
-                      <div className="font-semibold text-white">
-                        {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT') : '-'}
-                      </div>
+                      )}
+                      {entry.overtime_hours > 0 && (
+                        <div>
+                          <div className="text-xs text-gray-400">Horas Extras</div>
+                          <div className="font-bold text-amber-400 text-lg">{formatHours(entry.overtime_hours)}</div>
+                        </div>
+                      )}
+                      {entry.total_hours && (
+                        <div>
+                          <div className="text-xs text-gray-400">Total do Dia</div>
+                          <div className="font-bold text-green-400 text-lg">{formatHours(entry.total_hours)}</div>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-400">Fim (último registo)</div>
-                      <div className="font-semibold text-white">
-                        {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT') : '-'}
-                      </div>
-                    </div>
-                    {entry.regular_hours > 0 && (
-                      <div>
-                        <div className="text-sm text-gray-400">Horas Normais (Total do Dia)</div>
-                        <div className="font-bold text-blue-400 text-lg">{formatHours(entry.regular_hours)}</div>
-                      </div>
-                    )}
-                    {entry.overtime_hours > 0 && (
-                      <div>
-                        <div className="text-sm text-gray-400">Horas Extras (Total do Dia)</div>
-                        <div className="font-bold text-amber-400 text-lg">{formatHours(entry.overtime_hours)}</div>
-                      </div>
-                    )}
-                    {entry.total_hours && (
-                      <div>
-                        <div className="text-sm text-gray-400">Total do Dia</div>
-                        <div className="font-bold text-green-400 text-lg">{formatHours(entry.total_hours)}</div>
-                      </div>
-                    )}
-                    {entry.pauses && entry.pauses.length > 0 && (
-                      <div>
-                        <div className="text-sm text-gray-400">Pausas</div>
-                        <div className="font-semibold text-white">{entry.pauses.length} pausa(s)</div>
+                  </div>
+
+                  {/* Individual Entries */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-300">
+                      Registos Individuais {entry.entry_count && `(${entry.entry_count})`}
+                    </h4>
+                    {entry.entries && entry.entries.length > 0 ? (
+                      entry.entries.map((individualEntry, idx) => (
+                        <div 
+                          key={individualEntry.id || idx} 
+                          className="p-3 bg-[#0f0f0f] border border-gray-700 rounded-lg"
+                          data-testid={`individual-entry-${idx}`}
+                        >
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-semibold text-gray-400">
+                              Entrada #{idx + 1}
+                            </span>
+                            <span className="text-sm font-bold text-green-400">
+                              {formatHours(individualEntry.total_hours)}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <div className="text-xs text-gray-500">Início</div>
+                              <div className="font-semibold text-white">
+                                {individualEntry.start_time ? 
+                                  new Date(individualEntry.start_time).toLocaleTimeString('pt-PT', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  }) : '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500">Fim</div>
+                              <div className="font-semibold text-white">
+                                {individualEntry.end_time ? 
+                                  new Date(individualEntry.end_time).toLocaleTimeString('pt-PT', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  }) : '-'}
+                              </div>
+                            </div>
+                          </div>
+                          {individualEntry.observations && (
+                            <div className="mt-2 pt-2 border-t border-gray-700">
+                              <div className="text-xs text-gray-500">Observações</div>
+                              <div className="text-xs text-gray-300 italic">{individualEntry.observations}</div>
+                            </div>
+                          )}
+                          {individualEntry.is_overtime_day && (
+                            <div className="mt-2">
+                              <span className="text-xs px-2 py-1 bg-amber-900/30 border border-amber-600 rounded text-amber-400">
+                                {individualEntry.overtime_reason}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 bg-gray-900/50 border border-gray-700 rounded-lg text-gray-400 text-sm">
+                        Nenhum registo individual disponível
                       </div>
                     )}
                   </div>
