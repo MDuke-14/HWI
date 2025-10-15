@@ -943,6 +943,58 @@ class HWITimeTrackerTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False
 
+    def test_miguel_credentials(self):
+        """Test login specifically with miguel/password123 credentials as mentioned in review request"""
+        print(f"\n🔍 Testing Miguel Credentials (miguel/password123)...")
+        
+        # Reset token to test fresh login
+        original_token = self.token
+        self.token = None
+        
+        success, response = self.run_test(
+            "Miguel Login Test",
+            "POST",
+            "auth/login",
+            200,
+            data={
+                "username": "miguel",
+                "password": "password123"
+            }
+        )
+        
+        if success and 'access_token' in response:
+            print(f"   ✅ Miguel login successful")
+            print(f"   Username: {response['user']['username']}")
+            print(f"   Is admin: {response['user'].get('is_admin', False)}")
+            
+            # Test PDF generation with miguel credentials
+            miguel_token = response['access_token']
+            url = f"{self.base_url}/api/time-entries/reports/monthly-pdf"
+            headers = {'Authorization': f'Bearer {miguel_token}'}
+            
+            try:
+                pdf_response = requests.get(url, headers=headers, timeout=30)
+                if pdf_response.status_code == 200:
+                    print(f"   ✅ PDF generation works with miguel credentials")
+                    filename = pdf_response.headers.get('Content-Disposition', '')
+                    if 'miguel' in filename:
+                        print(f"   ✅ PDF filename contains miguel: {filename}")
+                    else:
+                        print(f"   ⚠️  PDF filename: {filename}")
+                else:
+                    print(f"   ❌ PDF generation failed: {pdf_response.status_code}")
+            except Exception as e:
+                print(f"   ❌ PDF test error: {str(e)}")
+            
+            # Restore original token for other tests
+            self.token = original_token
+            return True
+        else:
+            print(f"   ❌ Miguel login failed - user may not exist or password incorrect")
+            # Restore original token
+            self.token = original_token
+            return False
+
 def main():
     print("🚀 Starting HWI Time Tracker API Tests - PDF Monthly Report Generation")
     print("=" * 70)
