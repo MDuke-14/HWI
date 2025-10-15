@@ -1641,9 +1641,10 @@ async def create_manual_time_entry(
                 minute=int(end_time_parts[1])
             )
             
-            # Validate times
+            # Check if time crosses midnight (end < start means next day)
             if end_datetime <= start_datetime:
-                raise HTTPException(status_code=400, detail=f"Entrada {idx+1}: hora de fim deve ser posterior à hora de início")
+                # Entry crosses midnight - move end_datetime to next day
+                end_datetime = end_datetime + timedelta(days=1)
             
             # Calculate hours for this entry
             total_seconds = (end_datetime - start_datetime).total_seconds()
