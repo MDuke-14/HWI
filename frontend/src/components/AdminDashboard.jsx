@@ -432,6 +432,56 @@ const AdminDashboard = ({ user, onLogout }) => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-white">Utilizadores ({users.length})</h2>
                 <div className="flex gap-3">
+                  <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-purple-600 hover:bg-purple-700 text-white rounded-full">
+                        <Upload className="w-4 h-4 mr-2" />Importar Excel
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                      <DialogHeader><DialogTitle>Importar Folha de Ponto</DialogTitle></DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div>
+                          <Label>Ficheiro Excel</Label>
+                          <Input
+                            type="file"
+                            accept=".xlsx,.xls"
+                            onChange={(e) => setImportFile(e.target.files[0])}
+                            className="bg-[#0a0a0a] border-gray-700 text-white"
+                          />
+                          <p className="text-xs text-gray-400 mt-2">
+                            Formato aceite: Folha de ponto antiga (.xlsx)
+                          </p>
+                        </div>
+                        <div>
+                          <Label>Utilizador (opcional - detecta "Miguel" automaticamente)</Label>
+                          <select
+                            value={importUserId}
+                            onChange={(e) => setImportUserId(e.target.value)}
+                            className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                          >
+                            <option value="">Auto-detectar Miguel Moreira</option>
+                            {users.map(u => (
+                              <option key={u.id} value={u.id}>{u.username} - {u.full_name || u.email}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-3">
+                          <p className="text-xs text-blue-300">
+                            ℹ️ A importação irá:
+                            <br/>• Ler todas as datas com horários
+                            <br/>• Detectar localizações (Madrid, Valencia)
+                            <br/>• Calcular horas extras automaticamente
+                            <br/>• Ignorar dias que já têm entradas
+                          </p>
+                        </div>
+                        <Button onClick={handleImportExcel} disabled={loading || !importFile} className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-full">
+                          {loading ? 'A importar...' : 'Importar Ficheiro'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
                   <Dialog open={showManualEntryDialog} onOpenChange={setShowManualEntryDialog}>
                     <DialogTrigger asChild>
                       <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
