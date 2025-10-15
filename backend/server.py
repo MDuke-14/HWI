@@ -512,17 +512,7 @@ async def end_time_entry(
     if entry["status"] == "completed":
         raise HTTPException(status_code=400, detail="O registo já foi finalizado")
     
-    # Get current time in UTC
-    end_time_utc = datetime.now(timezone.utc)
-    
-    # Adjust end time based on country timezone if specified
-    end_time = end_time_utc
-    if entry.get("country"):
-        # Get timezone offset for the country (relative to Portugal)
-        offset = get_country_offset(entry["country"])
-        # Add offset to adjust time
-        end_time = end_time_utc + timedelta(hours=offset)
-    
+    end_time = datetime.now(timezone.utc)
     start_time = datetime.fromisoformat(entry["start_time"])
     
     # Merge observations - keep start observations and add end observations if provided
