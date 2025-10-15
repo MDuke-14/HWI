@@ -120,9 +120,12 @@ const Overtime = ({ user, onLogout }) => {
                   <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
                     <h3 className="text-white font-semibold mb-2">Informação sobre Horas Extras</h3>
-                    <p className="text-gray-300 text-sm">
-                      São consideradas horas extras todo o trabalho realizado em <strong>Sábados</strong>, <strong>Domingos</strong> e <strong>Feriados</strong> nacionais portugueses.
-                    </p>
+                    <ul className="text-gray-300 text-sm space-y-1">
+                      <li>• <strong>Horas Extras</strong>: Trabalho acima de 8h em dias úteis</li>
+                      <li>• <strong>Horas Especiais</strong>: Todo o trabalho em Sábados, Domingos e Feriados</li>
+                      <li>• <strong>Reinício</strong>: A contagem reinicia a cada dia 26 (novo período de faturação)</li>
+                      <li>• <strong>Relatórios</strong>: Períodos anteriores disponíveis na página de Relatórios</li>
+                    </ul>
                   </div>
                 </div>
               </div>
