@@ -1124,6 +1124,7 @@ async def download_monthly_pdf_report(
             day_data["entries"] = []
             day_data["total_hours"] = 0
             day_data["overtime_hours"] = 0
+            day_data["special_hours"] = 0
             day_data["payment_type"] = None
             day_data["payment_value"] = 0
         
@@ -1141,6 +1142,7 @@ async def download_monthly_pdf_report(
         "summary": {
             "total_worked_hours": round(total_worked_hours, 2),
             "total_overtime_hours": round(total_overtime_hours, 2),
+            "total_special_hours": round(total_special_hours, 2),
             "days_with_meal_allowance": days_with_meal_allowance,
             "days_with_travel_allowance": days_with_travel_allowance,
             "total_meal_allowance_value": days_with_meal_allowance * 10.0,
