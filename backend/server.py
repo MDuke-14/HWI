@@ -242,6 +242,35 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return current_user
 
+def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
+    """
+    Calculate regular, overtime, and special hours based on new rules:
+    - Regular hours: First 8h on regular days
+    - Overtime hours: Hours above 8h on regular days
+    - Special hours: All hours on weekends/holidays
+    """
+    if is_special_day:
+        # All hours on weekends/holidays are special hours
+        return {
+            "regular_hours": 0.0,
+            "overtime_hours": 0.0,
+            "special_hours": total_hours
+        }
+    else:
+        # Regular day: first 8h are regular, rest is overtime
+        if total_hours <= 8.0:
+            return {
+                "regular_hours": total_hours,
+                "overtime_hours": 0.0,
+                "special_hours": 0.0
+            }
+        else:
+            return {
+                "regular_hours": 8.0,
+                "overtime_hours": total_hours - 8.0,
+                "special_hours": 0.0
+            }
+
 async def send_service_email(technician_emails: List[str], service_data: dict, action_type: str):
     """Send email notification about service appointment"""
     try:
