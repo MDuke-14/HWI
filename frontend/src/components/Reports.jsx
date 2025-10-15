@@ -270,6 +270,14 @@ const Reports = ({ user, onLogout }) => {
               <TabsContent value="billing">
                 {detailedMonthlyReport ? (
                   <div className="space-y-6">
+                    {/* User Info Header */}
+                    {detailedMonthlyReport.full_name && (
+                      <div className="glass-effect p-4 rounded-xl text-center">
+                        <div className="text-gray-400 text-sm">Colaborador</div>
+                        <div className="text-2xl font-bold text-white">{detailedMonthlyReport.full_name}</div>
+                      </div>
+                    )}
+                    
                     {/* Summary Cards */}
                     <div className="grid md:grid-cols-4 gap-4">
                       <div className="glass-effect p-6 rounded-xl">
