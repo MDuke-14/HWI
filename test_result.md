@@ -366,6 +366,13 @@ frontend:
     stuck_count: 0
     priority: "high"
     needs_retesting: false
+  - task: "Edit Button in Reports and Import Button moved to Reports"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/Reports.jsx, /app/frontend/src/components/AdminDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
