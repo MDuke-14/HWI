@@ -472,22 +472,21 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     if existing_active:
         raise HTTPException(status_code=400, detail="Por favor finalize o registo anterior antes de iniciar um novo")
     
-    # Check if today is overtime day (use the adjusted date)
-    today_date = start_time.date()
+    # Check if today is overtime day
+    today_date = datetime.now(timezone.utc).date()
     is_ot, ot_reason = is_overtime_day(today_date)
     
     entry = TimeEntry(
         user_id=current_user["sub"],
         username=current_user["username"],
         date=today,
-        start_time=start_time,
+        start_time=datetime.now(timezone.utc),
         status="active",
         observations=entry_data.observations,
         is_overtime_day=is_ot,
         overtime_reason=ot_reason if is_ot else None,
         outside_residence_zone=entry_data.outside_residence_zone or False,
-        location_description=entry_data.location_description if entry_data.outside_residence_zone else None,
-        country=entry_data.country if entry_data.outside_residence_zone else None
+        location_description=entry_data.location_description if entry_data.outside_residence_zone else None
     )
     
     entry_dict = entry.model_dump()
