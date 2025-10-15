@@ -1696,12 +1696,14 @@ async def import_excel_timesheet(
     current_user: dict = Depends(get_current_admin)
 ):
     """
-    Import time entries from old Excel format (Admin only)
+    Import time entries from Excel or PDF format (Admin only)
     """
     try:
-        # Validate file is Excel
-        if not file.filename.endswith(('.xlsx', '.xls')):
-            raise HTTPException(status_code=400, detail="Apenas ficheiros Excel (.xlsx, .xls) são permitidos")
+        # Validate file is Excel or PDF
+        if not file.filename.endswith(('.xlsx', '.xls', '.pdf')):
+            raise HTTPException(status_code=400, detail="Apenas ficheiros Excel (.xlsx, .xls) ou PDF (.pdf) são permitidos")
+        
+        is_pdf = file.filename.endswith('.pdf')
         
         # Save uploaded file temporarily
         temp_dir = Path("/tmp/timetracker_imports")
@@ -1711,8 +1713,13 @@ async def import_excel_timesheet(
         with open(temp_file, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Parse Excel file
-        result = parse_excel_timesheet(str(temp_file))
+        # Parse file based on type
+        if is_pdf:
+            logging.info(f"Parsing PDF file: {file.filename}")
+            result = parse_pdf_timesheet(str(temp_file))
+        else:
+            logging.info(f"Parsing Excel file: {file.filename}")
+            result = parse_excel_timesheet(str(temp_file))
         
         # Clean up temp file
         temp_file.unlink()
@@ -1804,7 +1811,7 @@ async def import_excel_timesheet(
                         start_time=start_datetime,
                         end_time=end_datetime,
                         status="completed",
-                        observations=f"Importado de Excel (entrada {idx+1}/{len(entry_data['time_entries'])})",
+                        observations=f"Importado de {'PDF' if is_pdf else 'Excel'} (entrada {idx+1}/{len(entry_data['time_entries'])})",
                         is_overtime_day=is_special_day,
                         overtime_reason=overtime_reason if is_special_day else None,
                         total_hours=entry_hours,
