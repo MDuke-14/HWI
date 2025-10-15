@@ -442,15 +442,15 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <DialogHeader><DialogTitle>Importar Folha de Ponto</DialogTitle></DialogHeader>
                       <div className="space-y-4 mt-4">
                         <div>
-                          <Label>Ficheiro Excel</Label>
+                          <Label>Ficheiro Excel ou PDF</Label>
                           <Input
                             type="file"
-                            accept=".xlsx,.xls"
+                            accept=".xlsx,.xls,.pdf"
                             onChange={(e) => setImportFile(e.target.files[0])}
                             className="bg-[#0a0a0a] border-gray-700 text-white"
                           />
                           <p className="text-xs text-gray-400 mt-2">
-                            Formato aceite: Folha de ponto antiga (.xlsx)
+                            Formatos aceites: Excel (.xlsx, .xls) ou PDF (.pdf)
                           </p>
                         </div>
                         <div>
