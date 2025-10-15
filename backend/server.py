@@ -53,6 +53,7 @@ class User(BaseModel):
     email: EmailStr
     hashed_password: str
     full_name: Optional[str] = None
+    phone: Optional[str] = None
     is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
