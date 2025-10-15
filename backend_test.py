@@ -967,33 +967,207 @@ class HWITimeTrackerTester:
             print(f"   Username: {response['user']['username']}")
             print(f"   Is admin: {response['user'].get('is_admin', False)}")
             
-            # Test PDF generation with miguel credentials
-            miguel_token = response['access_token']
-            url = f"{self.base_url}/api/time-entries/reports/monthly-pdf"
-            headers = {'Authorization': f'Bearer {miguel_token}'}
+            # Store miguel token for further tests
+            self.token = response['access_token']
+            self.user_id = response['user']['id']
+            self.username = response['user']['username']
             
-            try:
-                pdf_response = requests.get(url, headers=headers, timeout=30)
-                if pdf_response.status_code == 200:
-                    print(f"   ✅ PDF generation works with miguel credentials")
-                    filename = pdf_response.headers.get('Content-Disposition', '')
-                    if 'miguel' in filename:
-                        print(f"   ✅ PDF filename contains miguel: {filename}")
-                    else:
-                        print(f"   ⚠️  PDF filename: {filename}")
-                else:
-                    print(f"   ❌ PDF generation failed: {pdf_response.status_code}")
-            except Exception as e:
-                print(f"   ❌ PDF test error: {str(e)}")
-            
-            # Restore original token for other tests
-            self.token = original_token
             return True
         else:
             print(f"   ❌ Miguel login failed - user may not exist or password incorrect")
             # Restore original token
             self.token = original_token
             return False
+
+    def test_history_entries_structure(self):
+        """Test /api/time-entries/list endpoint for History feature - verify entries array structure"""
+        print(f"\n🔍 Testing History Entries Structure (/api/time-entries/list)...")
+        
+        success, response = self.run_test(
+            "History Entries List",
+            "GET",
+            "time-entries/list",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            print(f"   ✅ Response is array with {len(response)} daily entries")
+            
+            # Verify structure of each daily entry
+            structure_valid = True
+            entries_with_multiple = 0
+            
+            for i, daily_entry in enumerate(response[:5]):  # Check first 5 entries
+                print(f"\n   📅 Daily Entry {i+1}: {daily_entry.get('date', 'N/A')}")
+                
+                # Check required fields
+                required_fields = ['date', 'total_hours', 'regular_hours', 'overtime_hours']
+                for field in required_fields:
+                    if field not in daily_entry:
+                        print(f"   ❌ Missing required field: {field}")
+                        structure_valid = False
+                    else:
+                        print(f"   ✅ {field}: {daily_entry[field]}")
+                
+                # Check entries array - this is the key requirement
+                if 'entries' not in daily_entry:
+                    print(f"   ❌ Missing 'entries' array - CRITICAL for History feature")
+                    structure_valid = False
+                else:
+                    entries_array = daily_entry['entries']
+                    if not isinstance(entries_array, list):
+                        print(f"   ❌ 'entries' is not an array")
+                        structure_valid = False
+                    else:
+                        print(f"   ✅ entries array present with {len(entries_array)} individual entries")
+                        
+                        if len(entries_array) > 1:
+                            entries_with_multiple += 1
+                            print(f"   🎯 Day with multiple entries found - perfect for History testing!")
+                        
+                        # Check structure of individual entries
+                        for j, entry in enumerate(entries_array[:2]):  # Check first 2 individual entries
+                            print(f"      Entry #{j+1}:")
+                            entry_fields = ['id', 'start_time', 'end_time', 'total_hours']
+                            for field in entry_fields:
+                                if field in entry:
+                                    value = entry[field]
+                                    if field in ['start_time', 'end_time']:
+                                        # Verify ISO format
+                                        try:
+                                            datetime.fromisoformat(value.replace('Z', '+00:00'))
+                                            print(f"         ✅ {field}: {value} (valid ISO format)")
+                                        except:
+                                            print(f"         ❌ {field}: {value} (invalid format)")
+                                            structure_valid = False
+                                    else:
+                                        print(f"         ✅ {field}: {value}")
+                                else:
+                                    print(f"         ❌ Missing {field}")
+                                    structure_valid = False
+                            
+                            # Check optional fields
+                            if 'observations' in entry:
+                                print(f"         ✅ observations: {entry['observations']}")
+                            if 'overtime_reason' in entry:
+                                print(f"         ✅ overtime_reason: {entry['overtime_reason']}")
+            
+            print(f"\n   📊 Summary:")
+            print(f"   - Total daily entries: {len(response)}")
+            print(f"   - Days with multiple clock-in/out entries: {entries_with_multiple}")
+            print(f"   - Structure validation: {'✅ PASSED' if structure_valid else '❌ FAILED'}")
+            
+            if entries_with_multiple > 0:
+                print(f"   🎯 Perfect! Found {entries_with_multiple} days with multiple entries - History view will work correctly")
+            else:
+                print(f"   ⚠️  No days with multiple entries found - History view may show limited data")
+            
+            return structure_valid
+        else:
+            print(f"   ❌ Invalid response format - expected array, got: {type(response)}")
+            return False
+
+    def test_history_with_date_filters(self):
+        """Test /api/time-entries/list with date filters"""
+        print(f"\n🔍 Testing History Entries with Date Filters...")
+        
+        # Test with date range
+        from datetime import datetime, timedelta
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        success, response = self.run_test(
+            "History Entries with Date Filter",
+            "GET",
+            f"time-entries/list?start_date={start_date}&end_date={end_date}",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            print(f"   ✅ Date filtered response: {len(response)} entries")
+            
+            # Verify all entries are within date range
+            date_range_valid = True
+            for entry in response:
+                entry_date = entry.get('date')
+                if entry_date:
+                    if start_date <= entry_date <= end_date:
+                        print(f"   ✅ Entry date {entry_date} within range")
+                    else:
+                        print(f"   ❌ Entry date {entry_date} outside range {start_date} to {end_date}")
+                        date_range_valid = False
+                        break
+            
+            return date_range_valid
+        else:
+            return False
+
+    def test_create_multiple_entries_for_testing(self):
+        """Create multiple time entries for the same day to test History feature properly"""
+        print(f"\n🔍 Creating Multiple Time Entries for History Testing...")
+        
+        entries_created = 0
+        
+        # Create first entry
+        success1, response1 = self.run_test(
+            "Start First Entry",
+            "POST",
+            "time-entries/start",
+            200,
+            data={
+                "observations": "Morning work session for History testing"
+            }
+        )
+        
+        if success1 and 'entry' in response1:
+            entry_id_1 = response1['entry']['id']
+            print(f"   ✅ First entry started: {entry_id_1}")
+            
+            # End first entry immediately
+            success_end1, _ = self.run_test(
+                "End First Entry",
+                "POST",
+                f"time-entries/end/{entry_id_1}",
+                200
+            )
+            
+            if success_end1:
+                entries_created += 1
+                print(f"   ✅ First entry completed")
+                
+                # Wait a moment then create second entry
+                import time
+                time.sleep(1)
+                
+                # Create second entry
+                success2, response2 = self.run_test(
+                    "Start Second Entry",
+                    "POST",
+                    "time-entries/start",
+                    200,
+                    data={
+                        "observations": "Afternoon work session for History testing"
+                    }
+                )
+                
+                if success2 and 'entry' in response2:
+                    entry_id_2 = response2['entry']['id']
+                    print(f"   ✅ Second entry started: {entry_id_2}")
+                    
+                    # End second entry
+                    success_end2, _ = self.run_test(
+                        "End Second Entry",
+                        "POST",
+                        f"time-entries/end/{entry_id_2}",
+                        200
+                    )
+                    
+                    if success_end2:
+                        entries_created += 1
+                        print(f"   ✅ Second entry completed")
+        
+        print(f"   📊 Created {entries_created} entries for testing")
+        return entries_created >= 2
 
 def main():
     print("🚀 Starting HWI Time Tracker API Tests - PDF Monthly Report Generation")
