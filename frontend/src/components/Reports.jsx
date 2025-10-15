@@ -414,6 +414,16 @@ const Reports = ({ user, onLogout }) => {
                           </select>
                         </div>
                         <div className="flex-1 flex gap-2 items-end">
+                          {user?.is_admin && (
+                            <Button
+                              data-testid="import-report-button"
+                              onClick={() => setShowImportDialog(true)}
+                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-full"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Importar
+                            </Button>
+                          )}
                           <Button
                             data-testid="export-pdf-button"
                             onClick={downloadPdfReport}
