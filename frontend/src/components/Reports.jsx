@@ -240,24 +240,6 @@ const Reports = ({ user, onLogout }) => {
               <TrendingUp className="w-10 h-10" />
               Relatórios
             </h1>
-            <div className="flex gap-3">
-              <Button
-                data-testid="export-pdf-button"
-                onClick={downloadPdfReport}
-                className="bg-red-600 hover:bg-red-700 text-white rounded-full"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Exportar PDF
-              </Button>
-              <Button
-                data-testid="refresh-button"
-                onClick={fetchReports}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-              >
-                {loading ? 'A atualizar...' : 'Atualizar'}
-              </Button>
-            </div>
           </div>
 
           {loading && !weeklyReport && !monthlyReport ? (
