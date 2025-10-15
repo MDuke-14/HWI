@@ -1170,22 +1170,18 @@ class HWITimeTrackerTester:
         return entries_created >= 2
 
 def main():
-    print("🚀 Starting HWI Time Tracker API Tests - PDF Monthly Report Generation")
+    print("🚀 Starting HWI Time Tracker API Tests - History Feature & Login Testing")
     print("=" * 70)
     
     tester = HWITimeTrackerTester()
     
-    # Test sequence - focusing on PDF Monthly Report Generation endpoint
+    # Test sequence - focusing on History feature backend endpoint and login functionality
     test_sequence = [
-        ("User Authentication", tester.test_admin_login),
+        ("Miguel Login Test", tester.test_miguel_credentials),
         ("Get Current User", tester.test_get_current_user),
-        ("Start Time Entry", tester.test_start_time_entry),
-        ("End Time Entry", tester.test_end_time_entry),
-        ("Miguel Credentials Test", tester.test_miguel_credentials),
-        ("PDF Report (No Parameters)", tester.test_pdf_report_no_params),
-        ("PDF Report (With Parameters)", tester.test_pdf_report_with_params),
-        ("PDF Report (Unauthorized)", tester.test_pdf_report_unauthorized),
-        ("PDF Content Validation", tester.test_pdf_content_validation),
+        ("Create Multiple Entries", tester.test_create_multiple_entries_for_testing),
+        ("History Entries Structure", tester.test_history_entries_structure),
+        ("History with Date Filters", tester.test_history_with_date_filters),
     ]
     
     failed_tests = []
