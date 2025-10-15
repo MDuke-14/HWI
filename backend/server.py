@@ -679,7 +679,10 @@ async def list_time_entries(
     end_date: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    query = {"user_id": current_user["sub"]}
+    """
+    Lista entradas agrupadas por dia com total de horas somado
+    """
+    query = {"user_id": current_user["sub"], "status": "completed"}
     
     if start_date and end_date:
         query["date"] = {"$gte": start_date, "$lte": end_date}
@@ -688,8 +691,55 @@ async def list_time_entries(
     elif end_date:
         query["date"] = {"$lte": end_date}
     
-    entries = await db.time_entries.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
-    return entries
+    # Get all entries
+    all_entries = await db.time_entries.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    
+    # Group by date and aggregate
+    daily_entries = {}
+    for entry in all_entries:
+        date = entry["date"]
+        if date not in daily_entries:
+            daily_entries[date] = {
+                "date": date,
+                "entries": [],
+                "total_hours": 0,
+                "regular_hours": 0,
+                "overtime_hours": 0,
+                "is_overtime_day": entry.get("is_overtime_day", False),
+                "overtime_reason": entry.get("overtime_reason"),
+                "outside_residence_zone": entry.get("outside_residence_zone", False),
+                "location_description": entry.get("location_description"),
+                "observations": []
+            }
+        
+        daily_entries[date]["entries"].append(entry)
+        daily_entries[date]["total_hours"] += entry.get("total_hours", 0)
+        daily_entries[date]["regular_hours"] += entry.get("regular_hours", 0)
+        daily_entries[date]["overtime_hours"] += entry.get("overtime_hours", 0)
+        
+        # Collect observations
+        if entry.get("observations"):
+            daily_entries[date]["observations"].append(entry["observations"])
+    
+    # Convert to list and round hours
+    result = []
+    for date_key in sorted(daily_entries.keys(), reverse=True):
+        day_data = daily_entries[date_key]
+        day_data["total_hours"] = round(day_data["total_hours"], 2)
+        day_data["regular_hours"] = round(day_data["regular_hours"], 2)
+        day_data["overtime_hours"] = round(day_data["overtime_hours"], 2)
+        day_data["observations"] = " | ".join(day_data["observations"]) if day_data["observations"] else None
+        
+        # Get first and last entry times for the day
+        day_data["start_time"] = day_data["entries"][0]["start_time"]
+        day_data["end_time"] = day_data["entries"][-1]["end_time"]
+        
+        # Keep detailed entries for reference
+        day_data["entry_count"] = len(day_data["entries"])
+        
+        result.append(day_data)
+    
+    return result
 
 @api_router.get("/time-entries/overtime")
 async def get_overtime_summary(current_user: dict = Depends(get_current_user)):
