@@ -23,6 +23,16 @@ const Reports = ({ user, onLogout }) => {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
+  // Import dialog states
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importUserId, setImportUserId] = useState('');
+
+  // Edit dialog states
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editForms, setEditForms] = useState({});
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
     if (!decimalHours) return '0h00m';
