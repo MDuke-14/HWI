@@ -559,13 +559,14 @@ const Reports = ({ user, onLogout }) => {
                                 )}
                               </div>
 
-                              {/* Edit Button (Admin only) */}
-                              {user?.is_admin && day.status === 'TRABALHADO' && day.entries && day.entries.length > 0 && (
+                              {/* Edit Button (Admin only) - Available on ALL days */}
+                              {user?.is_admin && (
                                 <div className="md:col-span-1 text-right">
                                   <Button
                                     onClick={() => handleEdit(day)}
                                     className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
                                     size="sm"
+                                    title={day.entries && day.entries.length > 0 ? "Editar entradas" : "Adicionar entradas"}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </Button>
