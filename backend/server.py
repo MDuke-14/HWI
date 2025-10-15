@@ -1688,6 +1688,173 @@ async def create_manual_time_entry(
         logging.error(f"Error creating manual entry: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao criar entrada: {str(e)}")
 
+@api_router.post("/admin/time-entries/import-excel")
+async def import_excel_timesheet(
+    file: UploadFile = File(...),
+    user_id: str = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Import time entries from old Excel format (Admin only)
+    """
+    try:
+        # Validate file is Excel
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            raise HTTPException(status_code=400, detail="Apenas ficheiros Excel (.xlsx, .xls) são permitidos")
+        
+        # Save uploaded file temporarily
+        temp_dir = Path("/tmp/timetracker_imports")
+        temp_dir.mkdir(exist_ok=True)
+        temp_file = temp_dir / f"{uuid.uuid4()}_{file.filename}"
+        
+        with open(temp_file, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Parse Excel file
+        result = parse_excel_timesheet(str(temp_file))
+        
+        # Clean up temp file
+        temp_file.unlink()
+        
+        if not result['success']:
+            raise HTTPException(status_code=400, detail=f"Erro ao processar ficheiro: {result.get('error', 'Erro desconhecido')}")
+        
+        entries_data = result['entries']
+        
+        if not entries_data:
+            raise HTTPException(status_code=400, detail="Nenhuma entrada válida encontrada no ficheiro")
+        
+        # If no user_id provided, try to find "Miguel Moreira"
+        if not user_id:
+            user = await db.users.find_one({
+                "$or": [
+                    {"username": {"$regex": "miguel", "$options": "i"}},
+                    {"full_name": {"$regex": "miguel.*moreira", "$options": "i"}}
+                ]
+            }, {"_id": 0})
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="Utilizador Miguel Moreira não encontrado. Especifique user_id.")
+            
+            user_id = user["id"]
+        else:
+            # Validate user exists
+            user = await db.users.find_one({"id": user_id}, {"_id": 0})
+            if not user:
+                raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+        
+        username = user.get("username", "")
+        
+        # Import entries
+        imported_count = 0
+        skipped_count = 0
+        error_count = 0
+        
+        for entry_data in entries_data:
+            try:
+                # Check if entries already exist for this date
+                existing = await db.time_entries.find_one({
+                    "user_id": user_id,
+                    "date": entry_data['date'],
+                    "status": "completed"
+                })
+                
+                if existing:
+                    skipped_count += 1
+                    continue
+                
+                # Process time entries
+                entry_date = datetime.strptime(entry_data['date'], "%Y-%m-%d").date()
+                is_special_day, overtime_reason = is_overtime_day(entry_date)
+                
+                total_day_hours = 0
+                created_entries = []
+                
+                for idx, time_pair in enumerate(entry_data['time_entries']):
+                    start_time_str = time_pair['start_time']
+                    end_time_str = time_pair['end_time']
+                    
+                    # Parse times
+                    start_parts = start_time_str.split(":")
+                    end_parts = end_time_str.split(":")
+                    
+                    # Create datetime objects
+                    start_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
+                        hour=int(start_parts[0]),
+                        minute=int(start_parts[1]),
+                        tzinfo=timezone.utc
+                    )
+                    end_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
+                        hour=int(end_parts[0]),
+                        minute=int(end_parts[1]),
+                        tzinfo=timezone.utc
+                    )
+                    
+                    # Calculate hours
+                    total_seconds = (end_datetime - start_datetime).total_seconds()
+                    entry_hours = round(total_seconds / 3600, 2)
+                    total_day_hours += entry_hours
+                    
+                    # Create entry
+                    time_entry = TimeEntry(
+                        user_id=user_id,
+                        username=username,
+                        date=entry_data['date'],
+                        start_time=start_datetime,
+                        end_time=end_datetime,
+                        status="completed",
+                        observations=f"Importado de Excel (entrada {idx+1}/{len(entry_data['time_entries'])})",
+                        is_overtime_day=is_special_day,
+                        overtime_reason=overtime_reason if is_special_day else None,
+                        total_hours=entry_hours,
+                        regular_hours=0,
+                        overtime_hours=0,
+                        special_hours=0,
+                        outside_residence_zone=entry_data.get('outside_residence_zone', False),
+                        location_description=entry_data.get('location_description')
+                    )
+                    
+                    created_entries.append(time_entry)
+                
+                # Calculate hours breakdown for the entire day
+                hours_breakdown = calculate_hours_breakdown(total_day_hours, is_special_day)
+                
+                # Distribute proportionally
+                for entry in created_entries:
+                    proportion = entry.total_hours / total_day_hours if total_day_hours > 0 else 0
+                    entry.regular_hours = round(hours_breakdown["regular_hours"] * proportion, 2)
+                    entry.overtime_hours = round(hours_breakdown["overtime_hours"] * proportion, 2)
+                    entry.special_hours = round(hours_breakdown["special_hours"] * proportion, 2)
+                
+                # Save all entries
+                for entry in created_entries:
+                    entry_dict = entry.model_dump()
+                    entry_dict['created_at'] = entry_dict['created_at'].isoformat()
+                    entry_dict['start_time'] = entry_dict['start_time'].isoformat()
+                    entry_dict['end_time'] = entry_dict['end_time'].isoformat()
+                    await db.time_entries.insert_one(entry_dict)
+                
+                imported_count += 1
+                
+            except Exception as e:
+                logging.error(f"Error importing entry for {entry_data.get('date')}: {str(e)}")
+                error_count += 1
+                continue
+        
+        return {
+            "message": "Importação concluída",
+            "imported": imported_count,
+            "skipped": skipped_count,
+            "errors": error_count,
+            "total_in_file": len(entries_data)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error in import endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao importar: {str(e)}")
+
 # ============ Vacation Routes ============
 
 @api_router.get("/vacations/balance")
