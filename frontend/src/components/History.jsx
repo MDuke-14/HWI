@@ -26,6 +26,14 @@ const History = ({ user, onLogout }) => {
     observations: ''
   });
 
+  // Helper function to format decimal hours as HH:MM
+  const formatHours = (decimalHours) => {
+    if (!decimalHours) return '0h00m';
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.round((decimalHours - hours) * 60);
+    return `${hours}h${String(minutes).padStart(2, '0')}m`;
+  };
+
   useEffect(() => {
     fetchEntries();
   }, [startDate, endDate]);
