@@ -509,7 +509,7 @@ const Reports = ({ user, onLogout }) => {
                               </div>
 
                               {/* Status / Entries */}
-                              <div className="md:col-span-4">
+                              <div className="md:col-span-3">
                                 {day.status === 'FOLGA' && (
                                   <div className="text-gray-400 font-semibold">🏖️ FOLGA</div>
                                 )}
@@ -558,6 +558,19 @@ const Reports = ({ user, onLogout }) => {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Edit Button (Admin only) */}
+                              {user?.is_admin && day.status === 'TRABALHADO' && day.entries && day.entries.length > 0 && (
+                                <div className="md:col-span-1 text-right">
+                                  <Button
+                                    onClick={() => handleEdit(day)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
+                                    size="sm"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
