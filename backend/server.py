@@ -664,14 +664,33 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
     if active_entry:
         return active_entry
     
-    # If no active entry, get today's completed entries
+    # If no active entry, get today's completed entries aggregated
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     today_entries = await db.time_entries.find({
         "user_id": current_user["sub"],
-        "date": today
-    }, {"_id": 0}).sort("created_at", -1).to_list(10)
+        "date": today,
+        "status": "completed"
+    }, {"_id": 0}).sort("created_at", 1).to_list(100)
     
-    return {"entries": today_entries, "has_active": False}
+    if not today_entries:
+        return {"entries": [], "has_active": False}
+    
+    # Aggregate today's entries
+    total_hours = sum(e.get("total_hours", 0) for e in today_entries)
+    regular_hours = sum(e.get("regular_hours", 0) for e in today_entries)
+    overtime_hours = sum(e.get("overtime_hours", 0) for e in today_entries)
+    
+    return {
+        "entries": today_entries,
+        "has_active": False,
+        "daily_summary": {
+            "date": today,
+            "total_hours": round(total_hours, 2),
+            "regular_hours": round(regular_hours, 2),
+            "overtime_hours": round(overtime_hours, 2),
+            "entry_count": len(today_entries)
+        }
+    }
 
 @api_router.get("/time-entries/list")
 async def list_time_entries(
