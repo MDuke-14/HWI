@@ -116,6 +116,15 @@ class TimeEntryUpdate(BaseModel):
     end_time: Optional[datetime] = None
     observations: Optional[str] = None
 
+class ManualTimeEntryCreate(BaseModel):
+    user_id: str
+    date: str  # YYYY-MM-DD
+    start_time: str  # HH:MM
+    end_time: str  # HH:MM
+    observations: Optional[str] = None
+    outside_residence_zone: Optional[bool] = False
+    location_description: Optional[str] = None
+
 class VacationRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
