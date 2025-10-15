@@ -13,6 +13,11 @@ const Reports = ({ user, onLogout }) => {
   const [billingReport, setBillingReport] = useState(null);
   const [detailedMonthlyReport, setDetailedMonthlyReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // States for month/year selection
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
@@ -26,6 +31,10 @@ const Reports = ({ user, onLogout }) => {
     fetchReports();
     fetchDetailedMonthlyReport();
   }, []);
+
+  useEffect(() => {
+    fetchDetailedMonthlyReport();
+  }, [selectedMonth, selectedYear]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -47,7 +56,12 @@ const Reports = ({ user, onLogout }) => {
 
   const fetchDetailedMonthlyReport = async () => {
     try {
-      const response = await axios.get(`${API}/time-entries/reports/monthly-detailed`);
+      const response = await axios.get(`${API}/time-entries/reports/monthly-detailed`, {
+        params: {
+          month: selectedMonth,
+          year: selectedYear
+        }
+      });
       setDetailedMonthlyReport(response.data);
     } catch (error) {
       console.error('Erro ao carregar relatório detalhado:', error);
