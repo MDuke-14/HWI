@@ -115,6 +115,33 @@ backend:
     stuck_count: 0
     priority: "high"
     needs_retesting: false
+  - task: "PDF Monthly Report Generation Endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/backend/pdf_report.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Added PDF report generation for detailed monthly report:
+          
+          Backend:
+          - Created /app/backend/pdf_report.py with generate_monthly_pdf_report function
+          - Uses reportlab and pillow for PDF generation
+          - Formats hours as HH:MM (e.g., 8h30m)
+          - Shows summary section with totals
+          - Shows daily detailed records with color-coded status
+          - Includes payment type information (Subsídio Alimentação / Ajuda de Custos)
+          
+          Endpoint: GET /api/time-entries/reports/monthly-pdf
+          - Accepts optional month/year parameters
+          - Returns PDF as StreamingResponse
+          - Filename: Relatorio_Mensal_{username}_{month}_{year}.pdf
+          
+          Needs backend testing to verify PDF generation works correctly.
   - task: "Outside Residence Zone Feature"
     implemented: true
     working: true
