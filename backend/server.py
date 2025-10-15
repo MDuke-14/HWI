@@ -1646,7 +1646,70 @@ async def create_manual_time_entry(
                 # Entry crosses midnight - move end_datetime to next day
                 end_datetime = end_datetime + timedelta(days=1)
             
-            # Calculate hours for this entry
+            # Now check if entry spans multiple days (after correcting for midnight)
+            if start_datetime.date() != end_datetime.date():
+                # Split entry at midnight
+                midnight = datetime.combine(start_datetime.date() + timedelta(days=1), datetime.min.time())
+                
+                # First part: start_time to 23:59:59
+                first_part_end = midnight - timedelta(seconds=1)
+                first_seconds = (first_part_end - start_datetime).total_seconds()
+                first_hours = round(first_seconds / 3600, 2)
+                
+                # Determine if first day is special
+                first_is_special, first_ot_reason = is_overtime_day(start_datetime.date())
+                first_breakdown = calculate_hours_breakdown(first_hours, first_is_special)
+                
+                first_entry = TimeEntry(
+                    user_id=entry_data.user_id,
+                    username=user.get("username", ""),
+                    date=start_datetime.strftime("%Y-%m-%d"),
+                    start_time=start_datetime,
+                    end_time=first_part_end,
+                    status="completed",
+                    observations=entry_data.observations or f"Entrada manual {idx+1}/{len(entry_data.time_entries)} (Parte 1) pelo administrador",
+                    is_overtime_day=first_is_special,
+                    overtime_reason=first_ot_reason if first_is_special else None,
+                    total_hours=first_hours,
+                    regular_hours=first_breakdown["regular_hours"],
+                    overtime_hours=first_breakdown["overtime_hours"],
+                    special_hours=first_breakdown["special_hours"],
+                    outside_residence_zone=entry_data.outside_residence_zone,
+                    location_description=entry_data.location_description
+                )
+                created_entries.append(first_entry)
+                total_day_hours += first_hours
+                
+                # Second part: 00:00:00 to end_time
+                second_seconds = (end_datetime - midnight).total_seconds()
+                second_hours = round(second_seconds / 3600, 2)
+                
+                # Determine if second day is special
+                second_is_special, second_ot_reason = is_overtime_day(end_datetime.date())
+                second_breakdown = calculate_hours_breakdown(second_hours, second_is_special)
+                
+                second_entry = TimeEntry(
+                    user_id=entry_data.user_id,
+                    username=user.get("username", ""),
+                    date=end_datetime.strftime("%Y-%m-%d"),
+                    start_time=midnight,
+                    end_time=end_datetime,
+                    status="completed",
+                    observations="Continuação do registo anterior",
+                    is_overtime_day=second_is_special,
+                    overtime_reason=second_ot_reason if second_is_special else None,
+                    total_hours=second_hours,
+                    regular_hours=second_breakdown["regular_hours"],
+                    overtime_hours=second_breakdown["overtime_hours"],
+                    special_hours=second_breakdown["special_hours"],
+                    outside_residence_zone=entry_data.outside_residence_zone,
+                    location_description=entry_data.location_description
+                )
+                created_entries.append(second_entry)
+                total_day_hours += second_hours
+                
+            else:
+                # Single day entry (no midnight crossing)
             total_seconds = (end_datetime - start_datetime).total_seconds()
             entry_hours = round(total_seconds / 3600, 2)
             total_day_hours += entry_hours
