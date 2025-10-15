@@ -2014,6 +2014,20 @@ async def upload_justification(
         {"$set": {"justification_file": file_name}}
     )
     
+    # Get user details for email
+    user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    if user:
+        user_full_name = user.get("full_name", current_user["username"])
+        user_email = user.get("email", "")
+        
+        # Send email to team (geral@hwi.pt)
+        await send_absence_justification_email(
+            user_name=user_full_name,
+            user_email=user_email,
+            absence_date=absence["date"],
+            filename=file.filename
+        )
+    
     return {"message": "Ficheiro carregado com sucesso", "filename": file_name}
 
 @api_router.get("/absences/file/{filename}")
