@@ -347,19 +347,19 @@ const History = ({ user, onLogout }) => {
                     {entry.regular_hours > 0 && (
                       <div>
                         <div className="text-sm text-gray-400">Horas Normais (Total do Dia)</div>
-                        <div className="font-bold text-blue-400 text-lg">{entry.regular_hours}h</div>
+                        <div className="font-bold text-blue-400 text-lg">{formatHours(entry.regular_hours)}</div>
                       </div>
                     )}
                     {entry.overtime_hours > 0 && (
                       <div>
                         <div className="text-sm text-gray-400">Horas Extras (Total do Dia)</div>
-                        <div className="font-bold text-amber-400 text-lg">{entry.overtime_hours}h</div>
+                        <div className="font-bold text-amber-400 text-lg">{formatHours(entry.overtime_hours)}</div>
                       </div>
                     )}
                     {entry.total_hours && (
                       <div>
                         <div className="text-sm text-gray-400">Total do Dia</div>
-                        <div className="font-bold text-green-400 text-lg">{entry.total_hours}h</div>
+                        <div className="font-bold text-green-400 text-lg">{formatHours(entry.total_hours)}</div>
                       </div>
                     )}
                     {entry.pauses && entry.pauses.length > 0 && (
