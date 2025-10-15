@@ -437,8 +437,8 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <br/>• Ignorar dias que já têm entradas
                           </p>
                         </div>
-                        <Button onClick={handleImportExcel} disabled={loading || !importFile} className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-full">
-                          {loading ? 'A importar...' : 'Importar Ficheiro'}
+                        <Button disabled className="w-full bg-gray-600 text-white rounded-full">
+                          Funcionalidade Removida
                         </Button>
                       </div>
                     </DialogContent>
