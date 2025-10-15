@@ -34,6 +34,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [editForm, setEditForm] = useState({
     username: '',
     email: '',
+    phone: '',
     full_name: '',
     password: '',
     is_admin: false
