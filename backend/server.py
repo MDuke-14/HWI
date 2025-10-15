@@ -684,6 +684,7 @@ async def register(user_data: UserCreate):
         email=user_data.email,
         hashed_password=hashed_password,
         full_name=user_data.full_name,
+        phone=user_data.phone,
         is_admin=is_admin
     )
     
@@ -1703,6 +1704,7 @@ async def admin_create_user(user_data: UserCreate, current_user: dict = Depends(
         email=user_data.email,
         hashed_password=hashed_password,
         full_name=user_data.full_name,
+        phone=user_data.phone,
         is_admin=is_admin
     )
     
