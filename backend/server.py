@@ -1053,6 +1053,7 @@ async def download_monthly_pdf_report(
     current_date = start_date
     total_worked_hours = 0
     total_overtime_hours = 0
+    total_special_hours = 0
     days_with_meal_allowance = 0
     days_with_travel_allowance = 0
     
@@ -1081,6 +1082,7 @@ async def download_monthly_pdf_report(
             # Calculate totals
             total_hours = sum(e.get("total_hours", 0) for e in day_entries)
             overtime_hours = sum(e.get("overtime_hours", 0) for e in day_entries)
+            special_hours = sum(e.get("special_hours", 0) for e in day_entries)
             
             # Check payment type
             outside_zone = any(e.get("outside_residence_zone", False) for e in day_entries)
@@ -1094,6 +1096,7 @@ async def download_monthly_pdf_report(
             } for e in day_entries]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
+            day_data["special_hours"] = round(special_hours, 2)
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
             
@@ -1108,6 +1111,7 @@ async def download_monthly_pdf_report(
             
             total_worked_hours += total_hours
             total_overtime_hours += overtime_hours
+            total_special_hours += special_hours
         else:
             # Not worked
             if is_weekend:
