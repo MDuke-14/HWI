@@ -2139,6 +2139,21 @@ async def review_absence(
         }}
     )
     
+    # Get user details for email
+    user = await db.users.find_one({"id": absence["user_id"]}, {"_id": 0})
+    if user:
+        user_full_name = user.get("full_name", absence["username"])
+        user_email = user.get("email", "")
+        
+        # Send email to user
+        await send_absence_decision_email(
+            user_name=user_full_name,
+            user_email=user_email,
+            absence_date=absence["date"],
+            approved=approved,
+            observations=None  # Can be extended to include observations
+        )
+    
     # Notify user
     message = f"A sua falta de {absence['date']} foi {'aprovada' if approved else 'rejeitada'} por {current_user['username']}"
     await create_notification(
