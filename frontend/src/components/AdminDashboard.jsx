@@ -344,6 +344,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <div className="flex-1">
                         <div className="text-white font-semibold">{u.username}{u.is_admin && <span className="ml-2 text-xs bg-red-600 px-2 py-1 rounded">ADMIN</span>}</div>
                         <div className="text-gray-400 text-sm">{u.email}</div>
+                        {u.phone && <div className="text-gray-500 text-xs">📞 {u.phone}</div>}
                         {u.full_name && <div className="text-gray-500 text-xs">{u.full_name}</div>}
                       </div>
                     </div>
