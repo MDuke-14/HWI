@@ -574,8 +574,7 @@ async def end_time_entry(
                     regular_hours=regular_hours,
                     overtime_hours=overtime_hours,
                     outside_residence_zone=entry.get("outside_residence_zone", False),
-                    location_description=entry.get("location_description"),
-                    country=entry.get("country")
+                    location_description=entry.get("location_description")
                 )
                 new_dict = new_entry.model_dump()
                 new_dict['start_time'] = new_dict['start_time'].isoformat()
