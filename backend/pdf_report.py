@@ -148,11 +148,12 @@ def generate_monthly_pdf_report(report_data):
             entries_text,
             total_text,
             overtime_text,
+            special_text,
             payment_text
         ])
     
     # Create table with appropriate column widths
-    daily_table = Table(daily_data, colWidths=[2*cm, 2.5*cm, 6*cm, 2.5*cm, 2.5*cm, 3.5*cm])
+    daily_table = Table(daily_data, colWidths=[1.5*cm, 2*cm, 5*cm, 2*cm, 2*cm, 2*cm, 3.5*cm])
     
     # Style the table
     table_style = [
