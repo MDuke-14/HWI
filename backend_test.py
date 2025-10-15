@@ -1838,6 +1838,7 @@ def main():
         ("Miguel Login Test", tester.test_miguel_credentials),
         ("Get Current User", tester.test_get_current_user),
         ("Midnight Crossing Logic Verification", tester.test_verify_midnight_crossing_logic),
+        ("EXACT Midnight Crossing Scenario", tester.test_simulate_midnight_crossing_scenario),
         ("Midnight Crossing Entry (Normal Zone)", tester.test_midnight_crossing_entry_normal_zone),
         ("Midnight Crossing Entry (Outside Zone)", tester.test_midnight_crossing_entry_outside_zone),
         ("Time Entries List Structure", tester.test_history_entries_structure),
