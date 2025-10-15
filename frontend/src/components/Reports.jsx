@@ -593,6 +593,151 @@ const Reports = ({ user, onLogout }) => {
           )}
         </div>
       </div>
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importar Relatório</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Ficheiro Excel ou PDF</Label>
+              <Input
+                type="file"
+                accept=".xlsx,.xls,.pdf"
+                onChange={(e) => setImportFile(e.target.files[0])}
+                className="bg-[#0a0a0a] border-gray-700 text-white"
+              />
+              <p className="text-xs text-gray-400 mt-2">
+                Formatos aceites: Excel (.xlsx, .xls) ou PDF (.pdf)
+              </p>
+            </div>
+            <div>
+              <Label>Utilizador (opcional - detecta "Miguel" automaticamente)</Label>
+              <Input
+                type="text"
+                value={importUserId}
+                onChange={(e) => setImportUserId(e.target.value)}
+                placeholder="ID do utilizador"
+                className="bg-[#0a0a0a] border-gray-700 text-white"
+              />
+            </div>
+            <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-3">
+              <p className="text-xs text-blue-300">
+                ℹ️ A importação irá:
+                <br/>• Ler todas as datas com horários
+                <br/>• Detectar localizações (Madrid, Valencia)
+                <br/>• Calcular horas extras automaticamente
+                <br/>• Ignorar dias que já têm entradas
+              </p>
+            </div>
+            <Button 
+              onClick={handleImportReport} 
+              disabled={loading || !importFile} 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-full"
+            >
+              {loading ? 'A importar...' : 'Importar Relatório'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setDialogOpen(false);
+          setEditingEntry(null);
+        }
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
+          {editingEntry && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  Editar Entradas - {editingEntry.day_of_week} Dia {editingEntry.day_number}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 mt-4">
+                {/* Summary */}
+                <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-blue-400 mb-2">Resumo do Dia</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Total de Horas:</span>
+                      <span className="ml-2 text-white font-semibold">{formatHours(editingEntry.total_hours)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Horas Extras:</span>
+                      <span className="ml-2 text-amber-400 font-semibold">{formatHours(editingEntry.overtime_hours)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Individual Entries */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3">Registos Individuais</h3>
+                  {(!editingEntry.entries || editingEntry.entries.length === 0) ? (
+                    <div className="bg-red-900/20 border border-red-600 rounded-lg p-4 text-red-400">
+                      ⚠️ Nenhum registo individual encontrado
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {editingEntry.entries.map((individualEntry, idx) => (
+                        <div key={individualEntry.id || idx} className="bg-[#0a0a0a] border border-gray-700 rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="text-sm font-semibold text-gray-400">
+                              Entrada #{idx + 1}
+                            </div>
+                            <div className="text-sm font-bold text-green-400">
+                              {formatHours(individualEntry.total_hours)}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                            <div>
+                              <Label className="text-gray-500 text-xs">Início</Label>
+                              <Input
+                                type="datetime-local"
+                                value={editForms[individualEntry.id]?.start_time || ''}
+                                onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'start_time', e.target.value)}
+                                className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-gray-500 text-xs">Fim</Label>
+                              <Input
+                                type="datetime-local"
+                                value={editForms[individualEntry.id]?.end_time || ''}
+                                onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'end_time', e.target.value)}
+                                className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                          <div className="mb-3">
+                            <Label className="text-gray-500 text-xs">Observações</Label>
+                            <Textarea
+                              value={editForms[individualEntry.id]?.observations || ''}
+                              onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'observations', e.target.value)}
+                              className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                              rows={2}
+                            />
+                          </div>
+                          <Button
+                            onClick={() => handleSaveIndividualEntry(individualEntry.id)}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
+                          >
+                            Guardar Entrada #{idx + 1}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
