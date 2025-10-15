@@ -218,14 +218,6 @@ const Reports = ({ user, onLogout }) => {
             </h1>
             <div className="flex gap-3">
               <Button
-                data-testid="export-excel-button"
-                onClick={downloadExcelReport}
-                className="bg-green-600 hover:bg-green-700 text-white rounded-full"
-              >
-                <FileDown className="w-4 h-4 mr-2" />
-                Exportar Excel
-              </Button>
-              <Button
                 data-testid="export-pdf-button"
                 onClick={downloadPdfReport}
                 className="bg-red-600 hover:bg-red-700 text-white rounded-full"
