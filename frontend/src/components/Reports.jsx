@@ -177,6 +177,7 @@ const Reports = ({ user, onLogout }) => {
         };
       });
     }
+    // If no entries exist, initialize empty (admin can add manually via AdminDashboard)
     setEditForms(forms);
   };
 
