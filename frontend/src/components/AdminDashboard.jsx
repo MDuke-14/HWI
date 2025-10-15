@@ -243,12 +243,23 @@ const AdminDashboard = ({ user, onLogout }) => {
                   {allAbsences.map((absence) => (
                     <div key={absence.id} className="bg-[#1a1a1a] p-5 rounded-lg">
                       <div className="flex justify-between items-start mb-3">
-                        <div>
+                        <div className="flex-1">
                           <div className="text-white font-semibold text-lg">{absence.username}</div>
                           <div className="text-gray-400 text-sm">{new Date(absence.date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
                           <div className="text-amber-400 font-semibold mt-1">{absence.hours}h - {absence.is_justified ? 'Justificada' : 'Injustificada'}</div>
                           {absence.reason && <div className="text-gray-300 text-sm mt-1">Motivo: {absence.reason}</div>}
-                          {absence.justification_file && <div className="text-blue-400 text-xs mt-1">📎 Tem ficheiro anexo</div>}
+                          {absence.justification_file && (
+                            <div className="mt-2">
+                              <Button 
+                                onClick={() => downloadJustificationFile(absence.justification_file)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs"
+                                size="sm"
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                Ver Justificação
+                              </Button>
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col gap-2">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
