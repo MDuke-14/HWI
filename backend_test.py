@@ -1541,18 +1541,23 @@ class HWITimeTrackerTester:
         return False
 
 def main():
-    print("🚀 Starting HWI Time Tracker API Tests - History Feature & Login Testing")
+    print("🚀 Starting HWI Time Tracker API Tests - Midnight Crossing Functionality")
+    print("=" * 70)
+    print("🎯 OBJETIVO: Testar divisão automática de entradas que cruzam meia-noite")
+    print("📋 CENÁRIO: Entrada às 22:00 → 02:00 deve criar 2 entradas separadas")
     print("=" * 70)
     
     tester = HWITimeTrackerTester()
     
-    # Test sequence - focusing on History feature backend endpoint and login functionality
+    # Test sequence - focusing on midnight crossing functionality
     test_sequence = [
         ("Miguel Login Test", tester.test_miguel_credentials),
         ("Get Current User", tester.test_get_current_user),
-        ("Create Multiple Entries", tester.test_create_multiple_entries_for_testing),
-        ("History Entries Structure", tester.test_history_entries_structure),
-        ("History with Date Filters", tester.test_history_with_date_filters),
+        ("Midnight Crossing Logic Verification", tester.test_verify_midnight_crossing_logic),
+        ("Midnight Crossing Entry (Normal Zone)", tester.test_midnight_crossing_entry_normal_zone),
+        ("Midnight Crossing Entry (Outside Zone)", tester.test_midnight_crossing_entry_outside_zone),
+        ("Time Entries List Structure", tester.test_history_entries_structure),
+        ("Excel Report with Midnight Data", tester.test_excel_report_midnight_crossing_data),
     ]
     
     failed_tests = []
