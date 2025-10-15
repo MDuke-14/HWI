@@ -76,6 +76,10 @@ const Reports = ({ user, onLogout }) => {
         headers: {
           Authorization: `Bearer ${token}`
         },
+        params: {
+          month: selectedMonth,
+          year: selectedYear
+        },
         responseType: 'blob'
       });
 
