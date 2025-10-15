@@ -51,15 +51,31 @@ const Overtime = ({ user, onLogout }) => {
             <div className="text-center text-gray-400 py-12">A carregar...</div>
           ) : overtimeSummary ? (
             <>
+              {/* Billing Period Info */}
+              {overtimeSummary.billing_period_start && overtimeSummary.billing_period_end && (
+                <div className="glass-effect p-4 rounded-xl mb-6 bg-blue-900/20 border border-blue-600">
+                  <div className="text-center">
+                    <div className="text-sm text-blue-400 mb-1">Período de Faturação Atual</div>
+                    <div className="text-white font-semibold">
+                      {new Date(overtimeSummary.billing_period_start + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(overtimeSummary.billing_period_end + 'T00:00:00').toLocaleDateString('pt-PT')}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      As horas extras reiniciam a cada dia 26
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Summary Cards */}
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
                 <div className="glass-effect p-8 rounded-xl">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-4 rounded-xl">
                       <TrendingUp className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                      <div className="text-gray-400 text-sm">Total de Horas Extras</div>
+                      <div className="text-gray-400 text-sm">Horas Extras</div>
+                      <div className="text-xs text-gray-500">(Dias Úteis)</div>
                       <div className="text-4xl font-bold text-amber-400" data-testid="total-overtime-hours">
                         {overtimeSummary.total_overtime_hours}h
                       </div>
@@ -70,11 +86,27 @@ const Overtime = ({ user, onLogout }) => {
                 <div className="glass-effect p-8 rounded-xl">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-4 rounded-xl">
+                      <Clock className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-gray-400 text-sm">Horas Especiais</div>
+                      <div className="text-xs text-gray-500">(Fins Semana/Feriados)</div>
+                      <div className="text-4xl font-bold text-purple-400" data-testid="total-special-hours">
+                        {overtimeSummary.total_special_hours || 0}h
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-effect p-8 rounded-xl">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="bg-gradient-to-br from-green-500 to-teal-600 p-4 rounded-xl">
                       <Calendar className="w-8 h-8 text-white" />
                     </div>
                     <div>
                       <div className="text-gray-400 text-sm">Dias Trabalhados</div>
-                      <div className="text-4xl font-bold text-purple-400" data-testid="total-overtime-days">
+                      <div className="text-xs text-gray-500">(Fins Semana/Feriados)</div>
+                      <div className="text-4xl font-bold text-green-400" data-testid="total-overtime-days">
                         {overtimeSummary.total_overtime_days}
                       </div>
                     </div>
