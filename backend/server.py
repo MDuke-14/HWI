@@ -1539,6 +1539,106 @@ async def delete_time_entry(entry_id: str, current_user: dict = Depends(get_curr
     
     return {"message": "Registo eliminado com sucesso"}
 
+@api_router.post("/admin/time-entries/manual")
+async def create_manual_time_entry(
+    entry_data: ManualTimeEntryCreate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Create a manual time entry for a specific user and date (Admin only)
+    """
+    try:
+        # Get user
+        user = await db.users.find_one({"id": entry_data.user_id}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+        
+        # Parse date and times
+        entry_date = datetime.strptime(entry_data.date, "%Y-%m-%d").date()
+        start_time_parts = entry_data.start_time.split(":")
+        end_time_parts = entry_data.end_time.split(":")
+        
+        # Create datetime objects
+        start_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
+            hour=int(start_time_parts[0]),
+            minute=int(start_time_parts[1]),
+            tzinfo=timezone.utc
+        )
+        end_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
+            hour=int(end_time_parts[0]),
+            minute=int(end_time_parts[1]),
+            tzinfo=timezone.utc
+        )
+        
+        # Validate times
+        if end_datetime <= start_datetime:
+            raise HTTPException(status_code=400, detail="Hora de fim deve ser posterior à hora de início")
+        
+        # Check if entry already exists for this date
+        existing = await db.time_entries.find_one({
+            "user_id": entry_data.user_id,
+            "date": entry_data.date,
+            "status": "completed"
+        })
+        
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Já existe uma entrada para este utilizador nesta data"
+            )
+        
+        # Calculate total hours
+        total_seconds = (end_datetime - start_datetime).total_seconds()
+        total_hours = round(total_seconds / 3600, 2)
+        
+        # Check if it's a special day (weekend/holiday)
+        is_special_day, overtime_reason = is_overtime_day(entry_date)
+        
+        # Calculate hours breakdown
+        hours_breakdown = calculate_hours_breakdown(total_hours, is_special_day)
+        
+        # Create entry
+        time_entry = TimeEntry(
+            user_id=entry_data.user_id,
+            username=user.get("username", ""),
+            date=entry_data.date,
+            start_time=start_datetime,
+            end_time=end_datetime,
+            status="completed",
+            observations=entry_data.observations or "Entrada manual pelo administrador",
+            is_overtime_day=is_special_day,
+            overtime_reason=overtime_reason if is_special_day else None,
+            total_hours=total_hours,
+            regular_hours=hours_breakdown["regular_hours"],
+            overtime_hours=hours_breakdown["overtime_hours"],
+            special_hours=hours_breakdown["special_hours"],
+            outside_residence_zone=entry_data.outside_residence_zone,
+            location_description=entry_data.location_description
+        )
+        
+        # Save to database
+        entry_dict = time_entry.model_dump()
+        entry_dict['created_at'] = entry_dict['created_at'].isoformat()
+        entry_dict['start_time'] = entry_dict['start_time'].isoformat()
+        entry_dict['end_time'] = entry_dict['end_time'].isoformat()
+        
+        await db.time_entries.insert_one(entry_dict)
+        
+        return {
+            "message": "Entrada criada com sucesso",
+            "entry_id": time_entry.id,
+            "total_hours": total_hours,
+            "regular_hours": hours_breakdown["regular_hours"],
+            "overtime_hours": hours_breakdown["overtime_hours"],
+            "special_hours": hours_breakdown["special_hours"]
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Formato de data/hora inválido: {str(e)}")
+    except Exception as e:
+        logging.error(f"Error creating manual entry: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar entrada: {str(e)}")
+
 # ============ Vacation Routes ============
 
 @api_router.get("/vacations/balance")
