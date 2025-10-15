@@ -682,6 +682,237 @@ class HWITimeTrackerTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False
 
+    def test_pdf_report_no_params(self):
+        """Test PDF monthly report generation without parameters (current month/year)"""
+        print(f"\n🔍 Testing PDF Monthly Report (No Parameters)...")
+        url = f"{self.base_url}/api/time-entries/reports/monthly-pdf"
+        headers = {
+            'Authorization': f'Bearer {self.token}' if self.token else ''
+        }
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                expected_content_type = 'application/pdf'
+                if expected_content_type in content_type:
+                    print(f"   ✅ Correct Content-Type: {content_type}")
+                else:
+                    print(f"   ❌ Unexpected Content-Type: {content_type}")
+                    return False
+                
+                # Check Content-Disposition header
+                content_disposition = response.headers.get('Content-Disposition', '')
+                if 'attachment' in content_disposition and 'filename=' in content_disposition:
+                    filename = content_disposition.split('filename=')[1].strip()
+                    print(f"   ✅ Content-Disposition header present: {filename}")
+                    
+                    # Verify filename format: Relatorio_Mensal_{username}_{month}_{year}.pdf
+                    if 'Relatorio_Mensal_' in filename and filename.endswith('.pdf'):
+                        print(f"   ✅ Correct filename format")
+                    else:
+                        print(f"   ❌ Incorrect filename format: {filename}")
+                        return False
+                else:
+                    print(f"   ❌ Missing or invalid Content-Disposition: {content_disposition}")
+                    return False
+                
+                # Check if response contains PDF file data
+                content_length = len(response.content)
+                print(f"   📊 File size: {content_length} bytes")
+                
+                if content_length == 0:
+                    print(f"   ❌ Empty PDF file")
+                    return False
+                
+                # Check PDF file signature (first few bytes should be %PDF)
+                if response.content[:4] == b'%PDF':
+                    print(f"   ✅ Valid PDF file signature detected")
+                else:
+                    print(f"   ❌ Invalid PDF signature: {response.content[:10]}")
+                    return False
+                
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_pdf_report_with_params(self):
+        """Test PDF monthly report generation with specific month/year parameters"""
+        print(f"\n🔍 Testing PDF Monthly Report (With Parameters: month=9, year=2025)...")
+        url = f"{self.base_url}/api/time-entries/reports/monthly-pdf?month=9&year=2025"
+        headers = {
+            'Authorization': f'Bearer {self.token}' if self.token else ''
+        }
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                if 'application/pdf' in content_type:
+                    print(f"   ✅ Correct Content-Type: {content_type}")
+                else:
+                    print(f"   ❌ Unexpected Content-Type: {content_type}")
+                    return False
+                
+                # Check Content-Disposition header and filename
+                content_disposition = response.headers.get('Content-Disposition', '')
+                if 'attachment' in content_disposition and 'filename=' in content_disposition:
+                    filename = content_disposition.split('filename=')[1].strip()
+                    print(f"   ✅ Content-Disposition header present: {filename}")
+                    
+                    # Verify filename includes specified month/year
+                    if 'Relatorio_Mensal_' in filename and '_09_2025.pdf' in filename:
+                        print(f"   ✅ Filename includes correct month/year parameters")
+                    else:
+                        print(f"   ❌ Filename doesn't match parameters: {filename}")
+                        return False
+                else:
+                    print(f"   ❌ Missing Content-Disposition header")
+                    return False
+                
+                # Check file size
+                content_length = len(response.content)
+                print(f"   📊 File size: {content_length} bytes")
+                
+                if content_length > 0:
+                    print(f"   ✅ PDF file generated successfully")
+                else:
+                    print(f"   ❌ Empty PDF file")
+                    return False
+                
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_pdf_report_unauthorized(self):
+        """Test PDF monthly report generation without authentication"""
+        print(f"\n🔍 Testing PDF Monthly Report (Unauthorized)...")
+        url = f"{self.base_url}/api/time-entries/reports/monthly-pdf"
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, timeout=10)
+            
+            success = response.status_code in [401, 403]  # Both are valid for unauthorized
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code} (Correctly rejected unauthorized request)")
+                return True
+            else:
+                print(f"❌ Failed - Expected 401 or 403, got {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_pdf_content_validation(self):
+        """Test PDF monthly report content validation"""
+        print(f"\n🔍 Testing PDF Monthly Report (Content Validation)...")
+        url = f"{self.base_url}/api/time-entries/reports/monthly-pdf"
+        headers = {
+            'Authorization': f'Bearer {self.token}' if self.token else ''
+        }
+        
+        self.tests_run += 1
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Basic PDF validation
+                content = response.content
+                content_length = len(content)
+                
+                # Check if it's a valid PDF
+                if content[:4] == b'%PDF':
+                    print(f"   ✅ Valid PDF signature")
+                else:
+                    print(f"   ❌ Invalid PDF signature")
+                    return False
+                
+                # Check reasonable file size (should contain data)
+                if content_length > 1000:  # At least 1KB for a meaningful report
+                    print(f"   ✅ Reasonable file size: {content_length} bytes")
+                else:
+                    print(f"   ❌ File too small: {content_length} bytes")
+                    return False
+                
+                # Check for PDF end marker
+                if b'%%EOF' in content:
+                    print(f"   ✅ PDF properly terminated")
+                else:
+                    print(f"   ⚠️  PDF may be incomplete (no EOF marker)")
+                
+                # Try to find some expected content in the PDF
+                content_str = content.decode('latin-1', errors='ignore')
+                expected_content = ['RELATÓRIO MENSAL', 'RESUMO MENSAL', 'Total Horas']
+                found_content = []
+                
+                for expected in expected_content:
+                    if expected in content_str:
+                        found_content.append(expected)
+                
+                if found_content:
+                    print(f"   ✅ Found expected content: {', '.join(found_content)}")
+                else:
+                    print(f"   ⚠️  Could not verify PDF content (may be encoded)")
+                
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
 def main():
     print("🚀 Starting HWI Time Tracker API Tests - Outside Residence Zone Feature")
     print("=" * 70)
