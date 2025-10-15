@@ -457,28 +457,11 @@ async def check_holiday(date: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de data inválido. Use YYYY-MM-DD")
 
-@api_router.get("/countries")
-async def get_countries():
-    """Get list of European countries for timezone selection"""
-    return {"countries": get_countries_list()}
-
 # ============ Time Entry Routes ============
 
 @api_router.post("/time-entries/start")
 async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depends(get_current_user)):
-    # Get current time in UTC
-    now_utc = datetime.now(timezone.utc)
-    
-    # Adjust time based on country timezone if specified
-    start_time = now_utc
-    if entry_data.country:
-        # Get timezone offset for the country (relative to Portugal)
-        offset = get_country_offset(entry_data.country)
-        # Add offset to adjust time
-        # Example: If it's 09:00 in Portugal and country is Spain (+1h), store 10:00
-        start_time = now_utc + timedelta(hours=offset)
-    
-    today = start_time.strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     
     # Check if there's already an active (not completed) entry for this user
     existing_active = await db.time_entries.find_one({
