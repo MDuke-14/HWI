@@ -1871,5 +1871,123 @@ def main():
         print("\n✅ All tests passed!")
         return 0
 
+def test_timezone_fix():
+    """Test timezone fix for manual time entries"""
+    print("🕐 TIMEZONE FIX TESTING - Manual Time Entries")
+    print("=" * 60)
+    print("Problem: When admin adds 8h00, appears as 9h00 (+1 hour)")
+    print("Objective: Verify times appear exactly as entered")
+    
+    tester = HWITimeTrackerTester()
+    
+    # Authenticate first
+    if not tester.test_miguel_credentials():
+        print("❌ Authentication failed - cannot test admin features")
+        return 1
+    
+    # Test 1: Basic manual entry creation
+    print("\n🎯 Test 1: Basic Manual Entry Creation (8:00-17:00)")
+    
+    from datetime import datetime
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    manual_entry_data = {
+        "user_id": tester.user_id,
+        "date": today,
+        "time_entries": [
+            {
+                "start_time": "08:00",
+                "end_time": "17:00"
+            }
+        ],
+        "observations": "Teste de correção de timezone - entrada manual 8h-17h"
+    }
+    
+    print(f"   📅 Creating manual entry for date: {today}")
+    print(f"   ⏰ Time range: 08:00 - 17:00 (expected 9 hours)")
+    
+    success, response = tester.run_test(
+        "Create Manual Entry (Timezone Test)",
+        "POST",
+        "admin/time-entries/manual",
+        200,
+        data=manual_entry_data
+    )
+    
+    if not success:
+        print("❌ Failed to create manual entry")
+        return 1
+    
+    # Verify the entry
+    success_list, response_list = tester.run_test(
+        "Verify Manual Entry Times",
+        "GET",
+        f"time-entries/list?start_date={today}&end_date={today}",
+        200
+    )
+    
+    if success_list and isinstance(response_list, list):
+        # Find today's entry
+        today_entry = None
+        for daily_entry in response_list:
+            if daily_entry.get('date') == today:
+                today_entry = daily_entry
+                break
+        
+        if today_entry and today_entry.get('entries'):
+            for entry in today_entry['entries']:
+                start_time = entry.get('start_time', '')
+                end_time = entry.get('end_time', '')
+                total_hours = entry.get('total_hours', 0)
+                
+                print(f"   📊 Entry found:")
+                print(f"      Start time: {start_time}")
+                print(f"      End time: {end_time}")
+                print(f"      Total hours: {total_hours}")
+                
+                # Extract time portion
+                try:
+                    if 'T' in start_time:
+                        start_time_only = start_time.split('T')[1][:5]
+                        end_time_only = end_time.split('T')[1][:5]
+                    else:
+                        start_time_only = start_time[:5]
+                        end_time_only = end_time[:5]
+                    
+                    print(f"      Extracted times: {start_time_only} - {end_time_only}")
+                    
+                    # CRITICAL VALIDATION
+                    if start_time_only == "08:00" and end_time_only == "17:00":
+                        print(f"      ✅ TIMEZONE FIX VERIFIED: Times appear exactly as entered!")
+                        if abs(total_hours - 9.0) < 0.1:
+                            print(f"      ✅ Total hours correct: {total_hours}")
+                            print("\n✅ TIMEZONE FIX VERIFICATION COMPLETE - TEST PASSED")
+                            return 0
+                        else:
+                            print(f"      ❌ Total hours incorrect: {total_hours} (expected 9.0)")
+                    else:
+                        print(f"      ❌ TIMEZONE ISSUE DETECTED:")
+                        print(f"         Expected: 08:00 - 17:00")
+                        print(f"         Got: {start_time_only} - {end_time_only}")
+                        
+                        if start_time_only == "09:00" and end_time_only == "18:00":
+                            print(f"      ❌ TIMEZONE BUG CONFIRMED: Times shifted +1 hour!")
+                        elif start_time_only == "07:00" and end_time_only == "16:00":
+                            print(f"      ❌ TIMEZONE BUG CONFIRMED: Times shifted -1 hour!")
+                        
+                        print("\n❌ TIMEZONE ISSUE STILL EXISTS - TEST FAILED")
+                        return 1
+                        
+                except Exception as e:
+                    print(f"      ❌ Error parsing times: {e}")
+                    return 1
+    
+    print("❌ Could not find or verify the created entry")
+    return 1
+
 if __name__ == "__main__":
-    sys.exit(main())
+    # Check if we should run timezone tests specifically
+    if len(sys.argv) > 1 and sys.argv[1] == "timezone":
+        sys.exit(test_timezone_fix())
+    else:
+        sys.exit(main())
