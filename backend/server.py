@@ -1710,40 +1710,46 @@ async def create_manual_time_entry(
                 
             else:
                 # Single day entry (no midnight crossing)
-            total_seconds = (end_datetime - start_datetime).total_seconds()
-            entry_hours = round(total_seconds / 3600, 2)
-            total_day_hours += entry_hours
-            
-            # Create entry
-            time_entry = TimeEntry(
-                user_id=entry_data.user_id,
-                username=user.get("username", ""),
-                date=entry_data.date,
-                start_time=start_datetime,
-                end_time=end_datetime,
-                status="completed",
-                observations=entry_data.observations or f"Entrada manual {idx+1}/{len(entry_data.time_entries)} pelo administrador",
-                is_overtime_day=is_special_day,
-                overtime_reason=overtime_reason if is_special_day else None,
-                total_hours=entry_hours,
-                regular_hours=0,  # Will calculate after all entries
-                overtime_hours=0,
-                special_hours=0,
-                outside_residence_zone=entry_data.outside_residence_zone,
-                location_description=entry_data.location_description
-            )
-            
-            created_entries.append(time_entry)
+                total_seconds = (end_datetime - start_datetime).total_seconds()
+                entry_hours = round(total_seconds / 3600, 2)
+                total_day_hours += entry_hours
+                
+                # Create entry
+                time_entry = TimeEntry(
+                    user_id=entry_data.user_id,
+                    username=user.get("username", ""),
+                    date=entry_data.date,
+                    start_time=start_datetime,
+                    end_time=end_datetime,
+                    status="completed",
+                    observations=entry_data.observations or f"Entrada manual {idx+1}/{len(entry_data.time_entries)} pelo administrador",
+                    is_overtime_day=is_special_day,
+                    overtime_reason=overtime_reason if is_special_day else None,
+                    total_hours=entry_hours,
+                    regular_hours=0,  # Will calculate after all entries
+                    overtime_hours=0,
+                    special_hours=0,
+                    outside_residence_zone=entry_data.outside_residence_zone,
+                    location_description=entry_data.location_description
+                )
+                
+                created_entries.append(time_entry)
         
-        # Calculate hours breakdown for the entire day
-        hours_breakdown = calculate_hours_breakdown(total_day_hours, is_special_day)
+        # Calculate hours breakdown for entries that don't have it yet (single-day entries)
+        # Entries that crossed midnight already have their breakdowns calculated
+        entries_needing_breakdown = [e for e in created_entries if e.regular_hours == 0 and e.overtime_hours == 0 and e.special_hours == 0]
         
-        # Distribute the hours proportionally across entries
-        for entry in created_entries:
-            proportion = entry.total_hours / total_day_hours if total_day_hours > 0 else 0
-            entry.regular_hours = round(hours_breakdown["regular_hours"] * proportion, 2)
-            entry.overtime_hours = round(hours_breakdown["overtime_hours"] * proportion, 2)
-            entry.special_hours = round(hours_breakdown["special_hours"] * proportion, 2)
+        if entries_needing_breakdown:
+            # Get total hours for these entries only
+            breakdown_total_hours = sum(e.total_hours for e in entries_needing_breakdown)
+            hours_breakdown = calculate_hours_breakdown(breakdown_total_hours, is_special_day)
+            
+            # Distribute the hours proportionally across entries needing breakdown
+            for entry in entries_needing_breakdown:
+                proportion = entry.total_hours / breakdown_total_hours if breakdown_total_hours > 0 else 0
+                entry.regular_hours = round(hours_breakdown["regular_hours"] * proportion, 2)
+                entry.overtime_hours = round(hours_breakdown["overtime_hours"] * proportion, 2)
+                entry.special_hours = round(hours_breakdown["special_hours"] * proportion, 2)
         
         # Save all entries to database
         for entry in created_entries:
