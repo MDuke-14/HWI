@@ -373,6 +373,13 @@ frontend:
     stuck_count: 0
     priority: "high"
     needs_retesting: true
+  - task: "Overtime Hours Reset Every 26th Day"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/components/Overtime.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
