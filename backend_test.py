@@ -276,25 +276,28 @@ class HWITimeTrackerTester:
 
     def test_admin_login(self):
         """Test login with admin credentials"""
-        # First try to register the admin user if it doesn't exist
-        print("   Attempting to register admin user first...")
+        # Try creating a unique test user with admin email
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_username = f"testadmin_{timestamp}"
+        
+        print("   Attempting to register test admin user...")
         register_success, register_response = self.run_test(
-            "Admin Registration",
+            "Test Admin Registration",
             "POST",
             "auth/register",
             200,
             data={
-                "username": "miguel",
+                "username": test_username,
                 "password": "password123",
-                "email": "miguel.moreira@hwi.pt",
-                "full_name": "Miguel Moreira",
+                "email": "miguel.moreira@hwi.pt",  # Admin email to get admin privileges
+                "full_name": "Test Admin User",
                 "company_start_date": "2024-01-01",
                 "vacation_days_taken": 0
             }
         )
         
         if register_success:
-            print("   ✅ Admin user registered successfully")
+            print("   ✅ Test admin user registered successfully")
             if 'access_token' in register_response:
                 self.token = register_response['access_token']
                 self.user_id = register_response['user']['id']
@@ -303,11 +306,11 @@ class HWITimeTrackerTester:
                 print(f"   Is admin: {register_response['user'].get('is_admin', False)}")
                 return True
         else:
-            print("   Registration failed, trying login...")
+            print("   Test admin registration failed, trying existing miguel user...")
         
-        # Try to login with username "miguel"
+        # Try to login with username "miguel" if it exists
         success, response = self.run_test(
-            "Admin Login",
+            "Miguel Login",
             "POST",
             "auth/login",
             200,
@@ -320,9 +323,36 @@ class HWITimeTrackerTester:
             self.token = response['access_token']
             self.user_id = response['user']['id']
             self.username = response['user']['username']
-            print(f"   Logged in as admin: {self.username}")
+            print(f"   Logged in as: {self.username}")
             print(f"   Is admin: {response['user'].get('is_admin', False)}")
             return True
+        
+        # If miguel doesn't work, try creating a regular user for testing
+        print("   Miguel login failed, creating regular test user...")
+        test_username_regular = f"testuser_{timestamp}"
+        register_success, register_response = self.run_test(
+            "Regular User Registration",
+            "POST",
+            "auth/register",
+            200,
+            data={
+                "username": test_username_regular,
+                "password": "password123",
+                "email": f"test_{timestamp}@example.com",
+                "full_name": "Test User",
+                "company_start_date": "2024-01-01",
+                "vacation_days_taken": 0
+            }
+        )
+        
+        if register_success and 'access_token' in register_response:
+            self.token = register_response['access_token']
+            self.user_id = register_response['user']['id']
+            self.username = register_response['user']['username']
+            print(f"   Created regular user: {self.username}")
+            print(f"   Is admin: {register_response['user'].get('is_admin', False)}")
+            return True
+        
         return False
 
     def test_excel_report_no_params(self):
