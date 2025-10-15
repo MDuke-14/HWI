@@ -1885,17 +1885,38 @@ def test_timezone_fix():
     # Try to authenticate as admin
     print("\n🔐 Attempting admin authentication...")
     
-    # Try existing miguel user first
-    success, response = tester.run_test(
-        "Miguel Login",
-        "POST",
-        "auth/login",
-        200,
-        data={
-            "username": "miguel",
-            "password": "password123"
-        }
-    )
+    # Try existing admin users with different credentials
+    admin_credentials = [
+        {"username": "miguel", "password": "password123"},
+        {"username": "pedro", "password": "password123"},
+        {"username": "admin", "password": "password123"},
+        {"username": "miguel", "password": "admin123"},
+        {"username": "pedro", "password": "admin123"}
+    ]
+    
+    success = False
+    for creds in admin_credentials:
+        print(f"   Trying {creds['username']}/{creds['password']}...")
+        success, response = tester.run_test(
+            f"Login {creds['username']}",
+            "POST",
+            "auth/login",
+            200,
+            data=creds
+        )
+        
+        if success and 'access_token' in response:
+            tester.token = response['access_token']
+            tester.user_id = response['user']['id']
+            tester.username = response['user']['username']
+            is_admin = response['user'].get('is_admin', False)
+            print(f"   ✅ Logged in as: {tester.username} (admin: {is_admin})")
+            if is_admin:
+                break
+        else:
+            print(f"   ❌ Failed to login as {creds['username']}")
+    
+    if not success:
     
     if success and 'access_token' in response:
         tester.token = response['access_token']
