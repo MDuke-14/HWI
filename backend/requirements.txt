@@ -70,3 +70,4 @@ urllib3==2.5.0
 uvicorn==0.25.0
 watchfiles==1.1.0
 aiosmtplib==4.0.2
+reportlab==4.4.4
