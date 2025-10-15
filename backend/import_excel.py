@@ -39,8 +39,8 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
     }
     """
     try:
-        # Read Excel file without header
-        df = pd.read_excel(file_path, header=None)
+        # Read Excel file without header, ensuring all values are read as-is
+        df = pd.read_excel(file_path, header=None, dtype=object)
         
         logging.info(f"Excel file loaded. Shape: {df.shape}")
         logging.info(f"First row sample: {df.iloc[0].tolist()[:10]}")
