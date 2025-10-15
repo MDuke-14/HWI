@@ -359,6 +359,13 @@ frontend:
     stuck_count: 0
     priority: "high"
     needs_retesting: false
+  - task: "Display Individual Time Entries in History View"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/History.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
