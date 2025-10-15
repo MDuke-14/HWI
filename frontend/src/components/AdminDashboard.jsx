@@ -25,6 +25,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [createForm, setCreateForm] = useState({
     username: '',
     email: '',
+    phone: '',
     full_name: '',
     password: '',
     company_start_date: '',
