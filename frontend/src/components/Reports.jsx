@@ -268,7 +268,117 @@ const Reports = ({ user, onLogout }) => {
               </TabsList>
 
               <TabsContent value="billing">
-                <ReportCard report={billingReport} title="Relatório de Faturação (Dia 26 a 25)" icon={TrendingUp} />
+                {detailedMonthlyReport ? (
+                  <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="glass-effect p-6 rounded-xl">
+                        <div className="text-gray-400 text-sm mb-2">Total Horas Trabalhadas</div>
+                        <div className="text-3xl font-bold text-white">{formatHours(detailedMonthlyReport.summary.total_worked_hours)}</div>
+                      </div>
+                      <div className="glass-effect p-6 rounded-xl">
+                        <div className="text-gray-400 text-sm mb-2">Horas Extras</div>
+                        <div className="text-3xl font-bold text-amber-400">{formatHours(detailedMonthlyReport.summary.total_overtime_hours)}</div>
+                      </div>
+                      <div className="glass-effect p-6 rounded-xl">
+                        <div className="text-gray-400 text-sm mb-2">Subsídio Alimentação</div>
+                        <div className="text-2xl font-bold text-green-400">
+                          {detailedMonthlyReport.summary.days_with_meal_allowance} dias × 10€
+                        </div>
+                        <div className="text-xl font-bold text-white mt-1">
+                          = {detailedMonthlyReport.summary.total_meal_allowance_value}€
+                        </div>
+                      </div>
+                      <div className="glass-effect p-6 rounded-xl">
+                        <div className="text-gray-400 text-sm mb-2">Ajuda de Custos</div>
+                        <div className="text-2xl font-bold text-blue-400">
+                          {detailedMonthlyReport.summary.days_with_travel_allowance} dias × 50€
+                        </div>
+                        <div className="text-xl font-bold text-white mt-1">
+                          = {detailedMonthlyReport.summary.total_travel_allowance_value}€
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Daily Records Table */}
+                    <div className="glass-effect p-6 overflow-x-auto">
+                      <h3 className="text-xl font-bold text-white mb-4">
+                        Período: {new Date(detailedMonthlyReport.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} - {new Date(detailedMonthlyReport.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}
+                      </h3>
+                      <div className="space-y-2">
+                        {detailedMonthlyReport.daily_records.map((day) => (
+                          <div key={day.date} className={`border rounded-lg p-4 ${
+                            day.status === 'FOLGA' ? 'bg-gray-800/30 border-gray-600' :
+                            day.status === 'FERIADO' ? 'bg-amber-900/20 border-amber-600' :
+                            day.status === 'TRABALHADO' ? 'bg-green-900/20 border-green-600' :
+                            'bg-gray-800/10 border-gray-700'
+                          }`}>
+                            <div className="grid md:grid-cols-12 gap-4 items-center">
+                              {/* Date and Day */}
+                              <div className="md:col-span-2">
+                                <div className="font-bold text-white">{day.day_of_week}</div>
+                                <div className="text-gray-400 text-sm">Dia {day.day_number}</div>
+                              </div>
+
+                              {/* Status / Entries */}
+                              <div className="md:col-span-4">
+                                {day.status === 'FOLGA' && (
+                                  <div className="text-gray-400 font-semibold">🏖️ FOLGA</div>
+                                )}
+                                {day.status === 'FERIADO' && (
+                                  <div className="text-amber-400 font-semibold">🎉 FERIADO - {day.holiday_name}</div>
+                                )}
+                                {day.status === 'NÃO TRABALHADO' && (
+                                  <div className="text-gray-500 font-semibold">❌ Não Trabalhado</div>
+                                )}
+                                {day.status === 'TRABALHADO' && day.entries && (
+                                  <div className="space-y-1">
+                                    {day.entries.map((entry, idx) => (
+                                      <div key={idx} className="text-sm text-gray-300">
+                                        {entry.start_time && entry.end_time && (
+                                          <span>
+                                            {new Date(entry.start_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})} - {new Date(entry.end_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Total Hours */}
+                              <div className="md:col-span-2 text-center">
+                                <div className="text-xs text-gray-400">Total</div>
+                                <div className="font-bold text-white">{day.total_hours > 0 ? formatHours(day.total_hours) : '-'}</div>
+                              </div>
+
+                              {/* Overtime */}
+                              <div className="md:col-span-2 text-center">
+                                <div className="text-xs text-gray-400">Horas Extra</div>
+                                <div className="font-bold text-amber-400">{day.overtime_hours > 0 ? formatHours(day.overtime_hours) : '0h00m'}</div>
+                              </div>
+
+                              {/* Payment Type */}
+                              <div className="md:col-span-2 text-right">
+                                {day.payment_type && (
+                                  <div>
+                                    <div className={`text-sm font-semibold ${day.payment_type === 'Ajuda de Custos' ? 'text-blue-400' : 'text-green-400'}`}>
+                                      {day.payment_type}
+                                    </div>
+                                    <div className="text-xs text-gray-400">{day.payment_value}€</div>
+                                    {day.location && <div className="text-xs text-gray-500">{day.location}</div>}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-400 py-12">A carregar relatório detalhado...</div>
+                )}
               </TabsContent>
 
               <TabsContent value="week">
