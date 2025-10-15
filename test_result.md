@@ -468,6 +468,46 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: |
+          Implemented admin-only edit and import features in Reports page (Relatório Mensal Detalhado).
+          
+          Changes Made in Reports.jsx:
+          1. Added Edit Button for each worked day:
+             - Only visible to admin users (user?.is_admin)
+             - Only shown for days with status='TRABALHADO' and entries present
+             - Opens same edit dialog used in History.jsx
+             - Allows editing all entry fields: start_time, end_time, observations
+             - Saves changes and refreshes report automatically
+          
+          2. Moved Import functionality from AdminDashboard:
+             - Added "Importar Relatório" button (renamed from "Importar Excel")
+             - Only visible to admin users
+             - Accepts Excel (.xlsx, .xls) and PDF (.pdf) files
+             - Optional user_id field (auto-detects "Miguel")
+             - Same functionality as before: reads dates/times, detects locations, calculates overtime
+             - Refreshes report after successful import
+          
+          3. UI Layout Updates:
+             - Changed grid layout from 12 columns to accommodate edit button
+             - Status/Entries column reduced from md:col-span-4 to md:col-span-3
+             - Added md:col-span-1 column for edit button on worked days
+          
+          Changes Made in AdminDashboard.jsx:
+          1. Removed Import Dialog:
+             - Removed entire import dialog and trigger button
+             - Removed showImportDialog, importFile, importUserId states
+             - Removed handleImportExcel function
+             - Removed Upload icon import
+          
+          Frontend compiled successfully. Needs testing to verify:
+          - Edit button appears only for admins on worked days
+          - Edit dialog opens and saves changes correctly
+          - Import button appears only for admins
+          - Import functionality works same as before
+          - AdminDashboard no longer has import button
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
           Added "Exportar Excel" button to Reports page:
           - Added FileDown icon import from lucide-react
           - Created downloadExcelReport function using axios with blob responseType
