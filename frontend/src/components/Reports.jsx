@@ -787,19 +787,123 @@ const Reports = ({ user, onLogout }) => {
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Registos Individuais</h3>
                   {(!editingEntry.entries || editingEntry.entries.length === 0) ? (
-                    <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-4">
-                      <div className="text-yellow-400 font-semibold mb-2">
-                        ℹ️ Nenhum registo encontrado para este dia
+                    <>
+                      {/* No Entries - Show Add Form */}
+                      <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-4 mb-4">
+                        <div className="text-yellow-400 font-semibold mb-2">
+                          ℹ️ Nenhum registo encontrado para este dia
+                        </div>
+                        <div className="text-sm text-yellow-300">
+                          Este dia é: <span className="font-bold">{editingEntry.status}</span>
+                          {editingEntry.holiday_name && ` - ${editingEntry.holiday_name}`}
+                        </div>
                       </div>
-                      <div className="text-sm text-yellow-300 mb-3">
-                        Este dia é: <span className="font-bold">{editingEntry.status}</span>
-                        {editingEntry.holiday_name && ` - ${editingEntry.holiday_name}`}
+
+                      {/* Manual Entry Form */}
+                      <div className="bg-[#0a0a0a] border border-gray-700 rounded-lg p-4 space-y-4">
+                        <h4 className="text-md font-semibold text-blue-400">Adicionar Entradas Manualmente</h4>
+                        
+                        {/* Time Entries */}
+                        <div className="space-y-3">
+                          {manualEntryForm.time_entries.map((entry, index) => (
+                            <div key={index} className="bg-[#1a1a1a] border border-gray-600 rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-semibold text-gray-300">Entrada #{index + 1}</span>
+                                {manualEntryForm.time_entries.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    onClick={() => removeManualTimeEntry(index)}
+                                    className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1 h-7 w-7"
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs text-gray-400">Início</Label>
+                                  <Input
+                                    type="time"
+                                    value={entry.start_time}
+                                    onChange={(e) => updateManualTimeEntry(index, 'start_time', e.target.value)}
+                                    className="bg-[#0a0a0a] border-gray-600 text-white mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs text-gray-400">Fim</Label>
+                                  <Input
+                                    type="time"
+                                    value={entry.end_time}
+                                    onChange={(e) => updateManualTimeEntry(index, 'end_time', e.target.value)}
+                                    className="bg-[#0a0a0a] border-gray-600 text-white mt-1"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          <Button
+                            type="button"
+                            onClick={addManualTimeEntry}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar Outra Entrada
+                          </Button>
+                        </div>
+
+                        {/* Observations */}
+                        <div>
+                          <Label className="text-gray-400">Observações</Label>
+                          <Textarea
+                            value={manualEntryForm.observations}
+                            onChange={(e) => setManualEntryForm(prev => ({ ...prev, observations: e.target.value }))}
+                            placeholder="Observações adicionais..."
+                            className="bg-[#1a1a1a] border-gray-600 text-white mt-1"
+                            rows={2}
+                          />
+                        </div>
+
+                        {/* Outside Residence Zone */}
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="outside_zone"
+                            checked={manualEntryForm.outside_residence_zone}
+                            onChange={(e) => setManualEntryForm(prev => ({ ...prev, outside_residence_zone: e.target.checked }))}
+                            className="rounded"
+                          />
+                          <Label htmlFor="outside_zone" className="text-gray-300 text-sm cursor-pointer">
+                            Fora de Zona de Residência (Madrid, Valencia, etc.)
+                          </Label>
+                        </div>
+
+                        {/* Location Description */}
+                        {manualEntryForm.outside_residence_zone && (
+                          <div>
+                            <Label className="text-gray-400 flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              Localização
+                            </Label>
+                            <Input
+                              value={manualEntryForm.location_description}
+                              onChange={(e) => setManualEntryForm(prev => ({ ...prev, location_description: e.target.value }))}
+                              placeholder="Ex: Madrid, Valencia..."
+                              className="bg-[#1a1a1a] border-gray-600 text-white mt-1"
+                            />
+                          </div>
+                        )}
+
+                        {/* Save Button */}
+                        <Button
+                          onClick={handleCreateManualEntry}
+                          disabled={loading}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full py-2"
+                        >
+                          {loading ? 'A guardar...' : 'Guardar Entrada(s)'}
+                        </Button>
                       </div>
-                      <div className="text-xs text-gray-300">
-                        Para adicionar entradas manualmente, vá para:<br/>
-                        <span className="text-blue-400 font-semibold">Admin → Utilizadores → "Adicionar Entrada Manual"</span>
-                      </div>
-                    </div>
+                    </>
                   ) : (
                     <div className="space-y-3">
                       {editingEntry.entries.map((individualEntry, idx) => (
