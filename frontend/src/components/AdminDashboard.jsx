@@ -402,25 +402,59 @@ const AdminDashboard = ({ user, onLogout }) => {
                             className="bg-[#0a0a0a] border-gray-700 text-white"
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label>Hora Início</Label>
-                            <Input
-                              type="time"
-                              value={manualEntryForm.start_time}
-                              onChange={(e) => setManualEntryForm({...manualEntryForm, start_time: e.target.value})}
-                              className="bg-[#0a0a0a] border-gray-700 text-white"
-                            />
+                        
+                        {/* Multiple Time Entries */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <Label>Horários de Trabalho</Label>
+                            <Button
+                              type="button"
+                              onClick={addTimeEntry}
+                              className="bg-green-600 hover:bg-green-700 text-white rounded-full text-xs"
+                              size="sm"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Adicionar Período
+                            </Button>
                           </div>
-                          <div>
-                            <Label>Hora Fim</Label>
-                            <Input
-                              type="time"
-                              value={manualEntryForm.end_time}
-                              onChange={(e) => setManualEntryForm({...manualEntryForm, end_time: e.target.value})}
-                              className="bg-[#0a0a0a] border-gray-700 text-white"
-                            />
-                          </div>
+                          
+                          {manualEntryForm.time_entries.map((entry, index) => (
+                            <div key={index} className="bg-[#0a0a0a] p-3 rounded-lg space-y-2">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-xs text-gray-400">Período {index + 1}</span>
+                                {manualEntryForm.time_entries.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    onClick={() => removeTimeEntry(index)}
+                                    className="bg-red-600 hover:bg-red-700 text-white rounded-full text-xs"
+                                    size="sm"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-xs">Início</Label>
+                                  <Input
+                                    type="time"
+                                    value={entry.start_time}
+                                    onChange={(e) => updateTimeEntry(index, 'start_time', e.target.value)}
+                                    className="bg-[#0a0a0a] border-gray-700 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Fim</Label>
+                                  <Input
+                                    type="time"
+                                    value={entry.end_time}
+                                    onChange={(e) => updateTimeEntry(index, 'end_time', e.target.value)}
+                                    className="bg-[#0a0a0a] border-gray-700 text-white"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                         <div>
                           <Label>Observações (opcional)</Label>
