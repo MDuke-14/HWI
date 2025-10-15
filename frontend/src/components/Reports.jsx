@@ -680,8 +680,18 @@ const Reports = ({ user, onLogout }) => {
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Registos Individuais</h3>
                   {(!editingEntry.entries || editingEntry.entries.length === 0) ? (
-                    <div className="bg-red-900/20 border border-red-600 rounded-lg p-4 text-red-400">
-                      ⚠️ Nenhum registo individual encontrado
+                    <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-4">
+                      <div className="text-yellow-400 font-semibold mb-2">
+                        ℹ️ Nenhum registo encontrado para este dia
+                      </div>
+                      <div className="text-sm text-yellow-300 mb-3">
+                        Este dia é: <span className="font-bold">{editingEntry.status}</span>
+                        {editingEntry.holiday_name && ` - ${editingEntry.holiday_name}`}
+                      </div>
+                      <div className="text-xs text-gray-300">
+                        Para adicionar entradas manualmente, vá para:<br/>
+                        <span className="text-blue-400 font-semibold">Admin → Utilizadores → "Adicionar Entrada Manual"</span>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-3">
