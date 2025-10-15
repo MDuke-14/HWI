@@ -51,18 +51,24 @@ const History = ({ user, onLogout }) => {
   };
 
   const handleEdit = (entry) => {
+    console.log('handleEdit called with entry:', entry);
+    console.log('entry.entries:', entry.entries);
     setEditingEntry(entry);
     // Initialize edit forms for all individual entries
     const forms = {};
-    if (entry.entries) {
+    if (entry.entries && Array.isArray(entry.entries)) {
       entry.entries.forEach(individualEntry => {
+        console.log('Processing individual entry:', individualEntry.id);
         forms[individualEntry.id] = {
           start_time: individualEntry.start_time ? individualEntry.start_time.split('.')[0] : '',
           end_time: individualEntry.end_time ? individualEntry.end_time.split('.')[0] : '',
           observations: individualEntry.observations || ''
         };
       });
+    } else {
+      console.warn('entry.entries is missing or not an array');
     }
+    console.log('Edit forms initialized:', forms);
     setEditForms(forms);
   };
 
