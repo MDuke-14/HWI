@@ -1873,6 +1873,8 @@ def main():
 
 def test_timezone_fix():
     """Test timezone fix for manual time entries"""
+    from datetime import datetime
+    
     print("🕐 TIMEZONE FIX TESTING - Manual Time Entries")
     print("=" * 60)
     print("Problem: When admin adds 8h00, appears as 9h00 (+1 hour)")
