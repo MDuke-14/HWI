@@ -92,12 +92,15 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                 
                 # Find time entries - look for decimal values between 0 and 1
                 time_values = []
+                raw_values_log = []
                 for col_idx in range(2, len(row)):  # Start from column 2
                     val = row[col_idx]
                     
                     # Skip empty/None values
                     if val is None or val == '':
                         continue
+                    
+                    raw_values_log.append(f"Col{col_idx}={val} (type={type(val).__name__})")
                     
                     # Check if it's a number between 0 and 1 (time as fraction of day)
                     if isinstance(val, (int, float)):
@@ -109,6 +112,9 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                     elif isinstance(val, time):
                         time_str = val.strftime('%H:%M')
                         time_values.append(time_str)
+                
+                if raw_values_log and row_idx <= 10:  # Only log first 10 rows
+                    logging.info(f"  Raw values: {', '.join(raw_values_log[:5])}")
                 
                 logging.info(f"  Found {len(time_values)} time values: {time_values}")
                 
