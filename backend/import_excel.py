@@ -101,6 +101,17 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                 for col_idx in range(2, len(row_values)):  # Start from column 2 (after date and day name)
                     val = row_values[col_idx]
                     
+                    # Skip empty/nan values
+                    if pd.isna(val) or val == '':
+                        continue
+                    
+                    # Try to convert to float if it's a string number
+                    if isinstance(val, str):
+                        try:
+                            val = float(val)
+                        except:
+                            continue
+                    
                     # Check if it's a time object
                     if isinstance(val, time):
                         # Convert time to HH:MM string
@@ -111,7 +122,7 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                         time_str = val.strftime('%H:%M')
                         time_values.append(time_str)
                     # Check if it's a decimal (fraction of day)
-                    elif isinstance(val, (int, float)) and not pd.isna(val):
+                    elif isinstance(val, (int, float)):
                         if 0 < val < 1:
                             time_str = excel_time_to_python(val)
                             if time_str:
