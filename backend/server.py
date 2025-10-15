@@ -1585,16 +1585,16 @@ async def create_manual_time_entry(
         is_special_day, overtime_reason = is_overtime_day(entry_date)
         
         # Check if entries already exist for this date
-        existing = await db.time_entries.find_one({
+        existing_entries = await db.time_entries.find({
             "user_id": entry_data.user_id,
             "date": entry_data.date,
             "status": "completed"
-        })
+        }).to_list(100)
         
-        if existing:
+        if existing_entries:
             raise HTTPException(
                 status_code=400,
-                detail="Já existem entradas para este utilizador nesta data. Elimine-as primeiro se desejar substituir."
+                detail=f"Já existem {len(existing_entries)} entrada(s) para este dia. Use a opção 'Eliminar Dia Completo' primeiro ou elimine as entradas individualmente no histórico."
             )
         
         created_entries = []
