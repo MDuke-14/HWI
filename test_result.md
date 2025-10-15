@@ -482,7 +482,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PDF Export Button in Reports"
+    - "Display Individual Time Entries in History View"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
