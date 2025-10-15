@@ -39,27 +39,22 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
     }
     """
     try:
-        # Read Excel file without header, ensuring all values are read as-is
-        df = pd.read_excel(file_path, header=None, dtype=object)
+        # Read Excel file - use openpyxl directly to get raw values
+        import openpyxl
         
-        logging.info(f"Excel file loaded. Shape: {df.shape}")
-        logging.info(f"First row sample: {df.iloc[0].tolist()[:10]}")
-        logging.info(f"Column 0 sample values: {df[0].tolist()[:20]}")
-        logging.info(f"Column 1 sample values: {df[1].tolist()[:20]}")
+        workbook = openpyxl.load_workbook(file_path, data_only=True)
+        sheet = workbook.active
+        
+        logging.info(f"Excel file loaded with openpyxl. Max row: {sheet.max_row}, Max col: {sheet.max_column}")
         
         entries_list = []
         
         # Iterate through all rows
-        for idx, row in df.iterrows():
+        for row_idx, row in enumerate(sheet.iter_rows(values_only=True), start=1):
             try:
-                # Convert row to list
-                row_values = row.tolist()
-                
-                # Look for date in first column - can be datetime object or Excel serial
+                # Look for date in first column
                 date_found = None
-                date_col_idx = 0
-                
-                val = row_values[0]
+                val = row[0] if len(row) > 0 else None
                 
                 # Check if it's a datetime object
                 if isinstance(val, datetime):
@@ -76,12 +71,12 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                 date_str = date_found.strftime('%Y-%m-%d')
                 
                 # Log the row we're processing
-                logging.info(f"Processing row {idx} for date {date_str}")
+                logging.info(f"Processing row {row_idx} for date {date_str}")
                 
                 # Check for location info
                 location = None
                 outside_zone = False
-                row_str = ' '.join([str(x).upper() for x in row_values if pd.notna(x) and x != ''])
+                row_str = ' '.join([str(x).upper() for x in row if x is not None and x != ''])
                 
                 if 'MADRID' in row_str:
                     location = 'Madrid'
@@ -95,38 +90,25 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                     logging.info(f"  Skipping vacation/rest day: {date_str}")
                     continue
                 
-                # Find time entries - look for time values
-                # Time can be datetime.time objects or decimal numbers
+                # Find time entries - look for decimal values between 0 and 1
                 time_values = []
-                for col_idx in range(2, len(row_values)):  # Start from column 2 (after date and day name)
-                    val = row_values[col_idx]
+                for col_idx in range(2, len(row)):  # Start from column 2
+                    val = row[col_idx]
                     
-                    # Skip empty/nan values
-                    if pd.isna(val) or val == '':
+                    # Skip empty/None values
+                    if val is None or val == '':
                         continue
                     
-                    # Try to convert to float if it's a string number
-                    if isinstance(val, str):
-                        try:
-                            val = float(val)
-                        except:
-                            continue
-                    
-                    # Check if it's a time object
-                    if isinstance(val, time):
-                        # Convert time to HH:MM string
-                        time_str = val.strftime('%H:%M')
-                        time_values.append(time_str)
-                    # Check if it's a datetime object (sometimes Excel stores times as datetime)
-                    elif isinstance(val, datetime):
-                        time_str = val.strftime('%H:%M')
-                        time_values.append(time_str)
-                    # Check if it's a decimal (fraction of day)
-                    elif isinstance(val, (int, float)):
+                    # Check if it's a number between 0 and 1 (time as fraction of day)
+                    if isinstance(val, (int, float)):
                         if 0 < val < 1:
                             time_str = excel_time_to_python(val)
                             if time_str:
                                 time_values.append(time_str)
+                    # Also check for datetime.time objects (in case openpyxl converts)
+                    elif isinstance(val, time):
+                        time_str = val.strftime('%H:%M')
+                        time_values.append(time_str)
                 
                 logging.info(f"  Found {len(time_values)} time values: {time_values}")
                 
@@ -138,15 +120,18 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                     end_time = time_values[i + 1]
                     
                     # Validate that end > start
-                    start_h, start_m = map(int, start_time.split(':'))
-                    end_h, end_m = map(int, end_time.split(':'))
-                    
-                    if (end_h * 60 + end_m) > (start_h * 60 + start_m):
-                        time_pairs.append({
-                            'start_time': start_time,
-                            'end_time': end_time
-                        })
-                        logging.info(f"    Pair: {start_time} - {end_time}")
+                    try:
+                        start_h, start_m = map(int, start_time.split(':'))
+                        end_h, end_m = map(int, end_time.split(':'))
+                        
+                        if (end_h * 60 + end_m) > (start_h * 60 + start_m):
+                            time_pairs.append({
+                                'start_time': start_time,
+                                'end_time': end_time
+                            })
+                            logging.info(f"    Pair: {start_time} - {end_time}")
+                    except:
+                        pass
                     
                     i += 2  # Move to next pair
                 
@@ -163,9 +148,10 @@ def parse_excel_timesheet(file_path, username="Miguel Moreira"):
                     logging.info(f"  ✗ No valid time pairs found for {date_str}")
                     
             except Exception as e:
-                logging.warning(f"Error processing row {idx}: {str(e)}")
+                logging.warning(f"Error processing row {row_idx}: {str(e)}")
                 continue
         
+        workbook.close()
         logging.info(f"Total entries found: {len(entries_list)}")
         
         return {
