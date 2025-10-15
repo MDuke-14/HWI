@@ -48,6 +48,9 @@ const AdminDashboard = ({ user, onLogout }) => {
     outside_residence_zone: false,
     location_description: ''
   });
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importUserId, setImportUserId] = useState('');
 
   useEffect(() => {
     fetchUsers();
