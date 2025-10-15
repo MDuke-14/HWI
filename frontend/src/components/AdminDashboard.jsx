@@ -184,6 +184,34 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleCreateManualEntry = async () => {
+    setLoading(true);
+    try {
+      if (!manualEntryForm.user_id || !manualEntryForm.date || !manualEntryForm.start_time || !manualEntryForm.end_time) {
+        toast.error('Preencha todos os campos obrigatórios');
+        setLoading(false);
+        return;
+      }
+      
+      await axios.post(`${API}/admin/time-entries/manual`, manualEntryForm);
+      toast.success('Entrada adicionada com sucesso!');
+      setShowManualEntryDialog(false);
+      setManualEntryForm({
+        user_id: '',
+        date: '',
+        start_time: '',
+        end_time: '',
+        observations: '',
+        outside_residence_zone: false,
+        location_description: ''
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao adicionar entrada');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const downloadJustificationFile = async (filename) => {
     try {
       const response = await axios.get(`${API}/absences/file/${filename}`, {
