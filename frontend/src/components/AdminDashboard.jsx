@@ -504,9 +504,22 @@ const AdminDashboard = ({ user, onLogout }) => {
                             />
                           </div>
                         )}
-                        <Button onClick={handleCreateManualEntry} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full">
-                          {loading ? 'A adicionar...' : 'Adicionar Entrada'}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handleDeleteDayEntries} 
+                            disabled={loading || !manualEntryForm.user_id || !manualEntryForm.date} 
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full"
+                          >
+                            🗑️ Limpar Dia
+                          </Button>
+                          <Button 
+                            onClick={handleCreateManualEntry} 
+                            disabled={loading} 
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                          >
+                            {loading ? 'A adicionar...' : 'Adicionar Entrada'}
+                          </Button>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
