@@ -336,12 +336,98 @@ const AdminDashboard = ({ user, onLogout }) => {
             <div className="glass-effect p-6 rounded-xl">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-white">Utilizadores ({users.length})</h2>
-                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full">
-                      <Plus className="w-4 h-4 mr-2" />Criar Utilizador
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-3">
+                  <Dialog open={showManualEntryDialog} onOpenChange={setShowManualEntryDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                        <Clock className="w-4 h-4 mr-2" />Adicionar Entrada
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                      <DialogHeader><DialogTitle>Adicionar Entrada Manual</DialogTitle></DialogHeader>
+                      <div className="space-y-3 mt-4">
+                        <div>
+                          <Label>Utilizador</Label>
+                          <select
+                            value={manualEntryForm.user_id}
+                            onChange={(e) => setManualEntryForm({...manualEntryForm, user_id: e.target.value})}
+                            className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                          >
+                            <option value="">Selecione um utilizador</option>
+                            {users.map(u => (
+                              <option key={u.id} value={u.id}>{u.username} - {u.full_name || u.email}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <Label>Data</Label>
+                          <Input
+                            type="date"
+                            value={manualEntryForm.date}
+                            onChange={(e) => setManualEntryForm({...manualEntryForm, date: e.target.value})}
+                            className="bg-[#0a0a0a] border-gray-700 text-white"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label>Hora Início</Label>
+                            <Input
+                              type="time"
+                              value={manualEntryForm.start_time}
+                              onChange={(e) => setManualEntryForm({...manualEntryForm, start_time: e.target.value})}
+                              className="bg-[#0a0a0a] border-gray-700 text-white"
+                            />
+                          </div>
+                          <div>
+                            <Label>Hora Fim</Label>
+                            <Input
+                              type="time"
+                              value={manualEntryForm.end_time}
+                              onChange={(e) => setManualEntryForm({...manualEntryForm, end_time: e.target.value})}
+                              className="bg-[#0a0a0a] border-gray-700 text-white"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Observações (opcional)</Label>
+                          <Input
+                            value={manualEntryForm.observations}
+                            onChange={(e) => setManualEntryForm({...manualEntryForm, observations: e.target.value})}
+                            className="bg-[#0a0a0a] border-gray-700 text-white"
+                            placeholder="Entrada manual pelo admin"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={manualEntryForm.outside_residence_zone}
+                            onCheckedChange={(checked) => setManualEntryForm({...manualEntryForm, outside_residence_zone: checked})}
+                          />
+                          <Label>Fora de Zona de Residência</Label>
+                        </div>
+                        {manualEntryForm.outside_residence_zone && (
+                          <div>
+                            <Label>Localização</Label>
+                            <Input
+                              value={manualEntryForm.location_description}
+                              onChange={(e) => setManualEntryForm({...manualEntryForm, location_description: e.target.value})}
+                              className="bg-[#0a0a0a] border-gray-700 text-white"
+                              placeholder="Ex: Madrid, Espanha"
+                            />
+                          </div>
+                        )}
+                        <Button onClick={handleCreateManualEntry} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full">
+                          {loading ? 'A adicionar...' : 'Adicionar Entrada'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full">
+                        <Plus className="w-4 h-4 mr-2" />Criar Utilizador
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
                     <DialogHeader><DialogTitle>Criar Novo Utilizador</DialogTitle></DialogHeader>
                     <div className="space-y-3 mt-4">
