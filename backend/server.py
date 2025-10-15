@@ -666,8 +666,9 @@ async def end_time_entry(
         total_hours = round(total_seconds / 3600, 2)
         
         is_ot = entry.get("is_overtime_day", False)
-        regular_hours = 0.0 if is_ot else total_hours
-        overtime_hours = total_hours if is_ot else 0.0
+        
+        # Calculate hours breakdown using new logic
+        hours_breakdown = calculate_hours_breakdown(total_hours, is_ot)
         
         await db.time_entries.update_one(
             {"id": entry_id},
@@ -675,8 +676,9 @@ async def end_time_entry(
                 "status": "completed",
                 "end_time": end_time.isoformat(),
                 "total_hours": total_hours,
-                "regular_hours": regular_hours,
-                "overtime_hours": overtime_hours,
+                "regular_hours": hours_breakdown["regular_hours"],
+                "overtime_hours": hours_breakdown["overtime_hours"],
+                "special_hours": hours_breakdown["special_hours"],
                 "observations": final_observations
             }}
         )
@@ -684,8 +686,9 @@ async def end_time_entry(
         return {
             "message": "Relógio finalizado",
             "total_hours": total_hours,
-            "regular_hours": regular_hours,
-            "overtime_hours": overtime_hours,
+            "regular_hours": hours_breakdown["regular_hours"],
+            "overtime_hours": hours_breakdown["overtime_hours"],
+            "special_hours": hours_breakdown["special_hours"],
             "is_overtime_day": is_ot
         }
 
