@@ -21,12 +21,9 @@ const Dashboard = ({ user, onLogout }) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [outsideResidenceZone, setOutsideResidenceZone] = useState(false);
   const [locationDescription, setLocationDescription] = useState('');
-  const [country, setCountry] = useState('');
-  const [countries, setCountries] = useState([]);
 
   useEffect(() => {
     fetchTodayEntry();
-    fetchCountries();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
