@@ -52,29 +52,46 @@ const History = ({ user, onLogout }) => {
 
   const handleEdit = (entry) => {
     setEditingEntry(entry);
-    setEditForm({
-      start_time: entry.start_time ? entry.start_time.split('.')[0] : '',
-      end_time: entry.end_time ? entry.end_time.split('.')[0] : '',
-      observations: entry.observations || ''
-    });
+    // Initialize edit forms for all individual entries
+    const forms = {};
+    if (entry.entries) {
+      entry.entries.forEach(individualEntry => {
+        forms[individualEntry.id] = {
+          start_time: individualEntry.start_time ? individualEntry.start_time.split('.')[0] : '',
+          end_time: individualEntry.end_time ? individualEntry.end_time.split('.')[0] : '',
+          observations: individualEntry.observations || ''
+        };
+      });
+    }
+    setEditForms(forms);
   };
 
-  const handleSaveEdit = async () => {
+  const handleUpdateIndividualEntry = (entryId, field, value) => {
+    setEditForms(prev => ({
+      ...prev,
+      [entryId]: {
+        ...prev[entryId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveIndividualEntry = async (entryId) => {
     try {
+      const formData = editForms[entryId];
       const updateData = {
-        observations: editForm.observations
+        observations: formData.observations
       };
       
-      if (editForm.start_time) {
-        updateData.start_time = new Date(editForm.start_time).toISOString();
+      if (formData.start_time) {
+        updateData.start_time = new Date(formData.start_time).toISOString();
       }
-      if (editForm.end_time) {
-        updateData.end_time = new Date(editForm.end_time).toISOString();
+      if (formData.end_time) {
+        updateData.end_time = new Date(formData.end_time).toISOString();
       }
 
-      await axios.put(`${API}/time-entries/${editingEntry.id}`, updateData);
+      await axios.put(`${API}/time-entries/${entryId}`, updateData);
       toast.success('Registo atualizado!');
-      setEditingEntry(null);
       fetchEntries();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao atualizar');
