@@ -820,6 +820,54 @@ agent_communication:
 
   - agent: "main"
     message: |
+      ✅ ADMIN FEATURES IN REPORTS PAGE IMPLEMENTED
+      
+      Moved and added admin-only features to the Reports page (Relatório Mensal Detalhado):
+      
+      1. Edit Button for Time Entries:
+         - Added Edit button next to each worked day entry (admin only)
+         - Opens comprehensive edit dialog showing:
+           * Day summary (total hours, overtime hours)
+           * All individual time entries for that day
+           * Editable fields: start_time, end_time, observations
+         - Uses same proven edit interface from History.jsx
+         - Automatically refreshes report after saving changes
+      
+      2. Import Relatório Button:
+         - Moved from AdminDashboard to Reports page
+         - Renamed from "Importar Excel" to "Importar Relatório"
+         - Only visible to admin users
+         - Maintains all functionality:
+           * Accepts Excel (.xlsx, .xls) and PDF (.pdf) files
+           * Optional user_id field (auto-detects "Miguel")
+           * Reads dates/times, detects locations, calculates overtime
+           * Refreshes report automatically after import
+      
+      3. AdminDashboard Cleanup:
+         - Completely removed import dialog and button
+         - Removed unused state variables and functions
+         - Removed Upload icon import
+         - Cleaner admin interface focused on user management
+      
+      Frontend Changes:
+      - Reports.jsx: +150 lines (added Edit, Upload icons, dialog states, edit/import handlers, two dialogs)
+      - AdminDashboard.jsx: -70 lines (removed import feature completely)
+      - Both files compile successfully
+      
+      NEEDS TESTING:
+      1. Login as admin user (miguel) and navigate to Reports
+      2. Verify "Importar" button visible at top of Relatório Mensal Detalhado
+      3. Verify "Edit" (✏️) button appears on each worked day
+      4. Test Edit functionality: open dialog, modify times/observations, save
+      5. Test Import functionality: upload Excel/PDF, verify entries created
+      6. Verify AdminDashboard no longer has import button
+      7. Login as regular user and verify admin buttons are hidden
+      
+      RECOMMENDATION: Use frontend testing agent to verify all admin features work correctly
+      in the Reports page and that they're properly hidden from non-admin users.
+
+  - agent: "main"
+    message: |
       ✅ PDF MONTHLY REPORT FEATURE IMPLEMENTED
       
       Added PDF export functionality for the detailed monthly report:
