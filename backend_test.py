@@ -1005,6 +1005,7 @@ def main():
     test_sequence = [
         ("User Authentication", tester.test_admin_login),
         ("Get Current User", tester.test_get_current_user),
+        ("Miguel Credentials Test", tester.test_miguel_credentials),
         ("PDF Report (No Parameters)", tester.test_pdf_report_no_params),
         ("PDF Report (With Parameters)", tester.test_pdf_report_with_params),
         ("PDF Report (Unauthorized)", tester.test_pdf_report_unauthorized),
