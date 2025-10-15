@@ -279,14 +279,20 @@ const Reports = ({ user, onLogout }) => {
                     )}
                     
                     {/* Summary Cards */}
-                    <div className="grid md:grid-cols-4 gap-4">
+                    <div className="grid md:grid-cols-5 gap-4">
                       <div className="glass-effect p-6 rounded-xl">
                         <div className="text-gray-400 text-sm mb-2">Total Horas Trabalhadas</div>
                         <div className="text-3xl font-bold text-white">{formatHours(detailedMonthlyReport.summary.total_worked_hours)}</div>
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
                         <div className="text-gray-400 text-sm mb-2">Horas Extras</div>
+                        <div className="text-sm text-gray-500">(Dias Úteis)</div>
                         <div className="text-3xl font-bold text-amber-400">{formatHours(detailedMonthlyReport.summary.total_overtime_hours)}</div>
+                      </div>
+                      <div className="glass-effect p-6 rounded-xl">
+                        <div className="text-gray-400 text-sm mb-2">Horas Especiais</div>
+                        <div className="text-sm text-gray-500">(Feriados/Fins Semana)</div>
+                        <div className="text-3xl font-bold text-purple-400">{formatHours(detailedMonthlyReport.summary.total_special_hours || 0)}</div>
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
                         <div className="text-gray-400 text-sm mb-2">Subsídio Alimentação</div>
