@@ -757,6 +757,13 @@ const Reports = ({ user, onLogout }) => {
         if (!open) {
           setDialogOpen(false);
           setEditingEntry(null);
+          // Reset manual entry form
+          setManualEntryForm({
+            time_entries: [{ start_time: '', end_time: '' }],
+            observations: '',
+            outside_residence_zone: false,
+            location_description: ''
+          });
         }
       }}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
