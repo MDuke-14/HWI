@@ -45,6 +45,16 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchDetailedMonthlyReport = async () => {
+    try {
+      const response = await axios.get(`${API}/time-entries/reports/monthly-detailed`);
+      setDetailedMonthlyReport(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar relatório detalhado:', error);
+      toast.error('Erro ao carregar relatório mensal detalhado');
+    }
+  };
+
   const downloadExcelReport = async () => {
     try {
       const token = localStorage.getItem('token');
