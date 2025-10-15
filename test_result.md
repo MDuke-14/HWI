@@ -370,6 +370,39 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: |
+          Implemented display of all individual time entries per day in the History view.
+          
+          Changes Made:
+          1. Modified History.jsx main card view (lines 386-473):
+             - Added "Resumo do Dia" section showing aggregated totals (regular hours, overtime hours, total hours)
+             - Added "Registos Individuais" section that iterates through entry.entries array
+             - Each individual entry shows:
+               * Entry number (#1, #2, etc.)
+               * Start time (HH:MM format)
+               * End time (HH:MM format)
+               * Total hours for that entry
+               * Observations (if any)
+               * Overtime reason badge (if applicable)
+             - Added fallback message if no individual entries are available
+          
+          2. Backend Already Supports This:
+             - The /api/time-entries/list endpoint already returns entry.entries array with all individual entries per day
+             - No backend changes needed
+          
+          3. UI/UX Improvements:
+             - Individual entries displayed in darker boxes for better distinction
+             - Clear visual hierarchy: daily summary → individual entries list → payment type
+             - Maintains existing edit dialog functionality for detailed editing
+          
+          Frontend compiled successfully. Needs testing to verify:
+          - Individual entries display correctly for days with multiple clock-ins
+          - Time formatting is correct (HH:MM)
+          - All entry details (start, end, observations) show properly
+          - Backend data structure compatibility
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
           Added "Exportar Excel" button to Reports page:
           - Added FileDown icon import from lucide-react
           - Created downloadExcelReport function using axios with blob responseType
