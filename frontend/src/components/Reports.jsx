@@ -33,6 +33,14 @@ const Reports = ({ user, onLogout }) => {
   const [editForms, setEditForms] = useState({});
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Manual entry form for adding new entries in edit dialog
+  const [manualEntryForm, setManualEntryForm] = useState({
+    time_entries: [{ start_time: '', end_time: '' }],
+    observations: '',
+    outside_residence_zone: false,
+    location_description: ''
+  });
+
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
     if (!decimalHours) return '0h00m';
