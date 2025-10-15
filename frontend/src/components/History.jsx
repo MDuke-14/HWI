@@ -472,13 +472,6 @@ const History = ({ user, onLogout }) => {
                     )}
                   </div>
 
-                  {entry.observations && (
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <div className="text-sm text-gray-400 mb-1">Observações</div>
-                      <div className="text-white italic">{entry.observations}</div>
-                    </div>
-                  )}
-
                   {/* Payment Type Info */}
                   <div className="mt-4 pt-4 border-t border-gray-700">
                     <div className="text-sm text-gray-400 mb-1">Tipo de Pagamento</div>
