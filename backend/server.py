@@ -949,6 +949,147 @@ async def get_monthly_detailed_report(
         }
     }
 
+@api_router.get("/time-entries/reports/monthly-pdf")
+async def download_monthly_pdf_report(
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Generate and download PDF monthly detailed report for accounting
+    """
+    now = datetime.now(timezone.utc)
+    
+    # Use current month/year if not provided
+    if not month or not year:
+        month = now.month
+        year = now.year
+    
+    # Get the detailed monthly report data (reuse the same logic)
+    start_date, end_date = get_billing_period_dates(date(year, month, 1))
+    
+    # Get all time entries for the period
+    entries_by_date = {}
+    entries = await db.time_entries.find({
+        "user_id": current_user["sub"],
+        "date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")},
+        "status": "completed"
+    }, {"_id": 0}).sort("date", 1).to_list(1000)
+    
+    for entry in entries:
+        date_key = entry["date"]
+        if date_key not in entries_by_date:
+            entries_by_date[date_key] = []
+        entries_by_date[date_key].append(entry)
+    
+    # Build daily records for entire period
+    daily_records = []
+    current_date = start_date
+    total_worked_hours = 0
+    total_overtime_hours = 0
+    days_with_meal_allowance = 0
+    days_with_travel_allowance = 0
+    
+    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+    
+    while current_date <= end_date:
+        date_str = current_date.strftime("%Y-%m-%d")
+        day_of_week = dias_semana[current_date.weekday()]
+        is_weekend = current_date.weekday() >= 5
+        is_ot_day, ot_reason = is_overtime_day(current_date)
+        is_holiday = is_ot_day and "Feriado" in (ot_reason or "")
+        
+        day_data = {
+            "date": date_str,
+            "day_of_week": day_of_week,
+            "day_number": current_date.day,
+            "is_weekend": is_weekend,
+            "is_holiday": is_holiday,
+            "holiday_name": ot_reason if is_holiday else None
+        }
+        
+        # Check if worked this day
+        if date_str in entries_by_date:
+            day_entries = entries_by_date[date_str]
+            
+            # Calculate totals
+            total_hours = sum(e.get("total_hours", 0) for e in day_entries)
+            overtime_hours = sum(e.get("overtime_hours", 0) for e in day_entries)
+            
+            # Check payment type
+            outside_zone = any(e.get("outside_residence_zone", False) for e in day_entries)
+            location = next((e.get("location_description") for e in day_entries if e.get("location_description")), None)
+            
+            day_data["status"] = "TRABALHADO"
+            day_data["entries"] = [{
+                "start_time": e.get("start_time"),
+                "end_time": e.get("end_time"),
+                "observations": e.get("observations")
+            } for e in day_entries]
+            day_data["total_hours"] = round(total_hours, 2)
+            day_data["overtime_hours"] = round(overtime_hours, 2)
+            day_data["outside_residence_zone"] = outside_zone
+            day_data["location"] = location
+            
+            if outside_zone:
+                day_data["payment_type"] = "Ajuda de Custos"
+                day_data["payment_value"] = 50.0
+                days_with_travel_allowance += 1
+            else:
+                day_data["payment_type"] = "Subsídio de Alimentação"
+                day_data["payment_value"] = 10.0
+                days_with_meal_allowance += 1
+            
+            total_worked_hours += total_hours
+            total_overtime_hours += overtime_hours
+        else:
+            # Not worked
+            if is_weekend:
+                day_data["status"] = "FOLGA"
+            elif is_holiday:
+                day_data["status"] = "FERIADO"
+            else:
+                day_data["status"] = "NÃO TRABALHADO"
+            
+            day_data["entries"] = []
+            day_data["total_hours"] = 0
+            day_data["overtime_hours"] = 0
+            day_data["payment_type"] = None
+            day_data["payment_value"] = 0
+        
+        daily_records.append(day_data)
+        current_date += timedelta(days=1)
+    
+    report_data = {
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
+        "month": month,
+        "year": year,
+        "daily_records": daily_records,
+        "summary": {
+            "total_worked_hours": round(total_worked_hours, 2),
+            "total_overtime_hours": round(total_overtime_hours, 2),
+            "days_with_meal_allowance": days_with_meal_allowance,
+            "days_with_travel_allowance": days_with_travel_allowance,
+            "total_meal_allowance_value": days_with_meal_allowance * 10.0,
+            "total_travel_allowance_value": days_with_travel_allowance * 50.0
+        }
+    }
+    
+    # Generate PDF
+    pdf_buffer = generate_monthly_pdf_report(report_data)
+    
+    # Generate filename
+    username = current_user.get("username", "user")
+    filename = f"Relatorio_Mensal_{username}_{month:02d}_{year}.pdf"
+    
+    # Return as streaming response
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 @api_router.get("/time-entries/reports/excel")
 async def download_excel_report(
     user_id: Optional[str] = None,
