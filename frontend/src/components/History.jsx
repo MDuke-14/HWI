@@ -246,7 +246,7 @@ const History = ({ user, onLogout }) => {
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
-                            data-testid={`edit-button-${entry.id}`}
+                            data-testid={`edit-button-${entry.date}`}
                             onClick={() => handleEdit(entry)}
                             className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
                             size="sm"
@@ -254,48 +254,101 @@ const History = ({ user, onLogout }) => {
                             <Edit className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
-                        {editingEntry?.id === entry.id && (
-                          <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+                        {editingEntry?.date === entry.date && (
+                          <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Editar Registo</DialogTitle>
+                              <DialogTitle>Detalhes do Dia - {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4 mt-4">
-                              <div>
-                                <Label>Hora de Início</Label>
-                                <Input
-                                  data-testid="edit-start-time-input"
-                                  type="datetime-local"
-                                  value={editForm.start_time}
-                                  onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
-                                  className="bg-[#0a0a0a] border-gray-700 text-white"
-                                />
+                            <div className="space-y-6 mt-4">
+                              {/* Summary */}
+                              <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4">
+                                <h3 className="text-lg font-semibold text-blue-400 mb-2">Resumo do Dia</h3>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-gray-400">Total de Entradas:</span>
+                                    <span className="ml-2 text-white font-semibold">{entry.entry_count || 1}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-400">Total de Horas:</span>
+                                    <span className="ml-2 text-white font-semibold">{formatHours(entry.total_hours)}</span>
+                                  </div>
+                                  {entry.regular_hours > 0 && (
+                                    <div>
+                                      <span className="text-gray-400">Horas Normais:</span>
+                                      <span className="ml-2 text-blue-400 font-semibold">{formatHours(entry.regular_hours)}</span>
+                                    </div>
+                                  )}
+                                  {entry.overtime_hours > 0 && (
+                                    <div>
+                                      <span className="text-gray-400">Horas Extras:</span>
+                                      <span className="ml-2 text-amber-400 font-semibold">{formatHours(entry.overtime_hours)}</span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
+
+                              {/* Individual Entries */}
                               <div>
-                                <Label>Hora de Fim</Label>
-                                <Input
-                                  data-testid="edit-end-time-input"
-                                  type="datetime-local"
-                                  value={editForm.end_time}
-                                  onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
-                                  className="bg-[#0a0a0a] border-gray-700 text-white"
-                                />
+                                <h3 className="text-lg font-semibold text-white mb-3">Registos Individuais</h3>
+                                <div className="space-y-3">
+                                  {entry.entries && entry.entries.map((individualEntry, idx) => (
+                                    <div key={individualEntry.id || idx} className="bg-[#0a0a0a] border border-gray-700 rounded-lg p-4">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div className="text-sm font-semibold text-gray-400">
+                                          Entrada #{idx + 1}
+                                        </div>
+                                        <div className="text-sm font-bold text-green-400">
+                                          {formatHours(individualEntry.total_hours)}
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                          <div className="text-gray-500 text-xs">Início</div>
+                                          <div className="text-white font-semibold">
+                                            {individualEntry.start_time ? new Date(individualEntry.start_time).toLocaleTimeString('pt-PT', {
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            }) : '-'}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-500 text-xs">Fim</div>
+                                          <div className="text-white font-semibold">
+                                            {individualEntry.end_time ? new Date(individualEntry.end_time).toLocaleTimeString('pt-PT', {
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            }) : '-'}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {individualEntry.observations && (
+                                        <div className="mt-3 pt-3 border-t border-gray-700">
+                                          <div className="text-gray-500 text-xs mb-1">Observações</div>
+                                          <div className="text-white text-sm italic">{individualEntry.observations}</div>
+                                        </div>
+                                      )}
+                                      {individualEntry.is_overtime_day && (
+                                        <div className="mt-2">
+                                          <span className="text-xs px-2 py-1 bg-amber-900/30 border border-amber-600 rounded text-amber-400">
+                                            {individualEntry.overtime_reason}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                              <div>
-                                <Label>Observações</Label>
-                                <Textarea
-                                  data-testid="edit-observations-input"
-                                  value={editForm.observations}
-                                  onChange={(e) => setEditForm({ ...editForm, observations: e.target.value })}
-                                  className="bg-[#0a0a0a] border-gray-700 text-white"
-                                />
-                              </div>
-                              <Button
-                                data-testid="save-edit-button"
-                                onClick={handleSaveEdit}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                              >
-                                Guardar Alterações
-                              </Button>
+
+                              {entry.observations && (
+                                <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4">
+                                  <div className="text-sm text-gray-400 mb-1">Observações Gerais do Dia</div>
+                                  <div className="text-white italic">{entry.observations}</div>
+                                </div>
+                              )}
                             </div>
                           </DialogContent>
                         )}
