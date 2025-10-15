@@ -5,7 +5,7 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { TrendingUp, Calendar, Clock, BarChart3, FileDown, FileText } from 'lucide-react';
+import { TrendingUp, Calendar, Clock, BarChart3, FileText } from 'lucide-react';
 
 const Reports = ({ user, onLogout }) => {
   const [weeklyReport, setWeeklyReport] = useState(null);
