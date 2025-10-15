@@ -41,11 +41,26 @@ def generate_monthly_pdf_report(report_data):
         alignment=1
     )
     
+    # User info style
+    user_style = ParagraphStyle(
+        'UserStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#2d3748'),
+        spaceAfter=15,
+        alignment=1,
+        fontName='Helvetica-Bold'
+    )
+    
     # Add title
     start_date = datetime.strptime(report_data['start_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
     end_date = datetime.strptime(report_data['end_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
     
+    # Get user info
+    full_name = report_data.get('full_name', report_data.get('username', 'Utilizador'))
+    
     elements.append(Paragraph("RELATÓRIO MENSAL DE HORAS", title_style))
+    elements.append(Paragraph(f"<b>Colaborador:</b> {full_name}", user_style))
     elements.append(Paragraph(f"Período: {start_date} - {end_date}", subtitle_style))
     elements.append(Spacer(1, 0.5*cm))
     
