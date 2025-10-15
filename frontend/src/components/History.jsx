@@ -264,7 +264,12 @@ const History = ({ user, onLogout }) => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Dialog>
+                      <Dialog open={dialogOpen && editingEntry?.date === entry.date} onOpenChange={(open) => {
+                        if (!open) {
+                          setDialogOpen(false);
+                          setEditingEntry(null);
+                        }
+                      }}>
                         <DialogTrigger asChild>
                           <Button
                             data-testid={`edit-button-${entry.date}`}
@@ -275,15 +280,14 @@ const History = ({ user, onLogout }) => {
                             <Edit className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
-                        {editingEntry?.date === entry.date && (
-                          <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Detalhes do Dia - {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-PT', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric'
-                              })}</DialogTitle>
-                            </DialogHeader>
+                        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Detalhes do Dia - {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}</DialogTitle>
+                          </DialogHeader>
                             <div className="space-y-6 mt-4">
                               {/* Summary */}
                               <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4">
