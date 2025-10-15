@@ -110,6 +110,23 @@ const Login = ({ onLogin }) => {
                 </div>
 
                 <div>
+                  <Label htmlFor="phone" className="text-gray-300 mb-2 block">
+                    <Phone className="w-4 h-4 inline mr-2" />
+                    Contacto telefónico
+                  </Label>
+                  <Input
+                    data-testid="phone-input"
+                    id="phone"
+                    type="tel"
+                    placeholder="+351 912 345 678"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="full_name" className="text-gray-300 mb-2 block">
                     <UserPlus className="w-4 h-4 inline mr-2" />
                     Nome completo (opcional)
