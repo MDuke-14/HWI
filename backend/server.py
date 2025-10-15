@@ -1544,7 +1544,8 @@ async def create_manual_time_entry(
     current_user: dict = Depends(get_current_admin)
 ):
     """
-    Create a manual time entry for a specific user and date (Admin only)
+    Create manual time entries for a specific user and date (Admin only)
+    Can create multiple start/end pairs for the same day
     """
     try:
         # Get user
@@ -1552,28 +1553,17 @@ async def create_manual_time_entry(
         if not user:
             raise HTTPException(status_code=404, detail="Utilizador não encontrado")
         
-        # Parse date and times
+        # Validate that we have at least one time entry
+        if not entry_data.time_entries or len(entry_data.time_entries) == 0:
+            raise HTTPException(status_code=400, detail="Deve fornecer pelo menos um par de horários")
+        
+        # Parse date
         entry_date = datetime.strptime(entry_data.date, "%Y-%m-%d").date()
-        start_time_parts = entry_data.start_time.split(":")
-        end_time_parts = entry_data.end_time.split(":")
         
-        # Create datetime objects
-        start_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
-            hour=int(start_time_parts[0]),
-            minute=int(start_time_parts[1]),
-            tzinfo=timezone.utc
-        )
-        end_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
-            hour=int(end_time_parts[0]),
-            minute=int(end_time_parts[1]),
-            tzinfo=timezone.utc
-        )
+        # Check if it's a special day (weekend/holiday)
+        is_special_day, overtime_reason = is_overtime_day(entry_date)
         
-        # Validate times
-        if end_datetime <= start_datetime:
-            raise HTTPException(status_code=400, detail="Hora de fim deve ser posterior à hora de início")
-        
-        # Check if entry already exists for this date
+        # Check if entries already exist for this date
         existing = await db.time_entries.find_one({
             "user_id": entry_data.user_id,
             "date": entry_data.date,
@@ -1583,50 +1573,88 @@ async def create_manual_time_entry(
         if existing:
             raise HTTPException(
                 status_code=400,
-                detail="Já existe uma entrada para este utilizador nesta data"
+                detail="Já existem entradas para este utilizador nesta data. Elimine-as primeiro se desejar substituir."
             )
         
-        # Calculate total hours
-        total_seconds = (end_datetime - start_datetime).total_seconds()
-        total_hours = round(total_seconds / 3600, 2)
+        created_entries = []
+        total_day_hours = 0
         
-        # Check if it's a special day (weekend/holiday)
-        is_special_day, overtime_reason = is_overtime_day(entry_date)
+        # Process each time entry
+        for idx, time_pair in enumerate(entry_data.time_entries):
+            start_time_str = time_pair.get("start_time")
+            end_time_str = time_pair.get("end_time")
+            
+            if not start_time_str or not end_time_str:
+                raise HTTPException(status_code=400, detail=f"Entrada {idx+1}: horários de início e fim são obrigatórios")
+            
+            # Parse times
+            start_time_parts = start_time_str.split(":")
+            end_time_parts = end_time_str.split(":")
+            
+            # Create datetime objects
+            start_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
+                hour=int(start_time_parts[0]),
+                minute=int(start_time_parts[1]),
+                tzinfo=timezone.utc
+            )
+            end_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
+                hour=int(end_time_parts[0]),
+                minute=int(end_time_parts[1]),
+                tzinfo=timezone.utc
+            )
+            
+            # Validate times
+            if end_datetime <= start_datetime:
+                raise HTTPException(status_code=400, detail=f"Entrada {idx+1}: hora de fim deve ser posterior à hora de início")
+            
+            # Calculate hours for this entry
+            total_seconds = (end_datetime - start_datetime).total_seconds()
+            entry_hours = round(total_seconds / 3600, 2)
+            total_day_hours += entry_hours
+            
+            # Create entry
+            time_entry = TimeEntry(
+                user_id=entry_data.user_id,
+                username=user.get("username", ""),
+                date=entry_data.date,
+                start_time=start_datetime,
+                end_time=end_datetime,
+                status="completed",
+                observations=entry_data.observations or f"Entrada manual {idx+1}/{len(entry_data.time_entries)} pelo administrador",
+                is_overtime_day=is_special_day,
+                overtime_reason=overtime_reason if is_special_day else None,
+                total_hours=entry_hours,
+                regular_hours=0,  # Will calculate after all entries
+                overtime_hours=0,
+                special_hours=0,
+                outside_residence_zone=entry_data.outside_residence_zone,
+                location_description=entry_data.location_description
+            )
+            
+            created_entries.append(time_entry)
         
-        # Calculate hours breakdown
-        hours_breakdown = calculate_hours_breakdown(total_hours, is_special_day)
+        # Calculate hours breakdown for the entire day
+        hours_breakdown = calculate_hours_breakdown(total_day_hours, is_special_day)
         
-        # Create entry
-        time_entry = TimeEntry(
-            user_id=entry_data.user_id,
-            username=user.get("username", ""),
-            date=entry_data.date,
-            start_time=start_datetime,
-            end_time=end_datetime,
-            status="completed",
-            observations=entry_data.observations or "Entrada manual pelo administrador",
-            is_overtime_day=is_special_day,
-            overtime_reason=overtime_reason if is_special_day else None,
-            total_hours=total_hours,
-            regular_hours=hours_breakdown["regular_hours"],
-            overtime_hours=hours_breakdown["overtime_hours"],
-            special_hours=hours_breakdown["special_hours"],
-            outside_residence_zone=entry_data.outside_residence_zone,
-            location_description=entry_data.location_description
-        )
+        # Distribute the hours proportionally across entries
+        for entry in created_entries:
+            proportion = entry.total_hours / total_day_hours if total_day_hours > 0 else 0
+            entry.regular_hours = round(hours_breakdown["regular_hours"] * proportion, 2)
+            entry.overtime_hours = round(hours_breakdown["overtime_hours"] * proportion, 2)
+            entry.special_hours = round(hours_breakdown["special_hours"] * proportion, 2)
         
-        # Save to database
-        entry_dict = time_entry.model_dump()
-        entry_dict['created_at'] = entry_dict['created_at'].isoformat()
-        entry_dict['start_time'] = entry_dict['start_time'].isoformat()
-        entry_dict['end_time'] = entry_dict['end_time'].isoformat()
-        
-        await db.time_entries.insert_one(entry_dict)
+        # Save all entries to database
+        for entry in created_entries:
+            entry_dict = entry.model_dump()
+            entry_dict['created_at'] = entry_dict['created_at'].isoformat()
+            entry_dict['start_time'] = entry_dict['start_time'].isoformat()
+            entry_dict['end_time'] = entry_dict['end_time'].isoformat()
+            await db.time_entries.insert_one(entry_dict)
         
         return {
-            "message": "Entrada criada com sucesso",
-            "entry_id": time_entry.id,
-            "total_hours": total_hours,
+            "message": f"{len(created_entries)} entrada(s) criada(s) com sucesso",
+            "entries_created": len(created_entries),
+            "total_hours": total_day_hours,
             "regular_hours": hours_breakdown["regular_hours"],
             "overtime_hours": hours_breakdown["overtime_hours"],
             "special_hours": hours_breakdown["special_hours"]
