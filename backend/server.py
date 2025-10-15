@@ -571,8 +571,9 @@ async def end_time_entry(
             
             day_date = current_start.date()
             is_ot, ot_reason = is_overtime_day(day_date)
-            regular_hours = 0.0 if is_ot else day_hours
-            overtime_hours = day_hours if is_ot else 0.0
+            
+            # Calculate hours breakdown using new logic
+            hours_breakdown = calculate_hours_breakdown(day_hours, is_ot)
             
             # Create entry for this day
             if current_start == start_time:
@@ -583,8 +584,9 @@ async def end_time_entry(
                         "status": "completed",
                         "end_time": midnight.isoformat(),
                         "total_hours": day_hours,
-                        "regular_hours": regular_hours,
-                        "overtime_hours": overtime_hours,
+                        "regular_hours": hours_breakdown["regular_hours"],
+                        "overtime_hours": hours_breakdown["overtime_hours"],
+                        "special_hours": hours_breakdown["special_hours"],
                         "observations": final_observations
                     }}
                 )
@@ -602,8 +604,9 @@ async def end_time_entry(
                     is_overtime_day=is_ot,
                     overtime_reason=ot_reason if is_ot else None,
                     total_hours=day_hours,
-                    regular_hours=regular_hours,
-                    overtime_hours=overtime_hours,
+                    regular_hours=hours_breakdown["regular_hours"],
+                    overtime_hours=hours_breakdown["overtime_hours"],
+                    special_hours=hours_breakdown["special_hours"],
                     outside_residence_zone=entry.get("outside_residence_zone", False),
                     location_description=entry.get("location_description")
                 )
