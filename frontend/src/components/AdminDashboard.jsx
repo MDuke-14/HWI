@@ -246,6 +246,27 @@ const AdminDashboard = ({ user, onLogout }) => {
     });
   };
 
+  const handleDeleteDayEntries = async () => {
+    if (!manualEntryForm.user_id || !manualEntryForm.date) {
+      toast.error('Selecione utilizador e data primeiro');
+      return;
+    }
+    
+    if (!window.confirm('Tem certeza que deseja eliminar TODAS as entradas deste dia?')) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await axios.delete(`${API}/admin/time-entries/date/${manualEntryForm.user_id}/${manualEntryForm.date}`);
+      toast.success(response.data.message || 'Entradas eliminadas com sucesso!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar entradas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const downloadJustificationFile = async (filename) => {
     try {
       const response = await axios.get(`${API}/absences/file/${filename}`, {
