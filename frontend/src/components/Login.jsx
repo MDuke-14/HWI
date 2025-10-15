@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Clock, User, Lock, Mail, UserPlus } from 'lucide-react';
+import { Clock, User, Lock, Mail, UserPlus, Phone } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
