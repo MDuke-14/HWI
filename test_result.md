@@ -586,7 +586,8 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Edit Button in Reports and Import Button moved to Reports"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
