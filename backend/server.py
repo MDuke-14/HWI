@@ -881,28 +881,41 @@ async def debug_db_info():
 async def login(credentials: UserLogin):
     logging.info(f"LOGIN ATTEMPT: username={credentials.username}")
     
+    # Find user
     user = await db.users.find_one({"username": credentials.username})
     logging.info(f"USER FOUND: {user is not None}")
     
     if not user:
         logging.error("User not found in database")
-        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+        raise HTTPException(
+            status_code=401, 
+            detail="Credenciais inválidas - utilizador não encontrado"
+        )
     
-    # Support both 'password' and 'hashed_password' field names
+    # Check for password field - support both field names
     stored_password = user.get("hashed_password") or user.get("password")
-    logging.info(f"STORED PASSWORD EXISTS: {stored_password is not None}")
+    password_field_name = "hashed_password" if user.get("hashed_password") else "password" if user.get("password") else None
+    logging.info(f"STORED PASSWORD EXISTS: {stored_password is not None}, FIELD: {password_field_name}")
     
     if not stored_password:
-        logging.error("No password field found")
-        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+        logging.error(f"No password field found. Available fields: {list(user.keys())}")
+        raise HTTPException(
+            status_code=401, 
+            detail="Credenciais inválidas - campo de senha não encontrado no utilizador"
+        )
     
+    # Verify password
     password_valid = verify_password(credentials.password, stored_password)
     logging.info(f"PASSWORD VALID: {password_valid}")
     
     if not password_valid:
         logging.error("Password verification failed")
-        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+        raise HTTPException(
+            status_code=401, 
+            detail="Credenciais inválidas - senha incorreta"
+        )
     
+    # Create access token
     access_token = create_access_token(data={"sub": user["id"], "username": user["username"], "is_admin": user.get("is_admin", False)})
     
     logging.info(f"LOGIN SUCCESS: {user['username']}")
