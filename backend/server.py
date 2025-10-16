@@ -853,6 +853,30 @@ async def register(user_data: UserCreate):
         user={"id": user.id, "username": user.username, "full_name": user.full_name, "is_admin": is_admin}
     )
 
+@api_router.get("/debug/db-info")
+async def debug_db_info():
+    """Debug endpoint to check database connection"""
+    try:
+        mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/emergent')
+        # Hide password in URL
+        safe_url = mongo_url.split('@')[-1] if '@' in mongo_url else mongo_url
+        
+        # Count users
+        user_count = await db.users.count_documents({})
+        
+        # Get sample user
+        sample_user = await db.users.find_one({}, {"_id": 0, "username": 1, "email": 1, "is_admin": 1})
+        
+        return {
+            "mongo_url": safe_url,
+            "database_name": "emergent",
+            "user_count": user_count,
+            "sample_user": sample_user,
+            "environment": "production" if "preview" not in safe_url else "preview"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @api_router.post("/auth/login", response_model=Token)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"username": credentials.username})
