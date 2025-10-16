@@ -48,10 +48,6 @@ const AdminDashboard = ({ user, onLogout }) => {
     outside_residence_zone: false,
     location_description: ''
   });
-  
-  // States for viewing user reports/history
-  const [viewingUserReports, setViewingUserReports] = useState(null);
-  const [viewingUserHistory, setViewingUserHistory] = useState(null);
 
   useEffect(() => {
     fetchUsers();
