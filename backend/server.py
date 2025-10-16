@@ -1674,7 +1674,11 @@ async def update_time_entry(
     update_data: TimeEntryUpdate,
     current_user: dict = Depends(get_current_user)
 ):
-    entry = await db.time_entries.find_one({"id": entry_id, "user_id": current_user["sub"]})
+    # Admin can edit any entry, regular users can only edit their own
+    if current_user.get("is_admin"):
+        entry = await db.time_entries.find_one({"id": entry_id})
+    else:
+        entry = await db.time_entries.find_one({"id": entry_id, "user_id": current_user["sub"]})
     
     if not entry:
         raise HTTPException(status_code=404, detail="Registo não encontrado")
