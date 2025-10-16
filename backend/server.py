@@ -772,6 +772,107 @@ async def send_absence_decision_email(user_name: str, user_email: str, absence_d
     except Exception as e:
         logging.error(f"Failed to send absence decision email: {str(e)}")
 
+def generate_temporary_password() -> str:
+    """Generate a secure random temporary password"""
+    import secrets
+    import string
+    
+    # Generate a 12-character password with letters, digits and special chars
+    alphabet = string.ascii_letters + string.digits + "!@#$%&*"
+    password = ''.join(secrets.choice(alphabet) for _ in range(12))
+    
+    # Ensure it has at least one uppercase, one lowercase, one digit, and one special char
+    if (any(c.isupper() for c in password) and
+        any(c.islower() for c in password) and
+        any(c.isdigit() for c in password) and
+        any(c in "!@#$%&*" for c in password)):
+        return password
+    else:
+        # Recursively generate until we get a valid one
+        return generate_temporary_password()
+
+async def send_password_reset_email(user_name: str, user_email: str, temporary_password: str):
+    """Send email with temporary password for password reset"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+        
+        subject = "Recuperação de Senha - HWI Relógio de Ponto"
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2563eb;">Recuperação de Senha</h2>
+                    
+                    <p>Olá <strong>{user_name}</strong>,</p>
+                    
+                    <p>Recebemos uma solicitação de recuperação de senha para sua conta no sistema de Relógio de Ponto da HWI.</p>
+                    
+                    <div style="background-color: #f0f9ff; padding: 20px; border-left: 4px solid #2563eb; margin: 25px 0;">
+                        <p style="margin: 0;"><strong>Sua senha temporária é:</strong></p>
+                        <p style="font-size: 24px; font-family: 'Courier New', monospace; color: #1e40af; margin: 10px 0; font-weight: bold;">
+                            {temporary_password}
+                        </p>
+                    </div>
+                    
+                    <div style="background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+                        <p style="margin: 0;"><strong>⚠️ Atenção:</strong></p>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Esta senha é <strong>temporária</strong></li>
+                            <li>Você será <strong>obrigado a criar uma nova senha</strong> no próximo login</li>
+                            <li>Por segurança, não compartilhe esta senha com ninguém</li>
+                        </ul>
+                    </div>
+                    
+                    <h3 style="color: #2563eb; margin-top: 30px;">Como fazer o login:</h3>
+                    <ol style="line-height: 2;">
+                        <li>Acesse o sistema de Relógio de Ponto</li>
+                        <li>Use seu <strong>nome de utilizador</strong> e a <strong>senha temporária</strong> acima</li>
+                        <li>Você será direcionado para criar uma nova senha</li>
+                        <li>Escolha uma senha forte e segura</li>
+                    </ol>
+                    
+                    <p style="margin-top: 30px; color: #666; font-size: 14px;">
+                        Se você não solicitou esta recuperação de senha, entre em contato com o administrador imediatamente.
+                    </p>
+                    
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+                    <p style="color: #666; font-size: 12px;">
+                        <strong>Equipe HWI Unipessoal, Lda</strong><br>
+                        Sistema de Relógio de Ponto
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = smtp_from
+        message['To'] = user_email
+        
+        html_part = MIMEText(html_body, 'html')
+        message.attach(html_part)
+        
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True
+        )
+        
+        logging.info(f"Password reset email sent to {user_email}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send password reset email: {str(e)}")
+        raise HTTPException(status_code=500, detail="Falha ao enviar email de recuperação")
+
 def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
     """Calculate vacation days based on company start date"""
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
