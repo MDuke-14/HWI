@@ -1824,6 +1824,279 @@ class HWITimeTrackerTester:
         
         return False
 
+    def test_admin_status_report(self):
+        """Test GET /api/admin/time-entries/status-report endpoint"""
+        print(f"\n🔍 Testing Admin Status Report...")
+        
+        success, response = self.run_test(
+            "Admin Status Report",
+            "GET",
+            "admin/time-entries/status-report",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            print(f"   ✅ Status report retrieved successfully")
+            
+            # Check response structure
+            if 'status_distribution' in response:
+                status_dist = response['status_distribution']
+                print(f"   📊 Status Distribution:")
+                for status, count in status_dist.items():
+                    print(f"      {status}: {count} entries")
+                
+                # Check for problematic entries
+                invalid_count = sum(count for status, count in status_dist.items() 
+                                  if status not in ['completed', 'active'])
+                if invalid_count > 0:
+                    print(f"   ⚠️  Found {invalid_count} entries with invalid status")
+                else:
+                    print(f"   ✅ All entries have valid status")
+            
+            if 'invalid_entries_sample' in response:
+                invalid_samples = response['invalid_entries_sample']
+                print(f"   📋 Invalid entries sample: {len(invalid_samples)} entries")
+                for entry in invalid_samples[:3]:  # Show first 3
+                    print(f"      ID: {entry.get('id')}, User: {entry.get('user')}, Status: {entry.get('status')}")
+            
+            if 'old_active_entries_sample' in response:
+                old_active_samples = response['old_active_entries_sample']
+                print(f"   📋 Old active entries sample: {len(old_active_samples)} entries")
+                for entry in old_active_samples[:3]:  # Show first 3
+                    print(f"      ID: {entry.get('id')}, User: {entry.get('user')}, Start: {entry.get('start_time')}")
+            
+            return True, response
+        
+        return False, {}
+
+    def test_admin_fix_invalid_status(self):
+        """Test POST /api/admin/time-entries/fix-invalid-status endpoint"""
+        print(f"\n🔍 Testing Admin Fix Invalid Status...")
+        
+        success, response = self.run_test(
+            "Admin Fix Invalid Status",
+            "POST",
+            "admin/time-entries/fix-invalid-status",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            print(f"   ✅ Fix operation completed successfully")
+            
+            # Check response structure
+            invalid_fixed = response.get('invalid_status_fixed', 0)
+            old_active_fixed = response.get('old_active_fixed', 0)
+            total_fixed = response.get('total_fixed', 0)
+            
+            print(f"   📊 Fix Results:")
+            print(f"      Invalid status entries fixed: {invalid_fixed}")
+            print(f"      Old active entries fixed: {old_active_fixed}")
+            print(f"      Total entries fixed: {total_fixed}")
+            
+            if total_fixed > 0:
+                print(f"   ✅ Successfully fixed {total_fixed} problematic entries")
+            else:
+                print(f"   ✅ No problematic entries found (system is clean)")
+            
+            return True, response
+        
+        return False, {}
+
+    def test_admin_delete_invalid(self):
+        """Test DELETE /api/admin/time-entries/delete-invalid endpoint"""
+        print(f"\n🔍 Testing Admin Delete Invalid Entries...")
+        
+        success, response = self.run_test(
+            "Admin Delete Invalid Entries",
+            "DELETE",
+            "admin/time-entries/delete-invalid",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            print(f"   ✅ Delete operation completed successfully")
+            
+            # Check response structure
+            deleted_count = response.get('deleted_count', 0)
+            message = response.get('message', '')
+            
+            print(f"   📊 Delete Results:")
+            print(f"      Entries deleted: {deleted_count}")
+            print(f"      Message: {message}")
+            
+            if deleted_count > 0:
+                print(f"   ✅ Successfully deleted {deleted_count} invalid entries")
+            else:
+                print(f"   ✅ No invalid entries found to delete (system is clean)")
+            
+            return True, response
+        
+        return False, {}
+
+    def test_admin_status_analysis_flow(self):
+        """Test complete admin status analysis and correction flow"""
+        print(f"\n🎯 Testing Complete Admin Status Analysis & Correction Flow...")
+        print("   This test will analyze, fix, and verify the time entries status cleanup")
+        
+        # Step 1: Initial status analysis
+        print(f"\n   📊 Step 1: Initial Status Analysis")
+        success1, initial_report = self.test_admin_status_report()
+        if not success1:
+            print("   ❌ Failed to get initial status report")
+            return False
+        
+        # Extract initial counts
+        initial_status_dist = initial_report.get('status_distribution', {})
+        initial_invalid_samples = initial_report.get('invalid_entries_sample', [])
+        initial_old_active_samples = initial_report.get('old_active_entries_sample', [])
+        
+        initial_invalid_count = sum(count for status, count in initial_status_dist.items() 
+                                  if status not in ['completed', 'active'])
+        initial_old_active_count = len(initial_old_active_samples)
+        
+        print(f"   📋 Initial Analysis Summary:")
+        print(f"      Total entries with invalid status: {initial_invalid_count}")
+        print(f"      Sample old active entries (>48h): {initial_old_active_count}")
+        
+        # Step 2: Fix invalid status entries
+        print(f"\n   🔧 Step 2: Automatic Correction")
+        success2, fix_response = self.test_admin_fix_invalid_status()
+        if not success2:
+            print("   ❌ Failed to fix invalid status entries")
+            return False
+        
+        total_fixed = fix_response.get('total_fixed', 0)
+        
+        # Step 3: Post-correction verification
+        print(f"\n   ✅ Step 3: Post-Correction Verification")
+        success3, final_report = self.test_admin_status_report()
+        if not success3:
+            print("   ❌ Failed to get final status report")
+            return False
+        
+        # Extract final counts
+        final_status_dist = final_report.get('status_distribution', {})
+        final_invalid_samples = final_report.get('invalid_entries_sample', [])
+        final_old_active_samples = final_report.get('old_active_entries_sample', [])
+        
+        final_invalid_count = sum(count for status, count in final_status_dist.items() 
+                                if status not in ['completed', 'active'])
+        final_old_active_count = len(final_old_active_samples)
+        
+        print(f"   📋 Final Analysis Summary:")
+        print(f"      Total entries with invalid status: {final_invalid_count}")
+        print(f"      Sample old active entries (>48h): {final_old_active_count}")
+        
+        # Step 4: Verification and summary
+        print(f"\n   📊 Correction Summary:")
+        print(f"      Entries fixed by correction: {total_fixed}")
+        print(f"      Invalid entries before: {initial_invalid_count}")
+        print(f"      Invalid entries after: {final_invalid_count}")
+        print(f"      Old active entries before: {initial_old_active_count}")
+        print(f"      Old active entries after: {final_old_active_count}")
+        
+        # Verify the correction was effective
+        correction_effective = (final_invalid_count == 0 and final_old_active_count == 0)
+        
+        if correction_effective:
+            print(f"   ✅ SUCCESS: System is now clean - no invalid or old active entries")
+        elif final_invalid_count < initial_invalid_count or final_old_active_count < initial_old_active_count:
+            print(f"   ✅ PARTIAL SUCCESS: Reduced problematic entries")
+        else:
+            print(f"   ⚠️  WARNING: No improvement detected")
+        
+        # Optional Step 5: Test delete functionality if there are still invalid entries
+        if final_invalid_count > 0:
+            print(f"\n   🗑️  Step 5: Testing Delete Invalid Entries (Optional)")
+            success5, delete_response = self.test_admin_delete_invalid()
+            if success5:
+                deleted_count = delete_response.get('deleted_count', 0)
+                print(f"      Deleted {deleted_count} invalid entries")
+                
+                # Final verification after delete
+                success6, delete_final_report = self.test_admin_status_report()
+                if success6:
+                    delete_final_status_dist = delete_final_report.get('status_distribution', {})
+                    delete_final_invalid_count = sum(count for status, count in delete_final_status_dist.items() 
+                                                   if status not in ['completed', 'active'])
+                    print(f"      Invalid entries after delete: {delete_final_invalid_count}")
+        
+        return correction_effective
+
+    def test_admin_credentials_and_access(self):
+        """Test admin credentials and access to admin endpoints"""
+        print(f"\n🔐 Testing Admin Credentials and Access...")
+        
+        # First, try to access admin endpoint without proper credentials
+        original_token = self.token
+        self.token = None
+        
+        success_unauth, _ = self.run_test(
+            "Admin Status Report (Unauthorized)",
+            "GET",
+            "admin/time-entries/status-report",
+            403  # Should be forbidden
+        )
+        
+        if success_unauth:
+            print(f"   ✅ Unauthorized access correctly rejected")
+        else:
+            print(f"   ❌ Unauthorized access not properly rejected")
+        
+        # Restore token
+        self.token = original_token
+        
+        # Test with proper admin credentials
+        if self.token:
+            success_auth, response = self.run_test(
+                "Admin Status Report (Authorized)",
+                "GET",
+                "admin/time-entries/status-report",
+                200
+            )
+            
+            if success_auth:
+                print(f"   ✅ Admin access with proper credentials successful")
+                return True
+            else:
+                print(f"   ❌ Admin access failed even with credentials")
+        else:
+            print(f"   ❌ No admin token available for testing")
+        
+        return False
+
+    def run_admin_status_tests(self):
+        """Run admin status analysis and correction tests specifically"""
+        print("🚀 Starting Admin Status Analysis & Correction Tests")
+        print(f"   Base URL: {self.base_url}")
+        print("=" * 60)
+        
+        # First ensure we have admin access
+        print("🔐 Setting up admin authentication...")
+        if not self.test_miguel_credentials():
+            print("❌ Failed to authenticate as admin, cannot run admin tests")
+            return False
+        
+        # Test admin access control
+        self.test_admin_credentials_and_access()
+        
+        # Run the complete admin status analysis flow
+        flow_success = self.test_admin_status_analysis_flow()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print(f"📊 Admin Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
+        success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
+        print(f"   Success Rate: {success_rate:.1f}%")
+        
+        if flow_success and success_rate >= 80:
+            print("✅ Admin Status Analysis: PASSED")
+            print("✅ System status cleanup completed successfully")
+        else:
+            print("❌ Admin Status Analysis: FAILED")
+        
+        return flow_success and success_rate >= 80
+
 def main():
     print("🚀 Starting HWI Time Tracker API Tests - Midnight Crossing Functionality")
     print("=" * 70)
