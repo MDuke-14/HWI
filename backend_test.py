@@ -2347,9 +2347,44 @@ def test_timezone_fix():
     print("❌ Could not find or verify the created entry")
     return 1
 
+def test_admin_status_main():
+    """Main function for admin status analysis and correction tests"""
+    print("🚀 Starting Admin Status Analysis & Correction Tests")
+    print("=" * 70)
+    print("🎯 OBJETIVO: Analisar e corrigir entradas com status inválido")
+    print("📋 TESTES:")
+    print("   1. Análise de Status (GET /api/admin/time-entries/status-report)")
+    print("   2. Correção Automática (POST /api/admin/time-entries/fix-invalid-status)")
+    print("   3. Verificação Pós-Correção")
+    print("   4. Opcional - Delete (DELETE /api/admin/time-entries/delete-invalid)")
+    print("=" * 70)
+    
+    tester = HWITimeTrackerTester()
+    
+    # Run the admin status tests
+    success = tester.run_admin_status_tests()
+    
+    if success:
+        print("\n✅ ALL ADMIN STATUS TESTS PASSED!")
+        print("✅ Sistema limpo - sem entradas com status inválido")
+        return 0
+    else:
+        print("\n❌ ADMIN STATUS TESTS FAILED!")
+        print("❌ Verifique os logs acima para detalhes")
+        return 1
+
 if __name__ == "__main__":
-    # Check if we should run timezone tests specifically
-    if len(sys.argv) > 1 and sys.argv[1] == "timezone":
-        sys.exit(test_timezone_fix())
+    # Check command line arguments for specific test types
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "timezone":
+            sys.exit(test_timezone_fix())
+        elif sys.argv[1] == "admin-status":
+            sys.exit(test_admin_status_main())
+        else:
+            print("Available test modes:")
+            print("  python backend_test.py                 # Run midnight crossing tests")
+            print("  python backend_test.py timezone        # Run timezone fix tests")
+            print("  python backend_test.py admin-status    # Run admin status analysis tests")
+            sys.exit(1)
     else:
         sys.exit(main())
