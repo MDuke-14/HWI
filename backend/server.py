@@ -1299,10 +1299,12 @@ async def get_reports(
 async def get_monthly_detailed_report(
     month: Optional[int] = None,
     year: Optional[int] = None,
+    user_id: Optional[str] = None,  # Admin can view other users
     current_user: dict = Depends(get_current_user)
 ):
     """
     Relatório mensal detalhado para contabilidade (26 do mês anterior até 25)
+    Admin can pass user_id to view other users' reports
     """
     now = datetime.now(timezone.utc)
     
@@ -1311,8 +1313,13 @@ async def get_monthly_detailed_report(
         month = now.month
         year = now.year
     
+    # Determine which user's data to fetch
+    target_user_id = current_user["sub"]  # Default to current user
+    if user_id and current_user.get("is_admin"):
+        target_user_id = user_id
+    
     # Get user data for report
-    user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    user = await db.users.find_one({"id": target_user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     
@@ -1325,7 +1332,7 @@ async def get_monthly_detailed_report(
     # Get all time entries for the period
     entries_by_date = {}
     entries = await db.time_entries.find({
-        "user_id": current_user["sub"],
+        "user_id": target_user_id,
         "date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")},
         "status": "completed"
     }, {"_id": 0}).sort("date", 1).to_list(1000)
