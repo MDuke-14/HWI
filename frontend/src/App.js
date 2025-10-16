@@ -3,6 +3,7 @@ import '@/App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import Login from '@/components/Login';
+import ChangePassword from '@/components/ChangePassword';
 import Dashboard from '@/components/Dashboard';
 import History from '@/components/History';
 import Reports from '@/components/Reports';
@@ -31,6 +32,7 @@ axios.interceptors.request.use(
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,8 +40,10 @@ function App() {
     const savedUser = localStorage.getItem('user');
     
     if (token && savedUser) {
+      const userData = JSON.parse(savedUser);
       setIsAuthenticated(true);
-      setUser(JSON.parse(savedUser));
+      setUser(userData);
+      setMustChangePassword(userData.must_change_password || false);
     }
     setLoading(false);
   }, []);
@@ -49,6 +53,15 @@ function App() {
     localStorage.setItem('user', JSON.stringify(userData));
     setIsAuthenticated(true);
     setUser(userData);
+    setMustChangePassword(userData.must_change_password || false);
+  };
+
+  const handlePasswordChanged = () => {
+    // Update user data to clear must_change_password flag
+    const updatedUser = { ...user, must_change_password: false };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    setMustChangePassword(false);
   };
 
   const handleLogout = () => {
@@ -56,6 +69,7 @@ function App() {
     localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUser(null);
+    setMustChangePassword(false);
   };
 
   if (loading) {
