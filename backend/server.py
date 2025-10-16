@@ -1055,7 +1055,13 @@ async def login(credentials: UserLogin):
     return Token(
         access_token=access_token,
         token_type="bearer",
-        user={"id": user["id"], "username": user["username"], "full_name": user.get("full_name"), "is_admin": user.get("is_admin", False)}
+        user={
+            "id": user["id"], 
+            "username": user["username"], 
+            "full_name": user.get("full_name"), 
+            "is_admin": user.get("is_admin", False),
+            "must_change_password": user.get("must_change_password", False)
+        }
     )
 
 @api_router.get("/auth/me")
