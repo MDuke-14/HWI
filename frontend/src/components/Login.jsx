@@ -186,6 +186,16 @@ const Login = ({ onLogin }) => {
                 className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500"
                 required
               />
+              
+              {!isRegister && (
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-blue-400 hover:text-blue-300 text-sm mt-2 inline-block"
+                >
+                  Esqueci a senha
+                </button>
+              )}
             </div>
 
             <Button
@@ -203,6 +213,66 @@ const Login = ({ onLogin }) => {
           <p>© 2025 HWI Unipessoal, Lda. Todos os direitos reservados.</p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <KeyRound className="w-5 h-5 text-blue-400" />
+              Recuperar Senha
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Insira o seu email ou nome de utilizador. Enviaremos uma senha temporária para o seu email registado.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleForgotPassword} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="forgot-email" className="text-gray-300 mb-2 block">
+                Email ou Nome de Utilizador
+              </Label>
+              <Input
+                id="forgot-email"
+                type="text"
+                placeholder="email@exemplo.com ou username"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+              <p className="text-sm text-blue-300">
+                <strong>ℹ️ Atenção:</strong> Você receberá uma senha temporária por email e será obrigado a criar uma nova senha no próximo login.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotPasswordEmail('');
+                }}
+                variant="outline"
+                className="flex-1 border-gray-700 hover:bg-gray-800"
+                disabled={sendingReset}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                disabled={sendingReset}
+              >
+                {sendingReset ? 'Enviando...' : 'Enviar Email'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
