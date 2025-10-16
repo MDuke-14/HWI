@@ -77,17 +77,26 @@ const Reports = ({ user, onLogout }) => {
   };
 
   const fetchDetailedMonthlyReport = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API}/time-entries/reports/monthly-detailed`, {
-        params: {
-          month: selectedMonth,
-          year: selectedYear
-        }
-      });
+      const params = {
+        month: selectedMonth,
+        year: selectedYear
+      };
+      
+      // Check if admin is viewing another user's report
+      const adminViewingUserId = sessionStorage.getItem('adminViewingUserId');
+      if (adminViewingUserId) {
+        params.user_id = adminViewingUserId;
+      }
+      
+      const response = await axios.get(`${API}/time-entries/reports/monthly-detailed`, { params });
       setDetailedMonthlyReport(response.data);
     } catch (error) {
       console.error('Erro ao carregar relatório detalhado:', error);
       toast.error('Erro ao carregar relatório mensal detalhado');
+    } finally {
+      setLoading(false);
     }
   };
 
