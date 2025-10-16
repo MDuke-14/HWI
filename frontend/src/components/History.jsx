@@ -279,16 +279,18 @@ const History = ({ user, onLogout }) => {
                           setEditingEntry(null);
                         }
                       }}>
-                        <DialogTrigger asChild>
-                          <Button
-                            data-testid={`edit-button-${entry.date}`}
-                            onClick={() => handleEdit(entry)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
-                            size="sm"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
+                        {user?.is_admin && (
+                          <DialogTrigger asChild>
+                            <Button
+                              data-testid={`edit-button-${entry.date}`}
+                              onClick={() => handleEdit(entry)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
+                              size="sm"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                        )}
                         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Detalhes do Dia - {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-PT', {
