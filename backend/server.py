@@ -1695,6 +1695,15 @@ async def update_time_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Registo não encontrado")
     
+    # Store original data for email notification (BEFORE changes)
+    before_data = {
+        "start_time": entry.get("start_time"),
+        "end_time": entry.get("end_time"),
+        "observations": entry.get("observations"),
+        "outside_residence_zone": entry.get("outside_residence_zone", False),
+        "location_description": entry.get("location_description", "")
+    }
+    
     update_dict = {}
     recalculate_hours = False
     
@@ -1746,6 +1755,37 @@ async def update_time_entry(
     
     if update_dict:
         await db.time_entries.update_one({"id": entry_id}, {"$set": update_dict})
+        
+        # Send email notification if entry was edited by admin (different user)
+        entry_owner_id = entry.get("user_id")
+        editor_id = current_user["sub"]
+        
+        if entry_owner_id != editor_id:
+            # This is an admin editing another user's entry - send notification
+            try:
+                # Get user info
+                user = await db.users.find_one({"id": entry_owner_id})
+                if user and user.get("email"):
+                    # Prepare after_data with updated values
+                    after_data = {
+                        "start_time": update_dict.get("start_time", entry.get("start_time")),
+                        "end_time": update_dict.get("end_time", entry.get("end_time")),
+                        "observations": update_dict.get("observations", entry.get("observations", "")),
+                        "outside_residence_zone": update_dict.get("outside_residence_zone", entry.get("outside_residence_zone", False)),
+                        "location_description": update_dict.get("location_description", entry.get("location_description", ""))
+                    }
+                    
+                    # Send email notification
+                    await send_time_entry_edit_notification_email(
+                        user_name=user.get("full_name", user.get("username")),
+                        user_email=user.get("email"),
+                        entry_date=entry.get("date"),
+                        before_data=before_data,
+                        after_data=after_data
+                    )
+            except Exception as e:
+                logging.error(f"Failed to send edit notification email: {str(e)}")
+                # Don't fail the update if email fails
     
     return {"message": "Registo atualizado com sucesso"}
 
