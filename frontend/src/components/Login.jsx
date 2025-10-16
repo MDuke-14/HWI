@@ -5,10 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Clock, User, Lock, Mail, UserPlus, Phone } from 'lucide-react';
+import { Clock, User, Lock, Mail, UserPlus, Phone, KeyRound } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [sendingReset, setSendingReset] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -32,6 +42,25 @@ const Login = ({ onLogin }) => {
       toast.error(error.response?.data?.detail || 'Erro ao autenticar');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setSendingReset(true);
+
+    try {
+      const response = await axios.post(`${API}/auth/forgot-password`, {
+        email: forgotPasswordEmail
+      });
+      
+      toast.success(response.data.message || 'Email enviado com sucesso!');
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao enviar email de recuperação');
+    } finally {
+      setSendingReset(false);
     }
   };
 
