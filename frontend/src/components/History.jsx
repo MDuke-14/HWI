@@ -153,6 +153,26 @@ const History = ({ user, onLogout }) => {
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="fade-in">
+          {/* Admin viewing banner */}
+          {sessionStorage.getItem('adminViewingUserId') && (
+            <div className="bg-blue-900/30 border border-blue-600 rounded-lg p-4 mb-6 flex justify-between items-center">
+              <div>
+                <span className="text-blue-400 font-semibold">👁️ A visualizar dados de: </span>
+                <span className="text-white font-bold">{sessionStorage.getItem('adminViewingUserName')}</span>
+              </div>
+              <Button
+                onClick={() => {
+                  sessionStorage.removeItem('adminViewingUserId');
+                  sessionStorage.removeItem('adminViewingUserName');
+                  window.location.href = '/admin';
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+              >
+                Voltar ao Admin
+              </Button>
+            </div>
+          )}
+          
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-white">Histórico de Registos</h1>
           </div>
