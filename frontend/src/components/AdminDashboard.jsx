@@ -684,6 +684,56 @@ const AdminDashboard = ({ user, onLogout }) => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialog for Viewing User History */}
+      {viewingUserHistory && (
+        <Dialog open={true} onOpenChange={() => setViewingUserHistory(null)}>
+          <DialogContent className="bg-[#0a0a0a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex justify-between items-center">
+                <DialogTitle className="text-2xl">
+                  Histórico de {viewingUserHistory.full_name || viewingUserHistory.username}
+                </DialogTitle>
+                <Button
+                  onClick={() => setViewingUserHistory(null)}
+                  className="bg-red-600 hover:bg-red-700 rounded-full p-2"
+                  size="sm"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="mt-4">
+              <History user={viewingUserHistory} onLogout={onLogout} isAdminView={true} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Dialog for Viewing User Reports */}
+      {viewingUserReports && (
+        <Dialog open={true} onOpenChange={() => setViewingUserReports(null)}>
+          <DialogContent className="bg-[#0a0a0a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex justify-between items-center">
+                <DialogTitle className="text-2xl">
+                  Relatórios de {viewingUserReports.full_name || viewingUserReports.username}
+                </DialogTitle>
+                <Button
+                  onClick={() => setViewingUserReports(null)}
+                  className="bg-red-600 hover:bg-red-700 rounded-full p-2"
+                  size="sm"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="mt-4">
+              <Reports user={viewingUserReports} onLogout={onLogout} isAdminView={true} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
