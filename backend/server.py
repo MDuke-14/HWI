@@ -858,24 +858,47 @@ async def debug_db_info():
     """Debug endpoint to check database connection"""
     try:
         mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/emergent')
+        db_name = os.environ.get('DB_NAME', 'emergent')
         # Hide password in URL
         safe_url = mongo_url.split('@')[-1] if '@' in mongo_url else mongo_url
         
         # Count users
         user_count = await db.users.count_documents({})
         
-        # Get sample user
+        # Get sample user fields (no sensitive data)
         sample_user = await db.users.find_one({}, {"_id": 0, "username": 1, "email": 1, "is_admin": 1})
+        
+        # Check specific admin users
+        admin_users = []
+        for username in ["pedro.duarte", "miguel.moreira", "admin"]:
+            user = await db.users.find_one({"username": username})
+            if user:
+                has_password = "hashed_password" in user or "password" in user
+                password_field = "hashed_password" if "hashed_password" in user else "password" if "password" in user else "none"
+                admin_users.append({
+                    "username": username,
+                    "exists": True,
+                    "has_password_field": has_password,
+                    "password_field_name": password_field,
+                    "is_admin": user.get("is_admin", False),
+                    "user_id": user.get("id", "no-id")
+                })
+            else:
+                admin_users.append({
+                    "username": username,
+                    "exists": False
+                })
         
         return {
             "mongo_url": safe_url,
-            "database_name": "emergent",
+            "database_name": db_name,
             "user_count": user_count,
             "sample_user": sample_user,
+            "admin_users": admin_users,
             "environment": "production" if "preview" not in safe_url else "preview"
         }
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": str(e), "error_type": type(e).__name__}
 
 @api_router.post("/auth/login", response_model=Token)
 async def login(credentials: UserLogin):
