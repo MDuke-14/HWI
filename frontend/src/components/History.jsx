@@ -42,6 +42,12 @@ const History = ({ user, onLogout }) => {
       if (startDate) params.start_date = format(startDate, 'yyyy-MM-dd');
       if (endDate) params.end_date = format(endDate, 'yyyy-MM-dd');
       
+      // Check if admin is viewing another user's history
+      const adminViewingUserId = sessionStorage.getItem('adminViewingUserId');
+      if (adminViewingUserId) {
+        params.user_id = adminViewingUserId;
+      }
+      
       const response = await axios.get(`${API}/time-entries/list`, { params });
       setEntries(response.data);
     } catch (error) {
