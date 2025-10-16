@@ -974,6 +974,39 @@ const Reports = ({ user, onLogout }) => {
                               rows={2}
                             />
                           </div>
+                          
+                          {/* Outside Residence Zone */}
+                          <div className="mb-3">
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`outside_zone_${individualEntry.id}`}
+                                checked={editForms[individualEntry.id]?.outside_residence_zone || false}
+                                onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'outside_residence_zone', e.target.checked)}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`outside_zone_${individualEntry.id}`} className="text-gray-300 text-xs cursor-pointer">
+                                Fora de Zona de Residência
+                              </Label>
+                            </div>
+                          </div>
+                          
+                          {/* Location Description */}
+                          {editForms[individualEntry.id]?.outside_residence_zone && (
+                            <div className="mb-3">
+                              <Label className="text-gray-500 text-xs flex items-center">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                Localização
+                              </Label>
+                              <Input
+                                value={editForms[individualEntry.id]?.location_description || ''}
+                                onChange={(e) => handleUpdateIndividualEntry(individualEntry.id, 'location_description', e.target.value)}
+                                placeholder="Ex: Madrid, Valencia..."
+                                className="bg-[#0a0a0a] border-gray-600 text-white text-sm mt-1"
+                              />
+                            </div>
+                          )}
+                          
                           <div className="grid grid-cols-2 gap-2">
                             <Button
                               onClick={() => handleSaveIndividualEntry(individualEntry.id)}
