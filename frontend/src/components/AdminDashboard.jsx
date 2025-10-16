@@ -590,7 +590,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm" 
                         size="sm"
                       >
-                        <History className="w-3 h-3 mr-1" />Histórico
+                        <HistoryIcon className="w-3 h-3 mr-1" />Histórico
                       </Button>
                       <Button 
                         onClick={() => {
