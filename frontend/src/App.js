@@ -176,6 +176,16 @@ function App() {
             }
           />
           <Route
+            path="/technical-reports"
+            element={
+              isAuthenticated ? (
+                <TechnicalReports user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
             path="/admin"
             element={
               isAuthenticated && user?.is_admin ? (
