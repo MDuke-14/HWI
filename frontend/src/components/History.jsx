@@ -232,8 +232,7 @@ const History = ({ user, onLogout }) => {
                       <div className="flex items-center gap-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           entry.status === 'completed' ? 'bg-gray-700 text-gray-300' :
-                          entry.status === 'active' ? 'bg-green-700 text-green-200' :
-                          'bg-amber-700 text-amber-200'
+                          'bg-green-700 text-green-200'
                         }`}>
                           {entry.status === 'completed' ? 'Concluído' : 'Ativo'}
                         </span>
