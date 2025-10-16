@@ -640,7 +640,7 @@ async def send_time_entry_edit_notification_email(
                 </table>
                 
                 <p style="margin-top: 20px; padding: 10px; background-color: #ffffcc; border-left: 4px solid #ffeb3b;">
-                    <strong>⚠️ Atenção:</strong> Se você não reconhece esta alteração, entre em contato com a administração imediatamente.
+                    <strong>Atenção:</strong> Se você não reconhece esta alteração, entre em contato com a administração imediatamente.
                 </p>
                 
                 <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;">
