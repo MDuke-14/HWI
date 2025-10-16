@@ -8,11 +8,14 @@ load_dotenv()
 
 async def check_and_create_users():
     # Connect to MongoDB
-    mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017/emergent')
+    mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+    db_name = os.environ.get('DB_NAME', 'emergent')
+    
     client = AsyncIOMotorClient(mongo_url)
-    db = client.emergent
+    db = client[db_name]
     
     print(f"Conectando a: {mongo_url}")
+    print(f"Banco de dados: {db_name}")
     
     # Check existing users
     users = await db.users.find({}, {"_id": 0, "username": 1, "email": 1, "is_admin": 1}).to_list(100)
