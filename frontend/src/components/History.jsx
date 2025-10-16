@@ -79,7 +79,9 @@ const History = ({ user, onLogout }) => {
         forms[individualEntry.id] = {
           start_time: startTimeValue,
           end_time: endTimeValue,
-          observations: individualEntry.observations || ''
+          observations: individualEntry.observations || '',
+          outside_residence_zone: individualEntry.outside_residence_zone || false,
+          location_description: individualEntry.location_description || ''
         };
       });
     } else {
