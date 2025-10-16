@@ -975,19 +975,22 @@ class HWITimeTrackerTester:
             return True
         else:
             print(f"   ❌ Miguel login failed - user may not exist or password incorrect")
-            print(f"   🔄 Attempting to create miguel user for testing...")
+            print(f"   🔄 Attempting to create admin user for testing...")
             
-            # Try to create miguel user
+            # Create admin test user with proper admin email
+            timestamp = datetime.now().strftime('%H%M%S')
+            admin_username = f"admin_{timestamp}"
+            
             register_success, register_response = self.run_test(
-                "Create Miguel User",
+                "Create Admin Test User",
                 "POST",
                 "auth/register",
                 200,
                 data={
-                    "username": "miguel",
+                    "username": admin_username,
                     "password": "password123",
-                    "email": "miguel.moreira@hwi.pt",  # Admin email
-                    "full_name": "Miguel Moreira",
+                    "email": "miguel.moreira@hwi.pt",  # Admin email from backend config
+                    "full_name": "Admin Test User",
                     "phone": "+351123456789",
                     "company_start_date": "2024-01-01",
                     "vacation_days_taken": 0
@@ -995,51 +998,52 @@ class HWITimeTrackerTester:
             )
             
             if register_success and 'access_token' in register_response:
-                print(f"   ✅ Miguel user created and logged in successfully")
+                print(f"   ✅ Admin user created and logged in successfully")
                 print(f"   Username: {register_response['user']['username']}")
                 print(f"   Is admin: {register_response['user'].get('is_admin', False)}")
                 
-                # Store miguel token for further tests
+                # Store admin token for further tests
                 self.token = register_response['access_token']
                 self.user_id = register_response['user']['id']
                 self.username = register_response['user']['username']
                 
                 return True
             else:
-                print(f"   ❌ Failed to create miguel user - trying alternative test user")
+                print(f"   ❌ Failed to create admin user with miguel.moreira@hwi.pt")
+                print(f"   🔄 Trying with pedro.duarte@hwi.pt...")
                 
-                # Create alternative test user
-                timestamp = datetime.now().strftime('%H%M%S')
-                test_username = f"testuser_{timestamp}"
+                # Try with the other admin email
+                pedro_username = f"pedro_{timestamp}"
                 
-                alt_success, alt_response = self.run_test(
-                    "Create Alternative Test User",
+                pedro_success, pedro_response = self.run_test(
+                    "Create Pedro Admin User",
                     "POST",
                     "auth/register",
                     200,
                     data={
-                        "username": test_username,
+                        "username": pedro_username,
                         "password": "password123",
-                        "email": f"test_{timestamp}@hwi.pt",
-                        "full_name": "Test User",
+                        "email": "pedro.duarte@hwi.pt",  # Alternative admin email
+                        "full_name": "Pedro Test User",
                         "phone": "+351987654321",
                         "company_start_date": "2024-01-01",
                         "vacation_days_taken": 0
                     }
                 )
                 
-                if alt_success and 'access_token' in alt_response:
-                    print(f"   ✅ Alternative test user created: {test_username}")
-                    print(f"   Is admin: {alt_response['user'].get('is_admin', False)}")
+                if pedro_success and 'access_token' in pedro_response:
+                    print(f"   ✅ Pedro admin user created: {pedro_username}")
+                    print(f"   Is admin: {pedro_response['user'].get('is_admin', False)}")
                     
                     # Store token for further tests
-                    self.token = alt_response['access_token']
-                    self.user_id = alt_response['user']['id']
-                    self.username = alt_response['user']['username']
+                    self.token = pedro_response['access_token']
+                    self.user_id = pedro_response['user']['id']
+                    self.username = pedro_response['user']['username']
                     
                     return True
                 else:
-                    print(f"   ❌ Failed to create any test user")
+                    print(f"   ❌ Failed to create any admin user")
+                    print(f"   ⚠️  Cannot run admin tests without admin privileges")
                     self.token = original_token
                     return False
 
