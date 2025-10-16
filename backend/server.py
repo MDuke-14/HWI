@@ -538,6 +538,165 @@ async def send_absence_justification_email(user_name: str, user_email: str, abse
                         <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Documento enviado:</td>
                         <td style="padding: 8px 15px;"><strong>{filename}</strong> (ver no painel)</td>
                     </tr>
+
+async def send_time_entry_edit_notification_email(
+    user_name: str, 
+    user_email: str, 
+    entry_date: str,
+    before_data: dict,
+    after_data: dict
+):
+    """Send email to user when admin edits their time entry"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+        
+        # Format date
+        date_formatted = datetime.strptime(entry_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+        
+        # Format times
+        def format_time(time_str):
+            if not time_str:
+                return "N/A"
+            try:
+                dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                return dt.strftime('%H:%M')
+            except:
+                return time_str
+        
+        before_start = format_time(before_data.get('start_time'))
+        before_end = format_time(before_data.get('end_time'))
+        before_obs = before_data.get('observations', 'N/A')
+        before_outside = "Sim" if before_data.get('outside_residence_zone') else "Não"
+        before_location = before_data.get('location_description', 'N/A')
+        
+        after_start = format_time(after_data.get('start_time'))
+        after_end = format_time(after_data.get('end_time'))
+        after_obs = after_data.get('observations', 'N/A')
+        after_outside = "Sim" if after_data.get('outside_residence_zone') else "Não"
+        after_location = after_data.get('location_description', 'N/A')
+        
+        subject = f"Alteração no seu Registo de Horas — {date_formatted}"
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>Olá, <strong>{user_name}</strong>!</p>
+                
+                <p>O administrador fez uma alteração no seu registo de horas.</p>
+                
+                <h3 style="color: #0066cc; margin-top: 20px;">Data do Registo:</h3>
+                <p style="font-size: 16px;"><strong>{date_formatted}</strong></p>
+                
+                <h3 style="color: #cc6600; margin-top: 20px;">ANTES da alteração:</h3>
+                <table style="border-collapse: collapse; margin: 15px 0; width: 100%;">
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #fff3e0; font-weight: bold; width: 40%;">Início:</td>
+                        <td style="padding: 8px 15px; background-color: #fff3e0;">{before_start}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #ffe0b2; font-weight: bold;">Fim:</td>
+                        <td style="padding: 8px 15px; background-color: #ffe0b2;">{before_end}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #fff3e0; font-weight: bold;">Observações:</td>
+                        <td style="padding: 8px 15px; background-color: #fff3e0;">{before_obs}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #ffe0b2; font-weight: bold;">Fora de Zona:</td>
+                        <td style="padding: 8px 15px; background-color: #ffe0b2;">{before_outside}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #fff3e0; font-weight: bold;">Localização:</td>
+                        <td style="padding: 8px 15px; background-color: #fff3e0;">{before_location}</td>
+                    </tr>
+                </table>
+                
+                <h3 style="color: #009900; margin-top: 20px;">DEPOIS da alteração:</h3>
+                <table style="border-collapse: collapse; margin: 15px 0; width: 100%;">
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #e8f5e9; font-weight: bold; width: 40%;">Início:</td>
+                        <td style="padding: 8px 15px; background-color: #e8f5e9;">{after_start}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #c8e6c9; font-weight: bold;">Fim:</td>
+                        <td style="padding: 8px 15px; background-color: #c8e6c9;">{after_end}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #e8f5e9; font-weight: bold;">Observações:</td>
+                        <td style="padding: 8px 15px; background-color: #e8f5e9;">{after_obs}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #c8e6c9; font-weight: bold;">Fora de Zona:</td>
+                        <td style="padding: 8px 15px; background-color: #c8e6c9;">{after_outside}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #e8f5e9; font-weight: bold;">Localização:</td>
+                        <td style="padding: 8px 15px; background-color: #e8f5e9;">{after_location}</td>
+                    </tr>
+                </table>
+                
+                <p style="margin-top: 20px; padding: 10px; background-color: #ffffcc; border-left: 4px solid #ffeb3b;">
+                    <strong>⚠️ Atenção:</strong> Se você não reconhece esta alteração, entre em contato com a administração imediatamente.
+                </p>
+                
+                <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;">
+                <p style="color: #666; font-size: 12px;">
+                    Este é um email automático. Por favor, não responda.
+                </p>
+            </body>
+        </html>
+        """
+        
+        await send_email(
+            to_email=user_email,
+            subject=subject,
+            html_body=html_body,
+            smtp_host=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True
+        )
+        
+        logging.info(f"Time entry edit notification sent to {user_email}")
+    except Exception as e:
+        logging.error(f"Failed to send time entry edit notification: {str(e)}")
+
+async def send_absence_justification_email_old(user_name: str, user_email: str, absence_date: str, filename: str):
+    """Send email to team when justification document is uploaded - OLD VERSION"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+        
+        # Format date
+        date_formatted = datetime.strptime(absence_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+        
+        subject = f"Documento de Justificativa de Falta — {user_name}"
+        
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <p>Olá,</p>
+                
+                <p>O(a) colaborador(a) <strong>{user_name}</strong> enviou um documento para justificar uma ausência.</p>
+                
+                <h3 style="color: #0066cc; margin-top: 20px;">Detalhes:</h3>
+                <table style="border-collapse: collapse; margin: 15px 0;">
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Data da falta:</td>
+                        <td style="padding: 8px 15px;">{date_formatted}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Documento enviado:</td>
+                        <td style="padding: 8px 15px;"><strong>{filename}</strong> (ver no painel)</td>
+                    </tr>
                 </table>
                 
                 <p style="margin-top: 25px;">Acesse o sistema para validar e aprovar ou recusar a justificativa.</p>
