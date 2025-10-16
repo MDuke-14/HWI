@@ -1535,12 +1535,49 @@ async def update_time_entry(
         raise HTTPException(status_code=404, detail="Registo não encontrado")
     
     update_dict = {}
+    recalculate_hours = False
+    
+    # Track if times are being updated
     if update_data.start_time:
         update_dict["start_time"] = update_data.start_time.isoformat()
+        recalculate_hours = True
     if update_data.end_time:
         update_dict["end_time"] = update_data.end_time.isoformat()
+        recalculate_hours = True
     if update_data.observations is not None:
         update_dict["observations"] = update_data.observations
+    
+    # If start or end time changed, recalculate hours
+    if recalculate_hours:
+        # Get the updated times (use new if provided, else keep old)
+        start_time_str = update_dict.get("start_time", entry.get("start_time"))
+        end_time_str = update_dict.get("end_time", entry.get("end_time"))
+        
+        if start_time_str and end_time_str:
+            # Parse times
+            start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+            end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
+            
+            # Calculate total hours
+            total_seconds = (end_time - start_time).total_seconds()
+            total_hours = round(total_seconds / 3600, 2)
+            
+            # Get entry date to check if it's overtime day
+            entry_date_str = entry.get("date")
+            if entry_date_str:
+                entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d").date()
+                is_ot, ot_reason = is_overtime_day(entry_date)
+                
+                # Calculate hours breakdown
+                hours_breakdown = calculate_hours_breakdown(total_hours, is_ot)
+                
+                # Update all hour fields
+                update_dict["total_hours"] = total_hours
+                update_dict["regular_hours"] = hours_breakdown["regular_hours"]
+                update_dict["overtime_hours"] = hours_breakdown["overtime_hours"]
+                update_dict["special_hours"] = hours_breakdown["special_hours"]
+                update_dict["is_overtime_day"] = is_ot
+                update_dict["overtime_reason"] = ot_reason if is_ot else None
     
     if update_dict:
         await db.time_entries.update_one({"id": entry_id}, {"$set": update_dict})
