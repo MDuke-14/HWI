@@ -1148,12 +1148,21 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
 async def list_time_entries(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    user_id: Optional[str] = None,  # Admin can view other users
     current_user: dict = Depends(get_current_user)
 ):
     """
     Lista entradas agrupadas por dia com total de horas somado
+    Admin can pass user_id to view other users' data
     """
-    query = {"user_id": current_user["sub"], "status": "completed"}
+    # Determine which user's data to fetch
+    target_user_id = current_user["sub"]  # Default to current user
+    
+    # If user_id provided and current user is admin, allow viewing other users
+    if user_id and current_user.get("is_admin"):
+        target_user_id = user_id
+    
+    query = {"user_id": target_user_id, "status": "completed"}
     
     if start_date and end_date:
         query["date"] = {"$gte": start_date, "$lte": end_date}
