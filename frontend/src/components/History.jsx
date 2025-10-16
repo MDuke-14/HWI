@@ -114,6 +114,12 @@ const History = ({ user, onLogout }) => {
       if (formData.end_time) {
         updateData.end_time = new Date(formData.end_time).toISOString();
       }
+      if (formData.outside_residence_zone !== undefined) {
+        updateData.outside_residence_zone = formData.outside_residence_zone;
+      }
+      if (formData.location_description) {
+        updateData.location_description = formData.location_description;
+      }
 
       await axios.put(`${API}/time-entries/${entryId}`, updateData);
       toast.success('Registo atualizado!');
