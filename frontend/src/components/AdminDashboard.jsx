@@ -579,10 +579,30 @@ const AdminDashboard = ({ user, onLogout }) => {
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => setViewingUserHistory(u)} className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm" size="sm">
+                      <Button 
+                        onClick={() => {
+                          // Store selected user ID in sessionStorage
+                          sessionStorage.setItem('adminViewingUserId', u.id);
+                          sessionStorage.setItem('adminViewingUserName', u.full_name || u.username);
+                          // Navigate to history page
+                          window.location.href = '/history';
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm" 
+                        size="sm"
+                      >
                         <History className="w-3 h-3 mr-1" />Histórico
                       </Button>
-                      <Button onClick={() => setViewingUserReports(u)} className="bg-green-600 hover:bg-green-700 text-white rounded-full text-sm" size="sm">
+                      <Button 
+                        onClick={() => {
+                          // Store selected user ID in sessionStorage
+                          sessionStorage.setItem('adminViewingUserId', u.id);
+                          sessionStorage.setItem('adminViewingUserName', u.full_name || u.username);
+                          // Navigate to reports page
+                          window.location.href = '/reports';
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-full text-sm" 
+                        size="sm"
+                      >
                         <FileText className="w-3 h-3 mr-1" />Relatórios
                       </Button>
                     </div>
