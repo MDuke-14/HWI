@@ -538,6 +538,38 @@ async def send_absence_justification_email(user_name: str, user_email: str, abse
                         <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Documento enviado:</td>
                         <td style="padding: 8px 15px;"><strong>{filename}</strong> (ver no painel)</td>
                     </tr>
+                </table>
+                
+                <p style="margin-top: 25px;">Acesse o sistema para validar e aprovar ou recusar a justificativa.</p>
+                
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+                <p style="color: #666; font-size: 12px;">
+                    Sistema de Gestão de Ponto | Emergent
+                </p>
+            </body>
+        </html>
+        """
+        
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = smtp_from
+        message['To'] = smtp_from  # Send to geral@hwi.pt
+        
+        html_part = MIMEText(html_body, 'html')
+        message.attach(html_part)
+        
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True
+        )
+        
+        logging.info(f"Absence justification email sent to {smtp_from} for {user_name}")
+    except Exception as e:
+        logging.error(f"Failed to send absence justification email: {str(e)}")
 
 async def send_time_entry_edit_notification_email(
     user_name: str, 
