@@ -57,6 +57,7 @@ class User(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     is_admin: bool = False
+    must_change_password: bool = False  # Flag for password reset
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
