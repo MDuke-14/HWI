@@ -1071,6 +1071,115 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     return user
 
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest):
+    """
+    Request password reset - generates temporary password and sends via email
+    Can use either email or username
+    """
+    logging.info(f"PASSWORD RESET REQUEST: {request.email}")
+    
+    # Try to find user by email or username
+    user = await db.users.find_one({
+        "$or": [
+            {"email": request.email},
+            {"username": request.email}
+        ]
+    })
+    
+    if not user:
+        # For security, don't reveal if user exists or not
+        logging.warning(f"Password reset requested for non-existent user: {request.email}")
+        return {
+            "message": "Se o utilizador existir, um email será enviado com instruções para recuperação de senha."
+        }
+    
+    # Generate temporary password
+    temp_password = generate_temporary_password()
+    hashed_temp_password = pwd_context.hash(temp_password)
+    
+    # Update user with temporary password and set must_change_password flag
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {
+                "hashed_password": hashed_temp_password,
+                "must_change_password": True,
+                "password_reset_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    # Send email with temporary password
+    try:
+        await send_password_reset_email(
+            user_name=user.get("full_name", user["username"]),
+            user_email=user["email"],
+            temporary_password=temp_password
+        )
+        
+        logging.info(f"Password reset successful for user: {user['username']}")
+        
+        return {
+            "message": "Email enviado com sucesso! Verifique sua caixa de entrada para a senha temporária."
+        }
+    except Exception as e:
+        logging.error(f"Failed to send reset email: {str(e)}")
+        # Revert the password change if email fails
+        raise HTTPException(
+            status_code=500,
+            detail="Erro ao enviar email de recuperação. Por favor, tente novamente ou contacte o administrador."
+        )
+
+@api_router.post("/auth/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Change user password (requires being logged in)
+    """
+    user = await db.users.find_one({"id": current_user["sub"]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    # Verify old password
+    stored_password = user.get("hashed_password") or user.get("password")
+    if not verify_password(request.old_password, stored_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Senha atual incorreta"
+        )
+    
+    # Validate new password
+    if len(request.new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="A nova senha deve ter no mínimo 6 caracteres"
+        )
+    
+    # Hash and update new password
+    new_hashed_password = pwd_context.hash(request.new_password)
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {
+                "hashed_password": new_hashed_password,
+                "must_change_password": False,  # Clear the flag after successful change
+                "password_changed_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    logging.info(f"Password changed successfully for user: {user['username']}")
+    
+    return {
+        "message": "Senha alterada com sucesso!",
+        "must_change_password": False
+    }
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
