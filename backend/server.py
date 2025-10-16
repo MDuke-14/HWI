@@ -870,7 +870,7 @@ async def debug_db_info():
         
         # Check specific admin users
         admin_users = []
-        for username in ["pedro.duarte", "miguel.moreira", "admin"]:
+        for username in ["pedro.duarte", "miguel.moreira", "admin", "pedro", "miguel"]:
             user = await db.users.find_one({"username": username})
             if user:
                 has_password = "hashed_password" in user or "password" in user
