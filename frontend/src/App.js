@@ -80,6 +80,16 @@ function App() {
     );
   }
 
+  // If authenticated but must change password, force password change screen
+  if (isAuthenticated && mustChangePassword) {
+    return (
+      <div className="App">
+        <ChangePassword onPasswordChanged={handlePasswordChanged} />
+        <Toaster position="top-right" />
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <BrowserRouter>
