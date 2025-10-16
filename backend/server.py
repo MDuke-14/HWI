@@ -1192,6 +1192,79 @@ async def change_password(
         "must_change_password": False
     }
 
+# ============ Clientes Routes ============
+
+@api_router.post("/clientes", response_model=Cliente)
+async def create_cliente(cliente: Cliente, current_user: dict = Depends(get_current_user)):
+    """Criar novo cliente"""
+    cliente_dict = cliente.dict()
+    cliente_dict["created_at"] = cliente_dict["created_at"].isoformat()
+    
+    await db.clientes.insert_one(cliente_dict)
+    
+    logging.info(f"Cliente criado: {cliente.nome} por {current_user['sub']}")
+    return cliente
+
+@api_router.get("/clientes")
+async def get_clientes(current_user: dict = Depends(get_current_user)):
+    """Listar todos os clientes ativos"""
+    clientes = await db.clientes.find(
+        {"ativo": True},
+        {"_id": 0}
+    ).sort("nome", 1).to_list(1000)
+    
+    return clientes
+
+@api_router.get("/clientes/{cliente_id}", response_model=Cliente)
+async def get_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
+    """Obter cliente específico"""
+    cliente = await db.clientes.find_one({"id": cliente_id, "ativo": True}, {"_id": 0})
+    
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    return cliente
+
+@api_router.put("/clientes/{cliente_id}", response_model=Cliente)
+async def update_cliente(
+    cliente_id: str,
+    cliente_data: Cliente,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar cliente"""
+    existing_cliente = await db.clientes.find_one({"id": cliente_id})
+    
+    if not existing_cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    update_data = cliente_data.dict(exclude={"id", "created_at"})
+    
+    await db.clientes.update_one(
+        {"id": cliente_id},
+        {"$set": update_data}
+    )
+    
+    updated_cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    
+    logging.info(f"Cliente atualizado: {cliente_id} por {current_user['sub']}")
+    
+    return updated_cliente
+
+@api_router.delete("/clientes/{cliente_id}")
+async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
+    """Deletar cliente (soft delete - marca como inativo)"""
+    result = await db.clientes.update_one(
+        {"id": cliente_id},
+        {"$set": {"ativo": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    logging.info(f"Cliente deletado: {cliente_id} por {current_user['sub']}")
+    
+    return {"message": "Cliente deletado com sucesso"}
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
