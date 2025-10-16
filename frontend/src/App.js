@@ -12,6 +12,7 @@ import Vacations from '@/components/Vacations';
 import Absences from '@/components/Absences';
 import AdminDashboard from '@/components/AdminDashboard';
 import Calendar from '@/components/Calendar';
+import TechnicalReports from '@/components/TechnicalReports';
 import { Toaster } from '@/components/ui/sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
