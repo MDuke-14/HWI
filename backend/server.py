@@ -1548,6 +1548,10 @@ async def update_time_entry(
         recalculate_hours = True
     if update_data.observations is not None:
         update_dict["observations"] = update_data.observations
+    if update_data.outside_residence_zone is not None:
+        update_dict["outside_residence_zone"] = update_data.outside_residence_zone
+    if update_data.location_description is not None:
+        update_dict["location_description"] = update_data.location_description
     
     # If start or end time changed, recalculate hours
     if recalculate_hours:
