@@ -117,6 +117,8 @@ class TimeEntryUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     observations: Optional[str] = None
+    outside_residence_zone: Optional[bool] = None
+    location_description: Optional[str] = None
 
 class ManualTimeEntryCreate(BaseModel):
     user_id: str
