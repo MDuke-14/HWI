@@ -883,7 +883,12 @@ async def login(credentials: UserLogin):
     if not user:
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     
-    if not verify_password(credentials.password, user["hashed_password"]):
+    # Support both 'password' and 'hashed_password' field names
+    stored_password = user.get("hashed_password") or user.get("password")
+    if not stored_password:
+        raise HTTPException(status_code=401, detail="Credenciais inválidas")
+    
+    if not verify_password(credentials.password, stored_password):
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     
     access_token = create_access_token(data={"sub": user["id"], "username": user["username"], "is_admin": user.get("is_admin", False)})
