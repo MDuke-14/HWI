@@ -1533,11 +1533,15 @@ async def get_overtime_summary(current_user: dict = Depends(get_current_user)):
     today = date.today()
     start_date, end_date = get_billing_period_dates(today)
     
+    # Convert dates to strings for MongoDB query
+    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else start_date
+    end_date_str = end_date.isoformat() if hasattr(end_date, 'isoformat') else end_date
+    
     # Filter entries within current billing period
     entries = await db.time_entries.find({
         "user_id": current_user["sub"],
         "status": "completed",
-        "date": {"$gte": start_date, "$lte": end_date}
+        "date": {"$gte": start_date_str, "$lte": end_date_str}
     }, {"_id": 0}).to_list(1000)
     
     total_overtime = sum(entry.get("overtime_hours", 0) for entry in entries)
@@ -1548,8 +1552,8 @@ async def get_overtime_summary(current_user: dict = Depends(get_current_user)):
         "total_overtime_hours": round(total_overtime, 2),
         "total_special_hours": round(total_special, 2),
         "total_overtime_days": len(overtime_entries),
-        "billing_period_start": start_date,
-        "billing_period_end": end_date,
+        "billing_period_start": start_date_str,
+        "billing_period_end": end_date_str,
         "entries": overtime_entries
     }
 
