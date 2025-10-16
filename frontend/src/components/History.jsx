@@ -235,8 +235,7 @@ const History = ({ user, onLogout }) => {
                           entry.status === 'active' ? 'bg-green-700 text-green-200' :
                           'bg-amber-700 text-amber-200'
                         }`}>
-                          {entry.status === 'completed' ? 'Concluído' :
-                           entry.status === 'active' ? 'Ativo' : 'Em Pausa'}
+                          {entry.status === 'completed' ? 'Concluído' : 'Ativo'}
                         </span>
                       </div>
                     </div>
