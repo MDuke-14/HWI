@@ -7,8 +7,8 @@ const Navigation = ({ user, onLogout, activePage }) => {
 
   const baseNavItems = [
     { name: 'Dashboard', path: '/', icon: Clock, key: 'dashboard' },
-    { name: 'Histórico', path: '/history', icon: History, key: 'history' },
     { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' },
+    { name: 'Histórico', path: '/history', icon: History, key: 'history' },
     { name: 'Horas Extras', path: '/overtime', icon: TrendingUp, key: 'overtime' },
     { name: 'Férias', path: '/vacations', icon: Palmtree, key: 'vacations' },
     { name: 'Faltas', path: '/absences', icon: FileText, key: 'absences' },
