@@ -1779,11 +1779,11 @@ async def update_time_entry(
 
 @api_router.delete("/time-entries/{entry_id}")
 async def delete_time_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
-    # Admin can delete any entry, regular users can only delete their own
-    if current_user.get("is_admin"):
-        result = await db.time_entries.delete_one({"id": entry_id})
-    else:
-        result = await db.time_entries.delete_one({"id": entry_id, "user_id": current_user["sub"]})
+    # Only admins can delete entries
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem eliminar registos")
+    
+    result = await db.time_entries.delete_one({"id": entry_id})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Registo não encontrado")
