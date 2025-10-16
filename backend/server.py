@@ -1577,6 +1577,104 @@ async def delete_all_entries_for_date(
         "deleted_count": result.deleted_count
     }
 
+@api_router.get("/admin/time-entries/status-report")
+async def get_status_report(current_user: dict = Depends(get_current_admin)):
+    """Analyze time entries status distribution (Admin only)"""
+    try:
+        # Count entries by status
+        pipeline = [
+            {
+                "$group": {
+                    "_id": "$status",
+                    "count": {"$sum": 1}
+                }
+            }
+        ]
+        
+        status_counts = await db.time_entries.aggregate(pipeline).to_list(None)
+        
+        # Get sample entries with invalid status
+        invalid_entries = await db.time_entries.find({
+            "status": {"$nin": ["completed", "active"]}
+        }).limit(10).to_list(10)
+        
+        # Get old active entries (more than 48 hours old)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=48)
+        old_active_entries = await db.time_entries.find({
+            "status": "active",
+            "start_time": {"$lt": cutoff_time.isoformat()}
+        }).limit(10).to_list(10)
+        
+        return {
+            "status_distribution": {item["_id"]: item["count"] for item in status_counts},
+            "invalid_entries_sample": [
+                {
+                    "id": e.get("id"),
+                    "user": e.get("username"),
+                    "date": e.get("date"),
+                    "status": e.get("status"),
+                    "start_time": e.get("start_time")
+                } for e in invalid_entries
+            ],
+            "old_active_entries_sample": [
+                {
+                    "id": e.get("id"),
+                    "user": e.get("username"),
+                    "date": e.get("date"),
+                    "start_time": e.get("start_time")
+                } for e in old_active_entries
+            ]
+        }
+    except Exception as e:
+        logging.error(f"Error getting status report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/time-entries/fix-invalid-status")
+async def fix_invalid_status(current_user: dict = Depends(get_current_admin)):
+    """Fix entries with invalid status (Admin only)"""
+    try:
+        # Fix entries with invalid status (not 'completed' or 'active')
+        result_invalid = await db.time_entries.update_many(
+            {"status": {"$nin": ["completed", "active"]}},
+            {"$set": {"status": "completed"}}
+        )
+        
+        # Fix old active entries (more than 48 hours old) - assume they should be completed
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=48)
+        result_old_active = await db.time_entries.update_many(
+            {
+                "status": "active",
+                "start_time": {"$lt": cutoff_time.isoformat()}
+            },
+            {"$set": {"status": "completed"}}
+        )
+        
+        return {
+            "message": "Entradas corrigidas com sucesso",
+            "invalid_status_fixed": result_invalid.modified_count,
+            "old_active_fixed": result_old_active.modified_count,
+            "total_fixed": result_invalid.modified_count + result_old_active.modified_count
+        }
+    except Exception as e:
+        logging.error(f"Error fixing invalid status: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/admin/time-entries/delete-invalid")
+async def delete_invalid_entries(current_user: dict = Depends(get_current_admin)):
+    """Delete entries with invalid status (Admin only)"""
+    try:
+        # Delete entries with invalid status (not 'completed' or 'active')
+        result = await db.time_entries.delete_many({
+            "status": {"$nin": ["completed", "active"]}
+        })
+        
+        return {
+            "message": f"{result.deleted_count} entradas inválidas eliminadas",
+            "deleted_count": result.deleted_count
+        }
+    except Exception as e:
+        logging.error(f"Error deleting invalid entries: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 @api_router.post("/admin/time-entries/manual")
 async def create_manual_time_entry(
     entry_data: ManualTimeEntryCreate,
