@@ -88,6 +88,18 @@ class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
+class Cliente(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    email: Optional[str] = None
+    telefone: Optional[str] = None
+    morada: Optional[str] = None
+    nif: Optional[str] = None
+    emails_adicionais: Optional[str] = None  # Separados por vírgula
+    ativo: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Token(BaseModel):
     access_token: str
     token_type: str
