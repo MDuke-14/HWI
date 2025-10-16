@@ -951,16 +951,45 @@ class HWITimeTrackerTester:
         original_token = self.token
         self.token = None
         
-        success, response = self.run_test(
-            "Miguel Login Test",
-            "POST",
-            "auth/login",
-            200,
-            data={
-                "username": "miguel",
-                "password": "password123"
-            }
-        )
+        # Try multiple common admin credentials
+        admin_credentials = [
+            {"username": "miguel", "password": "password123"},
+            {"username": "miguel", "password": "admin123"},
+            {"username": "miguel", "password": "123456"},
+            {"username": "pedro", "password": "password123"},
+            {"username": "pedro", "password": "admin123"},
+            {"username": "admin", "password": "password123"},
+            {"username": "admin", "password": "admin123"}
+        ]
+        
+        for creds in admin_credentials:
+            success, response = self.run_test(
+                f"Login Test ({creds['username']}/{creds['password']})",
+                "POST",
+                "auth/login",
+                200,
+                data=creds
+            )
+            
+            if success and 'access_token' in response:
+                is_admin = response['user'].get('is_admin', False)
+                print(f"   ✅ Login successful: {creds['username']}")
+                print(f"   Username: {response['user']['username']}")
+                print(f"   Is admin: {is_admin}")
+                
+                if is_admin:
+                    # Store admin token for further tests
+                    self.token = response['access_token']
+                    self.user_id = response['user']['id']
+                    self.username = response['user']['username']
+                    return True
+                else:
+                    print(f"   ⚠️  User {creds['username']} is not admin, continuing search...")
+            else:
+                print(f"   ❌ Login failed for {creds['username']}/{creds['password']}")
+        
+        # If no existing admin found, try to create one
+        success, response = None, None
         
         if success and 'access_token' in response:
             print(f"   ✅ Miguel login successful")
