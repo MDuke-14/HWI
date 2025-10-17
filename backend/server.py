@@ -114,7 +114,6 @@ class RelatorioTecnico(BaseModel):
     
     # Relações
     cliente_id: str
-    tecnico_id: str
     created_by_id: str
     
     # Dados do cliente (snapshot)
@@ -129,18 +128,44 @@ class RelatorioTecnico(BaseModel):
     equipamento_modelo: str
     equipamento_numero_serie: Optional[str] = None
     
-    # Motivo
-    descricao_problema: str
+    # Motivo (mudou de "descricao_problema")
+    motivo_assistencia: str
     
     # Relatório
     diagnostico: Optional[str] = None
     acoes_realizadas: Optional[str] = None
     resolucao: Optional[str] = None
     problema_resolvido: bool = False
-    
-    # Mão de obra
-    horas_trabalhadas: float = 0
+
+class TecnicoRelatorio(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    tecnico_id: str
     tecnico_nome: str
+    horas_cliente: float = 0
+    kms_deslocacao: float = 0  # Será multiplicado por 2 no frontend
+    tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
+    ordem: int = 0
+
+class MaterialRelatorio(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    designacao: str
+    quantidade: float
+    tipo: str  # "usado" ou "para_orcamento"
+    ordem: int = 0
+
+class FotoRelatorio(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    foto_path: str
+    foto_url: Optional[str] = None
+    descricao: Optional[str] = None
+    ordem: int = 0
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class RelatorioTecnicoCreate(BaseModel):
     cliente_id: str
@@ -152,7 +177,7 @@ class RelatorioTecnicoCreate(BaseModel):
     equipamento_marca: str
     equipamento_modelo: str
     equipamento_numero_serie: Optional[str] = None
-    descricao_problema: str
+    motivo_assistencia: str  # Mudou de "descricao_problema"
 
 class Token(BaseModel):
     access_token: str
