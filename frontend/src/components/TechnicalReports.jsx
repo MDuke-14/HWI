@@ -14,7 +14,10 @@ import {
   Trash2,
   User,
   FileText,
-  X
+  X,
+  Clock,
+  Car,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
