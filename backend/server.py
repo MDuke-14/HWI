@@ -100,6 +100,60 @@ class Cliente(BaseModel):
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class RelatorioTecnico(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero_assistencia: Optional[int] = None  # Auto-incrementado pelo backend
+    referencia_assistencia: Optional[str] = None
+    status: str = "rascunho"  # rascunho, em_andamento, concluido, enviado
+    
+    # Datas
+    data_criacao: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    data_servico: date
+    data_conclusao: Optional[datetime] = None
+    
+    # Relações
+    cliente_id: str
+    tecnico_id: str
+    created_by_id: str
+    
+    # Dados do cliente (snapshot)
+    cliente_nome: str
+    local_intervencao: str
+    pedido_por: str
+    contacto_pedido: Optional[str] = None
+    
+    # Equipamento
+    equipamento_tipologia: str
+    equipamento_marca: str
+    equipamento_modelo: str
+    equipamento_numero_serie: Optional[str] = None
+    
+    # Motivo
+    descricao_problema: str
+    
+    # Relatório
+    diagnostico: Optional[str] = None
+    acoes_realizadas: Optional[str] = None
+    resolucao: Optional[str] = None
+    problema_resolvido: bool = False
+    
+    # Mão de obra
+    horas_trabalhadas: float = 0
+    tecnico_nome: str
+
+class RelatorioTecnicoCreate(BaseModel):
+    cliente_id: str
+    data_servico: date
+    local_intervencao: str
+    pedido_por: str
+    contacto_pedido: Optional[str] = None
+    equipamento_tipologia: str
+    equipamento_marca: str
+    equipamento_modelo: str
+    equipamento_numero_serie: Optional[str] = None
+    descricao_problema: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
