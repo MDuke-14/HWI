@@ -1590,6 +1590,52 @@ async def add_tecnico_relatorio(
     
     return tecnico
 
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/tecnicos/{tecnico_id}")
+async def update_tecnico_relatorio(
+    relatorio_id: str,
+    tecnico_id: str,
+    tecnico_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar dados de um técnico no relatório"""
+    # Verificar permissão (admin)
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem editar técnicos")
+    
+    # Verificar se técnico existe
+    existing = await db.tecnicos_relatorio.find_one({
+        "id": tecnico_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Técnico não encontrado")
+    
+    # Atualizar campos editáveis
+    update_data = {}
+    if "tecnico_nome" in tecnico_data:
+        update_data["tecnico_nome"] = tecnico_data["tecnico_nome"]
+    if "horas_cliente" in tecnico_data:
+        update_data["horas_cliente"] = tecnico_data["horas_cliente"]
+    if "kms_deslocacao" in tecnico_data:
+        update_data["kms_deslocacao"] = tecnico_data["kms_deslocacao"]
+    if "tipo_horario" in tecnico_data:
+        update_data["tipo_horario"] = tecnico_data["tipo_horario"]
+    
+    await db.tecnicos_relatorio.update_one(
+        {"id": tecnico_id, "relatorio_id": relatorio_id},
+        {"$set": update_data}
+    )
+    
+    updated = await db.tecnicos_relatorio.find_one(
+        {"id": tecnico_id, "relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    
+    logging.info(f"Técnico {tecnico_id} atualizado no relatório {relatorio_id}")
+    
+    return updated
+
 @api_router.delete("/relatorios-tecnicos/{relatorio_id}/tecnicos/{tecnico_id}")
 async def delete_tecnico_relatorio(
     relatorio_id: str,
