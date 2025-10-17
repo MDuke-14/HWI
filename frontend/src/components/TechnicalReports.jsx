@@ -267,22 +267,35 @@ const TechnicalReports = ({ user, onLogout }) => {
                   {/* Actions */}
                   <div className="flex gap-2 pt-3 border-t border-gray-700">
                     <Button
-                      onClick={() => openEditModal(cliente)}
+                      onClick={() => openViewModal(cliente)}
                       variant="outline"
                       size="sm"
                       className="flex-1 border-gray-600 hover:border-blue-500 hover:bg-blue-500/10"
                     >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Editar
+                      <User className="w-4 h-4 mr-1" />
+                      Ver
                     </Button>
-                    <Button
-                      onClick={() => handleDeleteCliente(cliente.id)}
-                      variant="outline"
-                      size="sm"
-                      className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    
+                    {user?.is_admin && (
+                      <>
+                        <Button
+                          onClick={() => openEditModal(cliente)}
+                          variant="outline"
+                          size="sm"
+                          className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => openDeleteModal(cliente)}
+                          variant="outline"
+                          size="sm"
+                          className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
