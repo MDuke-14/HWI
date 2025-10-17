@@ -1565,10 +1565,6 @@ async def add_tecnico_relatorio(
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     
-    # Verificar permissão (admin)
-    if not current_user.get("is_admin", False):
-        raise HTTPException(status_code=403, detail="Apenas administradores podem adicionar técnicos")
-    
     # Contar técnicos existentes para ordem
     count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
     
@@ -1598,10 +1594,6 @@ async def update_tecnico_relatorio(
     current_user: dict = Depends(get_current_user)
 ):
     """Atualizar dados de um técnico no relatório"""
-    # Verificar permissão (admin)
-    if not current_user.get("is_admin", False):
-        raise HTTPException(status_code=403, detail="Apenas administradores podem editar técnicos")
-    
     # Verificar se técnico existe
     existing = await db.tecnicos_relatorio.find_one({
         "id": tecnico_id,
@@ -1643,10 +1635,6 @@ async def delete_tecnico_relatorio(
     current_user: dict = Depends(get_current_user)
 ):
     """Remover técnico de um relatório"""
-    # Verificar permissão (admin)
-    if not current_user.get("is_admin", False):
-        raise HTTPException(status_code=403, detail="Apenas administradores podem remover técnicos")
-    
     result = await db.tecnicos_relatorio.delete_one({
         "id": tecnico_id,
         "relatorio_id": relatorio_id
