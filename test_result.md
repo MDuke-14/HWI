@@ -851,12 +851,69 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PDF Export Button in Reports"
+    - "Technical Reports - Technician Management"
+    - "Technical Reports - Technician Management UI"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
+  - agent: "main"
+    message: |
+      ✅ PHASE 1 OF TECHNICAL REPORTS SYSTEM IMPLEMENTED: TECHNICIAN MANAGEMENT
+      
+      Completed the first phase of the technical reports feature as requested by the user.
+      This implementation follows the structure from the reference image while maintaining
+      the app's current dark theme styling.
+      
+      Backend Implementation:
+      1. Three new endpoints for technician management:
+         - GET /api/relatorios-tecnicos/{relatorio_id}/tecnicos
+         - POST /api/relatorios-tecnicos/{relatorio_id}/tecnicos
+         - DELETE /api/relatorios-tecnicos/{relatorio_id}/tecnicos/{tecnico_id}
+      
+      2. TecnicoRelatorio model already existed and is being used:
+         - tecnico_nome: str
+         - horas_cliente: float
+         - kms_deslocacao: float (will be x2 for round trip)
+         - tipo_horario: str (diurno, noturno, sabado, domingo_feriado)
+         - ordem: int (for display order)
+      
+      3. Auto-assignment: Report creator is automatically added as first technician (already implemented)
+      
+      Frontend Implementation:
+      1. Enhanced TechnicalReports.jsx with "Mão de Obra / Deslocação" section
+      
+      2. Report view modal now includes:
+         - Technician table showing name, hours, km (with x2 display), and work type code
+         - Admin-only "Adicionar Técnico" button
+         - Work type legend with codes: 1 (Diurno), 2 (Noturno), S (Sábado), D (Domingo/Feriado)
+      
+      3. Add Technician Modal with form:
+         - Nome do Técnico (text input)
+         - Horas no Cliente (number input with 0.5 step)
+         - Quilómetros (number input, shows x2 calculation)
+         - Tipo de Horário (select with 4 options)
+      
+      Design Notes:
+      - Maintained app's color scheme (dark backgrounds, blue accents)
+      - Layout structure inspired by reference image
+      - Clean table format for technicians
+      - Visual feedback for x2 km calculation
+      - Color-coded work type badges
+      
+      Testing Needed:
+      1. Backend: Test technician CRUD endpoints with authentication
+      2. Frontend: Test UI for viewing and adding technicians
+      3. Verify admin-only access to "Adicionar Técnico" button
+      4. Verify work type codes display correctly
+      5. Verify km x2 calculation display
+      
+      Credentials: miguel/password123 (admin user)
+      
+      Next Phases:
+      - Phase 2: Fotos (Photo uploads with descriptions)
+      - Phase 3: Materiais (Materials tracking with usado/orçamento)
   - agent: "main"
     message: |
       Excel report feature implemented:
