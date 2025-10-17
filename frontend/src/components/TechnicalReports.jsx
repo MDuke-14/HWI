@@ -75,6 +75,13 @@ const TechnicalReports = ({ user, onLogout }) => {
       fetchRelatorios();
     }
   }, [activeTab]);
+  
+  // Buscar clientes quando abre modal de criar relatório
+  useEffect(() => {
+    if (showAddRelatorioModal && clientes.length === 0) {
+      fetchClientes();
+    }
+  }, [showAddRelatorioModal]);
 
   const fetchClientes = async () => {
     try {
