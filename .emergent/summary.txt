@@ -1,0 +1,153 @@
+<analysis>
+The AI engineer's work primarily focused on resolving a persistent production login issue, which involved extensive debugging, database verification, and implementing a full password recovery system. Once resolved, the focus shifted to enhancing the application's reporting capabilities, starting with reorganizing UI navigation. Following this, a new module for Technical Reports was initiated, including a floating action button for access, client management (CRUD operations with admin roles), and the basic structure for technical reports. The most recent activity involved a detailed user request to build out the technical report form with advanced features like dynamic technician fields, photo uploads, material tracking with quotation requests, and digital signatures. The engineer is currently in Phase 1 of this complex report implementation, specifically working on integrating technician data into the reports.
+</analysis>
+
+<product_requirements>
+The HWI Unipessoal time-tracking application offers comprehensive employee time management, including clock-in/out, detailed monthly reports (previously also Faturação), and overtime calculations. It supports PWA features, vacation/absence management with email notifications and admin approval. Admin users have elevated privileges for user, vacation, and manual time entry/editing (including entries crossing midnight), with automatic recalculations and email notifications for edits. User profiles now mandate a phone number. Recent updates enable month/year selection for reports, display individual time entries in history, and allow admins to access other users' history and reports directly. The latest major request is to develop a robust Sistema de Relatórios Técnicos, including client management, detailed report forms with dynamic technician entries, mileage tracking (x2 for round trip), work type selection (Diurno, Nocturno, Sábado, Domingo/Feriado), photo uploads with text descriptions, material tracking (used/budget), a Pedir Cotação workflow (with email selection and auto-generated email body), and digital/text signatures. The final report should generate a PDF link for email distribution to clients.
+</product_requirements>
+
+<key_technical_concepts>
+- **Full-stack**: FastAPI (backend), React (frontend), MongoDB (database).
+- **Reporting**: ,  (PDF generation),  (Excel parsing).
+- **UI/UX**: Shadcn UI, Tailwind CSS.
+- **Backend**: JWT authentication,  (UTC standard), Pydantic,  (email).
+- **Data Handling**: UUIDs for IDs, ISO string for date/time in MongoDB.
+- **Authentication**: Bcrypt for password hashing,  flag for forced password reset.
+</key_technical_concepts>
+
+<code_architecture>
+/app/
+├── backend/
+│   ├── requirements.txt
+│   ├── server.py
+│   ├── .env
+│   ├── holidays.py
+│   ├── excel_report.py
+│   ├── timezones.py
+│   ├── pdf_report.py
+│   ├── import_excel.py
+│   ├── import_pdf.py
+│   ├── check_users.py
+│   ├── test_login.py
+│   └── reset_password.py # Created
+│   └── import_clientes.py # Created
+├── frontend/
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── .env
+│   ├── public/
+│   │   ├── manifest.json
+│   │   └── service-worker.js
+│   │   └── index.html
+│   └── src/
+│       ├── index.js
+│       ├── App.js
+│       ├── App.css
+│       ├── index.css
+│       ├── components/
+│       │   ├── ui/
+│       │   │   ├── textarea.jsx
+│       │   │   └── input.jsx
+│       │   │   └── sonner.tsx
+│       │   │   └── dialog.jsx
+│       │   │   └── alert-dialog.jsx
+│       │   │   └── ... (other shadcn components)
+│       │   ├── Dashboard.jsx
+│       │   ├── History.jsx
+│       │   ├── Reports.jsx
+│       │   ├── Navigation.jsx
+│       │   ├── Overtime.jsx
+│       │   ├── Vacations.jsx
+│       │   ├── AdminDashboard.jsx
+│       │   ├── Absences.jsx
+│       │   ├── Calendar.jsx
+│       │   ├── Login.jsx
+│       │   ├── ChangePassword.jsx # Created
+│       │   └── TechnicalReports.jsx # Created
+│       └── hooks/
+│           └── use-toast.js
+├── tests/
+├── scripts/
+│   └── create_production_users.sh
+├── DEBUG_PRODUCTION_LOGIN.md # Created
+├── INSTRUCOES_DEBUG.md # Created
+├── test_production_debug.sh # Created
+├── SISTEMA_RECUPERACAO_SENHA.md # Created
+├── ANALISE_SISTEMA_ANTIGO_HWI.md # Created
+├── PLAN_IMPLEMENTACAO_HWI.md # Created
+└── MODELO_RELATORIO_TECNICO.md # Created
+└── README.md
+
+-   **/app/backend/server.py**: Main FastAPI application.
+    -   **Summary**: Central API hub.
+    -   **Changes**:
+        -   : Debug logging added, modified to return detailed error info,  flag added to response.
+        -    model:  field added.
+        -   New models: , .
+        -   Email functions: ,  added.
+        -   New endpoints: , .
+        -   : Fixed  by converting  objects to ISO strings.
+        -   New endpoints:  (CRUD for , , ),  (report creation/listing).
+-   **/app/backend/.env**: Environment variables for backend.
+    -   **Summary**: Stores sensitive configurations.
+    -   **Changes**: JWT_SECRET and JWT_ALGORITHM were discovered missing, but  uses defaults.
+-   **/app/backend/check_users.py**: Script to check and create admin users.
+    -   **Summary**: Used for debugging.
+    -   **Changes**: Corrected to use  from  instead of hardcoded emergent.
+-   **/app/backend/reset_password.py**: New script for resetting user passwords.
+    -   **Summary**: Facilitates password resets for testing.
+    -   **Changes**: Created, then modified to correctly load  from .
+-   **/app/backend/import_clientes.py**: New script for importing client data.
+    -   **Summary**: Automates the initial population of client data from a file.
+    -   **Changes**: Created to parse and import clients provided by the user.
+-   **/app/frontend/src/components/Login.jsx**: User login and registration interface.
+    -   **Summary**: Handles user authentication.
+    -   **Changes**: Added Esqueci a senha link and a modal for password recovery. Displays detailed error messages.
+-   **/app/frontend/src/components/ChangePassword.jsx**: New component for forced password change.
+    -   **Summary**: UI for users to set a new password when  flag is set.
+    -   **Changes**: Created.
+-   **/app/frontend/src/App.js**: Main application component.
+    -   **Summary**: Manages authentication state and routing.
+    -   **Changes**: Added logic to check  flag and render  component if true. Added route for .
+-   **/app/frontend/src/components/Navigation.jsx**: Application navigation bar.
+    -   **Summary**: Provides links to main sections.
+    -   **Changes**: Reordered Relatórios to appear before Histórico.
+-   **/app/frontend/src/components/Dashboard.jsx**: Main dashboard view.
+    -   **Summary**: Displays core time-tracking functionality.
+    -   **Changes**: Added a floating action button (FAB) for Relatórios Técnicos in the bottom-right corner.
+-   **/app/frontend/src/components/TechnicalReports.jsx**: New component for technical reports and client management.
+    -   **Summary**: Central hub for the new technical reports system.
+    -   **Changes**: Created. Implemented client listing, view, edit, and delete functionality with admin checks and confirmation modals. Added Relatórios tab alongside Clientes tab. Includes UI for creating new reports and fetching clients for report forms.
+-   **/app/DEBUG_PRODUCTION_LOGIN.md**: Document created to guide debugging production login.
+-   **/app/INSTRUCOES_DEBUG.md**: Document created for debugging instructions.
+-   **/app/test_production_debug.sh**: Script created for testing production debug endpoint.
+-   **/app/SISTEMA_RECUPERACAO_SENHA.md**: Document explaining the new password recovery system.
+-   **/app/ANALISE_SISTEMA_ANTIGO_HWI.md**: Document summarizing the analysis of the old HWI system.
+-   **/app/PLAN_IMPLEMENTACAO_HWI.md**: Document planning the implementation of new features based on the old system.
+-   **/app/MODELO_RELATORIO_TECNICO.md**: Document detailing the data model for the technical report.
+</code_architecture>
+
+<pending_tasks>
+-   Complete the UI/logic for the  component.
+-   Fully implement PDF import logic in  (parsing and entry creation).
+-   Continue implementation of the detailed technical report form, specifically Phase 1: Técnicos + Materiais + Fotos.
+</pending_tasks>
+
+<current_work>
+The AI engineer is currently implementing the Sistema de Relatórios Técnicos, specifically focusing on Phase 1: Técnicos + Materiais + Fotos as requested by the user.
+
+This phase involves:
+1.  **Modifying the report creation process** to automatically add the technician who creates the report.
+2.  **Updating the report data model** to include fields for multiple technicians, their hours spent at the client, and kilometers traveled (which must be multiplied by 2 for round trip).
+3.  **Integrating work type selection** (Diurno, Nocturno, Sábado, Domingo/Feriado) for each technician.
+4.  **Adding a table** to display the chosen work conditions for clarity.
+5.  **Implementing a section for photo uploads**, including a visible upload button and automatically generated text fields for descriptions associated with each photo.
+6.  **Developing a section for material tracking**, specifying designation, quantity, and whether the material was used or requires a budget quotation.
+
+Immediately before this summary request, the AI engineer made an edit to the backend () to automatically add the technician (the current user) to the report upon its creation, which is the first step in the Técnicos part of Phase 1.
+</current_work>
+
+<optional_next_step>
+Implement the UI and logic in  for displaying technicians, adding new ones, and capturing their hours, kilometers, and work types, starting with automatically adding the current user as a technician.
+</optional_next_step>

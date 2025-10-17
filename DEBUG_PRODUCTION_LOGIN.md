@@ -30,10 +30,10 @@ Este endpoint retorna informações sobre:
 **Como usar:**
 ```bash
 # Aceder diretamente no navegador
-https://timelog-admin.preview.emergentagent.com/api/debug/db-info
+https://timeflow-service.preview.emergentagent.com/api/debug/db-info
 
 # Ou via curl
-curl https://timelog-admin.preview.emergentagent.com/api/debug/db-info
+curl https://timeflow-service.preview.emergentagent.com/api/debug/db-info
 ```
 
 ### 3. **Script para Resetar Senhas**
@@ -59,7 +59,7 @@ Corrigido `/app/backend/check_users.py` para usar `DB_NAME` do `.env` em vez de 
 
 1. Abrir navegador e aceder:
    ```
-   https://timelog-admin.preview.emergentagent.com/api/debug/db-info
+   https://timeflow-service.preview.emergentagent.com/api/debug/db-info
    ```
 
 2. Verificar a resposta JSON:
