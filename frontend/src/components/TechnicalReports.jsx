@@ -88,18 +88,23 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleDeleteCliente = async (clienteId) => {
-    if (!window.confirm('Tem certeza que deseja deletar este cliente?')) {
-      return;
-    }
+  const handleDeleteCliente = async () => {
+    if (!clienteToDelete) return;
 
     try {
-      await axios.delete(`${API}/clientes/${clienteId}`);
-      toast.success('Cliente deletado com sucesso!');
+      await axios.delete(`${API}/clientes/${clienteToDelete.id}`);
+      toast.success('Cliente eliminado com sucesso!');
+      setShowDeleteModal(false);
+      setClienteToDelete(null);
       fetchClientes();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao deletar cliente');
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar cliente');
     }
+  };
+
+  const openViewModal = (cliente) => {
+    setSelectedCliente(cliente);
+    setShowViewModal(true);
   };
 
   const openEditModal = (cliente) => {
@@ -113,6 +118,11 @@ const TechnicalReports = ({ user, onLogout }) => {
       emails_adicionais: cliente.emails_adicionais || ''
     });
     setShowEditModal(true);
+  };
+
+  const openDeleteModal = (cliente) => {
+    setClienteToDelete(cliente);
+    setShowDeleteModal(true);
   };
 
   const resetForm = () => {
