@@ -1319,6 +1319,182 @@ async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_curre
     
     return {"message": "Cliente deletado com sucesso"}
 
+# ============ Relatórios Técnicos Routes ============
+
+@api_router.post("/relatorios-tecnicos", response_model=RelatorioTecnico)
+async def create_relatorio(
+    relatorio_data: RelatorioTecnicoCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Criar novo relatório técnico"""
+    # Buscar dados do cliente
+    cliente = await db.clientes.find_one({"id": relatorio_data.cliente_id}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Buscar dados do usuário (técnico)
+    user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    
+    # Gerar número de assistência (último número + 1)
+    last_relatorio = await db.relatorios_tecnicos.find_one(
+        {},
+        sort=[("numero_assistencia", -1)]
+    )
+    numero_assistencia = (last_relatorio.get("numero_assistencia", 0) + 1) if last_relatorio else 1
+    
+    # Criar relatório
+    relatorio = RelatorioTecnico(
+        numero_assistencia=numero_assistencia,
+        cliente_id=relatorio_data.cliente_id,
+        tecnico_id=current_user["sub"],
+        created_by_id=current_user["sub"],
+        cliente_nome=cliente["nome"],
+        tecnico_nome=user.get("full_name", user["username"]),
+        data_servico=relatorio_data.data_servico,
+        local_intervencao=relatorio_data.local_intervencao,
+        pedido_por=relatorio_data.pedido_por,
+        contacto_pedido=relatorio_data.contacto_pedido,
+        equipamento_tipologia=relatorio_data.equipamento_tipologia,
+        equipamento_marca=relatorio_data.equipamento_marca,
+        equipamento_modelo=relatorio_data.equipamento_modelo,
+        equipamento_numero_serie=relatorio_data.equipamento_numero_serie,
+        descricao_problema=relatorio_data.descricao_problema
+    )
+    
+    relatorio_dict = relatorio.dict()
+    relatorio_dict["data_criacao"] = relatorio_dict["data_criacao"].isoformat()
+    relatorio_dict["data_servico"] = relatorio_dict["data_servico"].isoformat()
+    
+    await db.relatorios_tecnicos.insert_one(relatorio_dict)
+    
+    logging.info(f"Relatório técnico criado: {numero_assistencia} por {current_user['sub']}")
+    return relatorio
+
+@api_router.get("/relatorios-tecnicos")
+async def get_relatorios(
+    status: Optional[str] = None,
+    cliente_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar relatórios técnicos"""
+    query = {}
+    
+    # Filtros opcionais
+    if status:
+        query["status"] = status
+    if cliente_id:
+        query["cliente_id"] = cliente_id
+    
+    # Se não for admin, mostrar apenas seus relatórios
+    if not current_user.get("is_admin", False):
+        query["tecnico_id"] = current_user["sub"]
+    
+    relatorios = await db.relatorios_tecnicos.find(
+        query,
+        {"_id": 0}
+    ).sort("numero_assistencia", -1).to_list(1000)
+    
+    return relatorios
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}", response_model=RelatorioTecnico)
+async def get_relatorio(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter relatório técnico específico"""
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Verificar permissão (admin ou técnico do relatório)
+    if not current_user.get("is_admin", False) and relatorio["tecnico_id"] != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Sem permissão para ver este relatório")
+    
+    return relatorio
+
+@api_router.put("/relatorios-tecnicos/{relatorio_id}", response_model=RelatorioTecnico)
+async def update_relatorio(
+    relatorio_id: str,
+    relatorio_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar relatório técnico"""
+    existing = await db.relatorios_tecnicos.find_one({"id": relatorio_id})
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Verificar permissão
+    if not current_user.get("is_admin", False) and existing["tecnico_id"] != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Sem permissão para editar este relatório")
+    
+    # Remover campos que não devem ser atualizados
+    relatorio_data.pop("id", None)
+    relatorio_data.pop("numero_assistencia", None)
+    relatorio_data.pop("data_criacao", None)
+    relatorio_data.pop("created_by_id", None)
+    
+    await db.relatorios_tecnicos.update_one(
+        {"id": relatorio_id},
+        {"$set": relatorio_data}
+    )
+    
+    updated = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    
+    logging.info(f"Relatório técnico atualizado: {relatorio_id} por {current_user['sub']}")
+    
+    return updated
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}")
+async def delete_relatorio(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Deletar relatório técnico (apenas admin)"""
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem deletar relatórios")
+    
+    result = await db.relatorios_tecnicos.delete_one({"id": relatorio_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    logging.info(f"Relatório técnico deletado: {relatorio_id} por {current_user['sub']}")
+    
+    return {"message": "Relatório deletado com sucesso"}
+
+@api_router.patch("/relatorios-tecnicos/{relatorio_id}/status")
+async def update_relatorio_status(
+    relatorio_id: str,
+    status: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar status do relatório"""
+    valid_status = ["rascunho", "em_andamento", "concluido", "enviado"]
+    if status not in valid_status:
+        raise HTTPException(status_code=400, detail=f"Status inválido. Use: {', '.join(valid_status)}")
+    
+    existing = await db.relatorios_tecnicos.find_one({"id": relatorio_id})
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Verificar permissão
+    if not current_user.get("is_admin", False) and existing["tecnico_id"] != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Sem permissão")
+    
+    update_data = {"status": status}
+    if status == "concluido":
+        update_data["data_conclusao"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.relatorios_tecnicos.update_one(
+        {"id": relatorio_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": f"Status atualizado para {status}"}
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
