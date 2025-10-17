@@ -105,9 +105,60 @@
 user_problem_statement: |
   Time tracking application for HWI Unipessoal, lda with simplified time tracking (start/end only),
   overtime management, PWA capabilities, vacation/absence systems, admin privileges, and Excel report generation
-  matching a user-provided template format.
+  matching a user-provided template format. Recently extended with a Technical Reports system including client
+  management and detailed technical report forms with technician tracking.
 
 backend:
+  - task: "Technical Reports - Technician Management"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          PHASE 1: TECHNICIAN SECTION IMPLEMENTED
+          
+          Backend Changes:
+          1. Added endpoints for technician management:
+             - GET /api/relatorios-tecnicos/{relatorio_id}/tecnicos - List technicians
+             - POST /api/relatorios-tecnicos/{relatorio_id}/tecnicos - Add technician
+             - DELETE /api/relatorios-tecnicos/{relatorio_id}/tecnicos/{tecnico_id} - Remove technician
+          
+          2. Technician data structure (TecnicoRelatorio model):
+             - tecnico_nome: Name of the technician
+             - horas_cliente: Hours spent at client location
+             - kms_deslocacao: Kilometers traveled (one way, will be x2 for round trip)
+             - tipo_horario: Work type (diurno, noturno, sabado, domingo_feriado)
+             - ordem: Order for display
+          
+          3. Auto-assignment: When a report is created, the creator is automatically added as the first technician
+          
+          Frontend Changes:
+          1. Updated TechnicalReports.jsx with technician management UI:
+             - Added "Mão de Obra / Deslocação" section in report view modal
+             - Table displaying all technicians with their hours, kilometers, and work type code
+             - "Adicionar Técnico" button for admin users
+             - Modal form for adding new technicians with fields for name, hours, kilometers, and work type
+             - Auto-calculation showing round trip (x2) for kilometers
+             - Legend showing work type codes: 1 (Diurno 07h-19h), 2 (Noturno 19h-07h), S (Sábado), D (Domingo/Feriado)
+          
+          2. Work Types with Codes:
+             - Diurno (07h-19h): Code 1
+             - Noturno (19h-07h): Code 2
+             - Sábado: Code S
+             - Domingo/Feriado: Code D
+          
+          NEEDS TESTING:
+          1. Backend endpoints for listing and adding technicians
+          2. Frontend display of technicians in report view
+          3. Admin-only "Adicionar Técnico" button visibility
+          4. Add technician form with validation
+          5. Kilometers multiplication (x2) display
+          6. Work type code display and legend
   - task: "Timezone Fix for Manual Time Entries"
     implemented: true
     working: "NA"
