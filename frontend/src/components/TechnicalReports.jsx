@@ -69,8 +69,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   });
 
   useEffect(() => {
-    fetchClientes();
-  }, []);
+    if (activeTab === 'clientes') {
+      fetchClientes();
+    } else if (activeTab === 'relatorios') {
+      fetchRelatorios();
+    }
+  }, [activeTab]);
 
   const fetchClientes = async () => {
     try {
@@ -79,6 +83,19 @@ const TechnicalReports = ({ user, onLogout }) => {
       setClientes(response.data);
     } catch (error) {
       toast.error('Erro ao carregar clientes');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRelatorios = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/relatorios-tecnicos`);
+      setRelatorios(response.data);
+    } catch (error) {
+      toast.error('Erro ao carregar relatórios');
       console.error(error);
     } finally {
       setLoading(false);
