@@ -48,6 +48,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
   const [showViewRelatorioModal, setShowViewRelatorioModal] = useState(false);
   const [selectedRelatorio, setSelectedRelatorio] = useState(null);
+  const [tecnicos, setTecnicos] = useState([]);
+  const [showAddTecnicoModal, setShowAddTecnicoModal] = useState(false);
+  const [tecnicoFormData, setTecnicoFormData] = useState({
+    tecnico_nome: '',
+    horas_cliente: 0,
+    kms_deslocacao: 0,
+    tipo_horario: 'diurno'
+  });
   
   const [formData, setFormData] = useState({
     nome: '',
