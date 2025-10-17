@@ -319,6 +319,36 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const openEditTecnicoModal = (tecnico) => {
+    setSelectedTecnico(tecnico);
+    setTecnicoFormData({
+      tecnico_nome: tecnico.tecnico_nome,
+      horas_cliente: tecnico.horas_cliente,
+      kms_deslocacao: tecnico.kms_deslocacao,
+      tipo_horario: tecnico.tipo_horario
+    });
+    setShowEditTecnicoModal(true);
+  };
+
+  const handleEditTecnico = async (e) => {
+    e.preventDefault();
+    if (!selectedRelatorio || !selectedTecnico) return;
+
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos/${selectedTecnico.id}`,
+        tecnicoFormData
+      );
+      toast.success('Técnico atualizado com sucesso!');
+      setShowEditTecnicoModal(false);
+      setSelectedTecnico(null);
+      resetTecnicoForm();
+      await fetchTecnicosRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar técnico');
+    }
+  };
+
   const resetTecnicoForm = () => {
     setTecnicoFormData({
       tecnico_nome: '',
