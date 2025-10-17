@@ -291,6 +291,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
         {/* Clientes Section */}
         {activeTab === 'clientes' && (
+        <div className="glass-effect p-6 rounded-xl">
           {/* Search and Add */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
