@@ -233,12 +233,18 @@ const TechnicalReports = ({ user, onLogout }) => {
     await fetchTecnicosRelatorio(relatorio.id);
   };
 
-  const openEditRelatorioModal = (relatorio, e) => {
+  const openEditRelatorioModal = async (relatorio, e) => {
     if (e) e.stopPropagation(); // Prevenir abertura do modal de visualização
+    
+    // Buscar clientes se ainda não foram carregados
+    if (clientes.length === 0) {
+      await fetchClientes();
+    }
+    
     setSelectedRelatorio(relatorio);
     setRelatorioFormData({
       cliente_id: relatorio.cliente_id,
-      data_servico: relatorio.data_servico,
+      data_servico: relatorio.data_servico.split('T')[0], // Formato YYYY-MM-DD
       local_intervencao: relatorio.local_intervencao,
       pedido_por: relatorio.pedido_por,
       contacto_pedido: relatorio.contacto_pedido || '',
