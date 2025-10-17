@@ -176,6 +176,59 @@ const TechnicalReports = ({ user, onLogout }) => {
     });
     setSelectedCliente(null);
   };
+  
+  const resetRelatorioForm = () => {
+    setRelatorioFormData({
+      cliente_id: '',
+      data_servico: new Date().toISOString().split('T')[0],
+      local_intervencao: '',
+      pedido_por: '',
+      contacto_pedido: '',
+      equipamento_tipologia: '',
+      equipamento_marca: '',
+      equipamento_modelo: '',
+      equipamento_numero_serie: '',
+      descricao_problema: ''
+    });
+  };
+
+  const handleAddRelatorio = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/relatorios-tecnicos`, relatorioFormData);
+      toast.success('Relatório criado com sucesso!');
+      setShowAddRelatorioModal(false);
+      resetRelatorioForm();
+      fetchRelatorios();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao criar relatório');
+    }
+  };
+
+  const openViewRelatorioModal = (relatorio) => {
+    setSelectedRelatorio(relatorio);
+    setShowViewRelatorioModal(true);
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'rascunho': 'text-gray-400 bg-gray-500/10',
+      'em_andamento': 'text-blue-400 bg-blue-500/10',
+      'concluido': 'text-green-400 bg-green-500/10',
+      'enviado': 'text-purple-400 bg-purple-500/10'
+    };
+    return colors[status] || 'text-gray-400 bg-gray-500/10';
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      'rascunho': 'Rascunho',
+      'em_andamento': 'Em Andamento',
+      'concluido': 'Concluído',
+      'enviado': 'Enviado'
+    };
+    return labels[status] || status;
+  };
 
   const filteredClientes = clientes.filter(cliente =>
     cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
