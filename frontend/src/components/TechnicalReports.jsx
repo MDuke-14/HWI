@@ -1101,6 +1101,248 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Relatório Modal */}
+      <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Relatório #{selectedRelatorio?.numero_assistencia}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleEditRelatorio} className="space-y-6 mt-4">
+            {/* Cliente e Data */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_cliente_id" className="text-gray-300">
+                  Cliente *
+                </Label>
+                <select
+                  id="edit_cliente_id"
+                  value={relatorioFormData.cliente_id}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, cliente_id: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                  required
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clientes.map((cliente) => (
+                    <option key={cliente.id} value={cliente.id}>
+                      {cliente.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit_data_servico" className="text-gray-300">
+                  Data do Serviço *
+                </Label>
+                <Input
+                  id="edit_data_servico"
+                  type="date"
+                  value={relatorioFormData.data_servico}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, data_servico: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Local e Pedido */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_local_intervencao" className="text-gray-300">
+                  Local de Intervenção *
+                </Label>
+                <Input
+                  id="edit_local_intervencao"
+                  value={relatorioFormData.local_intervencao}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, local_intervencao: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_pedido_por" className="text-gray-300">
+                  Pedido por *
+                </Label>
+                <Input
+                  id="edit_pedido_por"
+                  value={relatorioFormData.pedido_por}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, pedido_por: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit_contacto_pedido" className="text-gray-300">
+                Contacto do Solicitante
+              </Label>
+              <Input
+                id="edit_contacto_pedido"
+                value={relatorioFormData.contacto_pedido}
+                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, contacto_pedido: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+              />
+            </div>
+
+            {/* Equipamento */}
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
+              <h3 className="text-blue-400 font-semibold mb-4">Equipamento</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_equipamento_tipologia" className="text-gray-300">
+                    Tipologia *
+                  </Label>
+                  <Input
+                    id="edit_equipamento_tipologia"
+                    value={relatorioFormData.equipamento_tipologia}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_tipologia: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit_equipamento_marca" className="text-gray-300">
+                    Marca *
+                  </Label>
+                  <Input
+                    id="edit_equipamento_marca"
+                    value={relatorioFormData.equipamento_marca}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_marca: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit_equipamento_modelo" className="text-gray-300">
+                    Modelo *
+                  </Label>
+                  <Input
+                    id="edit_equipamento_modelo"
+                    value={relatorioFormData.equipamento_modelo}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_modelo: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit_equipamento_numero_serie" className="text-gray-300">
+                    Número de Série
+                  </Label>
+                  <Input
+                    id="edit_equipamento_numero_serie"
+                    value={relatorioFormData.equipamento_numero_serie}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_numero_serie: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Motivo da Assistência */}
+            <div>
+              <Label htmlFor="edit_motivo_assistencia" className="text-gray-300">
+                Motivo da Assistência *
+              </Label>
+              <textarea
+                id="edit_motivo_assistencia"
+                value={relatorioFormData.motivo_assistencia}
+                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, motivo_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
+                required
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowEditRelatorioModal(false);
+                  setSelectedRelatorio(null);
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+              >
+                Salvar Alterações
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Relatório Confirmation Modal */}
+      <Dialog open={showDeleteRelatorioModal} onOpenChange={setShowDeleteRelatorioModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Confirmar Eliminação
+            </DialogTitle>
+          </DialogHeader>
+
+          {relatorioToDelete && (
+            <div className="space-y-4 mt-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <p className="text-white mb-2">
+                  Tem certeza que deseja eliminar este relatório?
+                </p>
+                <div className="bg-[#0f0f0f] p-3 rounded mt-3">
+                  <p className="text-white font-semibold">
+                    Relatório #{relatorioToDelete.numero_assistencia}
+                  </p>
+                  <p className="text-gray-400 text-sm">{relatorioToDelete.cliente_nome}</p>
+                  <p className="text-gray-400 text-sm">
+                    {new Date(relatorioToDelete.data_servico).toLocaleDateString('pt-PT')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-amber-200 text-sm">
+                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. O relatório e todos os dados associados (técnicos, fotos, materiais) serão permanentemente eliminados.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteRelatorioModal(false);
+                    setRelatorioToDelete(null);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-gray-600"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleDeleteRelatorio}
+                  className="flex-1 bg-red-500 hover:bg-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar Relatório
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Add Cliente Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
