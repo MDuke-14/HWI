@@ -774,7 +774,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* View Relatório Modal */}
       <Dialog open={showViewRelatorioModal} onOpenChange={setShowViewRelatorioModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <FileText className="w-5 h-5 text-blue-400" />
@@ -783,7 +783,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
 
           {selectedRelatorio && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-6 mt-4">
               {/* Status e Data */}
               <div className="flex items-center justify-between">
                 <span className={`px-3 py-1 rounded text-sm ${getStatusColor(selectedRelatorio.status)}`}>
@@ -795,15 +795,21 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
               {/* Cliente */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg">
-                <h4 className="text-blue-400 font-semibold mb-2">Cliente</h4>
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <h4 className="text-blue-400 font-semibold mb-2 flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  Dados do Cliente
+                </h4>
                 <p className="text-white font-medium">{selectedRelatorio.cliente_nome}</p>
                 <p className="text-gray-400 text-sm">Local: {selectedRelatorio.local_intervencao}</p>
                 <p className="text-gray-400 text-sm">Pedido por: {selectedRelatorio.pedido_por}</p>
+                {selectedRelatorio.contacto_pedido && (
+                  <p className="text-gray-400 text-sm">Contacto: {selectedRelatorio.contacto_pedido}</p>
+                )}
               </div>
 
               {/* Equipamento */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg">
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <h4 className="text-blue-400 font-semibold mb-2">Equipamento</h4>
                 <p className="text-white">{selectedRelatorio.equipamento_marca} - {selectedRelatorio.equipamento_tipologia}</p>
                 <p className="text-gray-400 text-sm">Modelo: {selectedRelatorio.equipamento_modelo}</p>
@@ -813,21 +819,208 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
               {/* Problema */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg">
-                <h4 className="text-blue-400 font-semibold mb-2">Descrição do Problema</h4>
-                <p className="text-gray-300">{selectedRelatorio.descricao_problema}</p>
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <h4 className="text-blue-400 font-semibold mb-2">Motivo da Assistência</h4>
+                <p className="text-gray-300">{selectedRelatorio.motivo_assistencia}</p>
               </div>
 
-              {/* Técnico */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg">
-                <h4 className="text-blue-400 font-semibold mb-2">Técnico Responsável</h4>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-white">{selectedRelatorio.tecnico_nome}</span>
+              {/* Mão de Obra / Deslocação */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Mão de Obra / Deslocação
+                  </h4>
+                  {user?.is_admin && (
+                    <Button
+                      onClick={() => setShowAddTecnicoModal(true)}
+                      size="sm"
+                      className="bg-blue-500 hover:bg-blue-600"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Adicionar Técnico
+                    </Button>
+                  )}
                 </div>
+
+                {/* Tabela de Técnicos */}
+                {tecnicos.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-700">
+                            <th className="text-left py-2 px-3 text-gray-400 text-sm font-medium">Técnico</th>
+                            <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Horas</th>
+                            <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Deslocação (km)</th>
+                            <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Código</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tecnicos.map((tec) => (
+                            <tr key={tec.id} className="border-b border-gray-700/50">
+                              <td className="py-3 px-3 text-white">{tec.tecnico_nome}</td>
+                              <td className="py-3 px-3 text-center text-gray-300">{tec.horas_cliente}h</td>
+                              <td className="py-3 px-3 text-center text-gray-300">
+                                {tec.kms_deslocacao} km 
+                                <span className="text-xs text-gray-500 ml-1">(x2 = {tec.kms_deslocacao * 2} km)</span>
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-sm">
+                                  {getTipoHorarioCodigo(tec.tipo_horario)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Legenda dos Códigos */}
+                    <div className="bg-blue-500/5 border border-blue-500/20 rounded p-3">
+                      <p className="text-xs text-gray-400 mb-2 font-semibold">Tipos de Trabalho:</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">1</span>
+                          <span className="text-gray-300">Dias úteis (07h-19h)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">2</span>
+                          <span className="text-gray-300">Dias úteis (19h-07h)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">S</span>
+                          <span className="text-gray-300">Sábado</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">D</span>
+                          <span className="text-gray-300">Domingos/Feriados</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">Nenhum técnico atribuído</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Técnico Modal */}
+      <Dialog open={showAddTecnicoModal} onOpenChange={setShowAddTecnicoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Plus className="w-5 h-5 text-blue-400" />
+              Adicionar Técnico
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleAddTecnico} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="tecnico_nome" className="text-gray-300">
+                Nome do Técnico *
+              </Label>
+              <Input
+                id="tecnico_nome"
+                value={tecnicoFormData.tecnico_nome}
+                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                placeholder="Ex: Pedro Duarte"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="horas_cliente" className="text-gray-300 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Horas no Cliente *
+                </Label>
+                <Input
+                  id="horas_cliente"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={tecnicoFormData.horas_cliente}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, horas_cliente: parseFloat(e.target.value) || 0 })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 8"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="kms_deslocacao" className="text-gray-300 flex items-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Quilómetros (só ida) *
+                </Label>
+                <Input
+                  id="kms_deslocacao"
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={tecnicoFormData.kms_deslocacao}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: parseFloat(e.target.value) || 0 })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 150"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Total ida e volta: {(tecnicoFormData.kms_deslocacao * 2).toFixed(0)} km
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="tipo_horario" className="text-gray-300">
+                Tipo de Horário *
+              </Label>
+              <select
+                id="tipo_horario"
+                value={tecnicoFormData.tipo_horario}
+                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tipo_horario: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                required
+              >
+                <option value="diurno">Diurno (07h-19h) - Código 1</option>
+                <option value="noturno">Noturno (19h-07h) - Código 2</option>
+                <option value="sabado">Sábado - Código S</option>
+                <option value="domingo_feriado">Domingo/Feriado - Código D</option>
+              </select>
+            </div>
+
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded p-3">
+              <p className="text-xs text-gray-400">
+                <strong>Nota:</strong> Os quilómetros serão automaticamente multiplicados por 2 (ida e volta) nos cálculos finais.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowAddTecnicoModal(false);
+                  resetTecnicoForm();
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+              >
+                Adicionar Técnico
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
