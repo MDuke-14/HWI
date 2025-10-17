@@ -1371,10 +1371,8 @@ async def create_relatorio(
     relatorio = RelatorioTecnico(
         numero_assistencia=numero_assistencia,
         cliente_id=relatorio_data.cliente_id,
-        tecnico_id=current_user["sub"],
         created_by_id=current_user["sub"],
         cliente_nome=cliente["nome"],
-        tecnico_nome=user.get("full_name", user["username"]),
         data_servico=relatorio_data.data_servico,
         local_intervencao=relatorio_data.local_intervencao,
         pedido_por=relatorio_data.pedido_por,
@@ -1383,7 +1381,7 @@ async def create_relatorio(
         equipamento_marca=relatorio_data.equipamento_marca,
         equipamento_modelo=relatorio_data.equipamento_modelo,
         equipamento_numero_serie=relatorio_data.equipamento_numero_serie,
-        descricao_problema=relatorio_data.descricao_problema
+        motivo_assistencia=relatorio_data.motivo_assistencia
     )
     
     relatorio_dict = relatorio.dict()
@@ -1391,6 +1389,17 @@ async def create_relatorio(
     relatorio_dict["data_servico"] = relatorio_dict["data_servico"].isoformat()
     
     await db.relatorios_tecnicos.insert_one(relatorio_dict)
+    
+    # Adicionar técnico criador automaticamente
+    tecnico = TecnicoRelatorio(
+        relatorio_id=relatorio.id,
+        tecnico_id=current_user["sub"],
+        tecnico_nome=user.get("full_name", user["username"]),
+        ordem=0
+    )
+    
+    tecnico_dict = tecnico.dict()
+    await db.tecnicos_relatorio.insert_one(tecnico_dict)
     
     logging.info(f"Relatório técnico criado: {numero_assistencia} por {current_user['sub']}")
     return relatorio
