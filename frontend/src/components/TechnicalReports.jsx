@@ -27,15 +27,25 @@ import {
 } from "@/components/ui/dialog";
 
 const TechnicalReports = ({ user, onLogout }) => {
+  const [activeTab, setActiveTab] = useState('clientes');
   const [clientes, setClientes] = useState([]);
+  const [relatorios, setRelatorios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Clientes modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [clienteToDelete, setClienteToDelete] = useState(null);
+  
+  // Relatórios modals
+  const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
+  const [showViewRelatorioModal, setShowViewRelatorioModal] = useState(false);
+  const [selectedRelatorio, setSelectedRelatorio] = useState(null);
+  
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -43,6 +53,19 @@ const TechnicalReports = ({ user, onLogout }) => {
     morada: '',
     nif: '',
     emails_adicionais: ''
+  });
+  
+  const [relatorioFormData, setRelatorioFormData] = useState({
+    cliente_id: '',
+    data_servico: new Date().toISOString().split('T')[0],
+    local_intervencao: '',
+    pedido_por: '',
+    contacto_pedido: '',
+    equipamento_tipologia: '',
+    equipamento_marca: '',
+    equipamento_modelo: '',
+    equipamento_numero_serie: '',
+    descricao_problema: ''
   });
 
   useEffect(() => {
