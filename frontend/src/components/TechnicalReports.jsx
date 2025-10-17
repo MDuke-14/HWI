@@ -1154,6 +1154,114 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Técnico Modal */}
+      <Dialog open={showEditTecnicoModal} onOpenChange={setShowEditTecnicoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Técnico
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleEditTecnico} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="edit_tecnico_nome" className="text-gray-300">
+                Nome do Técnico *
+              </Label>
+              <Input
+                id="edit_tecnico_nome"
+                value={tecnicoFormData.tecnico_nome}
+                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                placeholder="Ex: Pedro Duarte"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_horas_cliente" className="text-gray-300 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Horas no Cliente *
+                </Label>
+                <Input
+                  id="edit_horas_cliente"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={tecnicoFormData.horas_cliente}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, horas_cliente: parseFloat(e.target.value) || 0 })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 8"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_kms_deslocacao" className="text-gray-300 flex items-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Quilómetros (só ida) *
+                </Label>
+                <Input
+                  id="edit_kms_deslocacao"
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={tecnicoFormData.kms_deslocacao}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: parseFloat(e.target.value) || 0 })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 150"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Total ida e volta: {(tecnicoFormData.kms_deslocacao * 2).toFixed(0)} km
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit_tipo_horario" className="text-gray-300">
+                Tipo de Horário *
+              </Label>
+              <select
+                id="edit_tipo_horario"
+                value={tecnicoFormData.tipo_horario}
+                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tipo_horario: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                required
+              >
+                <option value="diurno">Diurno (07h-19h) - Código 1</option>
+                <option value="noturno">Noturno (19h-07h) - Código 2</option>
+                <option value="sabado">Sábado - Código S</option>
+                <option value="domingo_feriado">Domingo/Feriado - Código D</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowEditTecnicoModal(false);
+                  setSelectedTecnico(null);
+                  resetTecnicoForm();
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+              >
+                Salvar Alterações
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Relatório Modal */}
       <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
