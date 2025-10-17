@@ -47,7 +47,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Relatórios modals
   const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
   const [showViewRelatorioModal, setShowViewRelatorioModal] = useState(false);
+  const [showEditRelatorioModal, setShowEditRelatorioModal] = useState(false);
+  const [showDeleteRelatorioModal, setShowDeleteRelatorioModal] = useState(false);
   const [selectedRelatorio, setSelectedRelatorio] = useState(null);
+  const [relatorioToDelete, setRelatorioToDelete] = useState(null);
   const [tecnicos, setTecnicos] = useState([]);
   const [showAddTecnicoModal, setShowAddTecnicoModal] = useState(false);
   const [tecnicoFormData, setTecnicoFormData] = useState({
