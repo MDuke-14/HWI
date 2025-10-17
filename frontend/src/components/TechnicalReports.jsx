@@ -223,9 +223,65 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const openViewRelatorioModal = (relatorio) => {
+  const openViewRelatorioModal = async (relatorio) => {
     setSelectedRelatorio(relatorio);
     setShowViewRelatorioModal(true);
+    // Buscar técnicos do relatório
+    await fetchTecnicosRelatorio(relatorio.id);
+  };
+  
+  const fetchTecnicosRelatorio = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/tecnicos`);
+      setTecnicos(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar técnicos:', error);
+      toast.error('Erro ao carregar técnicos');
+    }
+  };
+
+  const handleAddTecnico = async (e) => {
+    e.preventDefault();
+    if (!selectedRelatorio) return;
+
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos`, tecnicoFormData);
+      toast.success('Técnico adicionado com sucesso!');
+      setShowAddTecnicoModal(false);
+      resetTecnicoForm();
+      await fetchTecnicosRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao adicionar técnico');
+    }
+  };
+
+  const resetTecnicoForm = () => {
+    setTecnicoFormData({
+      tecnico_nome: '',
+      horas_cliente: 0,
+      kms_deslocacao: 0,
+      tipo_horario: 'diurno'
+    });
+  };
+
+  const getTipoHorarioLabel = (tipo) => {
+    const labels = {
+      'diurno': 'Diurno (07h-19h)',
+      'noturno': 'Noturno (19h-07h)',
+      'sabado': 'Sábado',
+      'domingo_feriado': 'Domingo/Feriado'
+    };
+    return labels[tipo] || tipo;
+  };
+
+  const getTipoHorarioCodigo = (tipo) => {
+    const codigos = {
+      'diurno': '1',
+      'noturno': '2',
+      'sabado': 'S',
+      'domingo_feriado': 'D'
+    };
+    return codigos[tipo] || '-';
   };
 
   const getStatusColor = (status) => {
