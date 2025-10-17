@@ -3128,11 +3128,14 @@ if __name__ == "__main__":
             sys.exit(test_timezone_fix())
         elif sys.argv[1] == "admin-status":
             sys.exit(test_admin_status_main())
+        elif sys.argv[1] == "technical-reports":
+            sys.exit(test_technical_reports_main())
         else:
             print("Available test modes:")
-            print("  python backend_test.py                 # Run midnight crossing tests")
-            print("  python backend_test.py timezone        # Run timezone fix tests")
-            print("  python backend_test.py admin-status    # Run admin status analysis tests")
+            print("  python backend_test.py                      # Run midnight crossing tests")
+            print("  python backend_test.py timezone             # Run timezone fix tests")
+            print("  python backend_test.py admin-status         # Run admin status analysis tests")
+            print("  python backend_test.py technical-reports    # Run technical reports technician management tests")
             sys.exit(1)
     else:
         sys.exit(main())
