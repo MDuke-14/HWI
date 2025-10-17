@@ -232,6 +232,59 @@ const TechnicalReports = ({ user, onLogout }) => {
     // Buscar técnicos do relatório
     await fetchTecnicosRelatorio(relatorio.id);
   };
+
+  const openEditRelatorioModal = (relatorio, e) => {
+    if (e) e.stopPropagation(); // Prevenir abertura do modal de visualização
+    setSelectedRelatorio(relatorio);
+    setRelatorioFormData({
+      cliente_id: relatorio.cliente_id,
+      data_servico: relatorio.data_servico,
+      local_intervencao: relatorio.local_intervencao,
+      pedido_por: relatorio.pedido_por,
+      contacto_pedido: relatorio.contacto_pedido || '',
+      equipamento_tipologia: relatorio.equipamento_tipologia,
+      equipamento_marca: relatorio.equipamento_marca,
+      equipamento_modelo: relatorio.equipamento_modelo,
+      equipamento_numero_serie: relatorio.equipamento_numero_serie || '',
+      motivo_assistencia: relatorio.motivo_assistencia
+    });
+    setShowEditRelatorioModal(true);
+  };
+
+  const openDeleteRelatorioModal = (relatorio, e) => {
+    if (e) e.stopPropagation(); // Prevenir abertura do modal de visualização
+    setRelatorioToDelete(relatorio);
+    setShowDeleteRelatorioModal(true);
+  };
+
+  const handleEditRelatorio = async (e) => {
+    e.preventDefault();
+    if (!selectedRelatorio) return;
+
+    try {
+      await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}`, relatorioFormData);
+      toast.success('Relatório atualizado com sucesso!');
+      setShowEditRelatorioModal(false);
+      setSelectedRelatorio(null);
+      fetchRelatorios();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar relatório');
+    }
+  };
+
+  const handleDeleteRelatorio = async () => {
+    if (!relatorioToDelete) return;
+
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${relatorioToDelete.id}`);
+      toast.success('Relatório eliminado com sucesso!');
+      setShowDeleteRelatorioModal(false);
+      setRelatorioToDelete(null);
+      fetchRelatorios();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar relatório');
+    }
+  };
   
   const fetchTecnicosRelatorio = async (relatorioId) => {
     try {
