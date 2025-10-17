@@ -1529,6 +1529,87 @@ async def update_relatorio_status(
     
     return {"message": f"Status atualizado para {status}"}
 
+# ============ Técnicos do Relatório Routes ============
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/tecnicos")
+async def get_tecnicos_relatorio(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar técnicos atribuídos a um relatório"""
+    # Verificar se relatório existe
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Buscar técnicos ordenados
+    tecnicos = await db.tecnicos_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(100)
+    
+    return tecnicos
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/tecnicos")
+async def add_tecnico_relatorio(
+    relatorio_id: str,
+    tecnico_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Adicionar técnico a um relatório"""
+    # Verificar se relatório existe
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Verificar permissão (admin)
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem adicionar técnicos")
+    
+    # Contar técnicos existentes para ordem
+    count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
+    
+    # Criar técnico
+    tecnico = TecnicoRelatorio(
+        relatorio_id=relatorio_id,
+        tecnico_id="",  # Se não tiver user_id
+        tecnico_nome=tecnico_data.get("tecnico_nome", ""),
+        horas_cliente=tecnico_data.get("horas_cliente", 0),
+        kms_deslocacao=tecnico_data.get("kms_deslocacao", 0),
+        tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
+        ordem=count
+    )
+    
+    tecnico_dict = tecnico.dict()
+    await db.tecnicos_relatorio.insert_one(tecnico_dict)
+    
+    logging.info(f"Técnico adicionado ao relatório {relatorio_id}: {tecnico_data.get('tecnico_nome')}")
+    
+    return tecnico
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/tecnicos/{tecnico_id}")
+async def delete_tecnico_relatorio(
+    relatorio_id: str,
+    tecnico_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover técnico de um relatório"""
+    # Verificar permissão (admin)
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem remover técnicos")
+    
+    result = await db.tecnicos_relatorio.delete_one({
+        "id": tecnico_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Técnico não encontrado")
+    
+    logging.info(f"Técnico {tecnico_id} removido do relatório {relatorio_id}")
+    
+    return {"message": "Técnico removido com sucesso"}
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
