@@ -589,12 +589,11 @@ const TechnicalReports = ({ user, onLogout }) => {
               {relatorios.map((relatorio) => (
                 <div
                   key={relatorio.id}
-                  className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition cursor-pointer"
-                  onClick={() => openViewRelatorioModal(relatorio)}
+                  className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition"
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-3">
-                    <div>
+                    <div className="cursor-pointer flex-1" onClick={() => openViewRelatorioModal(relatorio)}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-blue-400 font-bold text-lg">
                           #{relatorio.numero_assistencia}
@@ -607,16 +606,38 @@ const TechnicalReports = ({ user, onLogout }) => {
                         {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
                       </p>
                     </div>
+                    
+                    {/* Action buttons for admin */}
+                    {user?.is_admin && (
+                      <div className="flex gap-1 ml-2">
+                        <Button
+                          onClick={(e) => openEditRelatorioModal(relatorio, e)}
+                          variant="outline"
+                          size="sm"
+                          className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
+                          variant="outline"
+                          size="sm"
+                          className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 p-2"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Cliente */}
-                  <div className="mb-3">
+                  <div className="mb-3 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
                     <p className="text-white font-semibold">{relatorio.cliente_nome}</p>
                     <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
                   </div>
 
                   {/* Equipamento */}
-                  <div className="mb-3 pb-3 border-b border-gray-700">
+                  <div className="mb-3 pb-3 border-b border-gray-700 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
                     <p className="text-xs text-gray-500 mb-1">Equipamento</p>
                     <p className="text-sm text-gray-300">
                       {relatorio.equipamento_marca} - {relatorio.equipamento_tipologia}
@@ -624,9 +645,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
 
                   {/* Técnico */}
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <div className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
                     <User className="w-4 h-4" />
-                    <span>{relatorio.tecnico_nome}</span>
+                    <span>{relatorio.cliente_nome}</span>
                   </div>
                 </div>
               ))}
