@@ -257,11 +257,25 @@ const TechnicalReports = ({ user, onLogout }) => {
         {/* Tabs/Sections */}
         <div className="mb-6">
           <div className="flex gap-4 border-b border-gray-700">
-            <button className="px-4 py-3 text-blue-400 border-b-2 border-blue-400 font-semibold">
+            <button
+              onClick={() => setActiveTab('clientes')}
+              className={`px-4 py-3 font-semibold transition ${
+                activeTab === 'clientes'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
               <Building2 className="w-4 h-4 inline mr-2" />
               Clientes
             </button>
-            <button className="px-4 py-3 text-gray-400 hover:text-white transition">
+            <button
+              onClick={() => setActiveTab('relatorios')}
+              className={`px-4 py-3 font-semibold transition ${
+                activeTab === 'relatorios'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
               <FileText className="w-4 h-4 inline mr-2" />
               Relatórios
             </button>
@@ -269,7 +283,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         </div>
 
         {/* Clientes Section */}
-        <div className="glass-effect p-6 rounded-xl">
+        {activeTab === 'clientes' && (
           {/* Search and Add */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
