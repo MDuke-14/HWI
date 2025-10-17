@@ -511,6 +511,59 @@ backend:
           The feature is ready for frontend integration and user acceptance testing.
 
 frontend:
+  - task: "Technical Reports - Technician Management UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/TechnicalReports.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          PHASE 1: TECHNICIAN SECTION UI IMPLEMENTED
+          
+          Changes to TechnicalReports.jsx:
+          1. Added new icons: Clock, Car, Users
+          2. Added state management for technicians and add technician modal
+          3. Added fetchTecnicosRelatorio function to load technicians when viewing a report
+          4. Added handleAddTecnico function to submit new technician
+          5. Added helper functions: getTipoHorarioLabel and getTipoHorarioCodigo
+          
+          New UI Components:
+          1. Technician table in report view modal showing:
+             - Técnico name
+             - Horas (hours)
+             - Deslocação (kilometers with x2 calculation shown)
+             - Código (work type code)
+          
+          2. Work type legend with color-coded badges:
+             - Code 1: Dias úteis (07h-19h)
+             - Code 2: Dias úteis (19h-07h)
+             - Code S: Sábado
+             - Code D: Domingos/Feriados
+          
+          3. Add Technician Modal with form fields:
+             - Nome do Técnico (required)
+             - Horas no Cliente (number input with 0.5 step)
+             - Quilómetros (number input showing x2 calculation)
+             - Tipo de Horário (select dropdown)
+          
+          4. Admin-only "Adicionar Técnico" button
+          
+          Visual Design:
+          - Maintains app's dark theme (bg-[#0f0f0f], border-gray-700)
+          - Blue accents for headings and codes (blue-400, blue-500)
+          - Clean table layout matching the reference image structure
+          - Info box with legend for work type codes
+          
+          NEEDS TESTING:
+          - View report modal displaying technicians correctly
+          - Add technician button (admin only)
+          - Add technician form validation
+          - Kilometers x2 display
+          - Work type codes and legend
   - task: "Excel Export Button in Reports"
     implemented: true
     working: true
