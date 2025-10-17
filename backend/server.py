@@ -1395,6 +1395,9 @@ async def create_relatorio(
         relatorio_id=relatorio.id,
         tecnico_id=current_user["sub"],
         tecnico_nome=user.get("full_name", user["username"]),
+        horas_cliente=0.0,
+        kms_deslocacao=0.0,
+        tipo_horario="diurno",
         ordem=0
     )
     
