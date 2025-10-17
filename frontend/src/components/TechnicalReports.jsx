@@ -528,6 +528,173 @@ const TechnicalReports = ({ user, onLogout }) => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* View Cliente Modal */}
+      <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <User className="w-5 h-5 text-blue-400" />
+              Detalhes do Cliente
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedCliente && (
+            <div className="space-y-4 mt-4">
+              {/* Nome */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm text-gray-400">Nome / Empresa</span>
+                </div>
+                <p className="text-white font-medium">{selectedCliente.nome}</p>
+              </div>
+
+              {/* NIF */}
+              {selectedCliente.nif && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm text-gray-400">NIF/NIPC</span>
+                  </div>
+                  <p className="text-white font-medium">{selectedCliente.nif}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Email */}
+                {selectedCliente.email && (
+                  <div className="bg-[#0f0f0f] p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm text-gray-400">Email</span>
+                    </div>
+                    <p className="text-white break-words">{selectedCliente.email}</p>
+                  </div>
+                )}
+
+                {/* Telefone */}
+                {selectedCliente.telefone && (
+                  <div className="bg-[#0f0f0f] p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Phone className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm text-gray-400">Telefone</span>
+                    </div>
+                    <p className="text-white">{selectedCliente.telefone}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Morada */}
+              {selectedCliente.morada && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm text-gray-400">Morada</span>
+                  </div>
+                  <p className="text-white">{selectedCliente.morada}</p>
+                </div>
+              )}
+
+              {/* Emails Adicionais */}
+              {selectedCliente.emails_adicionais && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Mail className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm text-gray-400">Emails Adicionais</span>
+                  </div>
+                  <p className="text-white break-words">{selectedCliente.emails_adicionais}</p>
+                </div>
+              )}
+
+              {/* Actions for Admin */}
+              {user?.is_admin && (
+                <div className="flex gap-3 pt-4 border-t border-gray-700">
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      openEditModal(selectedCliente);
+                    }}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar Cliente
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      openDeleteModal(selectedCliente);
+                    }}
+                    variant="outline"
+                    className="border-red-500 text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Confirmar Eliminação
+            </DialogTitle>
+          </DialogHeader>
+
+          {clienteToDelete && (
+            <div className="space-y-4 mt-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <p className="text-white mb-2">
+                  Tem certeza que deseja eliminar este cliente?
+                </p>
+                <div className="bg-[#0f0f0f] p-3 rounded mt-3">
+                  <p className="text-white font-semibold">{clienteToDelete.nome}</p>
+                  {clienteToDelete.nif && (
+                    <p className="text-gray-400 text-sm">NIF: {clienteToDelete.nif}</p>
+                  )}
+                  {clienteToDelete.email && (
+                    <p className="text-gray-400 text-sm">{clienteToDelete.email}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-amber-200 text-sm">
+                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. O cliente será marcado como inativo.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setClienteToDelete(null);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-gray-600"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleDeleteCliente}
+                  className="flex-1 bg-red-500 hover:bg-red-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar Cliente
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
