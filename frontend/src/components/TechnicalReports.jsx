@@ -967,9 +967,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Horas</th>
                             <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Deslocação (km)</th>
                             <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Código</th>
-                            {user?.is_admin && (
-                              <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Ações</th>
-                            )}
+                            <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Ações</th>
                           </tr>
                         </thead>
                         <tbody>
