@@ -645,27 +645,25 @@ const TechnicalReports = ({ user, onLogout }) => {
                       </p>
                     </div>
                     
-                    {/* Action buttons for admin */}
-                    {user?.is_admin && (
-                      <div className="flex gap-1 ml-2">
-                        <Button
-                          onClick={(e) => openEditRelatorioModal(relatorio, e)}
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 p-2"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    )}
+                    {/* Action buttons */}
+                    <div className="flex gap-1 ml-2">
+                      <Button
+                        onClick={(e) => openEditRelatorioModal(relatorio, e)}
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 p-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Cliente */}
