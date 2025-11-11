@@ -1810,17 +1810,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <Edit className="w-4 h-4 mr-2" />
                   Editar Cliente
                 </Button>
-                <Button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    openDeleteModal(selectedCliente);
-                  }}
-                  variant="outline"
-                  className="border-red-500 text-red-400 hover:bg-red-500/10"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar
-                </Button>
+                
+                {user?.is_admin && (
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      openDeleteModal(selectedCliente);
+                    }}
+                    variant="outline"
+                    className="border-red-500 text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
+                  </Button>
+                )}
               </div>
             </div>
           )}
