@@ -984,18 +984,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   {getTipoHorarioCodigo(tec.tipo_horario)}
                                 </span>
                               </td>
-                              {user?.is_admin && (
-                                <td className="py-3 px-3 text-center">
-                                  <Button
-                                    onClick={() => openEditTecnicoModal(tec)}
-                                    variant="outline"
-                                    size="sm"
-                                    className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
-                                  >
-                                    <Edit className="w-3.5 h-3.5" />
-                                  </Button>
-                                </td>
-                              )}
+                              <td className="py-3 px-3 text-center">
+                                <Button
+                                  onClick={() => openEditTecnicoModal(tec)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </Button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
