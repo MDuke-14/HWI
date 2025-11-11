@@ -1331,7 +1331,11 @@ async def update_cliente(
 
 @api_router.delete("/clientes/{cliente_id}")
 async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
-    """Deletar cliente (soft delete - marca como inativo)"""
+    """Deletar cliente (soft delete - marca como inativo) - Apenas admin"""
+    # Verificar permissão (admin)
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem eliminar clientes")
+    
     result = await db.clientes.update_one(
         {"id": cliente_id},
         {"$set": {"ativo": False}}
