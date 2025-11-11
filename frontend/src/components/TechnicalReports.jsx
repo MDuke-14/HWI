@@ -552,26 +552,22 @@ const TechnicalReports = ({ user, onLogout }) => {
                       Ver
                     </Button>
                     
-                    {user?.is_admin && (
-                      <>
-                        <Button
-                          onClick={() => openEditModal(cliente)}
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => openDeleteModal(cliente)}
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
+                    <Button
+                      onClick={() => openEditModal(cliente)}
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => openDeleteModal(cliente)}
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
