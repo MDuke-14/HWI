@@ -560,14 +560,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button
-                      onClick={() => openDeleteModal(cliente)}
-                      variant="outline"
-                      size="sm"
-                      className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    
+                    {user?.is_admin && (
+                      <Button
+                        onClick={() => openDeleteModal(cliente)}
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
