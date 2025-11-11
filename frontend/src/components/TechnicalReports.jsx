@@ -1795,32 +1795,30 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               )}
 
-              {/* Actions for Admin */}
-              {user?.is_admin && (
-                <div className="flex gap-3 pt-4 border-t border-gray-700">
-                  <Button
-                    onClick={() => {
-                      setShowViewModal(false);
-                      openEditModal(selectedCliente);
-                    }}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar Cliente
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setShowViewModal(false);
-                      openDeleteModal(selectedCliente);
-                    }}
-                    variant="outline"
-                    className="border-red-500 text-red-400 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </Button>
-                </div>
-              )}
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t border-gray-700">
+                <Button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    openEditModal(selectedCliente);
+                  }}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar Cliente
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    openDeleteModal(selectedCliente);
+                  }}
+                  variant="outline"
+                  className="border-red-500 text-red-400 hover:bg-red-500/10"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Eliminar
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
