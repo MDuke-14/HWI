@@ -946,16 +946,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <Users className="w-4 h-4" />
                     Mão de Obra / Deslocação
                   </h4>
-                  {user?.is_admin && (
-                    <Button
-                      onClick={() => setShowAddTecnicoModal(true)}
-                      size="sm"
-                      className="bg-blue-500 hover:bg-blue-600"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Adicionar Técnico
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => setShowAddTecnicoModal(true)}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Técnico
+                  </Button>
                 </div>
 
                 {/* Tabela de Técnicos */}
