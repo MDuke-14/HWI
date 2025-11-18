@@ -739,7 +739,67 @@ const Reports = ({ user, onLogout }) => {
                             {loading ? 'A atualizar...' : 'Atualizar'}
                           </Button>
                         </div>
-                      </div>
+                      ) : (
+                        /* Custom Range Selection */
+                        <div className="space-y-4">
+                          {user?.is_admin && (
+                            <div>
+                              <label className="text-gray-400 text-sm mb-2 block">Utilizador (Admin)</label>
+                              <select
+                                value={selectedUserId}
+                                onChange={(e) => setSelectedUserId(e.target.value)}
+                                className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                              >
+                                <option value="">-- Meu Relatório --</option>
+                                {allUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.full_name || u.username} ({u.username})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-gray-400 text-sm mb-2 block">Data Inicial</label>
+                              <input
+                                type="date"
+                                value={customStartDate}
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-gray-400 text-sm mb-2 block">Data Final</label>
+                              <input
+                                type="date"
+                                value={customEndDate}
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={fetchCustomRangeReport}
+                              disabled={loading}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              {loading ? 'A carregar...' : '🔍 Pesquisar'}
+                            </Button>
+                            <Button
+                              onClick={handleDownloadCustomPDF}
+                              disabled={!detailedMonthlyReport}
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              PDF
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* User Info Header */}
