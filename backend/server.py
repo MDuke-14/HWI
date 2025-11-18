@@ -2333,14 +2333,26 @@ async def download_monthly_pdf_report(
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
             
-            if outside_zone:
-                day_data["payment_type"] = "Ajuda de Custos"
-                day_data["payment_value"] = 50.0
-                days_with_travel_allowance += 1
+            # Verificar se tem direito a subsídio/ajuda de custos
+            # Em dias especiais (fins de semana/feriados), só paga subsídio se trabalhar >= 5h
+            is_special_day = is_weekend or is_holiday
+            qualifies_for_payment = True
+            
+            if is_special_day and total_hours < 5.0:
+                qualifies_for_payment = False
+            
+            if qualifies_for_payment:
+                if outside_zone:
+                    day_data["payment_type"] = "Ajuda de Custos"
+                    day_data["payment_value"] = 50.0
+                    days_with_travel_allowance += 1
+                else:
+                    day_data["payment_type"] = "Subsídio de Alimentação"
+                    day_data["payment_value"] = 10.0
+                    days_with_meal_allowance += 1
             else:
-                day_data["payment_type"] = "Subsídio de Alimentação"
-                day_data["payment_value"] = 10.0
-                days_with_meal_allowance += 1
+                day_data["payment_type"] = None
+                day_data["payment_value"] = None
             
             total_worked_hours += total_hours
             total_overtime_hours += overtime_hours
