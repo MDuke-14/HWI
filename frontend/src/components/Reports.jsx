@@ -669,6 +669,12 @@ const Reports = ({ user, onLogout }) => {
                                 {day.status === 'FERIADO' && (
                                   <div className="text-amber-400 font-semibold">🎉 FERIADO - {day.holiday_name}</div>
                                 )}
+                                {day.status === 'FÉRIAS' && (
+                                  <div className="text-blue-400 font-semibold">✈️ FÉRIAS</div>
+                                )}
+                                {day.status === 'FALTA' && (
+                                  <div className="text-red-400 font-semibold">⚠️ FALTA</div>
+                                )}
                                 {day.status === 'NÃO TRABALHADO' && (
                                   <div className="text-gray-500 font-semibold">❌ Não Trabalhado</div>
                                 )}
