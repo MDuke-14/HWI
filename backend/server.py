@@ -2528,7 +2528,10 @@ async def download_monthly_pdf_report(
             total_special_hours += special_hours
         else:
             # Not worked - determine status
-            if date_str in vacation_dates:
+            # First check if admin set a manual status
+            if date_str in manual_statuses:
+                day_data["status"] = manual_statuses[date_str]
+            elif date_str in vacation_dates:
                 day_data["status"] = "FÉRIAS"
             elif is_weekend:
                 day_data["status"] = "FOLGA"
