@@ -2176,6 +2176,225 @@ async def get_reports(
         "entries": entries
     }
 
+@api_router.get("/time-entries/reports/custom-range")
+async def get_custom_range_report(
+    start_date_str: str,
+    end_date_str: str,
+    user_id: Optional[str] = None,  # Admin can view other users
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Relatório personalizado por intervalo de datas
+    Admin can pass user_id to view other users' reports
+    Params: start_date_str and end_date_str in format YYYY-MM-DD
+    """
+    # Parse dates
+    try:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de data inválido. Use YYYY-MM-DD")
+    
+    # Validate date range
+    if start_date > end_date:
+        raise HTTPException(status_code=400, detail="Data inicial não pode ser posterior à data final")
+    
+    # Check if range is too large (max 365 days)
+    if (end_date - start_date).days > 365:
+        raise HTTPException(status_code=400, detail="Intervalo máximo de 365 dias")
+    
+    # Determine which user's data to fetch
+    target_user_id = current_user["sub"]  # Default to current user
+    if user_id and current_user.get("is_admin"):
+        target_user_id = user_id
+    
+    # Get user data for report
+    user = await db.users.find_one({"id": target_user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    username = user.get("username", "user")
+    full_name = user.get("full_name", username)
+    
+    # Get all time entries for the period
+    entries_by_date = {}
+    entries = await db.time_entries.find({
+        "user_id": target_user_id,
+        "date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")},
+        "status": "completed"
+    }, {"_id": 0}).sort("date", 1).to_list(1000)
+    
+    for entry in entries:
+        date_key = entry["date"]
+        if date_key not in entries_by_date:
+            entries_by_date[date_key] = []
+        entries_by_date[date_key].append(entry)
+    
+    # Get approved vacation requests for the period
+    vacation_dates = set()
+    vacation_requests = await db.vacation_requests.find({
+        "user_id": target_user_id,
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
+    
+    for vac in vacation_requests:
+        vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
+        vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
+        current_vac_date = vac_start
+        while current_vac_date <= vac_end:
+            if start_date <= current_vac_date <= end_date:
+                vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
+            current_vac_date += timedelta(days=1)
+    
+    # Get manual day status overrides
+    manual_statuses = {}
+    status_overrides = await db.day_status_overrides.find({
+        "user_id": target_user_id,
+        "date": {
+            "$gte": start_date.strftime("%Y-%m-%d"),
+            "$lte": end_date.strftime("%Y-%m-%d")
+        }
+    }, {"_id": 0}).to_list(1000)
+    
+    for override in status_overrides:
+        manual_statuses[override["date"]] = override["status"]
+    
+    # Build daily records for entire period
+    daily_records = []
+    current_date = start_date
+    total_worked_hours = 0
+    total_overtime_hours = 0
+    total_special_hours = 0
+    days_with_meal_allowance = 0
+    days_with_travel_allowance = 0
+    
+    while current_date <= end_date:
+        date_str = current_date.strftime("%Y-%m-%d")
+        day_entries = entries_by_date.get(date_str, [])
+        
+        is_weekend = current_date.weekday() >= 5
+        is_ot_day, ot_reason = is_overtime_day(current_date)
+        is_holiday = is_ot_day and "Feriado" in (ot_reason or "")
+        
+        day_data = {
+            "date": date_str,
+            "day_of_week": current_date.strftime("%A"),
+            "day_number": current_date.day,
+            "is_weekend": is_weekend,
+            "is_holiday": is_holiday,
+            "holiday_name": ot_reason if is_holiday else None
+        }
+        
+        if day_entries:
+            total_hours = sum(e.get("total_hours", 0) for e in day_entries)
+            overtime_hours = sum(e.get("overtime_hours", 0) for e in day_entries)
+            special_hours = sum(e.get("special_hours", 0) for e in day_entries)
+            
+            outside_zone = any(e.get("outside_residence_zone", False) for e in day_entries)
+            location = next((e.get("location_description") for e in day_entries if e.get("location_description")), None)
+            
+            day_data["status"] = "TRABALHADO"
+            day_data["entries"] = [{
+                "id": e.get("id"),
+                "start_time": e.get("start_time"),
+                "end_time": e.get("end_time"),
+                "total_hours": e.get("total_hours"),
+                "observations": e.get("observations")
+            } for e in day_entries]
+            day_data["total_hours"] = round(total_hours, 2)
+            day_data["overtime_hours"] = round(overtime_hours, 2)
+            day_data["special_hours"] = round(special_hours, 2)
+            day_data["outside_residence_zone"] = outside_zone
+            day_data["location"] = location
+            
+            # Payment calculation
+            is_special_day = is_weekend or is_holiday
+            qualifies_for_payment = True
+            
+            if is_special_day and total_hours < 5.0:
+                qualifies_for_payment = False
+            
+            if qualifies_for_payment:
+                if outside_zone:
+                    day_data["payment_type"] = "Ajuda de Custos"
+                    day_data["payment_value"] = 50.0
+                    days_with_travel_allowance += 1
+                else:
+                    day_data["payment_type"] = "Subsídio de Alimentação"
+                    day_data["payment_value"] = 10.0
+                    days_with_meal_allowance += 1
+            else:
+                day_data["payment_type"] = None
+                day_data["payment_value"] = None
+            
+            total_worked_hours += total_hours
+            total_overtime_hours += overtime_hours
+            total_special_hours += special_hours
+        else:
+            # Not worked - determine status
+            if date_str in manual_statuses:
+                day_data["status"] = manual_statuses[date_str]
+            elif date_str in vacation_dates:
+                day_data["status"] = "FÉRIAS"
+            elif is_weekend:
+                day_data["status"] = "FOLGA"
+            elif is_holiday:
+                day_data["status"] = "FERIADO"
+            else:
+                day_data["status"] = "FALTA"
+            
+            day_data["entries"] = []
+            day_data["total_hours"] = 0
+            day_data["overtime_hours"] = 0
+            day_data["special_hours"] = 0
+            day_data["payment_type"] = None
+            day_data["payment_value"] = 0
+        
+        daily_records.append(day_data)
+        current_date += timedelta(days=1)
+    
+    # Calculate vacation days used up to the end date
+    vacation_days_used = 0
+    all_vacation_requests = await db.vacation_requests.find({
+        "user_id": target_user_id,
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
+    
+    for vac in all_vacation_requests:
+        vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
+        vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
+        actual_end = min(vac_end, end_date)
+        if vac_start <= end_date:
+            current = vac_start
+            while current <= actual_end:
+                if current.weekday() < 5:
+                    vacation_days_used += 1
+                current += timedelta(days=1)
+    
+    vacation_entitlement = user.get("vacation_days_per_year", 22)
+    vacation_days_available = max(0, vacation_entitlement - vacation_days_used)
+    
+    return {
+        "username": username,
+        "full_name": full_name,
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
+        "report_type": "custom_range",
+        "daily_records": daily_records,
+        "summary": {
+            "total_worked_hours": round(total_worked_hours, 2),
+            "total_overtime_hours": round(total_overtime_hours, 2),
+            "total_special_hours": round(total_special_hours, 2),
+            "days_with_meal_allowance": days_with_meal_allowance,
+            "days_with_travel_allowance": days_with_travel_allowance,
+            "total_meal_allowance_value": days_with_meal_allowance * 10.0,
+            "total_travel_allowance_value": days_with_travel_allowance * 50.0,
+            "vacation_days_used": vacation_days_used,
+            "vacation_days_available": vacation_days_available,
+            "vacation_entitlement": vacation_entitlement
+        }
+    }
+
 @api_router.get("/time-entries/reports/monthly-detailed")
 async def get_monthly_detailed_report(
     month: Optional[int] = None,
