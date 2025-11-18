@@ -75,7 +75,7 @@ const Overtime = ({ user, onLogout }) => {
                       <TrendingUp className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                      <div className="text-gray-400 text-sm">Horas Extras</div>
+                      <div className="text-gray-400 text-sm">Trabalho Suplementar</div>
                       <div className="text-xs text-gray-500">(Dias Úteis)</div>
                       <div className="text-4xl font-bold text-amber-400" data-testid="total-overtime-hours">
                         {formatHours(overtimeSummary.total_overtime_hours)}
