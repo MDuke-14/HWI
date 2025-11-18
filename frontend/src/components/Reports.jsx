@@ -655,39 +655,59 @@ const Reports = ({ user, onLogout }) => {
               <TabsContent value="billing">
                 {detailedMonthlyReport ? (
                   <div className="space-y-6">
-                    {/* Month/Year Selector */}
+                    {/* Report Type Selector */}
                     <div className="glass-effect p-4 rounded-xl">
-                      <div className="flex gap-4 items-center">
-                        <div className="flex-1">
-                          <label className="text-gray-400 text-sm mb-2 block">Mês</label>
-                          <select
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                            className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                      <div className="mb-4">
+                        <label className="text-gray-400 text-sm mb-2 block">Tipo de Relatório</label>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setReportType('monthly')}
+                            className={`flex-1 ${reportType === 'monthly' ? 'bg-blue-600' : 'bg-gray-700'}`}
                           >
-                            <option value={1}>Janeiro</option>
-                            <option value={2}>Fevereiro</option>
-                            <option value={3}>Março</option>
-                            <option value={4}>Abril</option>
-                            <option value={5}>Maio</option>
-                            <option value={6}>Junho</option>
-                            <option value={7}>Julho</option>
-                            <option value={8}>Agosto</option>
-                            <option value={9}>Setembro</option>
-                            <option value={10}>Outubro</option>
-                            <option value={11}>Novembro</option>
-                            <option value={12}>Dezembro</option>
-                          </select>
+                            📅 Relatório Mensal
+                          </Button>
+                          <Button
+                            onClick={() => setReportType('custom')}
+                            className={`flex-1 ${reportType === 'custom' ? 'bg-blue-600' : 'bg-gray-700'}`}
+                          >
+                            🔍 Intervalo Personalizado
+                          </Button>
                         </div>
-                        <div className="flex-1">
-                          <label className="text-gray-400 text-sm mb-2 block">Ano</label>
-                          <select
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                            className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
-                          >
-                            {[2024, 2025, 2026].map(year => (
-                              <option key={year} value={year}>{year}</option>
+                      </div>
+
+                      {reportType === 'monthly' ? (
+                        /* Monthly Selection */
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1">
+                            <label className="text-gray-400 text-sm mb-2 block">Mês</label>
+                            <select
+                              value={selectedMonth}
+                              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                              className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                            >
+                              <option value={1}>Janeiro</option>
+                              <option value={2}>Fevereiro</option>
+                              <option value={3}>Março</option>
+                              <option value={4}>Abril</option>
+                              <option value={5}>Maio</option>
+                              <option value={6}>Junho</option>
+                              <option value={7}>Julho</option>
+                              <option value={8}>Agosto</option>
+                              <option value={9}>Setembro</option>
+                              <option value={10}>Outubro</option>
+                              <option value={11}>Novembro</option>
+                              <option value={12}>Dezembro</option>
+                            </select>
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-gray-400 text-sm mb-2 block">Ano</label>
+                            <select
+                              value={selectedYear}
+                              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                              className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                            >
+                              {[2024, 2025, 2026].map(year => (
+                                <option key={year} value={year}>{year}</option>
                             ))}
                           </select>
                         </div>
