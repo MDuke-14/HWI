@@ -36,7 +36,7 @@ const Overtime = ({ user, onLogout }) => {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-white flex items-center gap-3">
               <Clock className="w-10 h-10" />
-              Controlo de Horas Extras
+              Controlo de Trabalho Suplementar
             </h1>
             <Button
               data-testid="refresh-overtime-button"
