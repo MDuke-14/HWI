@@ -873,7 +873,7 @@ const Reports = ({ user, onLogout }) => {
                       <span className="ml-2 text-white font-semibold">{formatHours(editingEntry.total_hours)}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Horas Extras:</span>
+                      <span className="text-gray-400">Trabalho Suplementar:</span>
                       <span className="ml-2 text-amber-400 font-semibold">{formatHours(editingEntry.overtime_hours)}</span>
                     </div>
                   </div>
