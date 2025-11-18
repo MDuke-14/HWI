@@ -2176,6 +2176,16 @@ async def get_reports(
         "entries": entries
     }
 
+@api_router.get("/admin/users/list")
+async def list_all_users(current_user: dict = Depends(get_current_admin)):
+    """List all users (admin only) for reports"""
+    users = await db.users.find(
+        {},
+        {"_id": 0, "id": 1, "username": 1, "full_name": 1, "email": 1}
+    ).sort("full_name", 1).to_list(1000)
+    
+    return users
+
 @api_router.get("/time-entries/reports/custom-range")
 async def get_custom_range_report(
     start_date_str: str,
