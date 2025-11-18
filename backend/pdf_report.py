@@ -107,7 +107,7 @@ def generate_monthly_pdf_report(report_data):
     
     # Daily table headers
     daily_data = [
-        ['Data', 'Dia', 'Entradas/Saídas', 'Total', 'H.Extra', 'H.Especiais', 'Pagamento']
+        ['Data', 'Dia', 'Entradas/Saídas', 'Total', 'Trab.Supl.', 'Trab.Supl.Desc.', 'Pagamento']
     ]
     
     # Add daily records
