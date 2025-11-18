@@ -170,7 +170,7 @@ const Overtime = ({ user, onLogout }) => {
                           </div>
                           <div className="text-right">
                             <div className="text-amber-400 font-bold text-2xl">
-                              {entry.overtime_hours || entry.total_hours}h
+                              {formatHours(entry.overtime_hours || entry.total_hours)}
                             </div>
                           </div>
                         </div>
