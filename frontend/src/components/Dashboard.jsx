@@ -376,6 +376,20 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       </div>
 
+      {/* Floating Action Button - Admin Real-Time Status (Admin Only) */}
+      {user?.is_admin && (
+        <Button
+          onClick={openRealtimeModal}
+          className="fixed bottom-24 right-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full p-4 shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110 z-50 group"
+          title="Status em Tempo Real"
+        >
+          <Users className="w-6 h-6" />
+          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Status em Tempo Real
+          </span>
+        </Button>
+      )}
+
       {/* Floating Action Button - Relatórios Técnicos */}
       <a
         href="/technical-reports"
@@ -387,6 +401,161 @@ const Dashboard = ({ user, onLogout }) => {
           Relatórios Técnicos
         </span>
       </a>
+
+      {/* Real-Time Status Modal */}
+      <Dialog open={showRealtimeModal} onOpenChange={setShowRealtimeModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-white">
+                <Users className="w-5 h-5 text-purple-400" />
+                Status em Tempo Real - {realtimeData && new Date(realtimeData.date + 'T00:00:00').toLocaleDateString('pt-PT')}
+              </DialogTitle>
+              <Button
+                onClick={fetchRealtimeStatus}
+                disabled={realtimeLoading}
+                size="sm"
+                className="bg-purple-500 hover:bg-purple-600"
+              >
+                <RefreshCw className={`w-4 h-4 ${realtimeLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          {realtimeLoading && !realtimeData ? (
+            <div className="text-center py-12 text-gray-400">A carregar...</div>
+          ) : realtimeData ? (
+            <div className="space-y-4 mt-4">
+              {/* Day Info */}
+              {(realtimeData.is_weekend || realtimeData.is_holiday) && (
+                <div className={`p-4 rounded-lg border ${
+                  realtimeData.is_holiday ? 'bg-amber-900/20 border-amber-600' : 'bg-gray-800/30 border-gray-600'
+                }`}>
+                  <div className="text-center">
+                    {realtimeData.is_holiday ? (
+                      <p className="text-amber-400 font-semibold">🎉 Feriado: {realtimeData.holiday_name}</p>
+                    ) : (
+                      <p className="text-gray-400 font-semibold">🏖️ Fim de Semana</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Users Status Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {realtimeData.users.map((userStatus) => (
+                  <div
+                    key={userStatus.user_id}
+                    className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-purple-500 transition"
+                  >
+                    {/* User Info */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="text-white font-semibold">{userStatus.full_name}</h3>
+                        <p className="text-gray-400 text-sm">@{userStatus.username}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(userStatus.status_color)}`}>
+                        {userStatus.status}
+                      </span>
+                    </div>
+
+                    {/* Status Details */}
+                    <div className="space-y-2">
+                      {userStatus.status === 'TRABALHANDO' && (
+                        <>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-green-400" />
+                            <span className="text-gray-300">Início:</span>
+                            <span className="text-white font-semibold">{userStatus.clock_in_time}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-gray-300">Tempo decorrido:</span>
+                            <span className="text-green-400 font-semibold">{formatHours(userStatus.elapsed_hours)}</span>
+                          </div>
+                          {userStatus.outside_residence_zone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <MapPin className="w-4 h-4 text-blue-400" />
+                              <span className="text-blue-400">Ajuda de Custos</span>
+                              {userStatus.location && <span className="text-gray-400">- {userStatus.location}</span>}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {userStatus.status === 'TRABALHOU' && (
+                        <>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-blue-400" />
+                            <span className="text-gray-300">Entrada:</span>
+                            <span className="text-white font-semibold">{userStatus.clock_in_time}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-blue-400" />
+                            <span className="text-gray-300">Saída:</span>
+                            <span className="text-white font-semibold">{userStatus.clock_out_time}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-gray-300">Total:</span>
+                            <span className="text-blue-400 font-semibold">{formatHours(userStatus.total_hours)}</span>
+                          </div>
+                          {userStatus.outside_residence_zone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <MapPin className="w-4 h-4 text-blue-400" />
+                              <span className="text-blue-400">Ajuda de Custos</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {userStatus.status === 'FALTA' && (
+                        <p className="text-red-400 text-sm">Sem registo de ponto hoje</p>
+                      )}
+
+                      {userStatus.status === 'FÉRIAS' && (
+                        <p className="text-purple-400 text-sm">De férias</p>
+                      )}
+
+                      {userStatus.status === 'FERIADO' && userStatus.holiday_name && (
+                        <p className="text-amber-400 text-sm">{userStatus.holiday_name}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Summary */}
+              <div className="bg-purple-900/20 border border-purple-600 rounded-lg p-4 mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {realtimeData.users.filter(u => u.status === 'TRABALHANDO').length}
+                    </div>
+                    <div className="text-xs text-gray-400">Trabalhando Agora</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-400">
+                      {realtimeData.users.filter(u => u.status === 'TRABALHOU').length}
+                    </div>
+                    <div className="text-xs text-gray-400">Já Trabalharam</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-purple-400">
+                      {realtimeData.users.filter(u => u.status === 'FÉRIAS').length}
+                    </div>
+                    <div className="text-xs text-gray-400">De Férias</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-red-400">
+                      {realtimeData.users.filter(u => u.status === 'FALTA').length}
+                    </div>
+                    <div className="text-xs text-gray-400">Faltas</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
