@@ -2854,6 +2854,55 @@ async def delete_invalid_entries(current_user: dict = Depends(get_current_admin)
     except Exception as e:
         logging.error(f"Error deleting invalid entries: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+@api_router.post("/admin/day-status/set")
+async def set_day_status(
+    status_data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Set manual status for a specific day (FALTA, FÉRIAS, FOLGA)
+    Admin only - this overrides automatic detection
+    """
+    user_id = status_data.get("user_id")
+    date_str = status_data.get("date")
+    status = status_data.get("status")  # FALTA, FÉRIAS, FOLGA, or None to clear
+    
+    if not user_id or not date_str:
+        raise HTTPException(status_code=400, detail="user_id e date são obrigatórios")
+    
+    # Validate status
+    valid_statuses = ["FALTA", "FÉRIAS", "FOLGA", None]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Status inválido. Use: FALTA, FÉRIAS, FOLGA, ou null para limpar")
+    
+    # Check if user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    # Store or update day status override
+    if status is None:
+        # Remove override
+        await db.day_status_overrides.delete_one({
+            "user_id": user_id,
+            "date": date_str
+        })
+        return {"message": "Status manual removido"}
+    else:
+        # Set/update override
+        await db.day_status_overrides.update_one(
+            {"user_id": user_id, "date": date_str},
+            {"$set": {
+                "user_id": user_id,
+                "date": date_str,
+                "status": status,
+                "set_by": current_user["sub"],
+                "set_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+        return {"message": f"Dia marcado como {status}"}
+
 @api_router.post("/admin/time-entries/manual")
 async def create_manual_time_entry(
     entry_data: ManualTimeEntryCreate,
