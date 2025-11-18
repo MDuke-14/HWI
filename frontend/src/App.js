@@ -115,16 +115,6 @@ function App() {
             }
           />
           <Route
-            path="/history"
-            element={
-              isAuthenticated ? (
-                <History user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
             path="/reports"
             element={
               isAuthenticated ? (
