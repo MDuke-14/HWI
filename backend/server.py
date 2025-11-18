@@ -2859,6 +2859,38 @@ async def download_monthly_pdf_report(
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@api_router.get("/time-entries/reports/custom-range-pdf")
+async def download_custom_range_pdf(
+    start_date_str: str,
+    end_date_str: str,
+    user_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Download PDF report for custom date range"""
+    # Use the custom range endpoint to get data
+    report_data_response = await get_custom_range_report(
+        start_date_str=start_date_str,
+        end_date_str=end_date_str,
+        user_id=user_id,
+        current_user=current_user
+    )
+    
+    # Generate PDF
+    pdf_buffer = generate_monthly_pdf_report(report_data_response)
+    
+    # Generate filename with date range
+    username = report_data_response["username"]
+    start_formatted = start_date_str.replace("-", "")
+    end_formatted = end_date_str.replace("-", "")
+    filename = f"Relatorio_{username}_{start_formatted}_a_{end_formatted}.pdf"
+    
+    # Return as streaming response
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 @api_router.get("/time-entries/reports/excel")
 async def download_excel_report(
     user_id: Optional[str] = None,
