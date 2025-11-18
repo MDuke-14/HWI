@@ -9,8 +9,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Clock, Play, Square, Coffee, MapPin, Clipboard } from 'lucide-react';
+import { Clock, Play, Square, Coffee, MapPin, Clipboard, Users, RefreshCw } from 'lucide-react';
 import { formatHours } from '@/utils/timeUtils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
@@ -18,6 +24,9 @@ const Dashboard = ({ user, onLogout }) => {
   const [observations, setObservations] = useState('');
   const [endObservations, setEndObservations] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRealtimeModal, setShowRealtimeModal] = useState(false);
+  const [realtimeData, setRealtimeData] = useState(null);
+  const [realtimeLoading, setRealtimeLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [outsideResidenceZone, setOutsideResidenceZone] = useState(false);
