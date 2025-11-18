@@ -2241,6 +2241,19 @@ async def get_monthly_detailed_report(
                 vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
             current_vac_date += timedelta(days=1)
     
+    # Get manual day status overrides (admin-set statuses)
+    manual_statuses = {}
+    status_overrides = await db.day_status_overrides.find({
+        "user_id": target_user_id,
+        "date": {
+            "$gte": start_date.strftime("%Y-%m-%d"),
+            "$lte": end_date.strftime("%Y-%m-%d")
+        }
+    }, {"_id": 0}).to_list(1000)
+    
+    for override in status_overrides:
+        manual_statuses[override["date"]] = override["status"]
+    
     # Build daily records for entire period
     daily_records = []
     current_date = start_date
