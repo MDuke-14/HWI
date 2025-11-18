@@ -895,6 +895,39 @@ const Reports = ({ user, onLogout }) => {
                         </div>
                       </div>
 
+                      {/* Admin: Mark Day Status */}
+                      {user?.is_admin && (
+                        <div className="bg-purple-900/20 border border-purple-600 rounded-lg p-4 mb-4">
+                          <h4 className="text-md font-semibold text-purple-400 mb-3">Marcar Status do Dia (Admin)</h4>
+                          <div className="flex gap-3 items-end">
+                            <div className="flex-1">
+                              <label className="text-gray-300 text-sm mb-1 block">Tipo de Dia</label>
+                              <select
+                                value={manualDayStatus}
+                                onChange={(e) => setManualDayStatus(e.target.value)}
+                                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                              >
+                                <option value="">-- Automático --</option>
+                                <option value="FALTA">⚠️ FALTA</option>
+                                <option value="FÉRIAS">✈️ FÉRIAS</option>
+                                <option value="FOLGA">🏖️ FOLGA</option>
+                              </select>
+                            </div>
+                            <Button
+                              onClick={handleSetDayStatus}
+                              disabled={loading}
+                              className="bg-purple-500 hover:bg-purple-600"
+                            >
+                              {loading ? 'A guardar...' : 'Guardar Status'}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            <strong>Nota:</strong> O status manual substitui a deteção automática (férias aprovadas, feriados, etc.). 
+                            Escolha "Automático" para remover o status manual.
+                          </p>
+                        </div>
+                      )}
+
                       {/* Manual Entry Form */}
                       <div className="bg-[#0a0a0a] border border-gray-700 rounded-lg p-4 space-y-4">
                         <h4 className="text-md font-semibold text-blue-400">Adicionar Entradas Manualmente</h4>
