@@ -89,6 +89,10 @@ def generate_monthly_pdf_report(report_data):
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f7fafc')),
+        # Highlight vacation section header (row 7)
+        ('BACKGROUND', (0, 7), (-1, 7), colors.HexColor('#3b82f6')),
+        ('TEXTCOLOR', (0, 7), (-1, 7), colors.white),
+        ('FONTNAME', (0, 7), (-1, 7), 'Helvetica-Bold'),
         ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#cbd5e0')),
         ('FONTSIZE', (0, 1), (-1, -1), 10),
         ('PADDING', (0, 0), (-1, -1), 8),
