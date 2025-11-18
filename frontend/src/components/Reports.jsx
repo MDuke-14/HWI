@@ -62,11 +62,86 @@ const Reports = ({ user, onLogout }) => {
   useEffect(() => {
     fetchReports();
     fetchDetailedMonthlyReport();
+    if (user?.is_admin) {
+      fetchAllUsers();
+    }
   }, []);
 
   useEffect(() => {
-    fetchDetailedMonthlyReport();
-  }, [selectedMonth, selectedYear]);
+    if (reportType === 'monthly') {
+      fetchDetailedMonthlyReport();
+    }
+  }, [selectedMonth, selectedYear, reportType]);
+
+  const fetchAllUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/users/list`);
+      setAllUsers(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+    }
+  };
+
+  const fetchCustomRangeReport = async () => {
+    if (!customStartDate || !customEndDate) {
+      toast.error('Selecione as datas de início e fim');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const params = {
+        start_date_str: customStartDate,
+        end_date_str: customEndDate
+      };
+      
+      if (user?.is_admin && selectedUserId) {
+        params.user_id = selectedUserId;
+      }
+      
+      const response = await axios.get(`${API}/time-entries/reports/custom-range`, { params });
+      setDetailedMonthlyReport(response.data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao carregar relatório personalizado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadCustomPDF = async () => {
+    if (!customStartDate || !customEndDate) {
+      toast.error('Selecione as datas de início e fim');
+      return;
+    }
+
+    try {
+      const params = {
+        start_date_str: customStartDate,
+        end_date_str: customEndDate
+      };
+      
+      if (user?.is_admin && selectedUserId) {
+        params.user_id = selectedUserId;
+      }
+
+      const response = await axios.get(`${API}/time-entries/reports/custom-range-pdf`, {
+        params,
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Relatorio_${customStartDate}_a_${customEndDate}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('PDF transferido com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao transferir PDF');
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
