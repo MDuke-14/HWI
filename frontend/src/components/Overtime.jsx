@@ -100,7 +100,7 @@ const Overtime = ({ user, onLogout }) => {
                       <div className="text-gray-400 text-sm">Horas Especiais</div>
                       <div className="text-xs text-gray-500">(Fins Semana/Feriados)</div>
                       <div className="text-4xl font-bold text-purple-400" data-testid="total-special-hours">
-                        {overtimeSummary.total_special_hours || 0}h
+                        {formatHours(overtimeSummary.total_special_hours || 0)}
                       </div>
                     </div>
                   </div>
