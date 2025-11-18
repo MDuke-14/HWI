@@ -69,10 +69,15 @@ def generate_monthly_pdf_report(report_data):
     summary_data = [
         ['RESUMO MENSAL', ''],
         ['Total Horas Trabalhadas', format_hours(summary['total_worked_hours'])],
-        ['Horas Extras (Dias Úteis)', format_hours(summary['total_overtime_hours'])],
-        ['Horas Especiais (Feriados/Fins Semana)', format_hours(summary.get('total_special_hours', 0))],
+        ['Trabalho Suplementar', format_hours(summary['total_overtime_hours'])],
+        ['Trabalho Suplementar Dias de Descanso', format_hours(summary.get('total_special_hours', 0))],
         ['Subsídio de Alimentação', f"{summary['days_with_meal_allowance']} dias"],
         ['Ajuda de Custos', f"{summary['days_with_travel_allowance']} dias"],
+        ['', ''],  # Empty row for spacing
+        ['GESTÃO DE FÉRIAS', ''],
+        ['Dias de Férias Gozados (até {})'.format(report_data['end_date']), f"{summary.get('vacation_days_used', 0)} dias"],
+        ['Dias de Férias Disponíveis', f"{summary.get('vacation_days_available', 0)} dias"],
+        ['Total Anual de Férias', f"{summary.get('vacation_entitlement', 22)} dias"],
     ]
     
     summary_table = Table(summary_data, colWidths=[10*cm, 8*cm])
