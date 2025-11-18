@@ -2121,6 +2121,23 @@ async def get_monthly_detailed_report(
             entries_by_date[date_key] = []
         entries_by_date[date_key].append(entry)
     
+    # Get approved vacation requests for the period
+    vacation_dates = set()
+    vacation_requests = await db.vacation_requests.find({
+        "user_id": target_user_id,
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
+    
+    for vac in vacation_requests:
+        vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
+        vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
+        current_vac_date = vac_start
+        while current_vac_date <= vac_end:
+            # Only add if within our reporting period
+            if start_date <= current_vac_date <= end_date:
+                vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
+            current_vac_date += timedelta(days=1)
+    
     # Build daily records for entire period
     daily_records = []
     current_date = start_date
