@@ -5,14 +5,7 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Clock, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
-
-// Helper function to convert decimal hours to HH:MM format
-const formatHours = (decimalHours) => {
-  if (!decimalHours || decimalHours === 0) return '0h00';
-  const hours = Math.floor(decimalHours);
-  const minutes = Math.round((decimalHours - hours) * 60);
-  return minutes > 0 ? `${hours}h${minutes.toString().padStart(2, '0')}` : `${hours}h00`;
-};
+import { formatHours } from '@/utils/timeUtils';
 
 const Overtime = ({ user, onLogout }) => {
   const [overtimeSummary, setOvertimeSummary] = useState(null);
