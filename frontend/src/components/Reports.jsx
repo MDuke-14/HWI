@@ -327,6 +327,28 @@ const Reports = ({ user, onLogout }) => {
     }));
   };
 
+  const handleSetDayStatus = async () => {
+    if (!editingEntry || !user?.is_admin) return;
+    
+    setLoading(true);
+    try {
+      await axios.post(`${API}/admin/day-status/set`, {
+        user_id: user.id,
+        date: editingEntry.date,
+        status: manualDayStatus || null  // null to clear override
+      });
+      
+      toast.success(manualDayStatus ? `Dia marcado como ${manualDayStatus}` : 'Status manual removido');
+      setDialogOpen(false);
+      setManualDayStatus('');
+      fetchDetailedMonthlyReport(); // Refresh report
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao definir status do dia');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateManualEntry = async () => {
     if (!editingEntry) return;
     
