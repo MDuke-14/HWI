@@ -629,20 +629,14 @@ const Reports = ({ user, onLogout }) => {
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
                         <div className="text-gray-400 text-sm mb-2">Subsídio Alimentação</div>
-                        <div className="text-2xl font-bold text-green-400">
-                          {detailedMonthlyReport.summary.days_with_meal_allowance} dias × 10€
-                        </div>
-                        <div className="text-xl font-bold text-white mt-1">
-                          = {detailedMonthlyReport.summary.total_meal_allowance_value}€
+                        <div className="text-3xl font-bold text-green-400">
+                          {detailedMonthlyReport.summary.days_with_meal_allowance} dias
                         </div>
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
                         <div className="text-gray-400 text-sm mb-2">Ajuda de Custos</div>
-                        <div className="text-2xl font-bold text-blue-400">
-                          {detailedMonthlyReport.summary.days_with_travel_allowance} dias × 50€
-                        </div>
-                        <div className="text-xl font-bold text-white mt-1">
-                          = {detailedMonthlyReport.summary.total_travel_allowance_value}€
+                        <div className="text-3xl font-bold text-blue-400">
+                          {detailedMonthlyReport.summary.days_with_travel_allowance} dias
                         </div>
                       </div>
                     </div>
