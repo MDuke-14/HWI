@@ -706,7 +706,6 @@ const Reports = ({ user, onLogout }) => {
                                     <div className={`text-sm font-semibold ${day.payment_type === 'Ajuda de Custos' ? 'text-blue-400' : 'text-green-400'}`}>
                                       {day.payment_type}
                                     </div>
-                                    <div className="text-xs text-gray-400">{day.payment_value}€</div>
                                     {day.location && <div className="text-xs text-gray-500">{day.location}</div>}
                                   </div>
                                 )}
