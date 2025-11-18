@@ -2218,13 +2218,16 @@ async def get_monthly_detailed_report(
             total_overtime_hours += overtime_hours
             total_special_hours += special_hours
         else:
-            # Not worked
-            if is_weekend:
+            # Not worked - determine status
+            if date_str in vacation_dates:
+                day_data["status"] = "FÉRIAS"
+            elif is_weekend:
                 day_data["status"] = "FOLGA"
             elif is_holiday:
                 day_data["status"] = "FERIADO"
             else:
-                day_data["status"] = "NÃO TRABALHADO"
+                # Dia útil sem registo = FALTA
+                day_data["status"] = "FALTA"
             
             day_data["entries"] = []
             day_data["total_hours"] = 0
@@ -2375,13 +2378,16 @@ async def download_monthly_pdf_report(
             total_overtime_hours += overtime_hours
             total_special_hours += special_hours
         else:
-            # Not worked
-            if is_weekend:
+            # Not worked - determine status
+            if date_str in vacation_dates:
+                day_data["status"] = "FÉRIAS"
+            elif is_weekend:
                 day_data["status"] = "FOLGA"
             elif is_holiday:
                 day_data["status"] = "FERIADO"
             else:
-                day_data["status"] = "NÃO TRABALHADO"
+                # Dia útil sem registo = FALTA
+                day_data["status"] = "FALTA"
             
             day_data["entries"] = []
             day_data["total_hours"] = 0
