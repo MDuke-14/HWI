@@ -136,7 +136,7 @@ const Overtime = ({ user, onLogout }) => {
                 <div className="glass-effect p-6 rounded-xl">
                   <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
                     <Calendar className="w-6 h-6" />
-                    Registos de Horas Extras
+                    Registos de Trabalho Suplementar
                   </h2>
                   <div className="space-y-4">
                     {overtimeSummary.entries.map((entry) => (
