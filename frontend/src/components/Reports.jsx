@@ -41,6 +41,9 @@ const Reports = ({ user, onLogout }) => {
     location_description: ''
   });
 
+  // Manual day status (admin can mark as FALTA, FÉRIAS, FOLGA)
+  const [manualDayStatus, setManualDayStatus] = useState('');
+
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
     if (!decimalHours) return '0h00m';
