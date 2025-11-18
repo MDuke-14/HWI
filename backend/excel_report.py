@@ -170,17 +170,17 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
     ws.cell(row=row, column=1).font = header_font
     row += 1
     
-    # Ajudas de Custo (exemplo: 50€ x dias trabalhados)
+    # Ajudas de Custo - apenas contagem de dias
     days_worked = len([e for e in entries if e.get('status') == 'completed'])
     ws.cell(row=row, column=1).value = "Ajudas de Custo"
-    ws.cell(row=row, column=2).value = f"50€ x {days_worked} dias"
-    ws.cell(row=row, column=3).value = 50 * days_worked
+    ws.cell(row=row, column=2).value = f"{days_worked} dias"
+    ws.cell(row=row, column=3).value = ""
     row += 1
     
-    # Subsídio Alimentação
+    # Subsídio Alimentação - apenas contagem de dias
     ws.cell(row=row, column=1).value = "Subs. Alim. Cartão"
-    ws.cell(row=row, column=2).value = f"10€ x {days_worked} dias"
-    ws.cell(row=row, column=3).value = 10 * days_worked
+    ws.cell(row=row, column=2).value = f"{days_worked} dias"
+    ws.cell(row=row, column=3).value = ""
     row += 1
     
     # Trabalho Suplementar
