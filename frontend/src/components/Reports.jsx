@@ -190,6 +190,18 @@ const Reports = ({ user, onLogout }) => {
     
     setEditingEntry(day);
     setDialogOpen(true);
+    
+    // Initialize manual day status if day has no entries
+    if (!day.entries || day.entries.length === 0) {
+      if (day.status === 'FALTA' || day.status === 'FÉRIAS' || day.status === 'FOLGA') {
+        setManualDayStatus(day.status);
+      } else {
+        setManualDayStatus('');
+      }
+    } else {
+      setManualDayStatus('');
+    }
+    
     // Initialize edit forms for all individual entries
     const forms = {};
     if (day.entries && Array.isArray(day.entries)) {
