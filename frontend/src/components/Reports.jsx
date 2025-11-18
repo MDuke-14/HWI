@@ -414,7 +414,7 @@ const Reports = ({ user, onLogout }) => {
             <div className="text-3xl font-bold text-blue-400" data-testid="regular-hours">{formatHours(report.regular_hours)}</div>
           </div>
           <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Horas Extras</div>
+            <div className="text-gray-400 text-sm mb-2">Trabalho Suplementar</div>
             <div className="text-sm text-gray-500">(Dias Úteis)</div>
             <div className="text-3xl font-bold text-amber-400" data-testid="overtime-hours">{formatHours(report.overtime_hours)}</div>
           </div>
@@ -655,7 +655,7 @@ const Reports = ({ user, onLogout }) => {
                         <div className="text-3xl font-bold text-white">{formatHours(detailedMonthlyReport.summary.total_worked_hours)}</div>
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">Horas Extras</div>
+                        <div className="text-gray-400 text-sm mb-2">Trabalho Suplementar</div>
                         <div className="text-sm text-gray-500">(Dias Úteis)</div>
                         <div className="text-3xl font-bold text-amber-400">{formatHours(detailedMonthlyReport.summary.total_overtime_hours)}</div>
                       </div>
