@@ -120,10 +120,10 @@ const Overtime = ({ user, onLogout }) => {
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-white font-semibold mb-2">Informação sobre Horas Extras</h3>
+                    <h3 className="text-white font-semibold mb-2">Informação sobre Trabalho Suplementar</h3>
                     <ul className="text-gray-300 text-sm space-y-1">
-                      <li>• <strong>Horas Extras</strong>: Trabalho acima de 8h em dias úteis</li>
-                      <li>• <strong>Horas Especiais</strong>: Todo o trabalho em Sábados, Domingos e Feriados</li>
+                      <li>• <strong>Trabalho Suplementar</strong>: Trabalho acima de 8h em dias úteis</li>
+                      <li>• <strong>Trab. Supl. Dias Descanso</strong>: Todo o trabalho em Sábados, Domingos e Feriados</li>
                       <li>• <strong>Reinício</strong>: A contagem reinicia a cada dia 26 (novo período de faturação)</li>
                       <li>• <strong>Relatórios</strong>: Períodos anteriores disponíveis na página de Relatórios</li>
                     </ul>
