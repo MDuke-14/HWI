@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Clock, Play, Square, Coffee, MapPin, Clipboard } from 'lucide-react';
+import { formatHours } from '@/utils/timeUtils';
 
 const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
