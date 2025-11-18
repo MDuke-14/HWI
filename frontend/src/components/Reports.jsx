@@ -678,6 +678,33 @@ const Reports = ({ user, onLogout }) => {
                       </div>
                     </div>
 
+                    {/* Vacation Management Section */}
+                    {detailedMonthlyReport.summary.vacation_days_used !== undefined && (
+                      <div className="bg-purple-900/20 border border-purple-600 rounded-xl p-6">
+                        <h3 className="text-xl font-bold text-purple-400 mb-4">📅 Gestão de Férias</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <div className="text-gray-400 text-sm mb-2">Dias Gozados (até {new Date(detailedMonthlyReport.end_date + 'T00:00:00').toLocaleDateString('pt-PT')})</div>
+                            <div className="text-3xl font-bold text-red-400">
+                              {detailedMonthlyReport.summary.vacation_days_used} dias
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-400 text-sm mb-2">Dias Disponíveis</div>
+                            <div className="text-3xl font-bold text-green-400">
+                              {detailedMonthlyReport.summary.vacation_days_available} dias
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-400 text-sm mb-2">Total Anual</div>
+                            <div className="text-3xl font-bold text-blue-400">
+                              {detailedMonthlyReport.summary.vacation_entitlement} dias
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Daily Records Table */}
                     <div className="glass-effect p-6 overflow-x-auto">
                       <h3 className="text-xl font-bold text-white mb-4">
