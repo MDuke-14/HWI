@@ -5,7 +5,6 @@ import axios from 'axios';
 import Login from '@/components/Login';
 import ChangePassword from '@/components/ChangePassword';
 import Dashboard from '@/components/Dashboard';
-import History from '@/components/History';
 import Reports from '@/components/Reports';
 import Overtime from '@/components/Overtime';
 import Vacations from '@/components/Vacations';
