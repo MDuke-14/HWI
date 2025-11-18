@@ -182,6 +182,10 @@ def generate_monthly_pdf_report(report_data):
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#e2e8f0')))
         elif day['status'] == 'FERIADO':
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#fef3c7')))
+        elif day['status'] == 'FÉRIAS':
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#dbeafe')))  # Azul claro
+        elif day['status'] == 'FALTA':
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#fee2e2')))  # Vermelho claro
         elif day['status'] == 'TRABALHADO':
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#d1fae5')))
     
