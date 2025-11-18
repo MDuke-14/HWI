@@ -23,6 +23,13 @@ const Reports = ({ user, onLogout }) => {
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
 
+  // Custom range states
+  const [reportType, setReportType] = useState('monthly'); // 'monthly' or 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(''); // For admin to select user
+  const [allUsers, setAllUsers] = useState([]);
+
   // Import dialog states
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
