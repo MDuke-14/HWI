@@ -651,6 +651,8 @@ const Reports = ({ user, onLogout }) => {
                           <div key={day.date} className={`border rounded-lg p-4 ${
                             day.status === 'FOLGA' ? 'bg-gray-800/30 border-gray-600' :
                             day.status === 'FERIADO' ? 'bg-amber-900/20 border-amber-600' :
+                            day.status === 'FÉRIAS' ? 'bg-blue-900/20 border-blue-600' :
+                            day.status === 'FALTA' ? 'bg-red-900/20 border-red-600' :
                             day.status === 'TRABALHADO' ? 'bg-green-900/20 border-green-600' :
                             'bg-gray-800/10 border-gray-700'
                           }`}>
