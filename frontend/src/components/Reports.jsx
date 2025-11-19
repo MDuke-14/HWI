@@ -59,6 +59,42 @@ const Reports = ({ user, onLogout }) => {
     return `${hours}h${String(minutes).padStart(2, '0')}m`;
   };
 
+  // Helper function to group entries by date and sort by date
+  const groupAndSortEntriesByDate = (entries) => {
+    if (!entries || entries.length === 0) return [];
+
+    // Group entries by date
+    const grouped = entries.reduce((acc, entry) => {
+      const date = entry.date;
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(entry);
+      return acc;
+    }, {});
+
+    // Convert to array and sort by date (descending - most recent first)
+    const sortedDays = Object.keys(grouped).sort((a, b) => {
+      return new Date(b) - new Date(a);
+    });
+
+    // Return array of {date, entries, totalHours}
+    return sortedDays.map(date => {
+      const dayEntries = grouped[date];
+      const totalHours = dayEntries.reduce((sum, entry) => sum + (entry.total_hours || 0), 0);
+      return {
+        date,
+        entries: dayEntries.sort((a, b) => {
+          // Sort entries within the day by start_time
+          if (!a.start_time) return 1;
+          if (!b.start_time) return -1;
+          return new Date(a.start_time) - new Date(b.start_time);
+        }),
+        totalHours
+      };
+    });
+  };
+
   useEffect(() => {
     fetchReports();
     fetchDetailedMonthlyReport();
