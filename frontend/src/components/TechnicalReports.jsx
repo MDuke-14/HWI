@@ -1895,9 +1895,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">D</span>
                           <span className="text-gray-300">Domingos/Feriados</span>
                         </div>
-                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">D</span>
-                          <span className="text-gray-300">Domingos/Feriados</span>
-                        </div>
                       </div>
                     </div>
                   </div>
