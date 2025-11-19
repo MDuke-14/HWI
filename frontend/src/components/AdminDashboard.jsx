@@ -657,6 +657,126 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
             </div>
             
+
+            {/* Verify Hours Dialog */}
+            <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+              <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-yellow-400" />
+                    Verificação de Horas - {verifyingUser?.full_name || verifyingUser?.username}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="mt-4">
+                  {verifying ? (
+                    <div className="text-center py-8">
+                      <RefreshCw className="w-12 h-12 text-yellow-400 mx-auto mb-4 animate-spin" />
+                      <p className="text-gray-400">Verificando e recalculando horas...</p>
+                    </div>
+                  ) : verifyResult ? (
+                    <div className="space-y-4">
+                      {/* Período */}
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                        <h4 className="text-blue-400 font-semibold mb-2">Período Verificado</h4>
+                        <p className="text-gray-300 text-sm">
+                          {new Date(verifyResult.period.start).toLocaleDateString('pt-PT')} até{' '}
+                          {new Date(verifyResult.period.end).toLocaleDateString('pt-PT')}
+                        </p>
+                        <p className="text-gray-400 text-xs mt-1">
+                          Mês de faturação: {verifyResult.period.month}/{verifyResult.period.year}
+                        </p>
+                      </div>
+
+                      {/* Totais */}
+                      <div className="bg-[#0f0f0f] rounded-lg p-4 border border-gray-700">
+                        <h4 className="text-white font-semibold mb-3">Resumo de Horas</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-500">Horas Normais</p>
+                            <p className="text-xl text-white font-semibold">{verifyResult.totals.regular_hours}h</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Horas Extras (Dias Úteis)</p>
+                            <p className="text-xl text-yellow-400 font-semibold">{verifyResult.totals.overtime_hours}h</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Horas Especiais (Fins de Semana/Feriados)</p>
+                            <p className="text-xl text-purple-400 font-semibold">{verifyResult.totals.special_hours}h</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Total de Horas</p>
+                            <p className="text-xl text-green-400 font-semibold">{verifyResult.totals.total_hours}h</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <p className="text-xs text-gray-500">Dias Trabalhados</p>
+                          <p className="text-lg text-white">{verifyResult.totals.days_worked} dias</p>
+                        </div>
+                      </div>
+
+                      {/* Estatísticas */}
+                      <div className="bg-[#0f0f0f] rounded-lg p-4 border border-gray-700">
+                        <h4 className="text-white font-semibold mb-3">Estatísticas da Verificação</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Entradas verificadas:</span>
+                            <span className="text-white font-semibold">{verifyResult.entries_checked}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Entradas atualizadas:</span>
+                            <span className={`font-semibold ${verifyResult.entries_updated > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
+                              {verifyResult.entries_updated}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Problemas encontrados:</span>
+                            <span className={`font-semibold ${verifyResult.issues_found.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              {verifyResult.issues_found.length}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Issues encontrados */}
+                      {verifyResult.issues_found.length > 0 && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                          <h4 className="text-yellow-400 font-semibold mb-3">Problemas Corrigidos</h4>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {verifyResult.issues_found.map((issue, idx) => (
+                              <div key={idx} className="text-sm bg-black/30 p-2 rounded">
+                                <p className="text-white">
+                                  <span className="text-yellow-400">📅 {new Date(issue.date).toLocaleDateString('pt-PT')}</span>
+                                  {' - '}{issue.issue}
+                                </p>
+                                <p className="text-gray-400 text-xs">
+                                  Ação: {issue.action} ({issue.hours}h)
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Botão fechar */}
+                      <div className="flex justify-end pt-4">
+                        <Button
+                          onClick={() => setShowVerifyDialog(false)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Fechar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">Aguardando verificação...</p>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
             {/* Edit User Dialog */}
             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
               <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
