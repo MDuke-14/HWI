@@ -32,11 +32,13 @@ import {
 } from "@/components/ui/dialog";
 
 const TechnicalReports = ({ user, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('clientes');
+  const [activeTab, setActiveTab] = useState('clientes'); // 'relatorios', 'clientes', ou 'pesquisa'
   const [clientes, setClientes] = useState([]);
   const [relatorios, setRelatorios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [filteredByStatus, setFilteredByStatus] = useState([]);
   
   // Clientes modals
   const [showAddModal, setShowAddModal] = useState(false);
