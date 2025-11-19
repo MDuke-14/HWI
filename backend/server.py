@@ -1950,7 +1950,7 @@ async def delete_intervencao(
 async def upload_fotografia(
     relatorio_id: str,
     file: UploadFile = File(...),
-    descricao: str = "",
+    descricao: str = Form(""),
     current_user: dict = Depends(get_current_user)
 ):
     """Upload de fotografia para um relatório técnico"""
