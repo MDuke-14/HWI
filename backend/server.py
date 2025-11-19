@@ -4205,9 +4205,10 @@ async def recalculate_user_hours(
                         end = datetime.fromisoformat(e["end_time"])
                         total_seconds += (end - start).total_seconds()
                 
-                # Converter para horas, arredondando para minutos (ignorar segundos)
-                total_minutes = round(total_seconds / 60)  # Arredondar para minuto mais próximo
-                total_hours = total_minutes / 60  # Converter de volta para horas
+                # Converter para horas, TRUNCANDO segundos (não arredondando)
+                import math
+                total_minutes = math.floor(total_seconds / 60)  # Trunca segundos
+                total_hours = total_minutes / 60  # Converte para horas
                 
                 # Verificar se é dia especial (fim de semana ou feriado)
                 from holidays import is_overtime_day
