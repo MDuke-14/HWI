@@ -1190,6 +1190,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 )}
               </div>
+
+              {/* Relatório de Assistência */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <h4 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Relatório de Assistência
+                </h4>
+                {selectedRelatorio.relatorio_assistencia ? (
+                  <div className="text-gray-300 whitespace-pre-wrap bg-[#1a1a1a] p-3 rounded border border-gray-700">
+                    {selectedRelatorio.relatorio_assistencia}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic text-sm">Nenhum relatório registado</p>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
