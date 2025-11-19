@@ -956,6 +956,73 @@ frontend:
           
           NEEDS TESTING:
           1. Criar uma nova OT
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ✅ NOVA FUNCIONALIDADE: COMPONENTES ADICIONAIS (FOTOGRAFIAS)
+          
+          User Request: Adicionar seção "Componentes Adicionais" após "Mão de Obra/Deslocação" para upload de fotografias com texto explicativo
+          
+          Backend Implementation (server.py):
+          1. Modelo FotoRelatorio já existia no código
+          2. Criados 5 novos endpoints:
+             - POST /api/relatorios-tecnicos/{relatorio_id}/fotografias - Upload de foto
+             - GET /api/relatorios-tecnicos/{relatorio_id}/fotografias - Listar fotos
+             - GET /api/relatorios-tecnicos/{relatorio_id}/fotografias/{filename} - Obter arquivo
+             - DELETE /api/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id} - Remover foto
+             - PUT /api/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id} - Atualizar descrição
+          
+          3. Funcionalidades do Upload:
+             - Validação de tipo de arquivo (JPG, PNG, GIF, WEBP, HEIC, HEIF)
+             - Validação de tamanho (máximo 10MB - no frontend)
+             - Armazenamento em /app/backend/uploads/relatorios/
+             - Nomes únicos usando UUID
+             - Ordem automática de exibição
+          
+          Frontend Implementation (TechnicalReports.jsx):
+          1. Adicionados estados para gerenciar fotografias:
+             - fotografias, showAddFotoModal, selectedFoto, fotoFile, fotoDescricao, uploadingFoto
+          
+          2. Criadas funções:
+             - fetchFotografiasRelatorio() - Buscar fotos ao abrir OT
+             - openAddFotoModal() - Abrir modal de upload
+             - handleFotoFileChange() - Validar arquivo selecionado
+             - handleUploadFoto() - Enviar foto para backend
+             - handleDeleteFoto() - Remover foto
+          
+          3. Nova seção "Componentes Adicionais":
+             - Botão "Adicionar Fotografia"
+             - Galeria em grid responsivo (1/2/3 colunas)
+             - Cards de foto com imagem, descrição e data
+             - Botão de remover em cada foto
+             - Mensagem quando não há fotos
+          
+          4. Modal de Upload:
+             - Input de arquivo com validação
+             - Pré-visualização da imagem selecionada
+             - Campo de texto obrigatório para descrição
+             - Indicador de progresso durante upload
+             - Validação de formato e tamanho
+          
+          Features:
+          ✅ Sem limite de fotografias
+          ✅ Cada foto requer descrição obrigatória
+          ✅ Pré-visualização antes do upload
+          ✅ Validação de tipo e tamanho
+          ✅ Galeria responsiva
+          ✅ Remoção com confirmação
+          ✅ Exibição de data/hora do upload
+          
+          Status: ✅ Implementado - Backend e frontend funcionando
+          
+          NEEDS TESTING:
+          1. Fazer login e criar/abrir uma OT
+          2. Verificar seção "Componentes Adicionais" após "Mão de Obra"
+          3. Testar upload de fotografia com descrição
+          4. Verificar galeria de fotos
+          5. Testar remoção de fotografia
+          6. Validar formatos de arquivo aceitos
+
           2. Verificar que o status inicial é "Em Execução"
           3. Verificar que é possível mudar o status manualmente se necessário
 
