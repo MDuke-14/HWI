@@ -2668,7 +2668,11 @@ async def end_time_entry(
             # Calculate end of current day (midnight)
             midnight = datetime.combine(current_start.date() + timedelta(days=1), datetime.min.time(), timezone.utc)
             day_seconds = (midnight - current_start).total_seconds()
-            day_hours = round(day_seconds / 3600, 2)
+            
+            # TRUNCAR segundos (não arredondar)
+            day_minutes = math.floor(day_seconds / 60)
+            day_hours = day_minutes / 60
+            day_hours = round(day_hours, 2)
             
             day_date = current_start.date()
             is_ot, ot_reason = is_overtime_day(day_date)
