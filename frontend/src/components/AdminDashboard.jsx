@@ -785,7 +785,11 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <p className="text-xl text-yellow-400 font-semibold">{verifyResult.totals.overtime_hours}h</p>
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500">Horas Especiais (Fins de Semana/Feriados)</p>
+                            <p className="text-xs text-gray-500">Horas Sábado</p>
+                            <p className="text-xl text-orange-400 font-semibold">{verifyResult.totals.saturday_hours}h</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Horas Especiais (Dom/Feriados)</p>
                             <p className="text-xl text-purple-400 font-semibold">{verifyResult.totals.special_hours}h</p>
                           </div>
                           <div>
