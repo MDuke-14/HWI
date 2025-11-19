@@ -1026,6 +1026,78 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
 
+  // ========== Email PDF Functions ==========
+  
+  const openEmailModal = async () => {
+    // Preparar lista de emails do cliente
+    const cliente = await db.clientes.find_one({"id": selectedRelatorio.cliente_id});
+    
+    const emails = [];
+    if (selectedRelatorio.cliente_email) {
+      emails.push({ email: selectedRelatorio.cliente_email, selected: true });
+    }
+    
+    // Adicionar emails adicionais se existirem
+    const emailsAdicionaisCliente = selectedRelatorio.cliente_emails_adicionais || '';
+    if (emailsAdicionaisCliente) {
+      const emailsList = emailsAdicionaisCliente.split(/[;,]/).map(e => e.trim()).filter(e => e);
+      emailsList.forEach(email => {
+        emails.push({ email, selected: true });
+      });
+    }
+    
+    setEmailsCliente(emails);
+    setEmailsAdicionais('');
+    setShowEmailModal(true);
+  };
+
+  const handleSendEmail = async () => {
+    // Coletar emails selecionados
+    const emailsSelecionados = emailsCliente.filter(e => e.selected).map(e => e.email);
+    
+    // Adicionar emails adicionais
+    if (emailsAdicionais.trim()) {
+      const emailsExtras = emailsAdicionais.split(/[;,]/).map(e => e.trim()).filter(e => e);
+      emailsSelecionados.push(...emailsExtras);
+    }
+    
+    if (emailsSelecionados.length === 0) {
+      toast.error('Selecione pelo menos um email');
+      return;
+    }
+    
+    setSendingEmail(true);
+    
+    try {
+      const response = await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/enviar-pdf`,
+        { emails: emailsSelecionados }
+      );
+      
+      const { emails_enviados, emails_falhados } = response.data;
+      
+      if (emails_falhados && emails_falhados.length > 0) {
+        toast.warning(`PDF enviado para ${emails_enviados.length} email(s). ${emails_falhados.length} falharam.`);
+      } else {
+        toast.success(`PDF enviado com sucesso para ${emails_enviados.length} email(s)!`);
+      }
+      
+      setShowEmailModal(false);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const toggleEmailSelection = (index) => {
+    const novosEmails = [...emailsCliente];
+    novosEmails[index].selected = !novosEmails[index].selected;
+    setEmailsCliente(novosEmails);
+  };
+
+
+
   const getTipoHorarioLabel = (tipo) => {
     const labels = {
       'diurno': 'Diurno (07h-19h)',
