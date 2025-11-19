@@ -922,7 +922,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const openAssinaturaModal = () => {
-    setAssinaturaTipo('digital');
     setAssinaturaNome({ primeiro: '', ultimo: '' });
     setShowAssinaturaModal(true);
   };
