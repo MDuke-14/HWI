@@ -4234,17 +4234,21 @@ async def recalculate_user_hours(
                 })
                 continue
             
-            # Converter para horas, TRUNCANDO segundos (não arredondando)
-            total_minutes = math.floor(total_seconds / 60)  # Trunca segundos
-            total_hours = total_minutes / 60  # Converte para horas
+            # Usar start_time para calcular breakdown (precisa de datetime)
+            if entry.get("entries") and len(entry["entries"]) > 0:
+                first_start = datetime.fromisoformat(entry["entries"][0]["start_time"])
+                last_end = datetime.fromisoformat(entry["entries"][-1]["end_time"])
+            else:
+                first_start = datetime.fromisoformat(entry["start_time"])
+                last_end = datetime.fromisoformat(entry["end_time"])
             
-            # Verificar se é dia especial (fim de semana ou feriado)
-            from holidays import is_overtime_day
+            # Usar a NOVA LÓGICA do script fornecido
             date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
-            is_special, reason = is_overtime_day(date_obj)
+            hours_breakdown = calcular_breakdown_completo(first_start, last_end, date_obj)
             
-            # Calcular breakdown usando a nova lógica
-            hours_breakdown = calculate_hours_breakdown(total_hours, is_special)
+            # Calcular total truncando segundos
+            total_minutes = math.floor(total_seconds / 60)
+            total_hours = round(total_minutes / 60, 2)
             
             # Verificar se os valores mudaram
             old_regular = entry.get("regular_hours", 0)
