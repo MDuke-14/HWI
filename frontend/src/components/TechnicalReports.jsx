@@ -811,13 +811,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const openFotografiasModal = async () => {
-    setShowFotografiasModal(true);
-    if (selectedRelatorio) {
-      await fetchFotografiasRelatorio(selectedRelatorio.id);
-    }
-  };
-
   const openAddFotoModal = () => {
     setFotoFile(null);
     setFotoDescricao('');
