@@ -1126,6 +1126,101 @@ frontend:
              - Aviso se cliente não tiver emails
           
           Features:
+  - task: "Sistema de Notificações Push"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/backend/notification_system.py, /app/frontend/src/components/NotificationBell.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ✅ SISTEMA DE NOTIFICAÇÕES PUSH IMPLEMENTADO
+          
+          User Requirements:
+          1. Notificações Web Push (SO level)
+          2. Verificações a cada 15 minutos
+          3. Email para admin quando ultrapassar 8h20
+          4. Melhor solução para push
+          
+          Backend Implementation:
+          1. Arquivo notification_system.py criado:
+             - Classe NotificationSystem com verificações automáticas
+             - check_morning_clock_in(): Verifica se usuário iniciou ponto às 9h (seg-sex)
+             - check_long_breaks(): Detecta pausas > 1h00 entre entradas
+             - check_overtime_work(): Alerta após 8h20 de trabalho
+             - send_overtime_email_to_admins(): Email automático para admins
+             - notification_loop(): Executa verificações a cada 15min
+          
+          2. Modelos adicionados (server.py):
+             - Notification: id, user_id, type, title, message, priority, read, created_at
+             - PushSubscription: user_id, endpoint, keys
+          
+          3. Endpoints de Notificações:
+             - GET /notifications - Buscar notificações (com filtro unread_only)
+             - PUT /notifications/{id}/read - Marcar como lida
+             - POST /notifications/subscribe - Registrar push subscription
+             - DELETE /notifications/all - Limpar todas
+          
+          4. Sistema de Verificação Automática:
+             - Roda em background a cada 15 minutos
+             - Iniciado automaticamente no startup do servidor
+             - 3 tipos de verificações simultâneas
+             - Evita duplicatas (verifica últimos 15min)
+          
+          Frontend Implementation:
+          1. Service Worker atualizado (public/service-worker.js):
+             - Suporte para push notifications
+             - Event listeners para push e notificationclick
+             - Ícone e vibração
+             - Ações (Ver/Fechar)
+          
+          2. Componente NotificationBell.jsx:
+             - Sino de notificações na navegação
+             - Badge com contador de não lidas
+             - Dropdown com lista de notificações
+             - Cores por prioridade (vermelho/amarelo/azul)
+             - Registro automático de service worker
+             - Solicita permissão de notificações
+             - Polling a cada 2 minutos
+             - Botão "Limpar todas"
+          
+          3. Integrado em Navigation.jsx:
+             - Sino aparece ao lado do nome do usuário
+             - Sempre visível quando logado
+          
+          Regras de Notificação:
+          ✅ Segunda a Sexta às 9h00-9h30: Lembrete se não iniciou ponto
+          ✅ Pausa > 1h00: Alerta sobre pausa longa
+          ✅ Após 8h20 trabalho:
+             - Notificação para usuário perguntando se terminou
+             - Email automático para admins sobre horas extras
+          
+          Features Implementadas:
+          ✅ Web Push Notifications (aparecem no SO)
+          ✅ Service Worker registrado automaticamente
+          ✅ Permissão solicitada ao usuário
+          ✅ Verificações automáticas a cada 15min no backend
+          ✅ Email para admins sobre horas extras
+          ✅ Dropdown de notificações in-app
+          ✅ Sistema de prioridades (high/medium/low)
+          ✅ Prevenção de duplicatas
+          ✅ Notificações persistidas no banco
+          
+          Status: ✅ Implementado - Backend rodando com loop ativo
+          
+          NEEDS TESTING:
+          1. Fazer login e permitir notificações quando solicitado
+          2. Verificar sino de notificações na barra de navegação
+          3. Simular cenários:
+             - Não iniciar ponto às 9h (esperar verificação)
+             - Pausar por mais de 1h
+             - Trabalhar mais de 8h20
+          4. Verificar se notificações aparecem
+          5. Confirmar email para admin sobre horas extras
+
           ✅ Geração automática de PDF completo
           ✅ Seleção múltipla de emails do cliente
           ✅ Adição manual de emails extras
