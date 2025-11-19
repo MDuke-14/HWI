@@ -1,0 +1,226 @@
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from io import BytesIO
+from datetime import datetime
+from pathlib import Path
+
+def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura):
+    """
+    Gera PDF completo de uma Ordem de Trabalho
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.5*cm, bottomMargin=1.5*cm)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Estilos customizados
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1e40af'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#3b82f6'),
+        spaceAfter=8,
+        spaceBefore=12,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=6
+    )
+    
+    # Cabeçalho
+    elements.append(Paragraph("ORDEM DE TRABALHO", title_style))
+    elements.append(Paragraph(f"OT #{relatorio.get('numero_assistencia', 'N/A')}", title_style))
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # Status
+    status_labels = {
+        'orcamento': 'Orçamento',
+        'em_execucao': 'Em Execução',
+        'concluido': 'Concluído',
+        'facturado': 'Facturado'
+    }
+    status_text = status_labels.get(relatorio.get('status', ''), relatorio.get('status', ''))
+    elements.append(Paragraph(f"<b>Status:</b> {status_text}", normal_style))
+    
+    data_servico = relatorio.get('data_servico')
+    if isinstance(data_servico, str):
+        data_servico = datetime.fromisoformat(data_servico).strftime('%d/%m/%Y')
+    elements.append(Paragraph(f"<b>Data de Serviço:</b> {data_servico}", normal_style))
+    elements.append(Spacer(1, 0.3*cm))
+    
+    # Cliente
+    elements.append(Paragraph("DADOS DO CLIENTE", heading_style))
+    client_data = [
+        ['Nome:', cliente.get('nome', 'N/A')],
+        ['Email:', cliente.get('email', 'N/A')],
+        ['Telefone:', cliente.get('telefone', 'N/A')],
+        ['Morada:', cliente.get('morada', 'N/A')],
+        ['NIF:', cliente.get('nif', 'N/A')],
+        ['Local de Intervenção:', relatorio.get('local_intervencao', 'N/A')],
+        ['Pedido por:', relatorio.get('pedido_por', 'N/A')],
+    ]
+    
+    client_table = Table(client_data, colWidths=[5*cm, 12*cm])
+    client_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(client_table)
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # Equipamento
+    elements.append(Paragraph("EQUIPAMENTO", heading_style))
+    equip_data = [
+        ['Tipologia:', relatorio.get('equipamento_tipologia', 'N/A')],
+        ['Marca:', relatorio.get('equipamento_marca', 'N/A')],
+        ['Modelo:', relatorio.get('equipamento_modelo', 'N/A')],
+        ['Número de Série:', relatorio.get('equipamento_numero_serie', 'N/A')],
+    ]
+    
+    if relatorio.get('equipamento_ano_fabrico'):
+        equip_data.append(['Ano de Fabrico:', relatorio.get('equipamento_ano_fabrico')])
+    
+    equip_table = Table(equip_data, colWidths=[5*cm, 12*cm])
+    equip_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(equip_table)
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # Intervenções
+    if intervencoes:
+        elements.append(Paragraph("INTERVENÇÕES", heading_style))
+        for i, interv in enumerate(intervencoes, 1):
+            data_interv = interv.get('data_intervencao')
+            if isinstance(data_interv, str):
+                try:
+                    data_interv = datetime.fromisoformat(data_interv).strftime('%d/%m/%Y')
+                except:
+                    pass
+            
+            elements.append(Paragraph(f"<b>Intervenção #{i}</b> - {data_interv}", normal_style))
+            elements.append(Paragraph(f"<b>Motivo:</b> {interv.get('motivo_assistencia', 'N/A')}", normal_style))
+            
+            if interv.get('relatorio_assistencia'):
+                elements.append(Paragraph(f"<b>Relatório:</b> {interv.get('relatorio_assistencia')}", normal_style))
+            
+            elements.append(Spacer(1, 0.3*cm))
+    
+    # Técnicos / Mão de Obra
+    if tecnicos:
+        elements.append(Paragraph("MÃO DE OBRA / DESLOCAÇÃO", heading_style))
+        
+        tec_data = [['Técnico', 'Data', 'Horas', 'KM (ida/volta)', 'Código']]
+        
+        codigos = {
+            'diurno': '1',
+            'noturno': '2',
+            'sabado': 'S',
+            'domingo_feriado': 'D'
+        }
+        
+        for tec in tecnicos:
+            data_trab = tec.get('data_trabalho')
+            if isinstance(data_trab, str):
+                try:
+                    data_trab = datetime.fromisoformat(data_trab).strftime('%d/%m/%Y')
+                except:
+                    pass
+            
+            tec_data.append([
+                tec.get('tecnico_nome', 'N/A'),
+                data_trab or 'N/A',
+                f"{tec.get('horas_cliente', 0)}h",
+                f"{tec.get('kms_deslocacao', 0) * 2} km",
+                codigos.get(tec.get('tipo_horario', ''), '-')
+            ])
+        
+        tec_table = Table(tec_data, colWidths=[5*cm, 3*cm, 2*cm, 3*cm, 2*cm])
+        tec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(tec_table)
+        elements.append(Spacer(1, 0.5*cm))
+    
+    # Fotografias (apenas listar, não incluir imagens grandes no PDF)
+    if fotografias:
+        elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
+        for i, foto in enumerate(fotografias, 1):
+            elements.append(Paragraph(f"<b>Fotografia #{i}:</b> {foto.get('descricao', 'Sem descrição')}", normal_style))
+        elements.append(Spacer(1, 0.3*cm))
+    
+    # Assinatura
+    if assinatura:
+        elements.append(PageBreak())
+        elements.append(Paragraph("ASSINATURA DO CLIENTE", heading_style))
+        
+        if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
+            # Incluir imagem da assinatura
+            img_path = Path(assinatura['assinatura_path'])
+            if img_path.exists():
+                try:
+                    img = RLImage(str(img_path), width=8*cm, height=4*cm)
+                    elements.append(img)
+                except:
+                    pass
+        
+        nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
+        elements.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
+        
+        data_assinatura = assinatura.get('data_assinatura')
+        if isinstance(data_assinatura, str):
+            try:
+                data_assinatura = datetime.fromisoformat(data_assinatura).strftime('%d/%m/%Y %H:%M')
+            except:
+                pass
+        elements.append(Paragraph(f"<b>Data:</b> {data_assinatura}", normal_style))
+    
+    # Construir PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
