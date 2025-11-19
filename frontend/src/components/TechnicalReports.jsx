@@ -880,7 +880,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 type="submit"
                 className="flex-1 bg-blue-500 hover:bg-blue-600"
               >
-                Criar Relatório
+                Criar OT
               </Button>
             </div>
           </form>
