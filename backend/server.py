@@ -212,6 +212,10 @@ class AssinaturaRelatorio(BaseModel):
     assinado_por: Optional[str] = None  # Nome completo
     data_assinatura: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class EnviarEmailRequest(BaseModel):
+    emails: List[str]
+
 class RelatorioTecnicoCreate(BaseModel):
     cliente_id: str
     data_servico: date
