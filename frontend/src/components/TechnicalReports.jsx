@@ -918,9 +918,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <p className="text-white font-medium">{selectedRelatorio.cliente_nome}</p>
                 <p className="text-gray-400 text-sm">Local: {selectedRelatorio.local_intervencao}</p>
                 <p className="text-gray-400 text-sm">Pedido por: {selectedRelatorio.pedido_por}</p>
-                {selectedRelatorio.contacto_pedido && (
-                  <p className="text-gray-400 text-sm">Contacto: {selectedRelatorio.contacto_pedido}</p>
-                )}
               </div>
 
               {/* Equipamento */}
