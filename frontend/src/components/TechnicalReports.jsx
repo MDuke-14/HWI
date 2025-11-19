@@ -22,7 +22,8 @@ import {
   Users,
   Download,
   Image as ImageIcon,
-  PenTool
+  PenTool,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
