@@ -25,6 +25,7 @@ from excel_report import generate_monthly_report
 from pdf_report import generate_monthly_pdf_report
 from import_excel import parse_excel_timesheet
 from import_pdf import parse_pdf_timesheet
+from ot_pdf_report import generate_ot_pdf
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
