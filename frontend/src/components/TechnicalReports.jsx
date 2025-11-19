@@ -189,6 +189,58 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowDeleteModal(true);
   };
 
+  const handleAddRelatorioFromCliente = (cliente) => {
+    // Fechar modal de visualização do cliente
+    setShowViewModal(false);
+    
+    // Pré-selecionar o cliente no formulário de relatório
+    setRelatorioFormData({
+      ...relatorioFormData,
+      cliente_id: cliente.id
+    });
+    
+    // Abrir modal de criação de relatório
+    setShowAddRelatorioModal(true);
+  };
+
+  const fetchClienteRelatorios = async (clienteId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos`);
+      const relatoriosDoCliente = response.data.filter(r => r.cliente_id === clienteId);
+      setClienteRelatorios(relatoriosDoCliente);
+      setShowClienteRelatoriosModal(true);
+    } catch (error) {
+      toast.error('Erro ao carregar relatórios do cliente');
+    }
+  };
+
+  const handleDownloadAllClienteRelatorios = async (cliente) => {
+    try {
+      toast.info('A preparar download dos relatórios...');
+      
+      // Buscar todos os relatórios do cliente
+      const response = await axios.get(`${API}/relatorios-tecnicos`);
+      const relatoriosDoCliente = response.data.filter(r => r.cliente_id === cliente.id);
+      
+      if (relatoriosDoCliente.length === 0) {
+        toast.warning('Este cliente não tem relatórios');
+        return;
+      }
+      
+      // Download de cada relatório (abre em novas abas)
+      relatoriosDoCliente.forEach((relatorio, index) => {
+        setTimeout(() => {
+          const url = `${API}/relatorios-tecnicos/${relatorio.id}/pdf`;
+          window.open(url, '_blank');
+        }, index * 500); // Delay para evitar bloqueio de popup
+      });
+      
+      toast.success(`A fazer download de ${relatoriosDoCliente.length} relatório(s)`);
+    } catch (error) {
+      toast.error('Erro ao fazer download dos relatórios');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nome: '',
