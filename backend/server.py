@@ -161,6 +161,16 @@ class TecnicoRelatorio(BaseModel):
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
     ordem: int = 0
 
+class IntervencaoRelatorio(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    data_intervencao: date
+    motivo_assistencia: str
+    relatorio_assistencia: Optional[str] = None
+    ordem: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class MaterialRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
