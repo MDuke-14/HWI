@@ -4448,7 +4448,11 @@ async def create_manual_time_entry(
                 # First part: start_time to 23:59:59
                 first_part_end = midnight - timedelta(seconds=1)
                 first_seconds = (first_part_end - start_datetime).total_seconds()
-                first_hours = round(first_seconds / 3600, 2)
+                
+                # TRUNCAR segundos
+                first_minutes = math.floor(first_seconds / 60)
+                first_hours = first_minutes / 60
+                first_hours = round(first_hours, 2)
                 
                 # Determine if first day is special
                 first_is_special, first_ot_reason = is_overtime_day(start_datetime.date())
