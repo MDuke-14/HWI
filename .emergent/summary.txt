@@ -1,124 +1,93 @@
 <analysis>
 The user's primary language is Portuguese. The next agent must respond in Portuguese.
 
-The trajectory details an extensive series of feature additions and bug fixes for a time-tracking application. The work began by implementing a complex Technical Reports system (later renamed OTs - Ordens de Trabalho). This involved creating backend endpoints (FastAPI) and frontend components (React) for managing clients and the reports themselves. A significant portion of the work focused on iterative development based on user feedback.
+The trajectory chronicles an extensive, iterative development process for a time-tracking and work-order management application. The previous AI engineer implemented a vast number of features, primarily focused on a system called OTs - Ordens de Trabalho (Work Orders). The development followed a pattern of user request, implementation (backend and frontend), and frequent, though sometimes unsuccessful, testing attempts.
 
-Key feature requests included:
-1.  **CRUD for Reports and Technicians**: Adding/editing/deleting reports and the technicians associated with them, with evolving permission models (initially admin-only, then all-users-edit, and finally admin-only-delete).
-2.  **Reporting Enhancements**: Fixing overtime calculations, changing the display of hours from decimal to HH:MM format, removing monetary values for allowances, and ensuring absences and vacations appear correctly in both UI and PDF reports.
-3.  **Admin Controls**: A real-time dashboard to monitor all employees, the ability to manually set a day's status (e.g., Vacation, Absence), and flexible report generation with custom date ranges and user filtering.
-4.  **UI/UX Refinements**: Removing the History tab, converting the main navigation to a dropdown menu, and repositioning floating action buttons to avoid overlapping with branding.
+Key workstreams included:
+1.  **UI/UX Refinements:** Fixed initial UI bugs, like a dashboard card obscuring the navigation, and evolved the navigation from tabs to a dropdown menu with proper z-index layering to ensure it overlays all page content.
+2.  **OT Feature Expansion:** This was the core of the work. The OT system was built from scratch and continuously enhanced with features like:
+    *   A client and equipment database, with equipment being automatically added/updated from OTs.
+    *   Complex relational views (e.g., view client -> view their equipment -> view OTs for that equipment).
+    *   Refactoring single-entry fields (Motivo, Relatório) into a dynamic list of Interventions, each with its own date and details.
+    *   Adding date tracking for when technicians are assigned to an OT.
+    *   Implementing a sophisticated, clickable status system with admin-only permissions for certain statuses (Facturado).
+    *   Adding a dedicated search tab to filter OTs by status.
+3.  **Data Integrity Improvements:** Converted free-text fields into dropdowns (e.g., selecting technicians from a user list) and implemented automatic calculations with manual overrides (e.g., technician work codes).
 
-The engineer consistently followed a develop-compile-restart workflow, addressing user requests by modifying both the Python backend and React frontend. The last task was a UI adjustment on the Dashboard to prevent the main card from obscuring the new dropdown navigation.
+The last task involved adding an Ano de Fabrico (Year of Manufacture) field for equipment and then modifying it to accept flexible date formats (MM-AAAA, MM/AAAA, AAAA). The backend model was updated, but the frontend implementation for this flexible format is the immediate next step.
 </analysis>
 
 <product_requirements>
-The application is a comprehensive employee time-management and reporting system for HWI Unipessoal.
+The application is a comprehensive employee time-management and Work Order (OT - Ordem de Trabalho) system.
 
 **Core Functionality:**
-*   Employee clock-in/out with location tracking.
-*   PWA support for mobile access.
-*   Vacation and absence requests with admin approval and email notifications.
+*   Employee clock-in/out.
+*   Admin dashboard for real-time monitoring and custom reporting.
+*   Admins can download monthly PDF reports for any user directly from the dashboard.
 
-**Reporting System:**
-*   A Relatórios section provides detailed time reports.
-*   Admins can view reports for any user.
-*   Reports can be generated for standard monthly periods or custom date ranges.
-*   Reports must correctly calculate Trabalho Suplementar (Overtime) and Trabalho Suplementar Dias de Descanso (Special Day Hours).
-*   Days off, approved vacations, and absences (unjustified non-working days) must be clearly marked in reports and corresponding PDFs.
-*   Subsidy day counts (e.g., meal allowance) are tracked, but monetary values have been removed. For special days, a meal allowance is only granted if the user works 5+ hours.
-*   PDFs of reports must be downloadable, reflecting the selected user and date range.
-
-**OTs - Ordens de Trabalho (formerly Technical Reports):**
-*   A separate system for creating and managing work orders, accessible via a floating action button.
-*   Includes full CRUD functionality for clients and OTs.
-*   Permissions are tiered: all authenticated users can create and edit OTs and their details (technicians), but only admins can delete clients or OTs.
-
-**Admin-Specific Features:**
-*   A real-time status dashboard to view all employees' current activity (clocked-in, on break, vacation, etc.) for the day.
-*   Ability to manually edit any user's time entries and set a day's status to FALTA (Absence), FÉRIAS (Vacation), or FOLGA (Day Off).
+**OTs - Ordens de Trabalho System:**
+This is a full-fledged work order management module with a complex set of interconnected features.
+*   **Entities:** Manages Clients, OTs, Equipment, and Interventions.
+*   **Equipment DB:** An equipment database is maintained per client. Equipment is automatically created or updated when a new OT is made. OTs can be created by selecting from a client's existing equipment.
+*   **Interventions:** OTs can have multiple dated interventions, each with a motivo (reason) and relatório (report), allowing for a detailed history of a single work order.
+*   **Technicians:** Technicians (system users) can be added to OTs. The date of assignment is recorded. The work-hour code (e.g., day, night, weekend) is automatically suggested based on the date but can be manually overridden via a popup.
+*   **Status Management:** OTs have a multi-stage status (Orçamento, Em Execução, Concluído, Facturado). Status changes are made via a popup, with the Facturado status being restricted to admins.
+*   **Search:** A dedicated tab allows for filtering all OTs by their current status.
 </product_requirements>
 
 <key_technical_concepts>
-- **Frameworks**: FastAPI (Python backend), React (frontend with Create React App/Craco).
-- **Database**: MongoDB, using UUIDs for IDs.
-- **UI**: Shadcn UI components, Tailwind CSS.
-- **Backend Tech**: Pydantic for data validation, JWT for authentication,  for emails.
-- **Report Generation**:  for PDFs,  for Excel.
-- **Date/Time**: Python's  with UTC focus, ISO string format for DB storage.
+- **Frameworks**: FastAPI (Python), React (JavaScript).
+- **Database**: MongoDB.
+- **Styling**: Tailwind CSS, Shadcn UI components.
+- **Backend**: Pydantic for data modeling, JWT for auth. Endpoints are heavily used for CRUD operations on OTs, Clients, Equipment, Technicians, and Interventions.
+- **Frontend**: Heavy use of React state (, ) to manage complex, interconnected modals, dynamic forms, and filtered data views within a single massive component ().
 </key_technical_concepts>
 
 <code_architecture>
-The application is a standard monorepo with a  and  directory.
+The application follows a standard monorepo structure with a  and .
 
 
 
 -   ****
-    -   **Importance**: The core of the application, defining all API endpoints, data models (Pydantic), and business logic.
-    -   **Changes**: It was heavily modified to add numerous features:
-        -   Endpoints for CRUD operations on technical reports () and their associated technicians.
-        -   Permission logic updated to distinguish between general user edits and admin-only deletions.
-        -   New endpoints for flexible reporting () and PDF generation for custom ranges.
-        -   An endpoint for a real-time admin dashboard ().
-        -   An endpoint for admins to manually set a day's status ().
-        -   Logic for overtime, special days, and meal allowances was refined.
-        -   Logic to fetch and display vacations and absences in reports was added.
+    -   **Importance**: This is the monolithic backend service containing all API logic. It defines Pydantic models for all data structures (Users, OTs, Clients, Equipment, Interventions, Technicians) and the FastAPI endpoints for all CRUD operations.
+    -   **Summary of Changes**: The file was massively expanded to support the entire OT system. New models for , , and  were added. Numerous new endpoints were created to create, read, update, and delete these new entities. Logic was added to the OT update endpoint to enforce admin-only permissions for the facturado status. The OT creation endpoint was enhanced to automatically create/update equipment records in the database.
 
 -   ****
-    -   **Importance**: The main component for the OTs - Ordens de Trabalho feature.
-    -   **Changes**: This file was built out from a basic shell to a full-featured interface.
-        -   Tabs for managing OTs and Clientes.
-        -   Modals for creating, viewing, and editing OTs and their technicians.
-        -   Conditional rendering of delete buttons based on admin status ().
-        -   All text labels were updated from Relatório Técnico to OT or Ordem de Trabalho.
+    -   **Importance**: This has become the most complex component in the application, managing the entire OTs - Ordens de Trabalho feature set, including all related entities. It's a single, large file handling multiple tabs, numerous modals, and complex state management.
+    -   **Summary of Changes**: This file received the vast majority of all edits.
+        -   **UI Structure**: A new Pesquisa por Estado tab was added.
+        -   **Modals**: Numerous modals were added or modified for: viewing a client (with new buttons to Ver Equipamentos and Ver Relatórios), viewing a list of equipment, viewing a list of OTs for an equipment, changing OT status, and selecting a technician's work code.
+        -   **Forms**: Text inputs were replaced with  dropdowns for choosing clients and technicians.
+        -   **Dynamic Fields**: The static fields for motivo and relatório were replaced with a dynamic list of Intervention sub-forms.
+        -   **State**: State management was expanded to handle lists of equipment, users, interventions, and various filtered OT lists.
+        -   **Logic**: A  function was added for auto-assigning work codes. Multiple  calls were added to interact with the new backend endpoints.
 
 -   ****
-    -   **Importance**: The UI for viewing and managing employee time reports.
-    -   **Changes**: This component received significant upgrades for flexibility and correctness.
-        -   UI controls were added for selecting custom date ranges and filtering by user (for admins).
-        -   The display was updated to group multiple entries under a single date and to correctly format hours (HH:MM).
-        -   New statuses (FÉRIAS, FALTA) were given distinct visual styles.
-        -   Logic was added for an admin to manually set a day's status via a dropdown in the edit modal.
-        -   Text labels for Horas Extras were changed to Trabalho Suplementar.
+    -   **Importance**: The main dashboard for administrators to manage users and view reports.
+    -   **Summary of Changes**: A Download Relatório button was added to the Relatórios tab for each user, allowing an admin to download the current month's PDF report directly. The  handler for this button calls the  endpoint with the user's ID.
 
 -   ****
-    -   **Importance**: Controls the main application navigation.
-    -   **Changes**: The entire component was refactored. The horizontal tab bar was replaced with a dropdown menu to save space and prevent UI overlap issues, especially on smaller screens. The Histórico link was removed entirely.
-
--   ****
-    -   **Importance**: The main landing page after login, showing the clock-in/out controls.
-    -   **Changes**:
-        -   A floating action button was added for admins to open the new real-time status modal.
-        -   The positions of the floating action buttons were adjusted upwards (, ) to avoid being obscured.
-        -   The last task was to reduce the size of the main card to prevent it from covering the new navigation dropdown.
-
--   ****
-    -   **Importance**: Generates the monthly PDF report.
-    -   **Changes**: The script was updated to:
-        -   Include new statuses FÉRIAS and FALTA with corresponding row styling.
-        -   Add a new summary section for vacation days (used and available).
-        -   Update text labels from Horas Extras to Trabalho Suplementar.
+    -   **Importance**: The main application navigation bar.
+    -   **Summary of Changes**: The component's container was given a  to ensure it sits above page content. The dropdown menu itself was given a  to ensure it overlaps everything, including the main navigation bar and floating action buttons on other pages.
 </code_architecture>
 
 <pending_tasks>
-- Complete Phase 1 of the Sistema de Relatórios Técnicos (now OTs) by implementing:
-  - Photo uploads with descriptions.
-  - Material tracking (used vs. budget).
+- Implement the backend endpoint and frontend logic for the Download Todos os Relatórios button in the client view modal. This feature was requested but deferred because the backend endpoint did not exist.
 - Implement the UI and logic for the  component.
 - The original plan included a  workflow, which has not been started.
 </pending_tasks>
 
 <current_work>
-The most recent task was a direct response to a UI issue created by a previous change. After converting the main navigation from a tab bar to a dropdown menu (), the user reported that the main content card on the  was too large and was covering the new dropdown, making it inaccessible.
+The most recent task was to add an Ano de Fabrico (Year of Manufacture) field to the Equipamentos (Equipment) entity. The user then requested that this text field should be flexible, accepting multiple formats: , , and .
 
-The AI engineer acknowledged the issue and began investigating  to identify the specific CSS classes or component structure responsible for the card's size. The goal was to reduce its vertical padding and the height of the  component within it to shrink its overall height and ensure it no longer overlaps with the navigation header. The engineer had located the relevant code block within the JSX (messages 700-701) and was about to apply the necessary style changes.
+The previous engineer completed the first part of this follow-up request:
+1.  **Backend ():** The  Pydantic model was updated. The  field type was changed from  to  to accommodate the non-numeric formats.
+
+
+
+The work concluded before the corresponding frontend changes were made. The frontend input field for Ano de Fabrico in  is still likely configured as , which needs to be changed to  to allow the flexible formats.
 </current_work>
 
 <optional_next_step>
-Edit  to reduce the size of the main card containing the clock-in controls so it no longer covers the navigation dropdown.
+Update the Ano de Fabrico input field in the frontend () from  to  to allow users to enter the required formats (MM-AAAA, MM/AAAA, AAAA).
 </optional_next_step>
-
-<direct_quotes>
-User: na aba Dashboard Vamos reduzir o tamanho do quadro onde se situa as observaçoes, fora de residencia e o botao iniciar relogio. Esta a tapar o menu dropdown
-Assistant: Entendido! Vou reduzir o tamanho do card principal do Dashboard para que não cubra o menu dropdown. Deixe-me verificar e ajustar:
-</direct_quotes>
