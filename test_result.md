@@ -826,6 +826,42 @@ frontend:
           - Shows toast notifications for success/error
           - Endpoint: GET /api/time-entries/reports/monthly-pdf
           Frontend compiled successfully. Needs testing to verify download functionality.
+  - task: "Ano de Fabrico - Flexible Format Support"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/TechnicalReports.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ✅ CAMPO "ANO DE FABRICO" ATUALIZADO PARA FORMATOS FLEXÍVEIS
+          
+          Frontend Changes (TechnicalReports.jsx):
+          1. Atualizado o input "Ano de Fabrico" de type="number" para type="text"
+          2. Removidos os atributos min="1900" e max={new Date().getFullYear()}
+          3. Atualizado o placeholder de "Ex: 2020" para "Ex: 2020, 03/2020, 03-2020"
+          
+          Formatos Suportados:
+          - AAAA (Ex: 2020)
+          - MM/AAAA (Ex: 03/2020)
+          - MM-AAAA (Ex: 03-2020)
+          
+          Backend Changes (Previously Done):
+          - O backend já foi atualizado anteriormente para aceitar Optional[str] no modelo Equipamento
+          - Campo ano_fabrico agora aceita strings em vez de integers
+          
+          NEEDS TESTING:
+          1. Navegar até OTs - Ordens de Trabalho
+          2. Criar ou editar uma OT
+          3. Testar o campo "Ano de Fabrico" com os três formatos:
+             - Somente ano: 2020
+             - Mês e ano com barra: 03/2020
+             - Mês e ano com hífen: 03-2020
+          4. Verificar que o equipamento é salvo corretamente com o formato inserido
+          5. Verificar que o valor é exibido corretamente ao visualizar o equipamento
   - task: "Midnight Crossing Entry Splitting"
     implemented: true
     working: true
