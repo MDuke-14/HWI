@@ -1019,6 +1019,142 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
         </div>
         )}
+
+        {/* Pesquisa por Estado Section */}
+        {activeTab === 'pesquisa' && (
+        <div className="glass-effect p-6 rounded-xl">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Pesquisa por Estado</h2>
+            
+            {/* Status Dropdown */}
+            <div className="max-w-md">
+              <Label className="text-gray-300 mb-2 block">Selecione o Estado</Label>
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">-- Selecione um estado --</option>
+                <option value="orcamento">🟡 Orçamento</option>
+                <option value="em_execucao">🔵 Em Execução</option>
+                <option value="concluido">🟢 Concluído</option>
+                <option value="facturado">🟣 Facturado</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Results */}
+          {statusFilter && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white font-semibold">
+                  Resultados: {filteredByStatus.length} OT(s) com status "{getStatusLabel(statusFilter)}"
+                </h3>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                  <p className="text-gray-400 mt-4">A carregar...</p>
+                </div>
+              ) : filteredByStatus.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg">Nenhuma OT encontrada com este estado</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredByStatus.map((relatorio) => (
+                    <div
+                      key={relatorio.id}
+                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition cursor-pointer"
+                      onClick={() => openViewRelatorioModal(relatorio)}
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="cursor-pointer flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-blue-400 font-bold text-lg">
+                              #{relatorio.numero_assistencia}
+                            </span>
+                            <span 
+                              className={`text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
+                              onClick={(e) => openStatusModal(relatorio, e)}
+                              title="Clique para alterar status"
+                            >
+                              {getStatusLabel(relatorio.status)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400">
+                            {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                        
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditRelatorioModal(relatorio);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          
+                          {user?.is_admin && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRelatorioToDelete(relatorio);
+                                setShowDeleteRelatorioModal(true);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Cliente */}
+                      <div className="mb-3 pb-3 border-b border-gray-700">
+                        <p className="text-xs text-gray-500 mb-1">Cliente</p>
+                        <p className="text-white font-medium">{relatorio.cliente_nome}</p>
+                        <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
+                      </div>
+
+                      {/* Equipamento */}
+                      <div className="mb-3 pb-3 border-b border-gray-700">
+                        <p className="text-xs text-gray-500 mb-1">Equipamento</p>
+                        <p className="text-sm text-gray-300">
+                          {relatorio.equipamento_marca} - {relatorio.equipamento_tipologia}
+                        </p>
+                      </div>
+
+                      {/* Técnico */}
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <User className="w-4 h-4" />
+                        <span>{relatorio.cliente_nome}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!statusFilter && (
+            <div className="text-center py-12">
+              <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">Selecione um estado para pesquisar</p>
+            </div>
+          )}
+        </div>
+        )}
       </div>
 
       {/* Add Relatório Modal */}
