@@ -126,6 +126,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       fetchClientes();
     } else if (activeTab === 'relatorios') {
       fetchRelatorios();
+    } else if (activeTab === 'pesquisa') {
+      fetchRelatorios(); // Carregar relatórios para filtrar
     }
   }, [activeTab]);
   
