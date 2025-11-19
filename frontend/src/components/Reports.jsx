@@ -582,38 +582,63 @@ const Reports = ({ user, onLogout }) => {
               <BarChart3 className="w-5 h-5" />
               Registos do Período
             </h3>
-            <div className="space-y-3">
-              {report.entries.map((entry) => (
+            <div className="space-y-4">
+              {groupAndSortEntriesByDate(report.entries).map((day) => (
                 <div
-                  key={entry.id}
-                  className="bg-[#1a1a1a] p-4 rounded-lg flex justify-between items-center"
-                  data-testid="report-entry"
+                  key={day.date}
+                  className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-4"
+                  data-testid="report-day"
                 >
-                  <div>
-                    <div className="text-white font-semibold">
-                      {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-PT', {
-                        weekday: 'short',
+                  {/* Day Header */}
+                  <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-700">
+                    <div className="text-white font-bold text-lg">
+                      {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                        weekday: 'long',
                         day: 'numeric',
-                        month: 'short'
+                        month: 'long',
+                        year: 'numeric'
                       })}
                     </div>
-                    <div className="text-sm text-gray-400">
-                      {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : '-'}
-                      {' → '}
-                      {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : '-'}
+                    <div className="text-green-400 font-bold text-xl">
+                      {formatHours(day.totalHours)}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-green-400 font-bold text-lg">
-                      {formatHours(entry.total_hours)}
-                    </div>
-                    {/* Removed pauses display - no longer used */}
+
+                  {/* Entries for this day */}
+                  <div className="space-y-2">
+                    {day.entries.map((entry, index) => (
+                      <div
+                        key={entry.id || index}
+                        className="flex justify-between items-center bg-[#0f0f0f] p-3 rounded"
+                        data-testid="report-entry"
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-400">
+                            <span className="text-blue-400 font-semibold">Entrada #{index + 1}</span>
+                            {' • '}
+                            {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : '-'}
+                            {' → '}
+                            {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : '-'}
+                          </div>
+                          {entry.observations && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              💬 {entry.observations}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-green-400 font-semibold">
+                            {formatHours(entry.total_hours)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
