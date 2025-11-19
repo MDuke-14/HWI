@@ -46,6 +46,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [clienteToDelete, setClienteToDelete] = useState(null);
   const [clienteRelatorios, setClienteRelatorios] = useState([]);
   const [showClienteRelatoriosModal, setShowClienteRelatoriosModal] = useState(false);
+  const [showClienteEquipamentosModal, setShowClienteEquipamentosModal] = useState(false);
+  const [clienteEquipamentos, setClienteEquipamentos] = useState([]);
+  const [showEquipamentoOTsModal, setShowEquipamentoOTsModal] = useState(false);
+  const [equipamentoOTs, setEquipamentoOTs] = useState([]);
+  const [selectedEquipamento, setSelectedEquipamento] = useState(null);
   
   // Relatórios modals
   const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
