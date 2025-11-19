@@ -527,7 +527,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       setRelatorioToDelete(null);
       fetchRelatorios();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao deletar OT');
+      toast.error(formatErrorMessage(error));
     }
   };
 
