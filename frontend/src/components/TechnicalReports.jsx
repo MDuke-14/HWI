@@ -642,7 +642,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       setSelectedIntervencao(null);
       fetchIntervencoesRelatorio(selectedRelatorio.id);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao atualizar intervenção');
+      toast.error(formatErrorMessage(error));
     }
   };
 
