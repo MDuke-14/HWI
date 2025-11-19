@@ -1330,18 +1330,6 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="edit_contacto_pedido" className="text-gray-300">
-                Contacto do Solicitante
-              </Label>
-              <Input
-                id="edit_contacto_pedido"
-                value={relatorioFormData.contacto_pedido}
-                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, contacto_pedido: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-              />
-            </div>
-
             {/* Equipamento */}
             <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
               <h3 className="text-blue-400 font-semibold mb-4">Equipamento</h3>
