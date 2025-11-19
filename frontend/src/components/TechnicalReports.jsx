@@ -465,7 +465,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       equipamento_tipologia: relatorio.equipamento_tipologia,
       equipamento_marca: relatorio.equipamento_marca,
       equipamento_modelo: relatorio.equipamento_modelo,
-      equipamento_numero_serie: relatorio.equipamento_numero_serie || ''
+      equipamento_numero_serie: relatorio.equipamento_numero_serie || '',
+      equipamento_ano_fabrico: relatorio.equipamento_ano_fabrico || ''
     });
     setShowEditRelatorioModal(true);
   };
