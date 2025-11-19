@@ -359,6 +359,33 @@ const TechnicalReports = ({ user, onLogout }) => {
     setEquipamentos([]);
     setEquipamentoSelecionado('');
     setModoNovoEquipamento(false);
+    setIntervencoesForm([{
+      id: Date.now(),
+      data_intervencao: new Date().toISOString().split('T')[0],
+      motivo_assistencia: '',
+      relatorio_assistencia: ''
+    }]);
+  };
+
+  const addIntervencaoForm = () => {
+    setIntervencoesForm([...intervencoesForm, {
+      id: Date.now(),
+      data_intervencao: new Date().toISOString().split('T')[0],
+      motivo_assistencia: '',
+      relatorio_assistencia: ''
+    }]);
+  };
+
+  const removeIntervencaoForm = (id) => {
+    if (intervencoesForm.length > 1) {
+      setIntervencoesForm(intervencoesForm.filter(i => i.id !== id));
+    }
+  };
+
+  const updateIntervencaoForm = (id, field, value) => {
+    setIntervencoesForm(intervencoesForm.map(i => 
+      i.id === id ? { ...i, [field]: value } : i
+    ));
   };
 
   const handleAddRelatorio = async (e) => {
