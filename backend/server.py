@@ -169,7 +169,7 @@ class TecnicoRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
-    tecnico_id: str
+    tecnico_id: Optional[str] = None  # Opcional - pode ser nome livre
     tecnico_nome: str
     horas_cliente: float = 0
     kms_deslocacao: float = 0  # Será multiplicado por 2 no frontend
