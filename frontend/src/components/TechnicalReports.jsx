@@ -86,6 +86,11 @@ const TechnicalReports = ({ user, onLogout }) => {
     descricao_problema: ''
   });
 
+  // Equipamentos
+  const [equipamentos, setEquipamentos] = useState([]);
+  const [equipamentoSelecionado, setEquipamentoSelecionado] = useState('');
+  const [modoNovoEquipamento, setModoNovoEquipamento] = useState(false);
+
   useEffect(() => {
     if (activeTab === 'clientes') {
       fetchClientes();
