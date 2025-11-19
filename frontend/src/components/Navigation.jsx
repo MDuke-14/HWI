@@ -105,19 +105,8 @@ const Navigation = ({ user, onLogout, activePage }) => {
     </nav>
   );
 };
-                    isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-transparent text-gray-400 hover:text-white'
-                  }`}
-                  size="sm"
-                >
-                  <Icon className="w-4 h-4" />
-                </Button>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+
+export default Navigation;
     </nav>
   );
 };
