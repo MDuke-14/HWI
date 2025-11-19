@@ -79,7 +79,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     tecnico_nome: '',
     horas_cliente: 0,
     kms_deslocacao: 0,
-    tipo_horario: 'diurno'
+    tipo_horario: 'diurno',
+    data_trabalho: new Date().toISOString().split('T')[0]
   });
   
   const [formData, setFormData] = useState({
