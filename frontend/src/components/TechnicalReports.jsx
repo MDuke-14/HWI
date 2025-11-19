@@ -103,6 +103,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     descricao_problema: ''
   });
 
+  // Intervenções no formulário de criação
+  const [intervencoesForm, setIntervencoesForm] = useState([{
+    id: Date.now(),
+    data_intervencao: new Date().toISOString().split('T')[0],
+    motivo_assistencia: '',
+    relatorio_assistencia: ''
+  }]);
+
   // Equipamentos
   const [equipamentos, setEquipamentos] = useState([]);
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState('');
