@@ -862,6 +862,49 @@ frontend:
              - Mês e ano com hífen: 03-2020
           4. Verificar que o equipamento é salvo corretamente com o formato inserido
           5. Verificar que o valor é exibido corretamente ao visualizar o equipamento
+      - working: "NA"
+        agent: "main"
+        comment: |
+          🐛 BUG FIX: TRATAMENTO DE ERROS DE VALIDAÇÃO DO FASTAPI
+          
+          User Report: Erro ao criar nova OT - "Objects are not valid as a React child (found: object with keys {type, loc, msg, input, url})"
+          
+          Root Cause:
+          - Erros de validação do FastAPI retornam um array de objetos com estrutura {type, loc, msg, input, url}
+          - O código anterior tentava acessar apenas error.response?.data?.detail
+          - Quando detail é um array (erros de validação), o React tentava renderizar o objeto diretamente, causando o erro
+          
+          Solution Implemented:
+          1. Criada função helper `formatErrorMessage(error)` que:
+             - Trata erros de string (detail direto)
+             - Trata erros de array (validação do Pydantic)
+             - Extrai campo e mensagem de cada erro de validação
+             - Formata como string legível: "campo: mensagem"
+             - Fornece fallback genérico para outros tipos de erro
+          
+          2. Atualizado todos os tratamentos de erro em TechnicalReports.jsx:
+             - handleAddCliente: linha 247
+             - handleUpdateCliente: linha 260
+             - handleDeleteCliente: linha 274
+             - handleAddRelatorio: linha 464
+             - handleUpdateRelatorio: linha 516
+             - handleDeleteRelatorio: linha 530
+             - handleAddIntervencao: linha 616
+             - handleUpdateIntervencao: linha 645
+             - handleAddTecnico: linha 738
+             - handleUpdateTecnico: linha 771
+          
+          Benefit:
+          - Mensagens de erro agora são sempre strings legíveis
+          - Não há mais tentativa de renderizar objetos diretamente no React
+          - Usuário recebe feedback claro sobre o que está errado
+          
+          Frontend recompilado com sucesso. Aplicação rodando sem erros.
+          
+          NEEDS TESTING:
+          1. Tentar criar OT com dados inválidos para verificar mensagem de erro
+          2. Verificar que erros de validação agora são exibidos corretamente como strings
+          3. Testar campo "Ano de Fabrico" com formatos flexíveis após correção do erro
   - task: "Midnight Crossing Entry Splitting"
     implemented: true
     working: true
