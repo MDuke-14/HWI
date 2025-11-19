@@ -285,7 +285,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
     try {
       await axios.delete(`${API}/relatorios-tecnicos/${relatorioToDelete.id}`);
-      toast.success('Relatório eliminado com sucesso!');
+      toast.success('OT eliminada com sucesso!');
       setShowDeleteRelatorioModal(false);
       setRelatorioToDelete(null);
       fetchRelatorios();
