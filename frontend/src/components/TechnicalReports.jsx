@@ -1951,17 +1951,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                         </p>
                       </div>
 
-                      {/* Download Button */}
+                      {/* View Button */}
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(`${API}/relatorios-tecnicos/${relatorio.id}/pdf`, '_blank');
+                          setShowClienteRelatoriosModal(false);
+                          openViewRelatorioModal(relatorio);
                         }}
                         size="sm"
-                        className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
+                        className="w-full bg-purple-600 hover:bg-purple-700 mt-2"
                       >
-                        <Download className="w-3 h-3 mr-1" />
-                        Download PDF
+                        <FileText className="w-3 h-3 mr-1" />
+                        Ver Detalhes
                       </Button>
                     </div>
                   ))}
