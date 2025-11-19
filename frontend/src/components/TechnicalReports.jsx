@@ -43,6 +43,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [clienteToDelete, setClienteToDelete] = useState(null);
+  const [clienteRelatorios, setClienteRelatorios] = useState([]);
+  const [showClienteRelatoriosModal, setShowClienteRelatoriosModal] = useState(false);
   
   // Relatórios modals
   const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
