@@ -440,8 +440,12 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
     
     try {
-      // Criar o relatório técnico
-      const response = await axios.post(`${API}/relatorios-tecnicos`, relatorioFormData);
+      // Criar o relatório técnico com motivo_assistencia da primeira intervenção
+      const relatorioData = {
+        ...relatorioFormData,
+        motivo_assistencia: intervencoesValidas[0].motivo_assistencia
+      };
+      const response = await axios.post(`${API}/relatorios-tecnicos`, relatorioData);
       const relatorioId = response.data.id;
       
       // Criar as intervenções
