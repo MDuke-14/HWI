@@ -4253,17 +4253,20 @@ async def recalculate_user_hours(
             # Verificar se os valores mudaram
             old_regular = entry.get("regular_hours", 0)
             old_overtime = entry.get("overtime_hours", 0)
+            old_saturday = entry.get("saturday_hours", 0)
             old_special = entry.get("special_hours", 0)
             old_total = entry.get("total_hours", 0)
             
             new_regular = hours_breakdown["regular_hours"]
             new_overtime = hours_breakdown["overtime_hours"]
+            new_saturday = hours_breakdown["saturday_hours"]
             new_special = hours_breakdown["special_hours"]
-            new_total = round(total_hours, 2)
+            new_total = total_hours
             
             # Se houver diferença, atualizar
             if (abs(old_regular - new_regular) > 0.01 or 
-                abs(old_overtime - new_overtime) > 0.01 or 
+                abs(old_overtime - new_overtime) > 0.01 or
+                abs(old_saturday - new_saturday) > 0.01 or
                 abs(old_special - new_special) > 0.01 or
                 abs(old_total - new_total) > 0.01):
                 
@@ -4273,10 +4276,9 @@ async def recalculate_user_hours(
                     {"$set": {
                         "regular_hours": new_regular,
                         "overtime_hours": new_overtime,
+                        "saturday_hours": new_saturday,
                         "special_hours": new_special,
-                        "total_hours": new_total,
-                        "is_overtime_day": is_special,
-                        "overtime_reason": reason if is_special else None
+                        "total_hours": new_total
                     }}
                 )
                 
