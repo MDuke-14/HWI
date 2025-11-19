@@ -758,6 +758,17 @@ const TechnicalReports = ({ user, onLogout }) => {
               <FileText className="w-4 h-4 inline mr-2" />
               Ordens de Trabalho
             </button>
+            <button
+              onClick={() => setActiveTab('pesquisa')}
+              className={`px-4 py-3 font-semibold transition ${
+                activeTab === 'pesquisa'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Search className="w-4 h-4 inline mr-2" />
+              Pesquisa por Estado
+            </button>
           </div>
         </div>
 
