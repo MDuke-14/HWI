@@ -4206,7 +4206,6 @@ async def recalculate_user_hours(
                         total_seconds += (end - start).total_seconds()
                 
                 # Converter para horas, TRUNCANDO segundos (não arredondando)
-                import math
                 total_minutes = math.floor(total_seconds / 60)  # Trunca segundos
                 total_hours = total_minutes / 60  # Converte para horas
                 
