@@ -1183,10 +1183,78 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
-              {/* Problema */}
+              {/* Intervenções */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <h4 className="text-blue-400 font-semibold mb-2">Motivo da Assistência</h4>
-                <p className="text-gray-300">{selectedRelatorio.motivo_assistencia}</p>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Intervenções / Assistências
+                  </h4>
+                  <Button
+                    onClick={() => setShowAddIntervencaoModal(true)}
+                    size="sm"
+                    className="bg-green-500 hover:bg-green-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Intervenção
+                  </Button>
+                </div>
+
+                {intervencoes.length > 0 ? (
+                  <div className="space-y-3">
+                    {intervencoes.map((intervencao) => (
+                      <div key={intervencao.id} className="bg-[#1a1a1a] p-4 rounded border border-gray-700">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-blue-400" />
+                            <span className="text-white font-semibold">
+                              {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
+                            </span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              onClick={() => openEditIntervencaoModal(intervencao)}
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteIntervencao(intervencao.id)}
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Motivo:</p>
+                            <p className="text-gray-300 text-sm">{intervencao.motivo_assistencia}</p>
+                          </div>
+                          
+                          {intervencao.relatorio_assistencia && (
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">Relatório:</p>
+                              <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                                {intervencao.relatorio_assistencia}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">Nenhuma intervenção registada</p>
+                  </div>
+                )}
               </div>
 
               {/* Mão de Obra / Deslocação */}
