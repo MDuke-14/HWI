@@ -2685,7 +2685,7 @@ async def download_monthly_pdf_report(
     # Get approved vacation requests for the period
     vacation_dates = set()
     vacation_requests = await db.vacation_requests.find({
-        "user_id": current_user["sub"],
+        "user_id": target_user_id,
         "status": "approved"
     }, {"_id": 0}).to_list(1000)
     
@@ -2702,7 +2702,7 @@ async def download_monthly_pdf_report(
     # Get manual day status overrides (admin-set statuses)
     manual_statuses = {}
     status_overrides = await db.day_status_overrides.find({
-        "user_id": current_user["sub"],
+        "user_id": target_user_id,
         "date": {
             "$gte": start_date.strftime("%Y-%m-%d"),
             "$lte": end_date.strftime("%Y-%m-%d")
