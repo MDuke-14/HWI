@@ -290,7 +290,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       setRelatorioToDelete(null);
       fetchRelatorios();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao eliminar relatório');
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar OT');
     }
   };
   
