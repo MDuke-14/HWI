@@ -1838,31 +1838,64 @@ const TechnicalReports = ({ user, onLogout }) => {
               )}
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-700">
-                <Button
-                  onClick={() => {
-                    setShowViewModal(false);
-                    openEditModal(selectedCliente);
-                  }}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar Cliente
-                </Button>
-                
-                {user?.is_admin && (
+              <div className="space-y-3 pt-4 border-t border-gray-700">
+                {/* Relatórios Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Button
+                    onClick={() => handleAddRelatorioFromCliente(selectedCliente)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Relatório
+                  </Button>
+                  
                   <Button
                     onClick={() => {
                       setShowViewModal(false);
-                      openDeleteModal(selectedCliente);
+                      fetchClienteRelatorios(selectedCliente.id);
                     }}
-                    variant="outline"
-                    className="border-red-500 text-red-400 hover:bg-red-500/10"
+                    className="bg-purple-600 hover:bg-purple-700"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
+                    <FileText className="w-4 h-4 mr-2" />
+                    Ver Relatórios
                   </Button>
-                )}
+                  
+                  <Button
+                    onClick={() => handleDownloadAllClienteRelatorios(selectedCliente)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Todos
+                  </Button>
+                </div>
+
+                {/* Cliente Actions */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      openEditModal(selectedCliente);
+                    }}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar Cliente
+                  </Button>
+                  
+                  {user?.is_admin && (
+                    <Button
+                      onClick={() => {
+                        setShowViewModal(false);
+                        openDeleteModal(selectedCliente);
+                      }}
+                      variant="outline"
+                      className="border-red-500 text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
