@@ -224,14 +224,21 @@ const Reports = ({ user, onLogout }) => {
   const downloadPdfReport = async () => {
     try {
       const token = localStorage.getItem('token');
+      const params = {
+        month: selectedMonth,
+        year: selectedYear
+      };
+      
+      // If admin is viewing another user's report, include user_id
+      if (user?.is_admin && selectedUserId && reportType === 'monthly') {
+        params.user_id = selectedUserId;
+      }
+      
       const response = await axios.get(`${API}/time-entries/reports/monthly-pdf`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
-        params: {
-          month: selectedMonth,
-          year: selectedYear
-        },
+        params,
         responseType: 'blob'
       });
 
