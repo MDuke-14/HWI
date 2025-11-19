@@ -1029,26 +1029,30 @@ const TechnicalReports = ({ user, onLogout }) => {
   // ========== Email PDF Functions ==========
   
   const openEmailModal = async () => {
-    // Preparar lista de emails do cliente
-    const cliente = await db.clientes.find_one({"id": selectedRelatorio.cliente_id});
-    
-    const emails = [];
-    if (selectedRelatorio.cliente_email) {
-      emails.push({ email: selectedRelatorio.cliente_email, selected: true });
+    // Buscar cliente para pegar todos os emails
+    try {
+      const response = await axios.get(`${API}/clientes/${selectedRelatorio.cliente_id}`);
+      const cliente = response.data;
+      
+      const emails = [];
+      if (cliente.email) {
+        emails.push({ email: cliente.email, selected: true });
+      }
+      
+      // Adicionar emails adicionais se existirem
+      if (cliente.emails_adicionais) {
+        const emailsList = cliente.emails_adicionais.split(/[;,]/).map(e => e.trim()).filter(e => e);
+        emailsList.forEach(email => {
+          emails.push({ email, selected: true });
+        });
+      }
+      
+      setEmailsCliente(emails);
+      setEmailsAdicionais('');
+      setShowEmailModal(true);
+    } catch (error) {
+      toast.error('Erro ao carregar emails do cliente');
     }
-    
-    // Adicionar emails adicionais se existirem
-    const emailsAdicionaisCliente = selectedRelatorio.cliente_emails_adicionais || '';
-    if (emailsAdicionaisCliente) {
-      const emailsList = emailsAdicionaisCliente.split(/[;,]/).map(e => e.trim()).filter(e => e);
-      emailsList.forEach(email => {
-        emails.push({ email, selected: true });
-      });
-    }
-    
-    setEmailsCliente(emails);
-    setEmailsAdicionais('');
-    setShowEmailModal(true);
   };
 
   const handleSendEmail = async () => {
