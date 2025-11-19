@@ -195,78 +195,73 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(tec_table)
         elements.append(Spacer(1, 0.2*cm))
     
-    # Fotografias (incluir imagens em layout 2x2)
+    # Fotografias (2 por linha, layout compacto)
     if fotografias:
         elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
-        elements.append(Spacer(1, 0.3*cm))
+        
+        # Estilo para descrições pequenas
+        desc_style = ParagraphStyle(
+            'DescStyle',
+            parent=normal_style,
+            fontSize=7,
+            spaceAfter=1,
+            spaceBefore=1
+        )
         
         # Organizar fotos em pares (2 por linha)
         for i in range(0, len(fotografias), 2):
             foto1 = fotografias[i]
             foto2 = fotografias[i + 1] if i + 1 < len(fotografias) else None
             
-            # Criar célula para foto 1
-            cell1_content = []
+            row_content = []
+            
+            # Célula da foto 1
+            cell1 = []
             if foto1.get('foto_path'):
                 img_path = Path(foto1['foto_path'])
                 if img_path.exists():
                     try:
-                        img = RLImage(str(img_path), width=7*cm, height=5*cm, kind='proportional')
-                        cell1_content.append(img)
-                    except Exception as e:
-                        cell1_content.append(Paragraph("<i>(Erro ao carregar imagem)</i>", normal_style))
-                else:
-                    cell1_content.append(Paragraph("<i>(Imagem não encontrada)</i>", normal_style))
+                        img = RLImage(str(img_path), width=8*cm, height=6*cm, kind='proportional')
+                        cell1.append(img)
+                    except:
+                        cell1.append(Paragraph("<i>(Erro)</i>", desc_style))
+            cell1.append(Paragraph(f"<b>#{i+1}:</b> {foto1.get('descricao', '')[:100]}", desc_style))
+            row_content.append(cell1)
             
-            descricao1 = foto1.get('descricao', 'Sem descrição')
-            cell1_content.append(Paragraph(f"<b>Foto #{i+1}:</b> {descricao1}", ParagraphStyle(
-                'SmallText',
-                parent=normal_style,
-                fontSize=8,
-                spaceAfter=2
-            )))
-            
-            # Criar célula para foto 2 (se existir)
-            cell2_content = []
+            # Célula da foto 2 (se existir)
             if foto2:
+                cell2 = []
                 if foto2.get('foto_path'):
                     img_path = Path(foto2['foto_path'])
                     if img_path.exists():
                         try:
-                            img = RLImage(str(img_path), width=7*cm, height=5*cm, kind='proportional')
-                            cell2_content.append(img)
-                        except Exception as e:
-                            cell2_content.append(Paragraph("<i>(Erro ao carregar imagem)</i>", normal_style))
-                    else:
-                        cell2_content.append(Paragraph("<i>(Imagem não encontrada)</i>", normal_style))
-                
-                descricao2 = foto2.get('descricao', 'Sem descrição')
-                cell2_content.append(Paragraph(f"<b>Foto #{i+2}:</b> {descricao2}", ParagraphStyle(
-                    'SmallText',
-                    parent=normal_style,
-                    fontSize=8,
-                    spaceAfter=2
-                )))
-            
-            # Criar tabela com 2 colunas
-            if cell2_content:
-                foto_table = Table([[cell1_content, cell2_content]], colWidths=[8.5*cm, 8.5*cm])
+                            img = RLImage(str(img_path), width=8*cm, height=6*cm, kind='proportional')
+                            cell2.append(img)
+                        except:
+                            cell2.append(Paragraph("<i>(Erro)</i>", desc_style))
+                cell2.append(Paragraph(f"<b>#{i+2}:</b> {foto2.get('descricao', '')[:100]}", desc_style))
+                row_content.append(cell2)
             else:
-                foto_table = Table([[cell1_content, '']], colWidths=[8.5*cm, 8.5*cm])
+                row_content.append('')
             
+            # Criar tabela com as 2 fotos
+            foto_table = Table([row_content], colWidths=[9*cm, 9*cm])
             foto_table.setStyle(TableStyle([
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 5),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 2),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+                ('TOPPADDING', (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
             ]))
             
             elements.append(foto_table)
-            elements.append(Spacer(1, 0.5*cm))
+            
+            # Espaçamento mínimo entre linhas de fotos
+            if i + 2 < len(fotografias):
+                elements.append(Spacer(1, 0.15*cm))
         
-        # Spacer antes da assinatura
-        elements.append(Spacer(1, 0.5*cm))
+        elements.append(Spacer(1, 0.2*cm))
     
     # Assinatura
     if assinatura:
