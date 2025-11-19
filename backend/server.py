@@ -148,6 +148,7 @@ class RelatorioTecnico(BaseModel):
     acoes_realizadas: Optional[str] = None
     resolucao: Optional[str] = None
     problema_resolvido: bool = False
+    relatorio_assistencia: Optional[str] = None  # Descrição do trabalho realizado
 
 class TecnicoRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
