@@ -683,7 +683,24 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <div key={idx} className="bg-[#1a1a1a] p-5 rounded-lg">
                       <div className="flex justify-between items-center mb-3">
                         <div className="text-white font-semibold text-lg">{u.username}</div>
-                        <div className="text-green-400 font-bold text-2xl">{u.total_hours.toFixed(2)}h</div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-green-400 font-bold text-2xl">{u.total_hours.toFixed(2)}h</div>
+                          <Button
+                            onClick={() => {
+                              const now = new Date();
+                              const month = now.getMonth() + 1;
+                              const year = now.getFullYear();
+                              const url = `${API}/time-entries/reports/monthly-pdf?user_id=${u.user_id}&month=${month}&year=${year}`;
+                              window.open(url, '_blank');
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                            size="sm"
+                            title="Download Relatório do Mês Atual"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            PDF
+                          </Button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div><div className="text-gray-400">Horas Normais</div><div className="text-blue-400 font-semibold">{u.regular_hours.toFixed(2)}h</div></div>
