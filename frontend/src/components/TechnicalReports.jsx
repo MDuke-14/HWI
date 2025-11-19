@@ -1951,7 +1951,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               {/* Actions */}
               <div className="space-y-3 pt-4 border-t border-gray-700">
                 {/* Relatórios Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Button
                     onClick={() => handleAddRelatorioFromCliente(selectedCliente)}
                     className="bg-green-600 hover:bg-green-700"
@@ -1969,6 +1969,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Ver Relatórios
+                  </Button>
+                  
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      fetchClienteEquipamentosDetalhado(selectedCliente.id);
+                    }}
+                    className="bg-amber-600 hover:bg-amber-700"
+                  >
+                    <Car className="w-4 h-4 mr-2" />
+                    Ver Equipamentos
                   </Button>
                   
                   <Button
