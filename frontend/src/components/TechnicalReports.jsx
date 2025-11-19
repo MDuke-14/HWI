@@ -2259,6 +2259,19 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
 
+              {/* Botão Enviar PDF por Email */}
+              <div className="flex justify-center pt-6">
+                <Button
+                  onClick={() => openEmailModal()}
+                  size="lg"
+                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4"
+                >
+                  <Send className="w-5 h-5 mr-2" />
+                  Enviar PDF por Email
+                </Button>
+              </div>
+
+
             </div>
           )}
         </DialogContent>
