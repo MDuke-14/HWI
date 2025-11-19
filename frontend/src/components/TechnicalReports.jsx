@@ -336,7 +336,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       equipamento_marca: '',
       equipamento_modelo: '',
       equipamento_numero_serie: '',
-      descricao_problema: ''
+      descricao_problema: '',
+      relatorio_assistencia: ''
     });
     setEquipamentos([]);
     setEquipamentoSelecionado('');
