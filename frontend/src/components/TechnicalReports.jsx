@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
+import SignatureCanvas from 'react-signature-canvas';
 import {
   Building2,
   Plus,
