@@ -105,6 +105,15 @@ const TechnicalReports = ({ user, onLogout }) => {
     motivo_assistencia: '',
     relatorio_assistencia: ''
   });
+  
+  // Fotografias
+  const [fotografias, setFotografias] = useState([]);
+  const [showAddFotoModal, setShowAddFotoModal] = useState(false);
+  const [selectedFoto, setSelectedFoto] = useState(null);
+  const [fotoFile, setFotoFile] = useState(null);
+  const [fotoDescricao, setFotoDescricao] = useState('');
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+  
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_id: '',
     tecnico_nome: '',
