@@ -483,12 +483,34 @@ const TechnicalReports = ({ user, onLogout }) => {
 
     try {
       await axios.delete(`${API}/relatorios-tecnicos/${relatorioToDelete.id}`);
-      toast.success('OT eliminada com sucesso!');
+      toast.success('OT deletada com sucesso!');
       setShowDeleteRelatorioModal(false);
       setRelatorioToDelete(null);
       fetchRelatorios();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao eliminar OT');
+      toast.error(error.response?.data?.detail || 'Erro ao deletar OT');
+    }
+  };
+
+  const openStatusModal = (relatorio, e) => {
+    if (e) e.stopPropagation();
+    setSelectedStatusRelatorio(relatorio);
+    setShowStatusModal(true);
+  };
+
+  const handleChangeStatus = async (newStatus) => {
+    if (!selectedStatusRelatorio) return;
+
+    try {
+      await axios.put(`${API}/relatorios-tecnicos/${selectedStatusRelatorio.id}`, {
+        status: newStatus
+      });
+      toast.success('Status atualizado com sucesso!');
+      setShowStatusModal(false);
+      setSelectedStatusRelatorio(null);
+      fetchRelatorios();
+    } catch (error) {
+      toast.error('Erro ao atualizar status');
     }
   };
   
