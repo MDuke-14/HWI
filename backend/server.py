@@ -1796,6 +1796,12 @@ async def update_tecnico_relatorio(
         update_data["kms_deslocacao"] = tecnico_data["kms_deslocacao"]
     if "tipo_horario" in tecnico_data:
         update_data["tipo_horario"] = tecnico_data["tipo_horario"]
+    if "data_trabalho" in tecnico_data:
+        # Converter para string ISO se necessário
+        if isinstance(tecnico_data["data_trabalho"], str):
+            update_data["data_trabalho"] = tecnico_data["data_trabalho"]
+        else:
+            update_data["data_trabalho"] = tecnico_data["data_trabalho"].isoformat()
     
     await db.tecnicos_relatorio.update_one(
         {"id": tecnico_id, "relatorio_id": relatorio_id},
