@@ -4173,8 +4173,8 @@ async def recalculate_user_hours(
             "period": {
                 "start": start_date.isoformat(),
                 "end": end_date.isoformat(),
-                "month": month,
-                "year": year
+                "month": month if month else start_date.month,
+                "year": year if year else start_date.year
             },
             "totals": {
                 "regular_hours": 0,
