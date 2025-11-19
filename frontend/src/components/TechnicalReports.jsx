@@ -2391,6 +2391,104 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+
+      {/* Add Fotografia Modal */}
+      <Dialog open={showAddFotoModal} onOpenChange={setShowAddFotoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <ImageIcon className="w-5 h-5 text-blue-400" />
+              Adicionar Fotografia
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleUploadFoto} className="space-y-4 mt-4">
+            {/* Upload de arquivo */}
+            <div>
+              <Label htmlFor="foto_file" className="text-gray-300">
+                Selecionar Fotografia *
+              </Label>
+              <Input
+                id="foto_file"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif"
+                onChange={handleFotoFileChange}
+                className="bg-[#0f0f0f] border-gray-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Formatos aceitos: JPG, PNG, GIF, WEBP, HEIC, HEIF (máximo 10MB)
+              </p>
+              {fotoFile && (
+                <p className="text-sm text-green-400 mt-2">
+                  ✓ {fotoFile.name} ({(fotoFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
+            </div>
+
+            {/* Preview da imagem */}
+            {fotoFile && (
+              <div className="bg-black/30 rounded-lg p-4">
+                <p className="text-xs text-gray-400 mb-2">Pré-visualização:</p>
+                <img
+                  src={URL.createObjectURL(fotoFile)}
+                  alt="Preview"
+                  className="w-full max-h-64 object-contain rounded"
+                />
+              </div>
+            )}
+
+            {/* Descrição */}
+            <div>
+              <Label htmlFor="foto_descricao" className="text-gray-300">
+                Descrição / Observações *
+              </Label>
+              <textarea
+                id="foto_descricao"
+                value={fotoDescricao}
+                onChange={(e) => setFotoDescricao(e.target.value)}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
+                placeholder="Descreva o componente ou situação na fotografia..."
+                required
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowAddFotoModal(false);
+                  setFotoFile(null);
+                  setFotoDescricao('');
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={uploadingFoto}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+                disabled={uploadingFoto}
+              >
+                {uploadingFoto ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Relatório Modal */}
       <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
