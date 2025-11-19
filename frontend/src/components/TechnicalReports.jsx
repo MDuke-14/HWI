@@ -907,6 +907,117 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+
+  // ========== Assinatura Functions ==========
+  
+  const fetchAssinatura = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/assinatura`);
+      setAssinatura(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar assinatura:', error);
+    }
+  };
+
+  const openAssinaturaModal = () => {
+    setAssinaturaTipo('digital');
+    setAssinaturaNome({ primeiro: '', ultimo: '' });
+    setShowAssinaturaModal(true);
+  };
+
+  const clearCanvas = () => {
+    if (assinaturaCanvas) {
+      assinaturaCanvas.clear();
+    }
+  };
+
+  const handleSaveAssinaturaDigital = async () => {
+    if (!assinaturaCanvas || assinaturaCanvas.isEmpty()) {
+      toast.error('Por favor, desenhe sua assinatura');
+      return;
+    }
+
+    if (!assinaturaNome.primeiro.trim() || !assinaturaNome.ultimo.trim()) {
+      toast.error('Por favor, preencha primeiro e último nome');
+      return;
+    }
+
+    setUploadingAssinatura(true);
+
+    try {
+      // Converter canvas para blob
+      const canvas = assinaturaCanvas.getCanvas();
+      canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('file', blob, 'assinatura.png');
+        formData.append('primeiro_nome', assinaturaNome.primeiro);
+        formData.append('ultimo_nome', assinaturaNome.ultimo);
+
+        try {
+          await axios.post(
+            `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-digital`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            }
+          );
+
+          toast.success('Assinatura digital salva com sucesso!');
+          setShowAssinaturaModal(false);
+          fetchAssinatura(selectedRelatorio.id);
+        } catch (error) {
+          toast.error(formatErrorMessage(error));
+        } finally {
+          setUploadingAssinatura(false);
+        }
+      }, 'image/png');
+    } catch (error) {
+      toast.error('Erro ao processar assinatura');
+      setUploadingAssinatura(false);
+    }
+  };
+
+  const handleSaveAssinaturaManual = async () => {
+    if (!assinaturaNome.primeiro.trim() || !assinaturaNome.ultimo.trim()) {
+      toast.error('Por favor, preencha primeiro e último nome');
+      return;
+    }
+
+    setUploadingAssinatura(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('primeiro_nome', assinaturaNome.primeiro);
+      formData.append('ultimo_nome', assinaturaNome.ultimo);
+
+      await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-manual`,
+        formData
+      );
+
+      toast.success('Assinatura manual salva com sucesso!');
+      setShowAssinaturaModal(false);
+      fetchAssinatura(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setUploadingAssinatura(false);
+    }
+  };
+
+  const handleDeleteAssinatura = async () => {
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura`);
+      toast.success('Assinatura removida com sucesso!');
+      setAssinatura(null);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+
   const getTipoHorarioLabel = (tipo) => {
     const labels = {
       'diurno': 'Diurno (07h-19h)',
