@@ -2105,6 +2105,165 @@ async def update_fotografia_descricao(
     return updated
 
 
+# ============ Assinatura Routes ============
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/assinatura-digital")
+async def salvar_assinatura_digital(
+    relatorio_id: str,
+    file: UploadFile = File(...),
+    primeiro_nome: str = Form(""),
+    ultimo_nome: str = Form(""),
+    current_user: dict = Depends(get_current_user)
+):
+    """Salvar assinatura digital (canvas/desenho) para um relatório técnico"""
+    # Verificar se relatório existe
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Criar diretório de uploads se não existir
+    upload_dir = Path("/app/backend/uploads/assinaturas")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Gerar nome único para o arquivo
+    unique_filename = f"{uuid.uuid4()}.png"
+    file_path = upload_dir / unique_filename
+    
+    # Salvar arquivo
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logging.error(f"Erro ao salvar assinatura: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao salvar assinatura")
+    
+    # Remover assinatura anterior se existir
+    await db.assinaturas_relatorio.delete_many({"relatorio_id": relatorio_id})
+    
+    # Criar registro no banco
+    nome_completo = f"{primeiro_nome} {ultimo_nome}".strip()
+    assinatura = AssinaturaRelatorio(
+        relatorio_id=relatorio_id,
+        tipo="digital",
+        assinatura_path=str(file_path),
+        assinatura_url=f"/relatorios-tecnicos/{relatorio_id}/assinatura/imagem",
+        primeiro_nome=primeiro_nome,
+        ultimo_nome=ultimo_nome,
+        assinado_por=nome_completo if nome_completo else None
+    )
+    
+    assinatura_dict = assinatura.dict()
+    assinatura_dict["data_assinatura"] = assinatura_dict["data_assinatura"].isoformat()
+    
+    await db.assinaturas_relatorio.insert_one(assinatura_dict)
+    
+    logging.info(f"Assinatura digital salva para relatório {relatorio_id}")
+    
+    return assinatura
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/assinatura-manual")
+async def salvar_assinatura_manual(
+    relatorio_id: str,
+    primeiro_nome: str = Form(...),
+    ultimo_nome: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Salvar assinatura manual (texto) para um relatório técnico"""
+    # Verificar se relatório existe
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Validar nomes
+    if not primeiro_nome.strip() or not ultimo_nome.strip():
+        raise HTTPException(status_code=400, detail="Primeiro e último nome são obrigatórios")
+    
+    # Remover assinatura anterior se existir
+    await db.assinaturas_relatorio.delete_many({"relatorio_id": relatorio_id})
+    
+    # Criar registro no banco
+    nome_completo = f"{primeiro_nome} {ultimo_nome}".strip()
+    assinatura = AssinaturaRelatorio(
+        relatorio_id=relatorio_id,
+        tipo="manual",
+        primeiro_nome=primeiro_nome,
+        ultimo_nome=ultimo_nome,
+        assinado_por=nome_completo
+    )
+    
+    assinatura_dict = assinatura.dict()
+    assinatura_dict["data_assinatura"] = assinatura_dict["data_assinatura"].isoformat()
+    
+    await db.assinaturas_relatorio.insert_one(assinatura_dict)
+    
+    logging.info(f"Assinatura manual salva para relatório {relatorio_id} por {nome_completo}")
+    
+    return assinatura
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/assinatura")
+async def get_assinatura(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter assinatura de um relatório técnico"""
+    assinatura = await db.assinaturas_relatorio.find_one(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    
+    if not assinatura:
+        return None
+    
+    return assinatura
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/assinatura/imagem")
+async def get_assinatura_imagem(
+    relatorio_id: str
+):
+    """Obter imagem da assinatura - endpoint público para permitir carregamento"""
+    assinatura = await db.assinaturas_relatorio.find_one(
+        {"relatorio_id": relatorio_id, "tipo": "digital"}
+    )
+    
+    if not assinatura or not assinatura.get("assinatura_path"):
+        raise HTTPException(status_code=404, detail="Assinatura não encontrada")
+    
+    file_path = Path(assinatura["assinatura_path"])
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Arquivo de assinatura não encontrado")
+    
+    return FileResponse(file_path)
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/assinatura")
+async def delete_assinatura(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover assinatura de um relatório técnico"""
+    # Buscar assinatura
+    assinatura = await db.assinaturas_relatorio.find_one({"relatorio_id": relatorio_id})
+    
+    if not assinatura:
+        raise HTTPException(status_code=404, detail="Assinatura não encontrada")
+    
+    # Remover arquivo do disco se for assinatura digital
+    if assinatura.get("tipo") == "digital" and assinatura.get("assinatura_path"):
+        file_path = Path(assinatura["assinatura_path"])
+        if file_path.exists():
+            try:
+                file_path.unlink()
+            except Exception as e:
+                logging.error(f"Erro ao remover arquivo de assinatura: {e}")
+    
+    # Remover do banco
+    await db.assinaturas_relatorio.delete_one({"relatorio_id": relatorio_id})
+    
+    logging.info(f"Assinatura removida do relatório {relatorio_id}")
+    
+    return {"message": "Assinatura removida com sucesso"}
+
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
