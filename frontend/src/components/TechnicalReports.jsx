@@ -644,6 +644,56 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const calcularCodigoAutomatico = (dataTrabalho) => {
+    const data = new Date(dataTrabalho + 'T12:00:00'); // Meio-dia para evitar problemas de timezone
+    const diaSemana = data.getDay(); // 0 = Domingo, 6 = Sábado
+    
+    // Verificar se é domingo ou feriado
+    if (diaSemana === 0) {
+      return 'domingo_feriado'; // D
+    }
+    
+    // Verificar se é sábado
+    if (diaSemana === 6) {
+      return 'sabado'; // S
+    }
+    
+    // Dias úteis - por padrão usa horário diurno (1)
+    return 'diurno'; // 1 (7h01-19h00)
+  };
+
+  const handleDataTrabalhoChange = (novaData) => {
+    const codigoAuto = calcularCodigoAutomatico(novaData);
+    setTecnicoFormData({
+      ...tecnicoFormData,
+      data_trabalho: novaData,
+      tipo_horario: codigoAuto
+    });
+  };
+
+  const openCodigoModal = (tecnico, e) => {
+    if (e) e.stopPropagation();
+    setSelectedTecnicoForCodigo(tecnico);
+    setShowCodigoModal(true);
+  };
+
+  const handleChangeCodigo = async (novoCodigo) => {
+    if (!selectedTecnicoForCodigo || !selectedRelatorio) return;
+
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos/${selectedTecnicoForCodigo.id}`,
+        { tipo_horario: novoCodigo }
+      );
+      toast.success('Código atualizado com sucesso!');
+      setShowCodigoModal(false);
+      setSelectedTecnicoForCodigo(null);
+      fetchTecnicosRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error('Erro ao atualizar código');
+    }
+  };
+
   const handleAddTecnico = async (e) => {
     e.preventDefault();
     if (!selectedRelatorio) return;
