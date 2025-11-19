@@ -2083,10 +2083,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                   id="edit_data_trabalho"
                   type="date"
                   value={tecnicoFormData.data_trabalho}
-                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, data_trabalho: e.target.value })}
+                  onChange={(e) => handleDataTrabalhoChange(e.target.value)}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Código: <span className="text-blue-400 font-semibold">{getTipoHorarioCodigo(tecnicoFormData.tipo_horario)}</span>
+                </p>
               </div>
             </div>
 
