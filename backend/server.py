@@ -108,7 +108,7 @@ class Equipamento(BaseModel):
     marca: str
     modelo: str
     numero_serie: Optional[str] = None
-    ano_fabrico: Optional[int] = None  # Ano de fabricação
+    ano_fabrico: Optional[str] = None  # Ano de fabricação (aceita: AAAA, MM-AAAA, MM/AAAA)
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_used: Optional[datetime] = None  # Última vez usado em OT
