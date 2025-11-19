@@ -191,7 +191,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         equipamento_tipologia: '',
         equipamento_marca: '',
         equipamento_modelo: '',
-        equipamento_numero_serie: ''
+        equipamento_numero_serie: '',
+        equipamento_ano_fabrico: ''
       });
     } else if (equipamentoId) {
       setModoNovoEquipamento(false);
@@ -202,7 +203,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           equipamento_tipologia: equipamento.tipologia,
           equipamento_marca: equipamento.marca,
           equipamento_modelo: equipamento.modelo,
-          equipamento_numero_serie: equipamento.numero_serie || ''
+          equipamento_numero_serie: equipamento.numero_serie || '',
+          equipamento_ano_fabrico: equipamento.ano_fabrico || ''
         });
       }
     }
