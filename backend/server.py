@@ -2265,6 +2265,187 @@ async def delete_assinatura(
     return {"message": "Assinatura removida com sucesso"}
 
 
+# ============ PDF e Email Routes ============
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/enviar-pdf")
+async def enviar_pdf_ot(
+    relatorio_id: str,
+    emails: List[str],
+    current_user: dict = Depends(get_current_user)
+):
+    """Gerar PDF da OT e enviar por email"""
+    try:
+        # Buscar dados do relatório
+        relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+        if not relatorio:
+            raise HTTPException(status_code=404, detail="Relatório não encontrado")
+        
+        # Buscar cliente
+        cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
+        if not cliente:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        
+        # Buscar intervenções
+        intervencoes = await db.intervencoes_relatorio.find(
+            {"relatorio_id": relatorio_id},
+            {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+        
+        # Buscar técnicos
+        tecnicos = await db.tecnicos_relatorio.find(
+            {"relatorio_id": relatorio_id},
+            {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+        
+        # Buscar fotografias
+        fotografias = await db.fotos_relatorio.find(
+            {"relatorio_id": relatorio_id},
+            {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+        
+        # Buscar assinatura
+        assinatura = await db.assinaturas_relatorio.find_one(
+            {"relatorio_id": relatorio_id},
+            {"_id": 0}
+        )
+        
+        # Gerar PDF
+        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura)
+        
+        # Configuração SMTP
+        smtp_host = os.environ.get('SMTP_HOST', 'smtp.office365.com')
+        smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+        smtp_user = os.environ.get('SMTP_USER', '')
+        smtp_password = os.environ.get('SMTP_PASSWORD', '')
+        smtp_from = os.environ.get('SMTP_FROM', smtp_user)
+        
+        # Validar emails
+        if not emails or len(emails) == 0:
+            raise HTTPException(status_code=400, detail="Pelo menos um email deve ser fornecido")
+        
+        # Criar mensagem de email
+        numero_ot = relatorio.get('numero_assistencia', 'N/A')
+        subject = f"Ordem de Trabalho #{numero_ot} - {cliente.get('nome', '')}"
+        
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif;">
+            <h2 style="color: #1e40af;">Ordem de Trabalho #{numero_ot}</h2>
+            <p>Exmo(a) Sr(a),</p>
+            <p>Segue em anexo a Ordem de Trabalho #{numero_ot} referente ao serviço realizado.</p>
+            <p><strong>Cliente:</strong> {cliente.get('nome', 'N/A')}</p>
+            <p><strong>Data de Serviço:</strong> {relatorio.get('data_servico', 'N/A')}</p>
+            <p><strong>Equipamento:</strong> {relatorio.get('equipamento_marca', '')} {relatorio.get('equipamento_modelo', '')}</p>
+            <br>
+            <p>Com os melhores cumprimentos,</p>
+            <p><strong>HWI Unipessoal, Lda</strong></p>
+        </body>
+        </html>
+        """
+        
+        # Enviar email para cada destinatário
+        emails_enviados = []
+        emails_falhados = []
+        
+        for email_dest in emails:
+            try:
+                message = MIMEMultipart()
+                message['From'] = smtp_from
+                message['To'] = email_dest
+                message['Subject'] = subject
+                
+                message.attach(MIMEText(body, 'html'))
+                
+                # Anexar PDF
+                pdf_attachment = MIMEText(pdf_buffer.getvalue(), 'base64', 'utf-8')
+                pdf_attachment.add_header('Content-Type', 'application/pdf')
+                pdf_attachment.add_header('Content-Disposition', f'attachment; filename="OT_{numero_ot}.pdf"')
+                message.attach(pdf_attachment)
+                
+                # Enviar email
+                await aiosmtplib.send(
+                    message,
+                    hostname=smtp_host,
+                    port=smtp_port,
+                    username=smtp_user,
+                    password=smtp_password,
+                    start_tls=True
+                )
+                
+                emails_enviados.append(email_dest)
+                logging.info(f"PDF da OT {numero_ot} enviado para {email_dest}")
+                
+            except Exception as e:
+                logging.error(f"Erro ao enviar email para {email_dest}: {e}")
+                emails_falhados.append(email_dest)
+        
+        return {
+            "message": f"PDF enviado para {len(emails_enviados)} email(s)",
+            "emails_enviados": emails_enviados,
+            "emails_falhados": emails_falhados
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Erro ao enviar PDF: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar PDF: {str(e)}")
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/preview-pdf")
+async def preview_pdf_ot(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Gerar preview do PDF da OT sem enviar"""
+    # Buscar dados do relatório
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Buscar cliente
+    cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Buscar intervenções
+    intervencoes = await db.intervencoes_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+    
+    # Buscar técnicos
+    tecnicos = await db.tecnicos_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+    
+    # Buscar fotografias
+    fotografias = await db.fotos_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+    
+    # Buscar assinatura
+    assinatura = await db.assinaturas_relatorio.find_one(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    
+    # Gerar PDF
+    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura)
+    
+    # Retornar como download
+    numero_ot = relatorio.get('numero_assistencia', 'N/A')
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=OT_{numero_ot}_{cliente.get('nome', 'Cliente').replace(' ', '_')}.pdf"
+        }
+    )
+
+
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
