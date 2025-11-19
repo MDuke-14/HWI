@@ -206,11 +206,11 @@ const Dashboard = ({ user, onLogout }) => {
           )}
 
           {/* Control Buttons */}
-          <div className="glass-effect p-4 mb-6">
+          <div className="glass-effect p-3 mb-6">
             {!entry ? (
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="observations" className="text-gray-300 mb-2 block text-sm">
+                  <Label htmlFor="observations" className="text-gray-300 mb-1.5 block text-sm">
                     Observações (opcional)
                   </Label>
                   <Textarea
@@ -219,7 +219,7 @@ const Dashboard = ({ user, onLogout }) => {
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     placeholder="Ex: Entrada atrasada devido a reunião externa..."
-                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[60px] text-sm"
+                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[50px] text-sm"
                   />
                 </div>
 
