@@ -217,28 +217,14 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const handleDownloadAllClienteRelatorios = async (cliente) => {
     try {
-      toast.info('A preparar download dos relatórios...');
+      // Por enquanto, apenas mostra os relatórios
+      // TODO: Implementar geração de PDF para relatórios técnicos
+      toast.info('Funcionalidade de download em desenvolvimento');
       
-      // Buscar todos os relatórios do cliente
-      const response = await axios.get(`${API}/relatorios-tecnicos`);
-      const relatoriosDoCliente = response.data.filter(r => r.cliente_id === cliente.id);
-      
-      if (relatoriosDoCliente.length === 0) {
-        toast.warning('Este cliente não tem relatórios');
-        return;
-      }
-      
-      // Download de cada relatório (abre em novas abas)
-      relatoriosDoCliente.forEach((relatorio, index) => {
-        setTimeout(() => {
-          const url = `${API}/relatorios-tecnicos/${relatorio.id}/pdf`;
-          window.open(url, '_blank');
-        }, index * 500); // Delay para evitar bloqueio de popup
-      });
-      
-      toast.success(`A fazer download de ${relatoriosDoCliente.length} relatório(s)`);
+      // Abrir modal de visualização dos relatórios
+      fetchClienteRelatorios(cliente.id);
     } catch (error) {
-      toast.error('Erro ao fazer download dos relatórios');
+      toast.error('Erro ao processar relatórios');
     }
   };
 
