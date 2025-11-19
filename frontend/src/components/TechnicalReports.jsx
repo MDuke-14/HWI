@@ -81,6 +81,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     relatorio_assistencia: ''
   });
   const [tecnicoFormData, setTecnicoFormData] = useState({
+    tecnico_id: '',
     tecnico_nome: '',
     horas_cliente: 0,
     kms_deslocacao: 0,
