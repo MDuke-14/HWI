@@ -2334,6 +2334,113 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Change Código Modal */}
+      <Dialog open={showCodigoModal} onOpenChange={setShowCodigoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Clock className="w-5 h-5 text-blue-400" />
+              Alterar Código de Horário
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedTecnicoForCodigo && (
+            <div className="space-y-4 mt-4">
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <p className="text-white font-semibold mb-2">
+                  Técnico: {selectedTecnicoForCodigo.tecnico_nome}
+                </p>
+                <p className="text-gray-400 text-sm">
+                  Data: {new Date(selectedTecnicoForCodigo.data_trabalho).toLocaleDateString('pt-PT')}
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-gray-500 text-xs">Código atual:</span>
+                  <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-sm">
+                    {getTipoHorarioCodigo(selectedTecnicoForCodigo.tipo_horario)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-gray-300 text-sm mb-3">Selecione o novo código:</p>
+                
+                <Button
+                  onClick={() => handleChangeCodigo('diurno')}
+                  className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-8 h-8 rounded bg-blue-400 flex items-center justify-center text-black font-bold">
+                      1
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="font-semibold">Dias Úteis - Diurno</div>
+                      <div className="text-xs text-gray-400">7h01 às 19h00</div>
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => handleChangeCodigo('noturno')}
+                  className="w-full justify-start bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-8 h-8 rounded bg-indigo-400 flex items-center justify-center text-black font-bold">
+                      2
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="font-semibold">Dias Úteis - Noturno</div>
+                      <div className="text-xs text-gray-400">19h01 às 7h00</div>
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => handleChangeCodigo('sabado')}
+                  className="w-full justify-start bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-8 h-8 rounded bg-amber-400 flex items-center justify-center text-black font-bold">
+                      S
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="font-semibold">Sábados</div>
+                      <div className="text-xs text-gray-400">Qualquer horário</div>
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => handleChangeCodigo('domingo_feriado')}
+                  className="w-full justify-start bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-8 h-8 rounded bg-red-400 flex items-center justify-center text-black font-bold">
+                      D
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="font-semibold">Domingos e Feriados</div>
+                      <div className="text-xs text-gray-400">Qualquer horário</div>
+                    </div>
+                  </div>
+                </Button>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowCodigoModal(false);
+                  setSelectedTecnicoForCodigo(null);
+                }}
+                variant="outline"
+                className="w-full border-gray-600 mt-4"
+              >
+                Cancelar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Change Status Modal */}
       <Dialog open={showStatusModal} onOpenChange={setShowStatusModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
