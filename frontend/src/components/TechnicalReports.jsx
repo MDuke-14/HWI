@@ -1935,7 +1935,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                           />
                           {/* Botão de remover */}
                           <button
-                            onClick={() => handleDeleteFoto(foto.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFoto(foto.id);
+                            }}
                             className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition"
                             title="Remover fotografia"
                           >
