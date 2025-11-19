@@ -217,6 +217,27 @@ class AssinaturaRelatorio(BaseModel):
 class EnviarEmailRequest(BaseModel):
     emails: List[str]
 
+
+class Notification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: str
+    type: str  # "missing_clock_in", "long_break", "overtime_alert"
+    title: str
+    message: str
+    priority: str  # "low", "medium", "high"
+    read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PushSubscription(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    endpoint: str
+    keys: dict
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class RelatorioTecnicoCreate(BaseModel):
     cliente_id: str
     data_servico: date
