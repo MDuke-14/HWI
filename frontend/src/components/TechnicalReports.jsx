@@ -768,7 +768,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       resetTecnicoForm();
       await fetchTecnicosRelatorio(selectedRelatorio.id);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao atualizar técnico');
+      toast.error(formatErrorMessage(error));
     }
   };
 
