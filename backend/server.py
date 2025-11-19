@@ -2589,6 +2589,48 @@ async def check_holiday(date: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato de data inválido. Use YYYY-MM-DD")
 
+
+# ============ SETUP TEMPORÁRIO - CRIAR PRIMEIRO ADMIN ============
+@api_router.post("/setup/create-first-admin")
+async def create_first_admin():
+    """
+    ENDPOINT TEMPORÁRIO - Criar primeiro usuário admin
+    Acesse UMA VEZ em produção para criar admin inicial
+    """
+    # Verificar se já existe algum admin
+    existing_admin = await db.users.find_one({"is_admin": True})
+    if existing_admin:
+        return {"message": "Admin já existe!", "username": existing_admin.get("username")}
+    
+    # Criar admin padrão
+    hashed = pwd_context.hash("admin123")
+    
+    admin_user = User(
+        username="admin",
+        email="admin@hwi.pt",
+        hashed_password=hashed,
+        full_name="Administrador",
+        phone="000000000",
+        is_admin=True
+    )
+    
+    user_dict = admin_user.dict()
+    user_dict["created_at"] = user_dict["created_at"].isoformat()
+    
+    await db.users.insert_one(user_dict)
+    
+    logging.info("Primeiro admin criado via setup endpoint")
+    
+    return {
+        "success": True,
+        "message": "Admin criado com sucesso!",
+        "username": "admin",
+        "password": "admin123",
+        "email": "admin@hwi.pt",
+        "instrucoes": "Faça login com estas credenciais e mude a senha imediatamente!"
+    }
+
+
 # ============ Time Entry Routes ============
 
 @api_router.post("/time-entries/start")
