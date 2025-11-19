@@ -390,8 +390,31 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const handleAddRelatorio = async (e) => {
     e.preventDefault();
+    
+    // Validar que pelo menos uma intervenção tem motivo preenchido
+    const intervencoesValidas = intervencoesForm.filter(i => i.motivo_assistencia.trim());
+    if (intervencoesValidas.length === 0) {
+      toast.error('Adicione pelo menos um motivo de assistência');
+      return;
+    }
+    
     try {
-      await axios.post(`${API}/relatorios-tecnicos`, relatorioFormData);
+      // Criar o relatório técnico
+      const response = await axios.post(`${API}/relatorios-tecnicos`, relatorioFormData);
+      const relatorioId = response.data.id;
+      
+      // Criar as intervenções
+      for (let i = 0; i < intervencoesValidas.length; i++) {
+        const intervencao = intervencoesValidas[i];
+        await axios.post(`${API}/relatorios-tecnicos/${relatorioId}/intervencoes`, {
+          relatorio_id: relatorioId,
+          data_intervencao: intervencao.data_intervencao,
+          motivo_assistencia: intervencao.motivo_assistencia,
+          relatorio_assistencia: intervencao.relatorio_assistencia || null,
+          ordem: i
+        });
+      }
+      
       toast.success('OT criada com sucesso!');
       setShowAddRelatorioModal(false);
       resetRelatorioForm();
