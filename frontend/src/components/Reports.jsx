@@ -739,6 +739,7 @@ const Reports = ({ user, onLogout }) => {
                             {loading ? 'A atualizar...' : 'Atualizar'}
                           </Button>
                         </div>
+                      </div>
                       ) : (
                         /* Custom Range Selection */
                         <div className="space-y-4">
