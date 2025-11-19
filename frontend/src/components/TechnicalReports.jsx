@@ -1695,7 +1695,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {tec.kms_deslocacao * 2} km
                               </td>
                               <td className="py-3 px-3 text-center">
-                                <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-sm">
+                                <span 
+                                  className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-sm cursor-pointer hover:bg-blue-500/20 transition"
+                                  onClick={(e) => openCodigoModal(tec, e)}
+                                  title="Clique para alterar código"
+                                >
                                   {getTipoHorarioCodigo(tec.tipo_horario)}
                                 </span>
                               </td>
