@@ -607,6 +607,15 @@ const AdminDashboard = ({ user, onLogout }) => {
                       </Button>
                     </div>
                     <div className="flex gap-2 mt-2">
+                      <Button 
+                        onClick={() => handleVerifyHours(u)}
+                        className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full text-sm" 
+                        size="sm"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />Verificar Horas
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 mt-2">
                       <Button onClick={() => handleEditUser(u)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" size="sm">
                         <Edit className="w-3 h-3 mr-1" />Editar
                       </Button>
