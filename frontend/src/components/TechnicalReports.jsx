@@ -244,7 +244,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       resetForm();
       fetchClientes();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao adicionar cliente');
+      toast.error(formatErrorMessage(error));
     }
   };
 
