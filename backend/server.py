@@ -100,6 +100,18 @@ class Cliente(BaseModel):
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class Equipamento(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    cliente_id: str
+    tipologia: str
+    marca: str
+    modelo: str
+    numero_serie: Optional[str] = None
+    ativo: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_used: Optional[datetime] = None  # Última vez usado em OT
+
 class RelatorioTecnico(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
