@@ -1580,6 +1580,23 @@ const TechnicalReports = ({ user, onLogout }) => {
               />
             </div>
 
+            {/* Relatório de Assistência */}
+            <div>
+              <Label htmlFor="edit_relatorio_assistencia" className="text-gray-300">
+                Relatório de Assistência
+              </Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Descreva o trabalho realizado durante a assistência
+              </p>
+              <textarea
+                id="edit_relatorio_assistencia"
+                value={relatorioFormData.relatorio_assistencia || ''}
+                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, relatorio_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[150px]"
+                placeholder="Ex: Substituição do motor principal, limpeza e lubrificação dos componentes, testes funcionais realizados..."
+              />
+            </div>
+
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
