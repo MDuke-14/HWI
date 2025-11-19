@@ -842,8 +842,19 @@ const AdminDashboard = ({ user, onLogout }) => {
                         </div>
                       )}
 
-                      {/* Botão fechar */}
-                      <div className="flex justify-end pt-4">
+                      {/* Botões */}
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          onClick={() => {
+                            setVerifyResult(null);
+                            setVerifyMonth(new Date().getMonth() + 1);
+                            setVerifyYear(new Date().getFullYear());
+                          }}
+                          variant="outline"
+                          className="border-gray-600"
+                        >
+                          Verificar Outro Período
+                        </Button>
                         <Button
                           onClick={() => setShowVerifyDialog(false)}
                           className="bg-blue-600 hover:bg-blue-700"
@@ -851,10 +862,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                           Fechar
                         </Button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400">Aguardando verificação...</p>
                     </div>
                   )}
                 </div>
