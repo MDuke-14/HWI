@@ -21,7 +21,8 @@ import {
   Car,
   Users,
   Download,
-  Image as ImageIcon
+  Image as ImageIcon,
+  PenTool
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
