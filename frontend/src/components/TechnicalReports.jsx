@@ -31,6 +31,31 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Helper function to format error messages from FastAPI validation errors
+const formatErrorMessage = (error) => {
+  if (!error.response) {
+    return 'Erro de conexão';
+  }
+  
+  const data = error.response.data;
+  
+  // Se detail é uma string, retorne-a diretamente
+  if (typeof data.detail === 'string') {
+    return data.detail;
+  }
+  
+  // Se detail é um array (erros de validação do Pydantic)
+  if (Array.isArray(data.detail)) {
+    return data.detail.map(err => {
+      const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
+      return `${field}: ${err.msg}`;
+    }).join(', ');
+  }
+  
+  // Fallback
+  return 'Erro ao processar solicitação';
+};
+
 const TechnicalReports = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clientes'); // 'relatorios', 'clientes', ou 'pesquisa'
   const [clientes, setClientes] = useState([]);
