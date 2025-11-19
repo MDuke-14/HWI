@@ -4118,6 +4118,137 @@ async def delete_invalid_entries(current_user: dict = Depends(get_current_admin)
     except Exception as e:
         logging.error(f"Error deleting invalid entries: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/admin/users/{user_id}/recalculate-hours")
+async def recalculate_user_hours(
+    user_id: str,
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Recalcular e verificar todas as horas de um usuário para um período de faturação
+    Admin only
+    """
+    try:
+        # Se não especificou mês/ano, usar período atual
+        if not month or not year:
+            now = datetime.now(timezone.utc)
+            month = now.month
+            year = now.year
+        
+        # Obter datas do período de faturação (26 do mês anterior ao 25 do mês atual)
+        start_date, end_date = get_billing_period_dates(month, year)
+        
+        # Buscar usuário
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+        
+        # Buscar todas as entradas do período
+        entries = await db.time_entries.find({
+            "user_id": user_id,
+            "date": {
+                "$gte": start_date.isoformat(),
+                "$lte": end_date.isoformat()
+            }
+        }).to_list(length=None)
+        
+        # Estatísticas
+        stats = {
+            "user_id": user_id,
+            "username": user.get("username"),
+            "full_name": user.get("full_name"),
+            "period": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat(),
+                "month": month,
+                "year": year
+            },
+            "totals": {
+                "regular_hours": 0,
+                "overtime_hours": 0,
+                "special_hours": 0,
+                "total_hours": 0,
+                "days_worked": 0
+            },
+            "entries_checked": 0,
+            "entries_updated": 0,
+            "issues_found": []
+        }
+        
+        # Processar cada entrada
+        for entry in entries:
+            stats["entries_checked"] += 1
+            
+            if entry.get("status") != "completed":
+                continue
+            
+            # Verificar se tem breakdown de horas
+            if not entry.get("regular_hours") and not entry.get("overtime_hours") and not entry.get("special_hours"):
+                # Precisa recalcular
+                if entry.get("entries"):
+                    total_hours = 0
+                    for e in entry["entries"]:
+                        if e.get("start_time") and e.get("end_time"):
+                            start = datetime.fromisoformat(e["start_time"])
+                            end = datetime.fromisoformat(e["end_time"])
+                            hours = (end - start).total_seconds() / 3600
+                            total_hours += hours
+                    
+                    # Calcular breakdown
+                    is_special = entry.get("is_overtime_day", False)
+                    from holidays import is_overtime_day
+                    date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
+                    is_ot, reason = is_overtime_day(date_obj)
+                    
+                    hours_breakdown = calculate_hours_breakdown(total_hours, is_ot)
+                    
+                    # Atualizar entrada
+                    await db.time_entries.update_one(
+                        {"user_id": user_id, "date": entry["date"]},
+                        {"$set": {
+                            "regular_hours": hours_breakdown["regular"],
+                            "overtime_hours": hours_breakdown["overtime"],
+                            "special_hours": hours_breakdown["special"],
+                            "total_hours": total_hours,
+                            "is_overtime_day": is_ot,
+                            "overtime_reason": reason if is_ot else None
+                        }}
+                    )
+                    
+                    stats["entries_updated"] += 1
+                    stats["issues_found"].append({
+                        "date": entry["date"],
+                        "issue": "Horas não calculadas",
+                        "action": "Recalculadas",
+                        "hours": total_hours
+                    })
+            
+            # Somar horas
+            stats["totals"]["regular_hours"] += entry.get("regular_hours", 0)
+            stats["totals"]["overtime_hours"] += entry.get("overtime_hours", 0)
+            stats["totals"]["special_hours"] += entry.get("special_hours", 0)
+            stats["totals"]["total_hours"] += entry.get("total_hours", 0)
+            
+            if entry.get("total_hours", 0) > 0:
+                stats["totals"]["days_worked"] += 1
+        
+        # Arredondar totais
+        stats["totals"]["regular_hours"] = round(stats["totals"]["regular_hours"], 2)
+        stats["totals"]["overtime_hours"] = round(stats["totals"]["overtime_hours"], 2)
+        stats["totals"]["special_hours"] = round(stats["totals"]["special_hours"], 2)
+        stats["totals"]["total_hours"] = round(stats["totals"]["total_hours"], 2)
+        
+        logging.info(f"Verificação completa para {user.get('username')}: {stats['entries_checked']} entradas verificadas, {stats['entries_updated']} atualizadas")
+        
+        return stats
+        
+    except Exception as e:
+        logging.error(f"Erro ao recalcular horas: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/admin/day-status/set")
 async def set_day_status(
     status_data: dict,
