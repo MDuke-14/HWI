@@ -243,6 +243,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       cliente_id: cliente.id
     });
     
+    // Carregar equipamentos do cliente
+    fetchEquipamentos(cliente.id);
+    
     // Abrir modal de criação de relatório
     setShowAddRelatorioModal(true);
   };
