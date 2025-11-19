@@ -630,6 +630,17 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowAddTecnicoModal(true);
   };
 
+  const handleUsuarioChange = (userId) => {
+    const usuario = usuarios.find(u => u.id === userId);
+    if (usuario) {
+      setTecnicoFormData({
+        ...tecnicoFormData,
+        tecnico_id: usuario.id,
+        tecnico_nome: usuario.full_name || usuario.username
+      });
+    }
+  };
+
   const handleAddTecnico = async (e) => {
     e.preventDefault();
     if (!selectedRelatorio) return;
