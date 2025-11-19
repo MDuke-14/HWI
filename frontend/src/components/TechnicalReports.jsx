@@ -678,6 +678,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const resetTecnicoForm = () => {
     setTecnicoFormData({
+      tecnico_id: '',
       tecnico_nome: '',
       horas_cliente: 0,
       kms_deslocacao: 0,
