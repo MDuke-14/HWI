@@ -1978,7 +1978,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     }}
                     className="bg-amber-600 hover:bg-amber-700"
                   >
-                    <Car className="w-4 h-4 mr-2" />
+                    <Settings className="w-4 h-4 mr-2" />
                     Ver Equipamentos
                   </Button>
                   
