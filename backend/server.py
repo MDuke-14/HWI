@@ -2359,10 +2359,14 @@ async def enviar_pdf_ot(
                 message.attach(MIMEText(body, 'html'))
                 
                 # Anexar PDF
-                pdf_attachment = MIMEText(pdf_buffer.getvalue(), 'base64', 'utf-8')
-                pdf_attachment.add_header('Content-Type', 'application/pdf')
+                pdf_attachment = MIMEBase('application', 'pdf')
+                pdf_attachment.set_payload(pdf_buffer.getvalue())
+                encoders.encode_base64(pdf_attachment)
                 pdf_attachment.add_header('Content-Disposition', f'attachment; filename="OT_{numero_ot}.pdf"')
                 message.attach(pdf_attachment)
+                
+                # Resetar buffer para próximo email
+                pdf_buffer.seek(0)
                 
                 # Enviar email
                 await aiosmtplib.send(
