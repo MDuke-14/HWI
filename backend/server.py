@@ -2623,6 +2623,25 @@ async def create_first_admin():
     
     return {
         "success": True,
+
+
+@api_router.get("/health")
+async def health_check():
+    """Verificar saúde do sistema - SEM autenticação"""
+    try:
+        # Testar conexão com MongoDB
+        await db.users.find_one({})
+        db_status = "✅ Conectado"
+    except Exception as e:
+        db_status = f"❌ Erro: {str(e)[:100]}"
+    
+    return {
+        "status": "running",
+        "database": db_status,
+        "db_name": os.environ.get('DB_NAME', 'NOT SET'),
+        "mongo_url_prefix": os.environ.get('MONGO_URL', 'NOT SET')[:30] + "..."
+    }
+
         "message": "Admin criado com sucesso!",
         "username": "admin",
         "password": "admin123",
