@@ -203,6 +203,7 @@ class RelatorioTecnicoCreate(BaseModel):
     equipamento_marca: str
     equipamento_modelo: str
     equipamento_numero_serie: Optional[str] = None
+    equipamento_ano_fabrico: Optional[int] = None
     motivo_assistencia: str  # Mudou de "descricao_problema"
 
 class Token(BaseModel):
