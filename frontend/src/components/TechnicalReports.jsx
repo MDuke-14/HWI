@@ -701,19 +701,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const openAddTecnicoModal = () => {
-    fetchUsuarios();
     setShowAddTecnicoModal(true);
-  };
-
-  const handleUsuarioChange = (userId) => {
-    const usuario = usuarios.find(u => u.id === userId);
-    if (usuario) {
-      setTecnicoFormData({
-        ...tecnicoFormData,
-        tecnico_id: usuario.id,
-        tecnico_nome: usuario.full_name || usuario.username
-      });
-    }
   };
 
   const calcularCodigoAutomatico = (dataTrabalho) => {
