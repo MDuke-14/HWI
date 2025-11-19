@@ -206,11 +206,11 @@ const Dashboard = ({ user, onLogout }) => {
           )}
 
           {/* Control Buttons */}
-          <div className="glass-effect p-8 mb-6">
+          <div className="glass-effect p-4 mb-6">
             {!entry ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="observations" className="text-gray-300 mb-2 block">
+                  <Label htmlFor="observations" className="text-gray-300 mb-2 block text-sm">
                     Observações (opcional)
                   </Label>
                   <Textarea
@@ -219,12 +219,12 @@ const Dashboard = ({ user, onLogout }) => {
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     placeholder="Ex: Entrada atrasada devido a reunião externa..."
-                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[100px]"
+                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[60px] text-sm"
                   />
                 </div>
 
                 {/* Outside Residence Zone Checkbox */}
-                <div className="flex items-start space-x-3 p-4 bg-[#1a1a1a] rounded-lg border border-gray-700">
+                <div className="flex items-start space-x-3 p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
                   <Checkbox
                     data-testid="outside-zone-checkbox"
                     id="outside-zone"
@@ -235,12 +235,12 @@ const Dashboard = ({ user, onLogout }) => {
                   <div className="flex-1">
                     <Label
                       htmlFor="outside-zone"
-                      className="text-gray-300 font-medium cursor-pointer flex items-center gap-2"
+                      className="text-gray-300 font-medium cursor-pointer flex items-center gap-2 text-sm"
                     >
                       <MapPin className="w-4 h-4" />
                       Fora de Zona de Residência
                     </Label>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       Ativa Ajuda de Custas (em vez de Subsídio de Alimentação)
                     </p>
                   </div>
