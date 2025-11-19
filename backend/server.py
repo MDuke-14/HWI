@@ -4143,12 +4143,13 @@ async def recalculate_user_hours(
     try:
         # Se não especificou mês/ano, usar período atual
         if not month or not year:
-            now = datetime.now(timezone.utc)
-            month = now.month
-            year = now.year
+            reference_date = None  # Usará data atual
+        else:
+            # Criar uma data de referência dentro do mês especificado
+            reference_date = date(year, month, 15)  # Dia 15 do mês especificado
         
         # Obter datas do período de faturação (26 do mês anterior ao 25 do mês atual)
-        start_date, end_date = get_billing_period_dates(month, year)
+        start_date, end_date = get_billing_period_dates(reference_date)
         
         # Buscar usuário
         user = await db.users.find_one({"id": user_id})
