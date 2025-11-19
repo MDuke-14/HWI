@@ -444,11 +444,13 @@ def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
     - Overtime hours: Hours above 8h on regular days
     - Special hours: All hours on weekends/holidays (Saturday, Sunday, holidays)
     
-    Note: Hours are rounded to minutes (no seconds)
+    Note: Seconds are DISCARDED (truncated, not rounded)
     """
-    # Arredondar para minutos (2 casas decimais = centésimos de hora = ~36 segundos de precisão)
-    # Para ignorar segundos completamente, arredondamos para 1/60 (1 minuto)
-    total_hours = round(total_hours * 60) / 60  # Arredonda para o minuto mais próximo
+    # Truncar segundos (não arredondar)
+    # Convertemos para minutos e descartamos a fração (floor)
+    import math
+    total_minutes = math.floor(total_hours * 60)  # Trunca para minutos (descarta segundos)
+    total_hours = total_minutes / 60  # Converte de volta para horas
     
     if is_special_day:
         # All hours on weekends/holidays are special hours
