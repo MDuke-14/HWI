@@ -219,7 +219,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     e.preventDefault();
     try {
       await axios.post(`${API}/relatorios-tecnicos`, relatorioFormData);
-      toast.success('Relatório criado com sucesso!');
+      toast.success('OT criada com sucesso!');
       setShowAddRelatorioModal(false);
       resetRelatorioForm();
       fetchRelatorios();
