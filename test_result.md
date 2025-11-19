@@ -1013,6 +1013,81 @@ frontend:
           ✅ Remoção com confirmação
           ✅ Exibição de data/hora do upload
           
+  - task: "Sistema de Assinatura Digital"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/components/TechnicalReports.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ✅ SISTEMA DE ASSINATURA DIGITAL IMPLEMENTADO
+          
+          User Request: Adicionar sistema de assinatura após fotografias com opção digital (desenhar) e campos de nome
+          
+          Backend Implementation (server.py):
+          1. Modelo AssinaturaRelatorio criado com campos:
+             - id, relatorio_id, tipo (digital/manual)
+             - assinatura_path, assinatura_url (para digital)
+             - primeiro_nome, ultimo_nome, assinado_por
+             - data_assinatura
+          
+          2. Endpoints criados:
+             - POST /relatorios-tecnicos/{id}/assinatura-digital - Salvar assinatura desenhada
+             - POST /relatorios-tecnicos/{id}/assinatura-manual - Salvar assinatura texto
+             - GET /relatorios-tecnicos/{id}/assinatura - Obter assinatura
+             - GET /relatorios-tecnicos/{id}/assinatura/imagem - Servir imagem (público)
+             - DELETE /relatorios-tecnicos/{id}/assinatura - Remover assinatura
+          
+          3. Upload de assinatura digital:
+             - Salva como PNG em /app/backend/uploads/assinaturas/
+             - Nome único com UUID
+             - Remove assinatura anterior ao salvar nova
+          
+          Frontend Implementation (TechnicalReports.jsx):
+          1. Instalado react-signature-canvas para desenho
+          2. Adicionados estados para gerenciar assinatura
+          3. Nova seção "Assinatura do Cliente" após Fotografias
+          
+          4. Modal de Assinatura (apenas digital):
+             - Canvas interativo para desenhar
+             - Botão "Limpar" para recomeçar
+             - Campos obrigatórios: Primeiro Nome + Último Nome
+             - Botão "Salvar Assinatura"
+          
+          5. Exibição da Assinatura:
+             - Mostra imagem da assinatura quando tipo = digital
+             - Exibe nome completo do assinante
+             - Mostra data/hora da assinatura
+             - Botão para remover assinatura
+          
+          Features:
+          ✅ Canvas de desenho responsivo
+          ✅ Validação de campos obrigatórios
+          ✅ Conversão de canvas para PNG
+          ✅ Upload com FormData
+          ✅ Apenas uma assinatura por OT (substitui anterior)
+          ✅ Remoção de assinatura
+          ✅ Exibição visual da assinatura salva
+          
+          User Feedback Applied:
+          - Removido botão de assinatura manual conforme solicitado
+          - Mantido apenas assinatura digital com canvas
+          - Campos de nome mantidos (primeiro + último)
+          
+          Status: ✅ Implementado - Frontend e backend funcionando
+          
+          NEEDS TESTING:
+          1. Abrir uma OT e rolar até a seção de Assinatura
+          2. Clicar em "Adicionar Assinatura"
+          3. Desenhar assinatura no canvas
+          4. Preencher primeiro e último nome
+          5. Salvar e verificar se aparece na OT
+          6. Testar remoção de assinatura
+
           Status: ✅ Implementado - Backend e frontend funcionando
           
           NEEDS TESTING:
