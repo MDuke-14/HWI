@@ -266,6 +266,39 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchClienteEquipamentosDetalhado = async (clienteId) => {
+    try {
+      const response = await axios.get(`${API}/equipamentos?cliente_id=${clienteId}`);
+      setClienteEquipamentos(response.data);
+      setShowClienteEquipamentosModal(true);
+    } catch (error) {
+      toast.error('Erro ao carregar equipamentos do cliente');
+    }
+  };
+
+  const fetchEquipamentoOTs = async (equipamento) => {
+    try {
+      // Buscar todas as OTs
+      const response = await axios.get(`${API}/relatorios-tecnicos`);
+      
+      // Filtrar OTs que usam este equipamento (comparar marca, modelo e número de série)
+      const otsDoEquipamento = response.data.filter(r => {
+        const marcaMatch = r.equipamento_marca === equipamento.marca;
+        const modeloMatch = r.equipamento_modelo === equipamento.modelo;
+        const serieMatch = (!equipamento.numero_serie && !r.equipamento_numero_serie) || 
+                          (r.equipamento_numero_serie === equipamento.numero_serie);
+        
+        return marcaMatch && modeloMatch && serieMatch && r.cliente_id === equipamento.cliente_id;
+      });
+      
+      setEquipamentoOTs(otsDoEquipamento);
+      setSelectedEquipamento(equipamento);
+      setShowEquipamentoOTsModal(true);
+    } catch (error) {
+      toast.error('Erro ao carregar OTs do equipamento');
+    }
+  };
+
   const handleDownloadAllClienteRelatorios = async (cliente) => {
     try {
       // Por enquanto, apenas mostra os relatórios
