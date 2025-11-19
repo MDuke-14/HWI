@@ -114,6 +114,16 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoDescricao, setFotoDescricao] = useState('');
   const [uploadingFoto, setUploadingFoto] = useState(false);
+
+  // Assinatura
+  const [assinatura, setAssinatura] = useState(null);
+  const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
+  const [assinaturaTipo, setAssinaturaTipo] = useState('digital'); // 'digital' ou 'manual'
+  const [assinaturaCanvas, setAssinaturaCanvas] = useState(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
+  const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
+
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_id: '',
