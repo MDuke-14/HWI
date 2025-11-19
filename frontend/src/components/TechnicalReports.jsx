@@ -2126,15 +2126,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 </Button>
 
-                <Button
-                  onClick={() => handleChangeStatus('facturado')}
-                  className="w-full justify-start bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-purple-400"></div>
-                    <span>Facturado</span>
-                  </div>
-                </Button>
+                {user?.is_admin && (
+                  <Button
+                    onClick={() => handleChangeStatus('facturado')}
+                    className="w-full justify-start bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-400"></div>
+                      <span>Facturado</span>
+                      <span className="ml-auto text-xs bg-purple-400/20 px-2 py-0.5 rounded">Admin</span>
+                    </div>
+                  </Button>
+                )}
               </div>
 
               <Button
