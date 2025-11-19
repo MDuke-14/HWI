@@ -1469,7 +1469,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                 <p className="text-amber-200 text-sm">
-                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. O relatório e todos os dados associados (técnicos, fotos, materiais) serão permanentemente eliminados.
+                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. A OT e todos os dados associados (técnicos, fotos, materiais) serão permanentemente eliminados.
                 </p>
               </div>
 
