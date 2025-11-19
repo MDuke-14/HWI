@@ -2024,6 +2024,92 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Equipamentos do Cliente Modal */}
+      <Dialog open={showClienteEquipamentosModal} onOpenChange={setShowClienteEquipamentosModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Car className="w-5 h-5 text-amber-400" />
+              Equipamentos do Cliente
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {clienteEquipamentos.length === 0 ? (
+              <div className="text-center py-12">
+                <Car className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhum equipamento cadastrado para este cliente</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-gray-400 text-sm mb-4">
+                  Total: {clienteEquipamentos.length} equipamento(s)
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {clienteEquipamentos.map((equipamento) => (
+                    <div
+                      key={equipamento.id}
+                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-amber-500 transition"
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Car className="w-5 h-5 text-amber-400" />
+                            <span className="text-white font-bold text-lg">
+                              {equipamento.marca}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400">{equipamento.tipologia}</p>
+                        </div>
+                      </div>
+
+                      {/* Detalhes */}
+                      <div className="space-y-2 mb-3 pb-3 border-b border-gray-700">
+                        <div>
+                          <span className="text-xs text-gray-500">Modelo:</span>
+                          <p className="text-sm text-gray-300">{equipamento.modelo}</p>
+                        </div>
+                        
+                        {equipamento.numero_serie && (
+                          <div>
+                            <span className="text-xs text-gray-500">Nº Série:</span>
+                            <p className="text-sm text-gray-300 font-mono">{equipamento.numero_serie}</p>
+                          </div>
+                        )}
+                        
+                        {equipamento.last_used && (
+                          <div>
+                            <span className="text-xs text-gray-500">Último uso:</span>
+                            <p className="text-sm text-gray-300">
+                              {new Date(equipamento.last_used).toLocaleDateString('pt-PT')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Ver OTs Button */}
+                      <Button
+                        onClick={() => {
+                          setShowClienteEquipamentosModal(false);
+                          fetchEquipamentoOTs(equipamento);
+                        }}
+                        size="sm"
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Ver OTs deste Equipamento
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Relatórios do Cliente Modal */}
       <Dialog open={showClienteRelatoriosModal} onOpenChange={setShowClienteRelatoriosModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
