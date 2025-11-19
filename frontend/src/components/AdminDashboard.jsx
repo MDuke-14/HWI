@@ -682,12 +682,83 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </DialogHeader>
 
                 <div className="mt-4">
-                  {verifying ? (
+                  {!verifyResult ? (
+                    // Seletor de período ANTES de iniciar verificação
+                    <div className="space-y-4">
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                        <h4 className="text-yellow-400 font-semibold mb-2">⚠️ Importante</h4>
+                        <p className="text-gray-300 text-sm">
+                          Selecione o <strong>mês de faturação</strong> que deseja verificar.
+                        </p>
+                        <p className="text-gray-400 text-xs mt-2">
+                          O período de faturação vai do dia 26 do mês anterior até o dia 25 do mês selecionado.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-gray-300 mb-2 block">Mês de Faturação</Label>
+                          <select
+                            value={verifyMonth}
+                            onChange={(e) => setVerifyMonth(parseInt(e.target.value))}
+                            className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                          >
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label className="text-gray-300 mb-2 block">Ano</Label>
+                          <Input
+                            type="number"
+                            value={verifyYear}
+                            onChange={(e) => setVerifyYear(parseInt(e.target.value))}
+                            className="bg-[#0f0f0f] border-gray-700 text-white"
+                            min="2020"
+                            max="2030"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                        <p className="text-sm text-blue-300">
+                          <strong>Período a verificar:</strong> 26/{verifyMonth === 1 ? 12 : verifyMonth - 1}/{verifyMonth === 1 ? verifyYear - 1 : verifyYear} até 25/{verifyMonth}/{verifyYear}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          onClick={() => setShowVerifyDialog(false)}
+                          variant="outline"
+                          className="flex-1 border-gray-600"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          onClick={runVerification}
+                          className="flex-1 bg-yellow-600 hover:bg-yellow-700"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Iniciar Verificação
+                        </Button>
+                      </div>
+                    </div>
+                  ) : verifying ? (
                     <div className="text-center py-8">
                       <RefreshCw className="w-12 h-12 text-yellow-400 mx-auto mb-4 animate-spin" />
                       <p className="text-gray-400">Verificando e recalculando horas...</p>
                     </div>
-                  ) : verifyResult ? (
+                  ) : (
                     <div className="space-y-4">
                       {/* Período */}
                       <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
