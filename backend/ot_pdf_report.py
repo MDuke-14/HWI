@@ -187,37 +187,78 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(tec_table)
         elements.append(Spacer(1, 0.5*cm))
     
-    # Fotografias (incluir imagens no PDF)
+    # Fotografias (incluir imagens em layout 2x2)
     if fotografias:
         elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
+        elements.append(Spacer(1, 0.3*cm))
         
-        for i, foto in enumerate(fotografias, 1):
-            # Descrição da fotografia
-            elements.append(Paragraph(f"<b>Fotografia #{i}:</b> {foto.get('descricao', 'Sem descrição')}", normal_style))
+        # Organizar fotos em pares (2 por linha)
+        for i in range(0, len(fotografias), 2):
+            foto1 = fotografias[i]
+            foto2 = fotografias[i + 1] if i + 1 < len(fotografias) else None
             
-            # Incluir imagem da fotografia
-            if foto.get('foto_path'):
-                img_path = Path(foto['foto_path'])
+            # Criar célula para foto 1
+            cell1_content = []
+            if foto1.get('foto_path'):
+                img_path = Path(foto1['foto_path'])
                 if img_path.exists():
                     try:
-                        # Adicionar imagem com tamanho controlado
-                        img = RLImage(str(img_path), width=15*cm, height=10*cm, kind='proportional')
-                        elements.append(img)
-                        elements.append(Spacer(1, 0.3*cm))
+                        img = RLImage(str(img_path), width=7*cm, height=5*cm, kind='proportional')
+                        cell1_content.append(img)
                     except Exception as e:
-                        elements.append(Paragraph(f"<i>(Erro ao carregar imagem: {str(e)})</i>", normal_style))
-                        elements.append(Spacer(1, 0.3*cm))
+                        cell1_content.append(Paragraph("<i>(Erro ao carregar imagem)</i>", normal_style))
                 else:
-                    elements.append(Paragraph("<i>(Imagem não encontrada)</i>", normal_style))
-                    elements.append(Spacer(1, 0.3*cm))
+                    cell1_content.append(Paragraph("<i>(Imagem não encontrada)</i>", normal_style))
             
-            # Adicionar espaço entre fotografias
-            if i < len(fotografias):
-                elements.append(Spacer(1, 0.5*cm))
+            descricao1 = foto1.get('descricao', 'Sem descrição')
+            cell1_content.append(Paragraph(f"<b>Foto #{i+1}:</b> {descricao1}", ParagraphStyle(
+                'SmallText',
+                parent=normal_style,
+                fontSize=8,
+                spaceAfter=2
+            )))
+            
+            # Criar célula para foto 2 (se existir)
+            cell2_content = []
+            if foto2:
+                if foto2.get('foto_path'):
+                    img_path = Path(foto2['foto_path'])
+                    if img_path.exists():
+                        try:
+                            img = RLImage(str(img_path), width=7*cm, height=5*cm, kind='proportional')
+                            cell2_content.append(img)
+                        except Exception as e:
+                            cell2_content.append(Paragraph("<i>(Erro ao carregar imagem)</i>", normal_style))
+                    else:
+                        cell2_content.append(Paragraph("<i>(Imagem não encontrada)</i>", normal_style))
+                
+                descricao2 = foto2.get('descricao', 'Sem descrição')
+                cell2_content.append(Paragraph(f"<b>Foto #{i+2}:</b> {descricao2}", ParagraphStyle(
+                    'SmallText',
+                    parent=normal_style,
+                    fontSize=8,
+                    spaceAfter=2
+                )))
+            
+            # Criar tabela com 2 colunas
+            if cell2_content:
+                foto_table = Table([[cell1_content, cell2_content]], colWidths=[8.5*cm, 8.5*cm])
+            else:
+                foto_table = Table([[cell1_content, '']], colWidths=[8.5*cm, 8.5*cm])
+            
+            foto_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            
+            elements.append(foto_table)
+            elements.append(Spacer(1, 0.5*cm))
         
-        # Page break antes da assinatura se houver muitas fotos
-        if len(fotografias) > 2:
-            elements.append(PageBreak())
+        # Spacer antes da assinatura
+        elements.append(Spacer(1, 0.5*cm))
     
     # Assinatura
     if assinatura:
