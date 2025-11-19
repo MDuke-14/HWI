@@ -1454,7 +1454,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className="space-y-4 mt-4">
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <p className="text-white mb-2">
-                  Tem certeza que deseja eliminar este relatório?
+                  Tem certeza que deseja eliminar esta OT?
                 </p>
                 <div className="bg-[#0f0f0f] p-3 rounded mt-3">
                   <p className="text-white font-semibold">
