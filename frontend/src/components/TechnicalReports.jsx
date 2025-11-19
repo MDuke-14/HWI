@@ -2066,6 +2066,91 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Change Status Modal */}
+      <Dialog open={showStatusModal} onOpenChange={setShowStatusModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <FileText className="w-5 h-5 text-blue-400" />
+              Alterar Status da OT
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedStatusRelatorio && (
+            <div className="space-y-4 mt-4">
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <p className="text-white font-semibold mb-2">
+                  OT #{selectedStatusRelatorio.numero_assistencia}
+                </p>
+                <p className="text-gray-400 text-sm">{selectedStatusRelatorio.cliente_nome}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-gray-500 text-xs">Status atual:</span>
+                  <span className={`text-xs px-2 py-1 rounded ${getStatusColor(selectedStatusRelatorio.status)}`}>
+                    {getStatusLabel(selectedStatusRelatorio.status)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-gray-300 text-sm mb-3">Selecione o novo status:</p>
+                
+                <Button
+                  onClick={() => handleChangeStatus('orcamento')}
+                  className="w-full justify-start bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <span>Orçamento</span>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => handleChangeStatus('em_andamento')}
+                  className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                    <span>Em Andamento</span>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => handleChangeStatus('concluido')}
+                  className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    <span>Concluído</span>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={() => handleChangeStatus('cancelado')}
+                  className="w-full justify-start bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <span>Cancelado</span>
+                  </div>
+                </Button>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowStatusModal(false);
+                  setSelectedStatusRelatorio(null);
+                }}
+                variant="outline"
+                className="w-full border-gray-600 mt-4"
+              >
+                Cancelar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Relatório Confirmation Modal */}
       <Dialog open={showDeleteRelatorioModal} onOpenChange={setShowDeleteRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
