@@ -19,6 +19,8 @@ import sys
 import aiosmtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 sys.path.insert(0, str(Path(__file__).parent))
 from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates
 from excel_report import generate_monthly_report
