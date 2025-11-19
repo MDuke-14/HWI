@@ -17,6 +17,7 @@ import {
   X,
   Clock,
   Settings,
+  Car,
   Users,
   Download
 } from 'lucide-react';
