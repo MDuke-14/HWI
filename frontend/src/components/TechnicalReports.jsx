@@ -76,7 +76,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     data_servico: new Date().toISOString().split('T')[0],
     local_intervencao: '',
     pedido_por: '',
-    contacto_pedido: '',
     equipamento_tipologia: '',
     equipamento_marca: '',
     equipamento_modelo: '',
