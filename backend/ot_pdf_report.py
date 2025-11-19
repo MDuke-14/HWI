@@ -265,7 +265,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     
     # Assinatura
     if assinatura:
-        elements.append(PageBreak())
+        elements.append(Spacer(1, 0.3*cm))
         elements.append(Paragraph("ASSINATURA DO CLIENTE", heading_style))
         
         if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
@@ -273,7 +273,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             img_path = Path(assinatura['assinatura_path'])
             if img_path.exists():
                 try:
-                    img = RLImage(str(img_path), width=8*cm, height=4*cm)
+                    img = RLImage(str(img_path), width=6*cm, height=3*cm, kind='proportional')
                     elements.append(img)
                 except:
                     pass
