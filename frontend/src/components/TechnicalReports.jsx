@@ -416,7 +416,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <FileText className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Relatórios Técnicos</h1>
+              <h1 className="text-3xl font-bold text-white">OTs - Ordens de Trabalho</h1>
               <p className="text-gray-400">Gestão de Assistências Técnicas</p>
             </div>
           </div>
@@ -445,7 +445,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               }`}
             >
               <FileText className="w-4 h-4 inline mr-2" />
-              Relatórios
+              Ordens de Trabalho
             </button>
           </div>
         </div>
