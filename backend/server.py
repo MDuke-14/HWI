@@ -1995,7 +1995,7 @@ async def upload_fotografia(
     foto = FotoRelatorio(
         relatorio_id=relatorio_id,
         foto_path=str(file_path),
-        foto_url=f"/api/relatorios-tecnicos/{relatorio_id}/fotografias/{unique_filename}",
+        foto_url=f"/relatorios-tecnicos/{relatorio_id}/fotografias/{unique_filename}",
         descricao=descricao,
         ordem=ordem
     )
