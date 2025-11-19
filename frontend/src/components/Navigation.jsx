@@ -107,8 +107,3 @@ const Navigation = ({ user, onLogout, activePage }) => {
 };
 
 export default Navigation;
-    </nav>
-  );
-};
-
-export default Navigation;
