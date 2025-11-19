@@ -4580,6 +4580,17 @@ async def get_all_users(current_user: dict = Depends(get_current_admin)):
     users = await db.users.find({}, {"_id": 0, "hashed_password": 0}).to_list(1000)
     return users
 
+
+@api_router.get("/users")
+async def get_users_list(current_user: dict = Depends(get_current_user)):
+    """Listar usuários para seleção em formulários (requer autenticação)"""
+    users = await db.users.find(
+        {},
+        {"_id": 0, "hashed_password": 0, "id": 1, "username": 1, "full_name": 1}
+    ).to_list(1000)
+    return users
+
+
 @api_router.get("/admin/user/{user_id}/time-entries")
 async def get_user_time_entries(user_id: str, current_user: dict = Depends(get_current_admin)):
     """Get all time entries for a specific user (admin only)"""
