@@ -4189,6 +4189,7 @@ async def recalculate_user_hours(
             "totals": {
                 "regular_hours": 0,
                 "overtime_hours": 0,
+                "saturday_hours": 0,
                 "special_hours": 0,
                 "total_hours": 0,
                 "days_worked": 0
