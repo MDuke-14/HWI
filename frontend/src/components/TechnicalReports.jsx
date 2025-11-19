@@ -109,7 +109,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   
   // Fotografias
   const [fotografias, setFotografias] = useState([]);
-  const [showFotografiasModal, setShowFotografiasModal] = useState(false);
   const [showAddFotoModal, setShowAddFotoModal] = useState(false);
   const [selectedFoto, setSelectedFoto] = useState(null);
   const [fotoFile, setFotoFile] = useState(null);
