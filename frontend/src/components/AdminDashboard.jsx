@@ -191,14 +191,21 @@ const AdminDashboard = ({ user, onLogout }) => {
   };
 
 
-  const handleVerifyHours = async (user) => {
+  const handleVerifyHours = async (user, customMonth = null, customYear = null) => {
     setVerifyingUser(user);
-    setVerifyResult(null);
-    setShowVerifyDialog(true);
+    
+    // Se não especificou mês/ano customizado, mostrar o modal para escolher
+    if (customMonth === null || customYear === null) {
+      setVerifyResult(null);
+      setShowVerifyDialog(true);
+      return;
+    }
+    
     setVerifying(true);
 
     try {
-      const response = await axios.post(`${API}/admin/users/${user.id}/recalculate-hours`);
+      const url = `${API}/admin/users/${user.id}/recalculate-hours?month=${customMonth}&year=${customYear}`;
+      const response = await axios.post(url);
       setVerifyResult(response.data);
       
       if (response.data.entries_updated > 0) {
@@ -211,6 +218,10 @@ const AdminDashboard = ({ user, onLogout }) => {
     } finally {
       setVerifying(false);
     }
+  };
+
+  const runVerification = () => {
+    handleVerifyHours(verifyingUser, verifyMonth, verifyYear);
   };
 
 
