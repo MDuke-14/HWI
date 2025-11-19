@@ -193,6 +193,22 @@ class FotoRelatorio(BaseModel):
     ordem: int = 0
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class AssinaturaRelatorio(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    tipo: str  # "digital" ou "manual"
+    # Para assinatura digital
+    assinatura_path: Optional[str] = None
+    assinatura_url: Optional[str] = None
+    # Para assinatura manual
+    primeiro_nome: Optional[str] = None
+    ultimo_nome: Optional[str] = None
+    # Comum
+    assinado_por: Optional[str] = None  # Nome completo
+    data_assinatura: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class RelatorioTecnicoCreate(BaseModel):
     cliente_id: str
     data_servico: date
