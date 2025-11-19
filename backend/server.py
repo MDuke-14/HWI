@@ -2770,18 +2770,13 @@ async def end_time_entry(
             "entries_created": entries_created
         }
     else:
-        # Single day entry
+        # Single day entry - USAR NOVA LÓGICA
+        hours_breakdown = calcular_breakdown_completo(start_time, end_time, start_time.date())
+        
+        # Calcular total truncando segundos
         total_seconds = (end_time - start_time).total_seconds()
-        
-        # TRUNCAR segundos (não arredondar)
         total_minutes = math.floor(total_seconds / 60)
-        total_hours = total_minutes / 60
-        total_hours = round(total_hours, 2)  # Arredondar apenas para exibição
-        
-        is_ot = entry.get("is_overtime_day", False)
-        
-        # Calculate hours breakdown using new logic
-        hours_breakdown = calculate_hours_breakdown(total_hours, is_ot)
+        total_hours = round(total_minutes / 60, 2)
         
         await db.time_entries.update_one(
             {"id": entry_id},
@@ -2791,6 +2786,7 @@ async def end_time_entry(
                 "total_hours": total_hours,
                 "regular_hours": hours_breakdown["regular_hours"],
                 "overtime_hours": hours_breakdown["overtime_hours"],
+                "saturday_hours": hours_breakdown["saturday_hours"],
                 "special_hours": hours_breakdown["special_hours"],
                 "observations": final_observations
             }}
@@ -2801,8 +2797,8 @@ async def end_time_entry(
             "total_hours": total_hours,
             "regular_hours": hours_breakdown["regular_hours"],
             "overtime_hours": hours_breakdown["overtime_hours"],
-            "special_hours": hours_breakdown["special_hours"],
-            "is_overtime_day": is_ot
+            "saturday_hours": hours_breakdown["saturday_hours"],
+            "special_hours": hours_breakdown["special_hours"]
         }
 
 @api_router.get("/time-entries/today")
