@@ -770,7 +770,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const openEditTecnicoModal = (tecnico) => {
-    fetchUsuarios();
     setSelectedTecnico(tecnico);
     setTecnicoFormData({
       tecnico_id: tecnico.tecnico_id || '',
