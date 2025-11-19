@@ -599,7 +599,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Novo Relatório
+              Nova OT
             </Button>
           </div>
 
