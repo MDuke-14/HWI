@@ -120,7 +120,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Assinatura
   const [assinatura, setAssinatura] = useState(null);
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
-  const [assinaturaTipo, setAssinaturaTipo] = useState('digital'); // 'digital' ou 'manual'
   const [assinaturaCanvas, setAssinaturaCanvas] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
