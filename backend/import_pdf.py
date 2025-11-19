@@ -101,20 +101,21 @@ def parse_pdf_timesheet(file_path, username="Miguel Moreira"):
                             
                             # Check for FERIAS (vacation) or non-working days
                             row_text = ' '.join([str(cell).upper() for cell in row if cell])
-                            if any(keyword in row_text for keyword in ['FERIAS', 'FÉRIAS', 'FOLGA', 'FALTA', 'NÃO TRABALHADO']):
+                            if any(keyword in row_text for keyword in ['FERIAS', 'FÉRIAS', 'FOLGA', 'FALTA', 'NÃO TRABALHADO', 'FERIADO']):
                                 logging.info(f"    Skipping non-working day")
                                 continue
                             
                             time_pairs = []
                             
                             if header_format == 'combined':
-                                # Our format: Entradas/Saídas column with "09:00-13:00\n14:00-18:00"
-                                # Usually in column 2 (after Data and Dia)
-                                for col_idx in range(2, min(4, len(row))):
+                                # Our system format: column "Entradas/Saídas" with "09:00-13:00\n14:00-18:00"
+                                # Find the entries column (usually index 2 after Data and Dia)
+                                for col_idx in range(2, min(5, len(row))):
                                     cell = str(row[col_idx]) if row[col_idx] else ""
                                     
-                                    # Find all HH:MM-HH:MM patterns
-                                    pair_matches = re.findall(r'(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', cell)
+                                    # Find all HH:MM-HH:MM or HH:MM - HH:MM patterns
+                                    pair_matches = re.findall(r'(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})', cell)
+                                    
                                     for start_time, end_time in pair_matches:
                                         # Normalize format
                                         start_h, start_m = map(int, start_time.split(':'))
@@ -129,11 +130,14 @@ def parse_pdf_timesheet(file_path, username="Miguel Moreira"):
                                                 'start_time': start_formatted,
                                                 'end_time': end_formatted
                                             })
-                                            logging.info(f"      Pair (combined): {start_formatted} - {end_formatted}")
+                                            logging.info(f"      Pair (combined format): {start_formatted} - {end_formatted}")
+                                    
+                                    # If found pairs, break (don't process other columns)
+                                    if pair_matches:
+                                        break
                             
                             else:
                                 # External format: separate Ent/Sai columns
-                                # Extract time entries (Ent/Sai pairs)
                                 time_values = []
                                 for cell_idx in range(2, len(row)):
                                     cell = str(row[cell_idx]).strip() if row[cell_idx] else ""
@@ -162,9 +166,21 @@ def parse_pdf_timesheet(file_path, username="Miguel Moreira"):
                                             'start_time': start_time,
                                             'end_time': end_time
                                         })
-                                        logging.info(f"      Pair (separate): {start_time} - {end_time}")
+                                        logging.info(f"      Pair (separate format): {start_time} - {end_time}")
                                     
                                     i += 2
+                            
+                            # Detect location from "Tipo Pagamento" column if present
+                            if header_format == 'combined':
+                                # Check if there's a payment type column
+                                for col_idx in range(len(row)):
+                                    cell_text = str(row[col_idx]).upper() if row[col_idx] else ""
+                                    if 'AJUDA DE CUSTAS' in cell_text or 'AJUDA DE CUSTO' in cell_text:
+                                        # Extract location from "Ajuda de Custas - Location"
+                                        location_match = re.search(r'AJUDA DE CUST[AO]S?\s*[-–]\s*(.+)', cell_text)
+                                        if location_match:
+                                            current_location = location_match.group(1).strip()
+                                            current_location_outside = True
                             
                             # Only add if we have valid time entries
                             if time_pairs:
@@ -175,6 +191,10 @@ def parse_pdf_timesheet(file_path, username="Miguel Moreira"):
                                     'location_description': current_location
                                 })
                                 logging.info(f"    ✓ Added {len(time_pairs)} entries for {date_str}")
+                                
+                                # Reset location after adding entry
+                                current_location = None
+                                current_location_outside = False
                             
                         except Exception as e:
                             logging.warning(f"Error processing row: {str(e)}")
