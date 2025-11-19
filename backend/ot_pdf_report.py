@@ -10,20 +10,22 @@ from pathlib import Path
 
 def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura):
     """
-    Gera PDF completo de uma Ordem de Trabalho
+    Gera PDF completo de uma Ordem de Trabalho com espaçamento mínimo
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.5*cm, bottomMargin=1.5*cm)
+    # Margens reduzidas
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*cm, bottomMargin=0.8*cm, leftMargin=1*cm, rightMargin=1*cm)
     elements = []
     styles = getSampleStyleSheet()
     
-    # Estilos customizados
+    # Estilos customizados com espaçamento mínimo
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=18,
+        fontSize=16,
         textColor=colors.HexColor('#1e40af'),
-        spaceAfter=12,
+        spaceAfter=4,
+        spaceBefore=0,
         alignment=TA_CENTER,
         fontName='Helvetica-Bold'
     )
@@ -31,24 +33,25 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
-        fontSize=14,
+        fontSize=12,
         textColor=colors.HexColor('#3b82f6'),
-        spaceAfter=8,
-        spaceBefore=12,
+        spaceAfter=4,
+        spaceBefore=6,
         fontName='Helvetica-Bold'
     )
     
     normal_style = ParagraphStyle(
         'CustomNormal',
         parent=styles['Normal'],
-        fontSize=10,
-        spaceAfter=6
+        fontSize=9,
+        spaceAfter=2,
+        spaceBefore=0
     )
     
     # Cabeçalho
     elements.append(Paragraph("ORDEM DE TRABALHO", title_style))
     elements.append(Paragraph(f"OT #{relatorio.get('numero_assistencia', 'N/A')}", title_style))
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.2*cm))
     
     # Status
     status_labels = {
@@ -64,7 +67,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if isinstance(data_servico, str):
         data_servico = datetime.fromisoformat(data_servico).strftime('%d/%m/%Y')
     elements.append(Paragraph(f"<b>Data de Serviço:</b> {data_servico}", normal_style))
-    elements.append(Spacer(1, 0.3*cm))
+    elements.append(Spacer(1, 0.2*cm))
     
     # Cliente
     elements.append(Paragraph("DADOS DO CLIENTE", heading_style))
@@ -78,22 +81,22 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         ['Pedido por:', relatorio.get('pedido_por', 'N/A')],
     ]
     
-    client_table = Table(client_data, colWidths=[5*cm, 12*cm])
+    client_table = Table(client_data, colWidths=[4.5*cm, 13.5*cm])
     client_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
         ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
     elements.append(client_table)
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.2*cm))
     
     # Equipamento
     elements.append(Paragraph("EQUIPAMENTO", heading_style))
@@ -107,22 +110,22 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if relatorio.get('equipamento_ano_fabrico'):
         equip_data.append(['Ano de Fabrico:', relatorio.get('equipamento_ano_fabrico')])
     
-    equip_table = Table(equip_data, colWidths=[5*cm, 12*cm])
+    equip_table = Table(equip_data, colWidths=[4.5*cm, 13.5*cm])
     equip_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
         ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
     elements.append(equip_table)
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.2*cm))
     
     # Intervenções
     if intervencoes:
@@ -141,13 +144,16 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             if interv.get('relatorio_assistencia'):
                 elements.append(Paragraph(f"<b>Relatório:</b> {interv.get('relatorio_assistencia')}", normal_style))
             
-            elements.append(Spacer(1, 0.3*cm))
+            if i < len(intervencoes):
+                elements.append(Spacer(1, 0.15*cm))
+        
+        elements.append(Spacer(1, 0.2*cm))
     
     # Técnicos / Mão de Obra
     if tecnicos:
         elements.append(Paragraph("MÃO DE OBRA / DESLOCAÇÃO", heading_style))
         
-        tec_data = [['Técnico', 'Data', 'Horas', 'KM (ida/volta)', 'Código']]
+        tec_data = [['Técnico', 'Data', 'Horas', 'KM', 'Cód']]
         
         codigos = {
             'diurno': '1',
@@ -168,24 +174,26 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 tec.get('tecnico_nome', 'N/A'),
                 data_trab or 'N/A',
                 f"{tec.get('horas_cliente', 0)}h",
-                f"{tec.get('kms_deslocacao', 0) * 2} km",
+                f"{tec.get('kms_deslocacao', 0) * 2}",
                 codigos.get(tec.get('tipo_horario', ''), '-')
             ])
         
-        tec_table = Table(tec_data, colWidths=[5*cm, 3*cm, 2*cm, 3*cm, 2*cm])
+        tec_table = Table(tec_data, colWidths=[5.5*cm, 3*cm, 2*cm, 2.5*cm, 1.5*cm])
         tec_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
         ]))
         elements.append(tec_table)
-        elements.append(Spacer(1, 0.5*cm))
+        elements.append(Spacer(1, 0.2*cm))
     
     # Fotografias (incluir imagens em layout 2x2)
     if fotografias:
