@@ -188,6 +188,30 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+
+  const handleVerifyHours = async (user) => {
+    setVerifyingUser(user);
+    setVerifyResult(null);
+    setShowVerifyDialog(true);
+    setVerifying(true);
+
+    try {
+      const response = await axios.post(`${API}/admin/users/${user.id}/recalculate-hours`);
+      setVerifyResult(response.data);
+      
+      if (response.data.entries_updated > 0) {
+        toast.success(`${response.data.entries_updated} entrada(s) atualizada(s)!`);
+      } else {
+        toast.success('Todas as horas estão corretas!');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao verificar horas');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+
   const handleCreateManualEntry = async () => {
     setLoading(true);
     try {
