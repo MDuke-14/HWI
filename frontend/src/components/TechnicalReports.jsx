@@ -118,7 +118,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       const response = await axios.get(`${API}/relatorios-tecnicos`);
       setRelatorios(response.data);
     } catch (error) {
-      toast.error('Erro ao carregar relatórios');
+      toast.error('Erro ao carregar OTs');
       console.error(error);
     } finally {
       setLoading(false);
