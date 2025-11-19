@@ -613,7 +613,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       });
       fetchIntervencoesRelatorio(selectedRelatorio.id);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao adicionar intervenção');
+      toast.error(formatErrorMessage(error));
     }
   };
 
