@@ -924,6 +924,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     placeholder="Modelo do equipamento"
                     required
+                    disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
 
@@ -937,6 +938,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_numero_serie: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     placeholder="Opcional"
+                    disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
               </div>
