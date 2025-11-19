@@ -2056,7 +2056,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Car className="w-5 h-5 text-amber-400" />
+                            <Settings className="w-5 h-5 text-amber-400" />
                             <span className="text-white font-bold text-lg">
                               {equipamento.marca}
                             </span>
