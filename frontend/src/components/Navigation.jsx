@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Clock, TrendingUp, LogOut, User, Palmtree, Shield, FileText, CalendarDays, Menu, ChevronDown } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 const Navigation = ({ user, onLogout, activePage }) => {
   const location = useLocation();
