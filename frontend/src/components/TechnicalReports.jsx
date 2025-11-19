@@ -1767,18 +1767,34 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
 
           <form onSubmit={handleEditTecnico} className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="edit_tecnico_nome" className="text-gray-300">
-                Nome do Técnico *
-              </Label>
-              <Input
-                id="edit_tecnico_nome"
-                value={tecnicoFormData.tecnico_nome}
-                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: Pedro Duarte"
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_tecnico_nome" className="text-gray-300">
+                  Nome do Técnico *
+                </Label>
+                <Input
+                  id="edit_tecnico_nome"
+                  value={tecnicoFormData.tecnico_nome}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: Pedro Duarte"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_data_trabalho" className="text-gray-300">
+                  Data do Trabalho *
+                </Label>
+                <Input
+                  id="edit_data_trabalho"
+                  type="date"
+                  value={tecnicoFormData.data_trabalho}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, data_trabalho: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
