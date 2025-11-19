@@ -1360,6 +1360,122 @@ async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_curre
     
     return {"message": "Cliente deletado com sucesso"}
 
+# ============ Equipamentos Routes ============
+
+@api_router.get("/equipamentos")
+async def get_equipamentos(
+    cliente_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar equipamentos - pode filtrar por cliente"""
+    query = {"ativo": True}
+    if cliente_id:
+        query["cliente_id"] = cliente_id
+    
+    equipamentos = await db.equipamentos.find(
+        query,
+        {"_id": 0}
+    ).sort("last_used", -1).to_list(length=None)
+    
+    return equipamentos
+
+@api_router.get("/equipamentos/{equipamento_id}", response_model=Equipamento)
+async def get_equipamento(
+    equipamento_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter equipamento específico"""
+    equipamento = await db.equipamentos.find_one(
+        {"id": equipamento_id, "ativo": True},
+        {"_id": 0}
+    )
+    
+    if not equipamento:
+        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+    
+    return equipamento
+
+@api_router.post("/equipamentos", response_model=Equipamento)
+async def create_equipamento(
+    equipamento: Equipamento,
+    current_user: dict = Depends(get_current_user)
+):
+    """Criar novo equipamento"""
+    # Verificar se cliente existe
+    cliente = await db.clientes.find_one({"id": equipamento.cliente_id, "ativo": True})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Verificar se equipamento já existe (mesmo marca, modelo e número de série)
+    existing = await db.equipamentos.find_one({
+        "cliente_id": equipamento.cliente_id,
+        "marca": equipamento.marca,
+        "modelo": equipamento.modelo,
+        "numero_serie": equipamento.numero_serie,
+        "ativo": True
+    })
+    
+    if existing:
+        # Retornar o existente ao invés de criar duplicado
+        return existing
+    
+    equipamento_dict = equipamento.dict()
+    equipamento_dict["created_at"] = equipamento_dict["created_at"].isoformat()
+    if equipamento_dict.get("last_used"):
+        equipamento_dict["last_used"] = equipamento_dict["last_used"].isoformat()
+    
+    await db.equipamentos.insert_one(equipamento_dict)
+    
+    logging.info(f"Equipamento criado: {equipamento.marca} {equipamento.modelo} para cliente {equipamento.cliente_id}")
+    
+    return equipamento
+
+@api_router.put("/equipamentos/{equipamento_id}", response_model=Equipamento)
+async def update_equipamento(
+    equipamento_id: str,
+    equipamento_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar equipamento"""
+    existing = await db.equipamentos.find_one({"id": equipamento_id})
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+    
+    # Remover campos que não devem ser atualizados
+    equipamento_data.pop("id", None)
+    equipamento_data.pop("created_at", None)
+    equipamento_data.pop("cliente_id", None)  # Cliente não pode ser mudado
+    
+    await db.equipamentos.update_one(
+        {"id": equipamento_id},
+        {"$set": equipamento_data}
+    )
+    
+    updated = await db.equipamentos.find_one({"id": equipamento_id}, {"_id": 0})
+    
+    logging.info(f"Equipamento atualizado: {equipamento_id}")
+    
+    return updated
+
+@api_router.delete("/equipamentos/{equipamento_id}")
+async def delete_equipamento(
+    equipamento_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Deletar equipamento (soft delete)"""
+    result = await db.equipamentos.update_one(
+        {"id": equipamento_id},
+        {"$set": {"ativo": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+    
+    logging.info(f"Equipamento deletado: {equipamento_id}")
+    
+    return {"message": "Equipamento deletado com sucesso"}
+
 # ============ Relatórios Técnicos Routes ============
 
 @api_router.post("/relatorios-tecnicos", response_model=RelatorioTecnico)
