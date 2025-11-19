@@ -102,7 +102,7 @@ def parse_pdf_timesheet(file_path, username="Miguel Moreira"):
                             # Check for FERIAS (vacation) or non-working days
                             row_text = ' '.join([str(cell).upper() for cell in row if cell])
                             if any(keyword in row_text for keyword in ['FERIAS', 'FÉRIAS', 'FOLGA', 'FALTA', 'NÃO TRABALHADO', 'FERIADO']):
-                                logging.info(f"    Skipping non-working day")
+                                logging.info("    Skipping non-working day")
                                 continue
                             
                             time_pairs = []
