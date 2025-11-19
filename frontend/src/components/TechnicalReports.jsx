@@ -678,9 +678,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const getStatusColor = (status) => {
     const colors = {
       'orcamento': 'text-amber-400 bg-amber-500/10',
-      'em_andamento': 'text-blue-400 bg-blue-500/10',
-      'concluido': 'text-green-400 bg-green-500/10',
-      'cancelado': 'text-red-400 bg-red-500/10'
+      'em_execucao': 'text-blue-400 bg-blue-500/10',
+      'em_andamento': 'text-blue-400 bg-blue-500/10', // Backward compatibility
+      'concluido': 'text-green-400 bg-green-500/10'
     };
     return colors[status] || 'text-gray-400 bg-gray-500/10';
   };
@@ -688,9 +688,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const getStatusLabel = (status) => {
     const labels = {
       'orcamento': 'Orçamento',
-      'em_andamento': 'Em Andamento',
-      'concluido': 'Concluído',
-      'cancelado': 'Cancelado'
+      'em_execucao': 'Em Execução',
+      'em_andamento': 'Em Execução', // Backward compatibility
+      'concluido': 'Concluído'
     };
     return labels[status] || status;
   };
