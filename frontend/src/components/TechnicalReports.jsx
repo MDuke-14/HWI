@@ -276,7 +276,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       setSelectedRelatorio(null);
       fetchRelatorios();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao atualizar relatório');
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar OT');
     }
   };
 
