@@ -80,9 +80,9 @@ agenthub/agents/youtube/db
 android-sdk/ frontend/node_modules/.cache/default-development/0.pack
 frontend/node_modules/.cache/default-development/0.pack
 -e 
-# Environment files
-*.env
-*.env.*
+# Environment files - COMENTADO PARA PERMITIR DEPLOYMENT
+# *.env
+# *.env.*
 -e 
 # Environment files
 *.env
