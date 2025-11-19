@@ -1560,6 +1560,7 @@ async def create_relatorio(
             marca=relatorio_data.equipamento_marca,
             modelo=relatorio_data.equipamento_modelo,
             numero_serie=relatorio_data.equipamento_numero_serie,
+            ano_fabrico=relatorio_data.equipamento_ano_fabrico,
             last_used=datetime.now(timezone.utc)
         )
         
