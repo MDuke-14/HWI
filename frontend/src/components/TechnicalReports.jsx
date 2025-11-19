@@ -859,6 +859,29 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
               <h3 className="text-blue-400 font-semibold mb-4">Equipamento</h3>
               
+              {/* Dropdown de equipamentos existentes */}
+              {relatorioFormData.cliente_id && equipamentos.length > 0 && (
+                <div className="mb-4">
+                  <Label htmlFor="equipamento_select" className="text-gray-300">
+                    Selecionar Equipamento Existente
+                  </Label>
+                  <select
+                    id="equipamento_select"
+                    value={equipamentoSelecionado}
+                    onChange={(e) => handleEquipamentoChange(e.target.value)}
+                    className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Selecione ou crie novo...</option>
+                    {equipamentos.map(eq => (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.marca} - {eq.modelo} {eq.numero_serie ? `(#${eq.numero_serie})` : ''}
+                      </option>
+                    ))}
+                    <option value="novo">➕ Novo Equipamento</option>
+                  </select>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="equipamento_tipologia" className="text-gray-300">
@@ -871,6 +894,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     placeholder="Ex: Dobradora, Secadora"
                     required
+                    disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
 
@@ -883,6 +907,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     value={relatorioFormData.equipamento_marca}
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_marca: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
+                    disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                     placeholder="Ex: Kannegiesser"
                     required
                   />
