@@ -1490,7 +1490,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   className="flex-1 bg-red-500 hover:bg-red-600"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar Relatório
+                  Eliminar OT
                 </Button>
               </div>
             </div>
