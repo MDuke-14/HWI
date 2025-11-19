@@ -1903,6 +1903,89 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Relatórios do Cliente Modal */}
+      <Dialog open={showClienteRelatoriosModal} onOpenChange={setShowClienteRelatoriosModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <FileText className="w-5 h-5 text-purple-400" />
+              Relatórios do Cliente
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {clienteRelatorios.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhum relatório encontrado para este cliente</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-gray-400 text-sm mb-4">
+                  Total: {clienteRelatorios.length} relatório(s)
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {clienteRelatorios.map((relatorio) => (
+                    <div
+                      key={relatorio.id}
+                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-purple-500 transition cursor-pointer"
+                      onClick={() => {
+                        setShowClienteRelatoriosModal(false);
+                        openViewRelatorioModal(relatorio);
+                      }}
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-purple-400 font-bold text-lg">
+                              #{relatorio.numero_assistencia}
+                            </span>
+                            <span className={`text-xs px-2 py-1 rounded ${getStatusColor(relatorio.status)}`}>
+                              {getStatusLabel(relatorio.status)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400">
+                            {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Local */}
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
+                      </div>
+
+                      {/* Equipamento */}
+                      <div className="mb-3 pb-3 border-b border-gray-700">
+                        <p className="text-xs text-gray-500 mb-1">Equipamento</p>
+                        <p className="text-sm text-gray-300">
+                          {relatorio.equipamento_marca} - {relatorio.equipamento_tipologia}
+                        </p>
+                      </div>
+
+                      {/* Download Button */}
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`${API}/relatorios-tecnicos/${relatorio.id}/pdf`, '_blank');
+                        }}
+                        size="sm"
+                        className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Download PDF
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
