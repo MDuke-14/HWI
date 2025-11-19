@@ -2713,165 +2713,77 @@ const TechnicalReports = ({ user, onLogout }) => {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4">
-            {/* Tabs para escolher tipo de assinatura */}
-            <div className="flex gap-2 mb-6">
+          <div className="mt-4 space-y-4">
+            <div>
+              <Label className="text-gray-300 mb-2 block">Desenhe sua assinatura abaixo:</Label>
+              <div className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white">
+                <SignatureCanvas
+                  ref={(ref) => setAssinaturaCanvas(ref)}
+                  canvasProps={{
+                    className: 'w-full h-64',
+                    style: { width: '100%', height: '256px' }
+                  }}
+                  backgroundColor="white"
+                />
+              </div>
               <Button
-                onClick={() => setAssinaturaTipo('digital')}
-                className={`flex-1 ${assinaturaTipo === 'digital' ? 'bg-blue-600' : 'bg-gray-700'}`}
+                onClick={clearCanvas}
+                variant="outline"
+                size="sm"
+                className="mt-2 border-gray-600"
               >
-                Assinatura Digital
-              </Button>
-              <Button
-                onClick={() => setAssinaturaTipo('manual')}
-                className={`flex-1 ${assinaturaTipo === 'manual' ? 'bg-blue-600' : 'bg-gray-700'}`}
-              >
-                Assinatura Manual
+                Limpar
               </Button>
             </div>
 
-            {/* Assinatura Digital */}
-            {assinaturaTipo === 'digital' && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-gray-300 mb-2 block">Desenhe sua assinatura abaixo:</Label>
-                  <div className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white">
-                    <SignatureCanvas
-                      ref={(ref) => setAssinaturaCanvas(ref)}
-                      canvasProps={{
-                        className: 'w-full h-64',
-                        style: { width: '100%', height: '256px' }
-                      }}
-                      backgroundColor="white"
-                    />
-                  </div>
-                  <Button
-                    onClick={clearCanvas}
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 border-gray-600"
-                  >
-                    Limpar
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primeiro_nome_digital" className="text-gray-300">
-                      Primeiro Nome *
-                    </Label>
-                    <Input
-                      id="primeiro_nome_digital"
-                      type="text"
-                      value={assinaturaNome.primeiro}
-                      onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
-                      className="bg-[#0f0f0f] border-gray-700 text-white"
-                      placeholder="Ex: João"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ultimo_nome_digital" className="text-gray-300">
-                      Último Nome *
-                    </Label>
-                    <Input
-                      id="ultimo_nome_digital"
-                      type="text"
-                      value={assinaturaNome.ultimo}
-                      onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
-                      className="bg-[#0f0f0f] border-gray-700 text-white"
-                      placeholder="Ex: Silva"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    onClick={() => setShowAssinaturaModal(false)}
-                    variant="outline"
-                    className="flex-1 border-gray-600"
-                    disabled={uploadingAssinatura}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleSaveAssinaturaDigital}
-                    className="flex-1 bg-green-500 hover:bg-green-600"
-                    disabled={uploadingAssinatura}
-                  >
-                    {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura'}
-                  </Button>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="primeiro_nome_digital" className="text-gray-300">
+                  Primeiro Nome *
+                </Label>
+                <Input
+                  id="primeiro_nome_digital"
+                  type="text"
+                  value={assinaturaNome.primeiro}
+                  onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: João"
+                  required
+                />
               </div>
-            )}
-
-            {/* Assinatura Manual */}
-            {assinaturaTipo === 'manual' && (
-              <div className="space-y-4">
-                <p className="text-gray-400 text-sm mb-4">
-                  Digite o primeiro e último nome da pessoa que está assinando a OT:
-                </p>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primeiro_nome_manual" className="text-gray-300">
-                      Primeiro Nome *
-                    </Label>
-                    <Input
-                      id="primeiro_nome_manual"
-                      type="text"
-                      value={assinaturaNome.primeiro}
-                      onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
-                      className="bg-[#0f0f0f] border-gray-700 text-white"
-                      placeholder="Ex: João"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ultimo_nome_manual" className="text-gray-300">
-                      Último Nome *
-                    </Label>
-                    <Input
-                      id="ultimo_nome_manual"
-                      type="text"
-                      value={assinaturaNome.ultimo}
-                      onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
-                      className="bg-[#0f0f0f] border-gray-700 text-white"
-                      placeholder="Ex: Silva"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {assinaturaNome.primeiro && assinaturaNome.ultimo && (
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                    <p className="text-xs text-gray-400 mb-2">Pré-visualização:</p>
-                    <p className="text-2xl text-white font-signature text-center py-4">
-                      {assinaturaNome.primeiro} {assinaturaNome.ultimo}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    onClick={() => setShowAssinaturaModal(false)}
-                    variant="outline"
-                    className="flex-1 border-gray-600"
-                    disabled={uploadingAssinatura}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleSaveAssinaturaManual}
-                    className="flex-1 bg-green-500 hover:bg-green-600"
-                    disabled={uploadingAssinatura}
-                  >
-                    {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura'}
-                  </Button>
-                </div>
+              <div>
+                <Label htmlFor="ultimo_nome_digital" className="text-gray-300">
+                  Último Nome *
+                </Label>
+                <Input
+                  id="ultimo_nome_digital"
+                  type="text"
+                  value={assinaturaNome.ultimo}
+                  onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: Silva"
+                  required
+                />
               </div>
-            )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => setShowAssinaturaModal(false)}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={uploadingAssinatura}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveAssinaturaDigital}
+                className="flex-1 bg-green-500 hover:bg-green-600"
+                disabled={uploadingAssinatura}
+              >
+                {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
