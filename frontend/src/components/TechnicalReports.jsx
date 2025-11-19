@@ -68,6 +68,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAddTecnicoModal, setShowAddTecnicoModal] = useState(false);
   const [showEditTecnicoModal, setShowEditTecnicoModal] = useState(false);
   const [selectedTecnico, setSelectedTecnico] = useState(null);
+  const [usuarios, setUsuarios] = useState([]);
   
   // Intervenções
   const [intervencoes, setIntervencoes] = useState([]);
