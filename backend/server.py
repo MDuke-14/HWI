@@ -442,37 +442,35 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
 
 def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
     """
-    Calculate regular, overtime, and special hours based on rules:
-    - Regular hours: First 8h on regular days (Monday-Friday, non-holidays)
-    - Overtime hours: Hours above 8h on regular days
-    - Special hours: All hours on weekends/holidays (Saturday, Sunday, holidays)
+    FUNÇÃO DEPRECATED - Mantida para compatibilidade
+    Use calcular_breakdown_completo() para novos códigos
     
-    Note: Seconds are DISCARDED (truncated, not rounded)
+    Esta função ainda é usada em alguns lugares mas será removida
     """
-    # Truncar segundos (não arredondar)
-    # Convertemos para minutos e descartamos a fração (floor)
-    total_minutes = math.floor(total_hours * 60)  # Trunca para minutos (descarta segundos)
-    total_hours = total_minutes / 60  # Converte de volta para horas
+    # Truncar segundos
+    total_minutes = math.floor(total_hours * 60)
+    total_hours = total_minutes / 60
     
     if is_special_day:
-        # All hours on weekends/holidays are special hours
         return {
             "regular_hours": round(0.0, 2),
             "overtime_hours": round(0.0, 2),
+            "saturday_hours": round(0.0, 2),
             "special_hours": round(total_hours, 2)
         }
     else:
-        # Regular day: first 8h are regular, rest is overtime
         if total_hours <= 8.0:
             return {
                 "regular_hours": round(total_hours, 2),
                 "overtime_hours": round(0.0, 2),
+                "saturday_hours": round(0.0, 2),
                 "special_hours": round(0.0, 2)
             }
         else:
             return {
                 "regular_hours": round(8.0, 2),
                 "overtime_hours": round(total_hours - 8.0, 2),
+                "saturday_hours": round(0.0, 2),
                 "special_hours": round(0.0, 2)
             }
 
