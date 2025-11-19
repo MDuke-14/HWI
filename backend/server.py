@@ -2818,7 +2818,7 @@ async def download_monthly_pdf_report(
     # Calculate vacation days used up to the end date of this report
     vacation_days_used = 0
     all_vacation_requests = await db.vacation_requests.find({
-        "user_id": current_user["sub"],
+        "user_id": target_user_id,
         "status": "approved"
     }, {"_id": 0}).to_list(1000)
     
