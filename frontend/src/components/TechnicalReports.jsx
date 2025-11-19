@@ -539,6 +539,16 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchUsuarios = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      setUsuarios(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      setUsuarios([]);
+    }
+  };
+
   const fetchIntervencoesRelatorio = async (relatorioId) => {
     try {
       const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/intervencoes`);
