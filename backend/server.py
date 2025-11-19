@@ -2722,7 +2722,11 @@ async def end_time_entry(
         
         # Handle final day
         final_seconds = (end_time - current_start).total_seconds()
-        final_hours = round(final_seconds / 3600, 2)
+        
+        # TRUNCAR segundos (não arredondar)
+        final_minutes = math.floor(final_seconds / 60)
+        final_hours = final_minutes / 60
+        final_hours = round(final_hours, 2)
         
         final_date = end_time.date()
         is_ot, ot_reason = is_overtime_day(final_date)
