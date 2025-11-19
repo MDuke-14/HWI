@@ -796,7 +796,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <select
                   id="cliente_id"
                   value={relatorioFormData.cliente_id}
-                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, cliente_id: e.target.value })}
+                  onChange={(e) => {
+                    const clienteId = e.target.value;
+                    setRelatorioFormData({ ...relatorioFormData, cliente_id: clienteId });
+                    if (clienteId) {
+                      fetchEquipamentos(clienteId);
+                    } else {
+                      setEquipamentos([]);
+                    }
+                    setEquipamentoSelecionado('');
+                    setModoNovoEquipamento(false);
+                  }}
                   className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
                   required
                 >
