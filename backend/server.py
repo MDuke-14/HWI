@@ -449,7 +449,6 @@ def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
     """
     # Truncar segundos (não arredondar)
     # Convertemos para minutos e descartamos a fração (floor)
-    import math
     total_minutes = math.floor(total_hours * 60)  # Trunca para minutos (descarta segundos)
     total_hours = total_minutes / 60  # Converte de volta para horas
     
