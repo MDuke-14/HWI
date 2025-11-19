@@ -371,8 +371,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const openViewRelatorioModal = async (relatorio) => {
     setSelectedRelatorio(relatorio);
     setShowViewRelatorioModal(true);
-    // Buscar técnicos do relatório
+    // Buscar técnicos e intervenções do relatório
     await fetchTecnicosRelatorio(relatorio.id);
+    await fetchIntervencoesRelatorio(relatorio.id);
   };
 
   const openEditRelatorioModal = async (relatorio, e) => {
