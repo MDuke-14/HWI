@@ -271,7 +271,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
     try {
       await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}`, relatorioFormData);
-      toast.success('Relatório atualizado com sucesso!');
+      toast.success('OT atualizada com sucesso!');
       setShowEditRelatorioModal(false);
       setSelectedRelatorio(null);
       fetchRelatorios();
