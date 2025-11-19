@@ -2029,7 +2029,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
-              <Car className="w-5 h-5 text-amber-400" />
+              <Settings className="w-5 h-5 text-amber-400" />
               Equipamentos do Cliente
             </DialogTitle>
           </DialogHeader>
@@ -2037,7 +2037,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           <div className="mt-4">
             {clienteEquipamentos.length === 0 ? (
               <div className="text-center py-12">
-                <Car className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <Settings className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400 text-lg">Nenhum equipamento cadastrado para este cliente</p>
               </div>
             ) : (
