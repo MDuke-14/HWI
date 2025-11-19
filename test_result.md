@@ -917,6 +917,48 @@ frontend:
         agent: "testing"
         comment: |
           ✅ MIDNIGHT CROSSING FUNCTIONALITY COMPREHENSIVE TESTING COMPLETE
+      - working: "NA"
+        agent: "main"
+        comment: |
+          🐛 BUG FIX #3: CAMPO motivo_assistencia OBRIGATÓRIO
+          
+          User Report: Erro "motivo_assistencia Field Required" ao criar OT, mesmo com campo preenchido
+          
+          Root Cause:
+          - Backend exige motivo_assistencia como campo obrigatório no RelatorioTecnicoCreate
+          - Frontend enviava relatorioFormData sem incluir motivo_assistencia
+          - Campo estava preenchido nas intervenções, mas não no objeto principal
+          
+          Solution:
+          - Adicionado motivo_assistencia ao objeto enviado ao backend
+          - Usa motivo_assistencia da primeira intervenção válida
+          - Código: relatorioData = {...relatorioFormData, motivo_assistencia: intervencoesValidas[0].motivo_assistencia}
+          
+          Status: ✅ Corrigido - Frontend recompilado com sucesso
+      - working: "NA"
+        agent: "main"
+        comment: |
+          🔧 AJUSTE: STATUS PADRÃO DA OT ALTERADO
+          
+          User Request: Status padrão ao criar OT deve ser "Em Execução" e não "Orçamento"
+          
+          Backend Changes (server.py):
+          - Linha 121: Alterado status padrão de "orcamento" para "em_execucao"
+          - Classe RelatorioTecnico: status: str = "em_execucao"
+          
+          Status Disponíveis:
+          - orcamento
+          - em_execucao (NOVO PADRÃO)
+          - concluido
+          - facturado
+          
+          Status: ✅ Alterado - Backend reiniciado e rodando
+          
+          NEEDS TESTING:
+          1. Criar uma nova OT
+          2. Verificar que o status inicial é "Em Execução"
+          3. Verificar que é possível mudar o status manualmente se necessário
+
           
           Tested the automatic splitting of time entries that cross midnight (22:00 → 02:00):
           
