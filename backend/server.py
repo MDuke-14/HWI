@@ -4291,12 +4291,14 @@ async def recalculate_user_hours(
                     "old_values": {
                         "regular": round(old_regular, 2),
                         "overtime": round(old_overtime, 2),
+                        "saturday": round(old_saturday, 2),
                         "special": round(old_special, 2),
                         "total": round(old_total, 2)
                     },
                     "new_values": {
                         "regular": new_regular,
                         "overtime": new_overtime,
+                        "saturday": new_saturday,
                         "special": new_special,
                         "total": new_total
                     }
@@ -4305,6 +4307,7 @@ async def recalculate_user_hours(
             # Somar aos totais (usar valores atualizados)
             stats["totals"]["regular_hours"] += new_regular
             stats["totals"]["overtime_hours"] += new_overtime
+            stats["totals"]["saturday_hours"] += new_saturday
             stats["totals"]["special_hours"] += new_special
             stats["totals"]["total_hours"] += new_total
             
