@@ -891,10 +891,23 @@ const TechnicalReports = ({ user, onLogout }) => {
       <Dialog open={showViewRelatorioModal} onOpenChange={setShowViewRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-blue-400" />
-              OT #{selectedRelatorio?.numero_assistencia}
-            </DialogTitle>
+            <div className="flex items-center justify-between w-full pr-8">
+              <DialogTitle className="flex items-center gap-2 text-white">
+                <FileText className="w-5 h-5 text-blue-400" />
+                OT #{selectedRelatorio?.numero_assistencia}
+              </DialogTitle>
+              <Button
+                onClick={() => {
+                  setShowViewRelatorioModal(false);
+                  openEditRelatorioModal(selectedRelatorio);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                size="sm"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Editar OT
+              </Button>
+            </div>
           </DialogHeader>
 
           {selectedRelatorio && (
