@@ -2276,7 +2276,7 @@ async def delete_assinatura(
 @api_router.post("/relatorios-tecnicos/{relatorio_id}/enviar-pdf")
 async def enviar_pdf_ot(
     relatorio_id: str,
-    emails: List[str],
+    request: EnviarEmailRequest,
     current_user: dict = Depends(get_current_user)
 ):
     """Gerar PDF da OT e enviar por email"""
@@ -2326,7 +2326,7 @@ async def enviar_pdf_ot(
         smtp_from = os.environ.get('SMTP_FROM', smtp_user)
         
         # Validar emails
-        if not emails or len(emails) == 0:
+        if not request.emails or len(request.emails) == 0:
             raise HTTPException(status_code=400, detail="Pelo menos um email deve ser fornecido")
         
         # Criar mensagem de email
@@ -2353,7 +2353,7 @@ async def enviar_pdf_ot(
         emails_enviados = []
         emails_falhados = []
         
-        for email_dest in emails:
+        for email_dest in request.emails:
             try:
                 message = MIMEMultipart()
                 message['From'] = smtp_from
