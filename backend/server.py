@@ -34,12 +34,15 @@ from notification_system import notification_loop, NotificationSystem
 from hours_calculator import calcular_breakdown_completo
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(ROOT_DIR / '.env', override=False)
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://mongodb:27017')
+db_name = os.environ.get('DB_NAME', 'emergent')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[db_name]
+
+logging.info(f"Conectando ao MongoDB: {mongo_url[:30]}... | Database: {db_name}")
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
