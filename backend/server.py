@@ -4190,57 +4190,95 @@ async def recalculate_user_hours(
             stats["entries_checked"] += 1
             
             if entry.get("status") != "completed":
+                # Ignorar entradas não completadas
                 continue
             
-            # Verificar se tem breakdown de horas
-            if not entry.get("regular_hours") and not entry.get("overtime_hours") and not entry.get("special_hours"):
-                # Precisa recalcular
-                if entry.get("entries"):
-                    total_hours = 0
-                    for e in entry["entries"]:
-                        if e.get("start_time") and e.get("end_time"):
-                            start = datetime.fromisoformat(e["start_time"])
-                            end = datetime.fromisoformat(e["end_time"])
-                            hours = (end - start).total_seconds() / 3600
-                            total_hours += hours
-                    
-                    # Calcular breakdown
-                    is_special = entry.get("is_overtime_day", False)
-                    from holidays import is_overtime_day
-                    date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
-                    is_ot, reason = is_overtime_day(date_obj)
-                    
-                    hours_breakdown = calculate_hours_breakdown(total_hours, is_ot)
+            # SEMPRE recalcular para garantir que está correto
+            if entry.get("entries"):
+                total_seconds = 0
+                
+                for e in entry["entries"]:
+                    if e.get("start_time") and e.get("end_time"):
+                        start = datetime.fromisoformat(e["start_time"])
+                        end = datetime.fromisoformat(e["end_time"])
+                        total_seconds += (end - start).total_seconds()
+                
+                # Converter para horas, arredondando para minutos (ignorar segundos)
+                total_minutes = round(total_seconds / 60)  # Arredondar para minuto mais próximo
+                total_hours = total_minutes / 60  # Converter de volta para horas
+                
+                # Verificar se é dia especial (fim de semana ou feriado)
+                from holidays import is_overtime_day
+                date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
+                is_special, reason = is_overtime_day(date_obj)
+                
+                # Calcular breakdown usando a nova lógica
+                hours_breakdown = calculate_hours_breakdown(total_hours, is_special)
+                
+                # Verificar se os valores mudaram
+                old_regular = entry.get("regular_hours", 0)
+                old_overtime = entry.get("overtime_hours", 0)
+                old_special = entry.get("special_hours", 0)
+                old_total = entry.get("total_hours", 0)
+                
+                new_regular = hours_breakdown["regular_hours"]
+                new_overtime = hours_breakdown["overtime_hours"]
+                new_special = hours_breakdown["special_hours"]
+                new_total = round(total_hours, 2)
+                
+                # Se houver diferença, atualizar
+                if (abs(old_regular - new_regular) > 0.01 or 
+                    abs(old_overtime - new_overtime) > 0.01 or 
+                    abs(old_special - new_special) > 0.01 or
+                    abs(old_total - new_total) > 0.01):
                     
                     # Atualizar entrada
                     await db.time_entries.update_one(
                         {"user_id": user_id, "date": entry["date"]},
                         {"$set": {
-                            "regular_hours": hours_breakdown["regular"],
-                            "overtime_hours": hours_breakdown["overtime"],
-                            "special_hours": hours_breakdown["special"],
-                            "total_hours": total_hours,
-                            "is_overtime_day": is_ot,
-                            "overtime_reason": reason if is_ot else None
+                            "regular_hours": new_regular,
+                            "overtime_hours": new_overtime,
+                            "special_hours": new_special,
+                            "total_hours": new_total,
+                            "is_overtime_day": is_special,
+                            "overtime_reason": reason if is_special else None
                         }}
                     )
                     
                     stats["entries_updated"] += 1
                     stats["issues_found"].append({
                         "date": entry["date"],
-                        "issue": "Horas não calculadas",
-                        "action": "Recalculadas",
-                        "hours": total_hours
+                        "issue": f"Horas incorretas: Antes {old_total}h, Depois {new_total}h",
+                        "action": "Recalculado",
+                        "old_values": {
+                            "regular": old_regular,
+                            "overtime": old_overtime,
+                            "special": old_special,
+                            "total": old_total
+                        },
+                        "new_values": {
+                            "regular": new_regular,
+                            "overtime": new_overtime,
+                            "special": new_special,
+                            "total": new_total
+                        }
                     })
-            
-            # Somar horas
-            stats["totals"]["regular_hours"] += entry.get("regular_hours", 0)
-            stats["totals"]["overtime_hours"] += entry.get("overtime_hours", 0)
-            stats["totals"]["special_hours"] += entry.get("special_hours", 0)
-            stats["totals"]["total_hours"] += entry.get("total_hours", 0)
-            
-            if entry.get("total_hours", 0) > 0:
-                stats["totals"]["days_worked"] += 1
+                
+                # Somar aos totais (usar valores atualizados)
+                stats["totals"]["regular_hours"] += new_regular
+                stats["totals"]["overtime_hours"] += new_overtime
+                stats["totals"]["special_hours"] += new_special
+                stats["totals"]["total_hours"] += new_total
+                
+                if new_total > 0:
+                    stats["totals"]["days_worked"] += 1
+            else:
+                # Entrada sem sub-entries (formato antigo?)
+                stats["issues_found"].append({
+                    "date": entry["date"],
+                    "issue": "Entrada sem detalhes de horários",
+                    "action": "Ignorada"
+                })
         
         # Arredondar totais
         stats["totals"]["regular_hours"] = round(stats["totals"]["regular_hours"], 2)
