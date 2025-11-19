@@ -1908,6 +1908,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 )}
               </div>
+
+              {/* Botão para Ver Fotografias */}
+              <div className="flex justify-center pt-4">
+                <Button
+                  onClick={() => openFotografiasModal()}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3"
+                >
+                  <ImageIcon className="w-5 h-5 mr-2" />
+                  Ver Componentes Adicionais ({fotografias.length} foto{fotografias.length !== 1 ? 's' : ''})
+                </Button>
+              </div>
+
             </div>
           )}
         </DialogContent>
