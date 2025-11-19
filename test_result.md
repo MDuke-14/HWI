@@ -961,8 +961,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Technical Reports - Technician Management"
-    - "Technical Reports - Technician Management UI"
+    - "Ano de Fabrico - Flexible Format Support"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
