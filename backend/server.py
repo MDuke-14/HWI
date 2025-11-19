@@ -1823,6 +1823,102 @@ async def delete_tecnico_relatorio(
     
     return {"message": "Técnico removido com sucesso"}
 
+# ============ Intervenções Routes ============
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/intervencoes")
+async def get_intervencoes(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar intervenções de um relatório"""
+    intervencoes = await db.intervencoes_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+    
+    return intervencoes
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/intervencoes", response_model=IntervencaoRelatorio)
+async def add_intervencao(
+    relatorio_id: str,
+    intervencao: IntervencaoRelatorio,
+    current_user: dict = Depends(get_current_user)
+):
+    """Adicionar intervenção a um relatório"""
+    # Verificar se relatório existe
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Garantir que relatorio_id está correto
+    intervencao.relatorio_id = relatorio_id
+    
+    # Converter data para string ISO
+    intervencao_dict = intervencao.dict()
+    intervencao_dict["data_intervencao"] = intervencao_dict["data_intervencao"].isoformat()
+    intervencao_dict["created_at"] = intervencao_dict["created_at"].isoformat()
+    
+    await db.intervencoes_relatorio.insert_one(intervencao_dict)
+    
+    logging.info(f"Intervenção adicionada ao relatório {relatorio_id}")
+    
+    return intervencao
+
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/intervencoes/{intervencao_id}", response_model=IntervencaoRelatorio)
+async def update_intervencao(
+    relatorio_id: str,
+    intervencao_id: str,
+    intervencao_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar intervenção"""
+    existing = await db.intervencoes_relatorio.find_one({
+        "id": intervencao_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Intervenção não encontrada")
+    
+    # Remover campos que não devem ser atualizados
+    intervencao_data.pop("id", None)
+    intervencao_data.pop("relatorio_id", None)
+    intervencao_data.pop("created_at", None)
+    
+    # Converter data se for string
+    if "data_intervencao" in intervencao_data and isinstance(intervencao_data["data_intervencao"], str):
+        intervencao_data["data_intervencao"] = intervencao_data["data_intervencao"]
+    
+    await db.intervencoes_relatorio.update_one(
+        {"id": intervencao_id},
+        {"$set": intervencao_data}
+    )
+    
+    updated = await db.intervencoes_relatorio.find_one({"id": intervencao_id}, {"_id": 0})
+    
+    logging.info(f"Intervenção {intervencao_id} atualizada no relatório {relatorio_id}")
+    
+    return updated
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/intervencoes/{intervencao_id}")
+async def delete_intervencao(
+    relatorio_id: str,
+    intervencao_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover intervenção de um relatório"""
+    result = await db.intervencoes_relatorio.delete_one({
+        "id": intervencao_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Intervenção não encontrada")
+    
+    logging.info(f"Intervenção {intervencao_id} removida do relatório {relatorio_id}")
+    
+    return {"message": "Intervenção removida com sucesso"}
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
