@@ -26,6 +26,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [verifyingUser, setVerifyingUser] = useState(null);
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifying, setVerifying] = useState(false);
+  const [verifyMonth, setVerifyMonth] = useState(new Date().getMonth() + 1);
+  const [verifyYear, setVerifyYear] = useState(new Date().getFullYear());
 
   const [createForm, setCreateForm] = useState({
     username: '',
