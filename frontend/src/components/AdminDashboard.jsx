@@ -844,12 +844,45 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <div className="flex items-center gap-3">
                           <div className="text-green-400 font-bold text-2xl">{u.total_hours.toFixed(2)}h</div>
                           <Button
-                            onClick={() => {
-                              const now = new Date();
-                              const month = now.getMonth() + 1;
-                              const year = now.getFullYear();
-                              const url = `${API}/time-entries/reports/monthly-pdf?user_id=${u.user_id}&month=${month}&year=${year}`;
-                              window.open(url, '_blank');
+                            onClick={async () => {
+                              try {
+                                const now = new Date();
+                                const month = now.getMonth() + 1;
+                                const year = now.getFullYear();
+                                
+                                const response = await axios.get(
+                                  `${API}/time-entries/reports/monthly-pdf?user_id=${u.user_id}&month=${month}&year=${year}`,
+                                  {
+                                    responseType: 'blob'
+                                  }
+                                );
+                                
+                                // Criar URL do blob e fazer download
+                                const blob = new Blob([response.data], { type: 'application/pdf' });
+                                const downloadUrl = window.URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = downloadUrl;
+                                
+                                // Extrair nome do arquivo do header ou usar padrão
+                                const contentDisposition = response.headers['content-disposition'];
+                                let filename = `Relatorio_${u.username}_${month}_${year}.pdf`;
+                                if (contentDisposition) {
+                                  const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                                  if (filenameMatch) {
+                                    filename = filenameMatch[1];
+                                  }
+                                }
+                                
+                                link.download = filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(downloadUrl);
+                                
+                                toast.success('PDF baixado com sucesso!');
+                              } catch (error) {
+                                toast.error('Erro ao baixar PDF: ' + (error.response?.data?.detail || error.message));
+                              }
                             }}
                             className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
                             size="sm"
