@@ -132,6 +132,44 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchEquipamentos = async (clienteId) => {
+    try {
+      const response = await axios.get(`${API}/equipamentos?cliente_id=${clienteId}`);
+      setEquipamentos(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar equipamentos:', error);
+      setEquipamentos([]);
+    }
+  };
+
+  const handleEquipamentoChange = (equipamentoId) => {
+    setEquipamentoSelecionado(equipamentoId);
+    
+    if (equipamentoId === 'novo') {
+      setModoNovoEquipamento(true);
+      // Limpar campos de equipamento
+      setRelatorioFormData({
+        ...relatorioFormData,
+        equipamento_tipologia: '',
+        equipamento_marca: '',
+        equipamento_modelo: '',
+        equipamento_numero_serie: ''
+      });
+    } else if (equipamentoId) {
+      setModoNovoEquipamento(false);
+      const equipamento = equipamentos.find(e => e.id === equipamentoId);
+      if (equipamento) {
+        setRelatorioFormData({
+          ...relatorioFormData,
+          equipamento_tipologia: equipamento.tipologia,
+          equipamento_marca: equipamento.marca,
+          equipamento_modelo: equipamento.modelo,
+          equipamento_numero_serie: equipamento.numero_serie || ''
+        });
+      }
+    }
+  };
+
   const handleAddCliente = async (e) => {
     e.preventDefault();
     try {
