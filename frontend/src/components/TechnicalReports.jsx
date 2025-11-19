@@ -247,7 +247,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       data_servico: relatorio.data_servico.split('T')[0], // Formato YYYY-MM-DD
       local_intervencao: relatorio.local_intervencao,
       pedido_por: relatorio.pedido_por,
-      contacto_pedido: relatorio.contacto_pedido || '',
       equipamento_tipologia: relatorio.equipamento_tipologia,
       equipamento_marca: relatorio.equipamento_marca,
       equipamento_modelo: relatorio.equipamento_modelo,
