@@ -31,6 +31,7 @@ from import_excel import parse_excel_timesheet
 from import_pdf import parse_pdf_timesheet
 from ot_pdf_report import generate_ot_pdf
 from notification_system import notification_loop, NotificationSystem
+from hours_calculator import calcular_breakdown_completo
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
