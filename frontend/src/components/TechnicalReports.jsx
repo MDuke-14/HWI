@@ -3042,6 +3042,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         )}
                         
+                        {equipamento.ano_fabrico && (
+                          <div>
+                            <span className="text-xs text-gray-500">Ano de Fabrico:</span>
+                            <p className="text-sm text-gray-300">{equipamento.ano_fabrico}</p>
+                          </div>
+                        )}
+                        
                         {equipamento.last_used && (
                           <div>
                             <span className="text-xs text-gray-500">Último uso:</span>
