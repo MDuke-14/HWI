@@ -881,11 +881,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     console.log('handleDeleteFoto chamado com ID:', fotoId);
     console.log('selectedRelatorio:', selectedRelatorio);
     
-    if (!window.confirm('Tem certeza que deseja remover esta fotografia?')) {
-      console.log('Usuário cancelou a remoção');
-      return;
-    }
-    
     try {
       console.log('Tentando deletar foto...');
       const url = `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${fotoId}`;
