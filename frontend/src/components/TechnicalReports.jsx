@@ -1401,6 +1401,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <thead>
                           <tr className="border-b border-gray-700">
                             <th className="text-left py-2 px-3 text-gray-400 text-sm font-medium">Técnico</th>
+                            <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Data</th>
                             <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Horas</th>
                             <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Deslocação (km)</th>
                             <th className="text-center py-2 px-3 text-gray-400 text-sm font-medium">Código</th>
@@ -1411,6 +1412,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                           {tecnicos.map((tec) => (
                             <tr key={tec.id} className="border-b border-gray-700/50">
                               <td className="py-3 px-3 text-white">{tec.tecnico_nome}</td>
+                              <td className="py-3 px-3 text-center text-gray-300">
+                                {tec.data_trabalho ? new Date(tec.data_trabalho).toLocaleDateString('pt-PT') : '-'}
+                              </td>
                               <td className="py-3 px-3 text-center text-gray-300">{tec.horas_cliente}h</td>
                               <td className="py-3 px-3 text-center text-gray-300">
                                 {tec.kms_deslocacao} km 
