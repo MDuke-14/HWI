@@ -53,11 +53,11 @@ const Navigation = ({ user, onLogout, activePage }) => {
                 <>
                   {/* Overlay to close menu when clicking outside */}
                   <div 
-                    className="fixed inset-0 z-[100]" 
+                    className="fixed inset-0 z-[200]" 
                     onClick={() => setIsMenuOpen(false)}
                   />
                   
-                  <div className="absolute left-0 mt-2 w-56 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-2xl z-[110] overflow-hidden">
+                  <div className="absolute left-0 mt-2 w-56 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-2xl z-[300] overflow-hidden">
                     {navItems.map((item) => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path;
