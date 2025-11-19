@@ -1348,23 +1348,159 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 )}
               </div>
-
-              {/* Relatório de Assistência */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <h4 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Relatório de Assistência
-                </h4>
-                {selectedRelatorio.relatorio_assistencia ? (
-                  <div className="text-gray-300 whitespace-pre-wrap bg-[#1a1a1a] p-3 rounded border border-gray-700">
-                    {selectedRelatorio.relatorio_assistencia}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 italic text-sm">Nenhum relatório registado</p>
-                )}
-              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Intervenção Modal */}
+      <Dialog open={showAddIntervencaoModal} onOpenChange={setShowAddIntervencaoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Plus className="w-5 h-5 text-green-400" />
+              Adicionar Intervenção
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleAddIntervencao} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="data_intervencao" className="text-gray-300">
+                Data da Intervenção *
+              </Label>
+              <Input
+                id="data_intervencao"
+                type="date"
+                value={intervencaoFormData.data_intervencao}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, data_intervencao: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="motivo_assistencia" className="text-gray-300">
+                Motivo da Assistência *
+              </Label>
+              <textarea
+                id="motivo_assistencia"
+                value={intervencaoFormData.motivo_assistencia}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, motivo_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
+                placeholder="Descreva o motivo da assistência..."
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="relatorio_assistencia" className="text-gray-300">
+                Relatório de Assistência
+              </Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Descreva o trabalho realizado durante esta intervenção
+              </p>
+              <textarea
+                id="relatorio_assistencia"
+                value={intervencaoFormData.relatorio_assistencia}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, relatorio_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[150px]"
+                placeholder="Ex: Substituição do motor principal, limpeza e lubrificação..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowAddIntervencaoModal(false);
+                  setIntervencaoFormData({
+                    data_intervencao: new Date().toISOString().split('T')[0],
+                    motivo_assistencia: '',
+                    relatorio_assistencia: ''
+                  });
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="flex-1 bg-green-500 hover:bg-green-600">
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Intervenção Modal */}
+      <Dialog open={showEditIntervencaoModal} onOpenChange={setShowEditIntervencaoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Intervenção
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleEditIntervencao} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="edit_data_intervencao" className="text-gray-300">
+                Data da Intervenção *
+              </Label>
+              <Input
+                id="edit_data_intervencao"
+                type="date"
+                value={intervencaoFormData.data_intervencao}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, data_intervencao: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit_motivo_assistencia_int" className="text-gray-300">
+                Motivo da Assistência *
+              </Label>
+              <textarea
+                id="edit_motivo_assistencia_int"
+                value={intervencaoFormData.motivo_assistencia}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, motivo_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit_relatorio_assistencia_int" className="text-gray-300">
+                Relatório de Assistência
+              </Label>
+              <textarea
+                id="edit_relatorio_assistencia_int"
+                value={intervencaoFormData.relatorio_assistencia}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, relatorio_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[150px]"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowEditIntervencaoModal(false);
+                  setSelectedIntervencao(null);
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600">
+                <Edit className="w-4 h-4 mr-2" />
+                Guardar
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
