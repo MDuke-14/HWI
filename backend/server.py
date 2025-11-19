@@ -4513,7 +4513,12 @@ async def create_manual_time_entry(
             else:
                 # Single day entry (no midnight crossing)
                 total_seconds = (end_datetime - start_datetime).total_seconds()
-                entry_hours = round(total_seconds / 3600, 2)
+                
+                # TRUNCAR segundos
+                entry_minutes = math.floor(total_seconds / 60)
+                entry_hours = entry_minutes / 60
+                entry_hours = round(entry_hours, 2)
+                
                 total_day_hours += entry_hours
                 
                 # Create entry
