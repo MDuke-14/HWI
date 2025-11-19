@@ -275,9 +275,9 @@ const Dashboard = ({ user, onLogout }) => {
                 </Button>
               </div>
             ) : entry.status === 'active' ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="end-observations" className="text-gray-300 mb-2 block">
+                  <Label htmlFor="end-observations" className="text-gray-300 mb-1.5 block text-sm">
                     Observações ao Finalizar (opcional)
                   </Label>
                   <Textarea
@@ -286,7 +286,7 @@ const Dashboard = ({ user, onLogout }) => {
                     value={endObservations}
                     onChange={(e) => setEndObservations(e.target.value)}
                     placeholder="Ex: Trabalho concluído, reunião realizada..."
-                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[100px]"
+                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[70px] text-sm"
                   />
                 </div>
                 <Button
