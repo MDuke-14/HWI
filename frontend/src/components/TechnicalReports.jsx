@@ -1606,7 +1606,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     Mão de Obra / Deslocação
                   </h4>
                   <Button
-                    onClick={() => setShowAddTecnicoModal(true)}
+                    onClick={() => openAddTecnicoModal()}
                     size="sm"
                     className="bg-blue-500 hover:bg-blue-600"
                   >
