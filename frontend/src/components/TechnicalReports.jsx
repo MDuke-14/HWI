@@ -2194,6 +2194,95 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* OTs do Equipamento Modal */}
+      <Dialog open={showEquipamentoOTsModal} onOpenChange={setShowEquipamentoOTsModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <FileText className="w-5 h-5 text-purple-400" />
+              OTs do Equipamento
+              {selectedEquipamento && (
+                <span className="text-sm text-gray-400 ml-2">
+                  ({selectedEquipamento.marca} - {selectedEquipamento.modelo})
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {equipamentoOTs.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhuma OT encontrada para este equipamento</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-gray-400 text-sm mb-4">
+                  Total: {equipamentoOTs.length} OT(s) para este equipamento
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {equipamentoOTs.map((relatorio) => (
+                    <div
+                      key={relatorio.id}
+                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-purple-500 transition cursor-pointer"
+                      onClick={() => {
+                        setShowEquipamentoOTsModal(false);
+                        openViewRelatorioModal(relatorio);
+                      }}
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-purple-400 font-bold text-lg">
+                              #{relatorio.numero_assistencia}
+                            </span>
+                            <span className={`text-xs px-2 py-1 rounded ${getStatusColor(relatorio.status)}`}>
+                              {getStatusLabel(relatorio.status)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400">
+                            {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Local */}
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
+                      </div>
+
+                      {/* Problema */}
+                      <div className="mb-3 pb-3 border-b border-gray-700">
+                        <p className="text-xs text-gray-500 mb-1">Motivo</p>
+                        <p className="text-sm text-gray-300 line-clamp-2">
+                          {relatorio.motivo_assistencia || relatorio.descricao_problema}
+                        </p>
+                      </div>
+
+                      {/* View Button */}
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowEquipamentoOTsModal(false);
+                          openViewRelatorioModal(relatorio);
+                        }}
+                        size="sm"
+                        className="w-full bg-purple-600 hover:bg-purple-700 mt-2"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Ver Detalhes
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
