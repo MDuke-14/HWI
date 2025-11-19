@@ -88,6 +88,9 @@ const TechnicalReports = ({ user, onLogout }) => {
     tipo_horario: 'diurno',
     data_trabalho: new Date().toISOString().split('T')[0]
   });
+
+  const [showCodigoModal, setShowCodigoModal] = useState(false);
+  const [selectedTecnicoForCodigo, setSelectedTecnicoForCodigo] = useState(null);
   
   const [formData, setFormData] = useState({
     nome: '',
