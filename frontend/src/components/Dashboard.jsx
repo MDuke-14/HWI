@@ -380,7 +380,7 @@ const Dashboard = ({ user, onLogout }) => {
       {user?.is_admin && (
         <Button
           onClick={openRealtimeModal}
-          className="fixed bottom-24 right-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full p-4 shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110 z-50 group"
+          className="fixed bottom-36 right-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full p-4 shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110 z-50 group"
           title="Status em Tempo Real"
         >
           <Users className="w-6 h-6" />
@@ -393,7 +393,7 @@ const Dashboard = ({ user, onLogout }) => {
       {/* Floating Action Button - OTs (Ordens de Trabalho) */}
       <a
         href="/technical-reports"
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full p-4 shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 z-50 group"
+        className="fixed bottom-20 right-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full p-4 shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 z-50 group"
         title="OTs - Ordens de Trabalho"
       >
         <Clipboard className="w-6 h-6" />
