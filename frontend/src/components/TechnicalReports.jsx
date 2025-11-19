@@ -2446,6 +2446,84 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+
+      {/* Fotografias Modal */}
+      <Dialog open={showFotografiasModal} onOpenChange={setShowFotografiasModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between w-full pr-8">
+              <DialogTitle className="flex items-center gap-2 text-white">
+                <ImageIcon className="w-5 h-5 text-blue-400" />
+                Componentes Adicionais - OT #{selectedRelatorio?.numero_assistencia}
+              </DialogTitle>
+              <Button
+                onClick={() => openAddFotoModal()}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Fotografia
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="mt-6">
+            {/* Galeria de Fotografias */}
+            {fotografias.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {fotografias.map((foto) => (
+                  <div key={foto.id} className="bg-black/30 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500/50 transition">
+                    {/* Imagem */}
+                    <div className="relative aspect-video bg-gray-800">
+                      <img
+                        src={`${API}${foto.foto_url}`}
+                        alt={foto.descricao || 'Fotografia'}
+                        className="w-full h-full object-cover cursor-pointer"
+                        onClick={() => window.open(`${API}${foto.foto_url}`, '_blank')}
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23333" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ESem Imagem%3C/text%3E%3C/svg%3E';
+                        }}
+                        title="Clique para ampliar"
+                      />
+                      {/* Botão de remover */}
+                      <button
+                        onClick={() => handleDeleteFoto(foto.id)}
+                        className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition"
+                        title="Remover fotografia"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {/* Descrição */}
+                    <div className="p-3">
+                      <p className="text-sm text-gray-300">
+                        {foto.descricao || 'Sem descrição'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(foto.uploaded_at).toLocaleString('pt-PT')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <ImageIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg mb-2">Nenhuma fotografia adicionada</p>
+                <p className="text-gray-500 text-sm mb-6">Adicione fotografias dos componentes e situações encontradas</p>
+                <Button
+                  onClick={() => openAddFotoModal()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Primeira Fotografia
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Relatório Modal */}
       <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
