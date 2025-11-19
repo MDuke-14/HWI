@@ -140,6 +140,7 @@ class RelatorioTecnico(BaseModel):
     equipamento_marca: str
     equipamento_modelo: str
     equipamento_numero_serie: Optional[str] = None
+    equipamento_ano_fabrico: Optional[int] = None
     
     # Motivo (mudou de "descricao_problema")
     motivo_assistencia: str
