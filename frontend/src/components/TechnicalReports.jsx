@@ -680,7 +680,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       'orcamento': 'text-amber-400 bg-amber-500/10',
       'em_execucao': 'text-blue-400 bg-blue-500/10',
       'em_andamento': 'text-blue-400 bg-blue-500/10', // Backward compatibility
-      'concluido': 'text-green-400 bg-green-500/10'
+      'concluido': 'text-green-400 bg-green-500/10',
+      'facturado': 'text-purple-400 bg-purple-500/10'
     };
     return colors[status] || 'text-gray-400 bg-gray-500/10';
   };
@@ -690,7 +691,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       'orcamento': 'Orçamento',
       'em_execucao': 'Em Execução',
       'em_andamento': 'Em Execução', // Backward compatibility
-      'concluido': 'Concluído'
+      'concluido': 'Concluído',
+      'facturado': 'Facturado'
     };
     return labels[status] || status;
   };
