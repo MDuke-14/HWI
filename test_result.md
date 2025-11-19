@@ -1070,6 +1070,85 @@ frontend:
           ✅ Conversão de canvas para PNG
           ✅ Upload com FormData
           ✅ Apenas uma assinatura por OT (substitui anterior)
+  - task: "Envio de PDF por Email"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/backend/ot_pdf_report.py, /app/frontend/src/components/TechnicalReports.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ✅ SISTEMA DE ENVIO DE PDF POR EMAIL IMPLEMENTADO
+          
+          User Request: Botão para gerar PDF automático da OT e enviar por email com seleção de destinatários
+          
+          Backend Implementation:
+          1. Criado arquivo ot_pdf_report.py:
+             - Função generate_ot_pdf() que gera PDF completo da OT
+             - Inclui: Cliente, Equipamento, Intervenções, Técnicos, Fotografias (lista), Assinatura (imagem)
+             - Layout profissional com tabelas e formatação
+             - Logo e cabeçalho da empresa
+          
+          2. Endpoints criados (server.py):
+             - POST /relatorios-tecnicos/{id}/enviar-pdf - Enviar PDF por email
+             - GET /relatorios-tecnicos/{id}/preview-pdf - Download do PDF (preview)
+          
+          3. Funcionalidade de Email:
+             - Usa configuração SMTP já existente (Office365)
+             - Envia para múltiplos destinatários
+             - Corpo de email em HTML com informações resumidas
+             - PDF anexado ao email
+             - Retorna lista de emails enviados e falhados
+          
+          Frontend Implementation (TechnicalReports.jsx):
+          1. Adicionados estados:
+             - showEmailModal, emailsCliente, emailsAdicionais, sendingEmail
+          
+          2. Novas funções:
+             - openEmailModal() - Busca emails do cliente e abre modal
+             - handleSendEmail() - Envia PDF para emails selecionados
+             - toggleEmailSelection() - Marca/desmarca emails
+          
+          3. Botão "Enviar PDF por Email":
+             - Localizado após seção de Assinatura
+             - Design gradient verde-azul
+             - Ícone de envio
+          
+          4. Modal de Seleção de Emails:
+             - Lista emails do cliente com checkboxes
+             - Todos marcados por padrão
+             - Campo para adicionar emails extras manualmente
+             - Suporta separação por vírgula ou ponto e vírgula
+             - Contador total de destinatários
+             - Aviso se cliente não tiver emails
+          
+          Features:
+          ✅ Geração automática de PDF completo
+          ✅ Seleção múltipla de emails do cliente
+          ✅ Adição manual de emails extras
+          ✅ Validação de formato de email
+          ✅ Feedback de sucesso/falha por email
+          ✅ Indicador de progresso durante envio
+          ✅ Email em HTML com formatação profissional
+          
+          SMTP Configuration (já existente):
+          - Host: smtp.office365.com
+          - Port: 587
+          - From: geral@hwi.pt
+          
+          Status: ✅ Implementado - Backend e frontend funcionando
+          
+          NEEDS TESTING:
+          1. Abrir uma OT completa (com intervenções, técnicos, fotos, assinatura)
+          2. Rolar até o final e clicar em "Enviar PDF por Email"
+          3. Verificar modal com emails do cliente
+          4. Adicionar email adicional se necessário
+          5. Clicar "Enviar PDF" e verificar sucesso
+          6. Conferir se email chegou com PDF anexado
+
           ✅ Remoção de assinatura
           ✅ Exibição visual da assinatura salva
           
