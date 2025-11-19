@@ -2883,6 +2883,103 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Email PDF Modal */}
+      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Send className="w-5 h-5 text-green-400" />
+              Enviar PDF por Email
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-4">
+            <p className="text-gray-400 text-sm">
+              Selecione os emails do cliente que devem receber o PDF da OT:
+            </p>
+
+            {/* Lista de emails do cliente */}
+            {emailsCliente.length > 0 ? (
+              <div className="space-y-2">
+                <Label className="text-gray-300">Emails do Cliente:</Label>
+                {emailsCliente.map((item, index) => (
+                  <div key={index} className="flex items-center gap-3 bg-[#0f0f0f] p-3 rounded border border-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      onChange={() => toggleEmailSelection(index)}
+                      className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                    />
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span className="text-white flex-1">{item.email}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3">
+                <p className="text-yellow-400 text-sm">
+                  ⚠️ Este cliente não tem emails cadastrados. Adicione emails manualmente abaixo.
+                </p>
+              </div>
+            )}
+
+            {/* Emails adicionais */}
+            <div>
+              <Label htmlFor="emails_adicionais" className="text-gray-300">
+                Adicionar Emails Adicionais (separados por vírgula ou ponto e vírgula):
+              </Label>
+              <textarea
+                id="emails_adicionais"
+                value={emailsAdicionais}
+                onChange={(e) => setEmailsAdicionais(e.target.value)}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[80px]"
+                placeholder="exemplo1@email.com, exemplo2@email.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Você pode adicionar múltiplos emails separados por vírgula (,) ou ponto e vírgula (;)
+              </p>
+            </div>
+
+            {/* Preview de emails selecionados */}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded p-3">
+              <p className="text-xs text-gray-400 mb-2">
+                <strong>Total de destinatários:</strong> {emailsCliente.filter(e => e.selected).length + (emailsAdicionais.trim() ? emailsAdicionais.split(/[;,]/).filter(e => e.trim()).length : 0)}
+              </p>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => setShowEmailModal(false)}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={sendingEmail}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                className="flex-1 bg-green-500 hover:bg-green-600"
+                disabled={sendingEmail}
+              >
+                {sendingEmail ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar PDF
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {/* Edit Relatório Modal */}
       <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
