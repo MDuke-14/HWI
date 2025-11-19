@@ -64,6 +64,17 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAddTecnicoModal, setShowAddTecnicoModal] = useState(false);
   const [showEditTecnicoModal, setShowEditTecnicoModal] = useState(false);
   const [selectedTecnico, setSelectedTecnico] = useState(null);
+  
+  // Intervenções
+  const [intervencoes, setIntervencoes] = useState([]);
+  const [showAddIntervencaoModal, setShowAddIntervencaoModal] = useState(false);
+  const [showEditIntervencaoModal, setShowEditIntervencaoModal] = useState(false);
+  const [selectedIntervencao, setSelectedIntervencao] = useState(null);
+  const [intervencaoFormData, setIntervencaoFormData] = useState({
+    data_intervencao: new Date().toISOString().split('T')[0],
+    motivo_assistencia: '',
+    relatorio_assistencia: ''
+  });
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_nome: '',
     horas_cliente: 0,
