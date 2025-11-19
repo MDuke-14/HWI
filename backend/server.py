@@ -159,6 +159,7 @@ class TecnicoRelatorio(BaseModel):
     horas_cliente: float = 0
     kms_deslocacao: float = 0  # Será multiplicado por 2 no frontend
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
+    data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     ordem: int = 0
 
 class IntervencaoRelatorio(BaseModel):
