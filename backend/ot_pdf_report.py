@@ -187,12 +187,37 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(tec_table)
         elements.append(Spacer(1, 0.5*cm))
     
-    # Fotografias (apenas listar, não incluir imagens grandes no PDF)
+    # Fotografias (incluir imagens no PDF)
     if fotografias:
         elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
+        
         for i, foto in enumerate(fotografias, 1):
+            # Descrição da fotografia
             elements.append(Paragraph(f"<b>Fotografia #{i}:</b> {foto.get('descricao', 'Sem descrição')}", normal_style))
-        elements.append(Spacer(1, 0.3*cm))
+            
+            # Incluir imagem da fotografia
+            if foto.get('foto_path'):
+                img_path = Path(foto['foto_path'])
+                if img_path.exists():
+                    try:
+                        # Adicionar imagem com tamanho controlado
+                        img = RLImage(str(img_path), width=15*cm, height=10*cm, kind='proportional')
+                        elements.append(img)
+                        elements.append(Spacer(1, 0.3*cm))
+                    except Exception as e:
+                        elements.append(Paragraph(f"<i>(Erro ao carregar imagem: {str(e)})</i>", normal_style))
+                        elements.append(Spacer(1, 0.3*cm))
+                else:
+                    elements.append(Paragraph("<i>(Imagem não encontrada)</i>", normal_style))
+                    elements.append(Spacer(1, 0.3*cm))
+            
+            # Adicionar espaço entre fotografias
+            if i < len(fotografias):
+                elements.append(Spacer(1, 0.5*cm))
+        
+        # Page break antes da assinatura se houver muitas fotos
+        if len(fotografias) > 2:
+            elements.append(PageBreak())
     
     # Assinatura
     if assinatura:
