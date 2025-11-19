@@ -624,6 +624,11 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const openAddTecnicoModal = () => {
+    fetchUsuarios();
+    setShowAddTecnicoModal(true);
+  };
+
   const handleAddTecnico = async (e) => {
     e.preventDefault();
     if (!selectedRelatorio) return;
