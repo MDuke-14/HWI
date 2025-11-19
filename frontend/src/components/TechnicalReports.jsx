@@ -2125,6 +2125,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <span>Concluído</span>
                   </div>
                 </Button>
+
+                <Button
+                  onClick={() => handleChangeStatus('facturado')}
+                  className="w-full justify-start bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-purple-400"></div>
+                    <span>Facturado</span>
+                  </div>
+                </Button>
               </div>
 
               <Button
