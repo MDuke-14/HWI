@@ -224,7 +224,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       resetRelatorioForm();
       fetchRelatorios();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao criar relatório');
+      toast.error(error.response?.data?.detail || 'Erro ao criar OT');
     }
   };
 
