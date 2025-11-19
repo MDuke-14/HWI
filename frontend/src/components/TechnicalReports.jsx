@@ -2023,7 +2023,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Total ida e volta: {(tecnicoFormData.kms_deslocacao * 2).toFixed(0)} km
+                  Será multiplicado por 2 (ida e volta)
                 </p>
               </div>
             </div>
