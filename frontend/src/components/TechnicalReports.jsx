@@ -1430,13 +1430,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </Label>
                   <Input
                     id="equipamento_ano_fabrico"
-                    type="number"
-                    min="1900"
-                    max={new Date().getFullYear()}
+                    type="text"
                     value={relatorioFormData.equipamento_ano_fabrico}
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_ano_fabrico: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
-                    placeholder="Ex: 2020"
+                    placeholder="Ex: 2020, 03/2020, 03-2020"
                     disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
