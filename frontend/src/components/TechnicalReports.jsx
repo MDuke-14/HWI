@@ -596,7 +596,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       tecnico_nome: tecnico.tecnico_nome,
       horas_cliente: tecnico.horas_cliente,
       kms_deslocacao: tecnico.kms_deslocacao,
-      tipo_horario: tecnico.tipo_horario
+      tipo_horario: tecnico.tipo_horario,
+      data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0]
     });
     setShowEditTecnicoModal(true);
   };
