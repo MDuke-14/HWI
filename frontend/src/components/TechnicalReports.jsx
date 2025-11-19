@@ -2093,6 +2093,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <span className="text-gray-300">Dias úteis (07h-19h)</span>
                         </div>
                         <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">2</span>
+                          <span className="text-gray-300">Dias úteis (19h-07h)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">S</span>
                           <span className="text-gray-300">Sábado</span>
                         </div>
