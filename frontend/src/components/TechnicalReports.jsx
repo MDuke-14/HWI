@@ -515,6 +515,16 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.error('Erro ao atualizar status');
     }
   };
+
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status);
+    if (status) {
+      const filtered = relatorios.filter(r => r.status === status);
+      setFilteredByStatus(filtered);
+    } else {
+      setFilteredByStatus([]);
+    }
+  };
   
   const fetchTecnicosRelatorio = async (relatorioId) => {
     try {
