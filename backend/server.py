@@ -2478,6 +2478,77 @@ async def preview_pdf_ot(
 
 
 
+
+# ============ Notifications Routes ============
+
+@api_router.get("/notifications")
+async def get_notifications(
+    unread_only: bool = False,
+    current_user: dict = Depends(get_current_user)
+):
+    """Buscar notificações do usuário"""
+    query = {"user_id": current_user["sub"]}
+    
+    if unread_only:
+        query["read"] = False
+    
+    notifications = await db.notifications.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).limit(50).to_list(length=None)
+    
+    return notifications
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Marcar notificação como lida"""
+    result = await db.notifications.update_one(
+        {"id": notification_id, "user_id": current_user["sub"]},
+        {"$set": {"read": True}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notificação não encontrada")
+    
+    return {"message": "Notificação marcada como lida"}
+
+@api_router.post("/notifications/subscribe")
+async def subscribe_push(
+    subscription: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Registrar subscription de push notifications"""
+    # Remover subscription antiga do usuário
+    await db.push_subscriptions.delete_many({"user_id": current_user["sub"]})
+    
+    # Criar nova subscription
+    push_sub = PushSubscription(
+        user_id=current_user["sub"],
+        endpoint=subscription.get("endpoint", ""),
+        keys=subscription.get("keys", {})
+    )
+    
+    sub_dict = push_sub.dict()
+    sub_dict["created_at"] = sub_dict["created_at"].isoformat()
+    
+    await db.push_subscriptions.insert_one(sub_dict)
+    
+    logging.info(f"Push subscription registrada para usuário {current_user['sub']}")
+    
+    return {"message": "Subscription registrada com sucesso"}
+
+@api_router.delete("/notifications/all")
+async def delete_all_notifications(
+    current_user: dict = Depends(get_current_user)
+):
+    """Deletar todas as notificações do usuário"""
+    result = await db.notifications.delete_many({"user_id": current_user["sub"]})
+    
+    return {"message": f"{result.deleted_count} notificações removidas"}
+
 # ============ Holidays Routes ============
 
 @api_router.get("/holidays/{year}")
