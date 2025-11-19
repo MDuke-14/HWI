@@ -4480,7 +4480,11 @@ async def create_manual_time_entry(
                 
                 # Second part: 00:00:00 to end_time
                 second_seconds = (end_datetime - midnight).total_seconds()
-                second_hours = round(second_seconds / 3600, 2)
+                
+                # TRUNCAR segundos
+                second_minutes = math.floor(second_seconds / 60)
+                second_hours = second_minutes / 60
+                second_hours = round(second_hours, 2)
                 
                 # Determine if second day is special
                 second_is_special, second_ot_reason = is_overtime_day(end_datetime.date())
