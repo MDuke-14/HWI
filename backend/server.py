@@ -5095,6 +5095,7 @@ async def get_all_reports(
         user_id = entry["user_id"]
         if user_id not in user_stats:
             user_stats[user_id] = {
+                "user_id": user_id,  # Adicionar user_id para o frontend
                 "username": entry["username"],
                 "total_hours": 0,
                 "regular_hours": 0,
