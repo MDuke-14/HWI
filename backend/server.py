@@ -2764,7 +2764,11 @@ async def end_time_entry(
     else:
         # Single day entry
         total_seconds = (end_time - start_time).total_seconds()
-        total_hours = round(total_seconds / 3600, 2)
+        
+        # TRUNCAR segundos (não arredondar)
+        total_minutes = math.floor(total_seconds / 60)
+        total_hours = total_minutes / 60
+        total_hours = round(total_hours, 2)  # Arredondar apenas para exibição
         
         is_ot = entry.get("is_overtime_day", False)
         
