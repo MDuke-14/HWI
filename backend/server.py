@@ -3950,9 +3950,11 @@ async def update_time_entry(
             start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
             end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
             
-            # Calculate total hours
+            # Calculate total hours - TRUNCAR segundos
             total_seconds = (end_time - start_time).total_seconds()
-            total_hours = round(total_seconds / 3600, 2)
+            total_minutes = math.floor(total_seconds / 60)
+            total_hours = total_minutes / 60
+            total_hours = round(total_hours, 2)
             
             # Get entry date to check if it's overtime day
             entry_date_str = entry.get("date")
