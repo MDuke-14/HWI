@@ -610,10 +610,17 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const fetchUsuarios = async () => {
     try {
+      console.log('Buscando usuários...');
       const response = await axios.get(`${API}/users`);
+      console.log('Usuários recebidos:', response.data);
       setUsuarios(response.data);
+      
+      if (response.data.length === 0) {
+        toast.warning('Nenhum usuário encontrado no sistema. Contacte o administrador.');
+      }
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
+      toast.error('Erro ao carregar lista de técnicos');
       setUsuarios([]);
     }
   };
