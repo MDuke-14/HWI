@@ -1859,17 +1859,23 @@ const TechnicalReports = ({ user, onLogout }) => {
           <form onSubmit={handleAddTecnico} className="space-y-4 mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="tecnico_nome" className="text-gray-300">
-                  Nome do Técnico *
+                <Label htmlFor="tecnico_usuario" className="text-gray-300">
+                  Selecionar Técnico *
                 </Label>
-                <Input
-                  id="tecnico_nome"
-                  value={tecnicoFormData.tecnico_nome}
-                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  placeholder="Ex: Pedro Duarte"
+                <select
+                  id="tecnico_usuario"
+                  value={tecnicoFormData.tecnico_id}
+                  onChange={(e) => handleUsuarioChange(e.target.value)}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
-                />
+                >
+                  <option value="">-- Selecione um técnico --</option>
+                  {usuarios.map((usuario) => (
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.full_name || usuario.username}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
