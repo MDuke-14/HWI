@@ -1645,6 +1645,14 @@ async def update_relatorio(
     if not current_user.get("is_admin", False) and existing["tecnico_id"] != current_user["sub"]:
         raise HTTPException(status_code=403, detail="Sem permissão para editar este relatório")
     
+    # Validar mudança de status "facturado" - apenas admin
+    if "status" in relatorio_data and relatorio_data["status"] == "facturado":
+        if not current_user.get("is_admin", False):
+            raise HTTPException(
+                status_code=403, 
+                detail="Apenas administradores podem marcar OTs como 'Facturado'"
+            )
+    
     # Remover campos que não devem ser atualizados
     relatorio_data.pop("id", None)
     relatorio_data.pop("numero_assistencia", None)
