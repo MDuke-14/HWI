@@ -1608,8 +1608,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </td>
                               <td className="py-3 px-3 text-center text-gray-300">{tec.horas_cliente}h</td>
                               <td className="py-3 px-3 text-center text-gray-300">
-                                {tec.kms_deslocacao} km 
-                                <span className="text-xs text-gray-500 ml-1">(x2 = {tec.kms_deslocacao * 2} km)</span>
+                                {tec.kms_deslocacao * 2} km
                               </td>
                               <td className="py-3 px-3 text-center">
                                 <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-sm">
