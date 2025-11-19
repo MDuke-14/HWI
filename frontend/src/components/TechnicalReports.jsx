@@ -125,6 +125,13 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
 
+  // Email PDF
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailsCliente, setEmailsCliente] = useState([]);
+  const [emailsAdicionais, setEmailsAdicionais] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_id: '',
