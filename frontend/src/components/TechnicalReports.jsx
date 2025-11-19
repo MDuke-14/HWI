@@ -2105,12 +2105,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
 
                 <Button
-                  onClick={() => handleChangeStatus('em_andamento')}
+                  onClick={() => handleChangeStatus('em_execucao')}
                   className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400"
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                    <span>Em Andamento</span>
+                    <span>Em Execução</span>
                   </div>
                 </Button>
 
@@ -2121,16 +2121,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                     <span>Concluído</span>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => handleChangeStatus('cancelado')}
-                  className="w-full justify-start bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <span>Cancelado</span>
                   </div>
                 </Button>
               </div>
