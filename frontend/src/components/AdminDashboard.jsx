@@ -22,6 +22,11 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
+  const [verifyingUser, setVerifyingUser] = useState(null);
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+
   const [createForm, setCreateForm] = useState({
     username: '',
     email: '',
