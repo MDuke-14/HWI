@@ -1400,6 +1400,45 @@ agent_communication:
       RECOMMENDATION: The functionality is complete and ready for user acceptance testing.
       To test live: Start entry at 22:00, wait until 02:00 next day, then end entry.
 
+  - agent: "main"
+    message: |
+      ✅ CAMPO "ANO DE FABRICO" ATUALIZADO PARA SUPORTAR FORMATOS FLEXÍVEIS
+      
+      Implementada a solicitação do usuário para permitir que o campo "Ano de Fabrico" aceite formatos flexíveis:
+      
+      Frontend Changes (TechnicalReports.jsx):
+      1. Linha 1433: Alterado type="number" para type="text"
+      2. Removidos atributos min e max que restringiam valores numéricos
+      3. Atualizado placeholder para mostrar exemplos dos formatos aceitos
+      
+      Formatos Agora Suportados:
+      ✅ AAAA (apenas ano): Ex: 2020
+      ✅ MM/AAAA (mês/ano com barra): Ex: 03/2020
+      ✅ MM-AAAA (mês/ano com hífen): Ex: 03-2020
+      
+      Backend Support:
+      ✅ O modelo Equipamento já foi atualizado anteriormente (linha anterior do trabalho)
+      ✅ Campo ano_fabrico aceita Optional[str] em vez de Optional[int]
+      ✅ Nenhuma alteração adicional no backend necessária
+      
+      Testing Plan:
+      1. Login na aplicação
+      2. Navegar para OTs - Ordens de Trabalho
+      3. Criar uma nova OT ou editar uma existente
+      4. Testar o campo "Ano de Fabrico" com os três formatos:
+         - Apenas ano: 2020
+         - Mês/ano com barra: 03/2020
+         - Mês/ano com hífen: 03-2020
+      5. Salvar e verificar que o equipamento foi criado/atualizado
+      6. Visualizar o equipamento e confirmar que o valor está sendo exibido corretamente
+      
+      Frontend compilado com sucesso. Aplicação rodando sem erros.
+      
+      Test Credentials: miguel/password123 (admin user)
+      
+      RECOMMENDATION: Use frontend testing agent to verify the field accepts all three formats
+      and that data is properly saved and displayed.
+
   - agent: "testing"
     message: |
       ✅ ADMIN STATUS ANALYSIS & CORRECTION ENDPOINTS TESTING COMPLETE
