@@ -2025,10 +2025,9 @@ async def get_fotografias(
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias/{filename}")
 async def get_fotografia_file(
     relatorio_id: str,
-    filename: str,
-    current_user: dict = Depends(get_current_user)
+    filename: str
 ):
-    """Obter arquivo de fotografia"""
+    """Obter arquivo de fotografia - endpoint público para permitir carregamento de imagens"""
     file_path = Path(f"/app/backend/uploads/relatorios/{filename}")
     
     if not file_path.exists():
