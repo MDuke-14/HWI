@@ -1422,6 +1422,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                     disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="equipamento_ano_fabrico" className="text-gray-300">
+                    Ano de Fabrico
+                  </Label>
+                  <Input
+                    id="equipamento_ano_fabrico"
+                    type="number"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    value={relatorioFormData.equipamento_ano_fabrico}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_ano_fabrico: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    placeholder="Ex: 2020"
+                    disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
+                  />
+                </div>
               </div>
             </div>
 
