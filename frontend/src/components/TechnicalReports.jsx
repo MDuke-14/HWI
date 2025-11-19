@@ -796,6 +796,99 @@ const TechnicalReports = ({ user, onLogout }) => {
     });
   };
 
+
+  // ========== Fotografias Functions ==========
+  
+  const fetchFotografiasRelatorio = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/fotografias`);
+      setFotografias(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar fotografias:', error);
+      toast.error('Erro ao carregar fotografias');
+    }
+  };
+
+  const openAddFotoModal = () => {
+    setFotoFile(null);
+    setFotoDescricao('');
+    setShowAddFotoModal(true);
+  };
+
+  const handleFotoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP');
+        return;
+      }
+      // Validar tamanho (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
+        return;
+      }
+      setFotoFile(file);
+    }
+  };
+
+  const handleUploadFoto = async (e) => {
+    e.preventDefault();
+    
+    if (!fotoFile) {
+      toast.error('Selecione uma fotografia');
+      return;
+    }
+    
+    if (!fotoDescricao.trim()) {
+      toast.error('Adicione uma descrição para a fotografia');
+      return;
+    }
+    
+    setUploadingFoto(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', fotoFile);
+      formData.append('descricao', fotoDescricao);
+      
+      await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      toast.success('Fotografia adicionada com sucesso!');
+      setShowAddFotoModal(false);
+      setFotoFile(null);
+      setFotoDescricao('');
+      fetchFotografiasRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setUploadingFoto(false);
+    }
+  };
+
+  const handleDeleteFoto = async (fotoId) => {
+    if (!window.confirm('Tem certeza que deseja remover esta fotografia?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${fotoId}`);
+      toast.success('Fotografia removida com sucesso!');
+      fetchFotografiasRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   const getTipoHorarioLabel = (tipo) => {
     const labels = {
       'diurno': 'Diurno (07h-19h)',
