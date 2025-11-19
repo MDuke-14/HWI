@@ -2463,12 +2463,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                   required
                 >
                   <option value="">-- Selecione um técnico --</option>
-                  {usuarios.map((usuario) => (
-                    <option key={usuario.id} value={usuario.id}>
-                      {usuario.full_name || usuario.username}
-                    </option>
-                  ))}
+                  {usuarios.length === 0 ? (
+                    <option value="" disabled>Nenhum usuário disponível</option>
+                  ) : (
+                    usuarios.map((usuario) => (
+                      <option key={usuario.id} value={usuario.id}>
+                        {usuario.full_name || usuario.username}
+                      </option>
+                    ))
+                  )}
                 </select>
+                {usuarios.length === 0 && (
+                  <p className="text-xs text-yellow-400 mt-1">
+                    ⚠️ Nenhum usuário encontrado. Verifique o Admin Dashboard.
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Total de usuários carregados: {usuarios.length}
+                </p>
               </div>
 
               <div>
