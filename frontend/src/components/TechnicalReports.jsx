@@ -382,7 +382,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       equipamento_marca: relatorio.equipamento_marca,
       equipamento_modelo: relatorio.equipamento_modelo,
       equipamento_numero_serie: relatorio.equipamento_numero_serie || '',
-      motivo_assistencia: relatorio.motivo_assistencia
+      motivo_assistencia: relatorio.motivo_assistencia,
+      relatorio_assistencia: relatorio.relatorio_assistencia || ''
     });
     setShowEditRelatorioModal(true);
   };
