@@ -440,7 +440,82 @@ const TechnicalReports = ({ user, onLogout }) => {
       setTecnicos(response.data);
     } catch (error) {
       console.error('Erro ao carregar técnicos:', error);
-      toast.error('Erro ao carregar técnicos');
+      setTecnicos([]);
+    }
+  };
+
+  const fetchIntervencoesRelatorio = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/intervencoes`);
+      setIntervencoes(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar intervenções:', error);
+      setIntervencoes([]);
+    }
+  };
+
+  const handleAddIntervencao = async (e) => {
+    e.preventDefault();
+    if (!selectedRelatorio) return;
+
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes`, {
+        ...intervencaoFormData,
+        relatorio_id: selectedRelatorio.id,
+        ordem: intervencoes.length
+      });
+      
+      toast.success('Intervenção adicionada com sucesso!');
+      setShowAddIntervencaoModal(false);
+      setIntervencaoFormData({
+        data_intervencao: new Date().toISOString().split('T')[0],
+        motivo_assistencia: '',
+        relatorio_assistencia: ''
+      });
+      fetchIntervencoesRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao adicionar intervenção');
+    }
+  };
+
+  const openEditIntervencaoModal = (intervencao) => {
+    setSelectedIntervencao(intervencao);
+    setIntervencaoFormData({
+      data_intervencao: intervencao.data_intervencao.split('T')[0],
+      motivo_assistencia: intervencao.motivo_assistencia,
+      relatorio_assistencia: intervencao.relatorio_assistencia || ''
+    });
+    setShowEditIntervencaoModal(true);
+  };
+
+  const handleEditIntervencao = async (e) => {
+    e.preventDefault();
+    if (!selectedIntervencao || !selectedRelatorio) return;
+
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/${selectedIntervencao.id}`,
+        intervencaoFormData
+      );
+      
+      toast.success('Intervenção atualizada com sucesso!');
+      setShowEditIntervencaoModal(false);
+      setSelectedIntervencao(null);
+      fetchIntervencoesRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar intervenção');
+    }
+  };
+
+  const handleDeleteIntervencao = async (intervencaoId) => {
+    if (!window.confirm('Tem certeza que deseja remover esta intervenção?')) return;
+
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/${intervencaoId}`);
+      toast.success('Intervenção removida com sucesso!');
+      fetchIntervencoesRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error('Erro ao remover intervenção');
     }
   };
 
