@@ -50,6 +50,14 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# ============ Startup Event ============
+
+@app.on_event("startup")
+async def startup_event():
+    """Iniciar loop de notificações em background"""
+    asyncio.create_task(notification_loop(db))
+    logging.info("Sistema de notificações iniciado (verificação a cada 15 minutos)")
+
 # ============ Models ============
 
 class User(BaseModel):
