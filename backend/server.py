@@ -1755,10 +1755,14 @@ async def add_tecnico_relatorio(
         horas_cliente=tecnico_data.get("horas_cliente", 0),
         kms_deslocacao=tecnico_data.get("kms_deslocacao", 0),
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
+        data_trabalho=tecnico_data.get("data_trabalho", datetime.now(timezone.utc).date()),
         ordem=count
     )
     
     tecnico_dict = tecnico.dict()
+    # Converter data para string ISO
+    if isinstance(tecnico_dict.get("data_trabalho"), date):
+        tecnico_dict["data_trabalho"] = tecnico_dict["data_trabalho"].isoformat()
     await db.tecnicos_relatorio.insert_one(tecnico_dict)
     
     logging.info(f"Técnico adicionado ao relatório {relatorio_id}: {tecnico_data.get('tecnico_nome')}")
