@@ -1888,76 +1888,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <span className="text-gray-300">Dias úteis (07h-19h)</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">2</span>
-                          <span className="text-gray-300">Dias úteis (19h-07h)</span>
-
-              {/* Componentes Adicionais (Fotografias) */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" />
-                    Componentes Adicionais
-                  </h4>
-                  <Button
-                    onClick={() => openAddFotoModal()}
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Fotografia
-                  </Button>
-                </div>
-
-                {/* Galeria de Fotografias */}
-                {fotografias.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {fotografias.map((foto) => (
-                      <div key={foto.id} className="bg-black/30 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500/50 transition">
-                        {/* Imagem */}
-                        <div className="relative aspect-video bg-gray-800">
-                          <img
-                            src={`${API}${foto.foto_url}`}
-                            alt={foto.descricao || 'Fotografia'}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23333" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ESem Imagem%3C/text%3E%3C/svg%3E';
-                            }}
-                          />
-                          {/* Botão de remover */}
-                          <button
-                            onClick={() => handleDeleteFoto(foto.id)}
-                            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition"
-                            title="Remover fotografia"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        {/* Descrição */}
-                        <div className="p-3">
-                          <p className="text-sm text-gray-300 line-clamp-3">
-                            {foto.descricao || 'Sem descrição'}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">
-                            {new Date(foto.uploaded_at).toLocaleString('pt-PT')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <ImageIcon className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">Nenhuma fotografia adicionada</p>
-                  </div>
-                )}
-              </div>
-
-                        </div>
-                        <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">S</span>
                           <span className="text-gray-300">Sábado</span>
                         </div>
                         <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">D</span>
+                          <span className="text-gray-300">Domingos/Feriados</span>
+                        </div>
                           <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded font-mono">D</span>
                           <span className="text-gray-300">Domingos/Feriados</span>
                         </div>
