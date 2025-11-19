@@ -1143,19 +1143,81 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* Descrição do Problema */}
-            <div>
-              <Label htmlFor="descricao_problema" className="text-gray-300">
-                Descrição do Problema *
-              </Label>
-              <textarea
-                id="descricao_problema"
-                value={relatorioFormData.descricao_problema}
-                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, descricao_problema: e.target.value })}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
-                placeholder="Descreva o problema relatado..."
-                required
-              />
+            {/* Intervenções / Assistências */}
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-blue-400 font-semibold">Intervenções / Assistências</h3>
+                <Button
+                  type="button"
+                  onClick={addIntervencaoForm}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Adicionar Intervenção
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {intervencoesForm.map((intervencao, index) => (
+                  <div key={intervencao.id} className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-white font-semibold">Intervenção {index + 1}</span>
+                      {intervencoesForm.length > 1 && (
+                        <Button
+                          type="button"
+                          onClick={() => removeIntervencaoForm(intervencao.id)}
+                          variant="outline"
+                          size="sm"
+                          className="border-red-500 text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-gray-300">
+                          Data da Intervenção *
+                        </Label>
+                        <Input
+                          type="date"
+                          value={intervencao.data_intervencao}
+                          onChange={(e) => updateIntervencaoForm(intervencao.id, 'data_intervencao', e.target.value)}
+                          className="bg-[#1a1a1a] border-gray-700 text-white"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-300">
+                          Motivo da Assistência *
+                        </Label>
+                        <textarea
+                          value={intervencao.motivo_assistencia}
+                          onChange={(e) => updateIntervencaoForm(intervencao.id, 'motivo_assistencia', e.target.value)}
+                          className="w-full bg-[#1a1a1a] border border-gray-700 text-white rounded-md p-3 min-h-[80px]"
+                          placeholder="Descreva o motivo da assistência..."
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-300">
+                          Relatório de Assistência
+                        </Label>
+                        <textarea
+                          value={intervencao.relatorio_assistencia}
+                          onChange={(e) => updateIntervencaoForm(intervencao.id, 'relatorio_assistencia', e.target.value)}
+                          className="w-full bg-[#1a1a1a] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
+                          placeholder="Descreva o trabalho realizado (opcional)..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-3 pt-4">
