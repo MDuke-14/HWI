@@ -110,6 +110,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     equipamento_marca: '',
     equipamento_modelo: '',
     equipamento_numero_serie: '',
+    equipamento_ano_fabrico: '',
     descricao_problema: ''
   });
 
