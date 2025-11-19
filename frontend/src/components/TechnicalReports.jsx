@@ -878,15 +878,26 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const handleDeleteFoto = async (fotoId) => {
+    console.log('handleDeleteFoto chamado com ID:', fotoId);
+    console.log('selectedRelatorio:', selectedRelatorio);
+    
     if (!window.confirm('Tem certeza que deseja remover esta fotografia?')) {
+      console.log('Usuário cancelou a remoção');
       return;
     }
     
     try {
-      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${fotoId}`);
+      console.log('Tentando deletar foto...');
+      const url = `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${fotoId}`;
+      console.log('URL:', url);
+      
+      await axios.delete(url);
+      console.log('Foto deletada com sucesso!');
       toast.success('Fotografia removida com sucesso!');
       fetchFotografiasRelatorio(selectedRelatorio.id);
     } catch (error) {
+      console.error('Erro ao deletar foto:', error);
+      console.error('Error response:', error.response);
       toast.error(formatErrorMessage(error));
     }
   };
