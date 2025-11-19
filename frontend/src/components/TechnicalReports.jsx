@@ -932,7 +932,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <span className="text-blue-400 font-bold text-lg">
                           #{relatorio.numero_assistencia}
                         </span>
-                        <span className={`text-xs px-2 py-1 rounded ${getStatusColor(relatorio.status)}`}>
+                        <span 
+                          className={`text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
+                          onClick={(e) => openStatusModal(relatorio, e)}
+                          title="Clique para alterar status"
+                        >
                           {getStatusLabel(relatorio.status)}
                         </span>
                       </div>
