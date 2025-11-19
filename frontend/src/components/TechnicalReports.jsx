@@ -295,6 +295,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       equipamento_numero_serie: '',
       descricao_problema: ''
     });
+    setEquipamentos([]);
+    setEquipamentoSelecionado('');
+    setModoNovoEquipamento(false);
   };
 
   const handleAddRelatorio = async (e) => {
