@@ -701,7 +701,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Plus className="w-5 h-5 text-blue-400" />
-              Novo Relatório Técnico
+              Nova Ordem de Trabalho
             </DialogTitle>
           </DialogHeader>
 
