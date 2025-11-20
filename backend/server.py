@@ -2679,15 +2679,8 @@ async def health_check():
     return {
         "status": "running",
         "database": db_status,
-        "db_name": os.environ.get('DB_NAME', 'NOT SET'),
-        "mongo_url_prefix": os.environ.get('MONGO_URL', 'NOT SET')[:30] + "..."
-    }
-
-        "message": "Admin criado com sucesso!",
-        "username": "admin",
-        "password": "admin123",
-        "email": "admin@hwi.pt",
-        "instrucoes": "Faça login com estas credenciais e mude a senha imediatamente!"
+        "db_name": db_name,
+        "mongo_url_prefix": mongo_url[:30] + "..."
     }
 
 
