@@ -36,13 +36,14 @@ from hours_calculator import calcular_breakdown_completo
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)
 
-# MongoDB connection - FORÇAR uso do MongoDB gerenciado pelo Emergent
-# Ignorar MONGO_URL externa que pode estar incorreta
-mongo_url = 'mongodb://mongodb:27017'  # MongoDB gerenciado pelo Emergent/Kubernetes
-db_name = 'emergent'  # Nome padrão do banco
+# MongoDB connection
+# Em produção, Emergent fornece via variáveis de ambiente
+# Em desenvolvimento, usa .env local
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://mongodb:27017')
+db_name = os.environ.get('DB_NAME', 'emergent')
 
 # Log de conexão
-logging.info(f"🔌 Conectando ao MongoDB: {mongo_url} | Database: {db_name}")
+logging.info(f"🔌 MongoDB: {mongo_url[:40]}... | DB: {db_name}")
 
 client = AsyncIOMotorClient(mongo_url)
 db = client[db_name]
