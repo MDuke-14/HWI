@@ -3896,31 +3896,23 @@ async def download_monthly_pdf_report(
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
-    # Calculate vacation days used up to the end date of this report
-    vacation_days_used = 0
-    all_vacation_requests = await db.vacation_requests.find({
-        "user_id": target_user_id,
-        "status": "approved"
-    }, {"_id": 0}).to_list(1000)
+    # Buscar dados de férias do sistema de férias (usa vacation_balances)
+    vacation_balance = await db.vacation_balances.find_one({"user_id": target_user_id}, {"_id": 0})
     
-    for vac in all_vacation_requests:
-        vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
-        vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
-        
-        # Only count vacation days up to the end of this billing period
-        actual_end = min(vac_end, end_date)
-        if vac_start <= end_date:
-            # Count working days (exclude weekends)
-            current = vac_start
-            while current <= actual_end:
-                if current.weekday() < 5:  # Monday to Friday
-                    vacation_days_used += 1
-                current += timedelta(days=1)
-    
-    # Get user's vacation entitlement
-    user_data = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
-    vacation_entitlement = user_data.get("vacation_days_per_year", 22) if user_data else 22
-    vacation_days_available = max(0, vacation_entitlement - vacation_days_used)
+    if vacation_balance:
+        # Usar calculate_vacation_days que é a função correta
+        vacation_calc = calculate_vacation_days(
+            vacation_balance["company_start_date"],
+            vacation_balance.get("days_taken", 0)
+        )
+        vacation_days_used = vacation_balance.get("days_taken", 0)
+        vacation_days_available = vacation_calc["days_available"]
+        vacation_entitlement = vacation_calc["days_per_year"]
+    else:
+        # Se não tem balance, valores padrão
+        vacation_days_used = 0
+        vacation_days_available = 22
+        vacation_entitlement = 22
     
     report_data = {
         "username": username,
