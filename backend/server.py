@@ -3294,6 +3294,7 @@ async def get_custom_range_report(
     current_date = start_date
     total_worked_hours = 0
     total_overtime_hours = 0
+    total_saturday_hours = 0
     total_special_hours = 0
     days_with_meal_allowance = 0
     days_with_travel_allowance = 0
@@ -3508,6 +3509,7 @@ async def get_monthly_detailed_report(
     current_date = start_date
     total_worked_hours = 0
     total_overtime_hours = 0
+    total_saturday_hours = 0
     total_special_hours = 0
     days_with_meal_allowance = 0
     days_with_travel_allowance = 0
@@ -3737,6 +3739,7 @@ async def download_monthly_pdf_report(
     current_date = start_date
     total_worked_hours = 0
     total_overtime_hours = 0
+    total_saturday_hours = 0
     total_special_hours = 0
     days_with_meal_allowance = 0
     days_with_travel_allowance = 0
