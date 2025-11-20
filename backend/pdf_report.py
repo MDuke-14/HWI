@@ -69,8 +69,9 @@ def generate_monthly_pdf_report(report_data):
     summary_data = [
         ['RESUMO MENSAL', ''],
         ['Total Horas Trabalhadas', format_hours(summary['total_worked_hours'])],
-        ['Trabalho Suplementar', format_hours(summary['total_overtime_hours'])],
-        ['Trabalho Suplementar Dias de Descanso', format_hours(summary.get('total_special_hours', 0))],
+        ['Trabalho Suplementar (Dias Úteis)', format_hours(summary['total_overtime_hours'])],
+        ['Trabalho Suplementar Sábados', format_hours(summary.get('total_saturday_hours', 0))],
+        ['Trabalho Suplementar Domingos/Feriados', format_hours(summary.get('total_special_hours', 0))],
         ['Subsídio de Alimentação', f"{summary['days_with_meal_allowance']} dias"],
         ['Ajuda de Custos', f"{summary['days_with_travel_allowance']} dias"],
         ['', ''],  # Empty row for spacing
