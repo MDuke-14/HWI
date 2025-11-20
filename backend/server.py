@@ -3334,6 +3334,7 @@ async def get_custom_range_report(
             } for e in day_entries]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
+            day_data["saturday_hours"] = round(saturday_hours, 2)
             day_data["special_hours"] = round(special_hours, 2)
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
@@ -3557,6 +3558,7 @@ async def get_monthly_detailed_report(
             } for e in day_entries]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
+            day_data["saturday_hours"] = round(saturday_hours, 2)
             day_data["special_hours"] = round(special_hours, 2)
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
@@ -3807,6 +3809,7 @@ async def download_monthly_pdf_report(
             } for e in day_entries]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
+            day_data["saturday_hours"] = round(saturday_hours, 2)
             day_data["special_hours"] = round(special_hours, 2)
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
