@@ -2629,6 +2629,12 @@ async def create_first_admin():
     
     return {
         "success": True,
+        "message": "Admin criado com sucesso!",
+        "username": "admin",
+        "password": "admin123",
+        "email": "admin@hwi.pt",
+        "instrucoes": "Faça login com estas credenciais e mude a senha imediatamente!"
+    }
 
 
 @api_router.get("/health")
