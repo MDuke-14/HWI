@@ -63,7 +63,36 @@ api_router = APIRouter(prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():
-    """Iniciar loop de notificações em background"""
+    """Iniciar loop de notificações em background e criar admin se necessário"""
+    # Verificar se existe algum usuário
+    user_count = await db.users.count_documents({})
+    
+    if user_count == 0:
+        # Criar primeiro admin automaticamente
+        logging.info("⚠️ Banco vazio detectado! Criando primeiro admin...")
+        
+        hashed = pwd_context.hash("admin123")
+        
+        admin_user = User(
+            username="admin",
+            email="admin@hwi.pt",
+            hashed_password=hashed,
+            full_name="Administrador",
+            phone="000000000",
+            is_admin=True
+        )
+        
+        user_dict = admin_user.dict()
+        user_dict["created_at"] = user_dict["created_at"].isoformat()
+        
+        await db.users.insert_one(user_dict)
+        
+        logging.info("✅ Primeiro admin criado automaticamente!")
+        logging.info("   Username: admin")
+        logging.info("   Password: admin123")
+        logging.info("   ⚠️ MUDE A SENHA APÓS PRIMEIRO LOGIN!")
+    
+    # Iniciar sistema de notificações
     asyncio.create_task(notification_loop(db))
     logging.info("Sistema de notificações iniciado (verificação a cada 15 minutos)")
 
