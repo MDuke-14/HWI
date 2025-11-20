@@ -3907,7 +3907,7 @@ async def download_monthly_pdf_report(
         )
         vacation_days_used = vacation_balance.get("days_taken", 0)
         vacation_days_available = vacation_calc["days_available"]
-        vacation_entitlement = vacation_calc["days_per_year"]
+        vacation_entitlement = vacation_calc["days_earned"]  # Corrigido: era days_per_year
     else:
         # Se não tem balance, valores padrão
         vacation_days_used = 0
