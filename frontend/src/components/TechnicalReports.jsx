@@ -2139,8 +2139,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                             className="w-full h-full object-cover cursor-pointer"
                             onClick={() => window.open(`${API}${foto.foto_url}`, '_blank')}
                             onError={(e) => {
+                              console.log('Erro ao carregar imagem:', `${API}${foto.foto_url}`);
+                              console.log('Foto objeto:', foto);
                               e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23333" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ESem Imagem%3C/text%3E%3C/svg%3E';
                             }}
+                            onLoad={() => console.log('Imagem carregada com sucesso:', foto.foto_url)}
                             title="Clique para ampliar"
                           />
                           {/* Botão de remover */}
