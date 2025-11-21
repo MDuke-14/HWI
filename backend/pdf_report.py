@@ -52,6 +52,16 @@ def generate_monthly_pdf_report(report_data):
         fontName='Helvetica-Bold'
     )
     
+    # Add logo
+    from pathlib import Path
+    from reportlab.platypus import Image as RLImage
+    
+    logo_path = Path(__file__).parent / "assets" / "hwi_logo.png"
+    if logo_path.exists():
+        logo = RLImage(str(logo_path), width=4*cm, height=2*cm)
+        elements.append(logo)
+        elements.append(Spacer(1, 0.3*cm))
+    
     # Add title
     start_date = datetime.strptime(report_data['start_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
     end_date = datetime.strptime(report_data['end_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
@@ -62,7 +72,7 @@ def generate_monthly_pdf_report(report_data):
     elements.append(Paragraph("RELATÓRIO MENSAL DE HORAS", title_style))
     elements.append(Paragraph(f"<b>Colaborador:</b> {full_name}", user_style))
     elements.append(Paragraph(f"Período: {start_date} - {end_date}", subtitle_style))
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.3*cm))
     
     # Summary table
     summary = report_data['summary']
