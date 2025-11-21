@@ -2075,13 +2075,19 @@ async def upload_fotografia(
     unique_filename = f"{uuid.uuid4()}{file_ext}"
     file_path = upload_dir / unique_filename
     
-    # Salvar arquivo
+    # Ler conteúdo do arquivo
+    file_content = await file.read()
+    
+    # Converter para base64 para salvar no MongoDB
+    import base64
+    foto_base64 = base64.b64encode(file_content).decode('utf-8')
+    
+    # Salvar também em arquivo (para desenvolvimento local)
     try:
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(file_content)
     except Exception as e:
-        logging.error(f"Erro ao salvar arquivo: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao salvar arquivo")
+        logging.warning(f"Não foi possível salvar arquivo localmente: {e}")
     
     # Obter ordem (último + 1)
     last_foto = await db.fotos_relatorio.find_one(
@@ -2090,7 +2096,7 @@ async def upload_fotografia(
     )
     ordem = (last_foto.get("ordem", -1) + 1) if last_foto else 0
     
-    # Criar registro no banco
+    # Criar registro no banco COM BASE64
     foto = FotoRelatorio(
         relatorio_id=relatorio_id,
         foto_path=str(file_path),
@@ -2101,6 +2107,8 @@ async def upload_fotografia(
     
     foto_dict = foto.dict()
     foto_dict["uploaded_at"] = foto_dict["uploaded_at"].isoformat()
+    foto_dict["foto_base64"] = foto_base64  # Adicionar base64
+    foto_dict["foto_mime_type"] = file.content_type  # Salvar tipo
     
     await db.fotos_relatorio.insert_one(foto_dict)
     
