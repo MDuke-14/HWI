@@ -3916,19 +3916,51 @@ const TechnicalReports = ({ user, onLogout }) => {
                         </p>
                       </div>
 
-                      {/* View Button */}
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowClienteRelatoriosModal(false);
-                          openViewRelatorioModal(relatorio);
-                        }}
-                        size="sm"
-                        className="w-full bg-purple-600 hover:bg-purple-700 mt-2"
-                      >
-                        <FileText className="w-3 h-3 mr-1" />
-                        Ver Detalhes
-                      </Button>
+                      {/* Botões */}
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const response = await axios.get(
+                                `${API}/relatorios-tecnicos/${relatorio.id}/preview-pdf`,
+                                { responseType: 'blob' }
+                              );
+                              
+                              const blob = new Blob([response.data], { type: 'application/pdf' });
+                              const url = window.URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `OT_${relatorio.numero_assistencia}.pdf`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              window.URL.revokeObjectURL(url);
+                              
+                              toast.success('PDF baixado com sucesso!');
+                            } catch (error) {
+                              toast.error('Erro ao baixar PDF');
+                            }
+                          }}
+                          size="sm"
+                          className="flex-1 bg-red-600 hover:bg-red-700"
+                        >
+                          <Download className="w-3 h-3 mr-1" />
+                          PDF
+                        </Button>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowClienteRelatoriosModal(false);
+                            openViewRelatorioModal(relatorio);
+                          }}
+                          size="sm"
+                          className="flex-1 bg-purple-600 hover:bg-purple-700"
+                        >
+                          <FileText className="w-3 h-3 mr-1" />
+                          Ver Detalhes
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
