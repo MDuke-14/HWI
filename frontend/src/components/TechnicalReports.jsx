@@ -2260,8 +2260,37 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
 
-              {/* Botão Enviar PDF por Email */}
-              <div className="flex justify-center pt-6">
+              {/* Botões de Ação */}
+              <div className="flex gap-4 justify-center pt-6">
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await axios.get(
+                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
+                        { responseType: 'blob' }
+                      );
+                      
+                      const blob = new Blob([response.data], { type: 'application/pdf' });
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `OT_${selectedRelatorio.numero_assistencia}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast.success('PDF baixado com sucesso!');
+                    } catch (error) {
+                      toast.error('Erro ao baixar PDF');
+                    }
+                  }}
+                  size="lg"
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-4"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Download PDF
+                </Button>
                 <Button
                   onClick={() => openEmailModal()}
                   size="lg"
