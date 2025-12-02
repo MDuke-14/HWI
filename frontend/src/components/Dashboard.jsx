@@ -135,7 +135,14 @@ const Dashboard = ({ user, onLogout }) => {
       });
       toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
       setEndObservations('');
-      fetchTodayEntry();
+      
+      // Atualizar estado imediatamente
+      setEntry(null);  // Limpar entrada ativa
+      
+      // Buscar estado atualizado
+      await fetchTodayEntry();
+      
+      console.log('Estado atualizado após finalizar');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao finalizar');
     } finally {
