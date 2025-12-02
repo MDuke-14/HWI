@@ -2831,14 +2831,22 @@ const TechnicalReports = ({ user, onLogout }) => {
           <div className="mt-4 space-y-4">
             <div>
               <Label className="text-gray-300 mb-2 block">Desenhe sua assinatura abaixo:</Label>
-              <div className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white">
+              <div 
+                className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white"
+                style={{ touchAction: 'none' }}
+              >
                 <SignatureCanvas
                   ref={(ref) => setAssinaturaCanvas(ref)}
                   canvasProps={{
                     className: 'w-full h-64',
-                    style: { width: '100%', height: '256px' }
+                    style: { 
+                      width: '100%', 
+                      height: '256px',
+                      touchAction: 'none'
+                    }
                   }}
                   backgroundColor="white"
+                  penColor="black"
                 />
               </div>
               <Button
@@ -2859,8 +2867,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <Input
                   id="primeiro_nome_digital"
                   type="text"
+                  inputMode="none"
                   value={assinaturaNome.primeiro}
                   onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
+                  onFocus={(e) => e.target.blur()}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   placeholder="Ex: João"
                   required
@@ -2873,8 +2883,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <Input
                   id="ultimo_nome_digital"
                   type="text"
+                  inputMode="none"
                   value={assinaturaNome.ultimo}
                   onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
+                  onFocus={(e) => e.target.blur()}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   placeholder="Ex: Silva"
                   required
