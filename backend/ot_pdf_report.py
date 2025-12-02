@@ -51,7 +51,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     # Logo da empresa
     logo_path = Path(__file__).parent / "assets" / "hwi_logo.png"
     if logo_path.exists():
-        logo = RLImage(str(logo_path), width=4*cm, height=2*cm)
+        logo = RLImage(str(logo_path), width=6*cm, height=2*cm)
         elements.append(logo)
         elements.append(Spacer(1, 0.2*cm))
     
