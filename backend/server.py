@@ -2238,18 +2238,24 @@ async def salvar_assinatura_digital(
     unique_filename = f"{uuid.uuid4()}.png"
     file_path = upload_dir / unique_filename
     
-    # Salvar arquivo
+    # Ler conteúdo do arquivo
+    file_content = await file.read()
+    
+    # Converter para base64 para MongoDB
+    import base64
+    assinatura_base64 = base64.b64encode(file_content).decode('utf-8')
+    
+    # Salvar também em arquivo local
     try:
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(file_content)
     except Exception as e:
-        logging.error(f"Erro ao salvar assinatura: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao salvar assinatura")
+        logging.warning(f"Não foi possível salvar arquivo localmente: {e}")
     
     # Remover assinatura anterior se existir
     await db.assinaturas_relatorio.delete_many({"relatorio_id": relatorio_id})
     
-    # Criar registro no banco
+    # Criar registro no banco COM BASE64
     nome_completo = f"{primeiro_nome} {ultimo_nome}".strip()
     assinatura = AssinaturaRelatorio(
         relatorio_id=relatorio_id,
@@ -2263,6 +2269,7 @@ async def salvar_assinatura_digital(
     
     assinatura_dict = assinatura.dict()
     assinatura_dict["data_assinatura"] = assinatura_dict["data_assinatura"].isoformat()
+    assinatura_dict["assinatura_base64"] = assinatura_base64  # Adicionar base64
     
     await db.assinaturas_relatorio.insert_one(assinatura_dict)
     
