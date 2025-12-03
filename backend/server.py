@@ -215,6 +215,20 @@ class TecnicoRelatorio(BaseModel):
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     ordem: int = 0
 
+
+
+class EquipamentoOT(BaseModel):
+    """Equipamento associado a uma OT"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    tipologia: str
+    marca: str
+    modelo: str
+    numero_serie: Optional[str] = None
+    ano_fabrico: Optional[str] = None
+    ordem: int = 0  # Para ordenação na lista
+
 class IntervencaoRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
