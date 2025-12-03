@@ -332,8 +332,7 @@ class TimeEntry(BaseModel):
     overtime_reason: Optional[str] = None  # "Sábado", "Domingo", "Feriado: Nome"
     regular_hours: Optional[float] = None
     overtime_hours: Optional[float] = None  # Hours above 8h on regular days
-    saturday_hours: Optional[float] = None  # All hours on Saturday
-    special_hours: Optional[float] = None  # All hours on Sunday/holidays
+    special_hours: Optional[float] = None  # All hours on weekends/holidays
     total_hours: Optional[float] = None
     outside_residence_zone: bool = False  # True if working outside residence zone
     location_description: Optional[str] = None  # Location when outside residence zone
