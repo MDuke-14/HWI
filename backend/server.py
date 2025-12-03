@@ -3140,14 +3140,8 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
         "entradas": entradas
     }
 
-        "date": today,
-        "hora_servidor": hora_servidor,
-        "is_weekend": is_weekend,
-        "is_holiday": is_holiday,
-        "holiday_name": ot_reason if is_holiday else None,
-        "users": user_statuses
-    }
 
+# ============ Time Entry Reports Routes ============
 # ============ Time Entry Reports Routes ============
     total_hours = sum(e.get("total_hours", 0) for e in today_entries)
     regular_hours = sum(e.get("regular_hours", 0) for e in today_entries)
