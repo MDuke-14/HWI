@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates
 from excel_report import generate_monthly_report
 from pdf_report import generate_monthly_pdf_report
+from pdf_report_simple import generate_monthly_pdf_report as generate_pdf_simple
 from import_excel import parse_excel_timesheet
 from import_pdf import parse_pdf_timesheet
 from ot_pdf_report import generate_ot_pdf
