@@ -94,8 +94,7 @@ def calcular_breakdown_completo(
         Dict com horas em formato decimal:
         - regular_hours (horas normais)
         - overtime_hours (horas extra)
-        - saturday_hours (horas sábado)
-        - special_hours (horas domingo/feriado)
+        - special_hours (horas sábado/domingo/feriado JUNTAS)
     """
     # Calcular total de segundos
     total_seconds = (end_time - start_time).total_seconds()
@@ -115,10 +114,9 @@ def calcular_breakdown_completo(
     # Calcular breakdown em minutos
     breakdown_min = calcular_horas_dia(total_minutos, dia_semana_js, is_feriado)
     
-    # Converter para horas decimais
+    # Converter para horas decimais (SEM saturday_hours separado)
     return {
         "regular_hours": minutos_para_horas(breakdown_min["horas_normais"]),
         "overtime_hours": minutos_para_horas(breakdown_min["horas_extra"]),
-        "saturday_hours": minutos_para_horas(breakdown_min["horas_sabado"]),
         "special_hours": minutos_para_horas(breakdown_min["horas_especial"])
     }
