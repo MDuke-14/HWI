@@ -4829,7 +4829,6 @@ async def recalculate_user_hours(
         # Arredondar totais
         stats["totals"]["regular_hours"] = round(stats["totals"]["regular_hours"], 2)
         stats["totals"]["overtime_hours"] = round(stats["totals"]["overtime_hours"], 2)
-        stats["totals"]["saturday_hours"] = round(stats["totals"]["saturday_hours"], 2)
         stats["totals"]["special_hours"] = round(stats["totals"]["special_hours"], 2)
         stats["totals"]["total_hours"] = round(stats["totals"]["total_hours"], 2)
         
