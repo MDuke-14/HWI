@@ -3934,6 +3934,9 @@ async def download_monthly_pdf_report(
     if user_id and current_user.get("is_admin"):
         target_user_id = user_id
     
+    logging.info(f"Gerando PDF para user_id={target_user_id}, month={month}, year={year}")
+
+    
     # Get user data for report
     user = await db.users.find_one({"id": target_user_id}, {"_id": 0})
     if not user:
