@@ -2211,18 +2211,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {assinatura ? (
                   <div className="bg-black/30 rounded-lg p-4 border border-gray-700">
                     <div className="flex items-start gap-4">
-                      {/* Assinatura Digital */}
-                      {assinatura.tipo === 'digital' && assinatura.assinatura_url && (
+                      {/* Assinatura Digital - Sempre mostrar se tiver URL */}
+                      {assinatura.assinatura_url && (
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 mb-2">Assinatura Digital:</p>
-                          <div className="bg-white p-2 rounded">
+                          <p className="text-xs text-gray-500 mb-2">
+                            {assinatura.tipo === 'digital' ? 'Assinatura Digital:' : 'Assinatura:'}
+                          </p>
+                          <div className="bg-white p-3 rounded border-2 border-gray-300">
                             <img
                               src={`${API}${assinatura.assinatura_url}`}
                               alt="Assinatura"
-                              className="max-h-32 mx-auto"
+                              className="max-h-40 w-full object-contain"
                               onError={(e) => {
                                 console.log('Erro ao carregar assinatura:', `${API}${assinatura.assinatura_url}`);
-                                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="80"%3E%3Crect fill="%23f3f4f6" width="200" height="80"/%3E%3Ctext fill="%23666" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EAssinatura%3C/text%3E%3C/svg%3E';
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<p class="text-gray-600 text-sm text-center py-4">Erro ao carregar imagem</p>';
                               }}
                               onLoad={() => console.log('✓ Assinatura carregada')}
                             />
@@ -2231,7 +2234,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       )}
                       
                       {/* Informações */}
-                      <div className="flex-1">
+                      <div className={assinatura.assinatura_url ? 'flex-1' : 'w-full'}>
                         <div className="space-y-2">
                           <div>
                             <p className="text-xs text-gray-500">Tipo:</p>
