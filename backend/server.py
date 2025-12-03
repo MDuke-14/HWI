@@ -4258,7 +4258,14 @@ async def adjust_entry_to_8hours(
     }
     
     # Generate PDF
-    pdf_buffer = generate_monthly_pdf_report(report_data)
+    try:
+        pdf_buffer = generate_monthly_pdf_report(report_data)
+        logging.info(f"PDF gerado com sucesso: {len(pdf_buffer.getvalue())} bytes")
+    except Exception as e:
+        logging.error(f"Erro ao gerar PDF: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
     
     # Generate filename
     filename = f"Relatorio_Mensal_{username}_{month:02d}_{year}.pdf"
