@@ -3010,7 +3010,6 @@ async def end_time_entry(
                 "total_hours": total_hours,
                 "regular_hours": hours_breakdown["regular_hours"],
                 "overtime_hours": hours_breakdown["overtime_hours"],
-                "saturday_hours": hours_breakdown["saturday_hours"],
                 "special_hours": hours_breakdown["special_hours"],
                 "observations": final_observations
             }}
@@ -3021,7 +3020,6 @@ async def end_time_entry(
             "total_hours": total_hours,
             "regular_hours": hours_breakdown["regular_hours"],
             "overtime_hours": hours_breakdown["overtime_hours"],
-            "saturday_hours": hours_breakdown["saturday_hours"],
             "special_hours": hours_breakdown["special_hours"]
         }
 
