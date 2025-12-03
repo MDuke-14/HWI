@@ -4118,6 +4118,107 @@ async def download_monthly_pdf_report(
     # Buscar dados de férias do sistema de férias (usa vacation_balances)
     vacation_balance = await db.vacation_balances.find_one({"user_id": target_user_id}, {"_id": 0})
     
+
+
+@api_router.post("/admin/time-entries/{entry_id}/adjust-to-8h")
+async def adjust_entry_to_8hours(
+    entry_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Ajustar automaticamente uma entrada para totalizar 8h no dia
+    Admin only
+    """
+    try:
+        # Buscar a entrada específica
+        entry = await db.time_entries.find_one({"id": entry_id})
+        if not entry:
+            raise HTTPException(status_code=404, detail="Entrada não encontrada")
+        
+        # Verificar se tem start_time e end_time
+        if not entry.get("start_time") or not entry.get("end_time"):
+            raise HTTPException(status_code=400, detail="Entrada não tem horários definidos")
+        
+        # Buscar TODAS as entradas deste dia
+        all_day_entries = await db.time_entries.find({
+            "user_id": entry["user_id"],
+            "date": entry["date"]
+        }).to_list(None)
+        
+        # Calcular total de horas do dia (excluindo a entrada atual)
+        total_seconds_other = 0
+        for e in all_day_entries:
+            if e["id"] == entry_id:
+                continue  # Pular a entrada que vamos ajustar
+            
+            if e.get("start_time") and e.get("end_time"):
+                start = datetime.fromisoformat(e["start_time"])
+                end = datetime.fromisoformat(e["end_time"])
+                total_seconds_other += (end - start).total_seconds()
+        
+        # Converter para horas
+        import math
+        total_minutes_other = math.floor(total_seconds_other / 60)
+        hours_other = total_minutes_other / 60
+        
+        # Verificar quanto falta para 8h
+        target_hours = 8.0
+        hours_needed = target_hours - hours_other
+        
+        if hours_needed <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Este dia já tem {hours_other:.2f}h sem contar esta entrada. Não precisa ajuste."
+            )
+        
+        # Calcular nova hora de saída
+        start_time = datetime.fromisoformat(entry["start_time"])
+        minutes_needed = round(hours_needed * 60)
+        new_end_time = start_time + timedelta(minutes=minutes_needed)
+        
+        # Guardar hora original em observations
+        original_end = datetime.fromisoformat(entry["end_time"])
+        original_end_str = original_end.strftime("%H:%M")
+        
+        new_observations = entry.get("observations", "")
+        adjustment_note = f"[Ajustado para 8h - Original: {original_end_str}]"
+        
+        if new_observations:
+            new_observations = f"{new_observations} {adjustment_note}"
+        else:
+            new_observations = adjustment_note
+        
+        # Calcular novo total de horas desta entrada
+        new_total_seconds = (new_end_time - start_time).total_seconds()
+        new_total_minutes = math.floor(new_total_seconds / 60)
+        new_total_hours = round(new_total_minutes / 60, 2)
+        
+        # Atualizar entrada
+        await db.time_entries.update_one(
+            {"id": entry_id},
+            {"$set": {
+                "end_time": new_end_time.isoformat(),
+                "total_hours": new_total_hours,
+                "observations": new_observations
+            }}
+        )
+        
+        logging.info(f"Entrada {entry_id} ajustada para 8h totais no dia")
+        
+        return {
+            "message": "Entrada ajustada com sucesso",
+            "original_end_time": original_end_str,
+            "new_end_time": new_end_time.strftime("%H:%M"),
+            "hours_needed": round(hours_needed, 2),
+            "total_day_hours": target_hours
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Erro ao ajustar entrada para 8h: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
     if vacation_balance:
         # Usar calculate_vacation_days que é a função correta
         vacation_calc = calculate_vacation_days(
