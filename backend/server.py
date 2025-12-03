@@ -3051,6 +3051,88 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
         })
     
     return {
+
+
+@api_router.get("/time-entries/my-realtime-status")
+async def get_my_realtime_status(current_user: dict = Depends(get_current_user)):
+    """Get user's own real-time status for today with entry details"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_date = datetime.now(timezone.utc).date()
+    hora_servidor = datetime.now(timezone.utc).strftime("%H:%M")
+    user_id = current_user["sub"]
+    
+    # Get user's today entries
+    entries_db = await db.time_entries.find({
+        "user_id": user_id,
+        "date": today
+    }, {"_id": 0}).to_list(1000)
+    
+    # Process entries
+    entradas = []
+    for entry_db in entries_db:
+        if entry_db.get("entries"):
+            # Formato novo - múltiplas entradas
+            for idx, e in enumerate(entry_db["entries"]):
+                entrada = {
+                    "id": f"{entry_db['id']}_{idx}",
+                    "inicio": datetime.fromisoformat(e["start_time"]).strftime("%H:%M") if e.get("start_time") else None,
+                    "fim": datetime.fromisoformat(e["end_time"]).strftime("%H:%M") if e.get("end_time") else None,
+                    "estado": "terminada" if e.get("end_time") else "ativa"
+                }
+                entradas.append(entrada)
+        else:
+            # Formato antigo
+            entrada = {
+                "id": entry_db["id"],
+                "inicio": datetime.fromisoformat(entry_db["start_time"]).strftime("%H:%M") if entry_db.get("start_time") else None,
+                "fim": datetime.fromisoformat(entry_db["end_time"]).strftime("%H:%M") if entry_db.get("end_time") else None,
+                "estado": "ativa" if entry_db["status"] == "active" else "terminada"
+            }
+            entradas.append(entrada)
+    
+    # Determine status
+    has_active = any(e["estado"] == "ativa" for e in entradas)
+    
+    if has_active:
+        estado = "trabalho_iniciado"
+    elif entradas:
+        estado = "terminou"
+    else:
+        # Check vacation/weekend/holiday
+        vacation_requests = await db.vacation_requests.find({
+            "user_id": user_id,
+            "status": "approved"
+        }, {"_id": 0}).to_list(100)
+        
+        in_vacation = False
+        for vac in vacation_requests:
+            vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
+            vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
+            if vac_start <= today_date <= vac_end:
+                in_vacation = True
+                break
+        
+        is_ot_day, ot_reason = is_overtime_day(today_date)
+        is_weekend = today_date.weekday() >= 5
+        is_holiday = is_ot_day and "Feriado" in (ot_reason or "")
+        
+        if in_vacation:
+            estado = "ferias"
+        elif is_weekend:
+            estado = "folga"
+        elif is_holiday:
+            estado = "feriado"
+        else:
+            estado = "falta"
+    
+    return {
+        "id": user_id,
+        "nome": current_user.get("full_name") or current_user.get("username"),
+        "estado": estado,
+        "hora_servidor": hora_servidor,
+        "entradas": entradas
+    }
+
         "date": today,
         "hora_servidor": hora_servidor,
         "is_weekend": is_weekend,
