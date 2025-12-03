@@ -4045,7 +4045,6 @@ async def download_monthly_pdf_report(
             breakdown_min = calcular_horas_dia(total_minutos, dia_semana_js, is_feriado)
             
             overtime_hours = minutos_para_horas(breakdown_min["horas_extra"])
-            saturday_hours = minutos_para_horas(breakdown_min["horas_sabado"]) 
             special_hours = minutos_para_horas(breakdown_min["horas_especial"])
             
             # Check payment type
