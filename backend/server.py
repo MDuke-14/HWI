@@ -2086,6 +2086,79 @@ async def upload_fotografia(
     upload_dir.mkdir(parents=True, exist_ok=True)
     
     # Gerar nome único para o arquivo
+
+
+# ============ Equipamentos OT Routes ============
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/equipamentos")
+async def add_equipamento_ot(
+    relatorio_id: str,
+    equipamento_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Adicionar equipamento a uma OT"""
+    # Verificar se OT existe
+    ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not ot:
+        raise HTTPException(status_code=404, detail="OT não encontrada")
+    
+    # Obter ordem (último + 1)
+    last = await db.equipamentos_ot.find_one(
+        {"relatorio_id": relatorio_id},
+        sort=[("ordem", -1)]
+    )
+    ordem = (last.get("ordem", -1) + 1) if last else 0
+    
+    # Criar equipamento
+    equipamento = EquipamentoOT(
+        relatorio_id=relatorio_id,
+        tipologia=equipamento_data["tipologia"],
+        marca=equipamento_data["marca"],
+        modelo=equipamento_data["modelo"],
+        numero_serie=equipamento_data.get("numero_serie"),
+        ano_fabrico=equipamento_data.get("ano_fabrico"),
+        ordem=ordem
+    )
+    
+    equip_dict = equipamento.dict()
+    await db.equipamentos_ot.insert_one(equip_dict)
+    
+    logging.info(f"Equipamento adicionado à OT {relatorio_id}")
+    
+    return equipamento
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/equipamentos")
+async def get_equipamentos_ot(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar equipamentos de uma OT"""
+    equipamentos = await db.equipamentos_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+    
+    return equipamentos
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/equipamentos/{equipamento_id}")
+async def delete_equipamento_ot(
+    relatorio_id: str,
+    equipamento_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover equipamento de uma OT"""
+    result = await db.equipamentos_ot.delete_one({
+        "id": equipamento_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+    
+    logging.info(f"Equipamento {equipamento_id} removido da OT {relatorio_id}")
+    
+    return {"message": "Equipamento removido com sucesso"}
+
     unique_filename = f"{uuid.uuid4()}{file_ext}"
     file_path = upload_dir / unique_filename
     
