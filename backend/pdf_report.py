@@ -148,13 +148,6 @@ def generate_monthly_pdf_report(report_data):
             obs_list = []
             
             for idx, entry in enumerate(day['entries']):
-                # Filtrar entradas manuais do admin
-                if entry.get('observations') and 'Entrada manual' in entry.get('observations', ''):
-                    continue  # Pular entradas manuais
-                
-                if entry.get('observations') and 'pelo administrador' in entry.get('observations', ''):
-                    continue  # Pular entradas manuais
-                
                 if entry.get('start_time') and entry.get('end_time'):
                     start = datetime.fromisoformat(entry['start_time']).strftime('%H:%M')
                     end = datetime.fromisoformat(entry['end_time']).strftime('%H:%M')
@@ -164,13 +157,19 @@ def generate_monthly_pdf_report(report_data):
                     if entry.get('observations'):
                         obs_text = entry['observations']
                         
-                        # Verificar se tem ajuste de 8h
+                        # FILTRAR texto de entrada manual do admin
                         import re
+                        
+                        # Remover padrões de entrada manual
+                        obs_text = re.sub(r'Entrada manual \d+/\d+ pelo administrador', '', obs_text).strip()
+                        obs_text = re.sub(r'Importado de (PDF|Excel) \(entrada \d+/\d+\)', '', obs_text).strip()
+                        
+                        # Verificar se tem ajuste de 8h
                         match = re.search(r'\[Ajustado para 8h - Original: (\d{2}:\d{2})\]', obs_text)
                         if match:
                             hora_original = match.group(1)
                             obs_list.append(f"Ajustado por admin ({hora_original})")
-                        else:
+                        elif obs_text:  # Só adicionar se sobrou texto
                             # Observação normal do usuário
                             obs_list.append(obs_text)
             
