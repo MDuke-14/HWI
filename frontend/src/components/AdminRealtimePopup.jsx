@@ -177,7 +177,13 @@ const AdminRealtimePopup = ({ onClose }) => {
                 </div>
               );
             })}
-          </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Clock className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">Carregando status dos utilizadores...</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
