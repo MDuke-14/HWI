@@ -450,19 +450,25 @@ const Dashboard = ({ user, onLogout }) => {
 
               {/* Users Status Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {realtimeData.users.map((userStatus) => (
+                {realtimeData.users.map((userStatus) => {
+                  // Mapear estado antigo para novo
+                  const estado = userStatus.status || userStatus.estado;
+                  const nome = userStatus.full_name || userStatus.nome;
+                  const username = userStatus.username || '';
+                  
+                  return (
                   <div
-                    key={userStatus.user_id}
+                    key={userStatus.user_id || userStatus.id}
                     className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-purple-500 transition"
                   >
                     {/* User Info */}
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="text-white font-semibold">{userStatus.full_name}</h3>
-                        <p className="text-gray-400 text-sm">@{userStatus.username}</p>
+                        <h3 className="text-white font-semibold">{nome}</h3>
+                        {username && <p className="text-gray-400 text-sm">@{username}</p>}
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(userStatus.status_color)}`}>
-                        {userStatus.status}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(userStatus.status_color || 'gray')}`}>
+                        {estado}
                       </span>
                     </div>
 
