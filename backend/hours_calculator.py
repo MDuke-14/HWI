@@ -64,14 +64,11 @@ def calcular_horas_dia(total_minutos: int, dia_semana: int, is_feriado: bool) ->
     resultado = {
         "horas_normais": 0,
         "horas_extra": 0,
-        "horas_sabado": 0,
-        "horas_especial": 0  # Domingo ou Feriado
+        "horas_especial": 0  # Sábado, Domingo e Feriado JUNTOS
     }
     
-    if is_feriado or dia_semana == 0:  # Feriado ou Domingo
+    if is_feriado or dia_semana == 0 or dia_semana == 6:  # Feriado, Domingo ou Sábado
         resultado["horas_especial"] = total_minutos
-    elif dia_semana == 6:  # Sábado
-        resultado["horas_sabado"] = total_minutos
     else:  # Dias úteis (Segunda a Sexta)
         if total_minutos <= limite_minutos:
             resultado["horas_normais"] = total_minutos
