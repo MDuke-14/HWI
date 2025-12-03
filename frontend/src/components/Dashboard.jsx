@@ -573,6 +573,22 @@ const Dashboard = ({ user, onLogout }) => {
           ) : null}
         </DialogContent>
       </Dialog>
+      
+      {/* Botão Flutuante para Ver Próprio Status */}
+      {!user?.is_admin && (
+        <button
+          onClick={() => setShowMyRealtimePopup(true)}
+          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl transition-all hover:scale-110 z-50"
+          title="Ver Minhas Entradas"
+        >
+          <Clock className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Popup Realtime do Usuário */}
+      {showMyRealtimePopup && (
+        <UserRealtimePopup onClose={() => setShowMyRealtimePopup(false)} />
+      )}
     </div>
   );
 };
