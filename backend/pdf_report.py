@@ -169,7 +169,7 @@ def generate_monthly_pdf_report(report_data):
                         match = re.search(r'\[Ajustado para 8h - Original: (\d{2}:\d{2})\]', obs_text)
                         if match:
                             hora_original = match.group(1)
-                            obs_list.append(f"Horário ajustado por admin ({hora_original})")
+                            obs_list.append(f"Ajustado por admin ({hora_original})")
                         else:
                             # Observação normal do usuário
                             obs_list.append(obs_text)
