@@ -148,6 +148,13 @@ def generate_monthly_pdf_report(report_data):
             obs_list = []
             
             for idx, entry in enumerate(day['entries']):
+                # Filtrar entradas manuais do admin
+                if entry.get('observations') and 'Entrada manual' in entry.get('observations', ''):
+                    continue  # Pular entradas manuais
+                
+                if entry.get('observations') and 'pelo administrador' in entry.get('observations', ''):
+                    continue  # Pular entradas manuais
+                
                 if entry.get('start_time') and entry.get('end_time'):
                     start = datetime.fromisoformat(entry['start_time']).strftime('%H:%M')
                     end = datetime.fromisoformat(entry['end_time']).strftime('%H:%M')
