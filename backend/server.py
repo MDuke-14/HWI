@@ -4820,7 +4820,6 @@ async def recalculate_user_hours(
             # Somar aos totais (usar valores atualizados)
             stats["totals"]["regular_hours"] += new_regular
             stats["totals"]["overtime_hours"] += new_overtime
-            stats["totals"]["saturday_hours"] += new_saturday
             stats["totals"]["special_hours"] += new_special
             stats["totals"]["total_hours"] += new_total
             
