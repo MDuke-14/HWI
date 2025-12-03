@@ -113,24 +113,25 @@ const AdminRealtimePopup = ({ onClose }) => {
 
         {/* User Cards */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {users.map((user) => {
-              const totalMinutes = calculateTotalDay(user.entradas);
-              
-              return (
-                <div key={user.id} className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4">
-                  {/* Nome e Estado */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-white font-semibold">{user.nome}</h3>
-                    <span className={`px-3 py-1 rounded text-xs font-semibold text-white ${getStatusColor(user.estado)}`}>
-                      {getStatusLabel(user.estado)}
-                    </span>
-                  </div>
+          {users && users.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {users.map((user) => {
+                const totalMinutes = calculateTotalDay(user.entradas || []);
+                
+                return (
+                  <div key={user.id} className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4">
+                    {/* Nome e Estado */}
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-semibold">{user.nome}</h3>
+                      <span className={`px-3 py-1 rounded text-xs font-semibold text-white ${getStatusColor(user.estado)}`}>
+                        {getStatusLabel(user.estado)}
+                      </span>
+                    </div>
 
-                  {/* Entradas */}
-                  {user.entradas.length > 0 ? (
-                    <div className="space-y-2 mb-3">
-                      {user.entradas.map((entrada, idx) => {
+                    {/* Entradas */}
+                    {user.entradas && user.entradas.length > 0 ? (
+                      <div className="space-y-2 mb-3">
+                        {user.entradas.map((entrada, idx) => {
                         const elapsed = calculateElapsed(entrada.inicio, entrada.fim);
                         const isActive = entrada.estado === 'ativa';
                         
