@@ -3593,7 +3593,6 @@ async def get_custom_range_report(
             
             total_worked_hours += total_hours
             total_overtime_hours += overtime_hours
-            total_saturday_hours += saturday_hours
             total_special_hours += special_hours
         else:
             # Not worked - determine status
@@ -3832,7 +3831,6 @@ async def get_monthly_detailed_report(
             
             total_worked_hours += total_hours
             total_overtime_hours += overtime_hours
-            total_saturday_hours += saturday_hours
             total_special_hours += special_hours
         else:
             # Not worked - determine status
@@ -4085,7 +4083,6 @@ async def download_monthly_pdf_report(
             
             total_worked_hours += total_hours
             total_overtime_hours += overtime_hours
-            total_saturday_hours += saturday_hours
             total_special_hours += special_hours
         else:
             # Not worked - determine status
