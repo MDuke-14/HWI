@@ -533,7 +533,8 @@ const Dashboard = ({ user, onLogout }) => {
                       )}
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
 
               {/* Summary */}
