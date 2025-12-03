@@ -4122,6 +4122,60 @@ async def download_monthly_pdf_report(
     # Buscar dados de férias do sistema de férias (usa vacation_balances)
     vacation_balance = await db.vacation_balances.find_one({"user_id": target_user_id}, {"_id": 0})
     
+    
+    if vacation_balance:
+        vacation_calc = calculate_vacation_days(
+            vacation_balance["company_start_date"],
+            vacation_balance.get("days_taken", 0)
+        )
+        vacation_days_used = vacation_balance.get("days_taken", 0)
+        vacation_days_available = vacation_calc["days_available"]
+        vacation_entitlement = vacation_calc["days_earned"]
+    else:
+        vacation_days_used = 0
+        vacation_days_available = 22
+        vacation_entitlement = 22
+    
+    report_data = {
+        "username": username,
+        "full_name": full_name,
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": end_date.strftime("%Y-%m-%d"),
+        "month": month,
+        "year": year,
+        "daily_records": daily_records,
+        "summary": {
+            "total_worked_hours": round(total_worked_hours, 2),
+            "total_overtime_hours": round(total_overtime_hours, 2),
+            "total_saturday_hours": round(total_saturday_hours, 2),
+            "total_special_hours": round(total_special_hours, 2),
+            "days_with_meal_allowance": days_with_meal_allowance,
+            "days_with_travel_allowance": days_with_travel_allowance,
+            "total_meal_allowance_value": days_with_meal_allowance * 10.0,
+            "total_travel_allowance_value": days_with_travel_allowance * 50.0,
+            "vacation_days_used": vacation_days_used,
+            "vacation_days_available": vacation_days_available,
+            "vacation_entitlement": vacation_entitlement
+        }
+    }
+    
+    # Generate PDF
+    try:
+        pdf_buffer = generate_pdf_simple(report_data)
+        logging.info(f"PDF gerado: {len(pdf_buffer.getvalue())} bytes")
+    except Exception as e:
+        logging.error(f"Erro PDF: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    # Return PDF
+    filename = f"Relatorio_Mensal_{username}_{month:02d}_{year}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 
 
 @api_router.post("/admin/time-entries/{entry_id}/adjust-to-8h")
