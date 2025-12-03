@@ -425,6 +425,41 @@ const Reports = ({ user, onLogout }) => {
     }
   };
 
+  const handleAdjustTo8Hours = async (entryId) => {
+    if (!user?.is_admin) {
+      toast.error('Apenas administradores podem ajustar horas');
+      return;
+    }
+
+    if (!window.confirm('Ajustar automaticamente este dia para 8 horas totais?')) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/admin/time-entries/${entryId}/adjust-to-8h`);
+      toast.success('Dia ajustado para 8 horas com sucesso!');
+      
+      // Refresh report to show updated times
+      fetchDetailedMonthlyReport();
+      
+      // Update the edit dialog with new data
+      if (editingEntry) {
+        const updatedReport = await axios.get(`${API}/time-entries/reports/monthly-detailed`, {
+          params: {
+            month: selectedMonth,
+            year: selectedYear
+          }
+        });
+        const updatedDay = updatedReport.data.daily_records.find(d => d.date === editingEntry.date);
+        if (updatedDay) {
+          handleEdit(updatedDay);
+        }
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao ajustar horas');
+    }
+  };
+
   // Functions for adding manual entries
   const addManualTimeEntry = () => {
     setManualEntryForm(prev => ({
