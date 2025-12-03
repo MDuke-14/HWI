@@ -3647,7 +3647,6 @@ async def get_custom_range_report(
         "summary": {
             "total_worked_hours": round(total_worked_hours, 2),
             "total_overtime_hours": round(total_overtime_hours, 2),
-            "total_saturday_hours": round(total_saturday_hours, 2),
             "total_special_hours": round(total_special_hours, 2),
             "days_with_meal_allowance": days_with_meal_allowance,
             "days_with_travel_allowance": days_with_travel_allowance,
@@ -3891,7 +3890,6 @@ async def get_monthly_detailed_report(
         "summary": {
             "total_worked_hours": round(total_worked_hours, 2),
             "total_overtime_hours": round(total_overtime_hours, 2),
-            "total_saturday_hours": round(total_saturday_hours, 2),
             "total_special_hours": round(total_special_hours, 2),
             "days_with_meal_allowance": days_with_meal_allowance,
             "days_with_travel_allowance": days_with_travel_allowance,
@@ -4134,7 +4132,6 @@ async def download_monthly_pdf_report(
         "summary": {
             "total_worked_hours": round(total_worked_hours, 2),
             "total_overtime_hours": round(total_overtime_hours, 2),
-            "total_saturday_hours": round(total_saturday_hours, 2),
             "total_special_hours": round(total_special_hours, 2),
             "days_with_meal_allowance": days_with_meal_allowance,
             "days_with_travel_allowance": days_with_travel_allowance,
@@ -4290,7 +4287,6 @@ async def adjust_entry_to_8hours(
         "summary": {
             "total_worked_hours": round(total_worked_hours, 2),
             "total_overtime_hours": round(total_overtime_hours, 2),
-            "total_saturday_hours": round(total_saturday_hours, 2),
             "total_special_hours": round(total_special_hours, 2),
             "days_with_meal_allowance": days_with_meal_allowance,
             "days_with_travel_allowance": days_with_travel_allowance,
