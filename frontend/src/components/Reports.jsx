@@ -1338,7 +1338,16 @@ const Reports = ({ user, onLogout }) => {
                             </div>
                           )}
                           
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="flex gap-2">
+                            {user?.is_admin && (
+                              <Button
+                                onClick={() => handleAdjustTo8Hours(individualEntry.id)}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm py-2"
+                                title="Ajustar automaticamente para 8h totais no dia"
+                              >
+                                ⚡ Ajustar para 8h
+                              </Button>
+                            )}
                             <Button
                               onClick={() => handleSaveIndividualEntry(individualEntry.id)}
                               className="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
