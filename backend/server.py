@@ -4161,7 +4161,7 @@ async def download_monthly_pdf_report(
     
     # Generate PDF
     try:
-        pdf_buffer = generate_pdf_simple(report_data)
+        pdf_buffer = generate_monthly_pdf_report(report_data)  # USAR VERSÃO COMPLETA
         logging.info(f"PDF gerado: {len(pdf_buffer.getvalue())} bytes")
     except Exception as e:
         logging.error(f"Erro PDF: {e}")
