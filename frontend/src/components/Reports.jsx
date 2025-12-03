@@ -235,9 +235,6 @@ const Reports = ({ user, onLogout }) => {
       }
       
       const response = await axios.get(`${API}/time-entries/reports/monthly-pdf`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
         params,
         responseType: 'blob'
       });
