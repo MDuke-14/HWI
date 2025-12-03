@@ -3550,7 +3550,6 @@ async def get_custom_range_report(
             breakdown_min = calcular_horas_dia(total_minutos, dia_semana_js, is_feriado)
             
             overtime_hours = minutos_para_horas(breakdown_min["horas_extra"])
-            saturday_hours = minutos_para_horas(breakdown_min["horas_sabado"])
             special_hours = minutos_para_horas(breakdown_min["horas_especial"])
             
             outside_zone = any(e.get("outside_residence_zone", False) for e in day_entries)
@@ -3784,7 +3783,6 @@ async def get_monthly_detailed_report(
             breakdown_min = calcular_horas_dia(total_minutos, dia_semana_js, is_feriado)
             
             overtime_hours = minutos_para_horas(breakdown_min["horas_extra"])
-            saturday_hours = minutos_para_horas(breakdown_min["horas_sabado"])
             special_hours = minutos_para_horas(breakdown_min["horas_especial"])
             
             # Check payment type
