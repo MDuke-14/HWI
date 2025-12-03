@@ -3052,22 +3052,7 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
     
     return user_statuses
 
-        else:
-            # Absence on workday
-            status_info["status"] = "FALTA"
-            status_info["status_color"] = "red"
-        
-        user_statuses.append(status_info)
-    
-    return {
-        "date": today,
-        "is_weekend": is_weekend,
-        "is_holiday": is_holiday,
-        "holiday_name": ot_reason if is_holiday else None,
-        "users": user_statuses
-    }
-    
-    # Aggregate today's entries
+# ============ Time Entry Reports Routes ============
     total_hours = sum(e.get("total_hours", 0) for e in today_entries)
     regular_hours = sum(e.get("regular_hours", 0) for e in today_entries)
     overtime_hours = sum(e.get("overtime_hours", 0) for e in today_entries)
