@@ -223,56 +223,46 @@ const Reports = ({ user, onLogout }) => {
 
   const downloadPdfReport = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const params = {
+      const params = new URLSearchParams({
         month: selectedMonth,
         year: selectedYear
-      };
-      
-      // If admin is viewing another user's report, include user_id
-      if (user?.is_admin && selectedUserId && reportType === 'monthly') {
-        params.user_id = selectedUserId;
-      }
-      
-      const response = await axios.get(`${API}/time-entries/reports/monthly-pdf`, {
-        params,
-        responseType: 'blob'
       });
-
-      // Verificar se realmente é um PDF
-      const contentType = response.headers['content-type'];
-      if (!contentType || !contentType.includes('application/pdf')) {
-        // Recebeu JSON de erro, não PDF
-        const text = await response.data.text();
-        console.error('Resposta não é PDF:', text);
-        throw new Error('Erro ao gerar PDF. Por favor, faça login novamente.');
-      }
-
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
       
-      // Extract filename from headers or use default
-      const contentDisposition = response.headers['content-disposition'];
-      let filename = 'Relatorio_Mensal.pdf';
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename=(.+)/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
+      // If admin viewing another user
+      if (user?.is_admin && selectedUserId && reportType === 'monthly') {
+        params.append('user_id', selectedUserId);
+      }
+      
+      // Fazer download DIRETO sem validações complexas
+      const token = localStorage.getItem('token');
+      const url = `${API}/time-entries/reports/monthly-pdf?${params.toString()}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
       
-      link.setAttribute('download', filename);
+      const blob = await response.blob();
+      
+      // Download
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `Relatorio_${selectedMonth}_${selectedYear}.pdf`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
       
-      toast.success('Relatório PDF exportado com sucesso!');
+      toast.success('PDF exportado com sucesso!');
     } catch (error) {
-      console.error('PDF download error:', error);
-      toast.error('Erro ao exportar relatório PDF');
+      console.error('Erro download PDF:', error);
+      toast.error('Erro ao exportar PDF');
     }
   };
 
