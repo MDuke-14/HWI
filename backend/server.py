@@ -3051,6 +3051,13 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
         })
     
     return {
+        "date": today,
+        "hora_servidor": hora_servidor,
+        "is_weekend": is_weekend,
+        "is_holiday": is_holiday,
+        "holiday_name": ot_reason if is_holiday else None,
+        "users": user_statuses
+    }
 
 
 @api_router.get("/time-entries/my-realtime-status")
