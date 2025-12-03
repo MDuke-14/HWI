@@ -132,7 +132,7 @@ def generate_monthly_pdf_report(report_data):
             entries_text = '🏖️ FOLGA'
             observations_text = '-'
         elif day['status'] == 'FERIADO':
-            entries_text = f"🎉 {day.get('holiday_name', 'FERIADO')}"
+            entries_text = '🎉 FERIADO'  # Sem nome do feriado
             observations_text = '-'
         elif day['status'] == 'FÉRIAS':
             entries_text = '✈️ FÉRIAS'
