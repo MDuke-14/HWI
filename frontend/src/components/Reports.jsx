@@ -242,8 +242,17 @@ const Reports = ({ user, onLogout }) => {
         responseType: 'blob'
       });
 
+      // Verificar se realmente é um PDF
+      const contentType = response.headers['content-type'];
+      if (!contentType || !contentType.includes('application/pdf')) {
+        // Recebeu JSON de erro, não PDF
+        const text = await response.data.text();
+        console.error('Resposta não é PDF:', text);
+        throw new Error('Erro ao gerar PDF. Por favor, faça login novamente.');
+      }
+
       // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
       
