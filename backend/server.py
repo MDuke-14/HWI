@@ -2962,23 +2962,26 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/admin/realtime-status")
 async def get_realtime_status(current_user: dict = Depends(get_current_user)):
-    """Get real-time status of all employees for today with entry details"""
+    """Get real-time status of all employees for today (admin only)"""
     if not current_user.get("is_admin", False):
         raise HTTPException(status_code=403, detail="Apenas administradores")
     
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     today_date = datetime.now(timezone.utc).date()
-    hora_servidor = datetime.now(timezone.utc).strftime("%H:%M")
     
     # Get all users
     users = await db.users.find({}, {"_id": 0, "id": 1, "username": 1, "full_name": 1}).to_list(1000)
     
-    # Get all today's entries
-    all_entries_db = await db.time_entries.find({"date": today}, {"_id": 0}).to_list(1000)
+    # Get all today's entries (active and completed)
+    all_entries = await db.time_entries.find({
+        "date": today
+    }, {"_id": 0}).to_list(1000)
     
-    # Get approved vacations
+    # Get approved vacations for today
     vacation_users = set()
-    vacation_requests = await db.vacation_requests.find({"status": "approved"}, {"_id": 0}).to_list(1000)
+    vacation_requests = await db.vacation_requests.find({
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
     
     for vac in vacation_requests:
         vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
@@ -2986,73 +2989,82 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
         if vac_start <= today_date <= vac_end:
             vacation_users.add(vac["user_id"])
     
-    # Check day type
+    # Check if today is weekend or holiday
     is_ot_day, ot_reason = is_overtime_day(today_date)
     is_weekend = today_date.weekday() >= 5
     is_holiday = is_ot_day and "Feriado" in (ot_reason or "")
     
     # Build status for each user
     user_statuses = []
-    
     for user in users:
         user_id = user["id"]
-        user_entries_db = [e for e in all_entries_db if e["user_id"] == user_id]
+        user_entries = [e for e in all_entries if e["user_id"] == user_id]
         
-        # Processar entradas
-        entradas = []
-        has_active = False
+        # Find active entry
+        active_entry = next((e for e in user_entries if e["status"] == "active"), None)
+        completed_entries = [e for e in user_entries if e["status"] == "completed"]
         
-        for entry_db in user_entries_db:
-            # Pode ter array de entries ou formato antigo
-            if entry_db.get("entries"):
-                # Formato novo - múltiplas entradas
-                for idx, e in enumerate(entry_db["entries"]):
-                    entrada = {
-                        "id": f"{entry_db['id']}_{idx}",
-                        "inicio": datetime.fromisoformat(e["start_time"]).strftime("%H:%M") if e.get("start_time") else None,
-                        "fim": datetime.fromisoformat(e["end_time"]).strftime("%H:%M") if e.get("end_time") else None,
-                        "estado": "terminada" if e.get("end_time") else "ativa"
-                    }
-                    entradas.append(entrada)
-                    if entrada["estado"] == "ativa":
-                        has_active = True
-            else:
-                # Formato antigo - entrada única
-                entrada = {
-                    "id": entry_db["id"],
-                    "inicio": datetime.fromisoformat(entry_db["start_time"]).strftime("%H:%M") if entry_db.get("start_time") else None,
-                    "fim": datetime.fromisoformat(entry_db["end_time"]).strftime("%H:%M") if entry_db.get("end_time") else None,
-                    "estado": "ativa" if entry_db["status"] == "active" else "terminada"
-                }
-                entradas.append(entrada)
-                if entrada["estado"] == "ativa":
-                    has_active = True
+        status_info = {
+            "user_id": user_id,
+            "username": user["username"],
+            "full_name": user.get("full_name", user["username"]),
+            "date": today
+        }
         
-        # Determinar estado geral
-        if has_active:
-            estado = "trabalho_iniciado"
-        elif entradas:
-            estado = "terminou"
+        if active_entry:
+            # Currently working - SOMAR todas as entradas
+            start_time_active = datetime.fromisoformat(active_entry["start_time"])
+            
+            # Tempo da entrada ativa
+            elapsed_active = (datetime.now(timezone.utc) - start_time_active).total_seconds()
+            
+            # Tempo das entradas completadas
+            total_completed = sum(e.get("total_hours", 0) for e in completed_entries) * 3600  # converter para segundos
+            
+            # TOTAL = completadas + ativa
+            total_elapsed_seconds = total_completed + elapsed_active
+            elapsed_hours = round(total_elapsed_seconds / 3600, 2)
+            
+            status_info["status"] = "TRABALHANDO"
+            status_info["status_color"] = "green"
+            status_info["clock_in_time"] = start_time_active.strftime("%H:%M")
+            status_info["elapsed_hours"] = elapsed_hours  # SOMA de tudo
+            status_info["outside_residence_zone"] = active_entry.get("outside_residence_zone", False)
+            status_info["location"] = active_entry.get("location_description")
+        elif completed_entries:
+            # Worked today (finished)
+            total_hours = sum(e.get("total_hours", 0) for e in completed_entries)
+            first_entry = min(completed_entries, key=lambda x: x.get("start_time", ""))
+            last_entry = max(completed_entries, key=lambda x: x.get("end_time", ""))
+            
+            status_info["status"] = "TRABALHOU"
+            status_info["status_color"] = "blue"
+            status_info["clock_in_time"] = datetime.fromisoformat(first_entry["start_time"]).strftime("%H:%M")
+            status_info["clock_out_time"] = datetime.fromisoformat(last_entry["end_time"]).strftime("%H:%M")
+            status_info["total_hours"] = round(total_hours, 2)
+            status_info["outside_residence_zone"] = any(e.get("outside_residence_zone", False) for e in completed_entries)
         elif user_id in vacation_users:
-            estado = "ferias"
+            # On vacation
+            status_info["status"] = "FÉRIAS"
+            status_info["status_color"] = "purple"
         elif is_weekend:
-            estado = "folga"
+            # Weekend
+            status_info["status"] = "FOLGA"
+            status_info["status_color"] = "gray"
         elif is_holiday:
-            estado = "feriado"
+            # Holiday
+            status_info["status"] = "FERIADO"
+            status_info["status_color"] = "amber"
+            status_info["holiday_name"] = ot_reason
         else:
-            estado = "falta"
+            # Absence on workday
+            status_info["status"] = "FALTA"
+            status_info["status_color"] = "red"
         
-        user_statuses.append({
-            "id": user_id,
-            "nome": user.get("full_name") or user["username"],
-            "estado": estado,
-            "hora_servidor": hora_servidor,
-            "entradas": entradas
-        })
+        user_statuses.append(status_info)
     
     return {
         "date": today,
-        "hora_servidor": hora_servidor,
         "is_weekend": is_weekend,
         "is_holiday": is_holiday,
         "holiday_name": ot_reason if is_holiday else None,
