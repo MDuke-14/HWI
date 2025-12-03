@@ -2220,6 +2220,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                               src={`${API}${assinatura.assinatura_url}`}
                               alt="Assinatura"
                               className="max-h-32 mx-auto"
+                              onError={(e) => {
+                                console.log('Erro ao carregar assinatura:', `${API}${assinatura.assinatura_url}`);
+                                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="80"%3E%3Crect fill="%23f3f4f6" width="200" height="80"/%3E%3Ctext fill="%23666" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EAssinatura%3C/text%3E%3C/svg%3E';
+                              }}
+                              onLoad={() => console.log('✓ Assinatura carregada')}
                             />
                           </div>
                         </div>
