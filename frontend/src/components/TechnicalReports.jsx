@@ -2837,7 +2837,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
 
           <div className="mt-4 space-y-6">
-            <p className="text-gray-400 text-sm">Escolha o tipo de assinatura:</p>
+            <p className="text-gray-400 text-sm">Preencha ambas as assinaturas (obrigatórias):</p>
             
             {/* Card 1: Assinatura Digital */}
             <div className="bg-[#0f0f0f] border-2 border-blue-500 rounded-lg p-6">
@@ -2846,78 +2846,33 @@ const TechnicalReports = ({ user, onLogout }) => {
                 Assinatura Digital (Desenhar)
               </h3>
               
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-gray-300 mb-2 block">Desenhe sua assinatura:</Label>
-                  <div 
-                    className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white"
-                    style={{ touchAction: 'none' }}
-                  >
-                    <SignatureCanvas
-                      ref={(ref) => setAssinaturaCanvas(ref)}
-                      canvasProps={{
-                        className: 'w-full h-64',
-                        style: { 
-                          width: '100%', 
-                          height: '256px',
-                          touchAction: 'none'
-                        }
-                      }}
-                      backgroundColor="white"
-                      penColor="black"
-                    />
-                  </div>
-                  <Button
-                    onClick={clearCanvas}
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 border-gray-600"
-                  >
-                    Limpar
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primeiro_nome_digital" className="text-gray-300">
-                      Primeiro Nome *
-                    </Label>
-                    <Input
-                      id="primeiro_nome_digital"
-                      type="text"
-                      inputMode="none"
-                      value={assinaturaNome.primeiro}
-                      onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
-                      onFocus={(e) => e.target.blur()}
-                      className="bg-[#0f0f0f] border-gray-700 text-white"
-                      placeholder="Ex: João"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ultimo_nome_digital" className="text-gray-300">
-                      Último Nome *
-                    </Label>
-                    <Input
-                      id="ultimo_nome_digital"
-                      type="text"
-                      inputMode="none"
-                      value={assinaturaNome.ultimo}
-                      onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
-                      onFocus={(e) => e.target.blur()}
-                      className="bg-[#0f0f0f] border-gray-700 text-white"
-                      placeholder="Ex: Silva"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleSaveAssinaturaDigital}
-                  className="w-full bg-blue-500 hover:bg-blue-600"
-                  disabled={uploadingAssinatura}
+              <div>
+                <Label className="text-gray-300 mb-2 block">Desenhe a assinatura:</Label>
+                <div 
+                  className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white"
+                  style={{ touchAction: 'none' }}
                 >
-                  {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura Digital'}
+                  <SignatureCanvas
+                    ref={(ref) => setAssinaturaCanvas(ref)}
+                    canvasProps={{
+                      className: 'w-full h-64',
+                      style: { 
+                        width: '100%', 
+                        height: '256px',
+                        touchAction: 'none'
+                      }
+                    }}
+                    backgroundColor="white"
+                    penColor="black"
+                  />
+                </div>
+                <Button
+                  onClick={clearCanvas}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 border-gray-600"
+                >
+                  Limpar Canvas
                 </Button>
               </div>
             </div>
@@ -2926,12 +2881,12 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className="bg-[#0f0f0f] border-2 border-green-500 rounded-lg p-6">
               <h3 className="text-green-400 font-semibold text-lg mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Assinatura Manual (Digitar)
+                Nome Completo (Digitar)
               </h3>
               
               <div className="space-y-4">
                 <p className="text-gray-400 text-sm">
-                  Digite o primeiro e último nome da pessoa que está assinando:
+                  Digite o primeiro e último nome para validação:
                 </p>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -2946,6 +2901,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
                       className="bg-[#0f0f0f] border-gray-700 text-white"
                       placeholder="Ex: João"
+                      required
                     />
                   </div>
                   <div>
@@ -2959,27 +2915,29 @@ const TechnicalReports = ({ user, onLogout }) => {
                       onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
                       className="bg-[#0f0f0f] border-gray-700 text-white"
                       placeholder="Ex: Silva"
+                      required
                     />
                   </div>
                 </div>
-
-                <Button
-                  onClick={handleSaveAssinaturaManual}
-                  className="w-full bg-green-500 hover:bg-green-600"
-                  disabled={uploadingAssinatura}
-                >
-                  {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura Manual'}
-                </Button>
               </div>
             </div>
 
-            <div className="flex justify-end pt-4">
+            {/* Botões de Ação */}
+            <div className="flex gap-3 pt-4">
               <Button
                 onClick={() => setShowAssinaturaModal(false)}
                 variant="outline"
-                className="border-gray-600"
+                className="flex-1 border-gray-600"
+                disabled={uploadingAssinatura}
               >
                 Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveAssinaturaDigital}
+                className="flex-1 bg-green-500 hover:bg-green-600"
+                disabled={uploadingAssinatura}
+              >
+                {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura Completa'}
               </Button>
             </div>
           </div>
