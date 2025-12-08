@@ -210,6 +210,76 @@ class NotificationSystem:
                         port=self.smtp_port,
                         username=self.smtp_user,
                         password=self.smtp_password,
+    
+    async def send_push_notifications(self, notifications):
+        """Enviar push notifications para os browsers dos usuários"""
+        try:
+            from pywebpush import webpush
+            import os
+            
+            vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
+            vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
+            vapid_email = os.environ.get('VAPID_CLAIM_EMAIL', 'geral@hwi.pt')
+            
+            if not vapid_private or not vapid_public:
+                logging.warning("VAPID keys não configuradas - push notifications desabilitadas")
+                return
+            
+            # Agrupar notificações por user_id
+            notifs_by_user = {}
+            for notif in notifications:
+                user_id = notif["user_id"]
+                if user_id not in notifs_by_user:
+                    notifs_by_user[user_id] = []
+                notifs_by_user[user_id].append(notif)
+            
+            # Enviar push para cada usuário
+            for user_id, user_notifs in notifs_by_user.items():
+                # Buscar subscriptions do usuário
+                subscriptions = await self.db.push_subscriptions.find({"user_id": user_id}).to_list(None)
+                
+                if not subscriptions:
+                    continue
+                
+                # Enviar para cada subscription (pode ter múltiplos dispositivos)
+                for sub in subscriptions:
+                    for notif in user_notifs:
+                        try:
+                            # Criar payload da notificação
+                            import json
+                            payload = json.dumps({
+                                "title": notif["title"],
+                                "message": notif["message"],
+                                "type": notif["type"],
+                                "priority": notif["priority"],
+                                "id": notif.get("id", "")
+                            })
+                            
+                            # Enviar push
+                            webpush(
+                                subscription_info={
+                                    "endpoint": sub["endpoint"],
+                                    "keys": sub["keys"]
+                                },
+                                data=payload,
+                                vapid_private_key=vapid_private,
+                                vapid_claims={
+                                    "sub": f"mailto:{vapid_email}"
+                                }
+                            )
+                            
+                            logging.info(f"Push notification enviada para {user_id}: {notif['title']}")
+                            
+                        except Exception as e:
+                            logging.error(f"Erro ao enviar push para {user_id}: {e}")
+                            # Se subscription inválida, remover
+                            if "410" in str(e) or "404" in str(e):
+                                await self.db.push_subscriptions.delete_one({"_id": sub["_id"]})
+                                logging.info(f"Subscription inválida removida para {user_id}")
+        
+        except Exception as e:
+            logging.error(f"Erro ao enviar push notifications: {e}")
+
                         start_tls=True
                     )
                     
