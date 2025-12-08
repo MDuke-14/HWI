@@ -622,34 +622,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                         {u.full_name && <div className="text-gray-500 text-xs">{u.full_name}</div>}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button 
-                        onClick={() => {
-                          // Store selected user ID in sessionStorage
-                          sessionStorage.setItem('adminViewingUserId', u.id);
-                          sessionStorage.setItem('adminViewingUserName', u.full_name || u.username);
-                          // Navigate to history page
-                          window.location.href = '/history';
-                        }}
-                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm" 
-                        size="sm"
-                      >
-                        <HistoryIcon className="w-3 h-3 mr-1" />Histórico
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          // Store selected user ID in sessionStorage
-                          sessionStorage.setItem('adminViewingUserId', u.id);
-                          sessionStorage.setItem('adminViewingUserName', u.full_name || u.username);
-                          // Navigate to reports page
-                          window.location.href = '/reports';
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white rounded-full text-sm" 
-                        size="sm"
-                      >
-                        <FileText className="w-3 h-3 mr-1" />Relatórios
-                      </Button>
-                    </div>
                     <div className="flex gap-2 mt-2">
                       <Button 
                         onClick={() => handleVerifyHours(u)}
