@@ -154,6 +154,11 @@ class NotificationSystem:
             await self.send_overtime_email_to_admins(admin_emails)
         
         return notifications
+        
+        # Enviar push notifications
+        if notifications:
+            await self.send_push_notifications(notifications)
+
     
     async def send_overtime_email_to_admins(self, users_overtime):
         """Enviar email para admins sobre usuários em horas extras"""
