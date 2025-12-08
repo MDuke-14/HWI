@@ -178,6 +178,18 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Equipamentos
   const [equipamentos, setEquipamentos] = useState([]);
+  
+  // Equipamentos da OT
+  const [equipamentosOT, setEquipamentosOT] = useState([]);
+  const [showAddEquipamentoModal, setShowAddEquipamentoModal] = useState(false);
+  const [equipamentoFormData, setEquipamentoFormData] = useState({
+    tipologia: '',
+    marca: '',
+    modelo: '',
+    numero_serie: '',
+    ano_fabrico: ''
+  });
+
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState('');
   const [modoNovoEquipamento, setModoNovoEquipamento] = useState(false);
 
