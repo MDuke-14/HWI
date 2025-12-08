@@ -478,6 +478,32 @@ const Dashboard = ({ user, onLogout }) => {
 
                     {/* Status Details */}
                     <div className="space-y-2">
+                      {/* Mostrar lista de entradas se admin e tiver entradas */}
+                      {user?.is_admin && userStatus.entradas && userStatus.entradas.length > 0 && (
+                        <div className="mb-3 space-y-2">
+                          {userStatus.entradas.map((entrada, idx) => {
+                            const isActive = entrada.estado === 'ativa';
+                            return (
+                              <div
+                                key={entrada.id}
+                                className={`p-2 rounded border text-sm ${isActive ? 'border-green-500 bg-green-500/10' : 'border-gray-600 bg-black/20'}`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-gray-400 text-xs">Entrada {idx + 1}</span>
+                                  {isActive && <span className="text-green-400 text-xs font-semibold animate-pulse">ATIVA</span>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-3 h-3 text-gray-400" />
+                                  <span className="text-white font-mono">
+                                    {entrada.inicio} → {entrada.fim || 'agora'}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       {userStatus.status === 'TRABALHANDO' && (
                         <>
                           <div className="flex items-center gap-2 text-sm">
