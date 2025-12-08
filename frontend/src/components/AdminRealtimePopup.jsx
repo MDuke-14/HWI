@@ -31,6 +31,7 @@ const AdminRealtimePopup = ({ onClose }) => {
   const fetchRealtimeStatus = async () => {
     try {
       const response = await axios.get(`${API}/admin/realtime-status`);
+      console.log('Status recebido:', response.data);
       setUsers(response.data);
     } catch (error) {
       console.error('Erro ao buscar status:', error);
