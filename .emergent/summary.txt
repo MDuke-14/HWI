@@ -1,93 +1,271 @@
-<analysis>
-The user's primary language is Portuguese. The next agent must respond in Portuguese.
+<analysis>**original_problem_statement:**
+The user's initial goal was to enhance a time-tracking and work-order (OT) management application. The work evolved through a long series of iterative feature requests and bug fixes.
 
-The trajectory chronicles an extensive, iterative development process for a time-tracking and work-order management application. The previous AI engineer implemented a vast number of features, primarily focused on a system called OTs - Ordens de Trabalho (Work Orders). The development followed a pattern of user request, implementation (backend and frontend), and frequent, though sometimes unsuccessful, testing attempts.
+The most recent requests from the user include:
+1.  **Multiple Equipment per OT:** Allow a single Work Order (OT) to be associated with multiple pieces of equipment, instead of just one.
+2.  **Signature UI/UX Fixes:**
+    *   The digital signature canvas was opening the mobile keyboard, making it impossible to sign.
+    *   The user wants to separate the Digital Signature and Manual Signature (typing name) into two distinct cards.
+    *   The user then requested to remove the name fields from the digital signature card and have a single Save button that captures both the drawn signature and the typed names.
+    *   The digital signature was not appearing as an image in the OT view.
+3.  **UI Reorganization:**
+    *   The user requested to remove the Horas Extras tab.
+    *   Remove the Histórico and Relatórios buttons from the user list in the Admin Dashboard.
+    *   Move the real-time status information for all users from a floating button in the Admin Dashboard to the existing purple floating button on the main Dashboard, making it the central point for admins to see user status.
+4.  **Implement Push Notifications:** Create a system for native push notifications for reminders (clock-in, long breaks) and overtime alerts for admins, which should work even when the browser is closed.
+5.  **Fix Login Issues & Deployment:** The user has faced persistent deployment issues, including a blank white screen, 502 Bad Gateway errors, and login failures (Erro ao autenticar) in the production environment. These issues are critical and causing user frustration.
 
-Key workstreams included:
-1.  **UI/UX Refinements:** Fixed initial UI bugs, like a dashboard card obscuring the navigation, and evolved the navigation from tabs to a dropdown menu with proper z-index layering to ensure it overlays all page content.
-2.  **OT Feature Expansion:** This was the core of the work. The OT system was built from scratch and continuously enhanced with features like:
-    *   A client and equipment database, with equipment being automatically added/updated from OTs.
-    *   Complex relational views (e.g., view client -> view their equipment -> view OTs for that equipment).
-    *   Refactoring single-entry fields (Motivo, Relatório) into a dynamic list of Interventions, each with its own date and details.
-    *   Adding date tracking for when technicians are assigned to an OT.
-    *   Implementing a sophisticated, clickable status system with admin-only permissions for certain statuses (Facturado).
-    *   Adding a dedicated search tab to filter OTs by status.
-3.  **Data Integrity Improvements:** Converted free-text fields into dropdowns (e.g., selecting technicians from a user list) and implemented automatic calculations with manual overrides (e.g., technician work codes).
+**User's preferred language**: Portuguese
 
-The last task involved adding an Ano de Fabrico (Year of Manufacture) field for equipment and then modifying it to accept flexible date formats (MM-AAAA, MM/AAAA, AAAA). The backend model was updated, but the frontend implementation for this flexible format is the immediate next step.
-</analysis>
+**what currently exists?**
+The project is a comprehensive full-stack application for time tracking and Ordem de Trabalho (OT) management.
+-   **Backend:** A FastAPI server () with numerous endpoints for managing Users, OTs, Clients, Equipment, Interventions, Technicians, Photos, and Signatures. It handles complex business logic for hour calculations, PDF generation, and email notifications. It connects to a MongoDB database.
+-   **Frontend:** A React application, with the majority of the logic concentrated in a few large components like  (for OTs), , and . It features real-time status popups, various modals for data entry, and PDF report generation.
+-   **Key Features:** User authentication, clock-in/out, detailed OT management with status tracking, dynamic interventions, photo uploads (stored as Base64 in DB), digital/manual signatures (stored as Base64 in DB), PDF report generation (for monthly reports and OTs) with a company logo, and an admin dashboard with user management and real-time status views.
 
-<product_requirements>
-The application is a comprehensive employee time-management and Work Order (OT - Ordem de Trabalho) system.
+**Last working item**:
+-   **Last item agent was working:** The agent was implementing the user's request to allow **multiple pieces of equipment per OT**. The agent had already created the necessary backend models and API endpoints. On the frontend, it added the state, API functions, and UI elements (a list display, an Add Equipment button, and a new modal). However, during the implementation, a syntax error was introduced.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?**
+    1.  First, fix the frontend compilation error.
+    2.  Then, use the **frontend testing agent** to conduct a full test of the new multiple equipment feature.
+-   **User Testing Done:** N
 
-**Core Functionality:**
-*   Employee clock-in/out.
-*   Admin dashboard for real-time monitoring and custom reporting.
-*   Admins can download monthly PDF reports for any user directly from the dashboard.
+**All Pending/In progress Issue list**:
+-   **Issue 1: Frontend Build Failure (P0)**
+    -   **Description:** The application build is failing with a  in . This was caused by incorrectly inserting the JSX for the new Add Equipment modal inside another JSX element's structure.
+    -   **Attempted fixes:** The agent identified the misplaced code block and moved it to what it believes is the correct location (before the Edit Relatório modal). The agent initiated a compile but did not verify the result.
+    -   **Next debug checklist:**
+        1.  Check frontend logs for compilation success: (node:234) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:83) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:77) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:77) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:81) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:81) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:1803) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:1803) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:75) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:75) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:720) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:720) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:78) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:78) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:82) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:82) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:81) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:81) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:70) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:70) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:70) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:70) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:59) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:59) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:734) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:734) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:69) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:69) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:3024) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:3024) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:66) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:66) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option..
+        2.  If it compiles, take a screenshot of the app to ensure it loads without a white screen or error overlay.
+        3.  If it fails, analyze the new error message. The issue is almost certainly related to the placement of the new modal's JSX code within the  file's return statement. It must be a sibling to the other modals, not nested inside another element.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical, build-breaking error that makes the entire frontend unusable. Fixing it is necessary to continue any development or testing.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** No
 
-**OTs - Ordens de Trabalho System:**
-This is a full-fledged work order management module with a complex set of interconnected features.
-*   **Entities:** Manages Clients, OTs, Equipment, and Interventions.
-*   **Equipment DB:** An equipment database is maintained per client. Equipment is automatically created or updated when a new OT is made. OTs can be created by selecting from a client's existing equipment.
-*   **Interventions:** OTs can have multiple dated interventions, each with a motivo (reason) and relatório (report), allowing for a detailed history of a single work order.
-*   **Technicians:** Technicians (system users) can be added to OTs. The date of assignment is recorded. The work-hour code (e.g., day, night, weekend) is automatically suggested based on the date but can be manually overridden via a popup.
-*   **Status Management:** OTs have a multi-stage status (Orçamento, Em Execução, Concluído, Facturado). Status changes are made via a popup, with the Facturado status being restricted to admins.
-*   **Search:** A dedicated tab allows for filtering all OTs by their current status.
-</product_requirements>
+**In progress Task List**:
+-   **Task 1: Complete Multiple Equipment per OT Feature (P0)**
+    -   **Where to resume:** Resume after fixing the frontend build error (Issue 1). The next step is to perform end-to-end testing of the feature.
+    -   **Testing steps:**
+        1.  Log in and navigate to the OTs section.
+        2.  Open an existing OT. The modal should now display a list of equipment instead of a single equipment entry.
+        3.  Click the Adicionar Equipamento button.
+        4.  Verify the Adicionar Equipamento à OT modal opens, listing available equipment for that client.
+        5.  Select and add a new piece of equipment.
+        6.  Confirm the new equipment appears in the list on the OT view modal.
+        7.  Check the database to ensure a new document was created in the  collection linking the OT and the equipment.
+    -   **What will be achieved with this?** This will fulfill a key user requirement, making the OT system more flexible.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on something:** Issue 1: Frontend Build Failure.
 
-<key_technical_concepts>
-- **Frameworks**: FastAPI (Python), React (JavaScript).
-- **Database**: MongoDB.
-- **Styling**: Tailwind CSS, Shadcn UI components.
-- **Backend**: Pydantic for data modeling, JWT for auth. Endpoints are heavily used for CRUD operations on OTs, Clients, Equipment, Technicians, and Interventions.
-- **Frontend**: Heavy use of React state (, ) to manage complex, interconnected modals, dynamic forms, and filtered data views within a single massive component ().
-</key_technical_concepts>
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks:**
+    -   **(P1) OneDrive Integration:** The user has provided a detailed plan to use OneDrive as the central storage for all files (photos, signatures, PDFs) instead of Base64 in MongoDB. The agent has a playbook but needs user credentials (Client ID, Secret, Tenant ID) from an Azure App Registration. This is a major task.
+-   **Future Tasks:**
+    -   **(P2) Implement  workflow:** This was part of the original plan but has not been started.
+    -   **(P2) Implement UI for :** The component exists but is likely a placeholder.
+    -   **(P2) Implement Download Todos os Relatórios button:** A button in the client view modal to download all OTs for that client. This was deferred because the backend endpoint was missing.
 
-<code_architecture>
-The application follows a standard monorepo structure with a  and .
+**Completed work in this session**
+-   **Core OT/Time-Tracking Logic:**
+    -   Fixed numerous bugs in the hour calculation logic, finally settling on a system that truncates seconds and correctly categorizes regular, overtime, and special hours (weekends/holidays).
+    -   Created an admin tool (Verificar Horas) to recalculate historical time entries with the correct logic.
+    -   Added Observações from the dashboard to the monthly PDF report.
+-   **OT Feature - Photo Uploads:**
+    -   Implemented a feature to upload photos (Componentes Adicionais) to an OT.
+    -   Resolved multiple bugs related to image display, including fixing broken URLs and removing auth from the serving endpoint.
+    -   **Crucially, refactored storage from ephemeral filesystem to Base64 in MongoDB to make it work in a containerized production environment.**
+-   **OT Feature - Signatures:**
+    -   Implemented a digital (canvas) and manual (text input) signature system.
+    -   Refined the UI multiple times based on user feedback, settling on a single Save button for both.
+    -   Fixed a bug where the signature canvas would open the mobile keyboard.
+    -   Refactored signature storage to Base64 in MongoDB.
+-   **PDF Generation & Email:**
+    -   Implemented a feature to email the OT PDF to clients.
+    -   Added the company logo to all generated PDFs (OT and monthly reports).
+    -   Optimized PDF layout for compactness and made table rows auto-adjust height for long text.
+    -   Fixed a critical bug where failed PDF downloads were saving a JSON error as a corrupted PDF file.
+-   **UI/UX and Admin Features:**
+    -   Created a new real-time status popup for admins (on the Dashboard) and a personal one for users.
+    -   Consolidated admin/user popups onto the main Dashboard button as requested.
+    -   Removed the Horas Extras tab and extra buttons (Histórico, Relatórios) from the Admin Dashboard user list.
+-   **Deployment & Bug Fixes:**
+    -   Addressed numerous critical deployment blockers, including  errors, blank white screens, and login failures.
+    -   Identified the root cause of many deployment issues: incorrect/missing environment variables (, , ) in the production environment.
+    -   Fixed multiple  and  issues in the backend that were causing it to crash.
 
-
-
--   ****
-    -   **Importance**: This is the monolithic backend service containing all API logic. It defines Pydantic models for all data structures (Users, OTs, Clients, Equipment, Interventions, Technicians) and the FastAPI endpoints for all CRUD operations.
-    -   **Summary of Changes**: The file was massively expanded to support the entire OT system. New models for , , and  were added. Numerous new endpoints were created to create, read, update, and delete these new entities. Logic was added to the OT update endpoint to enforce admin-only permissions for the facturado status. The OT creation endpoint was enhanced to automatically create/update equipment records in the database.
-
--   ****
-    -   **Importance**: This has become the most complex component in the application, managing the entire OTs - Ordens de Trabalho feature set, including all related entities. It's a single, large file handling multiple tabs, numerous modals, and complex state management.
-    -   **Summary of Changes**: This file received the vast majority of all edits.
-        -   **UI Structure**: A new Pesquisa por Estado tab was added.
-        -   **Modals**: Numerous modals were added or modified for: viewing a client (with new buttons to Ver Equipamentos and Ver Relatórios), viewing a list of equipment, viewing a list of OTs for an equipment, changing OT status, and selecting a technician's work code.
-        -   **Forms**: Text inputs were replaced with  dropdowns for choosing clients and technicians.
-        -   **Dynamic Fields**: The static fields for motivo and relatório were replaced with a dynamic list of Intervention sub-forms.
-        -   **State**: State management was expanded to handle lists of equipment, users, interventions, and various filtered OT lists.
-        -   **Logic**: A  function was added for auto-assigning work codes. Multiple  calls were added to interact with the new backend endpoints.
-
--   ****
-    -   **Importance**: The main dashboard for administrators to manage users and view reports.
-    -   **Summary of Changes**: A Download Relatório button was added to the Relatórios tab for each user, allowing an admin to download the current month's PDF report directly. The  handler for this button calls the  endpoint with the user's ID.
-
--   ****
-    -   **Importance**: The main application navigation bar.
-    -   **Summary of Changes**: The component's container was given a  to ensure it sits above page content. The dropdown menu itself was given a  to ensure it overlaps everything, including the main navigation bar and floating action buttons on other pages.
-</code_architecture>
-
-<pending_tasks>
-- Implement the backend endpoint and frontend logic for the Download Todos os Relatórios button in the client view modal. This feature was requested but deferred because the backend endpoint did not exist.
-- Implement the UI and logic for the  component.
-- The original plan included a  workflow, which has not been started.
-</pending_tasks>
-
-<current_work>
-The most recent task was to add an Ano de Fabrico (Year of Manufacture) field to the Equipamentos (Equipment) entity. The user then requested that this text field should be flexible, accepting multiple formats: , , and .
-
-The previous engineer completed the first part of this follow-up request:
-1.  **Backend ():** The  Pydantic model was updated. The  field type was changed from  to  to accommodate the non-numeric formats.
+**Code Architecture**
 
 
+**Key Technical Concepts**
+-   **Frameworks**: FastAPI (Python), React (JavaScript).
+-   **Database**: MongoDB. All  fields are handled via Pydantic models to avoid serialization issues with ObjectId.
+-   **Styling**: Tailwind CSS, Shadcn UI components.
+-   **File Storage**: All user-uploaded files (photos, signatures) are stored as **Base64-encoded strings directly within the MongoDB documents** ( and  collections). This was a critical change to support ephemeral production environments.
+-   **PDF Generation**: ReportLab is used on the backend to generate complex PDFs for OTs and monthly reports.
+-   **Notifications**: A background task () runs every 15 minutes to check for notification conditions. Web Push notifications are sent using the  library and VAPID keys.
+-   **Deployment:** The application is deployed to a Kubernetes environment. A recurring and critical issue is the configuration of environment variables, which must be set in the deployment platform's panel, as  files are ignored by git.
 
-The work concluded before the corresponding frontend changes were made. The frontend input field for Ano de Fabrico in  is still likely configured as , which needs to be changed to  to allow the flexible formats.
-</current_work>
+**key DB schema**
+-   : Main work order document.
+-   : Client's equipment.
+-   : **(New)** Links OTs to multiple . Schema: .
+-   : .
+-   : .
+-   : User clock-in/out records. Contains fields for hour breakdowns: , , , .  was recently removed and merged into .
+-   : Stores user browser subscription info for push notifications.
 
-<optional_next_step>
-Update the Ano de Fabrico input field in the frontend () from  to  to allow users to enter the required formats (MM-AAAA, MM/AAAA, AAAA).
-</optional_next_step>
+**All files of reference**
+-   : Created/updated to add UI for multiple equipment. **Currently contains a syntax error.**
+-   : Updated with new endpoints and models for associating multiple equipment with an OT.
+
+**Critical Info for New Agent**
+-   **Deployment is the most critical issue.** The user is frustrated with failed deployments. The root cause has been consistently identified as a mismatch between the local environment (using  files) and the production environment (which requires variables set in the Emergent panel). The last agent hardcoded MongoDB defaults as a desperate measure. The next agent should revert this and guide the user to set  and  correctly in their deployment settings.
+-   **The hour calculation logic is extremely sensitive and tied to employee payment.** The user has provided a definitive script and logic. Do not deviate from it. The current implementation in  should be considered the source of truth. Any changes must be confirmed.
+-   **File Storage is Base64 in MongoDB.** To solve deployment issues with ephemeral file systems, all images (photos, signatures) are stored as Base64 strings in the database. This increases DB size but guarantees persistence. The OneDrive integration is a future task to address this.
+
+**documents created in this job**
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending user messages**
+1.  **Request:** Admins should only use the purple button on the dashboard, which should show all users' entries for the day.
+2.  **Request:** Implement native push notifications that work even when the browser/PWA is closed.
+3.  **Bug:** Login fails with 502 Bad Gateway. (Agent fixed backend crashes).
+4.  **Request:** Add a button to add more equipment to an OT. (Agent started, but introduced a bug).
+5.  **Bug:** Frontend build fails with a syntax error. (Agent attempted a fix).
+6.  **Clarification:** The agent's fix for the syntax error was just a recompile, not a verified fix.
+7.  **Bug:** Login is failing with Erro ao autenticar. (Agent fixed another backend crash).
+8.  **Bug:** User data is not appearing in the real-time popup. (Agent fixed backend logic).
+9.  **Request:** Allow a single OT to include multiple machines. (Agent started implementation).
+10. **Request:** Split signature into two cards (digital and manual), and ensure the digital signature appears as an image. (Agent implemented).
+
+**Project Health Check:**
+-   **Broken:** The frontend build is failing due to a syntax error in .
+-   **Mocked:** None.
+
+**3rd Party Integrations**
+-   None explicitly use external keys provided by the user yet. The SMTP configuration is present in the  file. The planned OneDrive integration will require user-provided API keys.
+
+**Testing status**
+-   Testing agent used after significant changes: YES
+-   Troubleshoot agent used after agent stuck in loop: YES
+-   Test files created: None.
+-   Known regressions: The frontend build is currently broken.
+
+**Credentials to test flow:**
+-   **admin:**  / 
+-   **non-admin:**  / 
+
+**What agent forgot to execute**
+-   The agent attempted to fix the  in  but did not wait to verify if the compilation was successful before moving on. The next agent must start by verifying this fix.</analysis>
