@@ -4281,63 +4281,6 @@ async def adjust_entry_to_8hours(
         logging.error(f"Erro ao ajustar entrada para 8h: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-    if vacation_balance:
-        # Usar calculate_vacation_days que é a função correta
-        vacation_calc = calculate_vacation_days(
-            vacation_balance["company_start_date"],
-            vacation_balance.get("days_taken", 0)
-        )
-        vacation_days_used = vacation_balance.get("days_taken", 0)
-        vacation_days_available = vacation_calc["days_available"]
-        vacation_entitlement = vacation_calc["days_earned"]  # Corrigido: era days_per_year
-    else:
-        # Se não tem balance, valores padrão
-        vacation_days_used = 0
-        vacation_days_available = 22
-        vacation_entitlement = 22
-    
-    report_data = {
-        "username": username,
-        "full_name": full_name,
-        "start_date": start_date.strftime("%Y-%m-%d"),
-        "end_date": end_date.strftime("%Y-%m-%d"),
-        "month": month,
-        "year": year,
-        "daily_records": daily_records,
-        "summary": {
-            "total_worked_hours": round(total_worked_hours, 2),
-            "total_overtime_hours": round(total_overtime_hours, 2),
-            "total_special_hours": round(total_special_hours, 2),
-            "days_with_meal_allowance": days_with_meal_allowance,
-            "days_with_travel_allowance": days_with_travel_allowance,
-            "total_meal_allowance_value": days_with_meal_allowance * 10.0,
-            "total_travel_allowance_value": days_with_travel_allowance * 50.0,
-            "vacation_days_used": vacation_days_used,
-            "vacation_days_available": vacation_days_available,
-            "vacation_entitlement": vacation_entitlement
-        }
-    }
-    
-    # Generate PDF
-    try:
-        pdf_buffer = generate_pdf_simple(report_data)  # USAR VERSÃO SIMPLIFICADA
-        logging.info(f"PDF gerado com sucesso: {len(pdf_buffer.getvalue())} bytes")
-    except Exception as e:
-        logging.error(f"Erro ao gerar PDF: {e}")
-        import traceback
-        logging.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
-    
-    # Generate filename
-    filename = f"Relatorio_Mensal_{username}_{month:02d}_{year}.pdf"
-    
-    # Return as streaming response
-    return StreamingResponse(
-        pdf_buffer,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
-
 @api_router.get("/time-entries/reports/custom-range-pdf")
 async def download_custom_range_pdf(
     start_date_str: str,
