@@ -3085,6 +3085,27 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
         user_id = user["id"]
         user_entries = [e for e in all_entries if e["user_id"] == user_id]
         
+        # Processar TODAS as entradas do dia (formato novo)
+        entradas_lista = []
+        for entry_db in user_entries:
+            if entry_db.get("entries"):
+                # Formato novo - múltiplas sub-entradas
+                for idx, e in enumerate(entry_db["entries"]):
+                    entradas_lista.append({
+                        "id": f"{entry_db['id']}_{idx}",
+                        "inicio": datetime.fromisoformat(e["start_time"]).strftime("%H:%M") if e.get("start_time") else None,
+                        "fim": datetime.fromisoformat(e["end_time"]).strftime("%H:%M") if e.get("end_time") else None,
+                        "estado": "terminada" if e.get("end_time") else "ativa"
+                    })
+            else:
+                # Formato antigo - entrada única
+                entradas_lista.append({
+                    "id": entry_db["id"],
+                    "inicio": datetime.fromisoformat(entry_db["start_time"]).strftime("%H:%M") if entry_db.get("start_time") else None,
+                    "fim": datetime.fromisoformat(entry_db["end_time"]).strftime("%H:%M") if entry_db.get("end_time") else None,
+                    "estado": "ativa" if entry_db["status"] == "active" else "terminada"
+                })
+        
         # Find active entry
         active_entry = next((e for e in user_entries if e["status"] == "active"), None)
         completed_entries = [e for e in user_entries if e["status"] == "completed"]
@@ -3093,7 +3114,8 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             "user_id": user_id,
             "username": user["username"],
             "full_name": user.get("full_name", user["username"]),
-            "date": today
+            "date": today,
+            "entradas": entradas_lista  # ADICIONAR lista de entradas
         }
         
         if active_entry:
