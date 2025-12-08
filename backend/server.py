@@ -1268,8 +1268,12 @@ async def login(credentials: UserLogin):
         )
     
     # Verify password
-    password_valid = verify_password(credentials.password, stored_password)
-    logging.info(f"PASSWORD VALID: {password_valid}")
+    try:
+        password_valid = verify_password(credentials.password, stored_password)
+        logging.info(f"PASSWORD VALID: {password_valid}, input_len={len(credentials.password)}, hash_len={len(stored_password)}")
+    except Exception as e:
+        logging.error(f"Password verification exception: {type(e).__name__}: {str(e)}")
+        password_valid = False
     
     if not password_valid:
         logging.error("Password verification failed")
