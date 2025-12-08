@@ -6,7 +6,6 @@ import Login from '@/components/Login';
 import ChangePassword from '@/components/ChangePassword';
 import Dashboard from '@/components/Dashboard';
 import Reports from '@/components/Reports';
-import Overtime from '@/components/Overtime';
 import Vacations from '@/components/Vacations';
 import Absences from '@/components/Absences';
 import AdminDashboard from '@/components/AdminDashboard';
