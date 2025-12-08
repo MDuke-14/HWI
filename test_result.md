@@ -1362,7 +1362,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Ano de Fabrico - Flexible Format Support"
+    - "Múltiplos Equipamentos por OT - TESTADO E FUNCIONANDO"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
