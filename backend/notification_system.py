@@ -290,19 +290,6 @@ class NotificationSystem:
         except Exception as e:
             logging.error(f"Erro ao enviar push notifications: {e}")
 
-                        start_tls=True
-                    )
-                    
-                    logging.info(f"Email de horas extras enviado para admin: {admin['email']}")
-                    
-                except Exception as e:
-                    logging.error(f"Erro ao enviar email para admin {admin.get('email')}: {e}")
-        
-        except Exception as e:
-            logging.error(f"Erro ao enviar emails de horas extras: {e}")
-    
-    async def run_checks(self):
-        """Executar todas as verificações"""
         try:
             notifications = []
             
