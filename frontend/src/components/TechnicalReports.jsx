@@ -916,6 +916,49 @@ const TechnicalReports = ({ user, onLogout }) => {
       console.log('Foto deletada com sucesso!');
       toast.success('Fotografia removida com sucesso!');
       fetchFotografiasRelatorio(selectedRelatorio.id);
+
+
+  // ========== Equipamentos OT Functions ==========
+  
+  const fetchEquipamentosOT = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/equipamentos`);
+      setEquipamentosOT(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar equipamentos:', error);
+    }
+  };
+
+  const handleAddEquipamento = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`, equipamentoFormData);
+      toast.success('Equipamento adicionado!');
+      setShowAddEquipamentoModal(false);
+      setEquipamentoFormData({
+        tipologia: '',
+        marca: '',
+        modelo: '',
+        numero_serie: '',
+        ano_fabrico: ''
+      });
+      fetchEquipamentosOT(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDeleteEquipamento = async (equipId) => {
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos/${equipId}`);
+      toast.success('Equipamento removido!');
+      fetchEquipamentosOT(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
     } catch (error) {
       console.error('Erro ao deletar foto:', error);
       console.error('Error response:', error.response);
