@@ -210,6 +210,16 @@ class NotificationSystem:
                         port=self.smtp_port,
                         username=self.smtp_user,
                         password=self.smtp_password,
+                        start_tls=True
+                    )
+                    
+                    logging.info(f"Email de horas extras enviado para admin: {admin['email']}")
+                    
+                except Exception as e:
+                    logging.error(f"Erro ao enviar email para admin {admin.get('email')}: {e}")
+        
+        except Exception as e:
+            logging.error(f"Erro ao enviar emails de horas extras: {e}")
     
     async def send_push_notifications(self, notifications):
         """Enviar push notifications para os browsers dos usuários"""
