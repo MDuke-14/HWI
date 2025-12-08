@@ -125,16 +125,6 @@ function App() {
             }
           />
           <Route
-            path="/overtime"
-            element={
-              isAuthenticated ? (
-                <Overtime user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
             path="/vacations"
             element={
               isAuthenticated ? (
