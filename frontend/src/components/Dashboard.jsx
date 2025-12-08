@@ -575,20 +575,22 @@ const Dashboard = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
       
-      {/* Botão Flutuante para Ver Próprio Status */}
-      {!user?.is_admin && (
-        <button
-          onClick={() => setShowMyRealtimePopup(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl transition-all hover:scale-110 z-50"
-          title="Ver Minhas Entradas"
-        >
-          <Clock className="w-6 h-6" />
-        </button>
-      )}
+      {/* Botão Flutuante - Admin vê todos, User vê próprio */}
+      <button
+        onClick={() => setShowMyRealtimePopup(true)}
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl transition-all hover:scale-110 z-50"
+        title={user?.is_admin ? "Ver Status de Todos os Utilizadores" : "Ver Minhas Entradas"}
+      >
+        <Clock className="w-6 h-6" />
+      </button>
 
-      {/* Popup Realtime do Usuário */}
+      {/* Popup Realtime - Admin vê todos, User vê próprio */}
       {showMyRealtimePopup && (
-        <UserRealtimePopup onClose={() => setShowMyRealtimePopup(false)} />
+        user?.is_admin ? (
+          <AdminRealtimePopup onClose={() => setShowMyRealtimePopup(false)} />
+        ) : (
+          <UserRealtimePopup onClose={() => setShowMyRealtimePopup(false)} />
+        )
       )}
     </div>
   );
