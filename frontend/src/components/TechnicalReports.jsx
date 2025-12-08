@@ -2955,17 +2955,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <div 
                   className="border-2 border-gray-600 rounded-lg overflow-hidden bg-white"
                   style={{ touchAction: 'none' }}
-
-
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-              >
-                Adicionar Equipamento
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
                 >
                   <SignatureCanvas
                     ref={(ref) => setAssinaturaCanvas(ref)}
