@@ -2212,12 +2212,40 @@ async def get_fotografias(
     
     return fotografias
 
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}/image")
+async def get_fotografia_image(
+    relatorio_id: str,
+    foto_id: str
+):
+    """Obter imagem da fotografia - endpoint público para servir imagens"""
+    # Buscar foto no MongoDB
+    foto = await db.fotos_relatorio.find_one({
+        "id": foto_id,
+        "relatorio_id": relatorio_id
+    }, {"_id": 0})
+    
+    if not foto:
+        raise HTTPException(status_code=404, detail="Fotografia não encontrada")
+    
+    if not foto.get("foto_base64"):
+        raise HTTPException(status_code=404, detail="Imagem não disponível")
+    
+    # Decodificar base64 e retornar
+    import base64
+    foto_bytes = base64.b64decode(foto["foto_base64"])
+    
+    from fastapi.responses import Response
+    return Response(
+        content=foto_bytes,
+        media_type=foto.get("content_type", "image/jpeg")
+    )
+
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias/{filename}")
 async def get_fotografia_file(
     relatorio_id: str,
     filename: str
 ):
-    """Obter arquivo de fotografia - endpoint público"""
+    """Obter arquivo de fotografia - endpoint público (compatibilidade)"""
     # Tentar buscar do arquivo primeiro (desenvolvimento local)
     file_path = Path(f"/app/backend/uploads/relatorios/{filename}")
     
