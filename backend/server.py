@@ -2103,7 +2103,7 @@ async def upload_fotografia(
             "filename": file.filename,
             "content_type": file.content_type,
             "uploaded_at": datetime.now(timezone.utc),
-            "uploaded_by": current_user["id"]
+            "uploaded_by": current_user["sub"]
         }
         
         # Salvar no banco
