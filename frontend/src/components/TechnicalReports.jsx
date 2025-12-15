@@ -917,7 +917,11 @@ const TechnicalReports = ({ user, onLogout }) => {
       console.log('Foto deletada com sucesso!');
       toast.success('Fotografia removida com sucesso!');
       fetchFotografiasRelatorio(selectedRelatorio.id);
-
+    } catch (error) {
+      console.error('Erro ao deletar foto:', error);
+      toast.error(formatErrorMessage(error));
+    }
+  };
 
   // ========== Equipamentos OT Functions ==========
   
