@@ -2085,11 +2085,42 @@ async def upload_fotografia(
             detail=f"Tipo de arquivo não permitido. Use: {', '.join(allowed_extensions)}"
         )
     
-    # Criar diretório de uploads se não existir
-    upload_dir = Path("/app/backend/uploads/relatorios")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Gerar nome único para o arquivo
+    try:
+        # Ler o conteúdo do arquivo
+        contents = await file.read()
+        
+        # Converter para base64
+        import base64
+        foto_base64 = base64.b64encode(contents).decode('utf-8')
+        
+        # Criar documento da foto
+        foto_id = str(uuid4())
+        foto_doc = {
+            "id": foto_id,
+            "relatorio_id": relatorio_id,
+            "foto_base64": foto_base64,
+            "descricao": descricao,
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "uploaded_at": datetime.now(timezone.utc),
+            "uploaded_by": current_user["id"]
+        }
+        
+        # Salvar no banco
+        await db.fotos_relatorio.insert_one(foto_doc)
+        
+        logging.info(f"Fotografia {foto_id} adicionada ao relatório {relatorio_id}")
+        
+        return {
+            "id": foto_id,
+            "relatorio_id": relatorio_id,
+            "descricao": descricao,
+            "foto_url": f"/api/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}/image",
+            "uploaded_at": foto_doc["uploaded_at"]
+        }
+    except Exception as e:
+        logging.error(f"Erro ao fazer upload de fotografia: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao fazer upload: {str(e)}")
 
 
 # ============ Equipamentos OT Routes ============
