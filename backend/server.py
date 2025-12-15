@@ -2194,50 +2194,6 @@ async def delete_equipamento_ot(
     
     return {"message": "Equipamento removido com sucesso"}
 
-    unique_filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = upload_dir / unique_filename
-    
-    # Ler conteúdo do arquivo
-    file_content = await file.read()
-    
-    # Converter para base64 para salvar no MongoDB
-    import base64
-    foto_base64 = base64.b64encode(file_content).decode('utf-8')
-    
-    # Salvar também em arquivo (para desenvolvimento local)
-    try:
-        with open(file_path, "wb") as buffer:
-            buffer.write(file_content)
-    except Exception as e:
-        logging.warning(f"Não foi possível salvar arquivo localmente: {e}")
-    
-    # Obter ordem (último + 1)
-    last_foto = await db.fotos_relatorio.find_one(
-        {"relatorio_id": relatorio_id},
-        sort=[("ordem", -1)]
-    )
-    ordem = (last_foto.get("ordem", -1) + 1) if last_foto else 0
-    
-    # Criar registro no banco COM BASE64
-    foto = FotoRelatorio(
-        relatorio_id=relatorio_id,
-        foto_path=str(file_path),
-        foto_url=f"/relatorios-tecnicos/{relatorio_id}/fotografias/{unique_filename}",
-        descricao=descricao,
-        ordem=ordem
-    )
-    
-    foto_dict = foto.dict()
-    foto_dict["uploaded_at"] = foto_dict["uploaded_at"].isoformat()
-    foto_dict["foto_base64"] = foto_base64  # Adicionar base64
-    foto_dict["foto_mime_type"] = file.content_type  # Salvar tipo
-    
-    await db.fotos_relatorio.insert_one(foto_dict)
-    
-    logging.info(f"Fotografia {foto.id} adicionada ao relatório {relatorio_id}")
-    
-    return foto
-
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias")
 async def get_fotografias(
     relatorio_id: str,
