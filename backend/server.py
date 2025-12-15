@@ -2287,15 +2287,7 @@ async def delete_fotografia(
     if not foto:
         raise HTTPException(status_code=404, detail="Fotografia não encontrada")
     
-    # Remover arquivo do disco
-    file_path = Path(foto["foto_path"])
-    if file_path.exists():
-        try:
-            file_path.unlink()
-        except Exception as e:
-            logging.error(f"Erro ao remover arquivo: {e}")
-    
-    # Remover do banco
+    # Remover do banco (foto armazenada como Base64)
     await db.fotos_relatorio.delete_one({"id": foto_id})
     
     logging.info(f"Fotografia {foto_id} removida do relatório {relatorio_id}")
