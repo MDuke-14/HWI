@@ -2203,7 +2203,12 @@ async def get_fotografias(
     fotografias = await db.fotos_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("ordem", 1).to_list(length=None)
+    ).sort("uploaded_at", -1).to_list(length=None)
+    
+    # Adicionar foto_url se não existir
+    for foto in fotografias:
+        if "foto_url" not in foto:
+            foto["foto_url"] = f"/api/relatorios-tecnicos/{relatorio_id}/fotografias/{foto['id']}/image"
     
     return fotografias
 
