@@ -2094,7 +2094,7 @@ async def upload_fotografia(
         foto_base64 = base64.b64encode(contents).decode('utf-8')
         
         # Criar documento da foto
-        foto_id = str(uuid4())
+        foto_id = str(uuid.uuid4())
         foto_doc = {
             "id": foto_id,
             "relatorio_id": relatorio_id,
