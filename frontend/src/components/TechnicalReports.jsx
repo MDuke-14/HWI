@@ -960,14 +960,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-    } catch (error) {
-      console.error('Erro ao deletar foto:', error);
-      console.error('Error response:', error.response);
-      toast.error(formatErrorMessage(error));
-    }
-  };
-
-
   // ========== Assinatura Functions ==========
   
   const fetchAssinatura = async (relatorioId) => {
