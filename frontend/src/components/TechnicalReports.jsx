@@ -2486,6 +2486,108 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
+              {/* Material */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Material
+                  </h4>
+                  <Button
+                    onClick={() => setShowAddMaterialModal(true)}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Material
+                  </Button>
+                </div>
+
+                {materiais.length > 0 ? (
+                  <div className="space-y-2">
+                    {materiais.map((material) => (
+                      <div
+                        key={material.id}
+                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700"
+                      >
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{material.descricao}</p>
+                          <div className="flex gap-4 mt-1 text-sm text-gray-400">
+                            <span>Qtd: {material.quantidade}</span>
+                            <span className={`px-2 py-0.5 rounded ${
+                              material.fornecido_por === 'Cliente' ? 'bg-green-600/20 text-green-400' :
+                              material.fornecido_por === 'HWI' ? 'bg-blue-600/20 text-blue-400' :
+                              'bg-yellow-600/20 text-yellow-400'
+                            }`}>
+                              {material.fornecido_por}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => openEditMaterialModal(material)}
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-500 text-blue-500"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteMaterial(material.id)}
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">
+                    Nenhum material adicionado
+                  </p>
+                )}
+              </div>
+
+              {/* Pedidos de Cotação */}
+              {pedidosCotacao.length > 0 && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg border border-yellow-600">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-yellow-400 font-semibold flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Pedidos de Cotação ({pedidosCotacao.length})
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {pedidosCotacao.map((pc) => (
+                      <div
+                        key={pc.id}
+                        onClick={() => {
+                          fetchPCDetalhes(pc.id);
+                          setShowPCModal(true);
+                        }}
+                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-yellow-600 cursor-pointer transition-colors"
+                      >
+                        <div>
+                          <p className="text-white font-medium">{pc.numero_pc}</p>
+                          <p className="text-sm text-gray-400">
+                            Status: <span className={`px-2 py-0.5 rounded ${
+                              pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                              pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                              pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                              'bg-green-600/20 text-green-400'
+                            }`}>{pc.status}</span>
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Assinatura */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-4">
