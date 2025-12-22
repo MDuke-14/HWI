@@ -1213,6 +1213,108 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // ========== Cronómetro Functions ==========
+
+  const fetchCronometros = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/cronometros`);
+      setCronometrosAtivos(response.data);
+      
+      // Iniciar timers para cronómetros ativos
+      const newTimers = {};
+      response.data.forEach(crono => {
+        const horaInicio = new Date(crono.hora_inicio);
+        const agora = new Date();
+        const diffMs = agora - horaInicio;
+        newTimers[`${crono.tecnico_id}_${crono.tipo}`] = Math.floor(diffMs / 1000);
+      });
+      setTimers(newTimers);
+    } catch (error) {
+      console.error('Erro ao buscar cronómetros:', error);
+    }
+  };
+
+  const fetchRegistosTecnicos = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/registos-tecnicos`);
+      setRegistosTecnicos(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar registos:', error);
+    }
+  };
+
+  const handleIniciarCronometro = async (tecnico, tipo) => {
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/iniciar`, {
+        tipo,
+        tecnico_id: tecnico.tecnico_id || tecnico.id,
+        tecnico_nome: tecnico.tecnico_nome
+      });
+      
+      toast.success(`Cronómetro de ${tipo} iniciado!`);
+      fetchCronometros(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handlePararCronometro = async (tecnico, tipo) => {
+    try {
+      const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/parar`, {
+        tipo,
+        tecnico_id: tecnico.tecnico_id || tecnico.id
+      });
+      
+      toast.success(response.data.message);
+      fetchCronometros(selectedRelatorio.id);
+      fetchRegistosTecnicos(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDeleteRegisto = async (registoId) => {
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${registoId}`);
+      toast.success('Registo removido!');
+      fetchRegistosTecnicos(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const getCronometroStatus = (tecnico, tipo) => {
+    return cronometrosAtivos.find(
+      c => (c.tecnico_id === tecnico.tecnico_id || c.tecnico_id === tecnico.id) && c.tipo === tipo && c.ativo
+    );
+  };
+
+  const formatTimer = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  // Atualizar timers a cada segundo
+  useEffect(() => {
+    if (cronometrosAtivos.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setTimers(prevTimers => {
+        const newTimers = { ...prevTimers };
+        Object.keys(newTimers).forEach(key => {
+          newTimers[key] = newTimers[key] + 1;
+        });
+        return newTimers;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [cronometrosAtivos]);
+
+  // ========== Assinatura Functions ==========
+
   const openAssinaturaModal = () => {
     setAssinaturaNome({ primeiro: '', ultimo: '' });
     setShowAssinaturaModal(true);
