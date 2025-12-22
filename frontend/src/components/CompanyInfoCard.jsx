@@ -163,15 +163,6 @@ const CompanyInfoCard = ({ user }) => {
                   {companyData.nome_empresa}
                 </h2>
               )}
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <div className="bg-white p-3 rounded-lg">
-                  <svg viewBox="0 0 200 80" className="w-32 h-12">
-                    <text x="10" y="50" fontFamily="Arial Black, sans-serif" fontSize="32" fontWeight="900" fill="#1e40af">HWI</text>
-                    <text x="10" y="75" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="bold" fill="#64748b">HARDWORK</text>
-                    <text x="110" y="75" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="bold" fill="#64748b">INDUSTRY</text>
-                  </svg>
-                </div>
-              </div>
             </div>
 
             {/* Informações de Contato */}
