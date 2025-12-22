@@ -455,6 +455,20 @@ class ServiceAppointmentUpdate(BaseModel):
     observations: Optional[str] = None
     status: Optional[str] = None
 
+class CompanyInfo(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default="company_info_default")
+    nome_empresa: str = "HWI UNIPESSOAL LDA"
+    telefone: str = "518176657"
+    telemovel: str = "+351 913008138"
+    website: str = "www.hwi.pt"
+    email: str = "geral@hwi.pt"
+    morada_linha1: str = "Rua Mário Pereira 7 RC ESQ"
+    morada_linha2: str = "2830-493 Barreiro, PT"
+    iban: str = "PT50 0007 0000 0074 9942 1152 3"
+    updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
+
 # ============ Auth Functions ============
 
 def verify_password(plain_password, hashed_password):
