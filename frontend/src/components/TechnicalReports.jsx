@@ -1179,6 +1179,24 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchAllPCs = async () => {
+    setLoadingPCs(true);
+    try {
+      const response = await axios.get(`${API}/pedidos-cotacao`);
+      setAllPCs(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar todos os PCs:', error);
+      toast.error('Erro ao carregar Pedidos de Cotação');
+    } finally {
+      setLoadingPCs(false);
+    }
+  };
+
+  const openPCFromList = async (pc) => {
+    await fetchPCDetalhes(pc.id);
+    setShowPCModal(true);
+  };
+
   // ========== Assinatura Functions ==========
   
   const fetchAssinatura = async (relatorioId) => {
