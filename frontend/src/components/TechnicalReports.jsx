@@ -132,6 +132,33 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [emailsAdicionais, setEmailsAdicionais] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  // Material OT
+  const [materiais, setMateriais] = useState([]);
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [materialFormData, setMaterialFormData] = useState({
+    descricao: '',
+    quantidade: 1,
+    fornecido_por: 'Cliente'
+  });
+
+  // Pedidos de Cotação
+  const [pedidosCotacao, setPedidosCotacao] = useState([]);
+  const [showPCModal, setShowPCModal] = useState(false);
+  const [selectedPC, setSelectedPC] = useState(null);
+  const [pcFormData, setPCFormData] = useState({
+    status: 'Em Espera',
+    observacoes: ''
+  });
+  const [fotografiasPC, setFotografiasPC] = useState([]);
+  const [showAddFotoPCModal, setShowAddFotoPCModal] = useState(false);
+  const [fotoPCFile, setFotoPCFile] = useState(null);
+  const [fotoPCDescricao, setFotoPCDescricao] = useState('');
+  const [uploadingFotoPC, setUploadingFotoPC] = useState(false);
+  const [showEmailPCModal, setShowEmailPCModal] = useState(false);
+  const [sendingEmailPC, setSendingEmailPC] = useState(false);
+
 
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
