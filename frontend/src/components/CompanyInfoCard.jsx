@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { Info, X, Building2, Phone, Globe, Mail, MapPin, CreditCard, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Info, X, Building2, Phone, Globe, Mail, MapPin, CreditCard, Smartphone, Edit, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +12,68 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const CompanyInfoCard = () => {
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const CompanyInfoCard = ({ user }) => {
   const [showInfo, setShowInfo] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [companyData, setCompanyData] = useState({
+    nome_empresa: 'HWI UNIPESSOAL LDA',
+    telefone: '518176657',
+    telemovel: '+351 913008138',
+    website: 'www.hwi.pt',
+    email: 'geral@hwi.pt',
+    morada_linha1: 'Rua Mário Pereira 7 RC ESQ',
+    morada_linha2: '2830-493 Barreiro, PT',
+    iban: 'PT50 0007 0000 0074 9942 1152 3'
+  });
+
+  const [editData, setEditData] = useState({ ...companyData });
+
+  // Buscar dados da empresa ao abrir o modal
+  useEffect(() => {
+    if (showInfo) {
+      fetchCompanyInfo();
+    }
+  }, [showInfo]);
+
+  const fetchCompanyInfo = async () => {
+    try {
+      const response = await axios.get(`${API}/company-info`);
+      setCompanyData(response.data);
+      setEditData(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar dados da empresa:', error);
+      toast.error('Erro ao carregar informações da empresa');
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/company-info`, editData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setCompanyData(editData);
+      setIsEditing(false);
+      toast.success('Informações atualizadas com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast.error('Erro ao atualizar informações');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditData({ ...companyData });
+    setIsEditing(false);
+  };
+
+  const isAdmin = user?.is_admin === true;
 
   return (
     <>
