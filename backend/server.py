@@ -1654,39 +1654,40 @@ async def create_relatorio(
     
     await db.relatorios_tecnicos.insert_one(relatorio_dict)
     
-    # Criar/atualizar equipamento automaticamente
-    equipamento_existente = await db.equipamentos.find_one({
-        "cliente_id": relatorio_data.cliente_id,
-        "marca": relatorio_data.equipamento_marca,
-        "modelo": relatorio_data.equipamento_modelo,
-        "numero_serie": relatorio_data.equipamento_numero_serie if relatorio_data.equipamento_numero_serie else None,
-        "ativo": True
-    })
-    
-    if equipamento_existente:
-        # Atualizar last_used
-        await db.equipamentos.update_one(
-            {"id": equipamento_existente["id"]},
-            {"$set": {"last_used": datetime.now(timezone.utc).isoformat()}}
-        )
-    else:
-        # Criar novo equipamento
-        novo_equipamento = Equipamento(
-            cliente_id=relatorio_data.cliente_id,
-            tipologia=relatorio_data.equipamento_tipologia,
-            marca=relatorio_data.equipamento_marca,
-            modelo=relatorio_data.equipamento_modelo,
-            numero_serie=relatorio_data.equipamento_numero_serie,
-            ano_fabrico=relatorio_data.equipamento_ano_fabrico,
-            last_used=datetime.now(timezone.utc)
-        )
+    # Criar/atualizar equipamento automaticamente (somente se marca e modelo forem fornecidos)
+    if relatorio_data.equipamento_marca and relatorio_data.equipamento_modelo:
+        equipamento_existente = await db.equipamentos.find_one({
+            "cliente_id": relatorio_data.cliente_id,
+            "marca": relatorio_data.equipamento_marca,
+            "modelo": relatorio_data.equipamento_modelo,
+            "numero_serie": relatorio_data.equipamento_numero_serie if relatorio_data.equipamento_numero_serie else None,
+            "ativo": True
+        })
         
-        equipamento_dict = novo_equipamento.dict()
-        equipamento_dict["created_at"] = equipamento_dict["created_at"].isoformat()
-        equipamento_dict["last_used"] = equipamento_dict["last_used"].isoformat()
-        
-        await db.equipamentos.insert_one(equipamento_dict)
-        logging.info(f"Equipamento criado automaticamente: {novo_equipamento.marca} {novo_equipamento.modelo}")
+        if equipamento_existente:
+            # Atualizar last_used
+            await db.equipamentos.update_one(
+                {"id": equipamento_existente["id"]},
+                {"$set": {"last_used": datetime.now(timezone.utc).isoformat()}}
+            )
+        else:
+            # Criar novo equipamento
+            novo_equipamento = Equipamento(
+                cliente_id=relatorio_data.cliente_id,
+                tipologia=relatorio_data.equipamento_tipologia or "",
+                marca=relatorio_data.equipamento_marca,
+                modelo=relatorio_data.equipamento_modelo,
+                numero_serie=relatorio_data.equipamento_numero_serie,
+                ano_fabrico=relatorio_data.equipamento_ano_fabrico,
+                last_used=datetime.now(timezone.utc)
+            )
+            
+            equipamento_dict = novo_equipamento.dict()
+            equipamento_dict["created_at"] = equipamento_dict["created_at"].isoformat()
+            equipamento_dict["last_used"] = equipamento_dict["last_used"].isoformat()
+            
+            await db.equipamentos.insert_one(equipamento_dict)
+            logging.info(f"Equipamento criado automaticamente: {novo_equipamento.marca} {novo_equipamento.modelo}")
     
     # Adicionar técnico criador automaticamente
     tecnico = TecnicoRelatorio(
