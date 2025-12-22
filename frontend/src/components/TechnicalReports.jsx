@@ -991,6 +991,187 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // ========== Material OT Functions ==========
+
+  const fetchMateriais = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/materiais`);
+      setMateriais(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar materiais:', error);
+    }
+  };
+
+  const handleAddMaterial = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, materialFormData);
+      toast.success('Material adicionado!');
+      fetchMateriais(selectedRelatorio.id);
+      setShowAddMaterialModal(false);
+      setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente' });
+      
+      // Se foi marcado como "Cotação", atualizar lista de PCs
+      if (materialFormData.fornecido_por === 'Cotação') {
+        fetchPedidosCotacao(selectedRelatorio.id);
+      }
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleUpdateMaterial = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais/${selectedMaterial.id}`,
+        materialFormData
+      );
+      toast.success('Material atualizado!');
+      fetchMateriais(selectedRelatorio.id);
+      setShowEditMaterialModal(false);
+      setSelectedMaterial(null);
+      
+      if (materialFormData.fornecido_por === 'Cotação') {
+        fetchPedidosCotacao(selectedRelatorio.id);
+      }
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId) => {
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais/${materialId}`);
+      toast.success('Material removido!');
+      fetchMateriais(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const openEditMaterialModal = (material) => {
+    setSelectedMaterial(material);
+    setMaterialFormData({
+      descricao: material.descricao,
+      quantidade: material.quantidade,
+      fornecido_por: material.fornecido_por
+    });
+    setShowEditMaterialModal(true);
+  };
+
+  // ========== Pedidos de Cotação Functions ==========
+
+  const fetchPedidosCotacao = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/pedidos-cotacao`);
+      setPedidosCotacao(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar PCs:', error);
+    }
+  };
+
+  const fetchPCDetalhes = async (pcId) => {
+    try {
+      const response = await axios.get(`${API}/pedidos-cotacao/${pcId}`);
+      setSelectedPC(response.data);
+      setPCFormData({
+        status: response.data.status,
+        observacoes: response.data.observacoes || ''
+      });
+      setFotografiasPC(response.data.fotografias || []);
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do PC:', error);
+      toast.error('Erro ao carregar detalhes do PC');
+    }
+  };
+
+  const handleUpdatePC = async () => {
+    try {
+      await axios.put(`${API}/pedidos-cotacao/${selectedPC.id}`, pcFormData);
+      toast.success('PC atualizado!');
+      fetchPedidosCotacao(selectedRelatorio.id);
+      setShowPCModal(false);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleUploadFotoPC = async (e) => {
+    e.preventDefault();
+    if (!fotoPCFile) {
+      toast.error('Selecione uma imagem');
+      return;
+    }
+
+    setUploadingFotoPC(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', fotoPCFile);
+      formData.append('descricao', fotoPCDescricao);
+
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/fotografias`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success('Fotografia adicionada!');
+      fetchPCDetalhes(selectedPC.id);
+      setShowAddFotoPCModal(false);
+      setFotoPCFile(null);
+      setFotoPCDescricao('');
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setUploadingFotoPC(false);
+    }
+  };
+
+  const handleDeleteFotoPC = async (fotoId) => {
+    try {
+      await axios.delete(`${API}/pedidos-cotacao/${selectedPC.id}/fotografias/${fotoId}`);
+      toast.success('Fotografia removida!');
+      fetchPCDetalhes(selectedPC.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDownloadPDFPC = async (pcId) => {
+    try {
+      const response = await axios.get(`${API}/pedidos-cotacao/${pcId}/preview-pdf`, {
+        responseType: 'blob'
+      });
+      
+      const pc = pedidosCotacao.find(p => p.id === pcId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `PC_${pc?.numero_pc || pcId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('PDF baixado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao baixar PDF');
+    }
+  };
+
+  const handleSendEmailPC = async (email) => {
+    setSendingEmailPC(true);
+    try {
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/send-email?email_destinatario=${email}`);
+      toast.success(`Email enviado para ${email}`);
+      setShowEmailPCModal(false);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setSendingEmailPC(false);
+    }
+  };
+
   // ========== Assinatura Functions ==========
   
   const fetchAssinatura = async (relatorioId) => {
