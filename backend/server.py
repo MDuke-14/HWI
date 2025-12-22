@@ -6339,6 +6339,29 @@ async def delete_material_ot(
 
 # ============ Pedidos de Cotação Routes ============
 
+@api_router.get("/pedidos-cotacao")
+async def get_all_pedidos_cotacao(
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar TODOS os PCs do sistema"""
+    pcs = await db.pedidos_cotacao.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(length=None)
+    
+    # Enriquecer com informações da OT
+    for pc in pcs:
+        ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
+        if ot:
+            pc["ot_numero"] = ot.get("numero_relatorio", "N/A")
+            pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
+        
+        # Contar materiais associados
+        materiais_count = await db.materiais_ot.count_documents({"pc_id": pc["id"]})
+        pc["materiais_count"] = materiais_count
+    
+    return pcs
+
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/pedidos-cotacao")
 async def get_pedidos_cotacao_ot(
     relatorio_id: str,
