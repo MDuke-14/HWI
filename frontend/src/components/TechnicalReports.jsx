@@ -3383,6 +3383,234 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* PC Modal */}
+      <Dialog open={showPCModal} onOpenChange={(open) => {
+        setShowPCModal(open);
+        if (!open) {
+          setSelectedPC(null);
+          setFotografiasPC([]);
+        }
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between text-white">
+              <span className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-yellow-400" />
+                {selectedPC?.numero_pc} - Pedido de Cotação
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleDownloadPDFPC.bind(null, selectedPC?.id)}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Download PDF
+                </Button>
+                <Button
+                  onClick={() => setShowEmailPCModal(true)}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  Enviar Email
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPC && (
+            <div className="space-y-4 mt-4">
+              {/* Status */}
+              {user?.is_admin && (
+                <div>
+                  <Label className="text-gray-300">Status do PC</Label>
+                  <select
+                    value={pcFormData.status}
+                    onChange={(e) => setPCFormData({ ...pcFormData, status: e.target.value })}
+                    className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1"
+                  >
+                    <option value="Em Espera">Em Espera</option>
+                    <option value="Cotação Pedida">Cotação Pedida</option>
+                    <option value="A Caminho">A Caminho</option>
+                    <option value="Em Armazém">Em Armazém</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Materiais */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <h4 className="text-blue-400 font-semibold mb-3">Material para Cotação</h4>
+                {selectedPC.materiais?.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedPC.materiais.map((mat) => (
+                      <div key={mat.id} className="flex justify-between p-2 bg-gray-800 rounded">
+                        <span className="text-white">{mat.descricao}</span>
+                        <span className="text-gray-400">Qtd: {mat.quantidade}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">Nenhum material associado</p>
+                )}
+              </div>
+
+              {/* Fotografias */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-blue-400 font-semibold">Fotografias</h4>
+                  <Button
+                    onClick={() => setShowAddFotoPCModal(true)}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Foto
+                  </Button>
+                </div>
+
+                {fotografiasPC.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {fotografiasPC.map((foto) => (
+                      <div key={foto.id} className="relative group">
+                        <img
+                          src={`${API}${foto.foto_url}`}
+                          alt={foto.descricao}
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <Button
+                            onClick={() => handleDeleteFotoPC(foto.id)}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-gray-300 text-sm mt-1">{foto.descricao}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">Nenhuma fotografia</p>
+                )}
+              </div>
+
+              {/* Observações */}
+              <div>
+                <Label className="text-gray-300">Observações</Label>
+                <textarea
+                  value={pcFormData.observacoes}
+                  onChange={(e) => setPCFormData({ ...pcFormData, observacoes: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1 min-h-[100px]"
+                  placeholder="Adicione observações sobre este pedido de cotação..."
+                />
+              </div>
+
+              {/* Botões */}
+              {user?.is_admin && (
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => setShowPCModal(false)}
+                    variant="outline"
+                    className="flex-1 border-gray-600"
+                  >
+                    Fechar
+                  </Button>
+                  <Button
+                    onClick={handleUpdatePC}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    Guardar Alterações
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Foto PC Modal */}
+      <Dialog open={showAddFotoPCModal} onOpenChange={setShowAddFotoPCModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Adicionar Fotografia ao PC</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUploadFotoPC} className="space-y-4">
+            <div>
+              <Label htmlFor="foto_pc_file" className="text-gray-300">Selecionar Imagem</Label>
+              <Input
+                id="foto_pc_file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFotoPCFile(e.target.files[0])}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="foto_pc_descricao" className="text-gray-300">Descrição</Label>
+              <Input
+                id="foto_pc_descricao"
+                value={fotoPCDescricao}
+                onChange={(e) => setFotoPCDescricao(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                placeholder="Ex: Vista frontal do equipamento"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowAddFotoPCModal(false);
+                  setFotoPCFile(null);
+                  setFotoPCDescricao('');
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={uploadingFotoPC}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+                disabled={uploadingFotoPC}
+              >
+                {uploadingFotoPC ? 'Enviando...' : 'Adicionar'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email PC Modal */}
+      <Dialog open={showEmailPCModal} onOpenChange={setShowEmailPCModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Enviar PDF por Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-300">Selecione o email de destino:</p>
+            <div className="space-y-2">
+              {['geral@hwi.pt', 'pedro.duarte@hwi.pt', 'miguel.moreira@hwi.pt'].map((email) => (
+                <Button
+                  key={email}
+                  onClick={() => handleSendEmailPC(email)}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={sendingEmailPC}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  {email}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Assinatura Modal */}
       <Dialog open={showAssinaturaModal} onOpenChange={setShowAssinaturaModal}>
