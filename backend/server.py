@@ -2115,7 +2115,7 @@ async def upload_fotografia(
             "id": foto_id,
             "relatorio_id": relatorio_id,
             "descricao": descricao,
-            "foto_url": f"/api/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}/image",
+            "foto_url": f"/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}/image",
             "uploaded_at": foto_doc["uploaded_at"]
         }
     except Exception as e:
