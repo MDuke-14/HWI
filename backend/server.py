@@ -156,7 +156,7 @@ class Equipamento(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     cliente_id: str
-    tipologia: str
+    tipologia: Optional[str] = None
     marca: str
     modelo: str
     numero_serie: Optional[str] = None
