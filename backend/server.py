@@ -217,6 +217,32 @@ class TecnicoRelatorio(BaseModel):
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     ordem: int = 0
 
+class CronometroOT(BaseModel):
+    """Cronómetro ativo de Trabalho ou Viagem"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    tecnico_id: str
+    tecnico_nome: str
+    tipo: str  # "trabalho" ou "viagem"
+    hora_inicio: datetime
+    ativo: bool = True
+
+class RegistoTecnicoOT(BaseModel):
+    """Registo de tempo segmentado (gerado automaticamente ao parar cronómetro)"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    tecnico_id: str
+    tecnico_nome: str
+    tipo: str  # "trabalho" ou "viagem"
+    data: date
+    hora_inicio_segmento: datetime
+    hora_fim_segmento: datetime
+    horas_arredondadas: float
+    km: float  # Viagem sempre 0, Trabalho usa km da OT
+    codigo: str  # 1, 2, S, D, V1, V2, VS, VD
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class EquipamentoOT(BaseModel):
