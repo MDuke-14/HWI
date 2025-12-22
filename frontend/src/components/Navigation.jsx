@@ -88,6 +88,7 @@ const Navigation = ({ user, onLogout, activePage }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            <CompanyInfoCard />
             <NotificationBell user={user} />
             <div className="flex items-center gap-2 text-gray-300">
               <User className="w-4 h-4" />
