@@ -6181,6 +6181,329 @@ async def delete_service(service_id: str, current_user: dict = Depends(get_curre
     
     return {"message": "Serviço cancelado com sucesso"}
 
+# ============ Material OT Routes ============
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/materiais")
+async def add_material_ot(
+    relatorio_id: str,
+    material_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Adicionar material a uma OT"""
+    ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not ot:
+        raise HTTPException(status_code=404, detail="OT não encontrada")
+    
+    # Validar quantidade
+    quantidade = material_data.get("quantidade", 0)
+    if quantidade <= 0:
+        raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
+    
+    # Criar material
+    material = MaterialOT(
+        relatorio_id=relatorio_id,
+        descricao=material_data["descricao"],
+        quantidade=quantidade,
+        fornecido_por=material_data["fornecido_por"]
+    )
+    
+    material_dict = material.dict()
+    material_dict["created_at"] = material_dict["created_at"].isoformat()
+    
+    # Se fornecido_por = "Cotação", criar/atualizar PC automaticamente
+    if material_data["fornecido_por"] == "Cotação":
+        # Buscar PC existente para esta OT com status "Em Espera"
+        pc_existente = await db.pedidos_cotacao.find_one({
+            "relatorio_id": relatorio_id,
+            "status": "Em Espera"
+        }, {"_id": 0})
+        
+        if pc_existente:
+            # Usar PC existente
+            material_dict["pc_id"] = pc_existente["id"]
+            logging.info(f"Material associado ao PC existente {pc_existente['numero_pc']}")
+        else:
+            # Criar novo PC
+            # Gerar número único de PC
+            last_pc = await db.pedidos_cotacao.find_one({}, {"_id": 0}, sort=[("numero_pc", -1)])
+            if last_pc and last_pc.get("numero_pc"):
+                # Extrair número do último PC
+                ultimo_num = int(last_pc["numero_pc"].split("-")[1])
+                novo_num = ultimo_num + 1
+            else:
+                novo_num = 1
+            
+            numero_pc = f"PC-{novo_num:03d}"
+            
+            novo_pc = PedidoCotacao(
+                numero_pc=numero_pc,
+                relatorio_id=relatorio_id,
+                status="Em Espera",
+                created_by=current_user["sub"]
+            )
+            
+            pc_dict = novo_pc.dict()
+            pc_dict["created_at"] = pc_dict["created_at"].isoformat()
+            await db.pedidos_cotacao.insert_one(pc_dict)
+            
+            material_dict["pc_id"] = novo_pc.id
+            logging.info(f"PC criado automaticamente: {numero_pc} para OT {relatorio_id}")
+    
+    await db.materiais_ot.insert_one(material_dict)
+    
+    return material
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/materiais")
+async def get_materiais_ot(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar materiais de uma OT"""
+    materiais = await db.materiais_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(length=None)
+    
+    return materiais
+
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/materiais/{material_id}")
+async def update_material_ot(
+    relatorio_id: str,
+    material_id: str,
+    material_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar material de uma OT"""
+    # Validar quantidade
+    if "quantidade" in material_data and material_data["quantidade"] <= 0:
+        raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
+    
+    material = await db.materiais_ot.find_one({"id": material_id, "relatorio_id": relatorio_id})
+    if not material:
+        raise HTTPException(status_code=404, detail="Material não encontrado")
+    
+    # Se mudou para "Cotação", associar ou criar PC
+    if material_data.get("fornecido_por") == "Cotação" and material.get("fornecido_por") != "Cotação":
+        pc_existente = await db.pedidos_cotacao.find_one({
+            "relatorio_id": relatorio_id,
+            "status": "Em Espera"
+        }, {"_id": 0})
+        
+        if pc_existente:
+            material_data["pc_id"] = pc_existente["id"]
+        else:
+            # Criar novo PC
+            last_pc = await db.pedidos_cotacao.find_one({}, {"_id": 0}, sort=[("numero_pc", -1)])
+            if last_pc and last_pc.get("numero_pc"):
+                ultimo_num = int(last_pc["numero_pc"].split("-")[1])
+                novo_num = ultimo_num + 1
+            else:
+                novo_num = 1
+            
+            numero_pc = f"PC-{novo_num:03d}"
+            
+            novo_pc = PedidoCotacao(
+                numero_pc=numero_pc,
+                relatorio_id=relatorio_id,
+                status="Em Espera",
+                created_by=current_user["sub"]
+            )
+            
+            pc_dict = novo_pc.dict()
+            pc_dict["created_at"] = pc_dict["created_at"].isoformat()
+            await db.pedidos_cotacao.insert_one(pc_dict)
+            
+            material_data["pc_id"] = novo_pc.id
+    
+    await db.materiais_ot.update_one(
+        {"id": material_id},
+        {"$set": material_data}
+    )
+    
+    return {"message": "Material atualizado"}
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/materiais/{material_id}")
+async def delete_material_ot(
+    relatorio_id: str,
+    material_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover material de uma OT"""
+    result = await db.materiais_ot.delete_one({"id": material_id, "relatorio_id": relatorio_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Material não encontrado")
+    
+    return {"message": "Material removido"}
+
+# ============ Pedidos de Cotação Routes ============
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/pedidos-cotacao")
+async def get_pedidos_cotacao_ot(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar PCs de uma OT"""
+    pcs = await db.pedidos_cotacao.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(length=None)
+    
+    return pcs
+
+@api_router.get("/pedidos-cotacao/{pc_id}")
+async def get_pedido_cotacao(
+    pc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter detalhes de um PC"""
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id}, {"_id": 0})
+    
+    if not pc:
+        raise HTTPException(status_code=404, detail="PC não encontrado")
+    
+    # Buscar materiais associados
+    materiais = await db.materiais_ot.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    pc["materiais"] = materiais
+    
+    # Buscar fotografias do PC
+    fotos = await db.fotos_pc.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).sort("uploaded_at", -1).to_list(length=None)
+    
+    for foto in fotos:
+        if "foto_url" not in foto:
+            foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
+    
+    pc["fotografias"] = fotos
+    
+    return pc
+
+@api_router.put("/pedidos-cotacao/{pc_id}")
+async def update_pedido_cotacao(
+    pc_id: str,
+    pc_data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Atualizar PC (admin only)"""
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id})
+    
+    if not pc:
+        raise HTTPException(status_code=404, detail="PC não encontrado")
+    
+    update_data = {k: v for k, v in pc_data.items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.pedidos_cotacao.update_one(
+        {"id": pc_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "PC atualizado"}
+
+@api_router.post("/pedidos-cotacao/{pc_id}/fotografias")
+async def add_fotografia_pc(
+    pc_id: str,
+    file: UploadFile = File(...),
+    descricao: str = Form(""),
+    current_user: dict = Depends(get_current_user)
+):
+    """Adicionar fotografia a um PC"""
+    try:
+        contents = await file.read()
+        
+        import base64
+        foto_base64 = base64.b64encode(contents).decode('utf-8')
+        
+        foto_id = str(uuid.uuid4())
+        foto_doc = {
+            "id": foto_id,
+            "pc_id": pc_id,
+            "foto_base64": foto_base64,
+            "descricao": descricao,
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "uploaded_at": datetime.now(timezone.utc),
+            "uploaded_by": current_user["sub"]
+        }
+        
+        await db.fotos_pc.insert_one(foto_doc)
+        
+        return {
+            "id": foto_id,
+            "pc_id": pc_id,
+            "descricao": descricao,
+            "foto_url": f"/pedidos-cotacao/{pc_id}/fotografias/{foto_id}/image",
+            "uploaded_at": foto_doc["uploaded_at"]
+        }
+    except Exception as e:
+        logging.error(f"Erro ao fazer upload de fotografia: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao fazer upload: {str(e)}")
+
+@api_router.get("/pedidos-cotacao/{pc_id}/fotografias")
+async def get_fotografias_pc(
+    pc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar fotografias de um PC"""
+    fotografias = await db.fotos_pc.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).sort("uploaded_at", -1).to_list(length=None)
+    
+    for foto in fotografias:
+        if "foto_url" not in foto:
+            foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
+    
+    return fotografias
+
+@api_router.get("/pedidos-cotacao/{pc_id}/fotografias/{foto_id}/image")
+async def get_fotografia_pc_image(
+    pc_id: str,
+    foto_id: str
+):
+    """Obter imagem da fotografia de um PC"""
+    foto = await db.fotos_pc.find_one({
+        "id": foto_id,
+        "pc_id": pc_id
+    }, {"_id": 0})
+    
+    if not foto:
+        raise HTTPException(status_code=404, detail="Fotografia não encontrada")
+    
+    if not foto.get("foto_base64"):
+        raise HTTPException(status_code=404, detail="Imagem não disponível")
+    
+    import base64
+    foto_bytes = base64.b64decode(foto["foto_base64"])
+    
+    from fastapi.responses import Response
+    return Response(
+        content=foto_bytes,
+        media_type=foto.get("content_type", "image/jpeg")
+    )
+
+@api_router.delete("/pedidos-cotacao/{pc_id}/fotografias/{foto_id}")
+async def delete_fotografia_pc(
+    pc_id: str,
+    foto_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover fotografia de um PC"""
+    foto = await db.fotos_pc.find_one({"id": foto_id, "pc_id": pc_id})
+    
+    if not foto:
+        raise HTTPException(status_code=404, detail="Fotografia não encontrada")
+    
+    await db.fotos_pc.delete_one({"id": foto_id})
+    
+    return {"message": "Fotografia removida"}
+
 # ============ Company Info Routes ============
 
 @api_router.get("/company-info")
