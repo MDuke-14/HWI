@@ -1463,6 +1463,20 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Search className="w-4 h-4 inline mr-2" />
               Pesquisa por Estado
             </button>
+            <button
+              onClick={() => {
+                setActiveTab('pedidos-cotacao');
+                fetchAllPCs();
+              }}
+              className={`px-4 py-3 font-semibold transition ${
+                activeTab === 'pedidos-cotacao'
+                  ? 'text-yellow-400 border-b-2 border-yellow-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <FileText className="w-4 h-4 inline mr-2" />
+              Pedidos de Cotação
+            </button>
           </div>
         </div>
 
