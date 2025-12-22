@@ -165,6 +165,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [allPCs, setAllPCs] = useState([]);
   const [loadingPCs, setLoadingPCs] = useState(false);
 
+  // Cronómetros
+  const [cronometrosAtivos, setCronometrosAtivos] = useState([]);
+  const [registosTecnicos, setRegistosTecnicos] = useState([]);
+  const [timers, setTimers] = useState({}); // Para contar tempo em tempo real
+
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_id: '',
