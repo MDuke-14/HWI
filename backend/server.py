@@ -6618,13 +6618,13 @@ async def send_email_pc(
         msg = MIMEMultipart()
         msg['From'] = smtp_from
         msg['To'] = email_destinatario
-        msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - OT {ot.get('numero_relatorio', 'N/A')}"
+        msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - OT #{ot.get('numero_assistencia', 'N/A')}"
         
         body = f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
             <h2>Pedido de Cotação</h2>
-            <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Ordem de Trabalho <b>{ot.get('numero_relatorio', 'N/A')}</b>.</p>
+            <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Ordem de Trabalho <b>#{ot.get('numero_assistencia', 'N/A')}</b>.</p>
             <p><b>Cliente:</b> {ot.get('cliente_nome', 'N/A')}</p>
             <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
             <hr>
