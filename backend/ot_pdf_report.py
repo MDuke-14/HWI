@@ -224,28 +224,34 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             
             # Célula da foto 1
             cell1 = []
-            if foto1.get('foto_path'):
-                img_path = Path(foto1['foto_path'])
-                if img_path.exists():
-                    try:
-                        img = RLImage(str(img_path), width=8*cm, height=6*cm, kind='proportional')
-                        cell1.append(img)
-                    except:
-                        cell1.append(Paragraph("<i>(Erro)</i>", desc_style))
+            if foto1.get('foto_base64'):
+                try:
+                    import base64
+                    foto_bytes = base64.b64decode(foto1['foto_base64'])
+                    foto_buffer = BytesIO(foto_bytes)
+                    img = RLImage(foto_buffer, width=8*cm, height=6*cm, kind='proportional')
+                    cell1.append(img)
+                except Exception as e:
+                    cell1.append(Paragraph(f"<i>(Erro ao carregar imagem: {str(e)[:30]})</i>", desc_style))
+            else:
+                cell1.append(Paragraph("<i>(Sem imagem)</i>", desc_style))
             cell1.append(Paragraph(f"<b>#{i+1}:</b> {foto1.get('descricao', '')[:100]}", desc_style))
             row_content.append(cell1)
             
             # Célula da foto 2 (se existir)
             if foto2:
                 cell2 = []
-                if foto2.get('foto_path'):
-                    img_path = Path(foto2['foto_path'])
-                    if img_path.exists():
-                        try:
-                            img = RLImage(str(img_path), width=8*cm, height=6*cm, kind='proportional')
-                            cell2.append(img)
-                        except:
-                            cell2.append(Paragraph("<i>(Erro)</i>", desc_style))
+                if foto2.get('foto_base64'):
+                    try:
+                        import base64
+                        foto_bytes = base64.b64decode(foto2['foto_base64'])
+                        foto_buffer = BytesIO(foto_bytes)
+                        img = RLImage(foto_buffer, width=8*cm, height=6*cm, kind='proportional')
+                        cell2.append(img)
+                    except Exception as e:
+                        cell2.append(Paragraph(f"<i>(Erro ao carregar imagem: {str(e)[:30]})</i>", desc_style))
+                else:
+                    cell2.append(Paragraph("<i>(Sem imagem)</i>", desc_style))
                 cell2.append(Paragraph(f"<b>#{i+2}:</b> {foto2.get('descricao', '')[:100]}", desc_style))
                 row_content.append(cell2)
             else:
