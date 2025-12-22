@@ -306,9 +306,9 @@ class RelatorioTecnicoCreate(BaseModel):
     local_intervencao: str
     pedido_por: str
     contacto_pedido: Optional[str] = None
-    equipamento_tipologia: str
-    equipamento_marca: str
-    equipamento_modelo: str
+    equipamento_tipologia: Optional[str] = None
+    equipamento_marca: Optional[str] = None
+    equipamento_modelo: Optional[str] = None
     equipamento_numero_serie: Optional[str] = None
     equipamento_ano_fabrico: Optional[str] = None  # Aceita: AAAA, MM-AAAA, MM/AAAA
     motivo_assistencia: str  # Mudou de "descricao_problema"
