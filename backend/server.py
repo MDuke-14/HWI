@@ -6353,7 +6353,7 @@ async def get_all_pedidos_cotacao(
     for pc in pcs:
         ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
         if ot:
-            pc["ot_numero"] = ot.get("numero_relatorio", "N/A")
+            pc["ot_numero"] = ot.get("numero_assistencia", "N/A")
             pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
         
         # Contar materiais associados
