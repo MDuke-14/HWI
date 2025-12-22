@@ -6505,6 +6505,126 @@ async def delete_fotografia_pc(
     
     return {"message": "Fotografia removida"}
 
+@api_router.get("/pedidos-cotacao/{pc_id}/preview-pdf")
+async def preview_pdf_pc(
+    pc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Gerar preview do PDF do PC"""
+    # Buscar PC
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id}, {"_id": 0})
+    if not pc:
+        raise HTTPException(status_code=404, detail="PC não encontrado")
+    
+    # Buscar OT associada
+    ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
+    if not ot:
+        raise HTTPException(status_code=404, detail="OT não encontrada")
+    
+    # Buscar materiais do PC
+    materiais = await db.materiais_ot.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Buscar fotografias do PC
+    fotografias = await db.fotos_pc.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Gerar PDF
+    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias)
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=PC_{pc['numero_pc']}.pdf"}
+    )
+
+@api_router.post("/pedidos-cotacao/{pc_id}/send-email")
+async def send_email_pc(
+    pc_id: str,
+    email_destinatario: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Enviar PDF do PC por email"""
+    # Validar email
+    emails_validos = ["geral@hwi.pt", "pedro.duarte@hwi.pt", "miguel.moreira@hwi.pt"]
+    if email_destinatario not in emails_validos:
+        raise HTTPException(status_code=400, detail="Email não autorizado")
+    
+    # Buscar PC
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id}, {"_id": 0})
+    if not pc:
+        raise HTTPException(status_code=404, detail="PC não encontrado")
+    
+    # Buscar OT associada
+    ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
+    if not ot:
+        raise HTTPException(status_code=404, detail="OT não encontrada")
+    
+    # Buscar materiais e fotografias
+    materiais = await db.materiais_ot.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    fotografias = await db.fotos_pc.find(
+        {"pc_id": pc_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Gerar PDF
+    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias)
+    
+    # Enviar email
+    try:
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.application import MIMEApplication
+        
+        msg = MIMEMultipart()
+        msg['From'] = smtp_from
+        msg['To'] = email_destinatario
+        msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - OT {ot.get('numero_relatorio', 'N/A')}"
+        
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif;">
+            <h2>Pedido de Cotação</h2>
+            <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Ordem de Trabalho <b>{ot.get('numero_relatorio', 'N/A')}</b>.</p>
+            <p><b>Cliente:</b> {ot.get('cliente_nome', 'N/A')}</p>
+            <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">Este é um email automático. Por favor, não responda.</p>
+            <p style="color: #666; font-size: 12px;">HWI Unipessoal, Lda.</p>
+        </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(body, 'html'))
+        
+        # Anexar PDF
+        pdf_attachment = MIMEApplication(pdf_buffer.read(), _subtype="pdf")
+        pdf_attachment.add_header('Content-Disposition', 'attachment', filename=f"PC_{pc['numero_pc']}.pdf")
+        msg.attach(pdf_attachment)
+        
+        # Enviar
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+        
+        logging.info(f"Email enviado para {email_destinatario}: PC {pc['numero_pc']}")
+        
+        return {"message": f"Email enviado com sucesso para {email_destinatario}"}
+        
+    except Exception as e:
+        logging.error(f"Erro ao enviar email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar email: {str(e)}")
+
 # ============ Company Info Routes ============
 
 @api_router.get("/company-info")
