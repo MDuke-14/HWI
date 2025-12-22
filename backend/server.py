@@ -6158,6 +6158,42 @@ async def delete_service(service_id: str, current_user: dict = Depends(get_curre
     
     return {"message": "Serviço cancelado com sucesso"}
 
+# ============ Company Info Routes ============
+
+@api_router.get("/company-info")
+async def get_company_info():
+    """Get company information (public)"""
+    company_info = await db.company_info.find_one({"id": "company_info_default"}, {"_id": 0})
+    
+    if not company_info:
+        # Retornar valores padrão se não existir
+        default_info = CompanyInfo()
+        return default_info.dict()
+    
+    return company_info
+
+@api_router.put("/company-info")
+async def update_company_info(
+    company_data: CompanyInfo,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Update company information (admin only)"""
+    # Adicionar metadados de atualização
+    update_dict = company_data.dict()
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+    update_dict["updated_by"] = current_user["sub"]
+    
+    # Upsert (insert ou update)
+    await db.company_info.update_one(
+        {"id": "company_info_default"},
+        {"$set": update_dict},
+        upsert=True
+    )
+    
+    logging.info(f"Informações da empresa atualizadas por {current_user['sub']}")
+    
+    return {"message": "Informações da empresa atualizadas com sucesso"}
+
 # ============ Include Router ============
 
 app.include_router(api_router)
