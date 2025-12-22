@@ -34,6 +34,7 @@ from ot_pdf_report import generate_ot_pdf
 from pc_pdf_report import generate_pc_pdf
 from notification_system import notification_loop, NotificationSystem
 from hours_calculator import calcular_breakdown_completo
+from cronometro_logic import segmentar_periodo
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)
