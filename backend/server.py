@@ -188,9 +188,9 @@ class RelatorioTecnico(BaseModel):
     contacto_pedido: Optional[str] = None
     
     # Equipamento
-    equipamento_tipologia: str
-    equipamento_marca: str
-    equipamento_modelo: str
+    equipamento_tipologia: Optional[str] = None
+    equipamento_marca: Optional[str] = None
+    equipamento_modelo: Optional[str] = None
     equipamento_numero_serie: Optional[str] = None
     equipamento_ano_fabrico: Optional[str] = None  # Aceita: AAAA, MM-AAAA, MM/AAAA
     
