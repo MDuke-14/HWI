@@ -230,6 +230,29 @@ class EquipamentoOT(BaseModel):
     ano_fabrico: Optional[str] = None
     ordem: int = 0  # Para ordenação na lista
 
+class MaterialOT(BaseModel):
+    """Material associado a uma OT"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    descricao: str
+    quantidade: int
+    fornecido_por: str  # "Cliente", "HWI", "Cotação"
+    pc_id: Optional[str] = None  # ID do Pedido de Cotação (se fornecido_por = Cotação)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PedidoCotacao(BaseModel):
+    """Pedido de Cotação (PC)"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero_pc: str  # PC-001, PC-002, etc.
+    relatorio_id: str  # OT associada
+    status: str = "Em Espera"  # Em Espera, Cotação Pedida, A Caminho, Em Armazém
+    observacoes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+    created_by: str
+
 class IntervencaoRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
