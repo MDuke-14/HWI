@@ -6209,6 +6209,174 @@ async def delete_service(service_id: str, current_user: dict = Depends(get_curre
     
     return {"message": "Serviço cancelado com sucesso"}
 
+# ============ Cronómetro OT Routes ============
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/cronometro/iniciar")
+async def iniciar_cronometro(
+    relatorio_id: str,
+    dados: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Iniciar cronómetro de Trabalho ou Viagem para um técnico"""
+    tipo = dados.get("tipo")  # "trabalho" ou "viagem"
+    tecnico_id = dados.get("tecnico_id")
+    tecnico_nome = dados.get("tecnico_nome")
+    
+    if tipo not in ["trabalho", "viagem"]:
+        raise HTTPException(status_code=400, detail="Tipo deve ser 'trabalho' ou 'viagem'")
+    
+    # Verificar se já existe cronómetro ativo para este técnico nesta OT
+    cronometro_ativo = await db.cronometros_ot.find_one({
+        "relatorio_id": relatorio_id,
+        "tecnico_id": tecnico_id,
+        "tipo": tipo,
+        "ativo": True
+    })
+    
+    if cronometro_ativo:
+        raise HTTPException(status_code=400, detail=f"Cronómetro de {tipo} já está ativo")
+    
+    # Criar novo cronómetro
+    cronometro = CronometroOT(
+        relatorio_id=relatorio_id,
+        tecnico_id=tecnico_id,
+        tecnico_nome=tecnico_nome,
+        tipo=tipo,
+        hora_inicio=datetime.now(timezone.utc),
+        ativo=True
+    )
+    
+    cronometro_dict = cronometro.dict()
+    cronometro_dict["hora_inicio"] = cronometro_dict["hora_inicio"].isoformat()
+    
+    await db.cronometros_ot.insert_one(cronometro_dict)
+    
+    logging.info(f"Cronómetro {tipo} iniciado para {tecnico_nome} na OT {relatorio_id}")
+    
+    return cronometro_dict
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/cronometro/parar")
+async def parar_cronometro(
+    relatorio_id: str,
+    dados: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Parar cronómetro e gerar registos segmentados"""
+    tipo = dados.get("tipo")
+    tecnico_id = dados.get("tecnico_id")
+    
+    # Buscar cronómetro ativo
+    cronometro = await db.cronometros_ot.find_one({
+        "relatorio_id": relatorio_id,
+        "tecnico_id": tecnico_id,
+        "tipo": tipo,
+        "ativo": True
+    })
+    
+    if not cronometro:
+        raise HTTPException(status_code=404, detail="Cronómetro não encontrado ou já parado")
+    
+    # Hora de fim
+    hora_fim = datetime.now(timezone.utc)
+    hora_inicio = datetime.fromisoformat(cronometro["hora_inicio"])
+    
+    # Buscar OT para pegar os KM
+    ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    km_ot = 0
+    if ot:
+        # Buscar técnico na OT para pegar KM
+        tecnico_ot = await db.tecnicos_relatorio.find_one({
+            "relatorio_id": relatorio_id,
+            "tecnico_id": tecnico_id
+        }, {"_id": 0})
+        if tecnico_ot:
+            km_ot = tecnico_ot.get("kms_deslocacao", 0)
+    
+    # Segmentar período
+    segmentos = segmentar_periodo(hora_inicio, hora_fim, tipo)
+    
+    # Criar registos
+    registos_criados = []
+    for seg in segmentos:
+        km_segmento = 0 if tipo == "viagem" else km_ot
+        
+        registo = RegistoTecnicoOT(
+            relatorio_id=relatorio_id,
+            tecnico_id=tecnico_id,
+            tecnico_nome=cronometro["tecnico_nome"],
+            tipo=tipo,
+            data=seg["data"],
+            hora_inicio_segmento=seg["hora_inicio_segmento"],
+            hora_fim_segmento=seg["hora_fim_segmento"],
+            horas_arredondadas=seg["horas_arredondadas"],
+            km=km_segmento,
+            codigo=seg["codigo"]
+        )
+        
+        registo_dict = registo.dict()
+        registo_dict["hora_inicio_segmento"] = registo_dict["hora_inicio_segmento"].isoformat()
+        registo_dict["hora_fim_segmento"] = registo_dict["hora_fim_segmento"].isoformat()
+        registo_dict["created_at"] = registo_dict["created_at"].isoformat()
+        
+        await db.registos_tecnico_ot.insert_one(registo_dict)
+        registos_criados.append(registo_dict)
+    
+    # Desativar cronómetro
+    await db.cronometros_ot.update_one(
+        {"id": cronometro["id"]},
+        {"$set": {"ativo": False, "hora_fim": hora_fim.isoformat()}}
+    )
+    
+    logging.info(f"Cronómetro {tipo} parado. {len(segmentos)} registos criados para {cronometro['tecnico_nome']}")
+    
+    return {
+        "message": f"Cronómetro parado. {len(segmentos)} registo(s) criado(s)",
+        "registos": registos_criados
+    }
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/cronometros")
+async def get_cronometros_ativos(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar cronómetros ativos de uma OT"""
+    cronometros = await db.cronometros_ot.find(
+        {"relatorio_id": relatorio_id, "ativo": True},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    return cronometros
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/registos-tecnicos")
+async def get_registos_tecnicos(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar todos os registos de técnicos de uma OT"""
+    registos = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(length=None)
+    
+    return registos
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/registos-tecnicos/{registo_id}")
+async def delete_registo_tecnico(
+    relatorio_id: str,
+    registo_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover um registo de técnico"""
+    result = await db.registos_tecnico_ot.delete_one({
+        "id": registo_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Registo não encontrado")
+    
+    return {"message": "Registo removido"}
+
 # ============ Material OT Routes ============
 
 @api_router.post("/relatorios-tecnicos/{relatorio_id}/materiais")
