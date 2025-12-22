@@ -31,6 +31,7 @@ from pdf_report_simple import generate_monthly_pdf_report as generate_pdf_simple
 from import_excel import parse_excel_timesheet
 from import_pdf import parse_pdf_timesheet
 from ot_pdf_report import generate_ot_pdf
+from pc_pdf_report import generate_pc_pdf
 from notification_system import notification_loop, NotificationSystem
 from hours_calculator import calcular_breakdown_completo
 
