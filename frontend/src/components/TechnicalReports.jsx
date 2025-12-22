@@ -1884,6 +1884,118 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
         </div>
         )}
+
+        {/* Pedidos de Cotação Section */}
+        {activeTab === 'pedidos-cotacao' && (
+        <div className="glass-effect p-6 rounded-xl">
+          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <FileText className="w-6 h-6 text-yellow-400" />
+            Pedidos de Cotação
+          </h2>
+
+          {loadingPCs ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
+              <p className="text-gray-400 mt-4">Carregando...</p>
+            </div>
+          ) : allPCs.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">Nenhum Pedido de Cotação encontrado</p>
+              <p className="text-gray-500 text-sm mt-2">
+                PCs são criados automaticamente quando adiciona material com "Fornecido Por: Cotação" a uma OT
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allPCs.map((pc) => (
+                <div
+                  key={pc.id}
+                  className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-5 hover:border-yellow-500 transition cursor-pointer"
+                  onClick={() => openPCFromList(pc)}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-5 h-5 text-yellow-400" />
+                        <span className="text-yellow-400 font-bold text-lg">
+                          {pc.numero_pc}
+                        </span>
+                      </div>
+                      <span 
+                        className={`text-xs px-2 py-1 rounded inline-block ${
+                          pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                          pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                          pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                          'bg-green-600/20 text-green-400'
+                        }`}
+                      >
+                        {pc.status}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </div>
+
+                  {/* Info */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-gray-300">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-400">OT:</span>
+                      <span className="text-white font-medium">{pc.ot_numero}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-gray-300">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-400">Cliente:</span>
+                      <span className="text-white">{pc.cliente_nome}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-gray-300">
+                      <Package className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-400">Materiais:</span>
+                      <span className="text-white font-medium">{pc.materiais_count || 0}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-gray-300">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-400">Criado:</span>
+                      <span className="text-white text-xs">
+                        {new Date(pc.created_at).toLocaleDateString('pt-PT')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions Preview */}
+                  <div className="flex gap-2 mt-4 pt-3 border-t border-gray-700">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadPDFPC(pc.id);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      PDF
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fetchPCDetalhes(pc.id);
+                        setShowEmailPCModal(true);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition text-sm"
+                    >
+                      <Send className="w-4 h-4" />
+                      Email
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        )}
       </div>
 
       {/* Add Relatório Modal */}
