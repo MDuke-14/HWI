@@ -161,6 +161,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEmailPCModal, setShowEmailPCModal] = useState(false);
   const [sendingEmailPC, setSendingEmailPC] = useState(false);
 
+  // Todos os PCs (para aba Pedidos de Cotação)
+  const [allPCs, setAllPCs] = useState([]);
+  const [loadingPCs, setLoadingPCs] = useState(false);
 
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
