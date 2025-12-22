@@ -6608,6 +6608,13 @@ async def send_email_pc(
         from email.mime.text import MIMEText
         from email.mime.application import MIMEApplication
         
+        # Configurações SMTP do ambiente
+        smtp_server = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+        
         msg = MIMEMultipart()
         msg['From'] = smtp_from
         msg['To'] = email_destinatario
