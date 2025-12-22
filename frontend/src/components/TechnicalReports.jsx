@@ -1758,7 +1758,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="equipamento_tipologia" className="text-gray-300">
-                    Tipologia *
+                    Tipologia
                   </Label>
                   <Input
                     id="equipamento_tipologia"
@@ -1766,14 +1766,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_tipologia: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     placeholder="Ex: Dobradora, Secadora"
-                    required
                     disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="equipamento_marca" className="text-gray-300">
-                    Marca *
+                    Marca
                   </Label>
                   <Input
                     id="equipamento_marca"
@@ -1782,13 +1781,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                     placeholder="Ex: Kannegiesser"
-                    required
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="equipamento_modelo" className="text-gray-300">
-                    Modelo *
+                    Modelo
                   </Label>
                   <Input
                     id="equipamento_modelo"
@@ -1796,7 +1794,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_modelo: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     placeholder="Modelo do equipamento"
-                    required
                     disabled={equipamentoSelecionado && equipamentoSelecionado !== 'novo'}
                   />
                 </div>
