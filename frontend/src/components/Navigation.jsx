@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Clock, TrendingUp, LogOut, User, Palmtree, Shield, FileText, CalendarDays, Menu, ChevronDown } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import CompanyInfoCard from './CompanyInfoCard';
 
 const Navigation = ({ user, onLogout, activePage }) => {
   const location = useLocation();
