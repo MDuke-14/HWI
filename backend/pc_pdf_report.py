@@ -84,7 +84,7 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     elements.append(Paragraph("INFORMAÇÕES DA ORDEM DE TRABALHO", heading_style))
     
     ot_data = [
-        ['Número OT:', ot.get('numero_relatorio', 'N/A'), 'Data:', ot.get('data_servico', 'N/A')],
+        ['Número OT:', f"#{ot.get('numero_assistencia', 'N/A')}", 'Data:', ot.get('data_servico', 'N/A')],
         ['Cliente:', ot.get('cliente_nome', 'N/A'), 'Status PC:', pc.get('status', 'Em Espera')]
     ]
     
