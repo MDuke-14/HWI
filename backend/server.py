@@ -2208,7 +2208,7 @@ async def get_fotografias(
     # Adicionar foto_url se não existir
     for foto in fotografias:
         if "foto_url" not in foto:
-            foto["foto_url"] = f"/api/relatorios-tecnicos/{relatorio_id}/fotografias/{foto['id']}/image"
+            foto["foto_url"] = f"/relatorios-tecnicos/{relatorio_id}/fotografias/{foto['id']}/image"
     
     return fotografias
 
