@@ -2664,7 +2664,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 ) : (
                   <p className="text-gray-400 text-sm text-center py-4">
-                    Adicione técnicos para usar os cronómetros
+                    Nenhum utilizador registado no sistema
                   </p>
                 )}
               </div>
