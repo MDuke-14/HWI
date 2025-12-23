@@ -28,25 +28,25 @@ const Navigation = ({ user, onLogout, activePage }) => {
 
   return (
     <nav className="glass-effect border-b border-gray-800 relative z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 text-white hover:text-blue-400 transition-colors">
-              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
-                <Clock className="w-6 h-6" />
+      <div className="container mx-auto px-2 sm:px-4">
+        <div className="flex justify-between items-center h-14 sm:h-16">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link to="/" className="flex items-center gap-1 sm:gap-2 text-white hover:text-blue-400 transition-colors">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-1.5 sm:p-2 rounded-lg">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <span className="font-bold text-xl">HWI Ponto</span>
+              <span className="font-bold text-base sm:text-xl hidden xs:inline">HWI Ponto</span>
             </Link>
 
             {/* Dropdown Menu */}
             <div className="relative">
               <Button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center gap-2"
+                className="bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 text-sm"
               >
                 <CurrentIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">{currentPageName}</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
               </Button>
 
               {/* Dropdown Content */}
@@ -58,7 +58,7 @@ const Navigation = ({ user, onLogout, activePage }) => {
                     onClick={() => setIsMenuOpen(false)}
                   />
                   
-                  <div className="absolute left-0 mt-2 w-56 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-2xl z-[300] overflow-hidden">
+                  <div className="absolute left-0 mt-2 w-48 sm:w-56 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-2xl z-[300] overflow-hidden">
                     {navItems.map((item) => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path;
@@ -67,14 +67,14 @@ const Navigation = ({ user, onLogout, activePage }) => {
                           key={item.key} 
                           to={item.path}
                           onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                          className={`flex items-center gap-3 px-3 sm:px-4 py-2.5 sm:py-3 transition-colors ${
                             isActive
                               ? 'bg-blue-600 text-white'
                               : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                           }`}
                         >
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{item.name}</span>
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="font-medium text-sm sm:text-base">{item.name}</span>
                           {isActive && (
                             <div className="ml-auto w-2 h-2 bg-white rounded-full" />
                           )}
@@ -87,19 +87,21 @@ const Navigation = ({ user, onLogout, activePage }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <CompanyInfoCard user={user} />
+          <div className="flex items-center gap-1 sm:gap-4">
+            <div className="hidden sm:block">
+              <CompanyInfoCard user={user} />
+            </div>
             <NotificationBell user={user} />
-            <div className="flex items-center gap-2 text-gray-300">
+            <div className="hidden sm:flex items-center gap-2 text-gray-300">
               <User className="w-4 h-4" />
               <span className="hidden md:inline" data-testid="user-name">{user?.username}</span>
             </div>
             <Button
               data-testid="logout-button"
               onClick={onLogout}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-full px-2 sm:px-4 py-1 sm:py-2"
             >
-              <LogOut className="w-4 h-4 md:mr-2" />
+              <LogOut className="w-4 h-4 sm:mr-2" />
               <span className="hidden md:inline">Sair</span>
             </Button>
           </div>
