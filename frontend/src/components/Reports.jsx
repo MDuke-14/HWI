@@ -1058,49 +1058,58 @@ const Reports = ({ user, onLogout }) => {
       </div>
 
       {/* Import Dialog */}
-      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        setShowImportDialog(open);
+        if (open && allUsers.length === 0) {
+          fetchAllUsers();
+        }
+      }}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
           <DialogHeader>
-            <DialogTitle>Importar Relatório</DialogTitle>
+            <DialogTitle>Importar PDF Mensal</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Ficheiro Excel ou PDF</Label>
+              <Label>Utilizador *</Label>
+              <select
+                value={importUserId}
+                onChange={(e) => setImportUserId(e.target.value)}
+                className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+              >
+                <option value="">Selecione o utilizador...</option>
+                {allUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.full_name || u.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Ficheiro PDF (gerado pela APP)</Label>
               <Input
                 type="file"
-                accept=".xlsx,.xls,.pdf"
+                accept=".pdf"
                 onChange={(e) => setImportFile(e.target.files[0])}
                 className="bg-[#0a0a0a] border-gray-700 text-white"
               />
               <p className="text-xs text-gray-400 mt-2">
-                Formatos aceites: Excel (.xlsx, .xls) ou PDF (.pdf)
+                Apenas PDFs mensais gerados por esta aplicação
               </p>
             </div>
-            <div>
-              <Label>Utilizador (opcional - detecta "Miguel" automaticamente)</Label>
-              <Input
-                type="text"
-                value={importUserId}
-                onChange={(e) => setImportUserId(e.target.value)}
-                placeholder="ID do utilizador"
-                className="bg-[#0a0a0a] border-gray-700 text-white"
-              />
-            </div>
-            <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-3">
-              <p className="text-xs text-blue-300">
-                ℹ️ A importação irá:
-                <br/>• Ler todas as datas com horários
-                <br/>• Detectar localizações (Madrid, Valencia)
-                <br/>• Calcular horas extras automaticamente
-                <br/>• Ignorar dias que já têm entradas
+            <div className="bg-amber-900/20 border border-amber-600 rounded-lg p-3">
+              <p className="text-xs text-amber-300">
+                ⚠️ <strong>ATENÇÃO:</strong> O PDF é a fonte de verdade!
+                <br/>• Os dados do PDF irão <strong>SUBSTITUIR</strong> qualquer entrada existente
+                <br/>• Dias que já tenham horas serão atualizados com os dados do PDF
+                <br/>• Esta ação não pode ser desfeita
               </p>
             </div>
             <Button 
               onClick={handleImportReport} 
-              disabled={loading || !importFile} 
+              disabled={loading || !importFile || !importUserId} 
               className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-full"
             >
-              {loading ? 'A importar...' : 'Importar Relatório'}
+              {loading ? 'A importar...' : 'Importar PDF'}
             </Button>
           </div>
         </DialogContent>
