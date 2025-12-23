@@ -2471,16 +2471,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                     Cronómetros de Trabalho e Viagem
                   </h4>
                   <div className="text-gray-400 text-sm">
-                    Selecionados: {tecnicos.filter(t => t.selected).length || 0}/{tecnicos.length}{' '}
+                    Selecionados: {Object.values(selectedCronoUsers).filter(Boolean).length}/{allSystemUsers.length}{' '}
                     <button 
-                      onClick={() => setTecnicos(tecnicos.map(t => ({...t, selected: true})))}
+                      onClick={() => {
+                        const all = {};
+                        allSystemUsers.forEach(u => { all[u.id] = true; });
+                        setSelectedCronoUsers(all);
+                      }}
                       className="text-blue-400 hover:text-blue-300 ml-2"
                     >
                       Todos
                     </button>
                     {' | '}
                     <button 
-                      onClick={() => setTecnicos(tecnicos.map(t => ({...t, selected: false})))}
+                      onClick={() => setSelectedCronoUsers({})}
                       className="text-blue-400 hover:text-blue-300"
                     >
                       Nenhum
