@@ -63,6 +63,24 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# ============ Root Health Endpoint for Deployment ============
+
+@app.get("/health")
+async def root_health_check():
+    """Health check endpoint for deployment - at root path /health"""
+    try:
+        # Testar conexão com MongoDB
+        await db.users.find_one({})
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)[:50]}"
+    
+    return {
+        "status": "healthy",
+        "database": db_status,
+        "service": "hwi-ponto-backend"
+    }
+
 # ============ Startup Event ============
 
 @app.on_event("startup")
