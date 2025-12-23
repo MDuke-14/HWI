@@ -2648,31 +2648,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                             </tbody>
                           </table>
                         </div>
-
-                        {/* Legenda Tipos de Trabalho */}
-                        <div className="mt-4 bg-gray-800/50 border border-gray-700 rounded-lg p-3">
-                          <p className="text-xs text-gray-400 mb-3 font-semibold">Tipos de Trabalho:</p>
-                          <div className="flex flex-wrap gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">1</span>
-                              <span className="text-white">Dias úteis (07h-19h)</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">2</span>
-                              <span className="text-white">Dias úteis (19h-07h)</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">S</span>
-                              <span className="text-white">Sábado</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">D</span>
-                              <span className="text-white">Domingos/Feriados</span>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     )}
+
+                    {/* Legenda Tipos de Trabalho - Sempre visível */}
+                    <div className="mt-4 bg-gray-800/50 border border-gray-700 rounded-lg p-3">
+                      <p className="text-xs text-gray-400 mb-3 font-semibold">Tipos de Trabalho:</p>
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">1</span>
+                          <span className="text-white">Dias úteis (07h-19h)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">2</span>
+                          <span className="text-white">Dias úteis (19h-07h)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">S</span>
+                          <span className="text-white">Sábado</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">D</span>
+                          <span className="text-white">Domingos/Feriados</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-gray-400 text-sm text-center py-4">
