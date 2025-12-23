@@ -1221,6 +1221,19 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // ========== Fetch All System Users (para Cronómetros) ==========
+  
+  const fetchAllSystemUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/users`);
+      setAllSystemUsers(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar utilizadores do sistema:', error);
+      // Fallback para utilizadores da OT se não tiver permissão admin
+      setAllSystemUsers([]);
+    }
+  };
+
   // ========== Cronómetro Functions ==========
 
   const fetchCronometros = async (relatorioId) => {
