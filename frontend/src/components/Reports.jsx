@@ -268,7 +268,12 @@ const Reports = ({ user, onLogout }) => {
 
   const handleImportReport = async () => {
     if (!importFile) {
-      toast.error('Selecione um ficheiro');
+      toast.error('Selecione um ficheiro PDF');
+      return;
+    }
+    
+    if (!importUserId) {
+      toast.error('Selecione um utilizador');
       return;
     }
     
@@ -276,11 +281,9 @@ const Reports = ({ user, onLogout }) => {
     try {
       const formData = new FormData();
       formData.append('file', importFile);
-      if (importUserId) {
-        formData.append('user_id', importUserId);
-      }
+      formData.append('user_id', importUserId);
       
-      const response = await axios.post(`${API}/admin/time-entries/import-excel`, formData, {
+      const response = await axios.post(`${API}/admin/time-entries/import-pdf`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -288,8 +291,8 @@ const Reports = ({ user, onLogout }) => {
       
       toast.success(
         `Importação concluída!\n` +
-        `Importados: ${response.data.imported}\n` +
-        `Ignorados (já existiam): ${response.data.skipped}\n` +
+        `Importados: ${response.data.imported} dias\n` +
+        `Substituídos: ${response.data.replaced} dias\n` +
         `Erros: ${response.data.errors}`
       );
       
