@@ -6646,6 +6646,16 @@ async def get_pedido_cotacao(
     if not pc:
         raise HTTPException(status_code=404, detail="PC não encontrado")
     
+    # Buscar OT associada para obter dados do cliente e máquina
+    ot = await db.relatorios_tecnicos.find_one({"id": pc.get("relatorio_id")}, {"_id": 0})
+    if ot:
+        pc["numero_ot"] = ot.get("numero_assistencia", "N/A")
+        pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
+        pc["equipamento_tipologia"] = ot.get("equipamento_tipologia")
+        pc["equipamento_marca"] = ot.get("equipamento_marca")
+        pc["equipamento_modelo"] = ot.get("equipamento_modelo")
+        pc["equipamento_numero_serie"] = ot.get("equipamento_numero_serie")
+    
     # Buscar materiais associados
     materiais = await db.materiais_ot.find(
         {"pc_id": pc_id},
