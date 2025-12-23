@@ -2492,31 +2492,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 </div>
 
-                {tecnicos.length > 0 ? (
+                {allSystemUsers.length > 0 ? (
                   <div className="space-y-2">
-                    {tecnicos.map((tec) => {
-                      const cronoTrabalho = getCronometroStatus(tec, 'trabalho');
-                      const cronoViagem = getCronometroStatus(tec, 'viagem');
-                      const timerKeyTrabalho = `${tec.tecnico_id || tec.id}_trabalho`;
-                      const timerKeyViagem = `${tec.tecnico_id || tec.id}_viagem`;
+                    {allSystemUsers.map((userItem) => {
+                      const cronoTrabalho = getCronometroStatus(userItem, 'trabalho');
+                      const cronoViagem = getCronometroStatus(userItem, 'viagem');
+                      const timerKeyTrabalho = `${userItem.id}_trabalho`;
+                      const timerKeyViagem = `${userItem.id}_viagem`;
 
                       return (
-                        <div key={tec.id} className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                        <div key={userItem.id} className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg border border-gray-700">
                           <div className="flex items-center gap-3">
                             <input 
                               type="checkbox" 
-                              checked={tec.selected || false}
+                              checked={selectedCronoUsers[userItem.id] || false}
                               onChange={(e) => {
-                                const updated = tecnicos.map(t => 
-                                  t.id === tec.id ? {...t, selected: e.target.checked} : t
-                                );
-                                setTecnicos(updated);
+                                setSelectedCronoUsers(prev => ({
+                                  ...prev,
+                                  [userItem.id]: e.target.checked
+                                }));
                               }}
                               className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-500"
                             />
                             <User className="w-4 h-4 text-gray-400" />
-                            <span className="text-white font-medium">{tec.tecnico_nome}</span>
-                            {tec.is_admin && (
+                            <span className="text-white font-medium">{userItem.full_name || userItem.username}</span>
+                            {userItem.is_admin && (
                               <span className="text-orange-400 text-xs">(Admin)</span>
                             )}
                           </div>
@@ -2532,8 +2532,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                             {/* Botão Trabalho */}
                             <button
                               onClick={() => cronoTrabalho
-                                ? handlePararCronometro(tec, 'trabalho')
-                                : handleIniciarCronometro(tec, 'trabalho')
+                                ? handlePararCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'trabalho')
+                                : handleIniciarCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'trabalho')
                               }
                               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition ${
                                 cronoTrabalho
@@ -2564,8 +2564,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                             {/* Botão Viagem */}
                             <button
                               onClick={() => cronoViagem
-                                ? handlePararCronometro(tec, 'viagem')
-                                : handleIniciarCronometro(tec, 'viagem')
+                                ? handlePararCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'viagem')
+                                : handleIniciarCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'viagem')
                               }
                               className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition ${
                                 cronoViagem
