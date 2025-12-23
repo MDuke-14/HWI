@@ -3981,23 +3981,21 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
               {/* Botões */}
-              {user?.is_admin && (
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    onClick={() => setShowPCModal(false)}
-                    variant="outline"
-                    className="flex-1 border-gray-600"
-                  >
-                    Fechar
-                  </Button>
-                  <Button
-                    onClick={handleUpdatePC}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    Guardar Alterações
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setShowPCModal(false)}
+                  variant="outline"
+                  className="flex-1 border-gray-600"
+                >
+                  Fechar
+                </Button>
+                <Button
+                  onClick={handleUpdatePC}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  Guardar Alterações
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
