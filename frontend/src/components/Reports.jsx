@@ -289,12 +289,23 @@ const Reports = ({ user, onLogout }) => {
         }
       });
       
-      toast.success(
-        `Importação concluída!\n` +
-        `Importados: ${response.data.imported} dias\n` +
-        `Substituídos: ${response.data.replaced} dias\n` +
-        `Erros: ${response.data.errors}`
-      );
+      const data = response.data;
+      let message = `✅ Importação concluída!\n\n`;
+      message += `📥 Dias trabalhados importados: ${data.imported}\n`;
+      if (data.replaced > 0) {
+        message += `🔄 Dias substituídos: ${data.replaced}\n`;
+      }
+      if (data.skipped > 0) {
+        message += `⏭️ Dias ignorados (folga/férias/falta): ${data.skipped}\n`;
+      }
+      if (data.errors > 0) {
+        message += `❌ Erros: ${data.errors}\n`;
+      }
+      if (data.metadata?.collaborator) {
+        message += `\n👤 Colaborador no PDF: ${data.metadata.collaborator}`;
+      }
+      
+      toast.success(message);
       
       setShowImportDialog(false);
       setImportFile(null);
