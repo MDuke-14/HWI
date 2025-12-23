@@ -566,6 +566,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     await fetchPedidosCotacao(relatorio.id);
     await fetchCronometros(relatorio.id);
     await fetchRegistosTecnicos(relatorio.id);
+    await fetchAllSystemUsers(); // Buscar todos os utilizadores do sistema para cronómetros
   };
 
   const openEditRelatorioModal = async (relatorio, e) => {
