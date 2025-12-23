@@ -56,8 +56,8 @@ self.addEventListener('push', function(event) {
     const data = event.data.json();
     const options = {
       body: data.message || 'Nova notificação',
-      icon: '/logo192.png',
-      badge: '/logo192.png',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       vibrate: [200, 100, 200],
       tag: data.type || 'notification',
       requireInteraction: data.priority === 'high',
