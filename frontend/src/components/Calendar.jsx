@@ -264,6 +264,7 @@ const Calendar = ({ user, onLogout }) => {
           {days.map((day, index) => {
             const dayServices = getServicesForDate(day);
             const dayVacations = getVacationsForDate(day);
+            const holiday = getHolidayForDate(day);
             const today = new Date();
             const isToday = day && 
               day === today.getDate() && 
@@ -274,14 +275,23 @@ const Calendar = ({ user, onLogout }) => {
               <div
                 key={index}
                 className={`min-h-[100px] p-2 rounded-lg border ${
-                  day ? 'bg-[#1a1a1a] border-gray-700' : 'border-transparent'
+                  day ? (holiday ? 'bg-red-900/20 border-red-700' : 'bg-[#1a1a1a] border-gray-700') : 'border-transparent'
                 } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
               >
                 {day && (
                   <>
-                    <div className={`text-sm font-semibold mb-1 ${isToday ? 'text-blue-400' : 'text-gray-300'}`}>
+                    <div className={`text-sm font-semibold mb-1 ${
+                      holiday ? 'text-red-400' : (isToday ? 'text-blue-400' : 'text-gray-300')
+                    }`}>
                       {day}
                     </div>
+                    
+                    {/* Holiday */}
+                    {holiday && (
+                      <div className="text-xs bg-red-900/30 border border-red-600 rounded px-1 py-0.5 mb-1">
+                        <div className="text-red-400 truncate">🎉 {holiday.name}</div>
+                      </div>
+                    )}
                     
                     {/* Services */}
                     {dayServices.map(service => (
