@@ -6314,11 +6314,13 @@ async def parar_cronometro(
         )
         
         registo_dict = registo.dict()
+        registo_dict["data"] = registo_dict["data"].isoformat()
         registo_dict["hora_inicio_segmento"] = registo_dict["hora_inicio_segmento"].isoformat()
         registo_dict["hora_fim_segmento"] = registo_dict["hora_fim_segmento"].isoformat()
         registo_dict["created_at"] = registo_dict["created_at"].isoformat()
         
         await db.registos_tecnico_ot.insert_one(registo_dict)
+        registo_dict.pop("_id", None)
         registos_criados.append(registo_dict)
     
     # Desativar cronómetro
