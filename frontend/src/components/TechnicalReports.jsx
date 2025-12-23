@@ -2649,14 +2649,26 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </table>
                         </div>
 
-                        {/* Legenda Códigos de Registos */}
-                        <div className="mt-4 bg-purple-500/5 border border-purple-500/20 rounded p-3">
-                          <p className="text-xs text-gray-400 mb-2 font-semibold">Códigos de Registo:</p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                            <div><span className="font-mono text-purple-400">1/2/S/D</span> = Trabalho</div>
-                            <div><span className="font-mono text-purple-400">V1/V2/VS/VD</span> = Viagem</div>
-                            <div><span className="font-mono text-purple-400">1/V1</span> = Turno 1 (07h-19h)</div>
-                            <div><span className="font-mono text-purple-400">2/V2</span> = Turno 2 (19h-07h)</div>
+                        {/* Legenda Tipos de Trabalho */}
+                        <div className="mt-4 bg-gray-800/50 border border-gray-700 rounded-lg p-3">
+                          <p className="text-xs text-gray-400 mb-3 font-semibold">Tipos de Trabalho:</p>
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">1</span>
+                              <span className="text-white">Dias úteis (07h-19h)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">2</span>
+                              <span className="text-white">Dias úteis (19h-07h)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">S</span>
+                              <span className="text-white">Sábado</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">D</span>
+                              <span className="text-white">Domingos/Feriados</span>
+                            </div>
                           </div>
                         </div>
                       </div>
