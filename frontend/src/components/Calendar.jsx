@@ -236,7 +236,7 @@ const Calendar = ({ user, onLogout }) => {
         </div>
 
         {/* Legend */}
-        <div className="flex gap-4 mb-4 text-sm">
+        <div className="flex flex-wrap gap-4 mb-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-600 rounded"></div>
             <span className="text-gray-300">Serviços</span>
@@ -244,6 +244,10 @@ const Calendar = ({ user, onLogout }) => {
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-amber-600 rounded"></div>
             <span className="text-gray-300">Férias</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-600 rounded"></div>
+            <span className="text-gray-300">Feriados</span>
           </div>
         </div>
 
