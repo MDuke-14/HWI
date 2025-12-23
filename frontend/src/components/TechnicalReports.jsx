@@ -2445,6 +2445,208 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <p className="text-gray-400 text-sm">Pedido por: {selectedRelatorio.pedido_por}</p>
               </div>
 
+              {/* Cronómetros de Trabalho e Viagem */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-green-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-green-400 font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Cronómetros de Trabalho e Viagem
+                  </h4>
+                  <div className="text-gray-400 text-sm">
+                    Selecionados: {tecnicos.filter(t => t.selected).length || 0}/{tecnicos.length}{' '}
+                    <button 
+                      onClick={() => setTecnicos(tecnicos.map(t => ({...t, selected: true})))}
+                      className="text-blue-400 hover:text-blue-300 ml-2"
+                    >
+                      Todos
+                    </button>
+                    {' | '}
+                    <button 
+                      onClick={() => setTecnicos(tecnicos.map(t => ({...t, selected: false})))}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      Nenhum
+                    </button>
+                  </div>
+                </div>
+
+                {tecnicos.length > 0 ? (
+                  <div className="space-y-2">
+                    {tecnicos.map((tec) => {
+                      const cronoTrabalho = getCronometroStatus(tec, 'trabalho');
+                      const cronoViagem = getCronometroStatus(tec, 'viagem');
+                      const timerKeyTrabalho = `${tec.tecnico_id || tec.id}_trabalho`;
+                      const timerKeyViagem = `${tec.tecnico_id || tec.id}_viagem`;
+
+                      return (
+                        <div key={tec.id} className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                          <div className="flex items-center gap-3">
+                            <input 
+                              type="checkbox" 
+                              checked={tec.selected || false}
+                              onChange={(e) => {
+                                const updated = tecnicos.map(t => 
+                                  t.id === tec.id ? {...t, selected: e.target.checked} : t
+                                );
+                                setTecnicos(updated);
+                              }}
+                              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-500"
+                            />
+                            <User className="w-4 h-4 text-gray-400" />
+                            <span className="text-white font-medium">{tec.tecnico_nome}</span>
+                            {tec.is_admin && (
+                              <span className="text-orange-400 text-xs">(Admin)</span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Timer de Trabalho Ativo */}
+                            {cronoTrabalho && (
+                              <span className="text-green-400 font-mono text-sm mr-2">
+                                {formatTimer(timers[timerKeyTrabalho] || 0)}
+                              </span>
+                            )}
+                            
+                            {/* Botão Trabalho */}
+                            <button
+                              onClick={() => cronoTrabalho
+                                ? handlePararCronometro(tec, 'trabalho')
+                                : handleIniciarCronometro(tec, 'trabalho')
+                              }
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition ${
+                                cronoTrabalho
+                                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                              }`}
+                            >
+                              {cronoTrabalho ? (
+                                <>
+                                  <StopCircle className="w-4 h-4" />
+                                  Parar
+                                </>
+                              ) : (
+                                <>
+                                  <PlayCircle className="w-4 h-4" />
+                                  Trabalho
+                                </>
+                              )}
+                            </button>
+
+                            {/* Timer de Viagem Ativo */}
+                            {cronoViagem && (
+                              <span className="text-blue-400 font-mono text-sm mr-2">
+                                {formatTimer(timers[timerKeyViagem] || 0)}
+                              </span>
+                            )}
+
+                            {/* Botão Viagem */}
+                            <button
+                              onClick={() => cronoViagem
+                                ? handlePararCronometro(tec, 'viagem')
+                                : handleIniciarCronometro(tec, 'viagem')
+                              }
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition ${
+                                cronoViagem
+                                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              }`}
+                            >
+                              {cronoViagem ? (
+                                <>
+                                  <StopCircle className="w-4 h-4" />
+                                  Parar
+                                </>
+                              ) : (
+                                <>
+                                  <Car className="w-4 h-4" />
+                                  Viagem
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Registos Gerados */}
+                    {registosTecnicos.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-700">
+                        <h5 className="text-white font-semibold mb-3 flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Registos Automáticos Gerados
+                        </h5>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-700">
+                                <th className="text-left py-2 px-2 text-gray-400">Técnico</th>
+                                <th className="text-center py-2 px-2 text-gray-400">Tipo</th>
+                                <th className="text-center py-2 px-2 text-gray-400">Data</th>
+                                <th className="text-center py-2 px-2 text-gray-400">Horas</th>
+                                <th className="text-center py-2 px-2 text-gray-400">KM</th>
+                                <th className="text-center py-2 px-2 text-gray-400">Código</th>
+                                <th className="text-center py-2 px-2 text-gray-400">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {registosTecnicos.map((reg) => (
+                                <tr key={reg.id} className="border-b border-gray-800 hover:bg-gray-800/50">
+                                  <td className="py-2 px-2 text-white">{reg.tecnico_nome}</td>
+                                  <td className="py-2 px-2 text-center">
+                                    <span className={`px-2 py-1 rounded text-xs ${
+                                      reg.tipo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 'bg-blue-600/20 text-blue-400'
+                                    }`}>
+                                      {reg.tipo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-2 text-center text-gray-300">
+                                    {new Date(reg.data).toLocaleDateString('pt-PT')}
+                                  </td>
+                                  <td className="py-2 px-2 text-center text-white font-medium">
+                                    {reg.horas_arredondadas}h
+                                  </td>
+                                  <td className="py-2 px-2 text-center text-gray-300">
+                                    {reg.km || 0}
+                                  </td>
+                                  <td className="py-2 px-2 text-center">
+                                    <span className="font-mono text-purple-400">{reg.codigo}</span>
+                                  </td>
+                                  <td className="py-2 px-2 text-center">
+                                    <Button
+                                      onClick={() => handleDeleteRegistoTecnico(reg.id)}
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Legenda Códigos de Registos */}
+                        <div className="mt-4 bg-purple-500/5 border border-purple-500/20 rounded p-3">
+                          <p className="text-xs text-gray-400 mb-2 font-semibold">Códigos de Registo:</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                            <div><span className="font-mono text-purple-400">1/2/S/D</span> = Trabalho</div>
+                            <div><span className="font-mono text-purple-400">V1/V2/VS/VD</span> = Viagem</div>
+                            <div><span className="font-mono text-purple-400">1/V1</span> = Turno 1 (07h-19h)</div>
+                            <div><span className="font-mono text-purple-400">2/V2</span> = Turno 2 (19h-07h)</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">
+                    Adicione técnicos para usar os cronómetros
+                  </p>
+                )}
+              </div>
+
               {/* Equipamentos */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-3">
