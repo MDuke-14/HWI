@@ -3856,22 +3856,60 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           {selectedPC && (
             <div className="space-y-4 mt-4">
-              {/* Status */}
-              {user?.is_admin && (
-                <div>
-                  <Label className="text-gray-300">Status do PC</Label>
-                  <select
-                    value={pcFormData.status}
-                    onChange={(e) => setPCFormData({ ...pcFormData, status: e.target.value })}
-                    className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1"
-                  >
-                    <option value="Em Espera">Em Espera</option>
-                    <option value="Cotação Pedida">Cotação Pedida</option>
-                    <option value="A Caminho">A Caminho</option>
-                    <option value="Em Armazém">Em Armazém</option>
-                  </select>
+              {/* Informações da OT */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-blue-700">
+                <h4 className="text-blue-400 font-semibold mb-3">Informações da Ordem de Trabalho</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">Número OT:</span>
+                    <span className="text-white ml-2 font-medium">#{selectedPC.numero_ot || selectedPC.ot_numero || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Cliente:</span>
+                    <span className="text-white ml-2">{selectedPC.cliente_nome || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados da Máquina */}
+              {(selectedPC.equipamento_tipologia || selectedPC.equipamento_marca || selectedPC.equipamento_modelo) && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                  <h4 className="text-yellow-400 font-semibold mb-3">Dados da Máquina</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Tipologia:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_tipologia || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Marca:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_marca || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Modelo:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_modelo || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Nº Série:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_numero_serie || 'N/A'}</span>
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* Status */}
+              <div>
+                <Label className="text-gray-300">Status do PC</Label>
+                <select
+                  value={pcFormData.status}
+                  onChange={(e) => setPCFormData({ ...pcFormData, status: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1"
+                >
+                  <option value="Em Espera">Em Espera</option>
+                  <option value="Cotação Pedida">Cotação Pedida</option>
+                  <option value="A Caminho">A Caminho</option>
+                  <option value="Em Armazém">Em Armazém</option>
+                </select>
+              </div>
 
               {/* Materiais */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
