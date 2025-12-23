@@ -31,6 +31,52 @@ const Calendar = ({ user, onLogout }) => {
     status: 'scheduled'
   });
 
+  // Feriados portugueses (fixos e móveis para 2025-2026)
+  const getHolidays = (year) => {
+    // Feriados fixos
+    const fixedHolidays = [
+      { date: `${year}-01-01`, name: 'Ano Novo' },
+      { date: `${year}-04-25`, name: 'Dia da Liberdade' },
+      { date: `${year}-05-01`, name: 'Dia do Trabalhador' },
+      { date: `${year}-06-10`, name: 'Dia de Portugal' },
+      { date: `${year}-08-15`, name: 'Assunção de Nossa Senhora' },
+      { date: `${year}-10-05`, name: 'Implantação da República' },
+      { date: `${year}-11-01`, name: 'Todos os Santos' },
+      { date: `${year}-12-01`, name: 'Restauração da Independência' },
+      { date: `${year}-12-08`, name: 'Imaculada Conceição' },
+      { date: `${year}-12-25`, name: 'Natal' },
+    ];
+
+    // Feriados móveis (Páscoa e derivados) - calculados para cada ano
+    const easterHolidays = {
+      2024: [
+        { date: '2024-03-29', name: 'Sexta-feira Santa' },
+        { date: '2024-03-31', name: 'Páscoa' },
+        { date: '2024-05-30', name: 'Corpo de Deus' },
+      ],
+      2025: [
+        { date: '2025-04-18', name: 'Sexta-feira Santa' },
+        { date: '2025-04-20', name: 'Páscoa' },
+        { date: '2025-06-19', name: 'Corpo de Deus' },
+      ],
+      2026: [
+        { date: '2026-04-03', name: 'Sexta-feira Santa' },
+        { date: '2026-04-05', name: 'Páscoa' },
+        { date: '2026-06-04', name: 'Corpo de Deus' },
+      ],
+    };
+
+    return [...fixedHolidays, ...(easterHolidays[year] || [])];
+  };
+
+  const getHolidayForDate = (day) => {
+    if (!day) return null;
+    const year = currentDate.getFullYear();
+    const dateStr = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const holidays = getHolidays(year);
+    return holidays.find(h => h.date === dateStr);
+  };
+
   useEffect(() => {
     fetchCalendarData();
     fetchUsers();
