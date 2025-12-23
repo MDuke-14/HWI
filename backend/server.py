@@ -5294,7 +5294,7 @@ async def import_pdf_timesheet(
         return {
             "message": "Importação concluída",
             "imported": imported_count,
-            "skipped": skipped_count,
+            "replaced": replaced_count,
             "errors": error_count,
             "total_in_file": len(entries_data)
         }
