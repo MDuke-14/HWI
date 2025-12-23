@@ -2613,7 +2613,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   </td>
                                   <td className="py-2 px-2 text-center">
                                     <Button
-                                      onClick={() => handleDeleteRegistoTecnico(reg.id)}
+                                      onClick={() => handleDeleteRegisto(reg.id)}
                                       size="sm"
                                       variant="ghost"
                                       className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
