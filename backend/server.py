@@ -6682,9 +6682,9 @@ async def get_pedido_cotacao(
 async def update_pedido_cotacao(
     pc_id: str,
     pc_data: dict,
-    current_user: dict = Depends(get_current_admin)
+    current_user: dict = Depends(get_current_user)
 ):
-    """Atualizar PC (admin only)"""
+    """Atualizar PC (qualquer utilizador pode editar)"""
     pc = await db.pedidos_cotacao.find_one({"id": pc_id})
     
     if not pc:
