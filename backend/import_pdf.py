@@ -13,6 +13,12 @@ def parse_pdf_timesheet(file_path):
     PDF Structure (REGISTO DIÁRIO DETALHADO table):
     | Data | Dia | Entradas/Saídas | Total | Trab.Supl. | Observações | Pagamento |
     
+    Handles:
+    - Multiple entries per day (separated by \n)
+    - Entries crossing midnight (00:00-XX:XX continuation)
+    - Various status formats: nn FOLGA, n FERIADO, (n FÉRIAS
+    - Ajuda de Custos with location in parentheses
+    
     Returns: dict with structure:
     {
         'success': bool,
@@ -26,11 +32,7 @@ def parse_pdf_timesheet(file_path):
                 'status': str  # TRABALHADO, FOLGA, FERIADO, FÉRIAS, FALTA
             }
         ],
-        'metadata': {
-            'collaborator': str,
-            'period_start': str,
-            'period_end': str
-        }
+        'metadata': {...}
     }
     """
     try:
@@ -86,69 +88,45 @@ def parse_pdf_timesheet(file_path):
                     if not table or len(table) < 2:
                         continue
                     
-                    # Find header row - look for "Data" and "Dia" columns
+                    # Check if this is the daily records table
+                    # Look for "Data" in first row/column
+                    is_daily_table = False
                     header_idx = None
-                    col_indices = {}
                     
                     for idx, row in enumerate(table):
                         if not row:
                             continue
-                        
                         row_text = ' '.join([str(cell or '').strip() for cell in row])
                         
-                        # Check if this is the header row
+                        # Check for header with "Data" and "Dia"
                         if 'Data' in row_text and 'Dia' in row_text:
+                            is_daily_table = True
                             header_idx = idx
-                            
-                            # Map column indices
-                            for col_idx, cell in enumerate(row):
-                                cell_text = str(cell or '').strip().lower()
-                                if 'data' in cell_text and 'dia' not in cell_text:
-                                    col_indices['data'] = col_idx
-                                elif cell_text == 'dia':
-                                    col_indices['dia'] = col_idx
-                                elif 'entrada' in cell_text or 'saída' in cell_text:
-                                    col_indices['entries'] = col_idx
-                                elif 'total' in cell_text and 'trab' not in cell_text:
-                                    col_indices['total'] = col_idx
-                                elif 'trab' in cell_text and 'supl' in cell_text:
-                                    col_indices['overtime'] = col_idx
-                                elif 'observa' in cell_text:
-                                    col_indices['observations'] = col_idx
-                                elif 'pagamento' in cell_text:
-                                    col_indices['payment'] = col_idx
-                            
-                            logging.info(f"  📊 Found header at row {idx}: {col_indices}")
+                            break
+                        
+                        # Also check if first cell is a date (DD/MM format)
+                        first_cell = str(row[0] or '').strip()
+                        if re.match(r'^\d{1,2}/\d{1,2}$', first_cell):
+                            is_daily_table = True
+                            header_idx = -1  # No header, data starts at 0
                             break
                     
-                    if header_idx is None:
+                    if not is_daily_table:
                         continue
                     
-                    # Set default column indices if not found
-                    if 'data' not in col_indices:
-                        col_indices['data'] = 0
-                    if 'dia' not in col_indices:
-                        col_indices['dia'] = 1
-                    if 'entries' not in col_indices:
-                        col_indices['entries'] = 2
-                    if 'total' not in col_indices:
-                        col_indices['total'] = 3
-                    if 'overtime' not in col_indices:
-                        col_indices['overtime'] = 4
-                    if 'observations' not in col_indices:
-                        col_indices['observations'] = 5
-                    if 'payment' not in col_indices:
-                        col_indices['payment'] = 6
+                    logging.info(f"  📊 Found daily table {table_idx} (header at row {header_idx})")
                     
                     # Process data rows
-                    for row_idx in range(header_idx + 1, len(table)):
+                    start_row = header_idx + 1 if header_idx >= 0 else 0
+                    
+                    for row_idx in range(start_row, len(table)):
                         row = table[row_idx]
                         if not row or len(row) < 3:
                             continue
                         
                         try:
-                            # Get date
-                            date_cell = str(row[col_indices['data']] or '').strip()
+                            # Get date from first column
+                            date_cell = str(row[0] or '').strip()
                             
                             # Match date format DD/MM
                             date_match = re.search(r'(\d{1,2})/(\d{1,2})', date_cell)
@@ -157,27 +135,27 @@ def parse_pdf_timesheet(file_path):
                             
                             day, month = map(int, date_match.groups())
                             
-                            # Determine year
-                            if detected_year:
-                                year = detected_year
-                                # Handle year boundary (e.g., period Nov-Dec might have entries in both years)
-                                if metadata['period_start']:
-                                    period_start_month = int(metadata['period_start'].split('-')[1])
-                                    # If entry month is less than period start month and period spans year boundary
-                                    if month < period_start_month and period_start_month > 6:
-                                        year = detected_year + 1
-                            else:
-                                year = datetime.now().year
+                            # Determine year based on period
+                            year = detected_year or datetime.now().year
+                            if metadata.get('period_start'):
+                                period_start_month = int(metadata['period_start'].split('-')[1])
+                                period_start_year = int(metadata['period_start'].split('-')[0])
+                                # Handle year boundary
+                                if month < period_start_month:
+                                    year = period_start_year + 1
+                                else:
+                                    year = period_start_year
                             
                             date_str = f"{year}-{month:02d}-{day:02d}"
                             
-                            # Get entries column
-                            entries_cell = str(row[col_indices['entries']] or '').strip()
+                            # Get entries column (index 2)
+                            entries_cell = str(row[2] or '').strip() if len(row) > 2 else ''
                             
                             # Detect status from entries column
                             status = 'TRABALHADO'
                             entries_upper = entries_cell.upper()
                             
+                            # Check for various status formats
                             if 'FOLGA' in entries_upper:
                                 status = 'FOLGA'
                             elif 'FERIADO' in entries_upper:
@@ -186,22 +164,22 @@ def parse_pdf_timesheet(file_path):
                                 status = 'FÉRIAS'
                             elif 'FALTA' in entries_upper:
                                 status = 'FALTA'
-                            elif 'NÃO TRABALHADO' in entries_upper or 'NAO TRABALHADO' in entries_upper:
+                            elif entries_cell == '-' or not entries_cell:
                                 status = 'NÃO TRABALHADO'
                             
-                            # Get observations
+                            # Get observations (index 5)
                             observations = None
-                            if col_indices.get('observations') and col_indices['observations'] < len(row):
-                                obs_cell = str(row[col_indices['observations']] or '').strip()
+                            if len(row) > 5:
+                                obs_cell = str(row[5] or '').strip()
                                 if obs_cell and obs_cell != '-':
                                     observations = obs_cell
                             
-                            # Get payment info (for outside_residence_zone)
+                            # Get payment info (index 6)
                             outside_residence_zone = False
                             location_description = None
                             
-                            if col_indices.get('payment') and col_indices['payment'] < len(row):
-                                payment_cell = str(row[col_indices['payment']] or '').strip()
+                            if len(row) > 6:
+                                payment_cell = str(row[6] or '').strip()
                                 payment_upper = payment_cell.upper()
                                 
                                 if 'AJUDA DE CUSTO' in payment_upper or 'AJUDA DE CUSTAS' in payment_upper:
@@ -210,28 +188,19 @@ def parse_pdf_timesheet(file_path):
                                     loc_match = re.search(r'\(([^)]+)\)', payment_cell)
                                     if loc_match:
                                         location_description = loc_match.group(1).strip()
-                                    else:
-                                        # Try to extract from line after "Ajuda de Custos"
-                                        lines = payment_cell.split('\n')
-                                        for line in lines:
-                                            if 'ajuda' not in line.lower() and '€' not in line and line.strip():
-                                                location_description = line.strip()
-                                                break
                             
                             # Parse time entries if status is TRABALHADO
                             time_pairs = []
                             
-                            if status == 'TRABALHADO':
-                                # Find all HH:MM-HH:MM patterns
-                                # Handle various formats:
-                                # - "09:00-13:00"
-                                # - "09:00 - 13:00"
-                                # - "9:00-13:00"
-                                # - Multiple entries separated by newlines
+                            if status == 'TRABALHADO' and entries_cell:
+                                # Split by newlines to handle multiple entries
+                                entry_lines = entries_cell.replace('\n', ' ').strip()
                                 
+                                # Find all HH:MM-HH:MM patterns
+                                # Handle formats: 09:00-13:00, 9:00-13:00, 08:55-00:00
                                 pair_matches = re.findall(
                                     r'(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})',
-                                    entries_cell
+                                    entry_lines
                                 )
                                 
                                 for start_time, end_time in pair_matches:
@@ -241,28 +210,31 @@ def parse_pdf_timesheet(file_path):
                                     start_formatted = f"{start_h:02d}:{start_m:02d}"
                                     end_formatted = f"{end_h:02d}:{end_m:02d}"
                                     
-                                    # Validate end > start (for same-day entries)
-                                    if (end_h * 60 + end_m) > (start_h * 60 + start_m):
+                                    # Handle midnight entries (00:00)
+                                    # If end is 00:00, treat it as end of day (23:59)
+                                    if end_h == 0 and end_m == 0:
+                                        # This is an entry that goes until midnight
+                                        # Keep it as-is for now, will be handled as 24:00
+                                        end_formatted = "23:59"
+                                    
+                                    # Validate: end must be > start (unless it's midnight crossing)
+                                    start_minutes = start_h * 60 + start_m
+                                    end_minutes = end_h * 60 + end_m
+                                    if end_h == 0 and end_m == 0:
+                                        end_minutes = 24 * 60  # Treat as next day
+                                    
+                                    if end_minutes > start_minutes:
+                                        time_pairs.append({
+                                            'start_time': start_formatted,
+                                            'end_time': end_formatted if end_formatted != "23:59" else "23:59"
+                                        })
+                                    elif start_h == 0 and start_minutes < 120:
+                                        # This is a continuation from previous day (00:00-XX:XX)
+                                        # Include it as a valid entry
                                         time_pairs.append({
                                             'start_time': start_formatted,
                                             'end_time': end_formatted
                                         })
-                                
-                                # If no pairs found, try individual times
-                                if not time_pairs:
-                                    times = re.findall(r'(\d{1,2}:\d{2})', entries_cell)
-                                    for i in range(0, len(times) - 1, 2):
-                                        start_h, start_m = map(int, times[i].split(':'))
-                                        end_h, end_m = map(int, times[i+1].split(':'))
-                                        
-                                        start_formatted = f"{start_h:02d}:{start_m:02d}"
-                                        end_formatted = f"{end_h:02d}:{end_m:02d}"
-                                        
-                                        if (end_h * 60 + end_m) > (start_h * 60 + start_m):
-                                            time_pairs.append({
-                                                'start_time': start_formatted,
-                                                'end_time': end_formatted
-                                            })
                             
                             # Create entry
                             entry = {
@@ -277,12 +249,17 @@ def parse_pdf_timesheet(file_path):
                             entries_list.append(entry)
                             
                             if time_pairs:
-                                logging.info(f"  ✅ {date_str} ({status}): {len(time_pairs)} entries, outside_zone={outside_residence_zone}")
+                                times_str = ', '.join([f"{t['start_time']}-{t['end_time']}" for t in time_pairs])
+                                logging.info(f"  ✅ {date_str} ({status}): {times_str}")
+                                if outside_residence_zone:
+                                    logging.info(f"     📍 Fora zona: {location_description}")
                             else:
                                 logging.info(f"  📋 {date_str}: {status}")
                             
                         except Exception as e:
                             logging.warning(f"  ⚠️ Error processing row {row_idx}: {str(e)}")
+                            import traceback
+                            logging.warning(traceback.format_exc())
                             continue
         
         # Sort entries by date
