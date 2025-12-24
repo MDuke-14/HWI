@@ -5731,12 +5731,25 @@ async def approve_vacation(
 @api_router.get("/admin/reports/all")
 async def get_all_reports(
     period: str = "billing",
+    month: Optional[int] = None,
+    year: Optional[int] = None,
     current_user: dict = Depends(get_current_admin)
 ):
     """Get consolidated reports for all users (admin only)"""
     now = datetime.now(timezone.utc)
     
-    if period == "billing":
+    # Se mês e ano foram especificados, usar esses valores
+    if month and year:
+        # Primeiro dia do mês
+        start_date = f"{year}-{str(month).zfill(2)}-01"
+        # Último dia do mês
+        if month == 12:
+            last_day = 31
+        else:
+            from calendar import monthrange
+            last_day = monthrange(year, month)[1]
+        end_date = f"{year}-{str(month).zfill(2)}-{str(last_day).zfill(2)}"
+    elif period == "billing":
         start_dt, end_dt = get_billing_period_dates(now.date())
         start_date = start_dt.strftime("%Y-%m-%d")
         end_date = end_dt.strftime("%Y-%m-%d")
