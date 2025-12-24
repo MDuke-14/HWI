@@ -105,33 +105,64 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     elements.append(client_table)
     elements.append(Spacer(1, 0.2*cm))
     
-    # Equipamento
-    elements.append(Paragraph("EQUIPAMENTO", heading_style))
-    equip_data = [
-        ['Tipologia:', relatorio.get('equipamento_tipologia', 'N/A')],
-        ['Marca:', relatorio.get('equipamento_marca', 'N/A')],
-        ['Modelo:', relatorio.get('equipamento_modelo', 'N/A')],
-        ['Número de Série:', relatorio.get('equipamento_numero_serie', 'N/A')],
-    ]
+    # Equipamentos (Principal + Adicionais)
+    elements.append(Paragraph("EQUIPAMENTOS", heading_style))
     
-    if relatorio.get('equipamento_ano_fabrico'):
-        equip_data.append(['Ano de Fabrico:', relatorio.get('equipamento_ano_fabrico')])
+    # Criar lista de todos os equipamentos
+    todos_equipamentos = []
     
-    equip_table = Table(equip_data, colWidths=[4.5*cm, 13.5*cm])
-    equip_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-    ]))
-    elements.append(equip_table)
+    # Equipamento principal (se tiver dados)
+    if relatorio.get('equipamento_tipologia') or relatorio.get('equipamento_marca') or relatorio.get('equipamento_modelo'):
+        todos_equipamentos.append({
+            'tipologia': relatorio.get('equipamento_tipologia', ''),
+            'marca': relatorio.get('equipamento_marca', ''),
+            'modelo': relatorio.get('equipamento_modelo', ''),
+            'numero_serie': relatorio.get('equipamento_numero_serie', ''),
+            'ano_fabrico': relatorio.get('equipamento_ano_fabrico', '')
+        })
+    
+    # Equipamentos adicionais
+    if equipamentos_adicionais:
+        for equip in equipamentos_adicionais:
+            todos_equipamentos.append({
+                'tipologia': equip.get('tipologia', ''),
+                'marca': equip.get('marca', ''),
+                'modelo': equip.get('modelo', ''),
+                'numero_serie': equip.get('numero_serie', ''),
+                'ano_fabrico': equip.get('ano_fabrico', '')
+            })
+    
+    if todos_equipamentos:
+        # Tabela com todos os equipamentos
+        equip_header = [['#', 'Tipologia', 'Marca', 'Modelo', 'Nº Série', 'Ano']]
+        
+        for idx, equip in enumerate(todos_equipamentos, 1):
+            equip_header.append([
+                str(idx),
+                equip.get('tipologia', 'N/A') or 'N/A',
+                equip.get('marca', 'N/A') or 'N/A',
+                equip.get('modelo', 'N/A') or 'N/A',
+                equip.get('numero_serie', 'N/A') or 'N/A',
+                equip.get('ano_fabrico', '-') or '-'
+            ])
+        
+        equip_table = Table(equip_header, colWidths=[1*cm, 3.5*cm, 3.5*cm, 4*cm, 4*cm, 2*cm])
+        equip_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(equip_table)
+    else:
+        # Sem equipamentos
+        elements.append(Paragraph("Nenhum equipamento registado", normal_style))
+    
     elements.append(Spacer(1, 0.2*cm))
     
     # Intervenções
