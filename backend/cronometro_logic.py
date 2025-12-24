@@ -33,17 +33,17 @@ def get_codigo_periodo(dt_inicio, dt_fim, tipo):
         tipo: "trabalho" ou "viagem"
     
     Returns:
-        str: Código do período (1, 2, S, D ou V1, V2, VS, VD)
+        str: Código do período (1, 2, S, D)
     """
     # Verificar dia da semana
     dia_semana = dt_inicio.weekday()  # 0=Segunda, 6=Domingo
     
     # Domingo ou Feriado
     if dia_semana == 6 or is_feriado(dt_inicio.date()):
-        codigo_base = "D"
+        return "D"
     # Sábado
     elif dia_semana == 5:
-        codigo_base = "S"
+        return "S"
     else:
         # Verificar horário (07:00-19:00 = Turno 1, resto = Turno 2)
         hora_inicio = dt_inicio.time()
@@ -58,15 +58,9 @@ def get_codigo_periodo(dt_inicio, dt_fim, tipo):
         hora_meio = meio.time()
         
         if turno1_inicio <= hora_meio < turno1_fim:
-            codigo_base = "1"
+            return "1"
         else:
-            codigo_base = "2"
-    
-    # Adicionar prefixo V se for viagem
-    if tipo == "viagem":
-        return f"V{codigo_base}"
-    
-    return codigo_base
+            return "2"
 
 def arredondar_horas(total_minutos):
     """
