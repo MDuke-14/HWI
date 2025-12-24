@@ -1239,11 +1239,15 @@ const TechnicalReports = ({ user, onLogout }) => {
       return;
     }
 
+    // Capturar valor diretamente do input para evitar problemas com estado
+    const descricaoElement = document.getElementById('foto_pc_descricao');
+    const descricao = descricaoElement ? descricaoElement.value : fotoPCDescricao;
+
     setUploadingFotoPC(true);
     try {
       const formData = new FormData();
       formData.append('file', fotoPCFile);
-      formData.append('descricao', fotoPCDescricao);
+      formData.append('descricao', descricao);
 
       await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/fotografias`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
