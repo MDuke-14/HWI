@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Users, MapPin, Wrench, Edit2, Trash2 } from 'lucide-react';
+import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Users, MapPin, Wrench, Edit2, Trash2, Search, Building2 } from 'lucide-react';
 
 const Calendar = ({ user, onLogout }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
