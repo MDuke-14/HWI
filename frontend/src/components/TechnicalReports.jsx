@@ -2547,107 +2547,113 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </div>
                   </div>
 
-                  {/* Botões de Iniciar/Parar em Massa */}
+                  {/* Botões de Trabalho e Viagem (Iniciar/Parar automático) */}
                   <div className="flex gap-3 mb-4">
-                    <Button
-                      onClick={async () => {
-                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
-                        if (selectedUsers.length === 0) {
-                          toast.error('Selecione pelo menos um técnico');
-                          return;
-                        }
-                        for (const user of selectedUsers) {
-                          const hasActive = getCronometroStatus(user, 'trabalho');
-                          if (!hasActive) {
-                            await handleIniciarCronometro({
-                              id: user.id,
-                              tecnico_id: user.id,
-                              tecnico_nome: user.full_name || user.username
-                            }, 'trabalho');
-                          }
-                        }
-                      }}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
-                    >
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                      Iniciar Trabalho
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
-                        if (selectedUsers.length === 0) {
-                          toast.error('Selecione pelo menos um técnico');
-                          return;
-                        }
-                        for (const user of selectedUsers) {
-                          const hasActive = getCronometroStatus(user, 'trabalho');
-                          if (hasActive) {
-                            await handlePararCronometro({
-                              id: user.id,
-                              tecnico_id: user.id,
-                              tecnico_nome: user.full_name || user.username
-                            }, 'trabalho');
-                          }
-                        }
-                      }}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
-                    >
-                      <StopCircle className="w-4 h-4 mr-2" />
-                      Parar Trabalho
-                    </Button>
-                  </div>
+                    {/* Botão Trabalho - alterna entre iniciar e parar */}
+                    {(() => {
+                      const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                      const hasAnyActiveTrabalho = selectedUsers.some(u => getCronometroStatus(u, 'trabalho'));
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (selectedUsers.length === 0) {
+                              toast.error('Selecione pelo menos um técnico');
+                              return;
+                            }
+                            for (const user of selectedUsers) {
+                              const hasActive = getCronometroStatus(user, 'trabalho');
+                              if (hasAnyActiveTrabalho) {
+                                // Parar todos os ativos
+                                if (hasActive) {
+                                  await handlePararCronometro({
+                                    id: user.id,
+                                    tecnico_id: user.id,
+                                    tecnico_nome: user.full_name || user.username
+                                  }, 'trabalho');
+                                }
+                              } else {
+                                // Iniciar para todos
+                                if (!hasActive) {
+                                  await handleIniciarCronometro({
+                                    id: user.id,
+                                    tecnico_id: user.id,
+                                    tecnico_nome: user.full_name || user.username
+                                  }, 'trabalho');
+                                }
+                              }
+                            }
+                          }}
+                          className={`flex-1 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                          disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                        >
+                          {hasAnyActiveTrabalho ? (
+                            <>
+                              <StopCircle className="w-4 h-4 mr-2" />
+                              Parar Trabalho
+                            </>
+                          ) : (
+                            <>
+                              <PlayCircle className="w-4 h-4 mr-2" />
+                              Iniciar Trabalho
+                            </>
+                          )}
+                        </Button>
+                      );
+                    })()}
 
-                  <div className="flex gap-3 mb-4">
-                    <Button
-                      onClick={async () => {
-                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
-                        if (selectedUsers.length === 0) {
-                          toast.error('Selecione pelo menos um técnico');
-                          return;
-                        }
-                        for (const user of selectedUsers) {
-                          const hasActive = getCronometroStatus(user, 'viagem');
-                          if (!hasActive) {
-                            await handleIniciarCronometro({
-                              id: user.id,
-                              tecnico_id: user.id,
-                              tecnico_nome: user.full_name || user.username
-                            }, 'viagem');
-                          }
-                        }
-                      }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
-                    >
-                      <Car className="w-4 h-4 mr-2" />
-                      Iniciar Viagem
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
-                        if (selectedUsers.length === 0) {
-                          toast.error('Selecione pelo menos um técnico');
-                          return;
-                        }
-                        for (const user of selectedUsers) {
-                          const hasActive = getCronometroStatus(user, 'viagem');
-                          if (hasActive) {
-                            await handlePararCronometro({
-                              id: user.id,
-                              tecnico_id: user.id,
-                              tecnico_nome: user.full_name || user.username
-                            }, 'viagem');
-                          }
-                        }
-                      }}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
-                    >
-                      <StopCircle className="w-4 h-4 mr-2" />
-                      Parar Viagem
-                    </Button>
+                    {/* Botão Viagem - alterna entre iniciar e parar */}
+                    {(() => {
+                      const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                      const hasAnyActiveViagem = selectedUsers.some(u => getCronometroStatus(u, 'viagem'));
+                      
+                      return (
+                        <Button
+                          onClick={async () => {
+                            if (selectedUsers.length === 0) {
+                              toast.error('Selecione pelo menos um técnico');
+                              return;
+                            }
+                            for (const user of selectedUsers) {
+                              const hasActive = getCronometroStatus(user, 'viagem');
+                              if (hasAnyActiveViagem) {
+                                // Parar todos os ativos
+                                if (hasActive) {
+                                  await handlePararCronometro({
+                                    id: user.id,
+                                    tecnico_id: user.id,
+                                    tecnico_nome: user.full_name || user.username
+                                  }, 'viagem');
+                                }
+                              } else {
+                                // Iniciar para todos
+                                if (!hasActive) {
+                                  await handleIniciarCronometro({
+                                    id: user.id,
+                                    tecnico_id: user.id,
+                                    tecnico_nome: user.full_name || user.username
+                                  }, 'viagem');
+                                }
+                              }
+                            }
+                          }}
+                          className={`flex-1 ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                          disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                        >
+                          {hasAnyActiveViagem ? (
+                            <>
+                              <StopCircle className="w-4 h-4 mr-2" />
+                              Parar Viagem
+                            </>
+                          ) : (
+                            <>
+                              <Car className="w-4 h-4 mr-2" />
+                              Iniciar Viagem
+                            </>
+                          )}
+                        </Button>
+                      );
+                    })()}
                   </div>
 
                   {/* Lista de Técnicos */}
