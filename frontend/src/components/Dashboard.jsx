@@ -100,6 +100,33 @@ const Dashboard = ({ user, onLogout }) => {
     fetchRealtimeStatus();
   };
 
+  // Funções Admin para controlar relógio de outros utilizadores
+  const handleAdminStartClock = async (userId, userName) => {
+    setAdminClockLoading(prev => ({ ...prev, [userId]: 'start' }));
+    try {
+      await axios.post(`${API}/admin/time-entries/start/${userId}`);
+      toast.success(`Relógio iniciado para ${userName}`);
+      fetchRealtimeStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao iniciar relógio');
+    } finally {
+      setAdminClockLoading(prev => ({ ...prev, [userId]: null }));
+    }
+  };
+
+  const handleAdminEndClock = async (userId, userName) => {
+    setAdminClockLoading(prev => ({ ...prev, [userId]: 'end' }));
+    try {
+      const response = await axios.post(`${API}/admin/time-entries/end/${userId}`);
+      toast.success(`Relógio finalizado para ${userName} (${response.data.total_hours}h)`);
+      fetchRealtimeStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao finalizar relógio');
+    } finally {
+      setAdminClockLoading(prev => ({ ...prev, [userId]: null }));
+    }
+  };
+
   const getStatusBadgeColor = (color) => {
     const colors = {
       green: 'bg-green-500/20 text-green-400 border-green-500',
