@@ -1424,6 +1424,25 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleDeletePC = async (pcId, pcNumero) => {
+    if (!window.confirm(`Tem certeza que deseja eliminar o PC ${pcNumero}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/pedidos-cotacao/${pcId}`);
+      toast.success(`PC ${pcNumero} eliminado com sucesso!`);
+      fetchAllPCs();
+      // Se estava visualizando, fechar o modal
+      if (selectedPC?.id === pcId) {
+        setShowPCModal(false);
+        setSelectedPC(null);
+      }
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   const openPCFromList = async (pc) => {
     await fetchPCDetalhes(pc.id);
     setShowPCModal(true);
