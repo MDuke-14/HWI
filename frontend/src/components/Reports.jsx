@@ -39,6 +39,7 @@ const Reports = ({ user, onLogout }) => {
   const [editingEntry, setEditingEntry] = useState(null);
   const [editForms, setEditForms] = useState({});
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [showAddEntryForm, setShowAddEntryForm] = useState(false);
 
   // Manual entry form for adding new entries in edit dialog
   const [manualEntryForm, setManualEntryForm] = useState({
