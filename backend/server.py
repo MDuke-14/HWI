@@ -6955,6 +6955,109 @@ async def delete_fotografia_pc(
     
     return {"message": "Fotografia removida"}
 
+# ============ Faturas PC Endpoints ============
+
+@api_router.post("/pedidos-cotacao/{pc_id}/faturas")
+async def upload_fatura_pc(
+    pc_id: str,
+    file: UploadFile = File(...),
+    descricao: str = Form(""),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload de fatura para um PC"""
+    # Verificar se PC existe
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id})
+    if not pc:
+        raise HTTPException(status_code=404, detail="PC não encontrado")
+    
+    # Ler conteúdo do arquivo
+    content = await file.read()
+    
+    # Converter para base64
+    import base64
+    file_base64 = base64.b64encode(content).decode('utf-8')
+    
+    # Determinar tipo de arquivo
+    content_type = file.content_type or 'application/octet-stream'
+    
+    fatura_id = str(uuid4())
+    fatura = {
+        "id": fatura_id,
+        "pc_id": pc_id,
+        "nome_ficheiro": file.filename,
+        "descricao": descricao,
+        "content_type": content_type,
+        "file_base64": file_base64,
+        "file_size": len(content),
+        "uploaded_by": current_user.get("username", ""),
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.faturas_pc.insert_one(fatura)
+    
+    return {
+        "message": "Fatura carregada com sucesso",
+        "id": fatura_id,
+        "nome_ficheiro": file.filename,
+        "fatura_url": f"/pedidos-cotacao/{pc_id}/faturas/{fatura_id}/file"
+    }
+
+@api_router.get("/pedidos-cotacao/{pc_id}/faturas")
+async def get_faturas_pc(
+    pc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar faturas de um PC"""
+    faturas = await db.faturas_pc.find(
+        {"pc_id": pc_id},
+        {"_id": 0, "file_base64": 0}  # Não incluir o conteúdo na listagem
+    ).to_list(100)
+    
+    for fatura in faturas:
+        fatura["fatura_url"] = f"/pedidos-cotacao/{pc_id}/faturas/{fatura['id']}/file"
+    
+    return faturas
+
+@api_router.get("/pedidos-cotacao/{pc_id}/faturas/{fatura_id}/file")
+async def get_fatura_file(
+    pc_id: str,
+    fatura_id: str
+):
+    """Obter arquivo da fatura"""
+    fatura = await db.faturas_pc.find_one({"id": fatura_id, "pc_id": pc_id})
+    
+    if not fatura:
+        raise HTTPException(status_code=404, detail="Fatura não encontrada")
+    
+    import base64
+    from fastapi.responses import Response
+    
+    file_bytes = base64.b64decode(fatura["file_base64"])
+    
+    return Response(
+        content=file_bytes,
+        media_type=fatura.get("content_type", "application/octet-stream"),
+        headers={
+            "Content-Disposition": f"inline; filename=\"{fatura.get('nome_ficheiro', 'fatura')}\""
+        }
+    )
+
+@api_router.delete("/pedidos-cotacao/{pc_id}/faturas/{fatura_id}")
+async def delete_fatura_pc(
+    pc_id: str,
+    fatura_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover fatura de um PC"""
+    fatura = await db.faturas_pc.find_one({"id": fatura_id, "pc_id": pc_id})
+    
+    if not fatura:
+        raise HTTPException(status_code=404, detail="Fatura não encontrada")
+    
+    await db.faturas_pc.delete_one({"id": fatura_id})
+    
+    return {"message": "Fatura removida"}
+
 @api_router.get("/pedidos-cotacao/{pc_id}/preview-pdf")
 async def preview_pdf_pc(
     pc_id: str,
