@@ -1637,3 +1637,46 @@ agent_communication:
       
       Credenciais: pedro/password ou miguel/password
 
+
+  - agent: "main"
+    message: |
+      ✅ IMPLEMENTAÇÃO DOS BOTÕES DE CRONÓMETRO EM MASSA - CONCLUÍDA
+      
+      Tarefa: Adicionar botões "Iniciar Trabalho" e "Iniciar Viagem" para múltiplos técnicos selecionados
+      
+      IMPLEMENTAÇÃO VERIFICADA EM TechnicalReports.jsx:
+      
+      1. ✅ BOTÕES EM MASSA (linhas 2551-2651):
+         - "Iniciar Trabalho" (verde) - Inicia cronómetro de trabalho para todos os técnicos selecionados
+         - "Parar Trabalho" (vermelho) - Para cronómetro de trabalho para todos os técnicos selecionados
+         - "Iniciar Viagem" (azul) - Inicia cronómetro de viagem para todos os técnicos selecionados
+         - "Parar Viagem" (vermelho) - Para cronómetro de viagem para todos os técnicos selecionados
+      
+      2. ✅ SELEÇÃO DE TÉCNICOS:
+         - Contador "Selecionados: X/Y"
+         - Link "Todos" para selecionar todos
+         - Link "Nenhum" para desmarcar todos
+         - Checkboxes individuais para cada técnico
+      
+      3. ✅ BOTÕES INDIVIDUAIS REMOVIDOS:
+         - Lista de técnicos agora mostra apenas: checkbox + nome + indicadores de cronómetros ativos
+         - Sem botões "Trabalho" e "Viagem" individuais ao lado de cada nome
+      
+      4. ✅ INDICADORES DE CRONÓMETROS ATIVOS:
+         - Quando cronómetro está ativo, mostra timer em tempo real
+         - Verde para Trabalho, Azul para Viagem
+      
+      VERIFICAÇÃO VIA SCREENSHOT:
+      - Modal da OT #3 aberta com sucesso
+      - 4 botões de cronómetro em massa visíveis
+      - Lista de 6 técnicos com checkboxes
+      - Nenhum botão individual visível
+      
+      PRECISA TESTAR:
+      1. Selecionar múltiplos técnicos e clicar "Iniciar Trabalho"
+      2. Verificar que cronómetros iniciam para todos os selecionados
+      3. Clicar "Parar Trabalho" e verificar que para para todos
+      4. Testar mesma funcionalidade para "Viagem"
+      
+      Credenciais: pedro/password ou miguel/password
+      Rota: /technical-reports → Aba "Ordens de Trabalho" → Clicar numa OT
