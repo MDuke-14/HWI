@@ -76,8 +76,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     elements.append(Paragraph(f"<b>Data de Serviço:</b> {data_servico}", normal_style))
     elements.append(Spacer(1, 0.2*cm))
     
-    # Cliente
-    elements.append(Paragraph("DADOS DO CLIENTE", heading_style))
+    # Cliente - KeepTogether
+    client_section = []
+    client_section.append(Paragraph("DADOS DO CLIENTE", heading_style))
     client_data = [
         ['Nome:', cliente.get('nome', 'N/A')],
         ['Email:', cliente.get('email', 'N/A')],
@@ -102,11 +103,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         ('TOPPADDING', (0, 0), (-1, -1), 3),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
-    elements.append(client_table)
-    elements.append(Spacer(1, 0.2*cm))
+    client_section.append(client_table)
+    client_section.append(Spacer(1, 0.2*cm))
+    elements.append(KeepTogether(client_section))
     
-    # Equipamentos (Principal + Adicionais)
-    elements.append(Paragraph("EQUIPAMENTOS", heading_style))
+    # Equipamentos - KeepTogether
+    equip_section = []
+    equip_section.append(Paragraph("EQUIPAMENTOS", heading_style))
     
     # Criar lista de todos os equipamentos
     todos_equipamentos = []
@@ -158,16 +161,17 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ('TOPPADDING', (0, 0), (-1, -1), 3),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
-        elements.append(equip_table)
+        equip_section.append(equip_table)
     else:
-        # Sem equipamentos
-        elements.append(Paragraph("Nenhum equipamento registado", normal_style))
+        equip_section.append(Paragraph("Nenhum equipamento registado", normal_style))
     
-    elements.append(Spacer(1, 0.2*cm))
+    equip_section.append(Spacer(1, 0.2*cm))
+    elements.append(KeepTogether(equip_section))
     
-    # Intervenções
+    # Intervenções - KeepTogether
     if intervencoes:
-        elements.append(Paragraph("INTERVENÇÕES", heading_style))
+        interv_section = []
+        interv_section.append(Paragraph("INTERVENÇÕES", heading_style))
         for i, interv in enumerate(intervencoes, 1):
             data_interv = interv.get('data_intervencao')
             if isinstance(data_interv, str):
@@ -176,21 +180,23 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 except:
                     pass
             
-            elements.append(Paragraph(f"<b>Intervenção #{i}</b> - {data_interv}", normal_style))
-            elements.append(Paragraph(f"<b>Motivo:</b> {interv.get('motivo_assistencia', 'N/A')}", normal_style))
+            interv_section.append(Paragraph(f"<b>Intervenção #{i}</b> - {data_interv}", normal_style))
+            interv_section.append(Paragraph(f"<b>Motivo:</b> {interv.get('motivo_assistencia', 'N/A')}", normal_style))
             
             if interv.get('relatorio_assistencia'):
-                elements.append(Paragraph(f"<b>Relatório:</b> {interv.get('relatorio_assistencia')}", normal_style))
+                interv_section.append(Paragraph(f"<b>Relatório:</b> {interv.get('relatorio_assistencia')}", normal_style))
             
             if i < len(intervencoes):
-                elements.append(Spacer(1, 0.15*cm))
+                interv_section.append(Spacer(1, 0.15*cm))
         
-        elements.append(Spacer(1, 0.2*cm))
+        interv_section.append(Spacer(1, 0.2*cm))
+        elements.append(KeepTogether(interv_section))
     
-    # Técnicos / Mão de Obra (incluindo registos de cronómetros)
+    # Técnicos / Mão de Obra - KeepTogether
     has_mao_obra = tecnicos or registos_mao_obra
     if has_mao_obra:
-        elements.append(Paragraph("MÃO DE OBRA / DESLOCAÇÃO", heading_style))
+        mao_obra_section = []
+        mao_obra_section.append(Paragraph("MÃO DE OBRA / DESLOCAÇÃO", heading_style))
         
         codigos = {
             'diurno': '1',
@@ -277,8 +283,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ('TOPPADDING', (0, 0), (-1, -1), 3),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
-        elements.append(mao_obra_table)
-        elements.append(Spacer(1, 0.1*cm))
+        mao_obra_section.append(mao_obra_table)
+        mao_obra_section.append(Spacer(1, 0.1*cm))
         
         # Legenda de códigos
         legenda_style = ParagraphStyle(
@@ -287,12 +293,14 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             fontSize=7,
             textColor=colors.HexColor('#6b7280')
         )
-        elements.append(Paragraph("<b>Legenda:</b> 1 = Diurno | 2 = Noturno | S = Sábado | D = Domingo/Feriado", legenda_style))
-        elements.append(Spacer(1, 0.2*cm))
+        mao_obra_section.append(Paragraph("<b>Legenda:</b> 1 = Diurno | 2 = Noturno | S = Sábado | D = Domingo/Feriado", legenda_style))
+        mao_obra_section.append(Spacer(1, 0.2*cm))
+        elements.append(KeepTogether(mao_obra_section))
     
-    # Materiais
+    # Materiais - KeepTogether
     if materiais:
-        elements.append(Paragraph("MATERIAIS", heading_style))
+        mat_section = []
+        mat_section.append(Paragraph("MATERIAIS", heading_style))
         
         mat_data = [['#', 'Descrição', 'Qtd', 'Fornecido Por']]
         
@@ -317,10 +325,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ('TOPPADDING', (0, 0), (-1, -1), 3),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
-        elements.append(mat_table)
-        elements.append(Spacer(1, 0.2*cm))
+        mat_section.append(mat_table)
+        mat_section.append(Spacer(1, 0.2*cm))
+        elements.append(KeepTogether(mat_section))
     
-    # Fotografias (2 por linha, layout compacto)
+    # Fotografias (2 por linha, layout compacto) - cada par KeepTogether
     if fotografias:
         elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
         
@@ -335,6 +344,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         # Organizar fotos em pares (2 por linha)
         for i in range(0, len(fotografias), 2):
+            foto_pair = []
             foto1 = fotografias[i]
             foto2 = fotografias[i + 1] if i + 1 < len(fotografias) else None
             
@@ -386,18 +396,19 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
             ]))
             
-            elements.append(foto_table)
-            
-            # Espaçamento mínimo entre linhas de fotos
+            foto_pair.append(foto_table)
             if i + 2 < len(fotografias):
-                elements.append(Spacer(1, 0.15*cm))
+                foto_pair.append(Spacer(1, 0.15*cm))
+            
+            elements.append(KeepTogether(foto_pair))
         
         elements.append(Spacer(1, 0.2*cm))
     
-    # Assinatura
+    # Assinatura - KeepTogether
     if assinatura:
-        elements.append(Spacer(1, 0.3*cm))
-        elements.append(Paragraph("ASSINATURA DO CLIENTE", heading_style))
+        assin_section = []
+        assin_section.append(Spacer(1, 0.3*cm))
+        assin_section.append(Paragraph("ASSINATURA DO CLIENTE", heading_style))
         
         if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
             # Incluir imagem da assinatura
@@ -405,12 +416,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             if img_path.exists():
                 try:
                     img = RLImage(str(img_path), width=6*cm, height=3*cm, kind='proportional')
-                    elements.append(img)
+                    assin_section.append(img)
                 except:
                     pass
         
         nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
-        elements.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
+        assin_section.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
         
         data_assinatura = assinatura.get('data_assinatura')
         if isinstance(data_assinatura, str):
@@ -418,7 +429,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 data_assinatura = datetime.fromisoformat(data_assinatura).strftime('%d/%m/%Y %H:%M')
             except:
                 pass
-        elements.append(Paragraph(f"<b>Data:</b> {data_assinatura}", normal_style))
+        assin_section.append(Paragraph(f"<b>Data:</b> {data_assinatura}", normal_style))
+        elements.append(KeepTogether(assin_section))
     
     # Construir PDF
     doc.build(elements)
