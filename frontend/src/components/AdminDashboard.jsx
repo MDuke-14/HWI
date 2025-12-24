@@ -29,6 +29,10 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [verifying, setVerifying] = useState(false);
   const [verifyMonth, setVerifyMonth] = useState(new Date().getMonth() + 1);
   const [verifyYear, setVerifyYear] = useState(new Date().getFullYear());
+  
+  // Estados para seleção de mês no Relatório Consolidado
+  const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
 
   const [createForm, setCreateForm] = useState({
     username: '',
