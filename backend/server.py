@@ -537,7 +537,7 @@ class CompanyInfo(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default="company_info_default")
     nome_empresa: str = "HWI UNIPESSOAL LDA"
-    telefone: str = "518176657"
+    nif: str = "518176657"
     telemovel: str = "+351 913008138"
     website: str = "www.hwi.pt"
     email: str = "geral@hwi.pt"
