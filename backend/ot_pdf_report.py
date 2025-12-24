@@ -233,36 +233,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(tec_table)
         elements.append(Spacer(1, 0.2*cm))
     
-    # Equipamentos Adicionais
-    if equipamentos_adicionais:
-        elements.append(Paragraph("EQUIPAMENTOS ADICIONAIS", heading_style))
-        
-        equip_add_data = [['#', 'Tipologia', 'Marca', 'Modelo', 'Nº Série']]
-        
-        for idx, equip in enumerate(equipamentos_adicionais, 1):
-            equip_add_data.append([
-                str(idx),
-                equip.get('tipologia', 'N/A'),
-                equip.get('marca', 'N/A'),
-                equip.get('modelo', 'N/A'),
-                equip.get('numero_serie', 'N/A')
-            ])
-        
-        equip_add_table = Table(equip_add_data, colWidths=[1*cm, 4*cm, 4*cm, 4.5*cm, 4.5*cm])
-        equip_add_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#10b981')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ]))
-        elements.append(equip_add_table)
-        elements.append(Spacer(1, 0.2*cm))
-    
     # Materiais
     if materiais:
         elements.append(Paragraph("MATERIAIS", heading_style))
