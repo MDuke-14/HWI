@@ -20,7 +20,7 @@ const CompanyInfoCard = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [companyData, setCompanyData] = useState({
     nome_empresa: 'HWI UNIPESSOAL LDA',
-    telefone: '518176657',
+    nif: '518176657',
     telemovel: '+351 913008138',
     website: 'www.hwi.pt',
     email: 'geral@hwi.pt',
