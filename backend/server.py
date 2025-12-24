@@ -4992,14 +4992,11 @@ async def create_manual_time_entry(
             "status": "completed"
         }).to_list(100)
         
-        if existing_entries:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Já existem {len(existing_entries)} entrada(s) para este dia. Use a opção 'Eliminar Dia Completo' primeiro ou elimine as entradas individualmente no histórico."
-            )
+        # Calculate existing hours for the day
+        existing_hours = sum(e.get("total_hours", 0) for e in existing_entries)
         
         created_entries = []
-        total_day_hours = 0
+        total_day_hours = existing_hours  # Start with existing hours
         
         # Process each time entry
         for idx, time_pair in enumerate(entry_data.time_entries):
