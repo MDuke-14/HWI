@@ -87,6 +87,14 @@ async def root_health_check():
 @app.on_event("startup")
 async def startup_event():
     """Iniciar loop de notificações em background e criar admin se necessário"""
+    
+    # Executar migrações pendentes
+    logging.info("🔄 A verificar migrações pendentes...")
+    try:
+        await run_migrations(db)
+    except Exception as e:
+        logging.error(f"❌ Erro ao executar migrações: {str(e)}")
+    
     # Verificar se existe algum usuário
     user_count = await db.users.count_documents({})
     
