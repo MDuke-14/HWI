@@ -5534,7 +5534,7 @@ async def get_users_list(current_user: dict = Depends(get_current_user)):
     """Listar usuários para seleção em formulários (requer autenticação)"""
     users = await db.users.find(
         {},
-        {"_id": 0, "hashed_password": 0, "id": 1, "username": 1, "full_name": 1}
+        {"_id": 0, "hashed_password": 0}
     ).to_list(1000)
     return users
 
