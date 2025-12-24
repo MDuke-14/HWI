@@ -992,7 +992,11 @@ const TechnicalReports = ({ user, onLogout }) => {
       return;
     }
     
-    if (!fotoDescricao.trim()) {
+    // Capturar valor diretamente do textarea para evitar problemas com estado
+    const descricaoElement = document.getElementById('foto_descricao');
+    const descricao = descricaoElement ? descricaoElement.value.trim() : fotoDescricao.trim();
+    
+    if (!descricao) {
       toast.error('Adicione uma descrição para a fotografia');
       return;
     }
@@ -1002,7 +1006,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       const formData = new FormData();
       formData.append('file', fotoFile);
-      formData.append('descricao', fotoDescricao);
+      formData.append('descricao', descricao);
       
       await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
