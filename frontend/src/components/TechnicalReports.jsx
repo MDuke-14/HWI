@@ -1187,10 +1187,63 @@ const TechnicalReports = ({ user, onLogout }) => {
         observacoes: response.data.observacoes || ''
       });
       setFotografiasPC(response.data.fotografias || []);
+      
+      // Buscar faturas do PC
+      try {
+        const faturasResponse = await axios.get(`${API}/pedidos-cotacao/${pcId}/faturas`);
+        setFaturasPC(faturasResponse.data || []);
+      } catch (err) {
+        console.error('Erro ao buscar faturas:', err);
+        setFaturasPC([]);
+      }
     } catch (error) {
       console.error('Erro ao buscar detalhes do PC:', error);
       toast.error('Erro ao carregar detalhes do PC');
     }
+  };
+
+  // Funções para faturas do PC
+  const handleUploadFatura = async (e) => {
+    e.preventDefault();
+    if (!faturaFile) {
+      toast.error('Selecione um ficheiro');
+      return;
+    }
+
+    setUploadingFatura(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', faturaFile);
+      formData.append('descricao', faturaDescricao);
+
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/faturas`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success('Fatura carregada com sucesso!');
+      setFaturaFile(null);
+      setFaturaDescricao('');
+      fetchPCDetalhes(selectedPC.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setUploadingFatura(false);
+    }
+  };
+
+  const handleDeleteFatura = async (faturaId) => {
+    try {
+      await axios.delete(`${API}/pedidos-cotacao/${selectedPC.id}/faturas/${faturaId}`);
+      toast.success('Fatura removida!');
+      fetchPCDetalhes(selectedPC.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleViewFatura = (fatura) => {
+    // Abrir a fatura numa nova aba
+    window.open(`${API}${fatura.fatura_url}`, '_blank');
   };
 
   const handleUpdatePC = async () => {
