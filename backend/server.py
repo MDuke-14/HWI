@@ -5170,6 +5170,118 @@ async def create_manual_time_entry(
         logging.error(f"Error creating manual entry: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao criar entrada: {str(e)}")
 
+# ============ Admin Clock Control Endpoints ============
+
+@api_router.post("/admin/time-entries/start/{user_id}")
+async def admin_start_clock(
+    user_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Admin inicia o relógio para um utilizador"""
+    # Verificar se o utilizador existe
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Verificar se já existe uma entrada ativa
+    existing_active = await db.time_entries.find_one({
+        "user_id": user_id,
+        "status": "active"
+    }, {"_id": 0})
+    
+    if existing_active:
+        raise HTTPException(status_code=400, detail="Este utilizador já tem um relógio ativo")
+    
+    # Verificar se é dia de horas extras
+    today_date = datetime.now(timezone.utc).date()
+    is_ot, ot_reason = is_overtime_day(today_date)
+    
+    entry = TimeEntry(
+        user_id=user_id,
+        username=user.get("username", ""),
+        date=today,
+        start_time=datetime.now(timezone.utc),
+        status="active",
+        observations=f"[Iniciado por admin: {current_user['username']}]",
+        is_overtime_day=is_ot,
+        overtime_reason=ot_reason if is_ot else None,
+        outside_residence_zone=False,
+        location_description=None
+    )
+    
+    entry_dict = entry.model_dump()
+    entry_dict['start_time'] = entry_dict['start_time'].isoformat()
+    entry_dict['created_at'] = entry_dict['created_at'].isoformat()
+    
+    await db.time_entries.insert_one(entry_dict)
+    
+    return {"message": f"Relógio iniciado para {user.get('username', user_id)}", "entry_id": entry.id}
+
+@api_router.post("/admin/time-entries/end/{user_id}")
+async def admin_end_clock(
+    user_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Admin finaliza o relógio de um utilizador"""
+    # Verificar se o utilizador existe
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    # Buscar entrada ativa
+    entry = await db.time_entries.find_one({
+        "user_id": user_id,
+        "status": "active"
+    })
+    
+    if not entry:
+        raise HTTPException(status_code=404, detail="Nenhum relógio ativo encontrado para este utilizador")
+    
+    end_time = datetime.now(timezone.utc)
+    start_time = datetime.fromisoformat(entry["start_time"])
+    
+    # Calcular horas
+    total_seconds = (end_time - start_time).total_seconds()
+    total_hours = total_seconds / 3600
+    
+    # Calcular horas normais e extras (máximo 8h normais por dia)
+    regular_hours = min(total_hours, 8)
+    overtime_hours = max(0, total_hours - 8)
+    
+    # Se for dia especial, tudo é hora extra
+    if entry.get("is_overtime_day"):
+        overtime_hours = total_hours
+        regular_hours = 0
+    
+    # Adicionar observação do admin
+    observations = entry.get("observations", "")
+    if observations:
+        observations = f"{observations}\n[Finalizado por admin: {current_user['username']}]"
+    else:
+        observations = f"[Finalizado por admin: {current_user['username']}]"
+    
+    # Atualizar entrada
+    await db.time_entries.update_one(
+        {"id": entry["id"]},
+        {
+            "$set": {
+                "end_time": end_time.isoformat(),
+                "status": "completed",
+                "total_hours": round(total_hours, 2),
+                "regular_hours": round(regular_hours, 2),
+                "overtime_hours": round(overtime_hours, 2),
+                "observations": observations
+            }
+        }
+    )
+    
+    return {
+        "message": f"Relógio finalizado para {user.get('username', user_id)}",
+        "total_hours": round(total_hours, 2)
+    }
+
 @api_router.post("/admin/time-entries/import-pdf")
 async def import_pdf_timesheet(
     file: UploadFile = File(...),
