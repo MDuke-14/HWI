@@ -162,6 +162,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [uploadingFotoPC, setUploadingFotoPC] = useState(false);
   const [showEmailPCModal, setShowEmailPCModal] = useState(false);
   const [sendingEmailPC, setSendingEmailPC] = useState(false);
+  
+  // Faturas PC
+  const [faturasPC, setFaturasPC] = useState([]);
+  const [faturaFile, setFaturaFile] = useState(null);
+  const [faturaDescricao, setFaturaDescricao] = useState('');
+  const [uploadingFatura, setUploadingFatura] = useState(false);
 
   // Todos os PCs (para aba Pedidos de Cotação)
   const [allPCs, setAllPCs] = useState([]);
