@@ -1707,12 +1707,13 @@ async def create_relatorio(
     # Buscar dados do usuário (técnico)
     user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
     
-    # Gerar número de assistência (último número + 1)
+    # Gerar número de assistência (último número + 1, mínimo 354)
     last_relatorio = await db.relatorios_tecnicos.find_one(
         {},
         sort=[("numero_assistencia", -1)]
     )
-    numero_assistencia = (last_relatorio.get("numero_assistencia", 0) + 1) if last_relatorio else 1
+    last_numero = last_relatorio.get("numero_assistencia", 0) if last_relatorio else 0
+    numero_assistencia = max(last_numero + 1, 354)  # Começar no mínimo em 354
     
     # Criar relatório
     relatorio = RelatorioTecnico(
