@@ -4521,6 +4521,51 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Material PC Modal */}
+      <Dialog open={showEditMaterialPCModal} onOpenChange={setShowEditMaterialPCModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar Material</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-gray-300">Descrição</Label>
+              <Input
+                value={editMaterialPCForm.descricao}
+                onChange={(e) => setEditMaterialPCForm({ ...editMaterialPCForm, descricao: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                placeholder="Descrição do material"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300">Quantidade</Label>
+              <Input
+                type="number"
+                min="1"
+                value={editMaterialPCForm.quantidade}
+                onChange={(e) => setEditMaterialPCForm({ ...editMaterialPCForm, quantidade: parseInt(e.target.value) || 1 })}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => setShowEditMaterialPCModal(false)}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpdateMaterialPC}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                Guardar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Assinatura Modal */}
       <Dialog open={showAssinaturaModal} onOpenChange={setShowAssinaturaModal}>
