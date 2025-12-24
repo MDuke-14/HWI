@@ -6980,7 +6980,7 @@ async def upload_fatura_pc(
     # Determinar tipo de arquivo
     content_type = file.content_type or 'application/octet-stream'
     
-    fatura_id = str(uuid4())
+    fatura_id = str(uuid.uuid4())
     fatura = {
         "id": fatura_id,
         "pc_id": pc_id,
