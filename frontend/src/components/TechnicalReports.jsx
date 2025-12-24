@@ -4693,40 +4693,37 @@ const TechnicalReports = ({ user, onLogout }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit_equipamento_tipologia" className="text-gray-300">
-                    Tipologia *
+                    Tipologia
                   </Label>
                   <Input
                     id="edit_equipamento_tipologia"
                     value={relatorioFormData.equipamento_tipologia}
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_tipologia: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
-                    required
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="edit_equipamento_marca" className="text-gray-300">
-                    Marca *
+                    Marca
                   </Label>
                   <Input
                     id="edit_equipamento_marca"
                     value={relatorioFormData.equipamento_marca}
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_marca: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
-                    required
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="edit_equipamento_modelo" className="text-gray-300">
-                    Modelo *
+                    Modelo
                   </Label>
                   <Input
                     id="edit_equipamento_modelo"
                     value={relatorioFormData.equipamento_modelo}
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_modelo: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
-                    required
                   />
                 </div>
 
