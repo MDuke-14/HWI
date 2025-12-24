@@ -904,72 +904,168 @@ const AdminDashboard = ({ user, onLogout }) => {
           <TabsContent value="reports">
             {reports && (
               <div className="glass-effect p-6 rounded-xl">
-                <h2 className="text-2xl font-semibold text-white mb-6">Relatório Consolidado</h2>
-                <div className="text-gray-400 mb-6">Período: {new Date(reports.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(reports.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                  <h2 className="text-2xl font-semibold text-white">Relatório Consolidado</h2>
+                  
+                  {/* Seletor de Mês/Ano */}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1a1a1a] border-gray-700 text-white hover:bg-[#252525]"
+                      onClick={() => {
+                        let newMonth = reportMonth - 1;
+                        let newYear = reportYear;
+                        if (newMonth < 1) {
+                          newMonth = 12;
+                          newYear -= 1;
+                        }
+                        setReportMonth(newMonth);
+                        setReportYear(newYear);
+                        fetchReports(newMonth, newYear);
+                      }}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={reportMonth.toString()}
+                        onValueChange={(value) => {
+                          const newMonth = parseInt(value);
+                          setReportMonth(newMonth);
+                          fetchReports(newMonth, reportYear);
+                        }}
+                      >
+                        <SelectTrigger className="w-[130px] bg-[#1a1a1a] border-gray-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
+                          <SelectItem value="1">Janeiro</SelectItem>
+                          <SelectItem value="2">Fevereiro</SelectItem>
+                          <SelectItem value="3">Março</SelectItem>
+                          <SelectItem value="4">Abril</SelectItem>
+                          <SelectItem value="5">Maio</SelectItem>
+                          <SelectItem value="6">Junho</SelectItem>
+                          <SelectItem value="7">Julho</SelectItem>
+                          <SelectItem value="8">Agosto</SelectItem>
+                          <SelectItem value="9">Setembro</SelectItem>
+                          <SelectItem value="10">Outubro</SelectItem>
+                          <SelectItem value="11">Novembro</SelectItem>
+                          <SelectItem value="12">Dezembro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select
+                        value={reportYear.toString()}
+                        onValueChange={(value) => {
+                          const newYear = parseInt(value);
+                          setReportYear(newYear);
+                          fetchReports(reportMonth, newYear);
+                        }}
+                      >
+                        <SelectTrigger className="w-[100px] bg-[#1a1a1a] border-gray-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
+                          {[2023, 2024, 2025, 2026].map(year => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1a1a1a] border-gray-700 text-white hover:bg-[#252525]"
+                      onClick={() => {
+                        let newMonth = reportMonth + 1;
+                        let newYear = reportYear;
+                        if (newMonth > 12) {
+                          newMonth = 1;
+                          newYear += 1;
+                        }
+                        setReportMonth(newMonth);
+                        setReportYear(newYear);
+                        fetchReports(newMonth, newYear);
+                      }}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="text-gray-400 mb-6">
+                  Período: {new Date(reports.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(reports.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}
+                </div>
+                
                 <div className="space-y-4">
-                  {reports.users.map((u, idx) => (
-                    <div key={idx} className="bg-[#1a1a1a] p-5 rounded-lg">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="text-white font-semibold text-lg">{u.username}</div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-green-400 font-bold text-2xl">{u.total_hours.toFixed(2)}h</div>
-                          <Button
-                            onClick={async () => {
-                              try {
-                                const now = new Date();
-                                const month = now.getMonth() + 1;
-                                const year = now.getFullYear();
-                                
-                                const response = await axios.get(
-                                  `${API}/time-entries/reports/monthly-pdf?user_id=${u.user_id}&month=${month}&year=${year}`,
-                                  {
-                                    responseType: 'blob'
+                  {reports.users && reports.users.length > 0 ? (
+                    reports.users.map((u, idx) => (
+                      <div key={idx} className="bg-[#1a1a1a] p-5 rounded-lg">
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="text-white font-semibold text-lg">{u.username}</div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-green-400 font-bold text-2xl">{u.total_hours.toFixed(2)}h</div>
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  const response = await axios.get(
+                                    `${API}/time-entries/reports/monthly-pdf?user_id=${u.user_id}&month=${reportMonth}&year=${reportYear}`,
+                                    {
+                                      responseType: 'blob'
+                                    }
+                                  );
+                                  
+                                  // Criar URL do blob e fazer download
+                                  const blob = new Blob([response.data], { type: 'application/pdf' });
+                                  const downloadUrl = window.URL.createObjectURL(blob);
+                                  const link = document.createElement('a');
+                                  link.href = downloadUrl;
+                                  
+                                  // Extrair nome do arquivo do header ou usar padrão
+                                  const contentDisposition = response.headers['content-disposition'];
+                                  let filename = `Relatorio_${u.username}_${reportMonth}_${reportYear}.pdf`;
+                                  if (contentDisposition) {
+                                    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                                    if (filenameMatch) {
+                                      filename = filenameMatch[1];
+                                    }
                                   }
-                                );
-                                
-                                // Criar URL do blob e fazer download
-                                const blob = new Blob([response.data], { type: 'application/pdf' });
-                                const downloadUrl = window.URL.createObjectURL(blob);
-                                const link = document.createElement('a');
-                                link.href = downloadUrl;
-                                
-                                // Extrair nome do arquivo do header ou usar padrão
-                                const contentDisposition = response.headers['content-disposition'];
-                                let filename = `Relatorio_${u.username}_${month}_${year}.pdf`;
-                                if (contentDisposition) {
-                                  const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-                                  if (filenameMatch) {
-                                    filename = filenameMatch[1];
-                                  }
+                                  
+                                  link.download = filename;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(downloadUrl);
+                                  
+                                  toast.success('PDF baixado com sucesso!');
+                                } catch (error) {
+                                  toast.error('Erro ao baixar PDF: ' + (error.response?.data?.detail || error.message));
                                 }
-                                
-                                link.download = filename;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                window.URL.revokeObjectURL(downloadUrl);
-                                
-                                toast.success('PDF baixado com sucesso!');
-                              } catch (error) {
-                                toast.error('Erro ao baixar PDF: ' + (error.response?.data?.detail || error.message));
-                              }
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                            size="sm"
-                            title="Download Relatório do Mês Atual"
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            PDF
-                          </Button>
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                              size="sm"
+                              title={`Download Relatório de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][reportMonth-1]} ${reportYear}`}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              PDF
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div><div className="text-gray-400">Horas Normais</div><div className="text-blue-400 font-semibold">{u.regular_hours.toFixed(2)}h</div></div>
+                          <div><div className="text-gray-400">Horas Extras</div><div className="text-amber-400 font-semibold">{u.overtime_hours.toFixed(2)}h</div></div>
+                          <div><div className="text-gray-400">Dias Trabalhados</div><div className="text-white font-semibold">{u.days_worked}</div></div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div><div className="text-gray-400">Horas Normais</div><div className="text-blue-400 font-semibold">{u.regular_hours.toFixed(2)}h</div></div>
-                        <div><div className="text-gray-400">Horas Extras</div><div className="text-amber-400 font-semibold">{u.overtime_hours.toFixed(2)}h</div></div>
-                        <div><div className="text-gray-400">Dias Trabalhados</div><div className="text-white font-semibold">{u.days_worked}</div></div>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-400 py-8">
+                      Nenhum registo encontrado para este período
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
