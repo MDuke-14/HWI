@@ -2547,8 +2547,112 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </div>
                   </div>
 
+                  {/* Botões de Iniciar/Parar em Massa */}
+                  <div className="flex gap-3 mb-4">
+                    <Button
+                      onClick={async () => {
+                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                        if (selectedUsers.length === 0) {
+                          toast.error('Selecione pelo menos um técnico');
+                          return;
+                        }
+                        for (const user of selectedUsers) {
+                          const hasActive = getCronometroStatus(user, 'trabalho');
+                          if (!hasActive) {
+                            await handleIniciarCronometro({
+                              id: user.id,
+                              tecnico_id: user.id,
+                              tecnico_nome: user.full_name || user.username
+                            }, 'trabalho');
+                          }
+                        }
+                      }}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                    >
+                      <PlayCircle className="w-4 h-4 mr-2" />
+                      Iniciar Trabalho
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                        if (selectedUsers.length === 0) {
+                          toast.error('Selecione pelo menos um técnico');
+                          return;
+                        }
+                        for (const user of selectedUsers) {
+                          const hasActive = getCronometroStatus(user, 'trabalho');
+                          if (hasActive) {
+                            await handlePararCronometro({
+                              id: user.id,
+                              tecnico_id: user.id,
+                              tecnico_nome: user.full_name || user.username
+                            }, 'trabalho');
+                          }
+                        }
+                      }}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                    >
+                      <StopCircle className="w-4 h-4 mr-2" />
+                      Parar Trabalho
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-3 mb-4">
+                    <Button
+                      onClick={async () => {
+                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                        if (selectedUsers.length === 0) {
+                          toast.error('Selecione pelo menos um técnico');
+                          return;
+                        }
+                        for (const user of selectedUsers) {
+                          const hasActive = getCronometroStatus(user, 'viagem');
+                          if (!hasActive) {
+                            await handleIniciarCronometro({
+                              id: user.id,
+                              tecnico_id: user.id,
+                              tecnico_nome: user.full_name || user.username
+                            }, 'viagem');
+                          }
+                        }
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                    >
+                      <Car className="w-4 h-4 mr-2" />
+                      Iniciar Viagem
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                        if (selectedUsers.length === 0) {
+                          toast.error('Selecione pelo menos um técnico');
+                          return;
+                        }
+                        for (const user of selectedUsers) {
+                          const hasActive = getCronometroStatus(user, 'viagem');
+                          if (hasActive) {
+                            await handlePararCronometro({
+                              id: user.id,
+                              tecnico_id: user.id,
+                              tecnico_nome: user.full_name || user.username
+                            }, 'viagem');
+                          }
+                        }
+                      }}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                      disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                    >
+                      <StopCircle className="w-4 h-4 mr-2" />
+                      Parar Viagem
+                    </Button>
+                  </div>
+
+                  {/* Lista de Técnicos */}
                   {allSystemUsers.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
                       {allSystemUsers.map((userItem) => {
                         const cronoTrabalho = getCronometroStatus(userItem, 'trabalho');
                         const cronoViagem = getCronometroStatus(userItem, 'viagem');
@@ -2576,46 +2680,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                               )}
                             </div>
 
+                            {/* Indicadores de cronómetros ativos */}
                             <div className="flex items-center gap-2">
                               {cronoTrabalho && (
-                                <span className="text-green-400 font-mono text-xs">
+                                <span className="flex items-center gap-1 text-green-400 font-mono text-xs bg-green-900/30 px-2 py-1 rounded">
+                                  <PlayCircle className="w-3 h-3" />
                                   {formatTimer(timers[timerKeyTrabalho] || 0)}
                                 </span>
                               )}
-                              <button
-                                onClick={() => cronoTrabalho
-                                  ? handlePararCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'trabalho')
-                                  : handleIniciarCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'trabalho')
-                                }
-                                className={`flex items-center gap-1 px-2 py-1 rounded font-medium text-xs transition ${
-                                  cronoTrabalho
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : 'bg-green-600 hover:bg-green-700 text-white'
-                                }`}
-                              >
-                                {cronoTrabalho ? <StopCircle className="w-3 h-3" /> : <PlayCircle className="w-3 h-3" />}
-                                {cronoTrabalho ? 'Parar' : 'Trabalho'}
-                              </button>
-
                               {cronoViagem && (
-                                <span className="text-blue-400 font-mono text-xs">
+                                <span className="flex items-center gap-1 text-blue-400 font-mono text-xs bg-blue-900/30 px-2 py-1 rounded">
+                                  <Car className="w-3 h-3" />
                                   {formatTimer(timers[timerKeyViagem] || 0)}
                                 </span>
                               )}
-                              <button
-                                onClick={() => cronoViagem
-                                  ? handlePararCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'viagem')
-                                  : handleIniciarCronometro({id: userItem.id, tecnico_id: userItem.id, tecnico_nome: userItem.full_name || userItem.username}, 'viagem')
-                                }
-                                className={`flex items-center gap-1 px-2 py-1 rounded font-medium text-xs transition ${
-                                  cronoViagem
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                }`}
-                              >
-                                {cronoViagem ? <StopCircle className="w-3 h-3" /> : <Car className="w-3 h-3" />}
-                                {cronoViagem ? 'Parar' : 'Viagem'}
-                              </button>
                             </div>
                           </div>
                         );
