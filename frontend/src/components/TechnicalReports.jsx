@@ -3293,7 +3293,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </p>
                           <div className="bg-white p-3 rounded border-2 border-gray-300">
                             <img
-                              src={`${API}${assinatura.assinatura_url}`}
+                              src={`${API}${assinatura.assinatura_url}?t=${assinatura.data_assinatura || Date.now()}`}
                               alt="Assinatura"
                               className="max-h-40 w-full object-contain"
                               onError={(e) => {
