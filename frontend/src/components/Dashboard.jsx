@@ -32,6 +32,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showMyRealtimePopup, setShowMyRealtimePopup] = useState(false);
+  const [adminClockLoading, setAdminClockLoading] = useState({});
 
   const [outsideResidenceZone, setOutsideResidenceZone] = useState(false);
   const [locationDescription, setLocationDescription] = useState('');
