@@ -901,7 +901,56 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowAddFotoModal(true);
   };
 
-  const handleFotoFileChange = (e) => {
+  // Função para comprimir imagem antes do upload
+  const compressImage = (file, maxWidth = 1200, maxHeight = 1200, quality = 0.7) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Redimensionar mantendo proporção
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Converter para blob comprimido
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                reject(new Error('Erro ao comprimir imagem'));
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error('Erro ao carregar imagem'));
+      };
+      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+    });
+  };
+
+  const handleFotoFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validar tipo de arquivo
@@ -915,7 +964,23 @@ const TechnicalReports = ({ user, onLogout }) => {
         toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
         return;
       }
-      setFotoFile(file);
+      
+      // Comprimir imagem se for maior que 500KB
+      if (file.size > 500 * 1024) {
+        try {
+          toast.info('A comprimir imagem...');
+          const compressedFile = await compressImage(file, 1200, 1200, 0.7);
+          const savedPercent = Math.round((1 - compressedFile.size / file.size) * 100);
+          toast.success(`Imagem comprimida! Redução de ${savedPercent}%`);
+          setFotoFile(compressedFile);
+        } catch (error) {
+          console.error('Erro ao comprimir:', error);
+          // Se falhar compressão, usa original
+          setFotoFile(file);
+        }
+      } else {
+        setFotoFile(file);
+      }
     }
   };
 
