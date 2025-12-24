@@ -202,6 +202,154 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(tec_table)
         elements.append(Spacer(1, 0.2*cm))
     
+    # Equipamentos Adicionais
+    if equipamentos_adicionais:
+        elements.append(Paragraph("EQUIPAMENTOS ADICIONAIS", heading_style))
+        
+        equip_add_data = [['#', 'Tipologia', 'Marca', 'Modelo', 'Nº Série']]
+        
+        for idx, equip in enumerate(equipamentos_adicionais, 1):
+            equip_add_data.append([
+                str(idx),
+                equip.get('tipologia', 'N/A'),
+                equip.get('marca', 'N/A'),
+                equip.get('modelo', 'N/A'),
+                equip.get('numero_serie', 'N/A')
+            ])
+        
+        equip_add_table = Table(equip_add_data, colWidths=[1*cm, 4*cm, 4*cm, 4.5*cm, 4.5*cm])
+        equip_add_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#10b981')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(equip_add_table)
+        elements.append(Spacer(1, 0.2*cm))
+    
+    # Materiais
+    if materiais:
+        elements.append(Paragraph("MATERIAIS", heading_style))
+        
+        mat_data = [['#', 'Referência', 'Descrição', 'Qtd', 'Preço Unit.', 'Total']]
+        
+        total_materiais = 0
+        for idx, mat in enumerate(materiais, 1):
+            qtd = mat.get('quantidade', 0)
+            preco = mat.get('preco_unitario', 0)
+            total_linha = qtd * preco
+            total_materiais += total_linha
+            
+            mat_data.append([
+                str(idx),
+                mat.get('referencia', 'N/A'),
+                mat.get('descricao', 'N/A')[:40],
+                str(qtd),
+                f"{preco:.2f}€",
+                f"{total_linha:.2f}€"
+            ])
+        
+        # Linha de total
+        mat_data.append(['', '', '', '', 'TOTAL:', f"{total_materiais:.2f}€"])
+        
+        mat_table = Table(mat_data, colWidths=[1*cm, 3*cm, 6.5*cm, 1.5*cm, 2.5*cm, 2.5*cm])
+        mat_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f59e0b')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (2, 1), (2, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (4, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
+            ('LINEABOVE', (4, -1), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(mat_table)
+        elements.append(Spacer(1, 0.2*cm))
+    
+    # Registos de Mão de Obra (Cronómetros)
+    if registos_mao_obra:
+        elements.append(Paragraph("REGISTOS DE MÃO DE OBRA", heading_style))
+        
+        reg_data = [['Técnico', 'Data', 'Início', 'Fim', 'Horas', 'Tipo', 'Cód']]
+        
+        codigos = {
+            'diurno': '1',
+            'noturno': '2',
+            'sabado': 'S',
+            'domingo_feriado': 'D'
+        }
+        
+        tipos_label = {
+            'trabalho': 'Trabalho',
+            'viagem': 'Viagem'
+        }
+        
+        for reg in registos_mao_obra:
+            data_reg = reg.get('data_trabalho', '')
+            if isinstance(data_reg, str) and data_reg:
+                try:
+                    data_reg = datetime.fromisoformat(data_reg).strftime('%d/%m/%Y')
+                except:
+                    pass
+            
+            hora_inicio = reg.get('hora_inicio', '')
+            if isinstance(hora_inicio, str) and 'T' in hora_inicio:
+                try:
+                    hora_inicio = datetime.fromisoformat(hora_inicio).strftime('%H:%M')
+                except:
+                    pass
+            
+            hora_fim = reg.get('hora_fim', '')
+            if isinstance(hora_fim, str) and 'T' in hora_fim:
+                try:
+                    hora_fim = datetime.fromisoformat(hora_fim).strftime('%H:%M')
+                except:
+                    pass
+            
+            reg_data.append([
+                reg.get('tecnico_nome', 'N/A'),
+                data_reg or 'N/A',
+                hora_inicio or 'N/A',
+                hora_fim or 'N/A',
+                f"{reg.get('horas_trabalhadas', 0):.2f}h",
+                tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
+                codigos.get(reg.get('tipo_horario', ''), '-')
+            ])
+        
+        reg_table = Table(reg_data, colWidths=[4*cm, 2.3*cm, 1.8*cm, 1.8*cm, 1.8*cm, 2.3*cm, 1.2*cm])
+        reg_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8b5cf6')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(reg_table)
+        elements.append(Spacer(1, 0.15*cm))
+        
+        # Legenda de códigos
+        legenda_style = ParagraphStyle(
+            'LegendaStyle',
+            parent=normal_style,
+            fontSize=7,
+            textColor=colors.HexColor('#6b7280')
+        )
+        elements.append(Paragraph("<b>Legenda:</b> 1 = Diurno | 2 = Noturno | S = Sábado | D = Domingo/Feriado", legenda_style))
+        elements.append(Spacer(1, 0.2*cm))
+    
     # Fotografias (2 por linha, layout compacto)
     if fotografias:
         elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
