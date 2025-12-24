@@ -8,7 +8,7 @@ from io import BytesIO
 from datetime import datetime
 from pathlib import Path
 
-def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura):
+def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None):
     """
     Gera PDF completo de uma Ordem de Trabalho com espaçamento mínimo
     """
