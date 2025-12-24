@@ -1418,6 +1418,124 @@ const Reports = ({ user, onLogout }) => {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Botão e Formulário para Adicionar Nova Entrada */}
+                      <div className="mt-4 pt-4 border-t border-gray-700">
+                        <Button
+                          onClick={() => setShowAddEntryForm(!showAddEntryForm)}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white mb-3"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          {showAddEntryForm ? 'Cancelar' : 'Adicionar Nova Entrada'}
+                        </Button>
+                        
+                        {showAddEntryForm && (
+                          <div className="bg-[#0a0a0a] border border-green-600 rounded-lg p-4 space-y-4">
+                            <h4 className="text-md font-semibold text-green-400">Nova Entrada para este Dia</h4>
+                            
+                            {/* Time Entries */}
+                            <div className="space-y-3">
+                              {manualEntryForm.time_entries.map((entry, index) => (
+                                <div key={index} className="bg-[#1a1a1a] border border-gray-600 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-semibold text-gray-300">Entrada #{index + 1}</span>
+                                    {manualEntryForm.time_entries.length > 1 && (
+                                      <Button
+                                        type="button"
+                                        onClick={() => removeManualTimeEntry(index)}
+                                        className="bg-red-600 hover:bg-red-700 text-white rounded-full p-1 h-7 w-7"
+                                      >
+                                        <Minus className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs text-gray-400">Início</Label>
+                                      <Input
+                                        type="time"
+                                        value={entry.start_time}
+                                        onChange={(e) => updateManualTimeEntry(index, 'start_time', e.target.value)}
+                                        className="bg-[#0a0a0a] border-gray-600 text-white mt-1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-gray-400">Fim</Label>
+                                      <Input
+                                        type="time"
+                                        value={entry.end_time}
+                                        onChange={(e) => updateManualTimeEntry(index, 'end_time', e.target.value)}
+                                        className="bg-[#0a0a0a] border-gray-600 text-white mt-1"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Add More Entries Button */}
+                            <Button
+                              type="button"
+                              onClick={addManualTimeEntry}
+                              className="w-full bg-gray-600 hover:bg-gray-700 text-white"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Adicionar Mais uma Entrada
+                            </Button>
+
+                            {/* Outside Residence Zone */}
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="add_outside_zone"
+                                checked={manualEntryForm.outside_residence_zone}
+                                onChange={(e) => setManualEntryForm({...manualEntryForm, outside_residence_zone: e.target.checked})}
+                                className="rounded"
+                              />
+                              <Label htmlFor="add_outside_zone" className="text-gray-300 text-sm cursor-pointer">
+                                Fora de Zona de Residência
+                              </Label>
+                            </div>
+
+                            {/* Location Description */}
+                            {manualEntryForm.outside_residence_zone && (
+                              <div>
+                                <Label className="text-gray-300 text-sm flex items-center">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  Localização
+                                </Label>
+                                <Input
+                                  value={manualEntryForm.location_description}
+                                  onChange={(e) => setManualEntryForm({...manualEntryForm, location_description: e.target.value})}
+                                  placeholder="Ex: Madrid, Valencia..."
+                                  className="bg-[#0a0a0a] border-gray-600 text-white mt-1"
+                                />
+                              </div>
+                            )}
+
+                            {/* Observations */}
+                            <div>
+                              <Label className="text-gray-300 text-sm">Observações</Label>
+                              <Textarea
+                                value={manualEntryForm.observations}
+                                onChange={(e) => setManualEntryForm({...manualEntryForm, observations: e.target.value})}
+                                placeholder="Observações (opcional)..."
+                                className="bg-[#0a0a0a] border-gray-600 text-white mt-1"
+                                rows={2}
+                              />
+                            </div>
+
+                            {/* Save Button */}
+                            <Button
+                              onClick={handleCreateManualEntry}
+                              disabled={loading}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full py-2"
+                            >
+                              {loading ? 'A guardar...' : 'Guardar Nova Entrada'}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
