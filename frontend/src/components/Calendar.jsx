@@ -83,6 +83,7 @@ const Calendar = ({ user, onLogout }) => {
   useEffect(() => {
     fetchCalendarData();
     fetchUsers();
+    fetchClients();
   }, [currentDate]);
 
   const fetchCalendarData = async () => {
@@ -110,6 +111,30 @@ const Calendar = ({ user, onLogout }) => {
       console.error('Error fetching users:', error);
     }
   };
+
+  const fetchClients = async () => {
+    try {
+      const response = await axios.get(`${API}/clientes`);
+      setClients(response.data);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
+  const handleSelectClient = (client) => {
+    setServiceForm({
+      ...serviceForm,
+      client_name: client.nome,
+      location: client.morada || ''
+    });
+    setClientSelectOpen(false);
+    setClientSearch('');
+  };
+
+  const filteredClients = clients.filter(client =>
+    client.nome?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    client.morada?.toLowerCase().includes(clientSearch.toLowerCase())
+  );
 
   const handlePreviousMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
