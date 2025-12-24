@@ -175,6 +175,15 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Todos os utilizadores do sistema (para cronómetros)
   const [allSystemUsers, setAllSystemUsers] = useState([]);
   const [selectedCronoUsers, setSelectedCronoUsers] = useState({});
+  
+  // Edição de registos de cronómetro
+  const [showEditRegistoModal, setShowEditRegistoModal] = useState(false);
+  const [editingRegisto, setEditingRegisto] = useState(null);
+  const [editRegistoForm, setEditRegistoForm] = useState({
+    horas_arredondadas: 0,
+    km: 0,
+    codigo: ''
+  });
 
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
