@@ -6893,6 +6893,34 @@ async def update_pedido_cotacao(
     
     return {"message": "PC atualizado"}
 
+@api_router.delete("/pedidos-cotacao/{pc_id}")
+async def delete_pedido_cotacao(
+    pc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Eliminar um PC e todos os dados associados"""
+    # Verificar se PC existe
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id})
+    if not pc:
+        raise HTTPException(status_code=404, detail="PC não encontrado")
+    
+    # Eliminar fotografias do PC
+    await db.fotos_pc.delete_many({"pc_id": pc_id})
+    
+    # Eliminar faturas do PC
+    await db.faturas_pc.delete_many({"pc_id": pc_id})
+    
+    # Atualizar materiais para remover referência ao PC
+    await db.materiais_ot.update_many(
+        {"pc_id": pc_id},
+        {"$unset": {"pc_id": ""}}
+    )
+    
+    # Eliminar o PC
+    await db.pedidos_cotacao.delete_one({"id": pc_id})
+    
+    return {"message": "PC eliminado com sucesso"}
+
 @api_router.post("/pedidos-cotacao/{pc_id}/fotografias")
 async def add_fotografia_pc(
     pc_id: str,
