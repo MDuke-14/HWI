@@ -4234,7 +4234,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 id="foto_pc_file"
                 type="file"
                 accept="image/*"
-                onChange={(e) => setFotoPCFile(e.target.files[0])}
+                onChange={handleFotoPCFileChange}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
                 required
               />
