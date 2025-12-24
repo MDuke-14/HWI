@@ -5132,14 +5132,38 @@ async def create_manual_time_entry(
         # Entries that crossed midnight already have their breakdowns calculated
         entries_needing_breakdown = [e for e in created_entries if e.regular_hours == 0 and e.overtime_hours == 0 and e.special_hours == 0]
         
+        hours_breakdown = {"regular_hours": 0, "overtime_hours": 0, "special_hours": 0}
+        
         if entries_needing_breakdown:
             # Get total hours for these entries only
-            breakdown_total_hours = sum(e.total_hours for e in entries_needing_breakdown)
-            hours_breakdown = calculate_hours_breakdown(breakdown_total_hours, is_special_day)
+            new_entries_hours = sum(e.total_hours for e in entries_needing_breakdown)
+            
+            # Calculate breakdown considering existing hours
+            # First 8 hours are regular, rest are overtime (if not special day)
+            if is_special_day:
+                # All hours on special day are special/overtime
+                hours_breakdown = {
+                    "regular_hours": 0,
+                    "overtime_hours": new_entries_hours,
+                    "special_hours": new_entries_hours
+                }
+            else:
+                # Regular hours are capped at 8h minus existing regular hours
+                existing_regular = sum(e.get("regular_hours", 0) for e in existing_entries)
+                remaining_regular = max(0, 8 - existing_regular)
+                
+                new_regular = min(new_entries_hours, remaining_regular)
+                new_overtime = max(0, new_entries_hours - remaining_regular)
+                
+                hours_breakdown = {
+                    "regular_hours": round(new_regular, 2),
+                    "overtime_hours": round(new_overtime, 2),
+                    "special_hours": 0
+                }
             
             # Distribute the hours proportionally across entries needing breakdown
             for entry in entries_needing_breakdown:
-                proportion = entry.total_hours / breakdown_total_hours if breakdown_total_hours > 0 else 0
+                proportion = entry.total_hours / new_entries_hours if new_entries_hours > 0 else 0
                 entry.regular_hours = round(hours_breakdown["regular_hours"] * proportion, 2)
                 entry.overtime_hours = round(hours_breakdown["overtime_hours"] * proportion, 2)
                 entry.special_hours = round(hours_breakdown["special_hours"] * proportion, 2)
