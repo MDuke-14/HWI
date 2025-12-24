@@ -5991,10 +5991,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <option value="2">2 - Dias úteis (19h-07h)</option>
                   <option value="S">S - Sábado</option>
                   <option value="D">D - Domingos/Feriados</option>
-                  <option value="V1">V1 - Viagem Dias úteis (07h-19h)</option>
-                  <option value="V2">V2 - Viagem Dias úteis (19h-07h)</option>
-                  <option value="VS">VS - Viagem Sábado</option>
-                  <option value="VD">VD - Viagem Domingos/Feriados</option>
                 </select>
               </div>
 
