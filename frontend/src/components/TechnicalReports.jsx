@@ -4253,9 +4253,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {selectedPC.materiais?.length > 0 ? (
                   <div className="space-y-2">
                     {selectedPC.materiais.map((mat) => (
-                      <div key={mat.id} className="flex justify-between p-2 bg-gray-800 rounded">
-                        <span className="text-white">{mat.descricao}</span>
-                        <span className="text-gray-400">Qtd: {mat.quantidade}</span>
+                      <div key={mat.id} className="flex justify-between items-center p-2 bg-gray-800 rounded">
+                        <div className="flex-1">
+                          <span className="text-white">{mat.descricao}</span>
+                          <span className="text-gray-400 ml-3">Qtd: {mat.quantidade}</span>
+                        </div>
+                        <Button
+                          onClick={() => openEditMaterialPCModal(mat)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
