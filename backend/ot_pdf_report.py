@@ -187,11 +187,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         elements.append(Spacer(1, 0.2*cm))
     
-    # Técnicos / Mão de Obra
-    if tecnicos:
+    # Técnicos / Mão de Obra (incluindo registos de cronómetros)
+    has_mao_obra = tecnicos or registos_mao_obra
+    if has_mao_obra:
         elements.append(Paragraph("MÃO DE OBRA / DESLOCAÇÃO", heading_style))
-        
-        tec_data = [['Técnico', 'Data', 'Horas', 'KM', 'Cód']]
         
         codigos = {
             'diurno': '1',
@@ -200,25 +199,75 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             'domingo_feriado': 'D'
         }
         
-        for tec in tecnicos:
-            data_trab = tec.get('data_trabalho')
-            if isinstance(data_trab, str):
-                try:
-                    data_trab = datetime.fromisoformat(data_trab).strftime('%d/%m/%Y')
-                except:
-                    pass
-            
-            tec_data.append([
-                tec.get('tecnico_nome', 'N/A'),
-                data_trab or 'N/A',
-                f"{tec.get('horas_cliente', 0)}h",
-                f"{tec.get('kms_deslocacao', 0) * 2}",
-                codigos.get(tec.get('tipo_horario', ''), '-')
-            ])
+        tipos_label = {
+            'trabalho': 'Trab.',
+            'viagem': 'Viag.'
+        }
         
-        tec_table = Table(tec_data, colWidths=[5.5*cm, 3*cm, 2*cm, 2.5*cm, 1.5*cm])
-        tec_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+        # Criar tabela unificada com todos os registos
+        mao_obra_data = [['Técnico', 'Data', 'Início', 'Fim', 'Horas', 'Tipo', 'Cód']]
+        
+        # Adicionar registos manuais de técnicos (se existirem)
+        if tecnicos:
+            for tec in tecnicos:
+                data_trab = tec.get('data_trabalho')
+                if isinstance(data_trab, str):
+                    try:
+                        data_trab = datetime.fromisoformat(data_trab).strftime('%d/%m/%Y')
+                    except:
+                        pass
+                
+                mao_obra_data.append([
+                    tec.get('tecnico_nome', 'N/A'),
+                    data_trab or 'N/A',
+                    '-',
+                    '-',
+                    f"{tec.get('horas_cliente', 0):.2f}h",
+                    'Manual',
+                    codigos.get(tec.get('tipo_horario', ''), '-')
+                ])
+        
+        # Adicionar registos de cronómetros
+        if registos_mao_obra:
+            for reg in registos_mao_obra:
+                data_reg = reg.get('data_trabalho', '')
+                if isinstance(data_reg, str) and data_reg:
+                    try:
+                        data_reg = datetime.fromisoformat(data_reg).strftime('%d/%m/%Y')
+                    except:
+                        pass
+                
+                hora_inicio = reg.get('hora_inicio', '')
+                if isinstance(hora_inicio, str) and 'T' in hora_inicio:
+                    try:
+                        hora_inicio = datetime.fromisoformat(hora_inicio).strftime('%H:%M')
+                    except:
+                        pass
+                elif isinstance(hora_inicio, str) and hora_inicio:
+                    hora_inicio = hora_inicio[:5] if len(hora_inicio) >= 5 else hora_inicio
+                
+                hora_fim = reg.get('hora_fim', '')
+                if isinstance(hora_fim, str) and 'T' in hora_fim:
+                    try:
+                        hora_fim = datetime.fromisoformat(hora_fim).strftime('%H:%M')
+                    except:
+                        pass
+                elif isinstance(hora_fim, str) and hora_fim:
+                    hora_fim = hora_fim[:5] if len(hora_fim) >= 5 else hora_fim
+                
+                mao_obra_data.append([
+                    reg.get('tecnico_nome', 'N/A'),
+                    data_reg or 'N/A',
+                    hora_inicio or '-',
+                    hora_fim or '-',
+                    f"{reg.get('horas_trabalhadas', 0):.2f}h",
+                    tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
+                    codigos.get(reg.get('tipo_horario', ''), '-')
+                ])
+        
+        mao_obra_table = Table(mao_obra_data, colWidths=[4*cm, 2.3*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.5*cm, 1.2*cm])
+        mao_obra_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8b5cf6')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -227,10 +276,18 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 3),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING', (0, 0), (-1, -1), 3),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
         ]))
-        elements.append(tec_table)
+        elements.append(mao_obra_table)
+        elements.append(Spacer(1, 0.1*cm))
+        
+        # Legenda de códigos
+        legenda_style = ParagraphStyle(
+            'LegendaStyle',
+            parent=normal_style,
+            fontSize=7,
+            textColor=colors.HexColor('#6b7280')
+        )
+        elements.append(Paragraph("<b>Legenda:</b> 1 = Diurno | 2 = Noturno | S = Sábado | D = Domingo/Feriado", legenda_style))
         elements.append(Spacer(1, 0.2*cm))
     
     # Materiais
