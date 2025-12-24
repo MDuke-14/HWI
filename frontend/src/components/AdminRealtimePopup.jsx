@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
-import { X, Clock, Users as UsersIcon } from 'lucide-react';
+import { X, Clock, Users as UsersIcon, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const AdminRealtimePopup = ({ onClose }) => {
   const [users, setUsers] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [loading, setLoading] = useState({});
 
   useEffect(() => {
     fetchRealtimeStatus();
@@ -35,6 +37,32 @@ const AdminRealtimePopup = ({ onClose }) => {
       setUsers(response.data);
     } catch (error) {
       console.error('Erro ao buscar status:', error);
+    }
+  };
+
+  const handleStartClock = async (userId, userName) => {
+    setLoading(prev => ({ ...prev, [userId]: 'start' }));
+    try {
+      await axios.post(`${API}/admin/time-entries/start/${userId}`);
+      toast.success(`Relógio iniciado para ${userName}`);
+      fetchRealtimeStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao iniciar relógio');
+    } finally {
+      setLoading(prev => ({ ...prev, [userId]: null }));
+    }
+  };
+
+  const handleEndClock = async (userId, userName) => {
+    setLoading(prev => ({ ...prev, [userId]: 'end' }));
+    try {
+      const response = await axios.post(`${API}/admin/time-entries/end/${userId}`);
+      toast.success(`Relógio finalizado para ${userName} (${response.data.total_hours}h)`);
+      fetchRealtimeStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao finalizar relógio');
+    } finally {
+      setLoading(prev => ({ ...prev, [userId]: null }));
     }
   };
 
