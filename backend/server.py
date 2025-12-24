@@ -5739,16 +5739,19 @@ async def get_all_reports(
     now = datetime.now(timezone.utc)
     
     # Se mês e ano foram especificados, usar esses valores
+    # Período: dia 26 do mês anterior até dia 25 do mês selecionado
     if month and year:
-        # Primeiro dia do mês
-        start_date = f"{year}-{str(month).zfill(2)}-01"
-        # Último dia do mês
-        if month == 12:
-            last_day = 31
-        else:
-            from calendar import monthrange
-            last_day = monthrange(year, month)[1]
-        end_date = f"{year}-{str(month).zfill(2)}-{str(last_day).zfill(2)}"
+        # Calcular mês anterior
+        prev_month = month - 1
+        prev_year = year
+        if prev_month < 1:
+            prev_month = 12
+            prev_year -= 1
+        
+        # Data início: dia 26 do mês anterior
+        start_date = f"{prev_year}-{str(prev_month).zfill(2)}-26"
+        # Data fim: dia 25 do mês selecionado
+        end_date = f"{year}-{str(month).zfill(2)}-25"
     elif period == "billing":
         start_dt, end_dt = get_billing_period_dates(now.date())
         start_date = start_dt.strftime("%Y-%m-%d")
