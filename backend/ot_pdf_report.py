@@ -268,7 +268,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     hora_fim or '-',
                     f"{reg.get('horas_trabalhadas', 0):.2f}h",
                     tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
-                    codigos.get(reg.get('tipo_horario', ''), '-')
+                    reg.get('codigo', '-')
                 ])
         
         mao_obra_table = Table(mao_obra_data, colWidths=[4*cm, 2.3*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.5*cm, 1.2*cm])
