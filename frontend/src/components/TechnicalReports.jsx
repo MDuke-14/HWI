@@ -1194,6 +1194,40 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Handler para upload de foto no PC com compressão
+  const handleFotoPCFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP');
+        return;
+      }
+      // Validar tamanho (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
+        return;
+      }
+      
+      // Comprimir imagem se for maior que 500KB
+      if (file.size > 500 * 1024) {
+        try {
+          toast.info('A comprimir imagem...');
+          const compressedFile = await compressImage(file, 1200, 1200, 0.7);
+          const savedPercent = Math.round((1 - compressedFile.size / file.size) * 100);
+          toast.success(`Imagem comprimida! Redução de ${savedPercent}%`);
+          setFotoPCFile(compressedFile);
+        } catch (error) {
+          console.error('Erro ao comprimir:', error);
+          setFotoPCFile(file);
+        }
+      } else {
+        setFotoPCFile(file);
+      }
+    }
+  };
+
   const handleUploadFotoPC = async (e) => {
     e.preventDefault();
     if (!fotoPCFile) {
