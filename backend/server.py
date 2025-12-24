@@ -2771,8 +2771,26 @@ async def preview_pdf_ot(
         {"_id": 0}
     )
     
+    # Buscar equipamentos adicionais
+    equipamentos_adicionais = await db.equipamentos_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+    
+    # Buscar materiais
+    materiais = await db.materiais_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Buscar registos de mão de obra (cronómetros)
+    registos_mao_obra = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("data_trabalho", 1).to_list(length=None)
+    
     # Gerar PDF
-    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura)
+    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura, equipamentos_adicionais, materiais, registos_mao_obra)
     
     # Retornar como download
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
