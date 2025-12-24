@@ -4267,6 +4267,99 @@ const TechnicalReports = ({ user, onLogout }) => {
                 />
               </div>
 
+              {/* Faturas */}
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-amber-400 font-semibold flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Faturas de Peças
+                  </h4>
+                </div>
+
+                {/* Upload Form */}
+                <form onSubmit={handleUploadFatura} className="mb-4 p-3 bg-[#0a0a0a] rounded-lg border border-gray-700">
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <Label className="text-gray-300 text-sm">Ficheiro (PDF, Imagem)</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+                        onChange={(e) => setFaturaFile(e.target.files[0])}
+                        className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-sm">Descrição (opcional)</Label>
+                      <Input
+                        value={faturaDescricao}
+                        onChange={(e) => setFaturaDescricao(e.target.value)}
+                        className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                        placeholder="Ex: Fatura peça X, Orçamento fornecedor Y"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!faturaFile || uploadingFatura}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingFatura ? 'A carregar...' : 'Carregar Fatura'}
+                    </Button>
+                  </div>
+                </form>
+
+                {/* Lista de Faturas */}
+                {faturasPC.length > 0 ? (
+                  <div className="space-y-2">
+                    {faturasPC.map((fatura) => (
+                      <div 
+                        key={fatura.id} 
+                        className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg border border-gray-700 hover:border-amber-500/50 transition"
+                      >
+                        <div 
+                          className="flex-1 cursor-pointer hover:text-amber-400 transition"
+                          onClick={() => handleViewFatura(fatura)}
+                          title="Clique para ver"
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-amber-400" />
+                            <span className="text-white font-medium">{fatura.nome_ficheiro}</span>
+                          </div>
+                          {fatura.descricao && (
+                            <p className="text-gray-400 text-sm mt-1 ml-6">{fatura.descricao}</p>
+                          )}
+                          <p className="text-gray-500 text-xs mt-1 ml-6">
+                            {fatura.uploaded_by && `Por ${fatura.uploaded_by} • `}
+                            {fatura.uploaded_at && new Date(fatura.uploaded_at).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => handleViewFatura(fatura)}
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-600 text-gray-300 hover:text-white"
+                            title="Ver fatura"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteFatura(fatura.id)}
+                            size="sm"
+                            variant="destructive"
+                            title="Remover fatura"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">Nenhuma fatura carregada</p>
+                )}
+              </div>
+
               {/* Botões */}
               <div className="flex gap-3 pt-4">
                 <Button
