@@ -326,6 +326,15 @@ const Reports = ({ user, onLogout }) => {
     
     setEditingEntry(day);
     setDialogOpen(true);
+    setShowAddEntryForm(false); // Reset add entry form visibility
+    
+    // Reset manual entry form
+    setManualEntryForm({
+      time_entries: [{ start_time: '', end_time: '' }],
+      observations: '',
+      outside_residence_zone: false,
+      location_description: ''
+    });
     
     // Initialize manual day status if day has no entries
     if (!day.entries || day.entries.length === 0) {
