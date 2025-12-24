@@ -409,6 +409,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         assin_section = []
         assin_section.append(Spacer(1, 0.3*cm))
         assin_section.append(Paragraph("ASSINATURA DO CLIENTE", heading_style))
+        assin_section.append(Paragraph("Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.", normal_style))
+        assin_section.append(Spacer(1, 0.2*cm))
         
         if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
             # Incluir imagem da assinatura
