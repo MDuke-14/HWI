@@ -165,6 +165,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEmailPCModal, setShowEmailPCModal] = useState(false);
   const [sendingEmailPC, setSendingEmailPC] = useState(false);
   
+  // Editar Material PC
+  const [showEditMaterialPCModal, setShowEditMaterialPCModal] = useState(false);
+  const [editMaterialPC, setEditMaterialPC] = useState(null);
+  const [editMaterialPCForm, setEditMaterialPCForm] = useState({ descricao: '', quantidade: 1 });
+  
   // Faturas PC
   const [faturasPC, setFaturasPC] = useState([]);
   const [faturaFile, setFaturaFile] = useState(null);
