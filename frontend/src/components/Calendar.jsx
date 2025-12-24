@@ -481,12 +481,76 @@ const Calendar = ({ user, onLogout }) => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label>Nome do Cliente *</Label>
-                        <Input
-                          value={serviceForm.client_name}
-                          onChange={(e) => setServiceForm({...serviceForm, client_name: e.target.value})}
-                          className="bg-[#0a0a0a] border-gray-700 text-white"
-                          placeholder="Ex: João Silva"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            value={serviceForm.client_name}
+                            onChange={(e) => setServiceForm({...serviceForm, client_name: e.target.value})}
+                            className="bg-[#0a0a0a] border-gray-700 text-white flex-1"
+                            placeholder="Ex: João Silva"
+                          />
+                          <Dialog open={clientSelectOpen} onOpenChange={setClientSelectOpen}>
+                            <DialogTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white"
+                                title="Selecionar cliente existente"
+                              >
+                                <Building2 className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[80vh]">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <Building2 className="w-5 h-5 text-blue-400" />
+                                  Selecionar Cliente
+                                </DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4 mt-4">
+                                {/* Search */}
+                                <div className="relative">
+                                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                  <Input
+                                    value={clientSearch}
+                                    onChange={(e) => setClientSearch(e.target.value)}
+                                    className="bg-[#0a0a0a] border-gray-700 text-white pl-10"
+                                    placeholder="Pesquisar cliente..."
+                                  />
+                                </div>
+                                
+                                {/* Client list */}
+                                <div className="max-h-[400px] overflow-y-auto space-y-2">
+                                  {filteredClients.length === 0 ? (
+                                    <div className="text-center text-gray-400 py-8">
+                                      {clientSearch ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                                    </div>
+                                  ) : (
+                                    filteredClients.map(client => (
+                                      <div
+                                        key={client.id}
+                                        onClick={() => handleSelectClient(client)}
+                                        className="p-3 bg-[#0a0a0a] border border-gray-700 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-900/20 transition"
+                                      >
+                                        <div className="font-semibold text-white">{client.nome}</div>
+                                        {client.morada && (
+                                          <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                                            <MapPin className="w-3 h-3" />
+                                            {client.morada}
+                                          </div>
+                                        )}
+                                        {client.telefone && (
+                                          <div className="text-sm text-gray-500 mt-1">
+                                            📞 {client.telefone}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </div>
                       <div>
                         <Label>Localidade *</Label>
