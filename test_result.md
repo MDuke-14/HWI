@@ -673,11 +673,11 @@ frontend:
           ✅ Sem erros de API ou falhas de sistema
   - task: "Technical Reports - Technician Management UI"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/frontend/src/components/TechnicalReports.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -724,6 +724,78 @@ frontend:
           - Add technician form validation
           - Kilometers x2 display
           - Work type codes and legend
+      - working: false
+        agent: "testing"
+        comment: |
+          ❌ CRONÓMETROS EM MASSA FUNCTIONALITY TESTING FAILED - BACKEND ERRORS DETECTED
+          
+          Teste realizado em 24/12/2025 conforme solicitação específica do usuário para testar funcionalidade de cronómetros em massa.
+          
+          🔐 LOGIN VALIDATION - ✅ SUCCESSFUL:
+          - Credenciais pedro/password funcionam corretamente
+          - Usuário pedro confirmado como admin (is_admin: true)
+          - Token JWT gerado com sucesso
+          
+          📋 OT AVAILABILITY - ✅ CONFIRMED:
+          - 3 OTs disponíveis no sistema (#1, #2, #3)
+          - OT #3 (f1ccce71-0c61-41fc-b5f2-e20f6c80e9f3) selecionada para teste
+          - Status: "em_execucao" - adequado para teste de cronómetros
+          
+          💻 FRONTEND IMPLEMENTATION - ✅ VERIFIED:
+          Análise do código TechnicalReports.jsx confirma implementação completa dos cronómetros em massa:
+          - ✅ 4 botões em massa: "Iniciar Trabalho", "Parar Trabalho", "Iniciar Viagem", "Parar Viagem"
+          - ✅ Contador "Selecionados: X/Y" implementado (linha 2529)
+          - ✅ Links "Todos" e "Nenhum" para seleção rápida (linhas 2538, 2545)
+          - ✅ Lista de técnicos com checkboxes (sem botões individuais)
+          - ✅ Botões desativados quando nenhum técnico selecionado (disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0})
+          - ✅ Funcionalidade de seleção em massa implementada
+          - ✅ Indicadores visuais com timers (verde para trabalho, azul para viagem)
+          
+          🚨 BACKEND ERRORS - ❌ CRITICAL ISSUES:
+          1. ❌ GET /api/users endpoint: "Internal Server Error"
+             - Impede carregamento da lista de técnicos do sistema
+             - Necessário para popular os checkboxes de seleção
+          
+          2. ❌ POST /api/relatorios-tecnicos/{id}/cronometro/iniciar: "Internal Server Error"
+             - Impede teste da funcionalidade de iniciar cronómetros
+             - Endpoint crítico para funcionalidade principal
+          
+          3. ✅ GET /api/relatorios-tecnicos/{id}/cronometros: Funciona (retorna [])
+             - Endpoint de listagem funcional mas vazio
+          
+          🎯 ELEMENTOS VISUAIS CONFIRMADOS (Análise de Código):
+          A) ✅ 4 botões em massa presentes:
+             - "Iniciar Trabalho" (verde, PlayCircle icon)
+             - "Parar Trabalho" (vermelho, StopCircle icon)  
+             - "Iniciar Viagem" (azul, Car icon)
+             - "Parar Viagem" (vermelho, StopCircle icon)
+          
+          B) ✅ Contador de seleção: "Selecionados: {count}/{total}"
+          
+          C) ✅ Links de seleção rápida: "Todos" | "Nenhum"
+          
+          D) ✅ Lista de técnicos com checkboxes (sem botões individuais)
+          
+          E) ✅ Validação de botões desativados quando 0 selecionados
+          
+          ⚠️ LIMITAÇÃO DE TESTE:
+          Não foi possível completar o teste funcional devido aos erros de backend.
+          A interface está implementada corretamente, mas os endpoints necessários
+          para carregar técnicos e iniciar cronómetros estão com falhas.
+          
+          🔧 AÇÕES NECESSÁRIAS:
+          1. Corrigir endpoint GET /api/users (erro interno do servidor)
+          2. Corrigir endpoint POST /api/relatorios-tecnicos/{id}/cronometro/iniciar
+          3. Verificar logs do backend para identificar causa dos erros
+          4. Testar novamente após correções do backend
+          
+          📊 RESULTADO FINAL:
+          - Frontend: ✅ TOTALMENTE IMPLEMENTADO conforme especificação
+          - Backend: ❌ ERROS CRÍTICOS impedem funcionamento
+          - Status: ❌ NÃO FUNCIONAL devido a problemas de backend
+          
+          A funcionalidade de cronómetros em massa está corretamente implementada no frontend
+          mas não pode ser testada devido a falhas nos endpoints do backend.
   - task: "Excel Export Button in Reports"
     implemented: true
     working: true
