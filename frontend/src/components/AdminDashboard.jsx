@@ -86,9 +86,11 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
-  const fetchReports = async () => {
+  const fetchReports = async (month = null, year = null) => {
     try {
-      const response = await axios.get(`${API}/admin/reports/all?period=billing`);
+      const m = month || reportMonth;
+      const y = year || reportYear;
+      const response = await axios.get(`${API}/admin/reports/all?month=${m}&year=${y}`);
       setReports(response.data);
     } catch (error) {
       console.error('Erro ao carregar relatórios');
