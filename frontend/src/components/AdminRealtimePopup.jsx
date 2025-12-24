@@ -203,6 +203,31 @@ const AdminRealtimePopup = ({ onClose }) => {
                       </div>
                     </div>
                   )}
+
+                  {/* Botões de Controlo Admin */}
+                  <div className="pt-3 mt-3 border-t border-gray-700 flex gap-2">
+                    {user.estado === 'trabalho_iniciado' ? (
+                      <Button
+                        onClick={() => handleEndClock(user.id, user.nome)}
+                        disabled={loading[user.id] === 'end'}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                        size="sm"
+                      >
+                        <Square className="w-4 h-4 mr-1" />
+                        {loading[user.id] === 'end' ? 'A finalizar...' : 'Finalizar'}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleStartClock(user.id, user.nome)}
+                        disabled={loading[user.id] === 'start' || ['ferias', 'folga', 'feriado'].includes(user.estado)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
+                      >
+                        <Play className="w-4 h-4 mr-1" />
+                        {loading[user.id] === 'start' ? 'A iniciar...' : 'Iniciar'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })}
