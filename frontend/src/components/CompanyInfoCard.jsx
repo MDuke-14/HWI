@@ -168,15 +168,15 @@ const CompanyInfoCard = ({ user }) => {
             {/* Informações de Contato */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{isEditing ? (
                 <>
-                  {/* Telefone - Edit */}
+                  {/* NIF - Edit */}
                   <div className="space-y-2">
                     <Label className="text-gray-300 flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-blue-400" />
-                      Telefone
+                      <FileText className="w-4 h-4 text-blue-400" />
+                      NIF
                     </Label>
                     <Input
-                      value={editData.telefone}
-                      onChange={(e) => setEditData({ ...editData, telefone: e.target.value })}
+                      value={editData.nif}
+                      onChange={(e) => setEditData({ ...editData, nif: e.target.value })}
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
@@ -222,14 +222,14 @@ const CompanyInfoCard = ({ user }) => {
                 </>
               ) : (
                 <>
-                  {/* Telefone - View */}
+                  {/* NIF - View */}
                   <div className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors">
                     <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-5 h-5 text-blue-400" />
+                      <FileText className="w-5 h-5 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 mb-1">Telefone</p>
-                      <p className="text-white font-semibold">{companyData.telefone}</p>
+                      <p className="text-xs text-gray-400 mb-1">NIF</p>
+                      <p className="text-white font-semibold">{companyData.nif}</p>
                     </div>
                   </div>
 
