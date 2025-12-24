@@ -293,7 +293,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             fontSize=7,
             textColor=colors.HexColor('#6b7280')
         )
-        mao_obra_section.append(Paragraph("<b>Legenda:</b> 1 = Diurno | 2 = Noturno | S = Sábado | D = Domingo/Feriado", legenda_style))
+        mao_obra_section.append(Paragraph("<b>Legenda:</b> 1 = Dias úteis (07h-19h) | 2 = Dias úteis (19h-07h) | S = Sábado | D = Domingos/Feriados", legenda_style))
         mao_obra_section.append(Spacer(1, 0.2*cm))
         elements.append(KeepTogether(mao_obra_section))
     
