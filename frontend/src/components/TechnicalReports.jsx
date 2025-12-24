@@ -1341,6 +1341,42 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Funções para editar material do PC
+  const openEditMaterialPCModal = (material) => {
+    setEditMaterialPC(material);
+    setEditMaterialPCForm({
+      descricao: material.descricao,
+      quantidade: material.quantidade
+    });
+    setShowEditMaterialPCModal(true);
+  };
+
+  const handleUpdateMaterialPC = async () => {
+    if (!editMaterialPC || !editMaterialPCForm.descricao.trim()) {
+      toast.error('Preencha a descrição do material');
+      return;
+    }
+    if (editMaterialPCForm.quantidade <= 0) {
+      toast.error('A quantidade deve ser maior que zero');
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${editMaterialPC.relatorio_id}/materiais/${editMaterialPC.id}`,
+        {
+          descricao: editMaterialPCForm.descricao,
+          quantidade: editMaterialPCForm.quantidade
+        }
+      );
+      toast.success('Material atualizado com sucesso!');
+      setShowEditMaterialPCModal(false);
+      fetchPCDetalhes(selectedPC.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   const handleDownloadPDFPC = async (pcId) => {
     try {
       const response = await axios.get(`${API}/pedidos-cotacao/${pcId}/preview-pdf`, {
