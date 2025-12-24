@@ -12,6 +12,9 @@ async def run_migrations(db: AsyncIOMotorDatabase):
     
     # Migration 1: Renumerar OTs a partir de #354
     await migrate_ot_numbers(db)
+    
+    # Migration 2: Renomear campo telefone para nif na company_info
+    await migrate_telefone_to_nif(db)
 
 
 async def migrate_ot_numbers(db: AsyncIOMotorDatabase):
@@ -62,6 +65,52 @@ async def migrate_ot_numbers(db: AsyncIOMotorDatabase):
             "key": MIGRATION_KEY,
             "executed_at": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
             "description": "Renumeração de OTs para começar em #354"
+        })
+        
+        logger.info(f"✅ Migração '{MIGRATION_KEY}' concluída e registada.")
+        
+    except Exception as e:
+        logger.error(f"❌ Erro na migração '{MIGRATION_KEY}': {str(e)}")
+        raise
+
+
+async def migrate_telefone_to_nif(db: AsyncIOMotorDatabase):
+    """
+    Migração: Renomear campo 'telefone' para 'nif' na collection company_info
+    Esta migração só corre uma vez.
+    """
+    MIGRATION_KEY = "company_info_telefone_to_nif"
+    
+    # Verificar se migração já foi executada
+    migration_done = await db.migrations.find_one({"key": MIGRATION_KEY})
+    
+    if migration_done:
+        logger.info(f"✅ Migração '{MIGRATION_KEY}' já foi executada anteriormente.")
+        return
+    
+    logger.info(f"🔄 A executar migração '{MIGRATION_KEY}'...")
+    
+    try:
+        # Verificar se existe company_info com campo telefone
+        company_info = await db.company_info.find_one({"id": "company_info_default"})
+        
+        if company_info and "telefone" in company_info:
+            # Renomear campo telefone para nif
+            await db.company_info.update_one(
+                {"id": "company_info_default"},
+                {
+                    "$rename": {"telefone": "nif"},
+                }
+            )
+            logger.info("  Campo 'telefone' renomeado para 'nif'")
+        else:
+            logger.info("  Campo 'telefone' não encontrado ou já migrado")
+        
+        # Marcar migração como concluída
+        await db.migrations.insert_one({
+            "key": MIGRATION_KEY,
+            "executed_at": __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),
+            "description": "Renomear campo telefone para nif em company_info"
         })
         
         logger.info(f"✅ Migração '{MIGRATION_KEY}' concluída e registada.")
