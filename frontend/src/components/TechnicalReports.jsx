@@ -1314,6 +1314,35 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const openEditRegistoModal = (registo) => {
+    setEditingRegisto(registo);
+    setEditRegistoForm({
+      horas_arredondadas: registo.horas_arredondadas || 0,
+      km: registo.km || 0,
+      codigo: registo.codigo || ''
+    });
+    setShowEditRegistoModal(true);
+  };
+
+  const handleUpdateRegisto = async () => {
+    if (!editingRegisto) return;
+    
+    try {
+      await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${editingRegisto.id}`, {
+        horas_arredondadas: parseFloat(editRegistoForm.horas_arredondadas),
+        km: parseFloat(editRegistoForm.km),
+        codigo: editRegistoForm.codigo
+      });
+      
+      toast.success('Registo atualizado!');
+      setShowEditRegistoModal(false);
+      setEditingRegisto(null);
+      fetchRegistosTecnicos(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   const getCronometroStatus = (tecnico, tipo) => {
     return cronometrosAtivos.find(
       c => (c.tecnico_id === tecnico.tecnico_id || c.tecnico_id === tecnico.id) && c.tipo === tipo && c.ativo
