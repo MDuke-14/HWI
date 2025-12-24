@@ -3304,7 +3304,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                               pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
                               pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
                               pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
-                              'bg-green-600/20 text-green-400'
+                              pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
+                              'bg-purple-600/20 text-purple-400'
                             }`}>{pc.status}</span>
                           </p>
                         </div>
