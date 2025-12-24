@@ -2531,10 +2531,17 @@ async def get_assinatura_imagem(
     if not assinatura:
         raise HTTPException(status_code=404, detail="Assinatura não encontrada")
     
+    # Headers para evitar cache
+    headers = {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+    
     # Tentar arquivo local primeiro
     file_path = Path(assinatura.get("assinatura_path", ""))
     if file_path.exists():
-        return FileResponse(file_path)
+        return FileResponse(file_path, headers=headers)
     
     # Usar base64 do MongoDB
     if not assinatura.get("assinatura_base64"):
@@ -2544,7 +2551,7 @@ async def get_assinatura_imagem(
     from fastapi.responses import Response
     
     assinatura_bytes = base64.b64decode(assinatura["assinatura_base64"])
-    return Response(content=assinatura_bytes, media_type="image/png")
+    return Response(content=assinatura_bytes, media_type="image/png", headers=headers)
 
 @api_router.delete("/relatorios-tecnicos/{relatorio_id}/assinatura")
 async def delete_assinatura(
