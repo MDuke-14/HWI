@@ -284,16 +284,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
         mao_obra_section.append(mao_obra_table)
-        mao_obra_section.append(Spacer(1, 0.1*cm))
-        
-        # Legenda de códigos
-        legenda_style = ParagraphStyle(
-            'LegendaStyle',
-            parent=normal_style,
-            fontSize=7,
-            textColor=colors.HexColor('#6b7280')
-        )
-        mao_obra_section.append(Paragraph("<b>Legenda:</b> 1 = Dias úteis (07h-19h) | 2 = Dias úteis (19h-07h) | S = Sábado | D = Domingos/Feriados", legenda_style))
         mao_obra_section.append(Spacer(1, 0.2*cm))
         elements.append(KeepTogether(mao_obra_section))
     
