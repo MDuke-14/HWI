@@ -236,14 +236,14 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         # Adicionar registos de cronómetros
         if registos_mao_obra:
             for reg in registos_mao_obra:
-                data_reg = reg.get('data_trabalho', '')
+                data_reg = reg.get('data', '')
                 if isinstance(data_reg, str) and data_reg:
                     try:
                         data_reg = datetime.fromisoformat(data_reg).strftime('%d/%m/%Y')
                     except:
                         pass
                 
-                hora_inicio = reg.get('hora_inicio', '')
+                hora_inicio = reg.get('hora_inicio_segmento', '')
                 if isinstance(hora_inicio, str) and 'T' in hora_inicio:
                     try:
                         hora_inicio = datetime.fromisoformat(hora_inicio).strftime('%H:%M')
@@ -252,7 +252,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 elif isinstance(hora_inicio, str) and hora_inicio:
                     hora_inicio = hora_inicio[:5] if len(hora_inicio) >= 5 else hora_inicio
                 
-                hora_fim = reg.get('hora_fim', '')
+                hora_fim = reg.get('hora_fim_segmento', '')
                 if isinstance(hora_fim, str) and 'T' in hora_fim:
                     try:
                         hora_fim = datetime.fromisoformat(hora_fim).strftime('%H:%M')
@@ -266,7 +266,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     data_reg or 'N/A',
                     hora_inicio or '-',
                     hora_fim or '-',
-                    f"{reg.get('horas_trabalhadas', 0):.2f}h",
+                    f"{reg.get('horas_arredondadas', 0):.2f}h",
                     tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
                     reg.get('codigo', '-')
                 ])
