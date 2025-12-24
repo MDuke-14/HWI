@@ -4197,6 +4197,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <option value="Cotação Pedida">Cotação Pedida</option>
                   <option value="A Caminho">A Caminho</option>
                   <option value="Em Armazém">Em Armazém</option>
+                  <option value="Terminado">Terminado</option>
                 </select>
               </div>
 
