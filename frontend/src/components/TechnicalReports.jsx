@@ -2385,6 +2385,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <Send className="w-4 h-4" />
                       Email
                     </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeletePC(pc.id, pc.numero_pc);
+                      }}
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition text-sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
