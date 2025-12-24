@@ -5563,6 +5563,116 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal Editar Registo Cronómetro */}
+      <Dialog open={showEditRegistoModal} onOpenChange={(open) => {
+        setShowEditRegistoModal(open);
+        if (!open) setEditingRegisto(null);
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Registo de Cronómetro
+            </DialogTitle>
+          </DialogHeader>
+
+          {editingRegisto && (
+            <div className="space-y-4 mt-4">
+              {/* Info do Registo */}
+              <div className="bg-[#0f0f0f] p-3 rounded-lg border border-gray-700">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-400">Técnico:</span>
+                    <span className="text-white ml-2">{editingRegisto.tecnico_nome}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Tipo:</span>
+                    <span className={`ml-2 ${editingRegisto.tipo === 'trabalho' ? 'text-green-400' : 'text-blue-400'}`}>
+                      {editingRegisto.tipo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Data:</span>
+                    <span className="text-white ml-2">
+                      {new Date(editingRegisto.data).toLocaleDateString('pt-PT')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campos Editáveis */}
+              <div>
+                <Label className="text-gray-300">Horas Arredondadas</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={editRegistoForm.horas_arredondadas}
+                  onChange={(e) => setEditRegistoForm({
+                    ...editRegistoForm,
+                    horas_arredondadas: e.target.value
+                  })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-300">KM</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={editRegistoForm.km}
+                  onChange={(e) => setEditRegistoForm({
+                    ...editRegistoForm,
+                    km: e.target.value
+                  })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-300">Código</Label>
+                <select
+                  value={editRegistoForm.codigo}
+                  onChange={(e) => setEditRegistoForm({
+                    ...editRegistoForm,
+                    codigo: e.target.value
+                  })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                >
+                  <option value="1">1 - Dias úteis (07h-19h)</option>
+                  <option value="2">2 - Dias úteis (19h-07h)</option>
+                  <option value="S">S - Sábado</option>
+                  <option value="D">D - Domingos/Feriados</option>
+                  <option value="V1">V1 - Viagem Dias úteis (07h-19h)</option>
+                  <option value="V2">V2 - Viagem Dias úteis (19h-07h)</option>
+                  <option value="VS">VS - Viagem Sábado</option>
+                  <option value="VD">VD - Viagem Domingos/Feriados</option>
+                </select>
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setShowEditRegistoModal(false)}
+                  variant="outline"
+                  className="flex-1 border-gray-600"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleUpdateRegisto}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
