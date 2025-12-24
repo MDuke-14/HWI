@@ -604,6 +604,33 @@ const Dashboard = ({ user, onLogout }) => {
                         <p className="text-amber-400 text-sm">{userStatus.holiday_name}</p>
                       )}
                     </div>
+
+                    {/* Botões Admin para Iniciar/Finalizar Relógio */}
+                    {user?.is_admin && (
+                      <div className="pt-3 mt-3 border-t border-gray-700 flex gap-2">
+                        {userStatus.status === 'TRABALHANDO' ? (
+                          <Button
+                            onClick={() => handleAdminEndClock(userStatus.user_id, nome)}
+                            disabled={adminClockLoading[userStatus.user_id] === 'end'}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                            size="sm"
+                          >
+                            <Square className="w-4 h-4 mr-1" />
+                            {adminClockLoading[userStatus.user_id] === 'end' ? 'A finalizar...' : 'Finalizar'}
+                          </Button>
+                        ) : !['FÉRIAS', 'FERIADO'].includes(userStatus.status) && (
+                          <Button
+                            onClick={() => handleAdminStartClock(userStatus.user_id, nome)}
+                            disabled={adminClockLoading[userStatus.user_id] === 'start'}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            size="sm"
+                          >
+                            <Play className="w-4 h-4 mr-1" />
+                            {adminClockLoading[userStatus.user_id] === 'start' ? 'A iniciar...' : 'Iniciar'}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
                 })}
