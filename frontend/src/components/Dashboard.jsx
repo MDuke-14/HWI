@@ -3,7 +3,6 @@ import axios from 'axios';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
 import UserRealtimePopup from '@/components/UserRealtimePopup';
-import AdminRealtimePopup from '@/components/AdminRealtimePopup';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
