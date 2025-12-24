@@ -210,8 +210,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             'viagem': 'Viag.'
         }
         
-        # Criar tabela unificada com todos os registos
-        mao_obra_data = [['Técnico', 'Data', 'Início', 'Fim', 'Horas', 'Tipo', 'Cód']]
+        # Criar tabela unificada com todos os registos (sem colunas Início e Fim)
+        mao_obra_data = [['Técnico', 'Data', 'Horas', 'Tipo', 'Cód']]
         
         # Adicionar registos manuais de técnicos (se existirem)
         if tecnicos:
@@ -226,8 +226,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 mao_obra_data.append([
                     tec.get('tecnico_nome', 'N/A'),
                     data_trab or 'N/A',
-                    '-',
-                    '-',
                     f"{tec.get('horas_cliente', 0):.2f}h",
                     'Manual',
                     codigos.get(tec.get('tipo_horario', ''), '-')
@@ -243,35 +241,15 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     except:
                         pass
                 
-                hora_inicio = reg.get('hora_inicio_segmento', '')
-                if isinstance(hora_inicio, str) and 'T' in hora_inicio:
-                    try:
-                        hora_inicio = datetime.fromisoformat(hora_inicio).strftime('%H:%M')
-                    except:
-                        pass
-                elif isinstance(hora_inicio, str) and hora_inicio:
-                    hora_inicio = hora_inicio[:5] if len(hora_inicio) >= 5 else hora_inicio
-                
-                hora_fim = reg.get('hora_fim_segmento', '')
-                if isinstance(hora_fim, str) and 'T' in hora_fim:
-                    try:
-                        hora_fim = datetime.fromisoformat(hora_fim).strftime('%H:%M')
-                    except:
-                        pass
-                elif isinstance(hora_fim, str) and hora_fim:
-                    hora_fim = hora_fim[:5] if len(hora_fim) >= 5 else hora_fim
-                
                 mao_obra_data.append([
                     reg.get('tecnico_nome', 'N/A'),
                     data_reg or 'N/A',
-                    hora_inicio or '-',
-                    hora_fim or '-',
                     f"{reg.get('horas_arredondadas', 0):.2f}h",
                     tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
                     reg.get('codigo', '-')
                 ])
         
-        mao_obra_table = Table(mao_obra_data, colWidths=[4*cm, 2.3*cm, 1.8*cm, 1.8*cm, 1.8*cm, 1.5*cm, 1.2*cm])
+        mao_obra_table = Table(mao_obra_data, colWidths=[5*cm, 3*cm, 2.5*cm, 2.5*cm, 2*cm])
         mao_obra_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8b5cf6')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
