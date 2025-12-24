@@ -294,38 +294,25 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if materiais:
         elements.append(Paragraph("MATERIAIS", heading_style))
         
-        mat_data = [['#', 'Referência', 'Descrição', 'Qtd', 'Preço Unit.', 'Total']]
+        mat_data = [['#', 'Descrição', 'Qtd', 'Fornecido Por']]
         
-        total_materiais = 0
         for idx, mat in enumerate(materiais, 1):
-            qtd = mat.get('quantidade', 0)
-            preco = mat.get('preco_unitario', 0)
-            total_linha = qtd * preco
-            total_materiais += total_linha
-            
             mat_data.append([
                 str(idx),
-                mat.get('referencia', 'N/A'),
-                mat.get('descricao', 'N/A')[:40],
-                str(qtd),
-                f"{preco:.2f}€",
-                f"{total_linha:.2f}€"
+                mat.get('descricao', 'N/A'),
+                str(mat.get('quantidade', 0)),
+                mat.get('fornecido_por', '-') or '-'
             ])
         
-        # Linha de total
-        mat_data.append(['', '', '', '', 'TOTAL:', f"{total_materiais:.2f}€"])
-        
-        mat_table = Table(mat_data, colWidths=[1*cm, 3*cm, 6.5*cm, 1.5*cm, 2.5*cm, 2.5*cm])
+        mat_table = Table(mat_data, colWidths=[1*cm, 10*cm, 2*cm, 5*cm])
         mat_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f59e0b')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('ALIGN', (2, 1), (2, -1), 'LEFT'),
+            ('ALIGN', (1, 1), (1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTNAME', (4, -1), (-1, -1), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
-            ('LINEABOVE', (4, -1), (-1, -1), 1, colors.black),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 3),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
