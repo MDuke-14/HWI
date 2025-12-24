@@ -3318,7 +3318,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
               {/* Assinatura */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h4 className="text-blue-400 font-semibold flex items-center gap-2">
                     <PenTool className="w-4 h-4" />
                     Assinatura do Cliente
@@ -3344,6 +3344,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </Button>
                   )}
                 </div>
+                <p className="text-gray-400 text-sm mb-4">
+                  Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.
+                </p>
 
                 {assinatura ? (
                   <div className="bg-black/30 rounded-lg p-4 border border-gray-700">
