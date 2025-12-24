@@ -17,8 +17,11 @@ const Calendar = ({ user, onLogout }) => {
   const [services, setServices] = useState([]);
   const [vacations, setVacations] = useState([]);
   const [users, setUsers] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [clientSelectOpen, setClientSelectOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
   const [editingService, setEditingService] = useState(null);
   const [serviceForm, setServiceForm] = useState({
     client_name: '',
