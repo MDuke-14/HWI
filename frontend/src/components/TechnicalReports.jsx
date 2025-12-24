@@ -4248,8 +4248,8 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Label htmlFor="foto_pc_descricao" className="text-gray-300">Descrição</Label>
               <Input
                 id="foto_pc_descricao"
-                value={fotoPCDescricao}
-                onChange={(e) => setFotoPCDescricao(e.target.value)}
+                defaultValue={fotoPCDescricao}
+                onBlur={(e) => setFotoPCDescricao(e.target.value)}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
                 placeholder="Ex: Vista frontal do equipamento"
               />
