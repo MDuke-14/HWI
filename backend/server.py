@@ -3449,10 +3449,10 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
         "has_active": False,
         "daily_summary": {
             "date": today,
-            "total_hours": round(total_hours, 2),
-            "regular_hours": round(regular_hours, 2),
-            "overtime_hours": round(overtime_hours, 2),
-            "special_hours": round(special_hours, 2),
+            "total_hours": round(truncar_horas_para_minutos(total_hours), 2),
+            "regular_hours": round(truncar_horas_para_minutos(regular_hours), 2),
+            "overtime_hours": round(truncar_horas_para_minutos(overtime_hours), 2),
+            "special_hours": round(truncar_horas_para_minutos(special_hours), 2),
             "entry_count": len(today_entries)
         }
     }
