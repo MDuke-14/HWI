@@ -3738,10 +3738,12 @@ async def get_custom_range_report(
             # Calculate total hours for the day
             total_hours = sum(e.get("total_hours", 0) for e in day_entries)
             
-            # RECALCULAR breakdown baseado no TOTAL do dia
+            # RECALCULAR breakdown baseado no TOTAL do dia (TRUNCANDO segundos)
             from hours_calculator import calcular_horas_dia, feriados_portugueses, minutos_para_horas
             import math
             
+            # Truncar para minutos inteiros
+            total_hours = truncar_horas_para_minutos(total_hours)
             total_minutos = math.floor(total_hours * 60)
             dia_semana_py = current_date.weekday()
             dia_semana_js = (dia_semana_py + 1) % 7
