@@ -4215,15 +4215,15 @@ async def download_monthly_pdf_report(
         if date_str in entries_by_date:
             day_entries = entries_by_date[date_str]
             
-            # Calculate total hours for the day (sum all entries)
-            total_hours = sum(e.get("total_hours", 0) for e in day_entries)
+            # Calculate total hours for the day (sum all entries) - TRUNCAR segundos
+            total_hours = truncar_horas_para_minutos(sum(e.get("total_hours", 0) for e in day_entries))
             
             # RECALCULAR breakdown baseado no TOTAL do dia (não somar individuais!)
             # Usar a função correta de cálculo
             from hours_calculator import calcular_horas_dia, feriados_portugueses, minutos_para_horas
             import math
             
-            # Converter total para minutos e truncar segundos
+            # Converter total para minutos (já está truncado)
             total_minutos = math.floor(total_hours * 60)
             
             # Verificar dia da semana e feriado
