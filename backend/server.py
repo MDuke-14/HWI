@@ -3559,8 +3559,8 @@ async def get_overtime_summary(current_user: dict = Depends(get_current_user)):
     overtime_entries = [e for e in entries if e.get("is_overtime_day", False)]
     
     return {
-        "total_overtime_hours": round(total_overtime, 2),
-        "total_special_hours": round(total_special, 2),
+        "total_overtime_hours": round(truncar_horas_para_minutos(total_overtime), 2),
+        "total_special_hours": round(truncar_horas_para_minutos(total_special), 2),
         "total_overtime_days": len(overtime_entries),
         "billing_period_start": start_date_str,
         "billing_period_end": end_date_str,
@@ -3597,6 +3597,9 @@ async def get_reports(
     overtime_hours = sum(entry.get("overtime_hours", 0) for entry in entries)
     special_hours = sum(entry.get("special_hours", 0) for entry in entries)
     total_days = len(entries)
+    
+    # Truncar horas para minutos
+    total_hours = truncar_horas_para_minutos(total_hours)
     avg_hours = round(total_hours / total_days, 2) if total_days > 0 else 0
     
     return {
@@ -3604,9 +3607,9 @@ async def get_reports(
         "start_date": start_date,
         "end_date": end_date,
         "total_hours": round(total_hours, 2),
-        "regular_hours": round(regular_hours, 2),
-        "overtime_hours": round(overtime_hours, 2),
-        "special_hours": round(special_hours, 2),
+        "regular_hours": round(truncar_horas_para_minutos(regular_hours), 2),
+        "overtime_hours": round(truncar_horas_para_minutos(overtime_hours), 2),
+        "special_hours": round(truncar_horas_para_minutos(special_hours), 2),
         "total_days": total_days,
         "avg_hours_per_day": avg_hours,
         "entries": entries
