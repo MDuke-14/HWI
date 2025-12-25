@@ -582,6 +582,28 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return current_user
 
+def truncar_horas_para_minutos(horas: float) -> float:
+    """
+    Trunca horas para minutos inteiros (sem segundos).
+    Ex: 8.6833... (8:41:00) -> 8.68 (8:40:48 arredondado para baixo)
+    Ex: 8.6999... (8:41:59) -> 8.68 (8:41:00 truncado)
+    
+    Processo:
+    1. Converte para minutos totais
+    2. Trunca (floor) para minutos inteiros
+    3. Converte de volta para horas decimais
+    """
+    total_minutos = math.floor(horas * 60)
+    return total_minutos / 60
+
+def truncar_segundos_para_horas(segundos: float) -> float:
+    """
+    Converte segundos para horas, truncando os segundos restantes.
+    Ex: 31259 segundos (8:41:59) -> 8.68h (8:41)
+    """
+    total_minutos = math.floor(segundos / 60)
+    return total_minutos / 60
+
 def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
     """
     FUNÇÃO DEPRECATED - Mantida para compatibilidade
