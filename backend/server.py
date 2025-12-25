@@ -3514,13 +3514,13 @@ async def list_time_entries(
         if entry.get("observations"):
             daily_entries[date]["observations"].append(entry["observations"])
     
-    # Convert to list and round hours
+    # Convert to list and truncate hours (sem segundos)
     result = []
     for date_key in sorted(daily_entries.keys(), reverse=True):
         day_data = daily_entries[date_key]
-        day_data["total_hours"] = round(day_data["total_hours"], 2)
-        day_data["regular_hours"] = round(day_data["regular_hours"], 2)
-        day_data["overtime_hours"] = round(day_data["overtime_hours"], 2)
+        day_data["total_hours"] = round(truncar_horas_para_minutos(day_data["total_hours"]), 2)
+        day_data["regular_hours"] = round(truncar_horas_para_minutos(day_data["regular_hours"]), 2)
+        day_data["overtime_hours"] = round(truncar_horas_para_minutos(day_data["overtime_hours"]), 2)
         day_data["observations"] = " | ".join(day_data["observations"]) if day_data["observations"] else None
         
         # Get first and last entry times for the day
