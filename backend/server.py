@@ -3297,20 +3297,22 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             # Currently working - SOMAR todas as entradas
             start_time_active = datetime.fromisoformat(active_entry["start_time"])
             
-            # Tempo da entrada ativa
+            # Tempo da entrada ativa (em segundos)
             elapsed_active = (datetime.now(timezone.utc) - start_time_active).total_seconds()
             
-            # Tempo das entradas completadas
-            total_completed = sum(e.get("total_hours", 0) for e in completed_entries) * 3600  # converter para segundos
+            # Tempo das entradas completadas (converter horas para segundos)
+            total_completed = sum(e.get("total_hours", 0) for e in completed_entries) * 3600
             
-            # TOTAL = completadas + ativa
+            # TOTAL = completadas + ativa (em segundos)
             total_elapsed_seconds = total_completed + elapsed_active
-            elapsed_hours = round(total_elapsed_seconds / 3600, 2)
+            
+            # TRUNCAR segundos para minutos
+            elapsed_hours = truncar_segundos_para_horas(total_elapsed_seconds)
             
             status_info["status"] = "TRABALHANDO"
             status_info["status_color"] = "green"
             status_info["clock_in_time"] = start_time_active.strftime("%H:%M")
-            status_info["elapsed_hours"] = elapsed_hours  # SOMA de tudo
+            status_info["elapsed_hours"] = round(elapsed_hours, 2)  # SOMA de tudo
             status_info["outside_residence_zone"] = active_entry.get("outside_residence_zone", False)
             status_info["location"] = active_entry.get("location_description")
         elif completed_entries:
@@ -3323,7 +3325,7 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             status_info["status_color"] = "blue"
             status_info["clock_in_time"] = datetime.fromisoformat(first_entry["start_time"]).strftime("%H:%M")
             status_info["clock_out_time"] = datetime.fromisoformat(last_entry["end_time"]).strftime("%H:%M")
-            status_info["total_hours"] = round(total_hours, 2)
+            status_info["total_hours"] = round(truncar_horas_para_minutos(total_hours), 2)
             status_info["outside_residence_zone"] = any(e.get("outside_residence_zone", False) for e in completed_entries)
         elif user_id in vacation_users:
             # On vacation
