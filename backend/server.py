@@ -1851,15 +1851,11 @@ async def get_relatorio(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Obter relatório técnico específico"""
+    """Obter relatório técnico específico - visível para todos os utilizadores"""
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
-    
-    # Verificar permissão (admin ou técnico do relatório)
-    if not current_user.get("is_admin", False) and relatorio["tecnico_id"] != current_user["sub"]:
-        raise HTTPException(status_code=403, detail="Sem permissão para ver este relatório")
     
     return relatorio
 
