@@ -440,6 +440,20 @@ const Dashboard = ({ user, onLogout }) => {
         </span>
       </a>
 
+      {/* Botão Flutuante Ver Minhas Entradas - Apenas para usuários normais */}
+      {!user?.is_admin && (
+        <Button
+          onClick={() => setShowMyRealtimePopup(true)}
+          className="fixed bottom-48 sm:bottom-36 right-4 sm:right-6 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-full p-3 sm:p-4 shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 hover:scale-110 z-50 group"
+          title="Ver Minhas Entradas"
+        >
+          <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="hidden sm:block absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            Ver Minhas Entradas
+          </span>
+        </Button>
+      )}
+
       {/* Real-Time Status Modal */}
       <Dialog open={showRealtimeModal} onOpenChange={setShowRealtimeModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
