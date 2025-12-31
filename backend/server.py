@@ -1838,9 +1838,22 @@ async def get_relatorios(
     if cliente_id:
         query["cliente_id"] = cliente_id
     
-    # Se não for admin, mostrar apenas seus relatórios
+    # Se não for admin, mostrar OTs onde é técnico principal OU está atribuído
     if not current_user.get("is_admin", False):
-        query["tecnico_id"] = current_user["sub"]
+        user_id = current_user["sub"]
+        
+        # Buscar IDs de OTs onde o técnico está atribuído
+        tecnicos_atribuidos = await db.tecnicos_ot.find(
+            {"tecnico_id": user_id},
+            {"relatorio_id": 1}
+        ).to_list(1000)
+        ot_ids_atribuidos = [t["relatorio_id"] for t in tecnicos_atribuidos]
+        
+        # Mostrar OTs onde é técnico principal OU está atribuído
+        query["$or"] = [
+            {"tecnico_id": user_id},
+            {"id": {"$in": ot_ids_atribuidos}}
+        ]
     
     relatorios = await db.relatorios_tecnicos.find(
         query,
