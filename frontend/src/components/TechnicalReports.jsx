@@ -3688,6 +3688,25 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
 
             <div>
+              <Label htmlFor="edit_equipamento_intervencao" className="text-gray-300">
+                Equipamento Relacionado
+              </Label>
+              <select
+                id="edit_equipamento_intervencao"
+                value={intervencaoFormData.equipamento_id || ''}
+                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, equipamento_id: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3"
+              >
+                <option value="">-- Selecionar Equipamento (opcional) --</option>
+                {equipamentos.map((eq) => (
+                  <option key={eq.id} value={eq.id}>
+                    {eq.tipologia} - {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <Label htmlFor="edit_motivo_assistencia_int" className="text-gray-300">
                 Motivo da Assistência *
               </Label>
