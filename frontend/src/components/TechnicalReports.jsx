@@ -4893,7 +4893,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
-
+      */}
 
       {/* Edit Relatório Modal */}
 
