@@ -747,7 +747,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     setIntervencaoFormData({
       data_intervencao: intervencao.data_intervencao.split('T')[0],
       motivo_assistencia: intervencao.motivo_assistencia,
-      relatorio_assistencia: intervencao.relatorio_assistencia || ''
+      relatorio_assistencia: intervencao.relatorio_assistencia || '',
+      equipamento_id: intervencao.equipamento_id || ''
     });
     setShowEditIntervencaoModal(true);
   };
