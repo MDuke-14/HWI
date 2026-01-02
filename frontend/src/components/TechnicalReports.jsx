@@ -3221,6 +3221,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         </div>
                         
+                        {/* Equipamento Relacionado */}
+                        {intervencao.equipamento_id && (
+                          <div className="mb-3 p-2 bg-purple-500/10 border border-purple-500/30 rounded">
+                            <p className="text-xs text-purple-400 flex items-center gap-1">
+                              <Settings className="w-3 h-3" />
+                              Equipamento: {(() => {
+                                const eq = equipamentos.find(e => e.id === intervencao.equipamento_id);
+                                return eq ? `${eq.tipologia} - ${eq.marca} ${eq.modelo}` : 'N/A';
+                              })()}
+                            </p>
+                          </div>
+                        )}
+                        
                         <div className="space-y-2">
                           <div>
                             <p className="text-xs text-gray-500 mb-1">Motivo:</p>
