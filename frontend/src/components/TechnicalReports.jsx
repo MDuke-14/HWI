@@ -1700,6 +1700,40 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
 
+  // ========== Visualizar PDF Functions ==========
+  
+  const handlePreviewPDF = async () => {
+    if (!selectedRelatorio) return;
+    
+    setLoadingPDFPreview(true);
+    try {
+      const response = await axios.get(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
+        { responseType: 'blob' }
+      );
+      
+      // Criar URL do blob para visualização
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfPreviewUrl(url);
+      setShowPDFPreviewModal(true);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar PDF para visualização');
+    } finally {
+      setLoadingPDFPreview(false);
+    }
+  };
+
+  const closePDFPreview = () => {
+    setShowPDFPreviewModal(false);
+    if (pdfPreviewUrl) {
+      URL.revokeObjectURL(pdfPreviewUrl);
+      setPdfPreviewUrl(null);
+    }
+  };
+
+
   // ========== Email PDF Functions ==========
   
   const openEmailModal = async () => {
