@@ -315,6 +315,7 @@ class IntervencaoRelatorio(BaseModel):
     data_intervencao: date
     motivo_assistencia: str
     relatorio_assistencia: Optional[str] = None
+    equipamento_id: Optional[str] = None  # ID do equipamento relacionado
     ordem: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
