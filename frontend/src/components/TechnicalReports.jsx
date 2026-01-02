@@ -113,7 +113,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [intervencaoFormData, setIntervencaoFormData] = useState({
     data_intervencao: new Date().toISOString().split('T')[0],
     motivo_assistencia: '',
-    relatorio_assistencia: ''
+    relatorio_assistencia: '',
+    equipamento_id: ''
   });
   
   // Fotografias
