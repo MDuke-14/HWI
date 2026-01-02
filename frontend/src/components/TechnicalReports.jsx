@@ -132,11 +132,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
 
-  // Email PDF
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailsCliente, setEmailsCliente] = useState([]);
-  const [emailsAdicionais, setEmailsAdicionais] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
+  // Visualizar PDF
+  const [showPDFPreviewModal, setShowPDFPreviewModal] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [loadingPDFPreview, setLoadingPDFPreview] = useState(false);
 
   // Material OT
   const [materiais, setMateriais] = useState([]);
