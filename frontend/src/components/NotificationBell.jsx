@@ -188,7 +188,7 @@ const NotificationBell = ({ user }) => {
           </div>
 
           {/* Banner para ativar notificações push */}
-          {pushSupported && pushPermission !== 'granted' && (
+          {pushSupported && !pushSubscribed && (
             <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-gray-700">
               <div className="flex items-center gap-3">
                 <BellRing className="w-8 h-8 text-blue-400 flex-shrink-0" />
