@@ -584,9 +584,10 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
     }
 
 
-async def handle_overtime_start(db, user_id: str, user_name: str, user_email: str, entry_id: str, base_url: str) -> Dict:
+async def handle_overtime_start(db, user_id: str, user_name: str, user_email: str, entry_id: str, base_url: str, custom_reason: str = None) -> Dict:
     """
     Quando um utilizador inicia ponto num sábado/domingo/feriado
+    OU quando já tem horas extra nesse dia e inicia novamente
     Envia pedido de autorização ao admin
     """
     today = date.today()
@@ -594,17 +595,20 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
     today_formatted = today.strftime("%d/%m/%Y")
     current_time = datetime.now().strftime("%H:%M")
     
-    # Determinar tipo de dia
-    is_ot, reason = is_overtime_day(today)
-    if not is_ot:
-        return {"status": "not_overtime_day", "reason": reason}
+    # Determinar tipo de dia - usar custom_reason se fornecido
+    if custom_reason:
+        reason = custom_reason
+    else:
+        is_ot, reason = is_overtime_day(today)
+        if not is_ot:
+            return {"status": "not_overtime_day", "reason": reason}
     
     admin_email = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
     
-    # Verificar se já existe autorização pendente
+    # Verificar se já existe autorização pendente para este entry específico
     existing_auth = await db.overtime_authorizations.find_one({
         "user_id": user_id,
-        "date": today_str,
+        "entry_id": entry_id,
         "request_type": "overtime_start",
         "status": "pending"
     })
