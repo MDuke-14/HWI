@@ -174,6 +174,16 @@ function App() {
               )
             }
           />
+          <Route
+            path="/admin/time-entries"
+            element={
+              isAuthenticated && user?.is_admin ? (
+                <AdminTimeEntries user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
