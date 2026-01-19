@@ -156,7 +156,7 @@ const Dashboard = ({ user, onLogout }) => {
       });
       toast.success('Relógio iniciado!');
       setObservations('');
-      setOutsideResidenceZone(false);
+      // Não resetar outsideResidenceZone se o dia já tem essa flag (será definido pelo fetchTodayEntry)
       setLocationDescription('');
       fetchTodayEntry();
     } catch (error) {
