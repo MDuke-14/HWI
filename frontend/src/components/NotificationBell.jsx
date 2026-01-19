@@ -27,17 +27,21 @@ const NotificationBell = ({ user }) => {
 
   const subscribeToPush = useCallback(async (registration) => {
     try {
-      // Verificar se já existe uma subscription
-      let subscription = await registration.pushManager.getSubscription();
+      // IMPORTANTE: Sempre cancelar subscription existente e criar uma nova
+      // Isso garante que usamos as chaves VAPID corretas
+      let existingSubscription = await registration.pushManager.getSubscription();
       
-      if (!subscription) {
-        // Criar nova subscription
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
-        console.log('Nova push subscription criada');
+      if (existingSubscription) {
+        console.log('Cancelando subscription antiga...');
+        await existingSubscription.unsubscribe();
       }
+      
+      // Criar nova subscription com as chaves VAPID atuais
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+      console.log('Nova push subscription criada');
 
       // Converter para JSON e enviar para o backend
       const subscriptionJson = subscription.toJSON();
