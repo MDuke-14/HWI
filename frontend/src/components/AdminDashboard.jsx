@@ -84,6 +84,8 @@ const AdminDashboard = ({ user, onLogout }) => {
     fetchAllAbsences();
     fetchReports();
     fetchTarifas();
+    fetchOvertimeAuthorizations();
+    fetchNotificationLogs();
   }, []);
 
   const fetchUsers = async () => {
