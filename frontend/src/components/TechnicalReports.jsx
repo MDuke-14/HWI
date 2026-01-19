@@ -991,7 +991,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       minutos_cliente: tecnico.minutos_cliente || 0,
       kms_deslocacao: tecnico.kms_deslocacao,
       tipo_horario: tecnico.tipo_horario,
-      data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0]
+      data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0],
+      hora_inicio: tecnico.hora_inicio || '',
+      hora_fim: tecnico.hora_fim || ''
     });
     setShowEditTecnicoModal(true);
   };
