@@ -1141,6 +1141,75 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
               </div>
 
+              {/* Teste de Notificações Push */}
+              <div className="glass-effect p-6 rounded-xl">
+                <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2">
+                  <BellRing className="w-6 h-6 text-green-400" />
+                  Testar Notificações Push
+                </h2>
+                <p className="text-gray-400 mb-4">
+                  Teste as notificações push no seu dispositivo. Certifique-se de que ativou as notificações no sino.
+                </p>
+                <div className="flex gap-4 flex-wrap">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await axios.post(`${API}/notifications/test-push`);
+                        toast.success('Notificação de teste enviada!');
+                      } catch (error) {
+                        toast.error('Erro ao enviar. Ative as notificações push primeiro.');
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    Teste Simples
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await axios.post(`${API}/notifications/test-clock-in-reminder`);
+                        toast.success('Notificação de lembrete de entrada enviada!');
+                      } catch (error) {
+                        toast.error('Erro ao enviar notificação');
+                      }
+                    }}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Testar "Não Iniciou Ponto"
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await axios.post(`${API}/notifications/test-clock-out-reminder`);
+                        toast.success('Notificação de lembrete de saída enviada!');
+                      } catch (error) {
+                        toast.error('Erro ao enviar notificação');
+                      }
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Testar "Não Parou Ponto"
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const response = await axios.post(`${API}/notifications/test-overtime-admin`);
+                        toast.success(response.data.message);
+                      } catch (error) {
+                        toast.error('Erro ao enviar notificação');
+                      }
+                    }}
+                    className="bg-yellow-600 hover:bg-yellow-700"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Testar "Pedido Horas Extra"
+                  </Button>
+                </div>
+              </div>
+
               {/* Autorizações de Horas Extra */}
               <div className="glass-effect p-6 rounded-xl">
                 <div className="flex justify-between items-center mb-4">
