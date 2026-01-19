@@ -18,8 +18,6 @@ const OvertimeAuthorization = () => {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   
-  const preSelectedAction = searchParams.get('action'); // 'approve' or 'reject'
-  
   const fetchAuthorization = async () => {
     try {
       const response = await axios.get(`${API}/overtime/authorization/${token}`);
