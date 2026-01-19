@@ -4,7 +4,7 @@ import { API } from '@/App';
 import { Bell, X, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBmYRJcwnwXPXRU6t0Bw';
+const VAPID_PUBLIC_KEY = 'BJCgtNpncNcP5DTu_5qf3pltLEte5V8X9ZcYqn67_XTXsl-zaWJdFCbG2N4MXweZFyFCTl8W-U0CIeABuwLWCuQ';
 
 const NotificationBell = ({ user }) => {
   const [notifications, setNotifications] = useState([]);
