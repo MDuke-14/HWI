@@ -244,6 +244,8 @@ class TecnicoRelatorio(BaseModel):
     kms_deslocacao: float = 0  # Será multiplicado por 2 no frontend
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
+    hora_inicio: Optional[str] = None  # Hora de início (HH:MM) para Folha de Horas
+    hora_fim: Optional[str] = None  # Hora de fim (HH:MM) para Folha de Horas
     ordem: int = 0
 
 class CronometroOT(BaseModel):
