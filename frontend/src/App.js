@@ -9,6 +9,7 @@ import Reports from '@/components/Reports';
 import Vacations from '@/components/Vacations';
 import Absences from '@/components/Absences';
 import AdminDashboard from '@/components/AdminDashboard';
+import AdminTimeEntries from '@/components/AdminTimeEntries';
 import Calendar from '@/components/Calendar';
 import TechnicalReports from '@/components/TechnicalReports';
 import { Toaster } from '@/components/ui/sonner';
