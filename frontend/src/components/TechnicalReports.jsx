@@ -265,6 +265,18 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [modoNovoEquipamento, setModoNovoEquipamento] = useState(false);
   const [equipamentosClienteOT, setEquipamentosClienteOT] = useState([]);
   const [equipamentoOTSelecionado, setEquipamentoOTSelecionado] = useState('novo');
+  
+  // Edição de Equipamentos
+  const [showEditEquipamentoModal, setShowEditEquipamentoModal] = useState(false);
+  const [editingEquipamento, setEditingEquipamento] = useState(null);
+  const [editEquipamentoFormData, setEditEquipamentoFormData] = useState({
+    tipologia: '',
+    marca: '',
+    modelo: '',
+    numero_serie: '',
+    ano_fabrico: ''
+  });
+  const [editingEquipamentoPrincipal, setEditingEquipamentoPrincipal] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'clientes') {
