@@ -893,7 +893,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const openEditTecnicoModal = (tecnico) => {
+  const openEditTecnicoModal = async (tecnico) => {
+    // Buscar utilizadores para o dropdown
+    await fetchAllSystemUsers();
+    
     setSelectedTecnico(tecnico);
     setTecnicoFormData({
       tecnico_id: tecnico.tecnico_id || '',
