@@ -4199,25 +4199,30 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Técnico Modal */}
-      <Dialog open={showAddTecnicoModal} onOpenChange={setShowAddTecnicoModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Plus className="w-5 h-5 text-blue-400" />
-              Adicionar Técnico
-            </DialogTitle>
-          </DialogHeader>
+      {/* Add Técnico Modal - Componente Extraído */}
+      <TecnicoModal
+        open={showAddTecnicoModal}
+        onOpenChange={setShowAddTecnicoModal}
+        isEditing={false}
+        tecnicoFormData={tecnicoFormData}
+        setTecnicoFormData={setTecnicoFormData}
+        allUsers={allSystemUsers}
+        onSubmit={handleAddTecnico}
+      />
 
-          <form onSubmit={handleAddTecnico} className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tecnico_nome" className="text-gray-300">
-                  Nome do Técnico *
-                </Label>
-                <select
-                  id="tecnico_nome"
-                  value={tecnicoFormData.tecnico_nome}
+      {/* Edit Técnico Modal - Componente Extraído */}
+      <TecnicoModal
+        open={showEditTecnicoModal}
+        onOpenChange={setShowEditTecnicoModal}
+        isEditing={true}
+        tecnicoFormData={tecnicoFormData}
+        setTecnicoFormData={setTecnicoFormData}
+        allUsers={allSystemUsers}
+        onSubmit={handleEditTecnico}
+      />
+
+
+      {/* Add Fotografia Modal */}
                   onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
                   className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
                   required
