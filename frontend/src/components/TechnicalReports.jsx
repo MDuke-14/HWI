@@ -7173,70 +7173,81 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </p>
                 
                 {Object.entries(folhaHorasData.datas_por_tecnico || {}).length > 0 ? (
-                  <div className="space-y-4">
-                    {Object.entries(folhaHorasData.datas_por_tecnico).map(([tecnicoId, datas]) => {
-                      const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
-                      return (
-                        <div key={tecnicoId} className="bg-[#0f0f0f] p-4 rounded-lg">
-                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700">
-                            <User className="w-4 h-4 text-blue-400" />
-                            <span className="text-white font-medium">{tecnico?.nome || 'Técnico'}</span>
+                  <div className="space-y-3">
+                    {/* Criar lista flat de técnico+data e ordenar cronologicamente */}
+                    {Object.entries(folhaHorasData.datas_por_tecnico)
+                      .flatMap(([tecnicoId, datas]) => {
+                        const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
+                        return datas.map(data => ({
+                          tecnicoId,
+                          tecnicoNome: tecnico?.nome || 'Técnico',
+                          data
+                        }));
+                      })
+                      .sort((a, b) => new Date(a.data) - new Date(b.data))
+                      .map(({ tecnicoId, tecnicoNome, data }) => {
+                        const chave = `${tecnicoId}_${data}`;
+                        const valores = folhaHorasExtras[chave] || { dieta: '', portagens: '', despesas: '' };
+                        const dataObj = new Date(data + 'T00:00:00');
+                        const dataFormatada = dataObj.toLocaleDateString('pt-PT');
+                        const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+                        const diaSemana = diasSemana[dataObj.getDay()];
+                        
+                        return (
+                          <div key={chave} className="bg-[#0f0f0f] p-4 rounded-lg">
+                            <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-700">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-blue-400" />
+                                <span className="text-white font-medium">{tecnicoNome}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="w-4 h-4 text-green-400" />
+                                <span className="text-green-400 font-medium">{dataFormatada}</span>
+                                <span className="text-gray-500">({diaSemana})</span>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <Label className="text-xs text-gray-500">Dieta (€)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={valores.dieta}
+                                  onChange={(e) => updateFolhaHorasExtra(chave, 'dieta', e.target.value)}
+                                  className="bg-[#1a1a1a] border-gray-700 text-white h-9"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-500">Portagens (€)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={valores.portagens}
+                                  onChange={(e) => updateFolhaHorasExtra(chave, 'portagens', e.target.value)}
+                                  className="bg-[#1a1a1a] border-gray-700 text-white h-9"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-500">Despesas (€)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={valores.despesas}
+                                  onChange={(e) => updateFolhaHorasExtra(chave, 'despesas', e.target.value)}
+                                  className="bg-[#1a1a1a] border-gray-700 text-white h-9"
+                                />
+                              </div>
+                            </div>
                           </div>
-                          
-                          <div className="space-y-3">
-                            {datas.map(data => {
-                              const chave = `${tecnicoId}_${data}`;
-                              const valores = folhaHorasExtras[chave] || { dieta: '', portagens: '', despesas: '' };
-                              const dataFormatada = new Date(data + 'T00:00:00').toLocaleDateString('pt-PT');
-                              
-                              return (
-                                <div key={data} className="grid grid-cols-4 gap-3 items-center">
-                                  <div className="text-gray-400 text-sm">
-                                    {dataFormatada}
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Dieta (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      value={valores.dieta}
-                                      onChange={(e) => updateFolhaHorasExtra(chave, 'dieta', e.target.value)}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-9"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Portagens (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      value={valores.portagens}
-                                      onChange={(e) => updateFolhaHorasExtra(chave, 'portagens', e.target.value)}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-9"
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Despesas (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      value={valores.despesas}
-                                      onChange={(e) => updateFolhaHorasExtra(chave, 'despesas', e.target.value)}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-9"
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 ) : (
                   <div className="text-center py-6 text-gray-500">
