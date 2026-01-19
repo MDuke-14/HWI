@@ -90,6 +90,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [equipamentoOTs, setEquipamentoOTs] = useState([]);
   const [selectedEquipamento, setSelectedEquipamento] = useState(null);
   
+  // Modal iniciar cronómetro após criar OT
+  const [showIniciarCronoModal, setShowIniciarCronoModal] = useState(false);
+  const [novaOTParaCrono, setNovaOTParaCrono] = useState(null);
+  const [cronoTecnicosSelecionados, setCronoTecnicosSelecionados] = useState([]);
+  const [cronoTipo, setCronoTipo] = useState('trabalho');
+  
   // Relatórios modals
   const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
   const [showViewRelatorioModal, setShowViewRelatorioModal] = useState(false);
