@@ -694,7 +694,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     await fetchTecnicosRelatorio(relatorio.id);
     await fetchIntervencoesRelatorio(relatorio.id);
     await fetchFotografiasRelatorio(relatorio.id);
-    await fetchAssinatura(relatorio.id);
+    await fetchAssinaturas(relatorio.id);
     await fetchEquipamentosOT(relatorio.id);
     await fetchMateriais(relatorio.id);
     await fetchPedidosCotacao(relatorio.id);
@@ -1941,7 +1941,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           toast.success('Assinatura digital salva com sucesso!');
           setShowAssinaturaModal(false);
-          fetchAssinatura(selectedRelatorio.id);
+          fetchAssinaturas(selectedRelatorio.id);
         } catch (error) {
           toast.error(formatErrorMessage(error));
         } finally {
@@ -1974,7 +1974,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       toast.success('Assinatura manual salva com sucesso!');
       setShowAssinaturaModal(false);
-      fetchAssinatura(selectedRelatorio.id);
+      fetchAssinaturas(selectedRelatorio.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
     } finally {
