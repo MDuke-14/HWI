@@ -700,7 +700,6 @@ async def process_authorization_decision(
     if datetime.now() > expires_at:
         return {"status": "error", "message": "Token expirado"}
     
-    user_id = auth_request.get("user_id")
     entry_id = auth_request.get("entry_id")
     request_type = auth_request.get("request_type")
     date_str = auth_request.get("date")
