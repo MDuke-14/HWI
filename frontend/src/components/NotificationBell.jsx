@@ -169,7 +169,7 @@ const NotificationBell = ({ user }) => {
           </span>
         )}
         {/* Indicador se push não está ativo */}
-        {pushSupported && pushPermission !== 'granted' && (
+        {pushSupported && !pushSubscribed && (
           <span className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full w-2 h-2" title="Notificações push não ativas" />
         )}
       </button>
