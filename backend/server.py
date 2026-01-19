@@ -550,6 +550,38 @@ class CompanyInfo(BaseModel):
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
 
+
+class Tarifa(BaseModel):
+    """Tarifas para cálculo de valores na Folha de Horas"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    numero: int  # 1, 2, 3...
+    nome: str  # Ex: "Tarifa 1", "Tarifa Premium"
+    valor_por_hora: float  # Valor em euros por hora
+    ativo: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+
+class TarifaCreate(BaseModel):
+    numero: int
+    nome: str
+    valor_por_hora: float
+
+
+class TarifaUpdate(BaseModel):
+    numero: Optional[int] = None
+    nome: Optional[str] = None
+    valor_por_hora: Optional[float] = None
+    ativo: Optional[bool] = None
+
+
+class FolhaHorasRequest(BaseModel):
+    """Request para gerar PDF da Folha de Horas"""
+    tarifas_por_tecnico: dict  # {tecnico_id: tarifa_valor}
+    dados_extras: dict  # {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
+
+
 # ============ Auth Functions ============
 
 def verify_password(plain_password, hashed_password):
