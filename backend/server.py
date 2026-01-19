@@ -2186,6 +2186,11 @@ async def update_tecnico_relatorio(
             update_data["data_trabalho"] = tecnico_data["data_trabalho"]
         else:
             update_data["data_trabalho"] = tecnico_data["data_trabalho"].isoformat()
+    # Novos campos para Folha de Horas
+    if "hora_inicio" in tecnico_data:
+        update_data["hora_inicio"] = tecnico_data["hora_inicio"]
+    if "hora_fim" in tecnico_data:
+        update_data["hora_fim"] = tecnico_data["hora_fim"]
     
     await db.tecnicos_relatorio.update_one(
         {"id": tecnico_id, "relatorio_id": relatorio_id},
