@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 class TimezoneFixTester:
-    def __init__(self, base_url="https://ot-workflow-plus.preview.emergentagent.com"):
+    def __init__(self, base_url="https://timetrack-pro-53.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
