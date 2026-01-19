@@ -6273,6 +6273,133 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal Iniciar Cronómetro após criar OT */}
+      <Dialog open={showIniciarCronoModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowIniciarCronoModal(false);
+          setNovaOTParaCrono(null);
+          setCronoTecnicosSelecionados([]);
+        }
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <PlayCircle className="w-5 h-5 text-green-400" />
+              Iniciar Cronómetro - OT #{novaOTParaCrono?.numero}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <p className="text-gray-400 text-sm">
+              OT criada com sucesso! Deseja iniciar um cronómetro?
+            </p>
+
+            {/* Tipo de Cronómetro */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">Tipo de Cronómetro</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  onClick={() => setCronoTipo('trabalho')}
+                  className={`flex-1 ${cronoTipo === 'trabalho' 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-gray-700 hover:bg-gray-600'}`}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Trabalho
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setCronoTipo('viagem')}
+                  className={`flex-1 ${cronoTipo === 'viagem' 
+                    ? 'bg-orange-600 hover:bg-orange-700' 
+                    : 'bg-gray-700 hover:bg-gray-600'}`}
+                >
+                  <Car className="w-4 h-4 mr-2" />
+                  Viagem
+                </Button>
+              </div>
+            </div>
+
+            {/* Seleção de Técnicos */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">Selecionar Técnico(s)</Label>
+              <div className="bg-[#0f0f0f] border border-gray-700 rounded-md max-h-48 overflow-y-auto">
+                {allSystemUsers.length > 0 ? (
+                  allSystemUsers.map((userItem) => {
+                    const isSelected = cronoTecnicosSelecionados.some(t => t.id === userItem.id);
+                    return (
+                      <div
+                        key={userItem.id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setCronoTecnicosSelecionados(
+                              cronoTecnicosSelecionados.filter(t => t.id !== userItem.id)
+                            );
+                          } else {
+                            setCronoTecnicosSelecionados([
+                              ...cronoTecnicosSelecionados,
+                              { id: userItem.id, nome: userItem.nome }
+                            ]);
+                          }
+                        }}
+                        className={`flex items-center gap-3 p-3 cursor-pointer border-b border-gray-700 last:border-b-0 hover:bg-gray-800 ${
+                          isSelected ? 'bg-blue-900/30' : ''
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                          isSelected 
+                            ? 'bg-blue-600 border-blue-600' 
+                            : 'border-gray-600'
+                        }`}>
+                          {isSelected && <span className="text-white text-xs">✓</span>}
+                        </div>
+                        <User className="w-4 h-4 text-gray-400" />
+                        <span className="text-white">{userItem.nome}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-4 text-gray-500 text-center">
+                    Nenhum utilizador encontrado
+                  </div>
+                )}
+              </div>
+              {cronoTecnicosSelecionados.length > 0 && (
+                <p className="text-sm text-gray-400 mt-2">
+                  {cronoTecnicosSelecionados.length} técnico(s) selecionado(s)
+                </p>
+              )}
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => {
+                  setShowIniciarCronoModal(false);
+                  setNovaOTParaCrono(null);
+                  setCronoTecnicosSelecionados([]);
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Ignorar
+              </Button>
+              <Button
+                onClick={handleIniciarCronoNovaOT}
+                disabled={cronoTecnicosSelecionados.length === 0}
+                className={`flex-1 ${cronoTipo === 'trabalho' 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-orange-600 hover:bg-orange-700'} disabled:opacity-50`}
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                Iniciar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
