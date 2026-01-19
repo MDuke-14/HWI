@@ -3030,19 +3030,54 @@ const TechnicalReports = ({ user, onLogout }) => {
                 
                 {/* Lista de Equipamentos */}
                 <div className="space-y-2">
-                  {/* Equipamento principal (da OT) */}
-                  <div className="bg-black/30 p-3 rounded border border-gray-600">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white font-medium">{selectedRelatorio.equipamento_marca} - {selectedRelatorio.equipamento_tipologia}</p>
-                        <p className="text-gray-400 text-sm">Modelo: {selectedRelatorio.equipamento_modelo}</p>
-                        {selectedRelatorio.equipamento_numero_serie && (
-                          <p className="text-gray-400 text-xs">Série: {selectedRelatorio.equipamento_numero_serie}</p>
-                        )}
+                  {/* Equipamento principal (da OT) - só mostra se tiver dados */}
+                  {(selectedRelatorio.equipamento_marca || selectedRelatorio.equipamento_tipologia || selectedRelatorio.equipamento_modelo) && (
+                    <div className="bg-black/30 p-3 rounded border border-gray-600">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-white font-medium">{selectedRelatorio.equipamento_marca} - {selectedRelatorio.equipamento_tipologia}</p>
+                          <p className="text-gray-400 text-sm">Modelo: {selectedRelatorio.equipamento_modelo}</p>
+                          {selectedRelatorio.equipamento_numero_serie && (
+                            <p className="text-gray-400 text-xs">Série: {selectedRelatorio.equipamento_numero_serie}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">Principal</span>
+                          <Button
+                            onClick={async () => {
+                              if (window.confirm('Tem certeza que deseja remover o equipamento principal?')) {
+                                try {
+                                  await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}`, {
+                                    equipamento_tipologia: '',
+                                    equipamento_marca: '',
+                                    equipamento_modelo: '',
+                                    equipamento_numero_serie: '',
+                                    equipamento_ano_fabrico: ''
+                                  });
+                                  setSelectedRelatorio({
+                                    ...selectedRelatorio,
+                                    equipamento_tipologia: '',
+                                    equipamento_marca: '',
+                                    equipamento_modelo: '',
+                                    equipamento_numero_serie: '',
+                                    equipamento_ano_fabrico: ''
+                                  });
+                                  toast.success('Equipamento principal removido');
+                                } catch (error) {
+                                  toast.error('Erro ao remover equipamento');
+                                }
+                              }
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">Principal</span>
                     </div>
-                  </div>
+                  )}
                   
                   {/* Equipamentos adicionais */}
                   {equipamentosOT.map((equip) => (
