@@ -1100,11 +1100,71 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchEquipamentosClienteParaOT = async (clienteId) => {
+    try {
+      const response = await axios.get(`${API}/equipamentos?cliente_id=${clienteId}`);
+      setEquipamentosClienteOT(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar equipamentos do cliente:', error);
+      setEquipamentosClienteOT([]);
+    }
+  };
+
+  const handleEquipamentoOTChange = (value) => {
+    setEquipamentoOTSelecionado(value);
+    
+    if (value === 'novo') {
+      // Limpar campos para criar novo
+      setEquipamentoFormData({
+        tipologia: '',
+        marca: '',
+        modelo: '',
+        numero_serie: '',
+        ano_fabrico: ''
+      });
+    } else {
+      // Preencher campos com dados do equipamento existente
+      const equipamento = equipamentosClienteOT.find(e => e.id === value);
+      if (equipamento) {
+        setEquipamentoFormData({
+          tipologia: equipamento.tipologia || '',
+          marca: equipamento.marca || '',
+          modelo: equipamento.modelo || '',
+          numero_serie: equipamento.numero_serie || '',
+          ano_fabrico: equipamento.ano_fabrico || ''
+        });
+      }
+    }
+  };
+
+  const openAddEquipamentoModal = () => {
+    // Buscar equipamentos do cliente da OT
+    if (selectedRelatorio?.cliente_id) {
+      fetchEquipamentosClienteParaOT(selectedRelatorio.cliente_id);
+    }
+    // Reset do form
+    setEquipamentoOTSelecionado('novo');
+    setEquipamentoFormData({
+      tipologia: '',
+      marca: '',
+      modelo: '',
+      numero_serie: '',
+      ano_fabrico: ''
+    });
+    setShowAddEquipamentoModal(true);
+  };
+
   const handleAddEquipamento = async (e) => {
     e.preventDefault();
     
     try {
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`, equipamentoFormData);
+      // Se é um equipamento novo, enviar flag para criar na base do cliente
+      const dataToSend = {
+        ...equipamentoFormData,
+        criar_na_base_cliente: equipamentoOTSelecionado === 'novo'
+      };
+      
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`, dataToSend);
       toast.success('Equipamento adicionado!');
       setShowAddEquipamentoModal(false);
       setEquipamentoFormData({
@@ -1114,6 +1174,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         numero_serie: '',
         ano_fabrico: ''
       });
+      setEquipamentoOTSelecionado('novo');
       fetchEquipamentosOT(selectedRelatorio.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
