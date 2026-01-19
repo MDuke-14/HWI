@@ -822,7 +822,9 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const openAddTecnicoModal = () => {
+  const openAddTecnicoModal = async () => {
+    // Buscar utilizadores para o dropdown
+    await fetchAllSystemUsers();
     setShowAddTecnicoModal(true);
   };
 
