@@ -1,271 +1,159 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to enhance a time-tracking and work-order (OT) management application. The work evolved through a long series of iterative feature requests and bug fixes.
+The user's initial goal was to continue enhancing a full-stack time-tracking and work-order (OT) management application. The user provided a detailed new feature request:
 
-The most recent requests from the user include:
-1.  **Multiple Equipment per OT:** Allow a single Work Order (OT) to be associated with multiple pieces of equipment, instead of just one.
-2.  **Signature UI/UX Fixes:**
-    *   The digital signature canvas was opening the mobile keyboard, making it impossible to sign.
-    *   The user wants to separate the Digital Signature and Manual Signature (typing name) into two distinct cards.
-    *   The user then requested to remove the name fields from the digital signature card and have a single Save button that captures both the drawn signature and the typed names.
-    *   The digital signature was not appearing as an image in the OT view.
-3.  **UI Reorganization:**
-    *   The user requested to remove the Horas Extras tab.
-    *   Remove the Histórico and Relatórios buttons from the user list in the Admin Dashboard.
-    *   Move the real-time status information for all users from a floating button in the Admin Dashboard to the existing purple floating button on the main Dashboard, making it the central point for admins to see user status.
-4.  **Implement Push Notifications:** Create a system for native push notifications for reminders (clock-in, long breaks) and overtime alerts for admins, which should work even when the browser is closed.
-5.  **Fix Login Issues & Deployment:** The user has faced persistent deployment issues, including a blank white screen, 502 Bad Gateway errors, and login failures (Erro ao autenticar) in the production environment. These issues are critical and causing user frustration.
+**Folha de Horas (Timesheet) Feature:**
+1.  Add a Folha de Horas button to each OT (Work Order).
+2.  Clicking the button should open a modal to generate a horizontal PDF timesheet.
+3.  The PDF must contain a detailed table with the following columns: Data, Dia de Semana, Técnicos, Horas, Tarifa, Total Valor, Km's, Preço por Km, Total de valor de Km's, Inicio, Pausa, Fim, Dieta, Portagens, Despesas, and Observações.
+4.  The system needs a new section in the admin dashboard for managing Tarifas (rates), which are selectable per technician when generating the timesheet.
+5.  The modal should allow an admin to input values for Dieta (allowance), Portagens (tolls), and Despesas (expenses) before generating the PDF.
+6.  The timesheet entries in the modal and the final PDF must be sorted chronologically by date.
+7.  The modal must display the date and day of the week next to each technician entry.
+
+After the implementation and fixes for the Folha de Horas, the user requested to prioritize refactoring the oversized  component.
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-The project is a comprehensive full-stack application for time tracking and Ordem de Trabalho (OT) management.
--   **Backend:** A FastAPI server () with numerous endpoints for managing Users, OTs, Clients, Equipment, Interventions, Technicians, Photos, and Signatures. It handles complex business logic for hour calculations, PDF generation, and email notifications. It connects to a MongoDB database.
--   **Frontend:** A React application, with the majority of the logic concentrated in a few large components like  (for OTs), , and . It features real-time status popups, various modals for data entry, and PDF report generation.
--   **Key Features:** User authentication, clock-in/out, detailed OT management with status tracking, dynamic interventions, photo uploads (stored as Base64 in DB), digital/manual signatures (stored as Base64 in DB), PDF report generation (for monthly reports and OTs) with a company logo, and an admin dashboard with user management and real-time status views.
+The application is a comprehensive OT management system. In this session, a major new feature, Folha de Horas (Timesheet), was fully implemented. This includes a new backend PDF generator (), a new data model and CRUD endpoints for managing  (rates), and a new UI in the admin dashboard for rate management. The frontend was updated to allow generating this new PDF from a modal with fields for selecting rates and adding expenses.
+
+A major refactoring of the massive  component (over 7,200 lines) has just begun. Several modal components have been extracted into a new  directory, and the process of integrating them back into the main component is underway.
 
 **Last working item**:
--   **Last item agent was working:** The agent was implementing the user's request to allow **multiple pieces of equipment per OT**. The agent had already created the necessary backend models and API endpoints. On the frontend, it added the state, API functions, and UI elements (a list display, an Add Equipment button, and a new modal). However, during the implementation, a syntax error was introduced.
+-   **Last item agent was working:** Refactoring the  component. The agent had just updated the extracted  to accept callback functions (, ) and was in the process of replacing the inline Add/Edit Técnico modals with this new component. The old inline modal code was identified as residual and needs to be removed.
 -   **Status:** IN PROGRESS
--   **Agent Testing Done:** N
--   **Which testing method agent to use?**
-    1.  First, fix the frontend compilation error.
-    2.  Then, use the **frontend testing agent** to conduct a full test of the new multiple equipment feature.
+-   **Agent Testing Done:** N (for the latest refactoring step)
+-   **Which testing method agent to use?** Frontend testing agent. The agent must perform regression testing on all functionalities related to the extracted modals (, , , , etc.) to ensure that moving the logic to child components did not break anything. The tests should cover opening the modals, interacting with forms, and submitting data.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Frontend Build Failure (P0)**
-    -   **Description:** The application build is failing with a  in . This was caused by incorrectly inserting the JSX for the new Add Equipment modal inside another JSX element's structure.
-    -   **Attempted fixes:** The agent identified the misplaced code block and moved it to what it believes is the correct location (before the Edit Relatório modal). The agent initiated a compile but did not verify the result.
+-   **Issue 1: Unresolved Testing Agent Failure (P1)**
+    -   **Description:** From a previous session, the testing agent reported an  and a Testing Not Completed status when testing the Edit OT Equipment feature. The user instructed to prioritize the Folha de Horas feature, so this was postponed. The stability of the equipment editing feature remains unknown.
+    -   **Attempted fixes:** None. The agent was instructed to work on a higher-priority task.
     -   **Next debug checklist:**
-        1.  Check frontend logs for compilation success: (node:234) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:83) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:83) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:77) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:77) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:81) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:81) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:1803) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:1803) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:75) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:75) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:720) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:720) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:78) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:78) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:82) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:82) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:81) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:81) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:70) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:70) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:70) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:70) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:59) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:59) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:734) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:734) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:69) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:69) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:65) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:68) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:3024) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:3024) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:66) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:66) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-(node:67) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option..
-        2.  If it compiles, take a screenshot of the app to ensure it loads without a white screen or error overlay.
-        3.  If it fails, analyze the new error message. The issue is almost certainly related to the placement of the new modal's JSX code within the  file's return statement. It must be a sibling to the other modals, not nested inside another element.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical, build-breaking error that makes the entire frontend unusable. Fixing it is necessary to continue any development or testing.
-    -   **Status:** IN PROGRESS
+        1.  Invoke the  with specific instructions to test editing an existing equipment item within an OT.
+        2.  Analyze the test report and logs if the failure persists.
+        3.  Check the backend endpoint  and the frontend handler  in  (or its newly refactored child component).
+    -   **Why fix this issue and what will be achieved with the fix?** This is a core feature that allows users to correct equipment information on work orders. Fixing it ensures data integrity and a stable user experience.
+    -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** No
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1: Complete Multiple Equipment per OT Feature (P0)**
-    -   **Where to resume:** Resume after fixing the frontend build error (Issue 1). The next step is to perform end-to-end testing of the feature.
-    -   **Testing steps:**
-        1.  Log in and navigate to the OTs section.
-        2.  Open an existing OT. The modal should now display a list of equipment instead of a single equipment entry.
-        3.  Click the Adicionar Equipamento button.
-        4.  Verify the Adicionar Equipamento à OT modal opens, listing available equipment for that client.
-        5.  Select and add a new piece of equipment.
-        6.  Confirm the new equipment appears in the list on the OT view modal.
-        7.  Check the database to ensure a new document was created in the  collection linking the OT and the equipment.
-    -   **What will be achieved with this?** This will fulfill a key user requirement, making the OT system more flexible.
+-   **Task 1: Complete Refactoring of  (P0)**
+    -   **Description:** The  component (originally >7,200 lines) is being broken down into smaller, manageable components located in . This task involves extracting the logic and JSX for each modal and section into its own file and then integrating the new components back into , passing state and handlers as props.
+    -   **Where to resume:** The agent just substituted the inline Add/Edit Técnico modals with the new  component. The immediate next step is to delete the now-redundant JSX and logic for those modals from  (lines ~4218 to ~4594). Afterward, continue the same process for the remaining extracted components: , , , and .
+    -   **What will be achieved with this?** A significantly more maintainable, readable, and less error-prone frontend codebase. This will make future feature development faster and safer.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on something:** Issue 1: Frontend Build Failure.
+    -   **Should Test frontend/backend/both after fix?** Frontend (heavy regression testing required).
+    -   **Blocked on something:** No.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) OneDrive Integration:** The user has provided a detailed plan to use OneDrive as the central storage for all files (photos, signatures, PDFs) instead of Base64 in MongoDB. The agent has a playbook but needs user credentials (Client ID, Secret, Tenant ID) from an Azure App Registration. This is a major task.
+    -   **(P1) OneDrive Integration:** Use OneDrive as the central storage for all files (photos, signatures, PDFs) instead of storing Base64 strings in MongoDB.
 -   **Future Tasks:**
-    -   **(P2) Implement  workflow:** This was part of the original plan but has not been started.
-    -   **(P2) Implement UI for :** The component exists but is likely a placeholder.
-    -   **(P2) Implement Download Todos os Relatórios button:** A button in the client view modal to download all OTs for that client. This was deferred because the backend endpoint was missing.
+    -   **(P2) Enhance Calendar UI:** The component  could be enhanced further.
 
 **Completed work in this session**
--   **Core OT/Time-Tracking Logic:**
-    -   Fixed numerous bugs in the hour calculation logic, finally settling on a system that truncates seconds and correctly categorizes regular, overtime, and special hours (weekends/holidays).
-    -   Created an admin tool (Verificar Horas) to recalculate historical time entries with the correct logic.
-    -   Added Observações from the dashboard to the monthly PDF report.
--   **OT Feature - Photo Uploads:**
-    -   Implemented a feature to upload photos (Componentes Adicionais) to an OT.
-    -   Resolved multiple bugs related to image display, including fixing broken URLs and removing auth from the serving endpoint.
-    -   **Crucially, refactored storage from ephemeral filesystem to Base64 in MongoDB to make it work in a containerized production environment.**
--   **OT Feature - Signatures:**
-    -   Implemented a digital (canvas) and manual (text input) signature system.
-    -   Refined the UI multiple times based on user feedback, settling on a single Save button for both.
-    -   Fixed a bug where the signature canvas would open the mobile keyboard.
-    -   Refactored signature storage to Base64 in MongoDB.
--   **PDF Generation & Email:**
-    -   Implemented a feature to email the OT PDF to clients.
-    -   Added the company logo to all generated PDFs (OT and monthly reports).
-    -   Optimized PDF layout for compactness and made table rows auto-adjust height for long text.
-    -   Fixed a critical bug where failed PDF downloads were saving a JSON error as a corrupted PDF file.
--   **UI/UX and Admin Features:**
-    -   Created a new real-time status popup for admins (on the Dashboard) and a personal one for users.
-    -   Consolidated admin/user popups onto the main Dashboard button as requested.
-    -   Removed the Horas Extras tab and extra buttons (Histórico, Relatórios) from the Admin Dashboard user list.
--   **Deployment & Bug Fixes:**
-    -   Addressed numerous critical deployment blockers, including  errors, blank white screens, and login failures.
-    -   Identified the root cause of many deployment issues: incorrect/missing environment variables (, , ) in the production environment.
-    -   Fixed multiple  and  issues in the backend that were causing it to crash.
+-   **Feature - Folha de Horas (Timesheet) Implemented:**
+    -   Created a new admin page ( with a Tarifas tab) to perform CRUD operations on technician rates.
+    -   Added a Folha de Horas button inside the OT details modal.
+    -   Implemented a modal that allows selecting rates per technician and entering extra costs (allowances, tolls, expenses) for a given OT.
+    -   Developed a backend endpoint () and a PDF generator () to create a horizontal, chronologically-sorted timesheet PDF with all required calculations.
+-   **Bugfix - Folha de Horas PDF:**
+    -   Fixed empty / columns by adding  and  fields to manual time entries (both frontend and backend).
+    -   Corrected the  calculation logic in the PDF generator.
+    -   Implemented chronological sorting for all entries in the PDF and the frontend modal.
+-   **Refactoring -  Started:**
+    -   Created a new directory .
+    -   Extracted 8 modal/section components from  into separate files (, , , , , , , ).
+    -   Successfully integrated  and  back into the main component.
+
+**Earlier issues found/mentioned but not fixed**
+-   **Issue 1: Testing Agent Failure during Equipment Edit Test**
+    -   As described in All Pending/In progress Issue list. The user deprioritized this to focus on new features and refactoring.
+
+**Known issue recurrence from previous fork**
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frameworks**: FastAPI (Python), React (JavaScript).
--   **Database**: MongoDB. All  fields are handled via Pydantic models to avoid serialization issues with ObjectId.
--   **Styling**: Tailwind CSS, Shadcn UI components.
--   **File Storage**: All user-uploaded files (photos, signatures) are stored as **Base64-encoded strings directly within the MongoDB documents** ( and  collections). This was a critical change to support ephemeral production environments.
--   **PDF Generation**: ReportLab is used on the backend to generate complex PDFs for OTs and monthly reports.
--   **Notifications**: A background task () runs every 15 minutes to check for notification conditions. Web Push notifications are sent using the  library and VAPID keys.
--   **Deployment:** The application is deployed to a Kubernetes environment. A recurring and critical issue is the configuration of environment variables, which must be set in the deployment platform's panel, as  files are ignored by git.
+-   **Component Refactoring:** Breaking down a large, monolithic React component () into smaller, single-responsibility components to improve maintainability. Passing state and callback functions as props.
+-   **Complex PDF Generation (ReportLab):** Created a new, complex, horizontal PDF document from scratch using ReportLab, involving custom styling, tables, data aggregation, and dynamic calculations.
+-   **Dynamic Data Handling:** Implemented logic to handle different types of time entries (stopwatch vs. manual) and merge them into a single, sorted dataset for the PDF.
+-   **State Management for Dynamic Forms:** Managed complex state for dynamically generated form fields in the Folha de Horas modal (e.g., one set of inputs per technician per day).
 
 **key DB schema**
--   : Main work order document.
--   : Client's equipment.
--   : **(New)** Links OTs to multiple . Schema: .
--   : .
--   : .
--   : User clock-in/out records. Contains fields for hour breakdowns: , , , .  was recently removed and merged into .
--   : Stores user browser subscription info for push notifications.
+-   **tarifas** (NEW):  - Stores the different billing rates for technicians.
+-   **tecnicos_relatorio**: Modified to include optional  and  for manual time entries.
 
 **All files of reference**
--   : Created/updated to add UI for multiple equipment. **Currently contains a syntax error.**
--   : Updated with new endpoints and models for associating multiple equipment with an OT.
+-   **/app/frontend/src/components/TechnicalReports.jsx**: The main component being refactored.
+-   **/app/frontend/src/components/technical-reports/**: The directory containing all the newly extracted components.
+-   **/app/backend/server.py**: Contains all new backend endpoints for rates and the timesheet feature.
+-   **/app/backend/folha_horas_pdf.py**: The new PDF generator for the timesheet.
+-   **/app/frontend/src/components/AdminDashboard.jsx**: Contains the UI for managing rates.
+-   **/app/memory/PRD.md**: Updated with the new feature and refactoring status.
+
+**Areas that need refactoring**:
+-   **/app/frontend/src/components/TechnicalReports.jsx**: The refactoring is in progress but far from complete. The remaining ~7,000 lines of logic and JSX for modals (Equipment, Materials, Signatures, etc.) must be fully extracted and integrated.
+
+**key api endpoints**
+-   **New Endpoints:**
+    -   : Create a new rate.
+    -   : Get all rates.
+    -   : Update a rate.
+    -   : Delete a rate.
+    -   : Get all processed data needed for the timesheet modal.
+    -   : Generate and return the timesheet PDF.
+-   **Modified Endpoints:**
+    -   : Updated to accept  and .
+    -   : Updated to accept  and .
 
 **Critical Info for New Agent**
--   **Deployment is the most critical issue.** The user is frustrated with failed deployments. The root cause has been consistently identified as a mismatch between the local environment (using  files) and the production environment (which requires variables set in the Emergent panel). The last agent hardcoded MongoDB defaults as a desperate measure. The next agent should revert this and guide the user to set  and  correctly in their deployment settings.
--   **The hour calculation logic is extremely sensitive and tied to employee payment.** The user has provided a definitive script and logic. Do not deviate from it. The current implementation in  should be considered the source of truth. Any changes must be confirmed.
--   **File Storage is Base64 in MongoDB.** To solve deployment issues with ephemeral file systems, all images (photos, signatures) are stored as Base64 strings in the database. This increases DB size but guarantees persistence. The OneDrive integration is a future task to address this.
+-   **PRIORITY 1 is the Refactoring Task.** The user has explicitly approved continuing this work. Proceed by integrating the remaining components one by one (, , , etc.). This will likely involve adapting the child components to accept state and callback functions as props from .
+-   **Test Incrementally.** After integrating each component, run a quick check to ensure the frontend compiles and the specific functionality of that modal hasn't broken. Full regression testing should be done after a significant batch of components are integrated.
+-   The Folha de Horas feature is complete and verified by the user, but the code for its modal now lives in .
+-   The P1 issue regarding Edit OT Equipment is still pending and should be addressed after the refactoring is in a good state.
 
-**documents created in this job**
--   
--   
--   
--   
--   
--   
--   
--   
--   
+**documents and test reports created in this job**
+-   /app/memory/PRD.md
+-   /app/test_reports/iteration_3.json
 
-**Last 10 User Messages and any pending user messages**
-1.  **Request:** Admins should only use the purple button on the dashboard, which should show all users' entries for the day.
-2.  **Request:** Implement native push notifications that work even when the browser/PWA is closed.
-3.  **Bug:** Login fails with 502 Bad Gateway. (Agent fixed backend crashes).
-4.  **Request:** Add a button to add more equipment to an OT. (Agent started, but introduced a bug).
-5.  **Bug:** Frontend build fails with a syntax error. (Agent attempted a fix).
-6.  **Clarification:** The agent's fix for the syntax error was just a recompile, not a verified fix.
-7.  **Bug:** Login is failing with Erro ao autenticar. (Agent fixed another backend crash).
-8.  **Bug:** User data is not appearing in the real-time popup. (Agent fixed backend logic).
-9.  **Request:** Allow a single OT to include multiple machines. (Agent started implementation).
-10. **Request:** Split signature into two cards (digital and manual), and ensure the digital signature appears as an image. (Agent implemented).
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **Request**: Refactor . (IN PROGRESS)
+2.  **Confirmation**: User approved the refactoring plan. (DONE)
+3.  **Request**: Show date/day of the week in the timesheet modal and sort entries chronologically in the PDF. (DONE)
+4.  **Bug Report**: User provided a screenshot showing the generated Folha de Horas PDF had empty time columns and incorrect totals. (DONE)
+5.  **Confirmation**: Agent finished the Folha de Horas implementation (before bug report).
+6.  **Confirmation**: User confirmed that expenses are associated with a specific technician/date and data from the modal is only for PDF generation. User also approved deferring the P0 issue to work on Folha de Horas. (DONE)
+7.  **Request**: Detailed requirements for the Folha de Horas (Timesheet) feature. (DONE)
+8.  **Confirmation**: User approved the plan to continue integrating the rest of the refactored components. (PENDING ACTION)
+9.  **Request**: Integrate remaining components (, , etc.). (PENDING ACTION)
+10. **Confirmation**: User confirmed sim (yes) to continue the refactoring task after the first component was extracted. (DONE)
 
 **Project Health Check:**
--   **Broken:** The frontend build is failing due to a syntax error in .
--   **Mocked:** None.
+-   **Broken:** The Edit OT Equipment feature is still potentially broken, pending investigation of the failed test from a previous session.
+-   **Mocked:** None
 
 **3rd Party Integrations**
--   None explicitly use external keys provided by the user yet. The SMTP configuration is present in the  file. The planned OneDrive integration will require user-provided API keys.
+-   ReportLab
+-   pywebpush
+-   pdfminer.six
 
 **Testing status**
--   Testing agent used after significant changes: YES
--   Troubleshoot agent used after agent stuck in loop: YES
--   Test files created: None.
--   Known regressions: The frontend build is currently broken.
+-   Testing agent used after significant changes: YES (for the Folha de Horas feature, which passed).
+-   Troubleshoot agent used after agent stuck in loop: NO
+-   Test files created:
+    -   
+-   Known regressions: None confirmed, but the refactoring poses a high risk if not tested thoroughly.
 
 **Credentials to test flow:**
 -   **admin:**  / 
 -   **non-admin:**  / 
 
 **What agent forgot to execute**
--   The agent attempted to fix the  in  but did not wait to verify if the compilation was successful before moving on. The next agent must start by verifying this fix.</analysis>
+-   After replacing the inline Add/Edit Técnico modals with the  component, the agent identified the large blocks of old, now-redundant code in  but did not proceed to delete them before the session ended.</analysis>
