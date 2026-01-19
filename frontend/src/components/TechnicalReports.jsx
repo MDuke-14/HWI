@@ -3152,7 +3152,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-blue-400 font-semibold">Equipamentos</h4>
                   <Button
-                    onClick={() => setShowAddEquipamentoModal(true)}
+                    onClick={openAddEquipamentoModal}
                     size="sm"
                     className="bg-blue-500 hover:bg-blue-600"
                   >
