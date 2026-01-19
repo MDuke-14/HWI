@@ -54,7 +54,6 @@ const NotificationBell = ({ user }) => {
       
       console.log('Push subscription registada com sucesso:', response.data);
       setPushSubscribed(true);
-      toast.success('Notificações push ativadas!');
       
     } catch (error) {
       console.error('Erro ao registar push subscription:', error);
