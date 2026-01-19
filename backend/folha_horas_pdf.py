@@ -302,42 +302,42 @@ def generate_folha_horas_pdf(
         
         # Km
         total_km_valor = total_km * PRECO_KM
-            total_geral_km_valor += total_km_valor
-            
-            # Dados extras (dieta, portagens, despesas)
-            chave_extras = f"{tecnico_id}_{data}"
-            extras = dados_extras.get(chave_extras, {})
-            dieta = extras.get('dieta', 0)
-            portagens = extras.get('portagens', 0)
-            despesas = extras.get('despesas', 0)
-            total_geral_dietas += dieta
-            total_geral_portagens += portagens
-            total_geral_despesas += despesas
-            
-            # Início e Fim (primeiro e último registo)
-            registos_ordenados = sorted(registos, key=lambda r: r.get('hora_inicio') or '')
-            primeiro_inicio = registos_ordenados[0].get('hora_inicio') if registos_ordenados else None
-            ultimo_fim = registos_ordenados[-1].get('hora_fim') if registos_ordenados else None
-            
-            # Pausa
-            pausa_minutos = calculate_pause_time([
-                {'hora_inicio_segmento': r.get('hora_inicio'), 'hora_fim_segmento': r.get('hora_fim')}
-                for r in registos if r.get('hora_inicio') and r.get('hora_fim')
-            ])
-            
-            # Observações (tipo de cronómetro)
-            obs_list = list(set(r.get('tipo_cronometro', '') for r in registos if r.get('tipo_cronometro')))
-            obs_map = {'trabalho': 'Trab.', 'viagem': 'Viag.', 'manual': 'Manual'}
-            obs = ', '.join([obs_map.get(o, o) for o in obs_list])
-            
-            # Formatar data
-            try:
-                date_obj = datetime.fromisoformat(data).date() if data else None
-            except:
-                date_obj = None
-            
-            row = [
-                format_date_pt(date_obj),
+        total_geral_km_valor += total_km_valor
+        
+        # Dados extras (dieta, portagens, despesas)
+        chave_extras = f"{tecnico_id}_{data}"
+        extras = dados_extras.get(chave_extras, {})
+        dieta = extras.get('dieta', 0)
+        portagens = extras.get('portagens', 0)
+        despesas = extras.get('despesas', 0)
+        total_geral_dietas += dieta
+        total_geral_portagens += portagens
+        total_geral_despesas += despesas
+        
+        # Início e Fim (primeiro e último registo)
+        registos_ordenados_hora = sorted(registos, key=lambda r: r.get('hora_inicio') or '')
+        primeiro_inicio = registos_ordenados_hora[0].get('hora_inicio') if registos_ordenados_hora else None
+        ultimo_fim = registos_ordenados_hora[-1].get('hora_fim') if registos_ordenados_hora else None
+        
+        # Pausa
+        pausa_minutos = calculate_pause_time([
+            {'hora_inicio_segmento': r.get('hora_inicio'), 'hora_fim_segmento': r.get('hora_fim')}
+            for r in registos if r.get('hora_inicio') and r.get('hora_fim')
+        ])
+        
+        # Observações (tipo de cronómetro)
+        obs_list = list(set(r.get('tipo_cronometro', '') for r in registos if r.get('tipo_cronometro')))
+        obs_map = {'trabalho': 'Trab.', 'viagem': 'Viag.', 'manual': 'Manual'}
+        obs = ', '.join([obs_map.get(o, o) for o in obs_list])
+        
+        # Formatar data
+        try:
+            date_obj = datetime.fromisoformat(data).date() if data else None
+        except:
+            date_obj = None
+        
+        row = [
+            format_date_pt(date_obj),
                 get_weekday_pt(date_obj),
                 tecnico_nome,
                 minutes_to_hhmm(total_minutos),
