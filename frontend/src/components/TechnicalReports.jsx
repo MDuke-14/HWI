@@ -4119,15 +4119,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <Label htmlFor="edit_tecnico_nome" className="text-gray-300">
                   Nome do Técnico *
                 </Label>
-                <Input
+                <select
                   id="edit_tecnico_nome"
-                  type="text"
                   value={tecnicoFormData.tecnico_nome}
                   onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tecnico_nome: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  placeholder="Digite o nome do técnico"
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
                   required
-                />
+                >
+                  <option value="">Selecione um técnico...</option>
+                  {allSystemUsers.map((user) => (
+                    <option key={user.id} value={user.full_name || user.username}>
+                      {user.full_name || user.username}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
