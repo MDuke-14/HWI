@@ -144,6 +144,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [loadingPDFPreview, setLoadingPDFPreview] = useState(false);
   const [downloadingAllPDFs, setDownloadingAllPDFs] = useState(false);
+  const [downloadingClientesPDF, setDownloadingClientesPDF] = useState(false);
 
   // Material OT
   const [materiais, setMateriais] = useState([]);
