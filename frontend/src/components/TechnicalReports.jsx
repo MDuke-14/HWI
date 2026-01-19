@@ -4506,6 +4506,42 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
+            {/* Campos de Hora Início e Fim (para Folha de Horas) - Edit Modal */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_hora_inicio" className="text-gray-300 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Hora de Início (opcional)
+                </Label>
+                <Input
+                  id="edit_hora_inicio"
+                  type="time"
+                  value={tecnicoFormData.hora_inicio || ''}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, hora_inicio: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Para Folha de Horas
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="edit_hora_fim" className="text-gray-300 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Hora de Fim (opcional)
+                </Label>
+                <Input
+                  id="edit_hora_fim"
+                  type="time"
+                  value={tecnicoFormData.hora_fim || ''}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, hora_fim: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Para Folha de Horas
+                </p>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="edit_tipo_horario" className="text-gray-300">
                 Tipo de Horário *
