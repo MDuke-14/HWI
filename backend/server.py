@@ -3301,10 +3301,10 @@ async def send_push_to_user(user_id: str, title: str, message: str, notification
             
         except WebPushException as e:
             logging.error(f"Erro ao enviar push: {e}")
-            # Se a subscription expirou ou é inválida, remover
-            if e.response and e.response.status_code in [404, 410]:
+            # Se a subscription expirou, é inválida ou as chaves VAPID não correspondem, remover
+            if e.response and e.response.status_code in [403, 404, 410]:
                 await db.push_subscriptions.delete_one({"_id": sub["_id"]})
-                logging.info(f"Subscription inválida removida para {user_id}")
+                logging.info(f"Subscription inválida/expirada removida para {user_id} (status: {e.response.status_code})")
         except Exception as e:
             logging.error(f"Erro inesperado ao enviar push: {e}")
     
