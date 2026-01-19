@@ -642,6 +642,31 @@ class FolhaHorasRequest(BaseModel):
     dados_extras: dict  # {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
 
 
+class OvertimeAuthorization(BaseModel):
+    """Pedido de autorização de horas extra"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    user_email: Optional[str] = None
+    entry_id: Optional[str] = None
+    date: str
+    request_type: str  # "overtime_start" or "overtime_end"
+    day_type: Optional[str] = None  # "Sábado", "Domingo", "Feriado: X"
+    start_time: Optional[str] = None
+    clock_in_time: Optional[str] = None
+    requested_at: str
+    expires_at: str
+    status: str = "pending"  # "pending", "approved", "rejected"
+    decided_by: Optional[str] = None
+    decided_at: Optional[str] = None
+    decision: Optional[str] = None
+
+
+class OvertimeDecision(BaseModel):
+    """Decisão sobre autorização de horas extra"""
+    action: str  # "approve" or "reject"
+
+
 # ============ Auth Functions ============
 
 def verify_password(plain_password, hashed_password):
