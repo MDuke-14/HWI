@@ -5244,9 +5244,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onChange={(e) => handleEquipamentoOTChange(e.target.value)}
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
               >
-                <option value="novo">➕ Criar novo equipamento</option>
+                <option value="novo">➕ Criar novo equipamento (guardar na BD do cliente)</option>
+                <option value="apenas_ot">📋 Adicionar apenas à OT (sem guardar na BD)</option>
                 {equipamentosClienteOT.length > 0 && (
-                  <option disabled className="text-gray-500">────────────────</option>
+                  <option disabled className="text-gray-500">────── Equipamentos do Cliente ──────</option>
                 )}
                 {equipamentosClienteOT.map((eq) => (
                   <option key={eq.id} value={eq.id}>
@@ -5255,8 +5256,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                 ))}
               </select>
               {equipamentoOTSelecionado === 'novo' && (
-                <p className="text-sm text-gray-400 mt-1">
-                  O novo equipamento será guardado na base de dados do cliente
+                <p className="text-sm text-green-400 mt-1">
+                  ✓ O equipamento será guardado na base de dados do cliente
+                </p>
+              )}
+              {equipamentoOTSelecionado === 'apenas_ot' && (
+                <p className="text-sm text-orange-400 mt-1">
+                  ⚠ O equipamento será associado apenas a esta OT (não fica na BD do cliente)
                 </p>
               )}
             </div>
@@ -5269,7 +5275,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, tipologia: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
-                  disabled={equipamentoOTSelecionado !== 'novo'}
+                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
               <div>
