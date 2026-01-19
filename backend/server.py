@@ -347,12 +347,14 @@ class AssinaturaRelatorio(BaseModel):
     # Para assinatura digital
     assinatura_path: Optional[str] = None
     assinatura_url: Optional[str] = None
+    assinatura_base64: Optional[str] = None
     # Para assinatura manual
     primeiro_nome: Optional[str] = None
     ultimo_nome: Optional[str] = None
     # Comum
     assinado_por: Optional[str] = None  # Nome completo
     data_assinatura: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    data_intervencao: Optional[str] = None  # Data da intervenção (editável pelo user)
 
 
 class EnviarEmailRequest(BaseModel):
