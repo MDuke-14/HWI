@@ -211,12 +211,17 @@ def generate_folha_horas_pdf(
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
+        
+        # Obter hora_inicio e hora_fim dos registos manuais (novo campo)
+        hora_inicio_manual = tec.get('hora_inicio')
+        hora_fim_manual = tec.get('hora_fim')
+        
         dados_por_tecnico_data[tecnico_id][data].append({
             'tipo': 'manual',
             'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
             'tipo_cronometro': 'manual',
-            'hora_inicio': None,
-            'hora_fim': None,
+            'hora_inicio': hora_inicio_manual,  # Pode ser HH:MM ou None
+            'hora_fim': hora_fim_manual,  # Pode ser HH:MM ou None
             'minutos': tec.get('minutos_cliente', 0),
             'km': tec.get('kms_deslocacao', 0),
             'codigo': {
