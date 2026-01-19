@@ -17,23 +17,6 @@ const OvertimeAuthorization = () => {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   
-  const fetchAuthorization = async () => {
-    try {
-      const response = await axios.get(`${API}/overtime/authorization/${token}`);
-      setAuthorization(response.data);
-      setLoading(false);
-    } catch (err) {
-      if (err.response?.status === 404) {
-        setError('Pedido de autorização não encontrado.');
-      } else if (err.response?.status === 410) {
-        setError('Este pedido de autorização expirou.');
-      } else {
-        setError('Erro ao carregar pedido de autorização.');
-      }
-      setLoading(false);
-    }
-  };
-  
   useEffect(() => {
     const loadAuthorization = async () => {
       try {
