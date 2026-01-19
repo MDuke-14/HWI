@@ -576,6 +576,24 @@ const TechnicalReports = ({ user, onLogout }) => {
       setShowAddRelatorioModal(false);
       resetRelatorioForm();
       fetchRelatorios();
+      
+      // Buscar lista de utilizadores e mostrar modal para iniciar cronómetro
+      try {
+        const usersResponse = await axios.get(`${API}/admin/users`);
+        setAllSystemUsers(usersResponse.data);
+      } catch (err) {
+        console.error('Erro ao buscar utilizadores:', err);
+      }
+      
+      // Guardar dados da nova OT e abrir modal
+      setNovaOTParaCrono({
+        id: relatorioId,
+        numero: response.data.numero_assistencia
+      });
+      setCronoTecnicosSelecionados([]);
+      setCronoTipo('trabalho');
+      setShowIniciarCronoModal(true);
+      
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
