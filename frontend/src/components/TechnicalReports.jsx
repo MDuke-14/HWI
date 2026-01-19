@@ -4909,211 +4909,35 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
-      {/* Edit Relatório Modal */}
+      {/* Add Equipamento Modal - Componente Extraído */}
+      <EquipamentoModal
+        open={showAddEquipamentoModal}
+        onOpenChange={setShowAddEquipamentoModal}
+        isEditing={false}
+        equipamentoFormData={equipamentoFormData}
+        setEquipamentoFormData={setEquipamentoFormData}
+        equipamentoOTSelecionado={equipamentoOTSelecionado}
+        handleEquipamentoOTChange={handleEquipamentoOTChange}
+        equipamentosClienteOT={equipamentosClienteOT}
+        onSubmit={handleAddEquipamento}
+        onCancel={() => setShowAddEquipamentoModal(false)}
+      />
 
-      {/* Add Equipamento Modal */}
-      <Dialog open={showAddEquipamentoModal} onOpenChange={setShowAddEquipamentoModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Plus className="w-5 h-5 text-blue-400" />
-              Adicionar Equipamento
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleAddEquipamento} className="space-y-4 mt-4">
-            {/* Dropdown para selecionar equipamento existente ou criar novo */}
-            <div>
-              <Label className="text-gray-300 mb-2 block">Selecionar Equipamento</Label>
-              <select
-                value={equipamentoOTSelecionado}
-                onChange={(e) => handleEquipamentoOTChange(e.target.value)}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
-              >
-                <option value="novo">➕ Criar novo equipamento (guardar na BD do cliente)</option>
-                <option value="apenas_ot">📋 Adicionar apenas à OT (sem guardar na BD)</option>
-                {equipamentosClienteOT.length > 0 && (
-                  <option disabled className="text-gray-500">────── Equipamentos do Cliente ──────</option>
-                )}
-                {equipamentosClienteOT.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
-                  </option>
-                ))}
-              </select>
-              {equipamentoOTSelecionado === 'novo' && (
-                <p className="text-sm text-green-400 mt-1">
-                  ✓ O equipamento será guardado na base de dados do cliente
-                </p>
-              )}
-              {equipamentoOTSelecionado === 'apenas_ot' && (
-                <p className="text-sm text-orange-400 mt-1">
-                  ⚠ O equipamento será associado apenas a esta OT (não fica na BD do cliente)
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-gray-300">Tipologia *</Label>
-                <Input
-                  value={equipamentoFormData.tipologia}
-                  onChange={(e) => setEquipamentoFormData({...equipamentoFormData, tipologia: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
-                />
-              </div>
-              <div>
-                <Label className="text-gray-300">Marca *</Label>
-                <Input
-                  value={equipamentoFormData.marca}
-                  onChange={(e) => setEquipamentoFormData({...equipamentoFormData, marca: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-gray-300">Modelo *</Label>
-                <Input
-                  value={equipamentoFormData.modelo}
-                  onChange={(e) => setEquipamentoFormData({...equipamentoFormData, modelo: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
-                />
-              </div>
-              <div>
-                <Label className="text-gray-300">Número de Série</Label>
-                <Input
-                  value={equipamentoFormData.numero_serie}
-                  onChange={(e) => setEquipamentoFormData({...equipamentoFormData, numero_serie: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-300">Ano de Fabrico</Label>
-              <Input
-                value={equipamentoFormData.ano_fabrico}
-                onChange={(e) => setEquipamentoFormData({...equipamentoFormData, ano_fabrico: e.target.value})}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: 2020, 03/2020, 03-2020"
-                disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                onClick={() => setShowAddEquipamentoModal(false)}
-                variant="outline"
-                className="flex-1 border-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-              >
-                Adicionar Equipamento
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Equipamento Modal */}
-      <Dialog open={showEditEquipamentoModal} onOpenChange={setShowEditEquipamentoModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Edit className="w-5 h-5 text-blue-400" />
-              Editar Equipamento {editingEquipamentoPrincipal ? '(Principal)' : ''}
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSaveEditEquipamento} className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-gray-300">Tipologia *</Label>
-                <Input
-                  value={editEquipamentoFormData.tipologia}
-                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, tipologia: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-gray-300">Marca *</Label>
-                <Input
-                  value={editEquipamentoFormData.marca}
-                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, marca: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-gray-300">Modelo *</Label>
-                <Input
-                  value={editEquipamentoFormData.modelo}
-                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, modelo: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-gray-300">Número de Série</Label>
-                <Input
-                  value={editEquipamentoFormData.numero_serie}
-                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, numero_serie: e.target.value})}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-300">Ano de Fabrico</Label>
-              <Input
-                value={editEquipamentoFormData.ano_fabrico}
-                onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, ano_fabrico: e.target.value})}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: 2020, 03/2020, 03-2020"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowEditEquipamentoModal(false);
-                  setEditingEquipamento(null);
-                  setEditingEquipamentoPrincipal(false);
-                }}
-                variant="outline"
-                className="flex-1 border-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-              >
-                Guardar Alterações
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Equipamento Modal - Componente Extraído */}
+      <EquipamentoModal
+        open={showEditEquipamentoModal}
+        onOpenChange={setShowEditEquipamentoModal}
+        isEditing={true}
+        editEquipamentoFormData={editEquipamentoFormData}
+        setEditEquipamentoFormData={setEditEquipamentoFormData}
+        editingEquipamentoPrincipal={editingEquipamentoPrincipal}
+        onSubmit={handleSaveEditEquipamento}
+        onCancel={() => {
+          setShowEditEquipamentoModal(false);
+          setEditingEquipamento(null);
+          setEditingEquipamentoPrincipal(false);
+        }}
+      />
 
       <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
