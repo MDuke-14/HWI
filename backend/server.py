@@ -37,6 +37,12 @@ from notification_system import notification_loop, NotificationSystem
 from hours_calculator import calcular_breakdown_completo
 from cronometro_logic import segmentar_periodo
 from migrations import run_migrations
+from notifications_scheduler import (
+    check_clock_in_status,
+    check_clock_out_status,
+    handle_overtime_start,
+    process_authorization_decision
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)
