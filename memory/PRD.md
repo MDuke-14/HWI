@@ -158,10 +158,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### P1 - Prioridade Alta
 - **Integração OneDrive**: Armazenar ficheiros (fotos, assinaturas, PDFs) no OneDrive em vez de Base64 no MongoDB
+- **Investigar Issue "Edit OT Equipment"**: Teste anterior falhou durante edição de equipamento (adiado para focar na refatoração)
 
 ### P2 - Prioridade Média
 - **Melhorar UI do Calendário**: Componente `/app/frontend/src/components/Calendar.jsx`
-- **Download Todos os Relatórios**: Botão na vista de cliente para download de todas as OTs
+- **Refatoração adicional**: TechnicalReports.jsx ainda tem ~6260 linhas - considerar extrair mais componentes
 
 ### ✅ Refactoring Completado (19 Janeiro 2026)
 - **TechnicalReports.jsx refatorado**: Reduzido de ~7200 linhas para ~6260 linhas (~940 linhas extraídas)
