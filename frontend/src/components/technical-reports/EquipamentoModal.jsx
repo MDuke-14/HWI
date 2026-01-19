@@ -70,22 +70,20 @@ const EquipamentoModal = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-gray-300">Tipologia *</Label>
+                <Label className="text-gray-300">Tipologia</Label>
                 <Input
                   value={equipamentoFormData.tipologia}
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, tipologia: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
                   disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
               <div>
-                <Label className="text-gray-300">Marca *</Label>
+                <Label className="text-gray-300">Marca</Label>
                 <Input
                   value={equipamentoFormData.marca}
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, marca: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
                   disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
@@ -93,12 +91,11 @@ const EquipamentoModal = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-gray-300">Modelo *</Label>
+                <Label className="text-gray-300">Modelo</Label>
                 <Input
                   value={equipamentoFormData.modelo}
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, modelo: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
                   disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
