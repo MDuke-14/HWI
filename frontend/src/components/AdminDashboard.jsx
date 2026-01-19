@@ -44,6 +44,13 @@ const AdminDashboard = ({ user, onLogout }) => {
     valor_por_hora: ''
   });
 
+  // Estados para Notificações e Autorizações
+  const [overtimeAuthorizations, setOvertimeAuthorizations] = useState([]);
+  const [notificationLogs, setNotificationLogs] = useState([]);
+  const [authStatusFilter, setAuthStatusFilter] = useState('all');
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [runningCheck, setRunningCheck] = useState(null);
+
   const [createForm, setCreateForm] = useState({
     username: '',
     email: '',
