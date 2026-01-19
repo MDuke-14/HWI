@@ -2917,7 +2917,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <td className="py-2 px-2 text-center text-gray-300">
                                 {tec.data_trabalho ? new Date(tec.data_trabalho).toLocaleDateString('pt-PT') : '-'}
                               </td>
-                              <td className="py-2 px-2 text-center text-white font-medium">{tec.horas_cliente}h</td>
+                              <td className="py-2 px-2 text-center text-white font-medium">
+                                {Math.floor((tec.minutos_cliente || 0) / 60)}h {(tec.minutos_cliente || 0) % 60}min
+                              </td>
                               <td className="py-2 px-2 text-center text-gray-300">{tec.kms_deslocacao * 2}</td>
                               <td className="py-2 px-2 text-center">
                                 <span 
