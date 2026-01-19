@@ -996,6 +996,139 @@ const AdminDashboard = ({ user, onLogout }) => {
             )}
           </TabsContent>
 
+          {/* Tarifas Tab Content */}
+          <TabsContent value="tarifas">
+            <div className="glass-effect p-6 rounded-xl">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-semibold text-white">Tarifas ({tarifas.filter(t => t.ativo).length})</h2>
+                <Button 
+                  onClick={() => handleOpenTarifaDialog()}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nova Tarifa
+                </Button>
+              </div>
+              
+              <p className="text-gray-400 text-sm mb-6">
+                Configure as tarifas que serão utilizadas na Folha de Horas. Cada tarifa representa um valor por hora de trabalho.
+              </p>
+              
+              {tarifas.filter(t => t.ativo).length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tarifas.filter(t => t.ativo).map((tarifa) => (
+                    <div key={tarifa.id} className="bg-[#1a1a1a] p-5 rounded-lg border border-gray-700">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2 rounded-lg">
+                            <DollarSign className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-white font-semibold">Tarifa {tarifa.numero}</div>
+                            <div className="text-gray-400 text-sm">{tarifa.nome}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-3xl font-bold text-amber-400 mb-4">
+                        {tarifa.valor_por_hora.toFixed(2)}€<span className="text-lg text-gray-500">/hora</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => handleOpenTarifaDialog(tarifa)} 
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" 
+                          size="sm"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />Editar
+                        </Button>
+                        <Button 
+                          onClick={() => handleDeleteTarifa(tarifa.id, tarifa.nome)} 
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm" 
+                          size="sm"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />Eliminar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-12">
+                  <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma tarifa configurada</p>
+                  <p className="text-sm mt-2">Crie tarifas para utilizar na Folha de Horas</p>
+                </div>
+              )}
+              
+              {/* Tarifas inativas */}
+              {tarifas.filter(t => !t.ativo).length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-500 mb-4">Tarifas Inativas ({tarifas.filter(t => !t.ativo).length})</h3>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {tarifas.filter(t => !t.ativo).map((tarifa) => (
+                      <div key={tarifa.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 opacity-60">
+                        <div className="text-gray-500 text-sm">Tarifa {tarifa.numero} - {tarifa.nome}</div>
+                        <div className="text-gray-600">{tarifa.valor_por_hora.toFixed(2)}€/hora</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Dialog para criar/editar tarifa */}
+            <Dialog open={showTarifaDialog} onOpenChange={setShowTarifaDialog}>
+              <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-amber-400" />
+                    {editingTarifa ? 'Editar Tarifa' : 'Nova Tarifa'}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <Label>Número da Tarifa *</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={tarifaForm.numero}
+                      onChange={(e) => setTarifaForm({...tarifaForm, numero: e.target.value})}
+                      className="bg-[#0a0a0a] border-gray-700 text-white"
+                      placeholder="Ex: 1, 2, 3..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Nome/Descrição *</Label>
+                    <Input
+                      value={tarifaForm.nome}
+                      onChange={(e) => setTarifaForm({...tarifaForm, nome: e.target.value})}
+                      className="bg-[#0a0a0a] border-gray-700 text-white"
+                      placeholder="Ex: Tarifa Normal, Tarifa Premium..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Valor por Hora (€) *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tarifaForm.valor_por_hora}
+                      onChange={(e) => setTarifaForm({...tarifaForm, valor_por_hora: e.target.value})}
+                      className="bg-[#0a0a0a] border-gray-700 text-white"
+                      placeholder="Ex: 35.00"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSaveTarifa} 
+                    disabled={loading}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-full"
+                  >
+                    {loading ? 'A guardar...' : (editingTarifa ? 'Atualizar Tarifa' : 'Criar Tarifa')}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
           <TabsContent value="reports">
             {reports && (
               <div className="glass-effect p-6 rounded-xl">
