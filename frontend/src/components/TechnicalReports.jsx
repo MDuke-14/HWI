@@ -3378,7 +3378,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <td className="py-2 px-2 text-center text-white font-medium">
                                 {Math.floor((tec.minutos_cliente || 0) / 60)}h {(tec.minutos_cliente || 0) % 60}min
                               </td>
-                              <td className="py-2 px-2 text-center text-gray-300">{tec.kms_deslocacao * 2}</td>
+                              <td className="py-2 px-2 text-center text-gray-300">
+                                {tec.kms_inicial !== undefined && tec.kms_final !== undefined ? (
+                                  <span title={`${tec.kms_inicial || 0} → ${tec.kms_final || 0}`}>
+                                    {tec.kms_deslocacao || Math.max(0, (tec.kms_final || 0) - (tec.kms_inicial || 0))} km
+                                  </span>
+                                ) : (
+                                  `${tec.kms_deslocacao || 0} km`
+                                )}
+                              </td>
                               <td className="py-2 px-2 text-center">
                                 <span 
                                   className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs cursor-pointer hover:bg-blue-500/20"
