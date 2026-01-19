@@ -526,10 +526,18 @@ const AdminDashboard = ({ user, onLogout }) => {
         </div>
 
         <Tabs defaultValue="vacations" className="w-full">
-          <TabsList className="grid w-full max-w-4xl mx-auto grid-cols-5 bg-[#1a1a1a] mb-8">
+          <TabsList className="grid w-full max-w-5xl mx-auto grid-cols-6 bg-[#1a1a1a] mb-8">
             <TabsTrigger value="vacations" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Calendar className="w-4 h-4 mr-2" />Férias</TabsTrigger>
             <TabsTrigger value="absences" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-2" />Faltas</TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-2" />Utilizadores</TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative">
+              <Bell className="w-4 h-4 mr-2" />Notificações
+              {overtimeAuthorizations.filter(a => a.status === 'pending').length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {overtimeAuthorizations.filter(a => a.status === 'pending').length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="tarifas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><DollarSign className="w-4 h-4 mr-2" />Tarifas</TabsTrigger>
             <TabsTrigger value="reports" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><TrendingUp className="w-4 h-4 mr-2" />Relatórios</TabsTrigger>
           </TabsList>
