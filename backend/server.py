@@ -3244,16 +3244,8 @@ async def subscribe_push(
     
     logging.info(f"Push subscription registrada para usuário {current_user['sub']}")
     
-    # Enviar notificação de teste para confirmar que funciona
-    try:
-        await send_push_to_user(
-            current_user["sub"],
-            "Notificações Ativas!",
-            "Você receberá alertas importantes no seu dispositivo.",
-            "welcome"
-        )
-    except Exception as e:
-        logging.warning(f"Não foi possível enviar push de boas-vindas: {e}")
+    # Nota: A notificação de boas-vindas é enviada via frontend após confirmação
+    # para evitar problemas de timing com a subscription
     
     return {"message": "Subscription registrada com sucesso"}
 
