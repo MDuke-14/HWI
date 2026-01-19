@@ -1024,7 +1024,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       minutos_cliente: 0,
       kms_deslocacao: 0,
       tipo_horario: 'diurno',
-      data_trabalho: new Date().toISOString().split('T')[0]
+      data_trabalho: new Date().toISOString().split('T')[0],
+      hora_inicio: '',
+      hora_fim: ''
     });
   };
 
