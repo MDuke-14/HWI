@@ -163,8 +163,18 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Melhorar UI do Calendário**: Componente `/app/frontend/src/components/Calendar.jsx`
 - **Download Todos os Relatórios**: Botão na vista de cliente para download de todas as OTs
 
-### Refactoring Necessário
-- **TechnicalReports.jsx**: Ficheiro muito grande (6400+ linhas). Necessita ser dividido em componentes menores para melhor manutenção.
+### ✅ Refactoring Completado (19 Janeiro 2026)
+- **TechnicalReports.jsx refatorado**: Reduzido de ~7200 linhas para ~6260 linhas (~940 linhas extraídas)
+- **Componentes extraídos em `/app/frontend/src/components/technical-reports/`:**
+  - `TecnicoModal.jsx` - Modal para adicionar/editar técnicos ✅ Testado
+  - `EquipamentoModal.jsx` - Modal para adicionar/editar equipamentos ✅ Testado
+  - `MaterialModal.jsx` - Modal para adicionar/editar materiais ✅ Testado
+  - `AssinaturaModal.jsx` - Modal para assinaturas digitais/manuais ✅ Testado
+  - `FolhaHorasModal.jsx` - Modal para gerar Folha de Horas PDF ✅ Testado
+  - `PDFPreviewModal.jsx` - Modal para visualização de PDF ✅ Testado
+  - `DeleteConfirmModal.jsx` - Modal de confirmação de eliminação
+  - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
+- **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
 ---
 
