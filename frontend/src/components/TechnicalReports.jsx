@@ -6340,7 +6340,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                           } else {
                             setCronoTecnicosSelecionados([
                               ...cronoTecnicosSelecionados,
-                              { id: userItem.id, nome: userItem.nome }
+                              { id: userItem.id, nome: userItem.full_name || userItem.username }
                             ]);
                           }
                         }}
@@ -6356,7 +6356,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                           {isSelected && <span className="text-white text-xs">✓</span>}
                         </div>
                         <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-white">{userItem.nome}</span>
+                        <span className="text-white">{userItem.full_name || userItem.username}</span>
                       </div>
                     );
                   })
