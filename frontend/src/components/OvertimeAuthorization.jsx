@@ -20,10 +20,6 @@ const OvertimeAuthorization = () => {
   
   const preSelectedAction = searchParams.get('action'); // 'approve' or 'reject'
   
-  useEffect(() => {
-    fetchAuthorization();
-  }, [token]);
-  
   const fetchAuthorization = async () => {
     try {
       const response = await axios.get(`${API}/overtime/authorization/${token}`);
@@ -40,6 +36,11 @@ const OvertimeAuthorization = () => {
       setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    fetchAuthorization();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
   
   const handleDecision = async (action) => {
     // Check if user is logged in as admin
