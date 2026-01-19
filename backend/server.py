@@ -7895,9 +7895,12 @@ async def get_folha_horas_data(
     ).sort("numero", 1).to_list(length=None)
     
     # Extrair lista única de técnicos
+    # Para técnicos manuais, usamos o 'id' do registo como identificador único
+    # Para cronómetros, usamos o 'tecnico_id'
     tecnicos_unicos = {}
     for tec in tecnicos:
-        tid = tec.get('tecnico_id') or tec.get('id')
+        # Para registos manuais, usar o 'id' do registo como chave
+        tid = tec.get('id')
         if tid and tid not in tecnicos_unicos:
             tecnicos_unicos[tid] = {
                 'id': tid,
@@ -7925,7 +7928,8 @@ async def get_folha_horas_data(
             datas_por_tecnico[tid].add(data)
     
     for tec in tecnicos:
-        tid = tec.get('tecnico_id') or tec.get('id')
+        # Para registos manuais, usar o 'id' do registo
+        tid = tec.get('id')
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
