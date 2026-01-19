@@ -25,12 +25,25 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Lista todos os técnicos disponíveis com checkboxes
 - Permite selecionar tipo de cronómetro (Trabalho ou Viagem)
 - Permite seleção múltipla de técnicos
-- Mostra contador de técnicos selecionados
-- Botão "Ignorar" para fechar sem iniciar
-- Botão "Iniciar" para começar cronómetros
-- **Ficheiros modificados**: 
-  - `/app/frontend/src/components/TechnicalReports.jsx` (linhas 93-97, 575-595, 1544-1576, 6300-6410)
+- Botão "Ignorar" para fechar sem iniciar, "Iniciar" para começar cronómetros
 - **Testado**: 9/9 testes passaram
+
+#### ✅ Dropdown de Equipamentos ao Adicionar em OT (Completo)
+- Ao adicionar equipamento a uma OT, aparece dropdown com equipamentos existentes do cliente
+- Primeira opção é "Criar novo equipamento"
+- Novos equipamentos são também guardados na base de dados do cliente
+- Campos preenchidos automaticamente ao selecionar equipamento existente
+
+#### ✅ Edição de Equipamentos na OT (Completo)
+- Todos os equipamentos (principal e secundários) podem ser editados
+- Botão de edição (ícone azul) em cada equipamento
+- Modal de edição com todos os campos editáveis
+- Endpoint PUT criado para equipamentos secundários
+
+#### ✅ Dropdown de Técnicos no Registo Manual (Completo)
+- No card "Mão de Obra/Deslocação", ao adicionar registo manual
+- Campo "Nome do Técnico" é agora um dropdown com todos os utilizadores
+- Funciona tanto para adicionar como para editar registos
 
 ---
 
