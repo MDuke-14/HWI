@@ -148,6 +148,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [downloadingAllPDFs, setDownloadingAllPDFs] = useState(false);
   const [downloadingClientesPDF, setDownloadingClientesPDF] = useState(false);
 
+  // Folha de Horas
+  const [showFolhaHorasModal, setShowFolhaHorasModal] = useState(false);
+  const [folhaHorasData, setFolhaHorasData] = useState(null);
+  const [loadingFolhaHoras, setLoadingFolhaHoras] = useState(false);
+  const [folhaHorasTarifas, setFolhaHorasTarifas] = useState({});  // {tecnico_id: tarifa_valor}
+  const [folhaHorasExtras, setFolhaHorasExtras] = useState({});    // {"tecnico_id_data": {dieta, portagens, despesas}}
+  const [generatingFolhaHoras, setGeneratingFolhaHoras] = useState(false);
+
   // Material OT
   const [materiais, setMateriais] = useState([]);
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
