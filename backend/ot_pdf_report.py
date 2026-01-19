@@ -403,35 +403,55 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         elements.append(Spacer(1, 0.2*cm))
     
-    # Assinatura - KeepTogether
-    if assinatura:
-        assin_section = []
-        assin_section.append(Spacer(1, 0.3*cm))
-        assin_section.append(Paragraph("ASSINATURA DO CLIENTE", heading_style))
-        assin_section.append(Paragraph("Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.", normal_style))
-        assin_section.append(Spacer(1, 0.2*cm))
+    # Assinaturas - Suporta múltiplas
+    # Converter para lista se for uma única assinatura (compatibilidade)
+    if assinaturas:
+        if isinstance(assinaturas, dict):
+            assinaturas_list = [assinaturas]
+        else:
+            assinaturas_list = assinaturas if assinaturas else []
         
-        if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
-            # Incluir imagem da assinatura
-            img_path = Path(assinatura['assinatura_path'])
-            if img_path.exists():
-                try:
-                    img = RLImage(str(img_path), width=6*cm, height=3*cm, kind='proportional')
-                    assin_section.append(img)
-                except:
-                    pass
-        
-        nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
-        assin_section.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
-        
-        data_assinatura = assinatura.get('data_assinatura')
-        if isinstance(data_assinatura, str):
-            try:
-                data_assinatura = datetime.fromisoformat(data_assinatura).strftime('%d/%m/%Y %H:%M')
-            except:
-                pass
-        assin_section.append(Paragraph(f"<b>Data:</b> {data_assinatura}", normal_style))
-        elements.append(KeepTogether(assin_section))
+        if assinaturas_list:
+            assin_section = []
+            assin_section.append(Spacer(1, 0.3*cm))
+            assin_section.append(Paragraph("ASSINATURAS DO CLIENTE", heading_style))
+            assin_section.append(Paragraph("Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.", normal_style))
+            assin_section.append(Spacer(1, 0.2*cm))
+            
+            for idx, assinatura in enumerate(assinaturas_list, 1):
+                if len(assinaturas_list) > 1:
+                    assin_section.append(Paragraph(f"<b>Assinatura {idx}</b>", normal_style))
+                
+                # Data da intervenção (editável)
+                data_intervencao = assinatura.get('data_intervencao')
+                if data_intervencao:
+                    assin_section.append(Paragraph(f"<b>Data da Intervenção:</b> {data_intervencao}", normal_style))
+                
+                if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
+                    # Incluir imagem da assinatura
+                    img_path = Path(assinatura['assinatura_path'])
+                    if img_path.exists():
+                        try:
+                            img = RLImage(str(img_path), width=6*cm, height=3*cm, kind='proportional')
+                            assin_section.append(img)
+                        except:
+                            pass
+                
+                nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
+                assin_section.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
+                
+                data_assinatura = assinatura.get('data_assinatura')
+                if isinstance(data_assinatura, str):
+                    try:
+                        data_assinatura = datetime.fromisoformat(data_assinatura).strftime('%d/%m/%Y %H:%M')
+                    except:
+                        pass
+                assin_section.append(Paragraph(f"<b>Data de Assinatura:</b> {data_assinatura}", normal_style))
+                
+                if idx < len(assinaturas_list):
+                    assin_section.append(Spacer(1, 0.3*cm))
+            
+            elements.append(KeepTogether(assin_section))
     
     # Construir PDF
     doc.build(elements)
