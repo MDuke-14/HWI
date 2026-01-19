@@ -293,6 +293,16 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             textColor=colors.HexColor('#6b7280')
         )
         mao_obra_section.append(Paragraph("<b>Legenda:</b> 1 = Dias úteis (07h-19h) | 2 = Dias úteis (19h-07h) | S = Sábado | D = Domingos/Feriados", legenda_style))
+        
+        # Nota sobre Kms
+        nota_kms_style = ParagraphStyle(
+            'NotaKmsStyle',
+            parent=normal_style,
+            fontSize=7,
+            textColor=colors.HexColor('#3b82f6'),
+            spaceBefore=4
+        )
+        mao_obra_section.append(Paragraph("<i>Aos kms de ida já adicionados iremos adicionar os kms de volta após assinatura deste relatório.</i>", nota_kms_style))
         mao_obra_section.append(Spacer(1, 0.2*cm))
         elements.append(KeepTogether(mao_obra_section))
     
