@@ -575,6 +575,10 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         if not user:
             continue
         
+        # Não notificar admins sobre eles próprios
+        if user.get("is_admin"):
+            continue
+        
         user_name = user.get("full_name") or user.get("username")
         user_email = user.get("email")
         clock_in_time = datetime.fromisoformat(entry.get("start_time")).strftime("%H:%M") if entry.get("start_time") else "N/A"
@@ -611,6 +615,25 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "decision": None
         }
         await db.overtime_authorizations.insert_one(auth_request)
+        
+        # Enviar PUSH notification ao utilizador
+        await send_push_notification(
+            db,
+            user_id,
+            "🕐 Não Parou o Ponto",
+            f"O seu ponto está ativo após as 18:00. Entrada: {clock_in_time}. Aguarde autorização de horas extra.",
+            "clock_out_reminder",
+            "high"
+        )
+        
+        # Enviar PUSH notification aos admins
+        await send_push_to_admins(
+            db,
+            "⚠️ Pedido de Horas Extra",
+            f"{user_name} ainda tem o ponto ativo. Autorize ou rejeite as horas extra.",
+            "overtime_authorization",
+            "high"
+        )
         
         # Enviar email ao utilizador
         if user_email:
