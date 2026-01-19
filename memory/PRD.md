@@ -55,6 +55,17 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - PDF contém tabela com: #, Nome, Email, NIF
 - Data de exportação e total de clientes no rodapé
 
+#### ✅ Página Admin de Gestão de Entradas (Completo)
+- Nova página `/admin/time-entries` acessível apenas para admins
+- Barra de seleção rápida de utilizadores no topo
+- Navegação por mês/ano com setas
+- Cards de resumo (Total Horas, Dias, Entradas)
+- Lista de entradas agrupadas por dia
+- Modal para adicionar nova entrada
+- Modal para editar entrada existente
+- Botão para eliminar entradas
+- Endpoints backend: GET/PUT/DELETE/POST para entradas
+
 ---
 
 ### Sessões Anteriores
