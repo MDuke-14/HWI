@@ -3926,7 +3926,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     type="number"
                     min="0"
                     max="24"
-                    value={Math.floor(tecnicoFormData.minutos_cliente / 60)}
+                    value={Math.floor(tecnicoFormData.minutos_cliente / 60) || ''}
                     onChange={(e) => {
                       const horas = parseInt(e.target.value) || 0;
                       const minutos = tecnicoFormData.minutos_cliente % 60;
@@ -3942,7 +3942,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     min="0"
                     max="59"
                     step="1"
-                    value={tecnicoFormData.minutos_cliente % 60}
+                    value={tecnicoFormData.minutos_cliente % 60 || ''}
                     onChange={(e) => {
                       const horas = Math.floor(tecnicoFormData.minutos_cliente / 60);
                       const minutos = parseInt(e.target.value) || 0;
