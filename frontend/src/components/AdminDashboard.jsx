@@ -130,6 +130,78 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // ============ Tarifas Functions ============
+  const fetchTarifas = async () => {
+    try {
+      const response = await axios.get(`${API}/tarifas/all`);
+      setTarifas(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar tarifas');
+    }
+  };
+
+  const handleOpenTarifaDialog = (tarifa = null) => {
+    if (tarifa) {
+      setEditingTarifa(tarifa);
+      setTarifaForm({
+        numero: tarifa.numero.toString(),
+        nome: tarifa.nome,
+        valor_por_hora: tarifa.valor_por_hora.toString()
+      });
+    } else {
+      setEditingTarifa(null);
+      setTarifaForm({
+        numero: '',
+        nome: '',
+        valor_por_hora: ''
+      });
+    }
+    setShowTarifaDialog(true);
+  };
+
+  const handleSaveTarifa = async () => {
+    if (!tarifaForm.numero || !tarifaForm.nome || !tarifaForm.valor_por_hora) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = {
+        numero: parseInt(tarifaForm.numero),
+        nome: tarifaForm.nome,
+        valor_por_hora: parseFloat(tarifaForm.valor_por_hora)
+      };
+
+      if (editingTarifa) {
+        await axios.put(`${API}/tarifas/${editingTarifa.id}`, data);
+        toast.success('Tarifa atualizada!');
+      } else {
+        await axios.post(`${API}/tarifas`, data);
+        toast.success('Tarifa criada!');
+      }
+      
+      setShowTarifaDialog(false);
+      fetchTarifas();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao guardar tarifa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTarifa = async (tarifaId, tarifaNome) => {
+    if (!window.confirm(`Tem certeza que deseja desativar a tarifa "${tarifaNome}"?`)) return;
+    
+    try {
+      await axios.delete(`${API}/tarifas/${tarifaId}`);
+      toast.success('Tarifa desativada!');
+      fetchTarifas();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao desativar tarifa');
+    }
+  };
+
   const handleVacationApproval = async (requestId, approved) => {
     try {
       await axios.post(`${API}/admin/vacations/${requestId}/approve?approved=${approved}`);
