@@ -4988,6 +4988,31 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
 
           <form onSubmit={handleAddEquipamento} className="space-y-4 mt-4">
+            {/* Dropdown para selecionar equipamento existente ou criar novo */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">Selecionar Equipamento</Label>
+              <select
+                value={equipamentoOTSelecionado}
+                onChange={(e) => handleEquipamentoOTChange(e.target.value)}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+              >
+                <option value="novo">➕ Criar novo equipamento</option>
+                {equipamentosClienteOT.length > 0 && (
+                  <option disabled className="text-gray-500">────────────────</option>
+                )}
+                {equipamentosClienteOT.map((eq) => (
+                  <option key={eq.id} value={eq.id}>
+                    {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
+                  </option>
+                ))}
+              </select>
+              {equipamentoOTSelecionado === 'novo' && (
+                <p className="text-sm text-gray-400 mt-1">
+                  O novo equipamento será guardado na base de dados do cliente
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-gray-300">Tipologia *</Label>
@@ -4996,6 +5021,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, tipologia: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
+                  disabled={equipamentoOTSelecionado !== 'novo'}
                 />
               </div>
               <div>
@@ -5005,6 +5031,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, marca: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
+                  disabled={equipamentoOTSelecionado !== 'novo'}
                 />
               </div>
             </div>
@@ -5017,6 +5044,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, modelo: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
+                  disabled={equipamentoOTSelecionado !== 'novo'}
                 />
               </div>
               <div>
@@ -5025,6 +5053,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   value={equipamentoFormData.numero_serie}
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, numero_serie: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
+                  disabled={equipamentoOTSelecionado !== 'novo'}
                 />
               </div>
             </div>
@@ -5036,6 +5065,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onChange={(e) => setEquipamentoFormData({...equipamentoFormData, ano_fabrico: e.target.value})}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
                 placeholder="Ex: 2020, 03/2020, 03-2020"
+                disabled={equipamentoOTSelecionado !== 'novo'}
               />
             </div>
 
