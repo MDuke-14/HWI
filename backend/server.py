@@ -6525,7 +6525,10 @@ async def iniciar_cronometro(
     
     logging.info(f"Cronómetro {tipo} iniciado para {tecnico_nome} na OT {relatorio_id}")
     
-    return cronometro_dict
+    # Remover _id para evitar erro de serialização
+    cronometro_dict.pop("_id", None)
+    
+    return {"message": f"Cronómetro de {tipo} iniciado", "cronometro": cronometro_dict}
 
 @api_router.post("/relatorios-tecnicos/{relatorio_id}/cronometro/parar")
 async def parar_cronometro(
