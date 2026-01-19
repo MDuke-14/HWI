@@ -263,6 +263,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState('');
   const [modoNovoEquipamento, setModoNovoEquipamento] = useState(false);
+  const [equipamentosClienteOT, setEquipamentosClienteOT] = useState([]);
+  const [equipamentoOTSelecionado, setEquipamentoOTSelecionado] = useState('novo');
 
   useEffect(() => {
     if (activeTab === 'clientes') {
