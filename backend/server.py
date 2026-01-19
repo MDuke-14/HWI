@@ -2615,9 +2615,10 @@ async def salvar_assinatura_digital(
     file: UploadFile = File(...),
     primeiro_nome: str = Form(""),
     ultimo_nome: str = Form(""),
+    data_intervencao: str = Form(""),
     current_user: dict = Depends(get_current_user)
 ):
-    """Salvar assinatura digital (canvas/desenho) para um relatório técnico"""
+    """Salvar assinatura digital (canvas/desenho) para um relatório técnico - permite múltiplas"""
     # Verificar se relatório existe
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
@@ -2645,8 +2646,7 @@ async def salvar_assinatura_digital(
     except Exception as e:
         logging.warning(f"Não foi possível salvar arquivo localmente: {e}")
     
-    # Remover assinatura anterior se existir
-    await db.assinaturas_relatorio.delete_many({"relatorio_id": relatorio_id})
+    # NÃO remover assinaturas anteriores - permitir múltiplas
     
     # Criar registro no banco COM BASE64
     nome_completo = f"{primeiro_nome} {ultimo_nome}".strip()
@@ -2657,7 +2657,8 @@ async def salvar_assinatura_digital(
         assinatura_url=f"/relatorios-tecnicos/{relatorio_id}/assinatura/imagem",
         primeiro_nome=primeiro_nome,
         ultimo_nome=ultimo_nome,
-        assinado_por=nome_completo if nome_completo else None
+        assinado_por=nome_completo if nome_completo else None,
+        data_intervencao=data_intervencao if data_intervencao else None
     )
     
     assinatura_dict = assinatura.dict()
