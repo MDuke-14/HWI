@@ -48,7 +48,11 @@ import {
 import { 
   FolhaHorasModal,
   PDFPreviewModal,
-  DeleteConfirmModal 
+  DeleteConfirmModal,
+  AssinaturaModal,
+  TecnicoModal,
+  EquipamentoModal,
+  MaterialModal
 } from './technical-reports';
 
 // Helper function to format error messages from FastAPI validation errors
