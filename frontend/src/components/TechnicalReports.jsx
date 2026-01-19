@@ -858,7 +858,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     setTecnicoFormData({
       tecnico_id: tecnico.tecnico_id || '',
       tecnico_nome: tecnico.tecnico_nome,
-      horas_cliente: tecnico.horas_cliente,
+      minutos_cliente: tecnico.minutos_cliente || 0,
       kms_deslocacao: tecnico.kms_deslocacao,
       tipo_horario: tecnico.tipo_horario,
       data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0]
