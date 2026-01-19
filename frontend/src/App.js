@@ -12,6 +12,7 @@ import AdminDashboard from '@/components/AdminDashboard';
 import AdminTimeEntries from '@/components/AdminTimeEntries';
 import Calendar from '@/components/Calendar';
 import TechnicalReports from '@/components/TechnicalReports';
+import OvertimeAuthorization from '@/components/OvertimeAuthorization';
 import { Toaster } from '@/components/ui/sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
