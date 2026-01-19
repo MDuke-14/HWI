@@ -341,9 +341,20 @@ const AdminDashboard = ({ user, onLogout }) => {
     <div className="min-h-screen bg-[#0a0a0a]">
       <Navigation user={user} onLogout={onLogout} activePage="admin" />
       <div className="container mx-auto px-4 py-8 max-w-7xl fade-in">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="bg-gradient-to-br from-red-500 to-pink-600 p-3 rounded-xl"><Shield className="w-8 h-8 text-white" /></div>
-          <h1 className="text-4xl font-bold text-white">Painel de Administração</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-red-500 to-pink-600 p-3 rounded-xl"><Shield className="w-8 h-8 text-white" /></div>
+            <h1 className="text-4xl font-bold text-white">Painel de Administração</h1>
+          </div>
+          
+          {/* Quick Access Button */}
+          <Button
+            onClick={() => window.location.href = '/admin/time-entries'}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Clock className="w-5 h-5 mr-2" />
+            Gestão de Entradas
+          </Button>
         </div>
 
         <Tabs defaultValue="vacations" className="w-full">
