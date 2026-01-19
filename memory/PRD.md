@@ -186,8 +186,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **18:15** - Verifica utilizadores com ponto ativo após horário normal
   - Envia email ao utilizador + pedido de autorização ao admin (geral@hwi.pt)
 
-**Autorização de Horas Extra (Sábados/Domingos/Feriados):**
+**Autorização de Horas Extra (Sábados/Domingos/Feriados/Entradas Adicionais):**
 - Quando utilizador inicia ponto em dia especial, pedido de autorização é enviado automaticamente
+- **NOVO:** Quando utilizador já tem horas extra num dia e inicia novamente, também requer autorização
 - Admin recebe email com botões "Autorizar" / "Não Autorizar"
 - ✅ Autorizar: Ponto continua ativo, horas contam como extra
 - ❌ Não Autorizar: Entrada é eliminada (início) ou ponto encerrado às 18:00 (fim do dia)
