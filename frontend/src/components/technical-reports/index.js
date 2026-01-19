@@ -6,3 +6,4 @@ export { default as EquipamentoModal } from './EquipamentoModal';
 export { default as MaterialModal } from './MaterialModal';
 export { default as PDFPreviewModal } from './PDFPreviewModal';
 export { default as DeleteConfirmModal } from './DeleteConfirmModal';
+export { default as CronometroStartModal } from './CronometroStartModal';
