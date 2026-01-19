@@ -131,12 +131,13 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [fotoDescricao, setFotoDescricao] = useState('');
   const [uploadingFoto, setUploadingFoto] = useState(false);
 
-  // Assinatura
-  const [assinatura, setAssinatura] = useState(null);
+  // Assinaturas (múltiplas)
+  const [assinaturas, setAssinaturas] = useState([]);
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
   const [assinaturaCanvas, setAssinaturaCanvas] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
+  const [assinaturaDataIntervencao, setAssinaturaDataIntervencao] = useState('');
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
 
   // Visualizar PDF
