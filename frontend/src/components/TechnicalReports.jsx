@@ -1988,14 +1988,22 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleDeleteAssinatura = async () => {
+  const handleDeleteAssinatura = async (assinaturaId) => {
+    if (!window.confirm('Tem certeza que deseja eliminar esta assinatura?')) return;
+    
     try {
-      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura`);
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinaturaId}`);
       toast.success('Assinatura removida com sucesso!');
-      setAssinatura(null);
+      fetchAssinaturas(selectedRelatorio.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
+  };
+
+  const openAssinaturaModal = () => {
+    setAssinaturaNome({ primeiro: '', ultimo: '' });
+    setAssinaturaDataIntervencao(new Date().toISOString().split('T')[0]);
+    setShowAssinaturaModal(true);
   };
 
 
