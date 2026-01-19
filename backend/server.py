@@ -141,10 +141,8 @@ async def startup_event():
     
     scheduler = AsyncIOScheduler(timezone=pytz.timezone('Europe/Lisbon'))
     
-    # Obter URL base do frontend
-    frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
-    # Remover /api se existir para ter URL limpo
-    base_url = frontend_url.replace('/api', '').rstrip('/')
+    # Obter URL base do frontend (para links nos emails)
+    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
     
     async def scheduled_clock_in_check():
         """Verificação das 09:30 - Utilizadores sem entrada"""
