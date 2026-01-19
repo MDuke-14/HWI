@@ -1927,6 +1927,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         formData.append('file', blob, 'assinatura.png');
         formData.append('primeiro_nome', assinaturaNome.primeiro);
         formData.append('ultimo_nome', assinaturaNome.ultimo);
+        formData.append('data_intervencao', assinaturaDataIntervencao);
 
         try {
           await axios.post(
@@ -1941,6 +1942,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           toast.success('Assinatura digital salva com sucesso!');
           setShowAssinaturaModal(false);
+          setAssinaturaNome({ primeiro: '', ultimo: '' });
+          setAssinaturaDataIntervencao('');
           fetchAssinaturas(selectedRelatorio.id);
         } catch (error) {
           toast.error(formatErrorMessage(error));
@@ -1966,6 +1969,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       const formData = new FormData();
       formData.append('primeiro_nome', assinaturaNome.primeiro);
       formData.append('ultimo_nome', assinaturaNome.ultimo);
+      formData.append('data_intervencao', assinaturaDataIntervencao);
 
       await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-manual`,
@@ -1974,6 +1978,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       toast.success('Assinatura manual salva com sucesso!');
       setShowAssinaturaModal(false);
+      setAssinaturaNome({ primeiro: '', ultimo: '' });
+      setAssinaturaDataIntervencao('');
       fetchAssinaturas(selectedRelatorio.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
