@@ -486,16 +486,58 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleDownloadAllClienteRelatorios = async (cliente) => {
+  const handleDownloadAllClienteRelatorios = async () => {
+    if (clienteRelatorios.length === 0) {
+      toast.error('Não há relatórios para download');
+      return;
+    }
+    
+    setDownloadingAllPDFs(true);
+    let successCount = 0;
+    let errorCount = 0;
+    
+    toast.info(`A preparar ${clienteRelatorios.length} PDF(s) para download...`);
+    
     try {
-      // Por enquanto, apenas mostra os relatórios
-      // TODO: Implementar geração de PDF para relatórios técnicos
-      toast.info('Funcionalidade de download em desenvolvimento');
+      for (const relatorio of clienteRelatorios) {
+        try {
+          const response = await axios.get(
+            `${API}/relatorios-tecnicos/${relatorio.id}/preview-pdf`,
+            { responseType: 'blob' }
+          );
+          
+          // Criar blob e fazer download
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `OT_${relatorio.numero_assistencia}_${relatorio.cliente_nome?.replace(/\s+/g, '_')}.pdf`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          successCount++;
+          
+          // Pequena pausa entre downloads para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (error) {
+          console.error(`Erro ao gerar PDF para OT #${relatorio.numero_assistencia}:`, error);
+          errorCount++;
+        }
+      }
       
-      // Abrir modal de visualização dos relatórios
-      fetchClienteRelatorios(cliente.id);
+      if (successCount > 0 && errorCount === 0) {
+        toast.success(`${successCount} PDF(s) descarregados com sucesso!`);
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.warning(`${successCount} PDF(s) descarregados. ${errorCount} falharam.`);
+      } else {
+        toast.error('Erro ao descarregar PDFs');
+      }
     } catch (error) {
-      toast.error('Erro ao processar relatórios');
+      toast.error('Erro ao processar download dos relatórios');
+    } finally {
+      setDownloadingAllPDFs(false);
     }
   };
 
