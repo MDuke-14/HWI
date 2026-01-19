@@ -231,10 +231,16 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     except:
                         pass
                 
+                # Converter minutos para formato hh:mm
+                minutos_total = tec.get('minutos_cliente', 0)
+                horas = minutos_total // 60
+                mins = minutos_total % 60
+                tempo_formatado = f"{horas}h {mins}min"
+                
                 mao_obra_data.append([
                     tec.get('tecnico_nome', 'N/A'),
                     data_trab or 'N/A',
-                    f"{tec.get('horas_cliente', 0):.2f}h",
+                    tempo_formatado,
                     'Manual',
                     codigos.get(tec.get('tipo_horario', ''), '-')
                 ])
