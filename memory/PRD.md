@@ -177,6 +177,39 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Sistema de Notificações por Email - Regras de Ponto (19 Janeiro 2026)
+**Sistema automático de verificação e autorização de horas extra:**
+
+**Verificações Automáticas (APScheduler):**
+- **09:30** - Verifica utilizadores que não iniciaram ponto (dias úteis)
+  - Envia email ao utilizador se: não tem ponto, não está de férias, não tem falta justificada, não é feriado
+- **18:15** - Verifica utilizadores com ponto ativo após horário normal
+  - Envia email ao utilizador + pedido de autorização ao admin (geral@hwi.pt)
+
+**Autorização de Horas Extra (Sábados/Domingos/Feriados):**
+- Quando utilizador inicia ponto em dia especial, pedido de autorização é enviado automaticamente
+- Admin recebe email com botões "Autorizar" / "Não Autorizar"
+- ✅ Autorizar: Ponto continua ativo, horas contam como extra
+- ❌ Não Autorizar: Entrada é eliminada (início) ou ponto encerrado às 18:00 (fim do dia)
+
+**Novos Endpoints API:**
+- `POST /api/notifications/check-clock-in` - Verificação manual (admin)
+- `POST /api/notifications/check-clock-out` - Verificação manual (admin)
+- `GET /api/overtime/authorization/{token}` - Obter detalhes do pedido
+- `POST /api/overtime/authorization/{token}/decide` - Aprovar/rejeitar
+- `GET /api/overtime/authorizations` - Listar todos os pedidos
+- `GET /api/notifications/logs` - Logs de notificações
+
+**Nova Página Frontend:**
+- `/authorize/:token` - Página para admin aprovar/rejeitar pedidos de horas extra
+
+**Tecnologias:**
+- APScheduler (cron jobs às 09:30 e 18:15, timezone Europe/Lisbon)
+- aiosmtplib (emails via SMTP Outlook)
+- Tokens seguros com validade de 24 horas
+
+**Resultado dos Testes:** 100% de sucesso (15/15 testes passaram)
+
 ---
 
 ## Arquitetura de Código
