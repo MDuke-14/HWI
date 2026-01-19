@@ -3517,6 +3517,19 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         "is_overtime_day": True
     }, {"_id": 0})
     
+    # Verificar se já existe uma entrada hoje com "Fora de Zona de Residência" ativo
+    existing_outside_zone = await db.time_entries.find_one({
+        "user_id": current_user["sub"],
+        "date": today,
+        "outside_residence_zone": True
+    }, {"_id": 0})
+    
+    # Se já existe entrada com outside_residence_zone=True, aplicar automaticamente a esta também
+    outside_zone_value = entry_data.outside_residence_zone or False
+    if existing_outside_zone:
+        outside_zone_value = True
+        logging.info(f"Aplicando outside_residence_zone=True automaticamente (já existe entrada com esta flag hoje)")
+    
     # Flag para indicar se precisa de autorização
     needs_authorization = is_ot or existing_overtime_today is not None
     authorization_reason = ot_reason if is_ot else "Entrada adicional em dia com horas extra"
@@ -3530,8 +3543,8 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         observations=entry_data.observations,
         is_overtime_day=is_ot,
         overtime_reason=ot_reason if is_ot else None,
-        outside_residence_zone=entry_data.outside_residence_zone or False,
-        location_description=entry_data.location_description if entry_data.outside_residence_zone else None
+        outside_residence_zone=outside_zone_value,
+        location_description=entry_data.location_description if outside_zone_value else None
     )
     
     entry_dict = entry.model_dump()
