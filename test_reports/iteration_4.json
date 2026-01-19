@@ -1,0 +1,178 @@
+{
+  "summary": "Completed frontend regression testing for refactored TechnicalReports.jsx modals. All 4 extracted modal components (TecnicoModal, EquipamentoModal, MaterialModal, AssinaturaModal) are working correctly in both Add and Edit modes.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "All Dialog modals",
+        "issues": ["Console warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent} - accessibility improvement recommended"]
+      }
+    ]
+  },
+  
+  "passed_tests": [
+    {
+      "category": "TecnicoModal (Add Mode)",
+      "tests": [
+        "Modal opens when clicking 'Adicionar Registo Manual' button",
+        "Title shows 'Adicionar Técnico' with green plus icon",
+        "Nome do Técnico dropdown populated with system users",
+        "Data do Trabalho date picker works correctly",
+        "Código automatically calculated based on date (1=Diurno, 2=Noturno, S=Sábado, D=Domingo/Feriado)",
+        "Tempo no Cliente (minutos) field with hours/minutes display",
+        "Km (só ida) field with note about multiplication by 2",
+        "Hora de Início/Fim optional fields for Folha de Horas",
+        "Tipo de Horário dropdown with 4 options",
+        "Cancelar and Adicionar Técnico buttons work correctly"
+      ]
+    },
+    {
+      "category": "TecnicoModal (Edit Mode)",
+      "tests": [
+        "Modal opens when clicking edit button on technician record",
+        "Title shows 'Editar Técnico' with blue edit icon",
+        "All fields pre-filled with existing data (tecnico_nome, data_trabalho, minutos_cliente, kms_deslocacao, hora_inicio, hora_fim, tipo_horario)",
+        "Atualizar Técnico button (blue) instead of Adicionar"
+      ]
+    },
+    {
+      "category": "EquipamentoModal (Add Mode)",
+      "tests": [
+        "Modal opens when clicking 'Adicionar Equipamento' button",
+        "Title shows 'Adicionar Equipamento' with green plus icon",
+        "Dropdown to select existing equipment or create new",
+        "Options: 'Criar novo equipamento (guardar na BD do cliente)', 'Adicionar apenas à OT (sem guardar na BD)', existing client equipment",
+        "Green note when creating new: 'O equipamento será guardado na base de dados do cliente'",
+        "Orange note when adding only to OT: 'O equipamento será associado apenas a esta OT'",
+        "Fields: Tipologia, Marca, Modelo, Número de Série, Ano de Fabrico",
+        "Fields disabled when selecting existing equipment",
+        "Cancelar and Adicionar Equipamento buttons work correctly"
+      ]
+    },
+    {
+      "category": "EquipamentoModal (Edit Mode)",
+      "tests": [
+        "Modal opens when clicking edit button on equipment",
+        "Title shows 'Editar Equipamento (Principal)' with blue edit icon for main equipment",
+        "All fields pre-filled with existing data (tipologia, marca, modelo, numero_serie, ano_fabrico)",
+        "Guardar Alterações button (green) instead of Adicionar"
+      ]
+    },
+    {
+      "category": "MaterialModal (Add Mode)",
+      "tests": [
+        "Modal opens when clicking 'Adicionar Material' button",
+        "Title shows 'Adicionar Material' with green plus icon",
+        "Descrição do Material field with placeholder 'Ex: Parafuso M8×20'",
+        "Quantidade field with default value 1",
+        "Fornecido Por dropdown with options: Cliente, HWI, Cotação",
+        "Yellow info box when 'Cotação' selected: 'Um Pedido de Cotação será criado automaticamente para este material'",
+        "Cancelar and Adicionar buttons work correctly"
+      ]
+    },
+    {
+      "category": "MaterialModal (Edit Mode)",
+      "tests": [
+        "Modal opens when clicking edit button on material item",
+        "Title shows 'Editar Material' with blue edit icon",
+        "All fields pre-filled with existing data (descricao, quantidade, fornecido_por)",
+        "Yellow info box shown when fornecido_por is 'Cotação'",
+        "Guardar button (blue) instead of Adicionar"
+      ]
+    },
+    {
+      "category": "AssinaturaModal",
+      "tests": [
+        "Modal opens when clicking 'Nova Assinatura' button",
+        "Title shows 'Assinaturas - OT #355' with pen icon",
+        "Existing signatures displayed with name, date, and signature image",
+        "Edit date button (pencil icon) for existing signatures",
+        "Delete button (trash icon) for existing signatures",
+        "Add new signature section with Primeiro Nome and Último Nome fields",
+        "Data da Intervenção date picker",
+        "Tabs: 'Assinatura Digital' and 'Apenas Nome'",
+        "Signature canvas for digital signature drawing",
+        "Limpar button to clear canvas",
+        "Guardar Assinatura Digital button (blue)",
+        "Guardar Assinatura Manual button (green) in 'Apenas Nome' tab"
+      ]
+    },
+    {
+      "category": "OT Modal Navigation",
+      "tests": [
+        "OTs page accessible via floating button on dashboard",
+        "Ordens de Trabalho tab shows list of OTs",
+        "Clicking on OT card opens detailed modal",
+        "Modal sections: Dados do Cliente, Mão de Obra/Deslocação, Cronómetros, Registos de Mão de Obra, Equipamentos, Intervenções/Assistências, Componentes Adicionais (Photos), Material, Pedidos de Cotação, Assinaturas do Cliente",
+        "All Add/Edit buttons in modal trigger correct extracted components"
+      ]
+    }
+  ],
+  
+  "test_report_links": [
+    "/app/frontend/src/components/technical-reports/TecnicoModal.jsx",
+    "/app/frontend/src/components/technical-reports/EquipamentoModal.jsx",
+    "/app/frontend/src/components/technical-reports/MaterialModal.jsx",
+    "/app/frontend/src/components/technical-reports/AssinaturaModal.jsx",
+    "/app/frontend/src/components/technical-reports/index.js"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "TechnicalReports.jsx is still ~6200 lines - consider further refactoring in future iterations",
+    "All DialogContent components missing aria-describedby for accessibility - minor improvement"
+  ],
+  
+  "updated_files": [],
+  
+  "success_rate": {
+    "backend": "N/A (frontend only testing)",
+    "frontend": "100% (All modal components working correctly)"
+  },
+  
+  "test_credentials": {
+    "admin": {"username": "pedro", "password": "password"}
+  },
+  
+  "seed_data_creation": "Used existing OT #355 with technicians, equipment, materials, and signatures for testing",
+  
+  "verified_modals": [
+    {
+      "component": "TecnicoModal",
+      "file": "/app/frontend/src/components/technical-reports/TecnicoModal.jsx",
+      "add_mode": "Working - Opens with 'Adicionar Técnico' title, all fields functional",
+      "edit_mode": "Working - Opens with 'Editar Técnico' title, pre-fills all data"
+    },
+    {
+      "component": "EquipamentoModal",
+      "file": "/app/frontend/src/components/technical-reports/EquipamentoModal.jsx",
+      "add_mode": "Working - Opens with dropdown selection, create new or select existing",
+      "edit_mode": "Working - Opens with 'Editar Equipamento (Principal)' title, pre-fills all data"
+    },
+    {
+      "component": "MaterialModal",
+      "file": "/app/frontend/src/components/technical-reports/MaterialModal.jsx",
+      "add_mode": "Working - Opens with 'Adicionar Material' title, Cotação info box shows correctly",
+      "edit_mode": "Working - Opens with 'Editar Material' title, pre-fills all data"
+    },
+    {
+      "component": "AssinaturaModal",
+      "file": "/app/frontend/src/components/technical-reports/AssinaturaModal.jsx",
+      "features": "Working - Shows existing signatures, add new with digital canvas or manual name, edit date, delete"
+    }
+  ],
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "Refactored modal components (TecnicoModal, EquipamentoModal, MaterialModal, AssinaturaModal) extracted from TechnicalReports.jsx are fully functional. All modals open/close correctly, form fields work, and data submission to backend is integrated. The main TechnicalReports.jsx component imports these from /app/frontend/src/components/technical-reports/index.js. Navigation to OTs: Dashboard -> floating blue button (bottom right) -> 'Ordens de Trabalho' tab -> click on OT card."
+}
