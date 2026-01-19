@@ -5050,12 +5050,27 @@ const TechnicalReports = ({ user, onLogout }) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <PenTool className="w-5 h-5 text-green-400" />
-              Assinatura do Cliente
+              Nova Assinatura do Cliente
             </DialogTitle>
           </DialogHeader>
 
           <div className="mt-4 space-y-6">
-            <p className="text-gray-400 text-sm">Preencha ambas as assinaturas (obrigatórias):</p>
+            {/* Data da Intervenção */}
+            <div className="bg-[#0f0f0f] border-2 border-orange-500 rounded-lg p-4">
+              <h3 className="text-orange-400 font-semibold text-lg mb-3 flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Data da Intervenção
+              </h3>
+              <p className="text-gray-400 text-sm mb-3">
+                Selecione a data da intervenção para esta assinatura:
+              </p>
+              <Input
+                type="date"
+                value={assinaturaDataIntervencao}
+                onChange={(e) => setAssinaturaDataIntervencao(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white max-w-xs"
+              />
+            </div>
             
             {/* Card 1: Assinatura Digital */}
             <div className="bg-[#0f0f0f] border-2 border-blue-500 rounded-lg p-6">
@@ -5155,7 +5170,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="flex-1 bg-green-500 hover:bg-green-600"
                 disabled={uploadingAssinatura}
               >
-                {uploadingAssinatura ? 'Salvando...' : 'Salvar Assinatura Completa'}
+                {uploadingAssinatura ? 'Salvando...' : 'Guardar Assinatura'}
               </Button>
             </div>
           </div>
