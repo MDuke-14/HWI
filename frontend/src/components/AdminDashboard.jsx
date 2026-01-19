@@ -1089,6 +1089,221 @@ const AdminDashboard = ({ user, onLogout }) => {
             )}
           </TabsContent>
 
+          {/* Notificações Tab Content */}
+          <TabsContent value="notifications">
+            <div className="space-y-6">
+              {/* Verificações Manuais */}
+              <div className="glass-effect p-6 rounded-xl">
+                <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2">
+                  <Play className="w-6 h-6 text-blue-400" />
+                  Verificações Manuais
+                </h2>
+                <p className="text-gray-400 mb-4">
+                  As verificações automáticas executam às 09:30 (entrada) e 18:15 (saída) em dias úteis.
+                  Use os botões abaixo para executar manualmente.
+                </p>
+                <div className="flex gap-4 flex-wrap">
+                  <Button
+                    onClick={handleRunClockInCheck}
+                    disabled={runningCheck !== null}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    {runningCheck === 'clock_in' ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Clock className="w-4 h-4 mr-2" />
+                    )}
+                    Verificar Entradas (09:30)
+                  </Button>
+                  <Button
+                    onClick={handleRunClockOutCheck}
+                    disabled={runningCheck !== null}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {runningCheck === 'clock_out' ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Clock className="w-4 h-4 mr-2" />
+                    )}
+                    Verificar Saídas (18:15)
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      fetchOvertimeAuthorizations(authStatusFilter);
+                      fetchNotificationLogs();
+                    }}
+                    variant="outline"
+                    className="border-gray-600"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Atualizar Dados
+                  </Button>
+                </div>
+              </div>
+
+              {/* Autorizações de Horas Extra */}
+              <div className="glass-effect p-6 rounded-xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6 text-yellow-400" />
+                    Autorizações de Horas Extra
+                    {overtimeAuthorizations.filter(a => a.status === 'pending').length > 0 && (
+                      <span className="bg-red-500 text-white text-sm px-2 py-1 rounded-full ml-2">
+                        {overtimeAuthorizations.filter(a => a.status === 'pending').length} pendentes
+                      </span>
+                    )}
+                  </h2>
+                  <Select value={authStatusFilter} onValueChange={(value) => {
+                    setAuthStatusFilter(value);
+                    fetchOvertimeAuthorizations(value);
+                  }}>
+                    <SelectTrigger className="w-40 bg-[#1a1a1a] border-gray-700 text-white">
+                      <SelectValue placeholder="Filtrar" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-gray-700">
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="pending">Pendentes</SelectItem>
+                      <SelectItem value="approved">Aprovados</SelectItem>
+                      <SelectItem value="rejected">Rejeitados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {loadingNotifications ? (
+                  <div className="text-center py-8">
+                    <RefreshCw className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-2" />
+                    <p className="text-gray-400">A carregar...</p>
+                  </div>
+                ) : overtimeAuthorizations.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                    <p className="text-gray-400">Nenhuma autorização {authStatusFilter !== 'all' ? authStatusFilter : ''}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {overtimeAuthorizations.map((auth) => (
+                      <div
+                        key={auth.id}
+                        className={`p-4 rounded-lg border ${
+                          auth.status === 'pending' ? 'bg-yellow-900/20 border-yellow-600' :
+                          auth.status === 'approved' ? 'bg-green-900/20 border-green-600' :
+                          'bg-red-900/20 border-red-600'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-semibold">{auth.user_name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                auth.status === 'pending' ? 'bg-yellow-600 text-white' :
+                                auth.status === 'approved' ? 'bg-green-600 text-white' :
+                                'bg-red-600 text-white'
+                              }`}>
+                                {auth.status === 'pending' ? 'Pendente' :
+                                 auth.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                              </span>
+                            </div>
+                            <p className="text-gray-400 text-sm">
+                              <span className="text-gray-500">Data:</span> {new Date(auth.date).toLocaleDateString('pt-PT')}
+                              {auth.day_type && <span className="ml-2 text-yellow-400">({auth.day_type})</span>}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              <span className="text-gray-500">Hora:</span> {auth.start_time || auth.clock_in_time || 'N/A'}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              <span className="text-gray-500">Tipo:</span> {auth.request_type === 'overtime_start' ? 'Início em dia especial' : 'Horas extra após 18:00'}
+                            </p>
+                            {auth.decided_by && (
+                              <p className="text-gray-500 text-xs mt-2">
+                                Decidido por {auth.decided_by} em {new Date(auth.decided_at).toLocaleString('pt-PT')}
+                              </p>
+                            )}
+                          </div>
+                          {auth.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleDecideAuthorization(auth.id, 'approve')}
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Autorizar
+                              </Button>
+                              <Button
+                                onClick={() => handleDecideAuthorization(auth.id, 'reject')}
+                                size="sm"
+                                variant="outline"
+                                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Rejeitar
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Logs de Notificações */}
+              <div className="glass-effect p-6 rounded-xl">
+                <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2">
+                  <HistoryIcon className="w-6 h-6 text-gray-400" />
+                  Histórico de Notificações
+                </h2>
+                
+                {notificationLogs.length === 0 ? (
+                  <p className="text-gray-400 text-center py-4">Nenhuma notificação enviada</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-700">
+                          <th className="text-left text-gray-400 py-2 px-3">Data/Hora</th>
+                          <th className="text-left text-gray-400 py-2 px-3">Tipo</th>
+                          <th className="text-left text-gray-400 py-2 px-3">Utilizador</th>
+                          <th className="text-left text-gray-400 py-2 px-3">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {notificationLogs.slice(0, 20).map((log, index) => (
+                          <tr key={index} className="border-b border-gray-800">
+                            <td className="py-2 px-3 text-gray-300 text-sm">
+                              {new Date(log.sent_at).toLocaleString('pt-PT')}
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                log.type === 'clock_in_reminder' ? 'bg-orange-600/20 text-orange-400' :
+                                log.type === 'clock_out_reminder' ? 'bg-purple-600/20 text-purple-400' :
+                                log.type === 'overtime_start_request' ? 'bg-yellow-600/20 text-yellow-400' :
+                                'bg-gray-600/20 text-gray-400'
+                              }`}>
+                                {log.type === 'clock_in_reminder' ? 'Lembrete Entrada' :
+                                 log.type === 'clock_out_reminder' ? 'Lembrete Saída' :
+                                 log.type === 'overtime_start_request' ? 'Pedido Horas Extra' :
+                                 log.type}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-white text-sm">{log.user_name}</td>
+                            <td className="py-2 px-3">
+                              {log.success ? (
+                                <CheckCircle className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-400" />
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
           {/* Tarifas Tab Content */}
           <TabsContent value="tarifas">
             <div className="glass-effect p-6 rounded-xl">
