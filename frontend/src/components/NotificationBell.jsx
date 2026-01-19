@@ -143,6 +143,7 @@ const NotificationBell = ({ user }) => {
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="relative p-2 rounded-full hover:bg-gray-700 transition"
+        data-testid="notification-bell"
       >
         <Bell className="w-5 h-5 text-gray-300" />
         {unreadCount > 0 && (
@@ -150,11 +151,15 @@ const NotificationBell = ({ user }) => {
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
+        {/* Indicador se push não está ativo */}
+        {pushSupported && pushPermission !== 'granted' && (
+          <span className="absolute -bottom-1 -right-1 bg-yellow-500 rounded-full w-2 h-2" title="Notificações push não ativas" />
+        )}
       </button>
 
       {/* Dropdown de notificações */}
       {showDropdown && (
-        <div className="absolute right-0 top-12 w-96 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+        <div className="absolute right-0 top-12 w-96 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 max-h-[32rem] overflow-y-auto">
           <div className="p-3 border-b border-gray-700 flex items-center justify-between">
             <h3 className="text-white font-semibold">Notificações</h3>
             <button
@@ -165,6 +170,34 @@ const NotificationBell = ({ user }) => {
             </button>
           </div>
 
+          {/* Banner para ativar notificações push */}
+          {pushSupported && pushPermission !== 'granted' && (
+            <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <BellRing className="w-8 h-8 text-blue-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-white text-sm font-medium">Ativar notificações push</p>
+                  <p className="text-gray-400 text-xs">Receba alertas no seu dispositivo</p>
+                </div>
+                <button
+                  onClick={requestNotificationPermission}
+                  className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition"
+                  data-testid="enable-push-btn"
+                >
+                  Ativar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Status de push ativo */}
+          {pushSubscribed && (
+            <div className="px-3 py-2 bg-green-500/10 border-b border-gray-700 flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-green-400 text-xs">Notificações push ativas</span>
+            </div>
+          )}
+
           <div className="divide-y divide-gray-700">
             {notifications.length > 0 ? (
               notifications.map((notif) => (
@@ -172,6 +205,7 @@ const NotificationBell = ({ user }) => {
                   key={notif.id}
                   className={`p-4 hover:bg-gray-800/50 cursor-pointer border-l-4 ${getPriorityColor(notif.priority)}`}
                   onClick={() => markAsRead(notif.id)}
+                  data-testid={`notification-item-${notif.id}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -206,6 +240,7 @@ const NotificationBell = ({ user }) => {
                   }
                 }}
                 className="text-blue-400 hover:text-blue-300 text-sm"
+                data-testid="clear-all-notifications"
               >
                 Limpar todas
               </button>
