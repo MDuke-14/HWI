@@ -3358,8 +3358,44 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     
     await db.time_entries.insert_one(entry_dict)
     
+    # Se é dia especial (fim de semana ou feriado), enviar pedido de autorização
+    overtime_authorization_sent = False
+    if is_ot:
+        try:
+            # Buscar dados do utilizador
+            user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+            user_name = user.get("full_name") or user.get("username") if user else current_user["username"]
+            user_email = user.get("email") if user else None
+            
+            frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
+            base_url = frontend_url.replace('/api', '').rstrip('/')
+            
+            result = await handle_overtime_start(
+                db=db,
+                user_id=current_user["sub"],
+                user_name=user_name,
+                user_email=user_email,
+                entry_id=entry_dict['id'],
+                base_url=base_url
+            )
+            overtime_authorization_sent = result.get("status") == "authorization_requested"
+            logging.info(f"Overtime authorization request: {result}")
+        except Exception as e:
+            logging.error(f"Error sending overtime authorization: {str(e)}")
+    
     # Return entry without MongoDB's _id field
-    return {"message": "Relógio iniciado", "entry": {k: v for k, v in entry_dict.items() if k != '_id'}}
+    response = {
+        "message": "Relógio iniciado",
+        "entry": {k: v for k, v in entry_dict.items() if k != '_id'}
+    }
+    
+    if overtime_authorization_sent:
+        response["overtime_authorization"] = {
+            "sent": True,
+            "message": f"Pedido de autorização enviado para a administração ({ot_reason})"
+        }
+    
+    return response
 
 @api_router.post("/time-entries/end/{entry_id}")
 async def end_time_entry(
