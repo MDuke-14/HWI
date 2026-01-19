@@ -8141,8 +8141,7 @@ async def generate_folha_horas(
 @api_router.post("/notifications/check-clock-in")
 async def trigger_clock_in_check(current_user: dict = Depends(get_current_admin)):
     """Executar verificação manual de entrada de ponto (apenas admin)"""
-    frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
-    base_url = frontend_url.replace('/api', '').rstrip('/')
+    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
     
     result = await check_clock_in_status(db, base_url)
     return result
@@ -8151,8 +8150,7 @@ async def trigger_clock_in_check(current_user: dict = Depends(get_current_admin)
 @api_router.post("/notifications/check-clock-out")
 async def trigger_clock_out_check(current_user: dict = Depends(get_current_admin)):
     """Executar verificação manual de saída de ponto (apenas admin)"""
-    frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
-    base_url = frontend_url.replace('/api', '').rstrip('/')
+    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
     
     result = await check_clock_out_status(db, base_url)
     return result
