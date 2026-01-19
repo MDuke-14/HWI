@@ -3766,7 +3766,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     type="number"
                     min="0"
                     max="24"
-                    value={Math.floor(tecnicoFormData.minutos_cliente / 60)}
+                    value={Math.floor(tecnicoFormData.minutos_cliente / 60) || ''}
                     onChange={(e) => {
                       const horas = parseInt(e.target.value) || 0;
                       const minutos = tecnicoFormData.minutos_cliente % 60;
