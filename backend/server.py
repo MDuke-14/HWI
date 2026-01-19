@@ -239,7 +239,7 @@ class TecnicoRelatorio(BaseModel):
     relatorio_id: str
     tecnico_id: Optional[str] = None  # Opcional - pode ser nome livre
     tecnico_nome: str
-    horas_cliente: float = 0
+    minutos_cliente: int = 0  # Tempo em minutos
     kms_deslocacao: float = 0  # Será multiplicado por 2 no frontend
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
