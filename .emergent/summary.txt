@@ -1,78 +1,76 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to continue enhancing a full-stack time-tracking and work-order (OT) management application. The user provided a detailed new feature request:
-
-**Folha de Horas (Timesheet) Feature:**
-1.  Add a Folha de Horas button to each OT (Work Order).
-2.  Clicking the button should open a modal to generate a horizontal PDF timesheet.
-3.  The PDF must contain a detailed table with the following columns: Data, Dia de Semana, Técnicos, Horas, Tarifa, Total Valor, Km's, Preço por Km, Total de valor de Km's, Inicio, Pausa, Fim, Dieta, Portagens, Despesas, and Observações.
-4.  The system needs a new section in the admin dashboard for managing Tarifas (rates), which are selectable per technician when generating the timesheet.
-5.  The modal should allow an admin to input values for Dieta (allowance), Portagens (tolls), and Despesas (expenses) before generating the PDF.
-6.  The timesheet entries in the modal and the final PDF must be sorted chronologically by date.
-7.  The modal must display the date and day of the week next to each technician entry.
-
-After the implementation and fixes for the Folha de Horas, the user requested to prioritize refactoring the oversized  component.
+The user's initial goal was to enhance a full-stack time-tracking and work-order (OT) management application. The project has evolved through several stages:
+1.  **Folha de Horas (Timesheet) Feature:** A feature to generate a detailed PDF timesheet from a work order was implemented and completed.
+2.  **Refactoring :** A massive 7,200-line React component was successfully refactored into smaller, manageable components. This task is complete.
+3.  **Email Notification System:** A comprehensive system was built to send email alerts and handle authorization for time tracking. This includes:
+    *   Scheduled checks for missed clock-ins and clock-outs on weekdays.
+    *   An authorization flow via email for overtime work performed on weekends, holidays, or after hours on weekdays.
+    *   A rule requiring admin approval if a user starts a new shift on a day they already have recorded overtime.
+4.  **Admin Notifications Dashboard:** An admin-facing dashboard was created to view and manage pending overtime authorizations and see a history of all notifications.
+5.  **Incremental Improvements & Bug Fixes:**
+    *   Fixed email authorization links that incorrectly pointed to .
+    *   Made equipment fields on work orders optional.
+    *   Modified the manual technician entry modal to use HH:MM format for time and to calculate Kms from a start and end value, rather than a single input.
+6.  **Current Task: Calendar UI Enhancement:** The user requested an improvement to the calendar's user interface.
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-The application is a comprehensive OT management system. In this session, a major new feature, Folha de Horas (Timesheet), was fully implemented. This includes a new backend PDF generator (), a new data model and CRUD endpoints for managing  (rates), and a new UI in the admin dashboard for rate management. The frontend was updated to allow generating this new PDF from a modal with fields for selecting rates and adding expenses.
-
-A major refactoring of the massive  component (over 7,200 lines) has just begun. Several modal components have been extracted into a new  directory, and the process of integrating them back into the main component is underway.
+The application is a robust work-order management system with advanced time-tracking capabilities. Key features include OT management, PDF report generation, a Folha de Horas (Timesheet) feature, and a newly implemented, fully-functional email notification system for time-tracking rules, complete with an admin dashboard for managing authorizations. The frontend has been significantly improved through major refactoring, and several UI/UX enhancements requested by the user have been applied. The backend uses scheduled jobs (APScheduler) to automate the notification workflow.
 
 **Last working item**:
--   **Last item agent was working:** Refactoring the  component. The agent had just updated the extracted  to accept callback functions (, ) and was in the process of replacing the inline Add/Edit Técnico modals with this new component. The old inline modal code was identified as residual and needs to be removed.
+-   **Last item agent was working:** Improving the UI of the  component. The agent received design guidelines from the , generated a new version of the component, and overwrote the existing file. The implementation is complete, but it has not been tested yet.
 -   **Status:** IN PROGRESS
--   **Agent Testing Done:** N (for the latest refactoring step)
--   **Which testing method agent to use?** Frontend testing agent. The agent must perform regression testing on all functionalities related to the extracted modals (, , , , etc.) to ensure that moving the logic to child components did not break anything. The tests should cover opening the modals, interacting with forms, and submitting data.
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent. The agent should first restart the service and take a screenshot to visually verify the new UI. Then, it should use the testing agent to perform regression tests on all calendar functionalities (e.g., viewing events, navigating months, ensuring data loads correctly) to confirm that the UI overhaul did not break existing features.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
 -   **Issue 1: Unresolved Testing Agent Failure (P1)**
-    -   **Description:** From a previous session, the testing agent reported an  and a Testing Not Completed status when testing the Edit OT Equipment feature. The user instructed to prioritize the Folha de Horas feature, so this was postponed. The stability of the equipment editing feature remains unknown.
-    -   **Attempted fixes:** None. The agent was instructed to work on a higher-priority task.
+    -   **Description:** From a previous session, the testing agent reported an  and a Testing Not Completed status when testing the Edit OT Equipment feature. This was postponed to prioritize other features. The stability of this core functionality is unknown.
+    -   **Attempted fixes:** None.
     -   **Next debug checklist:**
-        1.  Invoke the  with specific instructions to test editing an existing equipment item within an OT.
-        2.  Analyze the test report and logs if the failure persists.
-        3.  Check the backend endpoint  and the frontend handler  in  (or its newly refactored child component).
-    -   **Why fix this issue and what will be achieved with the fix?** This is a core feature that allows users to correct equipment information on work orders. Fixing it ensures data integrity and a stable user experience.
+        1.  Invoke the  with a clear instruction to test editing an existing equipment item within a work order.
+        2.  If the test fails again, analyze the test report () and the backend logs ().
+        3.  Inspect the frontend handler  (now inside ) and the backend endpoint  in .
+    -   **Why fix this issue and what will be achieved with the fix?** This is a core CRUD functionality. Fixing it is crucial for data integrity and user trust in the application.
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Both
     -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1: Complete Refactoring of  (P0)**
-    -   **Description:** The  component (originally >7,200 lines) is being broken down into smaller, manageable components located in . This task involves extracting the logic and JSX for each modal and section into its own file and then integrating the new components back into , passing state and handlers as props.
-    -   **Where to resume:** The agent just substituted the inline Add/Edit Técnico modals with the new  component. The immediate next step is to delete the now-redundant JSX and logic for those modals from  (lines ~4218 to ~4594). Afterward, continue the same process for the remaining extracted components: , , , and .
-    -   **What will be achieved with this?** A significantly more maintainable, readable, and less error-prone frontend codebase. This will make future feature development faster and safer.
+-   **Task 1: Complete and Verify Calendar UI Improvement (P0)**
+    -   **Where to resume:** The file  has been overwritten with a new design. The next step is to restart the frontend service, take a screenshot to visually inspect the new calendar, and then run the frontend testing agent to ensure all functionalities are working correctly.
+    -   **What will be achieved with this?** A modern, more intuitive, and visually appealing calendar interface that aligns with the new design guidelines.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Frontend (heavy regression testing required).
-    -   **Blocked on something:** No.
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on something:** No
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
     -   **(P1) OneDrive Integration:** Use OneDrive as the central storage for all files (photos, signatures, PDFs) instead of storing Base64 strings in MongoDB.
 -   **Future Tasks:**
-    -   **(P2) Enhance Calendar UI:** The component  could be enhanced further.
+    -   **(P2) Overtime Reporting:** Create a new report in the admin dashboard summarizing approved/rejected overtime authorizations by user.
+    -   **(P2) Real-time Admin Notifications:** Implement WebSockets to notify admins in real-time about new pending authorization requests, rather than relying on them to check the dashboard.
 
 **Completed work in this session**
--   **Feature - Folha de Horas (Timesheet) Implemented:**
-    -   Created a new admin page ( with a Tarifas tab) to perform CRUD operations on technician rates.
-    -   Added a Folha de Horas button inside the OT details modal.
-    -   Implemented a modal that allows selecting rates per technician and entering extra costs (allowances, tolls, expenses) for a given OT.
-    -   Developed a backend endpoint () and a PDF generator () to create a horizontal, chronologically-sorted timesheet PDF with all required calculations.
--   **Bugfix - Folha de Horas PDF:**
-    -   Fixed empty / columns by adding  and  fields to manual time entries (both frontend and backend).
-    -   Corrected the  calculation logic in the PDF generator.
-    -   Implemented chronological sorting for all entries in the PDF and the frontend modal.
--   **Refactoring -  Started:**
-    -   Created a new directory .
-    -   Extracted 8 modal/section components from  into separate files (, , , , , , , ).
-    -   Successfully integrated  and  back into the main component.
+-   **Refactoring -  (DONE):** Successfully completed the full refactoring of the monolithic component into smaller, modular components (, , , ). The final result passed all regression tests.
+-   **Feature - Email Notification & Authorization System (DONE):**
+    -   Implemented a backend scheduler () to send emails for missed clock-ins and clock-outs.
+    -   Created an authorization flow for overtime via secure links sent by email.
+    -   Built a public page () to handle admin decisions.
+    -   Added a new rule to require authorization for additional clock-ins on days with existing overtime.
+-   **Feature - Admin Notifications Dashboard (DONE):**
+    -   Added a Notificações tab to the Admin Dashboard to manage pending authorizations and view notification history.
+-   **Bugfix - Production URL in Emails (DONE):** Fixed email authorization links by adding and using a  environment variable in the backend, ensuring links work outside of the local environment.
+-   **Improvement - OT Equipment & Technician Modals (DONE):**
+    -   Made all equipment fields optional.
+    -   Changed the technician time input to HH:MM format.
+    -   Updated the Kms calculation to use start and end values, removing the previous multiplication logic and updating the UI, backend, and PDF reports accordingly.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Testing Agent Failure during Equipment Edit Test**
-    -   As described in All Pending/In progress Issue list. The user deprioritized this to focus on new features and refactoring.
+-   **Issue 1: Testing Agent Failure during Equipment Edit Test:** As described in All Pending/In progress Issue list. This issue was deferred by user request and has not been addressed yet.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -81,79 +79,84 @@ A major refactoring of the massive  component (over 7,200 lines) has just begun.
 
 
 **Key Technical Concepts**
--   **Component Refactoring:** Breaking down a large, monolithic React component () into smaller, single-responsibility components to improve maintainability. Passing state and callback functions as props.
--   **Complex PDF Generation (ReportLab):** Created a new, complex, horizontal PDF document from scratch using ReportLab, involving custom styling, tables, data aggregation, and dynamic calculations.
--   **Dynamic Data Handling:** Implemented logic to handle different types of time entries (stopwatch vs. manual) and merge them into a single, sorted dataset for the PDF.
--   **State Management for Dynamic Forms:** Managed complex state for dynamically generated form fields in the Folha de Horas modal (e.g., one set of inputs per technician per day).
+-   **Background Scheduled Jobs (APScheduler):** Using a library to run tasks (like checking for missed clock-ins) at specific, recurring times.
+-   **Asynchronous Emailing (aiosmtplib):** Sending emails from the backend without blocking the main application thread.
+-   **Token-Based URL Authorization:** Generating and managing secure, single-use tokens for actions initiated from external systems (like email).
+-   **Environment Configuration:** Separating backend and frontend configuration and ensuring the backend has access to necessary frontend URLs for generating correct links.
+-   **Complex Form Logic:** Managing state for dynamic forms with calculated fields (e.g., Kms calculation, total minutes from HH:MM).
 
 **key DB schema**
--   **tarifas** (NEW):  - Stores the different billing rates for technicians.
--   **tecnicos_relatorio**: Modified to include optional  and  for manual time entries.
+-   **overtime_authorizations** (NEW): 
+-   **time_entries**: Modified to include , .
+-   **tecnicos_relatorio**: Modified to replace  with  and .
 
 **All files of reference**
--   **/app/frontend/src/components/TechnicalReports.jsx**: The main component being refactored.
--   **/app/frontend/src/components/technical-reports/**: The directory containing all the newly extracted components.
--   **/app/backend/server.py**: Contains all new backend endpoints for rates and the timesheet feature.
--   **/app/backend/folha_horas_pdf.py**: The new PDF generator for the timesheet.
--   **/app/frontend/src/components/AdminDashboard.jsx**: Contains the UI for managing rates.
--   **/app/memory/PRD.md**: Updated with the new feature and refactoring status.
+-   /app/frontend/src/components/Calendar.jsx
+-   /app/backend/notifications_scheduler.py
+-   /app/backend/server.py
+-   /app/frontend/src/components/AdminDashboard.jsx
+-   /app/frontend/src/components/OvertimeAuthorization.jsx
+-   /app/frontend/src/components/technical-reports/TecnicoModal.jsx
 
 **Areas that need refactoring**:
--   **/app/frontend/src/components/TechnicalReports.jsx**: The refactoring is in progress but far from complete. The remaining ~7,000 lines of logic and JSX for modals (Equipment, Materials, Signatures, etc.) must be fully extracted and integrated.
+-    has grown significantly with the addition of the notifications tab. It could be a candidate for future refactoring, breaking each tab into a separate sub-component.
 
 **key api endpoints**
 -   **New Endpoints:**
-    -   : Create a new rate.
-    -   : Get all rates.
-    -   : Update a rate.
-    -   : Delete a rate.
-    -   : Get all processed data needed for the timesheet modal.
-    -   : Generate and return the timesheet PDF.
+    -   : Manually triggers the check for users who haven't clocked in.
+    -   : Manually triggers the check for users who haven't clocked out.
+    -   : Retrieves all authorization requests for the admin dashboard.
+    -   : Processes an admin's decision (approve/reject) from an authorization request.
+    -   : Retrieves the details of a single authorization request for the public page.
 -   **Modified Endpoints:**
-    -   : Updated to accept  and .
-    -   : Updated to accept  and .
+    -   : Logic was added to check if the clock-in requires overtime authorization.
+    -   : Endpoints for adding/editing technicians were updated to handle  and .
 
 **Critical Info for New Agent**
--   **PRIORITY 1 is the Refactoring Task.** The user has explicitly approved continuing this work. Proceed by integrating the remaining components one by one (, , , etc.). This will likely involve adapting the child components to accept state and callback functions as props from .
--   **Test Incrementally.** After integrating each component, run a quick check to ensure the frontend compiles and the specific functionality of that modal hasn't broken. Full regression testing should be done after a significant batch of components are integrated.
--   The Folha de Horas feature is complete and verified by the user, but the code for its modal now lives in .
--   The P1 issue regarding Edit OT Equipment is still pending and should be addressed after the refactoring is in a good state.
+-   **Priority 1 is testing the Calendar.** The file  was just overwritten. You must restart the services, visually inspect the new UI via a screenshot, and then run regression tests to ensure no functionality was broken.
+-   **Address the pending equipment bug.** After the calendar task is verified by the user, the P1 issue regarding the Edit OT Equipment test failure should be investigated and resolved.
+-   **The user is highly engaged.** Expect to work in small, incremental steps, seeking user feedback after each one. The user provides clear directions and priorities.
+-   The notification system's email links depend on the  variable in . The user has provided the correct production URL to use.
 
 **documents and test reports created in this job**
--   /app/memory/PRD.md
--   /app/test_reports/iteration_3.json
+-   /app/test_reports/iteration_4.json
+-   /app/test_reports/iteration_5.json
+-   /app/memory/PRD.md (updated multiple times)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request**: Refactor . (IN PROGRESS)
-2.  **Confirmation**: User approved the refactoring plan. (DONE)
-3.  **Request**: Show date/day of the week in the timesheet modal and sort entries chronologically in the PDF. (DONE)
-4.  **Bug Report**: User provided a screenshot showing the generated Folha de Horas PDF had empty time columns and incorrect totals. (DONE)
-5.  **Confirmation**: Agent finished the Folha de Horas implementation (before bug report).
-6.  **Confirmation**: User confirmed that expenses are associated with a specific technician/date and data from the modal is only for PDF generation. User also approved deferring the P0 issue to work on Folha de Horas. (DONE)
-7.  **Request**: Detailed requirements for the Folha de Horas (Timesheet) feature. (DONE)
-8.  **Confirmation**: User approved the plan to continue integrating the rest of the refactored components. (PENDING ACTION)
-9.  **Request**: Integrate remaining components (, , etc.). (PENDING ACTION)
-10. **Confirmation**: User confirmed sim (yes) to continue the refactoring task after the first component was extracted. (DONE)
+1.  **Request**: Improve the Calendar UI. (IN PROGRESS)
+2.  **Request**: Update the Kms calculation on OTs to use initial Kms and final Kms instead of a single value. (DONE)
+3.  **Request**: Update the technician modal: Time at client should be in HH:MM format, and Kms can be 0. (DONE)
+4.  **Request**: Make equipment data fields on OTs optional. (DONE)
+5.  **Confirmation**: User provided the final production URL to be used in email links. (DONE)
+6.  **Bug Report**: User reported that authorization links in emails were broken because they pointed to . (DONE)
+7.  **Request**: Add a new rule to the notification system: require admin approval if a user starts a new shift on a day they already have overtime. (DONE)
+8.  **Confirmation**: User approved the plan to build the notifications dashboard. (DONE)
+9.  **Finish Action**: Agent finished the notification system and suggested building a dashboard for it. (DONE)
+10. **Confirmation**: User approved the plan to start the notification system implementation. (DONE)
 
 **Project Health Check:**
--   **Broken:** The Edit OT Equipment feature is still potentially broken, pending investigation of the failed test from a previous session.
+-   **Broken:** The Edit OT Equipment feature is potentially broken, pending investigation of a failed test from a previous session.
 -   **Mocked:** None
 
 **3rd Party Integrations**
 -   ReportLab
 -   pywebpush
 -   pdfminer.six
+-   APScheduler (newly added)
+-   aiosmtplib (used for SMTP)
 
 **Testing status**
--   Testing agent used after significant changes: YES (for the Folha de Horas feature, which passed).
+-   Testing agent used after significant changes: YES. The  refactoring and the notification system were both successfully validated by the testing agent.
 -   Troubleshoot agent used after agent stuck in loop: NO
 -   Test files created:
-    -   
--   Known regressions: None confirmed, but the refactoring poses a high risk if not tested thoroughly.
+    -   /app/test_reports/iteration_4.json
+    -   /app/test_reports/iteration_5.json
+-   Known regressions: None confirmed, but the Edit OT Equipment feature remains a potential regression from a past session.
 
 **Credentials to test flow:**
 -   **admin:**  / 
 -   **non-admin:**  / 
 
 **What agent forgot to execute**
--   After replacing the inline Add/Edit Técnico modals with the  component, the agent identified the large blocks of old, now-redundant code in  but did not proceed to delete them before the session ended.</analysis>
+-   The agent has consistently followed user requests. The only outstanding tracked item is the Edit OT Equipment test failure, which was intentionally deferred based on user-provided priorities and is correctly listed as a pending issue.</analysis>
