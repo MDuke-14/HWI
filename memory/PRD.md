@@ -50,6 +50,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Descarrega todos os PDFs sequencialmente
 - Mostra progresso e contador de sucesso/erro
 
+#### ✅ Exportar Lista de Clientes para PDF (Completo)
+- Botão "Exportar PDF" na página de Clientes (apenas admin)
+- PDF contém tabela com: #, Nome, Email, NIF
+- Data de exportação e total de clientes no rodapé
+
 ---
 
 ### Sessões Anteriores
