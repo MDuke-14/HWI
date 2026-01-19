@@ -2716,7 +2716,7 @@ async def get_assinatura(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Obter assinatura de um relatório técnico"""
+    """Obter assinatura de um relatório técnico - retorna a primeira (compatibilidade)"""
     assinatura = await db.assinaturas_relatorio.find_one(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
@@ -2726,6 +2726,38 @@ async def get_assinatura(
         return None
     
     return assinatura
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/assinaturas")
+async def get_all_assinaturas(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter todas as assinaturas de um relatório técnico"""
+    assinaturas = await db.assinaturas_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("data_assinatura", 1).to_list(100)
+    
+    return assinaturas
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_id}")
+async def delete_assinatura(
+    relatorio_id: str,
+    assinatura_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Eliminar uma assinatura específica"""
+    result = await db.assinaturas_relatorio.delete_one({
+        "id": assinatura_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Assinatura não encontrada")
+    
+    logging.info(f"Assinatura {assinatura_id} eliminada do relatório {relatorio_id}")
+    
+    return {"message": "Assinatura eliminada com sucesso"}
 
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/assinatura/imagem")
 async def get_assinatura_imagem(
