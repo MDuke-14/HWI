@@ -44,6 +44,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Componentes extraídos
+import { 
+  FolhaHorasModal,
+  PDFPreviewModal,
+  DeleteConfirmModal 
+} from './technical-reports';
+
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
   if (!error.response) {
