@@ -3968,6 +3968,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <Eye className="w-5 h-5 mr-2" />
                   {loadingPDFPreview ? 'A gerar...' : 'Visualizar PDF'}
                 </Button>
+                <Button
+                  onClick={handleOpenFolhaHoras}
+                  disabled={loadingFolhaHoras}
+                  size="lg"
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-4"
+                  data-testid="folha-horas-btn"
+                >
+                  <FileSpreadsheet className="w-5 h-5 mr-2" />
+                  {loadingFolhaHoras ? 'A carregar...' : 'Folha de Horas'}
+                </Button>
               </div>
 
 
