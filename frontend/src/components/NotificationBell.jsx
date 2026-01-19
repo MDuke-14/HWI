@@ -88,21 +88,32 @@ const NotificationBell = ({ user }) => {
   }, [subscribeToPush]);
 
   useEffect(() => {
-    // Verificar suporte a push notifications
-    if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
-      setPushSupported(true);
-      setPushPermission(Notification.permission);
-      
-      // Se já tem permissão, verificar subscription existente (não criar nova automaticamente)
-      if (Notification.permission === 'granted' && user) {
-        navigator.serviceWorker.ready.then(async (registration) => {
-          const existingSub = await registration.pushManager.getSubscription();
-          if (existingSub) {
-            setPushSubscribed(true);
+    const checkPushStatus = async () => {
+      // Verificar suporte a push notifications
+      if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
+        setPushSupported(true);
+        setPushPermission(Notification.permission);
+        
+        // Se já tem permissão, verificar subscription existente
+        if (Notification.permission === 'granted' && user) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const existingSub = await registration.pushManager.getSubscription();
+            if (existingSub) {
+              console.log('Subscription existente encontrada');
+              setPushSubscribed(true);
+            } else {
+              console.log('Nenhuma subscription encontrada');
+              setPushSubscribed(false);
+            }
+          } catch (error) {
+            console.error('Erro ao verificar subscription:', error);
           }
-        });
+        }
       }
-    }
+    };
+
+    checkPushStatus();
 
     // Buscar notificações iniciais
     if (user) {
