@@ -16,11 +16,18 @@ from collections import defaultdict
 
 def format_time_hhmm(dt):
     """Formata datetime para HH:MM"""
+    if not dt:
+        return '-'
+    
     if isinstance(dt, str):
+        # Se já é HH:MM, retornar diretamente
+        if len(dt) == 5 and ':' in dt:
+            return dt
         try:
             dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
         except:
-            return dt
+            return dt if dt else '-'
+    
     return dt.strftime('%H:%M') if dt else '-'
 
 
