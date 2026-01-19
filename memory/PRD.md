@@ -181,7 +181,16 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 └── frontend/
     └── src/
         └── components/
-            ├── TechnicalReports.jsx  # Gestão de OTs (componente principal)
+            ├── technical-reports/    # Componentes extraídos (refatoração)
+            │   ├── FolhaHorasModal.jsx
+            │   ├── AssinaturaModal.jsx
+            │   ├── TecnicoModal.jsx
+            │   ├── EquipamentoModal.jsx
+            │   ├── MaterialModal.jsx
+            │   ├── PDFPreviewModal.jsx
+            │   ├── DeleteConfirmModal.jsx
+            │   └── index.js
+            ├── TechnicalReports.jsx  # Gestão de OTs (componente principal - refatorado)
             ├── AdminDashboard.jsx    # Admin Dashboard com tab Tarifas
             ├── Dashboard.jsx         # Dashboard principal
             └── ...
