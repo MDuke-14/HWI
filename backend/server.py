@@ -8085,6 +8085,93 @@ async def generate_folha_horas(
     )
 
 
+# ============ Sistema de Notificações de Ponto Routes ============
+
+@api_router.post("/notifications/check-clock-in")
+async def trigger_clock_in_check(current_user: dict = Depends(get_current_admin)):
+    """Executar verificação manual de entrada de ponto (apenas admin)"""
+    frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
+    base_url = frontend_url.replace('/api', '').rstrip('/')
+    
+    result = await check_clock_in_status(db, base_url)
+    return result
+
+
+@api_router.post("/notifications/check-clock-out")
+async def trigger_clock_out_check(current_user: dict = Depends(get_current_admin)):
+    """Executar verificação manual de saída de ponto (apenas admin)"""
+    frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
+    base_url = frontend_url.replace('/api', '').rstrip('/')
+    
+    result = await check_clock_out_status(db, base_url)
+    return result
+
+
+@api_router.get("/overtime/authorization/{token}")
+async def get_overtime_authorization(token: str):
+    """Obter detalhes de um pedido de autorização de horas extra"""
+    auth_request = await db.overtime_authorizations.find_one({"id": token}, {"_id": 0})
+    
+    if not auth_request:
+        raise HTTPException(status_code=404, detail="Pedido de autorização não encontrado")
+    
+    # Verificar se expirou
+    expires_at = datetime.fromisoformat(auth_request.get("expires_at"))
+    if datetime.now() > expires_at:
+        raise HTTPException(status_code=410, detail="Este pedido de autorização expirou")
+    
+    return auth_request
+
+
+@api_router.post("/overtime/authorization/{token}/decide")
+async def decide_overtime_authorization(
+    token: str,
+    decision: OvertimeDecision,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Aprovar ou rejeitar pedido de autorização de horas extra"""
+    # Buscar nome do admin
+    admin = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
+    admin_name = admin.get("full_name") or admin.get("username") if admin else "Admin"
+    
+    approved = decision.action == "approve"
+    result = await process_authorization_decision(db, token, approved, admin_name)
+    
+    return result
+
+
+@api_router.get("/overtime/authorizations")
+async def list_overtime_authorizations(
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Listar todos os pedidos de autorização de horas extra (apenas admin)"""
+    query = {}
+    if status:
+        query["status"] = status
+    
+    authorizations = await db.overtime_authorizations.find(
+        query,
+        {"_id": 0}
+    ).sort("requested_at", -1).to_list(100)
+    
+    return authorizations
+
+
+@api_router.get("/notifications/logs")
+async def get_notification_logs(
+    limit: int = 50,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Obter logs de notificações enviadas (apenas admin)"""
+    logs = await db.notification_logs.find(
+        {},
+        {"_id": 0}
+    ).sort("sent_at", -1).to_list(limit)
+    
+    return logs
+
+
 # ============ Include Router ============
 
 app.include_router(api_router)
