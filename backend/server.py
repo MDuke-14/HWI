@@ -1805,22 +1805,6 @@ async def create_relatorio(
             await db.equipamentos.insert_one(equipamento_dict)
             logging.info(f"Equipamento criado automaticamente: {novo_equipamento.marca} {novo_equipamento.modelo}")
     
-    # Adicionar técnico criador automaticamente
-    tecnico = TecnicoRelatorio(
-        relatorio_id=relatorio.id,
-        tecnico_id=current_user["sub"],
-        tecnico_nome=user.get("full_name", user["username"]),
-        horas_cliente=0.0,
-        kms_deslocacao=0.0,
-        tipo_horario="diurno",
-        data_trabalho=relatorio_data.data_servico,  # Data do serviço como data de trabalho inicial
-        ordem=0
-    )
-    
-    tecnico_dict = tecnico.dict()
-    tecnico_dict["data_trabalho"] = tecnico_dict["data_trabalho"].isoformat()
-    await db.tecnicos_relatorio.insert_one(tecnico_dict)
-    
     logging.info(f"Relatório técnico criado: {numero_assistencia} por {current_user['sub']}")
     return relatorio
 
