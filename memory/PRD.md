@@ -67,6 +67,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - Seleção de tarifa por técnico (dropdown com tarifas configuradas)
   - Preenchimento de dietas/portagens/despesas por técnico e data
   - Botão "Gerar PDF"
+- **Novos campos no registo manual de técnicos:**
+  - Hora de Início (HH:MM) - para Folha de Horas
+  - Hora de Fim (HH:MM) - para Folha de Horas
 - **PDF Gerado em Formato Horizontal (Landscape) com colunas:**
   - Data, Dia Semana, Técnico, Horas, Tarifa, Total Valor
   - Km's, Preço/Km (0,65€), Total Km
