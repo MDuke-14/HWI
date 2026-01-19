@@ -15,6 +15,19 @@ const TecnicoModal = ({
   onSubmit,
   loading = false
 }) => {
+  // Estado local para horas e minutos
+  const [horas, setHoras] = useState('');
+  const [minutos, setMinutos] = useState('');
+
+  // Sincronizar estado local com tecnicoFormData
+  useEffect(() => {
+    if (tecnicoFormData.minutos_cliente !== undefined) {
+      const totalMinutos = tecnicoFormData.minutos_cliente || 0;
+      setHoras(Math.floor(totalMinutos / 60).toString());
+      setMinutos((totalMinutos % 60).toString());
+    }
+  }, [tecnicoFormData.minutos_cliente, open]);
+
   const getTipoHorarioCodigo = (tipo) => {
     const codigos = {
       'diurno': '1 (Diurno)',
@@ -33,6 +46,35 @@ const TecnicoModal = ({
         tecnico_id: user.id,
         tecnico_nome: user.full_name || user.username
       });
+    }
+  };
+
+  const handleHorasChange = (value) => {
+    const h = parseInt(value) || 0;
+    setHoras(value);
+    const m = parseInt(minutos) || 0;
+    setTecnicoFormData({ 
+      ...tecnicoFormData, 
+      minutos_cliente: (h * 60) + m 
+    });
+  };
+
+  const handleMinutosChange = (value) => {
+    const m = parseInt(value) || 0;
+    setMinutos(value);
+    const h = parseInt(horas) || 0;
+    setTecnicoFormData({ 
+      ...tecnicoFormData, 
+      minutos_cliente: (h * 60) + m 
+    });
+  };
+
+  const handleKmsChange = (value) => {
+    // Permitir string vazia ou número (incluindo 0)
+    if (value === '' || value === null) {
+      setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: 0 });
+    } else {
+      setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: parseFloat(value) || 0 });
     }
   };
 
@@ -95,43 +137,59 @@ const TecnicoModal = ({
             </div>
           </div>
 
-          {/* Tempo e KMs */}
+          {/* Tempo no Cliente (HH:MM) e KMs */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-gray-300 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                Tempo no Cliente (minutos) *
+                Tempo no Cliente *
               </Label>
-              <Input
-                type="number"
-                min="0"
-                value={tecnicoFormData.minutos_cliente || ''}
-                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, minutos_cliente: parseInt(e.target.value) || 0 })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: 480 (8 horas)"
-                required
-              />
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  type="number"
+                  min="0"
+                  max="24"
+                  value={horas}
+                  onChange={(e) => handleHorasChange(e.target.value)}
+                  className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
+                  placeholder="0"
+                />
+                <span className="text-gray-400 font-bold">:</span>
+                <Input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={minutos}
+                  onChange={(e) => handleMinutosChange(e.target.value)}
+                  className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
+                  placeholder="00"
+                />
+                <span className="text-gray-500 text-sm">(HH:MM)</span>
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}h {(tecnicoFormData.minutos_cliente || 0) % 60}m
+                Total: {tecnicoFormData.minutos_cliente || 0} minutos
               </p>
             </div>
 
             <div>
               <Label className="text-gray-300 flex items-center gap-2">
                 <Car className="w-4 h-4" />
-                Km (só ida) *
+                Km (só ida)
               </Label>
               <Input
                 type="number"
                 step="0.1"
                 min="0"
-                value={tecnicoFormData.kms_deslocacao || ''}
-                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: parseFloat(e.target.value) || 0 })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: 150"
-                required
+                value={tecnicoFormData.kms_deslocacao ?? ''}
+                onChange={(e) => handleKmsChange(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                placeholder="0"
               />
-              <p className="text-xs text-gray-500 mt-1">Será multiplicado por 2 (ida e volta)</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {tecnicoFormData.kms_deslocacao > 0 
+                  ? `Será multiplicado por 2 (ida e volta) = ${(tecnicoFormData.kms_deslocacao * 2).toFixed(1)} km`
+                  : 'Deixe a 0 se não houver deslocação'}
+              </p>
             </div>
           </div>
 
