@@ -93,10 +93,13 @@ const NotificationBell = ({ user }) => {
       setPushSupported(true);
       setPushPermission(Notification.permission);
       
-      // Se já tem permissão, verificar/criar subscription
+      // Se já tem permissão, verificar subscription existente (não criar nova automaticamente)
       if (Notification.permission === 'granted' && user) {
-        navigator.serviceWorker.ready.then(registration => {
-          subscribeToPush(registration);
+        navigator.serviceWorker.ready.then(async (registration) => {
+          const existingSub = await registration.pushManager.getSubscription();
+          if (existingSub) {
+            setPushSubscribed(true);
+          }
         });
       }
     }
@@ -108,7 +111,7 @@ const NotificationBell = ({ user }) => {
       const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
       return () => clearInterval(interval);
     }
-  }, [user, subscribeToPush]);
+  }, [user]);
 
   const fetchNotifications = async () => {
     try {
