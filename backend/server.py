@@ -7736,6 +7736,260 @@ async def update_company_info(
     
     return {"message": "Informações da empresa atualizadas com sucesso"}
 
+
+# ============ Tarifas Routes ============
+
+@api_router.get("/tarifas")
+async def get_tarifas(current_user: dict = Depends(get_current_user)):
+    """Listar todas as tarifas ativas"""
+    tarifas = await db.tarifas.find(
+        {"ativo": True},
+        {"_id": 0}
+    ).sort("numero", 1).to_list(length=None)
+    
+    return tarifas
+
+
+@api_router.get("/tarifas/all")
+async def get_all_tarifas(current_user: dict = Depends(get_current_admin)):
+    """Listar todas as tarifas (admin only)"""
+    tarifas = await db.tarifas.find(
+        {},
+        {"_id": 0}
+    ).sort("numero", 1).to_list(length=None)
+    
+    return tarifas
+
+
+@api_router.post("/tarifas")
+async def create_tarifa(
+    tarifa_data: TarifaCreate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Criar nova tarifa (admin only)"""
+    # Verificar se já existe tarifa com mesmo número
+    existing = await db.tarifas.find_one({"numero": tarifa_data.numero, "ativo": True})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Já existe uma tarifa com o número {tarifa_data.numero}")
+    
+    tarifa = Tarifa(
+        numero=tarifa_data.numero,
+        nome=tarifa_data.nome,
+        valor_por_hora=tarifa_data.valor_por_hora
+    )
+    
+    tarifa_dict = tarifa.model_dump()
+    tarifa_dict["created_at"] = tarifa_dict["created_at"].isoformat()
+    
+    await db.tarifas.insert_one(tarifa_dict)
+    tarifa_dict.pop("_id", None)
+    
+    logging.info(f"Tarifa criada: {tarifa.numero} - {tarifa.nome} por {current_user['sub']}")
+    
+    return tarifa_dict
+
+
+@api_router.put("/tarifas/{tarifa_id}")
+async def update_tarifa(
+    tarifa_id: str,
+    tarifa_data: TarifaUpdate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Atualizar tarifa (admin only)"""
+    existing = await db.tarifas.find_one({"id": tarifa_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tarifa não encontrada")
+    
+    update_data = {k: v for k, v in tarifa_data.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
+    
+    # Se está a mudar o número, verificar se já existe
+    if "numero" in update_data and update_data["numero"] != existing.get("numero"):
+        existing_numero = await db.tarifas.find_one({
+            "numero": update_data["numero"], 
+            "ativo": True,
+            "id": {"$ne": tarifa_id}
+        })
+        if existing_numero:
+            raise HTTPException(status_code=400, detail=f"Já existe uma tarifa com o número {update_data['numero']}")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.tarifas.update_one(
+        {"id": tarifa_id},
+        {"$set": update_data}
+    )
+    
+    updated = await db.tarifas.find_one({"id": tarifa_id}, {"_id": 0})
+    
+    logging.info(f"Tarifa atualizada: {tarifa_id} por {current_user['sub']}")
+    
+    return updated
+
+
+@api_router.delete("/tarifas/{tarifa_id}")
+async def delete_tarifa(
+    tarifa_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Desativar tarifa (admin only)"""
+    existing = await db.tarifas.find_one({"id": tarifa_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tarifa não encontrada")
+    
+    await db.tarifas.update_one(
+        {"id": tarifa_id},
+        {"$set": {"ativo": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    logging.info(f"Tarifa desativada: {tarifa_id} por {current_user['sub']}")
+    
+    return {"message": "Tarifa desativada com sucesso"}
+
+
+# ============ Folha de Horas Routes ============
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/folha-horas-data")
+async def get_folha_horas_data(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Obter dados necessários para gerar a Folha de Horas
+    Retorna: técnicos, registos, tarifas disponíveis
+    """
+    # Buscar dados do relatório
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Buscar cliente
+    cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
+    
+    # Buscar técnicos manuais
+    tecnicos = await db.tecnicos_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Buscar registos de cronómetros
+    registos = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Buscar tarifas ativas
+    tarifas = await db.tarifas.find(
+        {"ativo": True},
+        {"_id": 0}
+    ).sort("numero", 1).to_list(length=None)
+    
+    # Extrair lista única de técnicos
+    tecnicos_unicos = {}
+    for tec in tecnicos:
+        tid = tec.get('tecnico_id') or tec.get('id')
+        if tid and tid not in tecnicos_unicos:
+            tecnicos_unicos[tid] = {
+                'id': tid,
+                'nome': tec.get('tecnico_nome')
+            }
+    
+    for reg in registos:
+        tid = reg.get('tecnico_id')
+        if tid and tid not in tecnicos_unicos:
+            tecnicos_unicos[tid] = {
+                'id': tid,
+                'nome': reg.get('tecnico_nome')
+            }
+    
+    # Extrair datas únicas por técnico
+    datas_por_tecnico = {}
+    for reg in registos:
+        tid = reg.get('tecnico_id')
+        data = reg.get('data', '')
+        if isinstance(data, str) and 'T' in data:
+            data = data.split('T')[0]
+        if tid:
+            if tid not in datas_por_tecnico:
+                datas_por_tecnico[tid] = set()
+            datas_por_tecnico[tid].add(data)
+    
+    for tec in tecnicos:
+        tid = tec.get('tecnico_id') or tec.get('id')
+        data = tec.get('data_trabalho', '')
+        if isinstance(data, str) and 'T' in data:
+            data = data.split('T')[0]
+        if tid:
+            if tid not in datas_por_tecnico:
+                datas_por_tecnico[tid] = set()
+            datas_por_tecnico[tid].add(data)
+    
+    # Converter sets para listas ordenadas
+    datas_por_tecnico = {k: sorted(list(v)) for k, v in datas_por_tecnico.items()}
+    
+    return {
+        "relatorio": relatorio,
+        "cliente": cliente,
+        "tecnicos": list(tecnicos_unicos.values()),
+        "registos": registos,
+        "tecnicos_manuais": tecnicos,
+        "tarifas": tarifas,
+        "datas_por_tecnico": datas_por_tecnico
+    }
+
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/folha-horas-pdf")
+async def generate_folha_horas(
+    relatorio_id: str,
+    request: FolhaHorasRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Gerar PDF da Folha de Horas"""
+    # Buscar dados do relatório
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Buscar cliente
+    cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Buscar técnicos manuais
+    tecnicos_manuais = await db.tecnicos_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Buscar registos de cronómetros
+    registos_mao_obra = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Gerar PDF
+    pdf_buffer = generate_folha_horas_pdf(
+        relatorio=relatorio,
+        cliente=cliente,
+        registos_mao_obra=registos_mao_obra,
+        tecnicos_manuais=tecnicos_manuais,
+        tarifas_por_tecnico=request.tarifas_por_tecnico,
+        dados_extras=request.dados_extras
+    )
+    
+    numero_ot = relatorio.get('numero_assistencia', 'N/A')
+    cliente_nome = cliente.get('nome', 'Cliente').replace(' ', '_')
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=FolhaHoras_OT{numero_ot}_{cliente_nome}.pdf"
+        }
+    )
+
+
 # ============ Include Router ============
 
 app.include_router(api_router)
