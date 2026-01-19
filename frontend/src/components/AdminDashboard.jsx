@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [users, setUsers] = useState([]);
@@ -33,6 +33,16 @@ const AdminDashboard = ({ user, onLogout }) => {
   // Estados para seleção de mês no Relatório Consolidado
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
+
+  // Estados para Tarifas
+  const [tarifas, setTarifas] = useState([]);
+  const [showTarifaDialog, setShowTarifaDialog] = useState(false);
+  const [editingTarifa, setEditingTarifa] = useState(null);
+  const [tarifaForm, setTarifaForm] = useState({
+    numero: '',
+    nome: '',
+    valor_por_hora: ''
+  });
 
   const [createForm, setCreateForm] = useState({
     username: '',
@@ -66,6 +76,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     fetchPendingVacations();
     fetchAllAbsences();
     fetchReports();
+    fetchTarifas();
   }, []);
 
   const fetchUsers = async () => {
