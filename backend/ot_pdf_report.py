@@ -181,6 +181,14 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     pass
             
             interv_section.append(Paragraph(f"<b>Intervenção #{i}</b> - {data_interv}", normal_style))
+            
+            # Equipamento relacionado (se existir)
+            if interv.get('equipamento_id') and equipamentos_adicionais:
+                equip_rel = next((e for e in equipamentos_adicionais if e.get('id') == interv.get('equipamento_id')), None)
+                if equip_rel:
+                    equip_desc = f"{equip_rel.get('tipologia', '')} - {equip_rel.get('marca', '')} {equip_rel.get('modelo', '')}"
+                    interv_section.append(Paragraph(f"<b>Equipamento:</b> {equip_desc}", normal_style))
+            
             interv_section.append(Paragraph(f"<b>Motivo:</b> {interv.get('motivo_assistencia', 'N/A')}", normal_style))
             
             if interv.get('relatorio_assistencia'):
