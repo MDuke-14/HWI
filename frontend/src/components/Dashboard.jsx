@@ -71,10 +71,18 @@ const Dashboard = ({ user, onLogout }) => {
         // No entry or multiple entries for today
         setEntry(null);
         setTodayEntries(response.data?.entries || []);
+        // Se o dia já tem "Fora de Zona", marcar automaticamente para a próxima entrada
+        if (response.data?.day_has_outside_zone) {
+          setOutsideResidenceZone(true);
+        }
       } else {
         // Active entry
         setEntry(response.data);
         setTodayEntries([]);
+        // Se o dia já tem "Fora de Zona", marcar automaticamente
+        if (response.data?.day_has_outside_zone) {
+          setOutsideResidenceZone(true);
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar entrada de hoje:', error);
