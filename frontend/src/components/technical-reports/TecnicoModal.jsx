@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Clock, Car, Plus, Edit } from 'lucide-react';
+import { User, Clock, Car, Plus, Edit, AlertCircle } from 'lucide-react';
 
 const TecnicoModal = ({
   open,
@@ -69,14 +69,8 @@ const TecnicoModal = ({
     });
   };
 
-  const handleKmsChange = (value) => {
-    // Permitir string vazia ou número (incluindo 0)
-    if (value === '' || value === null) {
-      setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: 0 });
-    } else {
-      setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: parseFloat(value) || 0 });
-    }
-  };
+  // Calcular Kms automaticamente
+  const kmsCalculado = Math.max(0, (parseFloat(tecnicoFormData.kms_final) || 0) - (parseFloat(tecnicoFormData.kms_inicial) || 0));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,58 +131,83 @@ const TecnicoModal = ({
             </div>
           </div>
 
-          {/* Tempo no Cliente (HH:MM) e KMs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-gray-300 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Tempo no Cliente *
-              </Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input
-                  type="number"
-                  min="0"
-                  max="24"
-                  value={horas}
-                  onChange={(e) => handleHorasChange(e.target.value)}
-                  className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
-                  placeholder="0"
-                />
-                <span className="text-gray-400 font-bold">:</span>
-                <Input
-                  type="number"
-                  min="0"
-                  max="59"
-                  value={minutos}
-                  onChange={(e) => handleMinutosChange(e.target.value)}
-                  className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
-                  placeholder="00"
-                />
-                <span className="text-gray-500 text-sm">(HH:MM)</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Total: {tecnicoFormData.minutos_cliente || 0} minutos
-              </p>
-            </div>
-
-            <div>
-              <Label className="text-gray-300 flex items-center gap-2">
-                <Car className="w-4 h-4" />
-                Km (só ida)
-              </Label>
+          {/* Tempo no Cliente (HH:MM) */}
+          <div>
+            <Label className="text-gray-300 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Tempo no Cliente *
+            </Label>
+            <div className="flex items-center gap-2 mt-1">
               <Input
                 type="number"
-                step="0.1"
                 min="0"
-                value={tecnicoFormData.kms_deslocacao ?? ''}
-                onChange={(e) => handleKmsChange(e.target.value)}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                max="24"
+                value={horas}
+                onChange={(e) => handleHorasChange(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
                 placeholder="0"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {tecnicoFormData.kms_deslocacao > 0 
-                  ? `Será multiplicado por 2 (ida e volta) = ${(tecnicoFormData.kms_deslocacao * 2).toFixed(1)} km`
-                  : 'Deixe a 0 se não houver deslocação'}
+              <span className="text-gray-400 font-bold">:</span>
+              <Input
+                type="number"
+                min="0"
+                max="59"
+                value={minutos}
+                onChange={(e) => handleMinutosChange(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
+                placeholder="00"
+              />
+              <span className="text-gray-500 text-sm">(HH:MM)</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Total: {tecnicoFormData.minutos_cliente || 0} minutos
+            </p>
+          </div>
+
+          {/* Km's Iniciais e Finais */}
+          <div className="space-y-3">
+            <Label className="text-gray-300 flex items-center gap-2">
+              <Car className="w-4 h-4" />
+              Quilómetros
+            </Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-gray-400 text-sm">Km's Iniciais</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={tecnicoFormData.kms_inicial ?? ''}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, kms_inicial: parseFloat(e.target.value) || 0 })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Km's Finais</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={tecnicoFormData.kms_final ?? ''}
+                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, kms_final: parseFloat(e.target.value) || 0 })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-400 text-sm">Total (calculado)</Label>
+                <div className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1 font-semibold text-green-400">
+                  {kmsCalculado.toFixed(1)} km
+                </div>
+              </div>
+            </div>
+            
+            {/* Aviso sobre Kms */}
+            <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-3 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-blue-300">
+                Aos kms de ida já adicionados iremos adicionar os kms de volta após assinatura deste relatório.
               </p>
             </div>
           </div>
