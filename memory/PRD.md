@@ -191,17 +191,17 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 └── frontend/
     └── src/
         └── components/
-            ├── technical-reports/    # Componentes extraídos (refatoração)
-            │   ├── FolhaHorasModal.jsx (266 linhas) ✅ Integrado
-            │   ├── AssinaturaModal.jsx (315 linhas)
-            │   ├── TecnicoModal.jsx (275 linhas)
-            │   ├── EquipamentoModal.jsx (270 linhas)
-            │   ├── MaterialModal.jsx (185 linhas)
-            │   ├── CronometroStartModal.jsx (165 linhas)
-            │   ├── PDFPreviewModal.jsx (70 linhas) ✅ Integrado
-            │   ├── DeleteConfirmModal.jsx (60 linhas)
+            ├── technical-reports/    # ✅ Componentes extraídos (refatoração completa)
+            │   ├── FolhaHorasModal.jsx    ✅ Integrado
+            │   ├── AssinaturaModal.jsx    ✅ Integrado
+            │   ├── TecnicoModal.jsx       ✅ Integrado
+            │   ├── EquipamentoModal.jsx   ✅ Integrado
+            │   ├── MaterialModal.jsx      ✅ Integrado
+            │   ├── CronometroStartModal.jsx
+            │   ├── PDFPreviewModal.jsx    ✅ Integrado
+            │   ├── DeleteConfirmModal.jsx
             │   └── index.js
-            ├── TechnicalReports.jsx  # 7055 linhas (era 7295 - redução de 240)
+            ├── TechnicalReports.jsx  # ~6260 linhas (reduzido de ~7200)
             ├── AdminDashboard.jsx    # Admin Dashboard com tab Tarifas
             ├── Dashboard.jsx         # Dashboard principal
             └── ...
