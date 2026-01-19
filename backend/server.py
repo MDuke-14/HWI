@@ -2231,6 +2231,35 @@ async def add_equipamento_ot(
     if not ot:
         raise HTTPException(status_code=404, detail="OT não encontrada")
     
+    # Se for novo equipamento, criar também na base de dados do cliente
+    criar_na_base_cliente = equipamento_data.get("criar_na_base_cliente", False)
+    if criar_na_base_cliente and ot.get("cliente_id"):
+        cliente_id = ot["cliente_id"]
+        
+        # Verificar se já existe equipamento igual no cliente
+        existing = await db.equipamentos.find_one({
+            "cliente_id": cliente_id,
+            "marca": equipamento_data["marca"],
+            "modelo": equipamento_data["modelo"],
+            "numero_serie": equipamento_data.get("numero_serie"),
+            "ativo": True
+        })
+        
+        if not existing:
+            # Criar novo equipamento na base do cliente
+            novo_equipamento = Equipamento(
+                cliente_id=cliente_id,
+                tipologia=equipamento_data.get("tipologia"),
+                marca=equipamento_data["marca"],
+                modelo=equipamento_data["modelo"],
+                numero_serie=equipamento_data.get("numero_serie"),
+                ano_fabrico=equipamento_data.get("ano_fabrico")
+            )
+            equip_cliente_dict = novo_equipamento.dict()
+            equip_cliente_dict["created_at"] = equip_cliente_dict["created_at"].isoformat()
+            await db.equipamentos.insert_one(equip_cliente_dict)
+            logging.info(f"Novo equipamento criado na base do cliente {cliente_id}: {equipamento_data['marca']} {equipamento_data['modelo']}")
+    
     # Obter ordem (último + 1)
     last = await db.equipamentos_ot.find_one(
         {"relatorio_id": relatorio_id},
@@ -2238,7 +2267,7 @@ async def add_equipamento_ot(
     )
     ordem = (last.get("ordem", -1) + 1) if last else 0
     
-    # Criar equipamento
+    # Criar equipamento na OT
     equipamento = EquipamentoOT(
         relatorio_id=relatorio_id,
         tipologia=equipamento_data["tipologia"],
