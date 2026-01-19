@@ -133,6 +133,57 @@ async def startup_event():
     # Iniciar sistema de notificações
     asyncio.create_task(notification_loop(db))
     logging.info("Sistema de notificações iniciado (verificação a cada 15 minutos)")
+    
+    # Iniciar scheduler para verificações de ponto
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    import pytz
+    
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone('Europe/Lisbon'))
+    
+    # Obter URL base do frontend
+    frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
+    # Remover /api se existir para ter URL limpo
+    base_url = frontend_url.replace('/api', '').rstrip('/')
+    
+    async def scheduled_clock_in_check():
+        """Verificação das 09:30 - Utilizadores sem entrada"""
+        logging.info("🕘 Executando verificação de entrada às 09:30...")
+        try:
+            result = await check_clock_in_status(db, base_url)
+            logging.info(f"Verificação 09:30 concluída: {result.get('notified_count', 0)} notificações enviadas")
+        except Exception as e:
+            logging.error(f"Erro na verificação 09:30: {str(e)}")
+    
+    async def scheduled_clock_out_check():
+        """Verificação das 18:15 - Utilizadores com ponto ativo"""
+        logging.info("🕕 Executando verificação de saída às 18:15...")
+        try:
+            result = await check_clock_out_status(db, base_url)
+            logging.info(f"Verificação 18:15 concluída: {result.get('notified_count', 0)} notificações enviadas")
+        except Exception as e:
+            logging.error(f"Erro na verificação 18:15: {str(e)}")
+    
+    # Agendar verificação das 09:30 (dias úteis)
+    scheduler.add_job(
+        scheduled_clock_in_check,
+        CronTrigger(hour=9, minute=30, day_of_week='mon-fri'),
+        id='clock_in_check',
+        replace_existing=True
+    )
+    
+    # Agendar verificação das 18:15 (dias úteis)
+    scheduler.add_job(
+        scheduled_clock_out_check,
+        CronTrigger(hour=18, minute=15, day_of_week='mon-fri'),
+        id='clock_out_check',
+        replace_existing=True
+    )
+    
+    scheduler.start()
+    logging.info("📅 Scheduler de verificações de ponto iniciado (09:30 e 18:15)")
+    logging.info(f"   Timezone: Europe/Lisbon")
+    logging.info(f"   Base URL: {base_url}")
 
 # ============ Models ============
 
