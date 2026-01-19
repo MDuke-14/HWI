@@ -9,7 +9,6 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const OvertimeAuthorization = () => {
   const { token } = useParams();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
