@@ -192,9 +192,25 @@ const NotificationBell = ({ user }) => {
 
           {/* Status de push ativo */}
           {pushSubscribed && (
-            <div className="px-3 py-2 bg-green-500/10 border-b border-gray-700 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-green-400 text-xs">Notificações push ativas</span>
+            <div className="px-3 py-2 bg-green-500/10 border-b border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-green-400 text-xs">Notificações push ativas</span>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await axios.post(`${API}/notifications/test-push`);
+                    toast.success('Notificação de teste enviada!');
+                  } catch (error) {
+                    toast.error('Erro ao enviar teste');
+                  }
+                }}
+                className="text-xs text-blue-400 hover:text-blue-300"
+                data-testid="test-push-btn"
+              >
+                Testar
+              </button>
             </div>
           )}
 
