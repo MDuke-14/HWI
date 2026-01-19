@@ -459,16 +459,13 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
     
     notified_users = []
     
-    # Buscar todos os utilizadores ativos
-    users = await db.users.find({"role": {"$ne": "disabled"}}, {"_id": 0}).to_list(1000)
+    # Buscar todos os utilizadores ativos (não admin)
+    users = await db.users.find({"role": {"$ne": "disabled"}, "is_admin": {"$ne": True}}, {"_id": 0}).to_list(1000)
     
     for user in users:
         user_id = user.get("id")
         user_name = user.get("full_name") or user.get("username")
         user_email = user.get("email")
-        
-        if not user_email:
-            continue
         
         # Verificar se tem entrada de ponto hoje
         has_entry = await db.time_entries.find_one({
@@ -500,24 +497,34 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
         if has_absence:
             continue  # Tem falta justificada
         
-        # Enviar email de lembrete
-        html_content = get_clock_in_reminder_email_html(user_name, today_formatted)
-        success = await send_notification_email(
-            to_email=user_email,
-            subject=f"⚠️ Não Iniciou o Ponto - {today_formatted}",
-            html_content=html_content
+        # Enviar PUSH notification ao utilizador
+        await send_push_notification(
+            db,
+            user_id,
+            "⚠️ Não Iniciou o Ponto",
+            f"Ainda não registou entrada hoje ({today_formatted}). Por favor, regularize a situação.",
+            "clock_in_reminder",
+            "high"
         )
         
-        if success:
-            notified_users.append({
-                "user_id": user_id,
-                "user_name": user_name,
-                "email": user_email
-            })
-            
-            # Registar notificação
-            await db.notification_logs.insert_one({
-                "type": "clock_in_reminder",
+        # Enviar email de lembrete
+        if user_email:
+            html_content = get_clock_in_reminder_email_html(user_name, today_formatted)
+            await send_notification_email(
+                to_email=user_email,
+                subject=f"⚠️ Não Iniciou o Ponto - {today_formatted}",
+                html_content=html_content
+            )
+        
+        notified_users.append({
+            "user_id": user_id,
+            "user_name": user_name,
+            "email": user_email
+        })
+        
+        # Registar notificação
+        await db.notification_logs.insert_one({
+            "type": "clock_in_reminder",
                 "user_id": user_id,
                 "user_name": user_name,
                 "date": today_str,
