@@ -3905,38 +3905,37 @@ const TechnicalReports = ({ user, onLogout }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit_horas_cliente" className="text-gray-300 flex items-center gap-2">
+                <Label htmlFor="edit_minutos_cliente" className="text-gray-300 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  Horas no Cliente *
+                  Tempo no Cliente *
                 </Label>
                 <div className="flex gap-2 items-center">
                   <Input
-                    id="edit_horas_cliente"
+                    id="edit_horas_parte"
                     type="number"
                     min="0"
                     max="24"
-                    value={Math.floor(tecnicoFormData.horas_cliente)}
+                    value={Math.floor(tecnicoFormData.minutos_cliente / 60)}
                     onChange={(e) => {
                       const horas = parseInt(e.target.value) || 0;
-                      const minutos = Math.round((tecnicoFormData.horas_cliente % 1) * 60);
-                      setTecnicoFormData({ ...tecnicoFormData, horas_cliente: horas + (minutos / 60) });
+                      const minutos = tecnicoFormData.minutos_cliente % 60;
+                      setTecnicoFormData({ ...tecnicoFormData, minutos_cliente: (horas * 60) + minutos });
                     }}
                     className="bg-[#0f0f0f] border-gray-700 text-white w-20"
                     placeholder="0"
-                    required
                   />
                   <span className="text-gray-400">h</span>
                   <Input
-                    id="edit_minutos_cliente"
+                    id="edit_minutos_parte"
                     type="number"
                     min="0"
                     max="59"
-                    step="5"
-                    value={Math.round((tecnicoFormData.horas_cliente % 1) * 60)}
+                    step="1"
+                    value={tecnicoFormData.minutos_cliente % 60}
                     onChange={(e) => {
-                      const horas = Math.floor(tecnicoFormData.horas_cliente);
+                      const horas = Math.floor(tecnicoFormData.minutos_cliente / 60);
                       const minutos = parseInt(e.target.value) || 0;
-                      setTecnicoFormData({ ...tecnicoFormData, horas_cliente: horas + (minutos / 60) });
+                      setTecnicoFormData({ ...tecnicoFormData, minutos_cliente: (horas * 60) + minutos });
                     }}
                     className="bg-[#0f0f0f] border-gray-700 text-white w-20"
                     placeholder="0"
@@ -3944,7 +3943,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <span className="text-gray-400">min</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Ex: 9h 30min = 9.5 horas
+                  Total: {tecnicoFormData.minutos_cliente} minutos
                 </p>
               </div>
 
