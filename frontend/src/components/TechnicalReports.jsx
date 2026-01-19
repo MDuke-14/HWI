@@ -3319,14 +3319,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <p className="text-gray-400 text-xs">Ano: {equip.ano_fabrico}</p>
                           )}
                         </div>
-                        <Button
-                          onClick={() => handleDeleteEquipamento(equip.id)}
-                          size="sm"
-                          variant="outline"
-                          className="border-red-500 text-red-500 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => openEditEquipamentoModal(equip)}
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteEquipamento(equip.id)}
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
