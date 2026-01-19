@@ -1203,6 +1203,79 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Abrir modal de edição para equipamento secundário
+  const openEditEquipamentoModal = (equipamento) => {
+    setEditingEquipamento(equipamento);
+    setEditingEquipamentoPrincipal(false);
+    setEditEquipamentoFormData({
+      tipologia: equipamento.tipologia || '',
+      marca: equipamento.marca || '',
+      modelo: equipamento.modelo || '',
+      numero_serie: equipamento.numero_serie || '',
+      ano_fabrico: equipamento.ano_fabrico || ''
+    });
+    setShowEditEquipamentoModal(true);
+  };
+
+  // Abrir modal de edição para equipamento principal
+  const openEditEquipamentoPrincipalModal = () => {
+    setEditingEquipamento(null);
+    setEditingEquipamentoPrincipal(true);
+    setEditEquipamentoFormData({
+      tipologia: selectedRelatorio.equipamento_tipologia || '',
+      marca: selectedRelatorio.equipamento_marca || '',
+      modelo: selectedRelatorio.equipamento_modelo || '',
+      numero_serie: selectedRelatorio.equipamento_numero_serie || '',
+      ano_fabrico: selectedRelatorio.equipamento_ano_fabrico || ''
+    });
+    setShowEditEquipamentoModal(true);
+  };
+
+  // Guardar edição de equipamento
+  const handleSaveEditEquipamento = async (e) => {
+    e.preventDefault();
+    
+    try {
+      if (editingEquipamentoPrincipal) {
+        // Editar equipamento principal (está na própria OT)
+        await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}`, {
+          equipamento_tipologia: editEquipamentoFormData.tipologia,
+          equipamento_marca: editEquipamentoFormData.marca,
+          equipamento_modelo: editEquipamentoFormData.modelo,
+          equipamento_numero_serie: editEquipamentoFormData.numero_serie,
+          equipamento_ano_fabrico: editEquipamentoFormData.ano_fabrico
+        });
+        
+        // Atualizar estado local
+        setSelectedRelatorio({
+          ...selectedRelatorio,
+          equipamento_tipologia: editEquipamentoFormData.tipologia,
+          equipamento_marca: editEquipamentoFormData.marca,
+          equipamento_modelo: editEquipamentoFormData.modelo,
+          equipamento_numero_serie: editEquipamentoFormData.numero_serie,
+          equipamento_ano_fabrico: editEquipamentoFormData.ano_fabrico
+        });
+        
+        toast.success('Equipamento principal atualizado!');
+      } else {
+        // Editar equipamento secundário
+        await axios.put(
+          `${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos/${editingEquipamento.id}`,
+          editEquipamentoFormData
+        );
+        
+        fetchEquipamentosOT(selectedRelatorio.id);
+        toast.success('Equipamento atualizado!');
+      }
+      
+      setShowEditEquipamentoModal(false);
+      setEditingEquipamento(null);
+      setEditingEquipamentoPrincipal(false);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   // ========== Material OT Functions ==========
 
   const fetchMateriais = async (relatorioId) => {
