@@ -185,6 +185,11 @@ function App() {
               )
             }
           />
+          {/* Rota pública para autorização de horas extra (requer login admin) */}
+          <Route
+            path="/authorize/:token"
+            element={<OvertimeAuthorization />}
+          />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
