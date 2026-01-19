@@ -1205,8 +1205,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleEquipamentoOTChange = (value) => {
     setEquipamentoOTSelecionado(value);
     
-    if (value === 'novo') {
-      // Limpar campos para criar novo
+    if (value === 'novo' || value === 'apenas_ot') {
+      // Limpar campos para criar novo (com ou sem BD do cliente)
       setEquipamentoFormData({
         tipologia: '',
         marca: '',
