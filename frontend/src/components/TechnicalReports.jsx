@@ -6107,18 +6107,46 @@ const TechnicalReports = ({ user, onLogout }) => {
 
               {/* Campos Editáveis */}
               <div>
-                <Label className="text-gray-300">Horas Arredondadas</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={editRegistoForm.horas_arredondadas}
-                  onChange={(e) => setEditRegistoForm({
-                    ...editRegistoForm,
-                    horas_arredondadas: e.target.value
-                  })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                />
+                <Label className="text-gray-300">Tempo Trabalhado</Label>
+                <div className="flex gap-2 items-center mt-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="24"
+                    value={Math.floor(editRegistoForm.minutos_trabalhados / 60)}
+                    onChange={(e) => {
+                      const horas = parseInt(e.target.value) || 0;
+                      const minutos = editRegistoForm.minutos_trabalhados % 60;
+                      setEditRegistoForm({
+                        ...editRegistoForm,
+                        minutos_trabalhados: (horas * 60) + minutos
+                      });
+                    }}
+                    className="bg-[#0f0f0f] border-gray-700 text-white w-20"
+                    placeholder="0"
+                  />
+                  <span className="text-gray-400">h</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={editRegistoForm.minutos_trabalhados % 60}
+                    onChange={(e) => {
+                      const horas = Math.floor(editRegistoForm.minutos_trabalhados / 60);
+                      const minutos = parseInt(e.target.value) || 0;
+                      setEditRegistoForm({
+                        ...editRegistoForm,
+                        minutos_trabalhados: (horas * 60) + minutos
+                      });
+                    }}
+                    className="bg-[#0f0f0f] border-gray-700 text-white w-20"
+                    placeholder="0"
+                  />
+                  <span className="text-gray-400">min</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total: {editRegistoForm.minutos_trabalhados} minutos
+                </p>
               </div>
 
               <div>
