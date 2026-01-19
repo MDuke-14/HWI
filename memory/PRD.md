@@ -254,3 +254,5 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ReportLab (geração de PDF)
 - pywebpush (notificações push)
 - pdfminer.six
+- APScheduler (agendamento de tarefas)
+- aiosmtplib (envio de emails SMTP)
