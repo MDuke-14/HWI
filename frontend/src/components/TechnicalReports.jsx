@@ -2958,7 +2958,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <td className="py-2 px-2 text-center text-gray-300">
                                 {new Date(reg.data).toLocaleDateString('pt-PT')}
                               </td>
-                              <td className="py-2 px-2 text-center text-white font-medium">{reg.horas_arredondadas}h</td>
+                              <td className="py-2 px-2 text-center text-white font-medium">
+                                {(() => {
+                                  const mins = reg.minutos_trabalhados || Math.round((reg.horas_arredondadas || 0) * 60);
+                                  return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+                                })()}
+                              </td>
                               <td className="py-2 px-2 text-center text-gray-300">{reg.km || 0}</td>
                               <td className="py-2 px-2 text-center">
                                 <span className="font-mono text-purple-400">{reg.codigo}</span>
