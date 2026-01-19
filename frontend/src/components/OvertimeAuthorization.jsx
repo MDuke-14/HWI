@@ -35,8 +35,23 @@ const OvertimeAuthorization = () => {
   };
   
   useEffect(() => {
-    fetchAuthorization();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const loadAuthorization = async () => {
+      try {
+        const response = await axios.get(`${API}/overtime/authorization/${token}`);
+        setAuthorization(response.data);
+        setLoading(false);
+      } catch (err) {
+        if (err.response?.status === 404) {
+          setError('Pedido de autorização não encontrado.');
+        } else if (err.response?.status === 410) {
+          setError('Este pedido de autorização expirou.');
+        } else {
+          setError('Erro ao carregar pedido de autorização.');
+        }
+        setLoading(false);
+      }
+    };
+    loadAuthorization();
   }, [token]);
   
   const handleDecision = async (action) => {
