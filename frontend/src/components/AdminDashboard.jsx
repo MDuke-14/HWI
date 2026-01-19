@@ -149,6 +149,82 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Funções para Notificações e Autorizações
+  const fetchOvertimeAuthorizations = async (status = null) => {
+    try {
+      setLoadingNotifications(true);
+      const url = status && status !== 'all' 
+        ? `${API}/overtime/authorizations?status=${status}`
+        : `${API}/overtime/authorizations`;
+      const response = await axios.get(url);
+      setOvertimeAuthorizations(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar autorizações');
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const fetchNotificationLogs = async () => {
+    try {
+      const response = await axios.get(`${API}/notifications/logs?limit=50`);
+      setNotificationLogs(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar logs de notificações');
+    }
+  };
+
+  const handleRunClockInCheck = async () => {
+    setRunningCheck('clock_in');
+    try {
+      const response = await axios.post(`${API}/notifications/check-clock-in`);
+      const data = response.data;
+      if (data.status === 'completed') {
+        toast.success(`Verificação concluída: ${data.notified_count} utilizadores notificados`);
+      } else {
+        toast.info(`Verificação ignorada: ${data.reason}`);
+      }
+      fetchNotificationLogs();
+    } catch (error) {
+      toast.error('Erro ao executar verificação');
+    } finally {
+      setRunningCheck(null);
+    }
+  };
+
+  const handleRunClockOutCheck = async () => {
+    setRunningCheck('clock_out');
+    try {
+      const response = await axios.post(`${API}/notifications/check-clock-out`);
+      const data = response.data;
+      if (data.status === 'completed') {
+        toast.success(`Verificação concluída: ${data.notified_count} utilizadores notificados`);
+      } else {
+        toast.info(`Verificação ignorada: ${data.reason}`);
+      }
+      fetchOvertimeAuthorizations();
+      fetchNotificationLogs();
+    } catch (error) {
+      toast.error('Erro ao executar verificação');
+    } finally {
+      setRunningCheck(null);
+    }
+  };
+
+  const handleDecideAuthorization = async (token, action) => {
+    try {
+      const response = await axios.post(`${API}/overtime/authorization/${token}/decide`, { action });
+      if (response.data.status === 'success') {
+        toast.success(response.data.message);
+        fetchOvertimeAuthorizations(authStatusFilter);
+      } else {
+        toast.error(response.data.message || 'Erro ao processar decisão');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao processar decisão');
+    }
+  };
+
   const handleOpenTarifaDialog = (tarifa = null) => {
     if (tarifa) {
       setEditingTarifa(tarifa);
