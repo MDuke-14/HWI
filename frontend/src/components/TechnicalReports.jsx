@@ -3751,17 +3751,43 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <Clock className="w-4 h-4" />
                   Horas no Cliente *
                 </Label>
-                <Input
-                  id="horas_cliente"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={tecnicoFormData.horas_cliente}
-                  onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, horas_cliente: parseFloat(e.target.value) || 0 })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  placeholder="Ex: 8"
-                  required
-                />
+                <div className="flex gap-2 items-center">
+                  <Input
+                    id="horas_cliente"
+                    type="number"
+                    min="0"
+                    max="24"
+                    value={Math.floor(tecnicoFormData.horas_cliente)}
+                    onChange={(e) => {
+                      const horas = parseInt(e.target.value) || 0;
+                      const minutos = Math.round((tecnicoFormData.horas_cliente % 1) * 60);
+                      setTecnicoFormData({ ...tecnicoFormData, horas_cliente: horas + (minutos / 60) });
+                    }}
+                    className="bg-[#0f0f0f] border-gray-700 text-white w-20"
+                    placeholder="0"
+                    required
+                  />
+                  <span className="text-gray-400">h</span>
+                  <Input
+                    id="minutos_cliente"
+                    type="number"
+                    min="0"
+                    max="59"
+                    step="5"
+                    value={Math.round((tecnicoFormData.horas_cliente % 1) * 60)}
+                    onChange={(e) => {
+                      const horas = Math.floor(tecnicoFormData.horas_cliente);
+                      const minutos = parseInt(e.target.value) || 0;
+                      setTecnicoFormData({ ...tecnicoFormData, horas_cliente: horas + (minutos / 60) });
+                    }}
+                    className="bg-[#0f0f0f] border-gray-700 text-white w-20"
+                    placeholder="0"
+                  />
+                  <span className="text-gray-400">min</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Ex: 9h 30min = 9.5 horas
+                </p>
               </div>
 
               <div>
