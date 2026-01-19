@@ -45,6 +45,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Campo "Nome do Técnico" é agora um dropdown com todos os utilizadores
 - Funciona tanto para adicionar como para editar registos
 
+#### ✅ Download de Todos os Relatórios do Cliente (Completo)
+- Botão "Download Todos (X)" no modal de relatórios do cliente
+- Descarrega todos os PDFs sequencialmente
+- Mostra progresso e contador de sucesso/erro
+
 ---
 
 ### Sessões Anteriores
