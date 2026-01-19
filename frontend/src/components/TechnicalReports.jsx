@@ -4318,152 +4318,33 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Material Modal */}
-      <Dialog open={showAddMaterialModal} onOpenChange={setShowAddMaterialModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Adicionar Material</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddMaterial} className="space-y-4">
-            <div>
-              <Label htmlFor="descricao_material" className="text-gray-300">Descrição do Material</Label>
-              <Input
-                id="descricao_material"
-                value={materialFormData.descricao}
-                onChange={(e) => setMaterialFormData({ ...materialFormData, descricao: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
-              />
-            </div>
+      {/* Add Material Modal - Componente Extraído */}
+      <MaterialModal
+        open={showAddMaterialModal}
+        onOpenChange={setShowAddMaterialModal}
+        isEditing={false}
+        materialFormData={materialFormData}
+        setMaterialFormData={setMaterialFormData}
+        onSubmit={handleAddMaterial}
+        onCancel={() => {
+          setShowAddMaterialModal(false);
+          setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente' });
+        }}
+      />
 
-            <div>
-              <Label htmlFor="quantidade_material" className="text-gray-300">Quantidade</Label>
-              <Input
-                id="quantidade_material"
-                type="number"
-                min="1"
-                value={materialFormData.quantidade}
-                onChange={(e) => setMaterialFormData({ ...materialFormData, quantidade: parseInt(e.target.value) })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="fornecido_por" className="text-gray-300">Fornecido Por</Label>
-              <select
-                id="fornecido_por"
-                value={materialFormData.fornecido_por}
-                onChange={(e) => setMaterialFormData({ ...materialFormData, fornecido_por: e.target.value })}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
-                required
-              >
-                <option value="Cliente">Cliente</option>
-                <option value="HWI">HWI</option>
-                <option value="Cotação">Cotação</option>
-              </select>
-            </div>
-
-            {materialFormData.fornecido_por === 'Cotação' && (
-              <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-3">
-                <p className="text-yellow-400 text-sm">
-                  ℹ️ Um Pedido de Cotação será criado automaticamente para este material
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowAddMaterialModal(false);
-                  setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente' });
-                }}
-                variant="outline"
-                className="flex-1 border-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Adicionar
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Material Modal */}
-      <Dialog open={showEditMaterialModal} onOpenChange={setShowEditMaterialModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Editar Material</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUpdateMaterial} className="space-y-4">
-            <div>
-              <Label htmlFor="edit_descricao_material" className="text-gray-300">Descrição do Material</Label>
-              <Input
-                id="edit_descricao_material"
-                value={materialFormData.descricao}
-                onChange={(e) => setMaterialFormData({ ...materialFormData, descricao: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit_quantidade_material" className="text-gray-300">Quantidade</Label>
-              <Input
-                id="edit_quantidade_material"
-                type="number"
-                min="1"
-                value={materialFormData.quantidade}
-                onChange={(e) => setMaterialFormData({ ...materialFormData, quantidade: parseInt(e.target.value) })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit_fornecido_por" className="text-gray-300">Fornecido Por</Label>
-              <select
-                id="edit_fornecido_por"
-                value={materialFormData.fornecido_por}
-                onChange={(e) => setMaterialFormData({ ...materialFormData, fornecido_por: e.target.value })}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
-                required
-              >
-                <option value="Cliente">Cliente</option>
-                <option value="HWI">HWI</option>
-                <option value="Cotação">Cotação</option>
-              </select>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowEditMaterialModal(false);
-                  setSelectedMaterial(null);
-                }}
-                variant="outline"
-                className="flex-1 border-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-              >
-                Salvar
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Material Modal - Componente Extraído */}
+      <MaterialModal
+        open={showEditMaterialModal}
+        onOpenChange={setShowEditMaterialModal}
+        isEditing={true}
+        materialFormData={materialFormData}
+        setMaterialFormData={setMaterialFormData}
+        onSubmit={handleUpdateMaterial}
+        onCancel={() => {
+          setShowEditMaterialModal(false);
+          setSelectedMaterial(null);
+        }}
+      />
 
       {/* PC Modal */}
       <Dialog open={showPCModal} onOpenChange={(open) => {
