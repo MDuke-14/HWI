@@ -55,6 +55,33 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - PDF contém tabela com: #, Nome, Email, NIF
 - Data de exportação e total de clientes no rodapé
 
+#### ✅ Folha de Horas - PDF Horizontal (Completo - 19 Janeiro 2026)
+**Novo botão "Folha de Horas" nas OTs para gerar documento PDF horizontal com:**
+- **Gestão de Tarifas no Admin Dashboard:**
+  - Nova tab "Tarifas" para criar/editar/eliminar tarifas
+  - Cada tarifa tem: número, nome/descrição, valor por hora (€)
+  - 3 tarifas padrão criadas: Normal (30€/h), Noturna (45€/h), Premium (60€/h)
+  - Endpoints: GET/POST/PUT/DELETE `/api/tarifas`
+- **Modal de Configuração da Folha de Horas:**
+  - Mostra cliente e localização da OT
+  - Seleção de tarifa por técnico (dropdown com tarifas configuradas)
+  - Preenchimento de dietas/portagens/despesas por técnico e data
+  - Botão "Gerar PDF"
+- **PDF Gerado em Formato Horizontal (Landscape) com colunas:**
+  - Data, Dia Semana, Técnico, Horas, Tarifa, Total Valor
+  - Km's, Preço/Km (0,65€), Total Km
+  - Início, Pausa, Fim
+  - Dieta, Portagens, Despesas, Observações
+  - Linha de totais e grande total
+- **Endpoints:**
+  - `GET /api/relatorios-tecnicos/{id}/folha-horas-data` - dados para configuração
+  - `POST /api/relatorios-tecnicos/{id}/folha-horas-pdf` - gerar PDF
+- **Ficheiros:**
+  - `/app/backend/folha_horas_pdf.py` - gerador de PDF
+  - AdminDashboard.jsx - tab Tarifas
+  - TechnicalReports.jsx - botão e modal
+- **Testado:** Backend 92% (12/13), Frontend 100%
+
 #### ✅ Página Admin de Gestão de Entradas (Completo)
 - Nova página `/admin/time-entries` acessível apenas para admins
 - Barra de seleção rápida de utilizadores no topo
