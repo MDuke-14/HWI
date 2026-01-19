@@ -2676,9 +2676,10 @@ async def salvar_assinatura_manual(
     relatorio_id: str,
     primeiro_nome: str = Form(...),
     ultimo_nome: str = Form(...),
+    data_intervencao: str = Form(""),
     current_user: dict = Depends(get_current_user)
 ):
-    """Salvar assinatura manual (texto) para um relatório técnico"""
+    """Salvar assinatura manual (texto) para um relatório técnico - permite múltiplas"""
     # Verificar se relatório existe
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
@@ -2688,8 +2689,7 @@ async def salvar_assinatura_manual(
     if not primeiro_nome.strip() or not ultimo_nome.strip():
         raise HTTPException(status_code=400, detail="Primeiro e último nome são obrigatórios")
     
-    # Remover assinatura anterior se existir
-    await db.assinaturas_relatorio.delete_many({"relatorio_id": relatorio_id})
+    # NÃO remover assinaturas anteriores - permitir múltiplas
     
     # Criar registro no banco
     nome_completo = f"{primeiro_nome} {ultimo_nome}".strip()
@@ -2698,7 +2698,8 @@ async def salvar_assinatura_manual(
         tipo="manual",
         primeiro_nome=primeiro_nome,
         ultimo_nome=ultimo_nome,
-        assinado_por=nome_completo
+        assinado_por=nome_completo,
+        data_intervencao=data_intervencao if data_intervencao else None
     )
     
     assinatura_dict = assinatura.dict()
