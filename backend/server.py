@@ -3004,11 +3004,11 @@ async def preview_pdf_ot(
         {"_id": 0}
     ).sort("ordem", 1).to_list(length=None)
     
-    # Buscar assinatura
-    assinatura = await db.assinaturas_relatorio.find_one(
+    # Buscar assinaturas (todas)
+    assinaturas = await db.assinaturas_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    )
+    ).sort("data_assinatura", 1).to_list(length=None)
     
     # Buscar equipamentos adicionais
     equipamentos_adicionais = await db.equipamentos_ot.find(
@@ -3029,7 +3029,7 @@ async def preview_pdf_ot(
     ).sort("data_trabalho", 1).to_list(length=None)
     
     # Gerar PDF
-    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura, equipamentos_adicionais, materiais, registos_mao_obra)
+    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra)
     
     # Retornar como download
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
