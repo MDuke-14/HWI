@@ -1542,6 +1542,43 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Iniciar cronómetro após criar nova OT (não depende de selectedRelatorio)
+  const handleIniciarCronoNovaOT = async () => {
+    if (!novaOTParaCrono || cronoTecnicosSelecionados.length === 0) {
+      toast.error('Selecione pelo menos um técnico');
+      return;
+    }
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const tecnico of cronoTecnicosSelecionados) {
+      try {
+        await axios.post(`${API}/relatorios-tecnicos/${novaOTParaCrono.id}/cronometro/iniciar`, {
+          tipo: cronoTipo,
+          tecnico_id: tecnico.id,
+          tecnico_nome: tecnico.nome
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Erro ao iniciar cronómetro para ${tecnico.nome}:`, error);
+        errorCount++;
+      }
+    }
+    
+    if (successCount > 0) {
+      const tipoLabel = cronoTipo === 'trabalho' ? 'Trabalho' : 'Viagem';
+      toast.success(`Cronómetro de ${tipoLabel} iniciado para ${successCount} técnico(s)!`);
+    }
+    if (errorCount > 0) {
+      toast.error(`Falha ao iniciar cronómetro para ${errorCount} técnico(s)`);
+    }
+    
+    setShowIniciarCronoModal(false);
+    setNovaOTParaCrono(null);
+    setCronoTecnicosSelecionados([]);
+  };
+
   const handlePararCronometro = async (tecnico, tipo) => {
     try {
       const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/parar`, {
