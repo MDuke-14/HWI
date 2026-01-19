@@ -1607,6 +1607,111 @@ async def delete_cliente(cliente_id: str, current_user: dict = Depends(get_curre
     
     return {"message": "Cliente deletado com sucesso"}
 
+@api_router.get("/clientes/export/pdf")
+async def export_clientes_pdf(current_user: dict = Depends(get_current_user)):
+    """Exportar lista de clientes para PDF - Apenas admin"""
+    # Verificar permissão (admin)
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem exportar lista de clientes")
+    
+    # Buscar todos os clientes ativos
+    clientes = await db.clientes.find(
+        {"ativo": True},
+        {"_id": 0}
+    ).sort("nome", 1).to_list(length=None)
+    
+    # Gerar PDF
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    import io
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm)
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=1  # Center
+    )
+    
+    elements = []
+    
+    # Título
+    elements.append(Paragraph("Lista de Clientes", title_style))
+    elements.append(Spacer(1, 20))
+    
+    # Data de exportação
+    from datetime import datetime
+    date_style = ParagraphStyle(
+        'DateStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.gray,
+        alignment=1
+    )
+    elements.append(Paragraph(f"Exportado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", date_style))
+    elements.append(Spacer(1, 30))
+    
+    # Tabela de clientes
+    if clientes:
+        data = [["#", "Nome", "Email", "NIF"]]
+        for i, cliente in enumerate(clientes, 1):
+            data.append([
+                str(i),
+                cliente.get("nome", ""),
+                cliente.get("email", ""),
+                cliente.get("nif", "")
+            ])
+        
+        table = Table(data, colWidths=[1*cm, 7*cm, 6*cm, 3*cm])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a1a')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('TOPPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+            ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        elements.append(table)
+        
+        # Total
+        elements.append(Spacer(1, 20))
+        total_style = ParagraphStyle(
+            'TotalStyle',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.gray
+        )
+        elements.append(Paragraph(f"Total: {len(clientes)} cliente(s)", total_style))
+    else:
+        elements.append(Paragraph("Nenhum cliente encontrado.", styles['Normal']))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    logging.info(f"Lista de clientes exportada para PDF por {current_user['sub']}")
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=lista_clientes.pdf"}
+    )
+
 # ============ Equipamentos Routes ============
 
 @api_router.get("/equipamentos")
