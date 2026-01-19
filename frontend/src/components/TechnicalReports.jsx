@@ -202,7 +202,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_id: '',
     tecnico_nome: '',
-    horas_cliente: 0,
+    minutos_cliente: 0,
     kms_deslocacao: 0,
     tipo_horario: 'diurno',
     data_trabalho: new Date().toISOString().split('T')[0]
@@ -889,7 +889,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     setTecnicoFormData({
       tecnico_id: '',
       tecnico_nome: '',
-      horas_cliente: 0,
+      minutos_cliente: 0,
       kms_deslocacao: 0,
       tipo_horario: 'diurno',
       data_trabalho: new Date().toISOString().split('T')[0]
