@@ -6219,10 +6219,31 @@ const TechnicalReports = ({ user, onLogout }) => {
       <Dialog open={showClienteRelatoriosModal} onOpenChange={setShowClienteRelatoriosModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-purple-400" />
-              Relatórios do Cliente
-            </DialogTitle>
+            <div className="flex items-center justify-between w-full pr-8">
+              <DialogTitle className="flex items-center gap-2 text-white">
+                <FileText className="w-5 h-5 text-purple-400" />
+                Relatórios do Cliente
+              </DialogTitle>
+              {clienteRelatorios.length > 0 && (
+                <Button
+                  onClick={handleDownloadAllClienteRelatorios}
+                  disabled={downloadingAllPDFs}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {downloadingAllPDFs ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      A descarregar...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Todos ({clienteRelatorios.length})
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="mt-4">
