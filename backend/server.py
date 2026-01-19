@@ -1975,7 +1975,7 @@ async def add_tecnico_relatorio(
         relatorio_id=relatorio_id,
         tecnico_id="",  # Se não tiver user_id
         tecnico_nome=tecnico_data.get("tecnico_nome", ""),
-        horas_cliente=tecnico_data.get("horas_cliente", 0),
+        minutos_cliente=tecnico_data.get("minutos_cliente", 0),
         kms_deslocacao=tecnico_data.get("kms_deslocacao", 0),
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
         data_trabalho=tecnico_data.get("data_trabalho", datetime.now(timezone.utc).date()),
