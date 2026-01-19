@@ -5192,6 +5192,92 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Equipamento Modal */}
+      <Dialog open={showEditEquipamentoModal} onOpenChange={setShowEditEquipamentoModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Equipamento {editingEquipamentoPrincipal ? '(Principal)' : ''}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveEditEquipamento} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-300">Tipologia *</Label>
+                <Input
+                  value={editEquipamentoFormData.tipologia}
+                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, tipologia: e.target.value})}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Marca *</Label>
+                <Input
+                  value={editEquipamentoFormData.marca}
+                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, marca: e.target.value})}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-300">Modelo *</Label>
+                <Input
+                  value={editEquipamentoFormData.modelo}
+                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, modelo: e.target.value})}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Número de Série</Label>
+                <Input
+                  value={editEquipamentoFormData.numero_serie}
+                  onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, numero_serie: e.target.value})}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-gray-300">Ano de Fabrico</Label>
+              <Input
+                value={editEquipamentoFormData.ano_fabrico}
+                onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, ano_fabrico: e.target.value})}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                placeholder="Ex: 2020, 03/2020, 03-2020"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowEditEquipamentoModal(false);
+                  setEditingEquipamento(null);
+                  setEditingEquipamentoPrincipal(false);
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+              >
+                Guardar Alterações
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showEditRelatorioModal} onOpenChange={setShowEditRelatorioModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
