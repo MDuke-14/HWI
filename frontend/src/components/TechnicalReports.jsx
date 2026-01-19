@@ -5387,55 +5387,21 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* PDF Preview Modal */}
-      <Dialog open={showPDFPreviewModal} onOpenChange={closePDFPreview}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[95vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-blue-400" />
-              Visualização do PDF - OT #{selectedRelatorio?.numero_assistencia}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="mt-4" style={{ height: 'calc(90vh - 120px)' }}>
-            {pdfPreviewUrl ? (
-              <iframe
-                src={pdfPreviewUrl}
-                className="w-full h-full rounded-lg border border-gray-700"
-                title="PDF Preview"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                A carregar PDF...
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-3 mt-4">
-            <Button
-              onClick={closePDFPreview}
-              variant="outline"
-              className="border-gray-600"
-            >
-              Fechar
-            </Button>
-            <Button
-              onClick={() => {
-                if (pdfPreviewUrl) {
-                  const link = document.createElement('a');
-                  link.href = pdfPreviewUrl;
-                  link.download = `OT_${selectedRelatorio?.numero_assistencia}.pdf`;
-                  link.click();
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* PDF Preview Modal - Componente Extraído */}
+      <PDFPreviewModal
+        open={showPDFPreviewModal}
+        onOpenChange={closePDFPreview}
+        pdfUrl={pdfPreviewUrl}
+        title={`Visualização do PDF - OT #${selectedRelatorio?.numero_assistencia}`}
+        onDownload={() => {
+          if (pdfPreviewUrl) {
+            const link = document.createElement('a');
+            link.href = pdfPreviewUrl;
+            link.download = `OT_${selectedRelatorio?.numero_assistencia}.pdf`;
+            link.click();
+          }
+        }}
+      />
 
       {/* Edit Relatório Modal */}
 
