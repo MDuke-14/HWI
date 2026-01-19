@@ -741,6 +741,15 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
     }
     await db.overtime_authorizations.insert_one(auth_request)
     
+    # Enviar PUSH notification aos admins
+    await send_push_to_admins(
+        db,
+        f"🕐 Pedido de Horas Extra - {reason}",
+        f"{user_name} iniciou ponto às {current_time}. Autorize ou rejeite.",
+        "overtime_authorization",
+        "high"
+    )
+    
     # Enviar email ao admin
     admin_html = get_authorization_email_html(
         user_name=user_name,
