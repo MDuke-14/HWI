@@ -542,6 +542,35 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleDownloadClientesPDF = async () => {
+    setDownloadingClientesPDF(true);
+    try {
+      const response = await axios.get(`${API}/clientes/export/pdf`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `lista_clientes_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Lista de clientes exportada com sucesso!');
+    } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error('Apenas administradores podem exportar a lista de clientes');
+      } else {
+        toast.error('Erro ao exportar lista de clientes');
+      }
+    } finally {
+      setDownloadingClientesPDF(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nome: '',
