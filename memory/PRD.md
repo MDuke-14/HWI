@@ -66,6 +66,14 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Botão para eliminar entradas
 - Endpoints backend: GET/PUT/DELETE/POST para entradas
 
+#### ✅ Múltiplas Assinaturas nas OTs (Completo)
+- Suporte para adicionar várias assinaturas sem anular as existentes
+- Campo "Data da Intervenção" editável em cada assinatura
+- Lista de todas as assinaturas com contador
+- Botão de eliminar individual para cada assinatura
+- Todas as assinaturas aparecem no PDF com data da intervenção
+- Backend: novos endpoints GET /assinaturas, DELETE /assinaturas/{id}
+
 ---
 
 ### Sessões Anteriores
