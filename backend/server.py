@@ -3322,6 +3322,83 @@ async def test_push_notification(
         raise HTTPException(status_code=400, detail="Não foi possível enviar a notificação. Verifique se as notificações push estão ativadas.")
 
 
+@api_router.post("/notifications/test-clock-in-reminder")
+async def test_clock_in_reminder(
+    current_user: dict = Depends(get_current_user)
+):
+    """Testar notificação de lembrete de clock-in (apenas para admins)"""
+    user = await db.users.find_one({"id": current_user["sub"]})
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem testar esta funcionalidade")
+    
+    from notifications_scheduler import send_push_notification
+    from datetime import date
+    
+    today_formatted = date.today().strftime("%d/%m/%Y")
+    
+    success = await send_push_notification(
+        db,
+        current_user["sub"],
+        "⚠️ Não Iniciou o Ponto",
+        f"Ainda não registou entrada hoje ({today_formatted}). Por favor, regularize a situação.",
+        "clock_in_reminder",
+        "high"
+    )
+    
+    if success:
+        return {"message": "Notificação de lembrete de entrada enviada!"}
+    else:
+        raise HTTPException(status_code=400, detail="Não foi possível enviar a notificação.")
+
+
+@api_router.post("/notifications/test-clock-out-reminder")
+async def test_clock_out_reminder(
+    current_user: dict = Depends(get_current_user)
+):
+    """Testar notificação de lembrete de clock-out (apenas para admins)"""
+    user = await db.users.find_one({"id": current_user["sub"]})
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem testar esta funcionalidade")
+    
+    from notifications_scheduler import send_push_notification
+    
+    success = await send_push_notification(
+        db,
+        current_user["sub"],
+        "🕐 Não Parou o Ponto",
+        "O seu ponto está ativo após as 18:00. Entrada: 09:00. Aguarde autorização de horas extra.",
+        "clock_out_reminder",
+        "high"
+    )
+    
+    if success:
+        return {"message": "Notificação de lembrete de saída enviada!"}
+    else:
+        raise HTTPException(status_code=400, detail="Não foi possível enviar a notificação.")
+
+
+@api_router.post("/notifications/test-overtime-admin")
+async def test_overtime_admin_notification(
+    current_user: dict = Depends(get_current_user)
+):
+    """Testar notificação de horas extra para admin (apenas para admins)"""
+    user = await db.users.find_one({"id": current_user["sub"]})
+    if not user or not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem testar esta funcionalidade")
+    
+    from notifications_scheduler import send_push_to_admins
+    
+    count = await send_push_to_admins(
+        db,
+        "⚠️ Pedido de Horas Extra",
+        "Utilizador Teste ainda tem o ponto ativo. Autorize ou rejeite as horas extra.",
+        "overtime_authorization",
+        "high"
+    )
+    
+    return {"message": f"Notificação enviada para {count} administrador(es)!"}
+
+
 @api_router.delete("/notifications/all")
 async def delete_all_notifications(
     current_user: dict = Depends(get_current_user)
