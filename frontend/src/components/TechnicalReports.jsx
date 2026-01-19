@@ -3609,7 +3609,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3"
               >
                 <option value="">-- Selecionar Equipamento (opcional) --</option>
-                {equipamentos.map((eq) => (
+                {equipamentosOT.map((eq) => (
                   <option key={eq.id} value={eq.id}>
                     {eq.tipologia} - {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
                   </option>
