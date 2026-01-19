@@ -2885,7 +2885,7 @@ async def enviar_pdf_ot(
         ).sort("data_trabalho", 1).to_list(length=None)
         
         # Gerar PDF
-        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinatura, equipamentos_adicionais, materiais, registos_mao_obra)
+        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra)
         
         # Configuração SMTP
         smtp_host = os.environ.get('SMTP_HOST', 'smtp.office365.com')
