@@ -217,14 +217,17 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 ```
 /app/
 ├── backend/
-│   ├── server.py             # API FastAPI principal
-│   ├── ot_pdf_report.py      # Geração de PDFs OT
-│   ├── folha_horas_pdf.py    # Geração de Folha de Horas (landscape)
-│   ├── cronometro_logic.py   # Lógica de cronómetros
-│   └── migrations.py         # Migrações de dados
+│   ├── server.py               # API FastAPI principal + APScheduler
+│   ├── notifications_scheduler.py  # ✅ NEW: Lógica de notificações de ponto
+│   ├── ot_pdf_report.py        # Geração de PDFs OT
+│   ├── folha_horas_pdf.py      # Geração de Folha de Horas (landscape)
+│   ├── cronometro_logic.py     # Lógica de cronómetros
+│   ├── holidays.py             # Feriados portugueses
+│   └── migrations.py           # Migrações de dados
 └── frontend/
     └── src/
         └── components/
+            ├── OvertimeAuthorization.jsx  # ✅ NEW: Página de autorização
             ├── technical-reports/    # ✅ Componentes extraídos (refatoração completa)
             │   ├── FolhaHorasModal.jsx    ✅ Integrado
             │   ├── AssinaturaModal.jsx    ✅ Integrado
