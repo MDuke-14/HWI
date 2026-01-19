@@ -159,33 +159,30 @@ const EquipamentoModal = ({
         <form onSubmit={onSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-300">Tipologia *</Label>
+              <Label className="text-gray-300">Tipologia</Label>
               <Input
                 value={editEquipamentoFormData.tipologia}
                 onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, tipologia: e.target.value})}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
               />
             </div>
             <div>
-              <Label className="text-gray-300">Marca *</Label>
+              <Label className="text-gray-300">Marca</Label>
               <Input
                 value={editEquipamentoFormData.marca}
                 onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, marca: e.target.value})}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-gray-300">Modelo *</Label>
+              <Label className="text-gray-300">Modelo</Label>
               <Input
                 value={editEquipamentoFormData.modelo}
                 onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, modelo: e.target.value})}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
               />
             </div>
             <div>
