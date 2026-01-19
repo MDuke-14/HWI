@@ -52,7 +52,8 @@ import {
   AssinaturaModal,
   TecnicoModal,
   EquipamentoModal,
-  MaterialModal
+  MaterialModal,
+  CronometroStartModal
 } from './technical-reports';
 
 // Helper function to format error messages from FastAPI validation errors
