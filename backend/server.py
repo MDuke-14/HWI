@@ -3244,7 +3244,91 @@ async def subscribe_push(
     
     logging.info(f"Push subscription registrada para usuário {current_user['sub']}")
     
+    # Enviar notificação de teste para confirmar que funciona
+    try:
+        await send_push_to_user(
+            current_user["sub"],
+            "Notificações Ativas!",
+            "Você receberá alertas importantes no seu dispositivo.",
+            "welcome"
+        )
+    except Exception as e:
+        logging.warning(f"Não foi possível enviar push de boas-vindas: {e}")
+    
     return {"message": "Subscription registrada com sucesso"}
+
+
+async def send_push_to_user(user_id: str, title: str, message: str, notification_type: str = "info", priority: str = "medium"):
+    """Função utilitária para enviar push notification para um usuário"""
+    from pywebpush import webpush, WebPushException
+    import json
+    
+    vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
+    vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
+    vapid_email = os.environ.get('VAPID_CLAIM_EMAIL', 'geral@hwi.pt')
+    
+    if not vapid_private or not vapid_public:
+        logging.warning("VAPID keys não configuradas")
+        return False
+    
+    subscriptions = await db.push_subscriptions.find({"user_id": user_id}).to_list(None)
+    
+    if not subscriptions:
+        logging.info(f"Nenhuma subscription encontrada para usuário {user_id}")
+        return False
+    
+    sent_count = 0
+    for sub in subscriptions:
+        try:
+            payload = json.dumps({
+                "title": title,
+                "message": message,
+                "type": notification_type,
+                "priority": priority
+            })
+            
+            webpush(
+                subscription_info={
+                    "endpoint": sub["endpoint"],
+                    "keys": sub["keys"]
+                },
+                data=payload,
+                vapid_private_key=vapid_private,
+                vapid_claims={"sub": f"mailto:{vapid_email}"}
+            )
+            sent_count += 1
+            logging.info(f"Push notification enviada para {user_id}")
+            
+        except WebPushException as e:
+            logging.error(f"Erro ao enviar push: {e}")
+            # Se a subscription expirou ou é inválida, remover
+            if e.response and e.response.status_code in [404, 410]:
+                await db.push_subscriptions.delete_one({"_id": sub["_id"]})
+                logging.info(f"Subscription inválida removida para {user_id}")
+        except Exception as e:
+            logging.error(f"Erro inesperado ao enviar push: {e}")
+    
+    return sent_count > 0
+
+
+@api_router.post("/notifications/test-push")
+async def test_push_notification(
+    current_user: dict = Depends(get_current_user)
+):
+    """Enviar notificação push de teste para o usuário atual"""
+    success = await send_push_to_user(
+        current_user["sub"],
+        "Teste de Notificação",
+        "Esta é uma notificação de teste. Se você está vendo isto, as notificações push estão funcionando!",
+        "test",
+        "medium"
+    )
+    
+    if success:
+        return {"message": "Notificação de teste enviada com sucesso!"}
+    else:
+        raise HTTPException(status_code=400, detail="Não foi possível enviar a notificação. Verifique se as notificações push estão ativadas.")
+
 
 @api_router.delete("/notifications/all")
 async def delete_all_notifications(
