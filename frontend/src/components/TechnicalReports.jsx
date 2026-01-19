@@ -3718,93 +3718,102 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               )}
 
-              {/* Assinatura */}
+              {/* Assinaturas */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-blue-400 font-semibold flex items-center gap-2">
                     <PenTool className="w-4 h-4" />
-                    Assinatura do Cliente
+                    Assinaturas do Cliente ({assinaturas.length})
                   </h4>
-                  {!assinatura ? (
-                    <Button
-                      onClick={() => openAssinaturaModal()}
-                      size="sm"
-                      className="bg-green-500 hover:bg-green-600"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Adicionar Assinatura
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => handleDeleteAssinatura()}
-                      size="sm"
-                      variant="outline"
-                      className="border-red-500 text-red-500 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Remover Assinatura
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => openAssinaturaModal()}
+                    size="sm"
+                    className="bg-green-500 hover:bg-green-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Nova Assinatura
+                  </Button>
                 </div>
                 <p className="text-gray-400 text-sm mb-4">
                   Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.
                 </p>
 
-                {assinatura ? (
-                  <div className="bg-black/30 rounded-lg p-4 border border-gray-700">
-                    <div className="flex items-start gap-4">
-                      {/* Assinatura Digital - Sempre mostrar se tiver URL */}
-                      {assinatura.assinatura_url && (
-                        <div className="flex-1">
-                          <p className="text-xs text-gray-500 mb-2">
-                            {assinatura.tipo === 'digital' ? 'Assinatura Digital:' : 'Assinatura:'}
-                          </p>
-                          <div className="bg-white p-3 rounded border-2 border-gray-300">
-                            <img
-                              src={`${API}${assinatura.assinatura_url}?t=${assinatura.data_assinatura || Date.now()}`}
-                              alt="Assinatura"
-                              className="max-h-40 w-full object-contain"
-                              onError={(e) => {
-                                console.log('Erro ao carregar assinatura:', `${API}${assinatura.assinatura_url}`);
-                                e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML = '<p class="text-gray-600 text-sm text-center py-4">Erro ao carregar imagem</p>';
-                              }}
-                              onLoad={() => console.log('✓ Assinatura carregada')}
-                            />
-                          </div>
+                {assinaturas.length > 0 ? (
+                  <div className="space-y-3">
+                    {assinaturas.map((assinatura, index) => (
+                      <div key={assinatura.id} className="bg-black/30 rounded-lg p-4 border border-gray-700">
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
+                            Assinatura #{index + 1}
+                          </span>
+                          <Button
+                            onClick={() => handleDeleteAssinatura(assinatura.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-500 hover:bg-red-500/10 h-6 w-6 p-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                      )}
-                      
-                      {/* Informações */}
-                      <div className={assinatura.assinatura_url ? 'flex-1' : 'w-full'}>
-                        <div className="space-y-2">
-                          <div>
-                            <p className="text-xs text-gray-500">Tipo:</p>
-                            <p className="text-white">
-                              {assinatura.tipo === 'digital' ? 'Assinatura Digital' : 'Assinatura Manual'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Nome:</p>
-                            <p className="text-white font-semibold">
-                              {assinatura.assinado_por || `${assinatura.primeiro_nome} ${assinatura.ultimo_nome}`}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Data:</p>
-                            <p className="text-gray-300">
-                              {new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}
-                            </p>
+                        <div className="flex items-start gap-4">
+                          {/* Assinatura Digital - Sempre mostrar se tiver URL */}
+                          {assinatura.assinatura_url && (
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500 mb-2">
+                                {assinatura.tipo === 'digital' ? 'Assinatura Digital:' : 'Assinatura:'}
+                              </p>
+                              <div className="bg-white p-3 rounded border-2 border-gray-300">
+                                <img
+                                  src={`${API}${assinatura.assinatura_url}?t=${assinatura.data_assinatura || Date.now()}`}
+                                  alt="Assinatura"
+                                  className="max-h-32 w-full object-contain"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = '<p class="text-gray-600 text-sm text-center py-4">Erro ao carregar</p>';
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Informações */}
+                          <div className={assinatura.assinatura_url ? 'flex-1' : 'w-full'}>
+                            <div className="space-y-2">
+                              {assinatura.data_intervencao && (
+                                <div>
+                                  <p className="text-xs text-gray-500">Data da Intervenção:</p>
+                                  <p className="text-orange-400 font-semibold">{assinatura.data_intervencao}</p>
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-xs text-gray-500">Nome:</p>
+                                <p className="text-white font-semibold">
+                                  {assinatura.assinado_por || `${assinatura.primeiro_nome} ${assinatura.ultimo_nome}`}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Data de Assinatura:</p>
+                                <p className="text-gray-300 text-sm">
+                                  {new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500">Tipo:</p>
+                                <p className="text-gray-400 text-sm">
+                                  {assinatura.tipo === 'digital' ? '✏️ Digital' : '📝 Manual'}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <PenTool className="w-12 h-12 text-gray-600 mx-auto mb-2" />
                     <p className="text-gray-400 text-sm">OT ainda não assinada</p>
-                    <p className="text-gray-500 text-xs mt-1">Clique em "Adicionar Assinatura" para o cliente assinar</p>
+                    <p className="text-gray-500 text-xs mt-1">Clique em "Nova Assinatura" para o cliente assinar</p>
                   </div>
                 )}
               </div>
