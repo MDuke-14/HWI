@@ -214,7 +214,8 @@ def generate_folha_horas_pdf(
     
     # Processar registos manuais
     for tec in tecnicos_manuais:
-        tecnico_id = tec.get('tecnico_id', tec.get('id', 'manual'))
+        # IMPORTANTE: Usar o 'id' do registo como chave, não o 'tecnico_id'
+        tecnico_id = tec.get('id', 'manual')
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
