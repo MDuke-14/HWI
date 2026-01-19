@@ -1545,8 +1545,10 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const openEditRegistoModal = (registo) => {
     setEditingRegisto(registo);
+    // Converter horas para minutos se existir horas_arredondadas
+    const minutos = registo.minutos_trabalhados || Math.round((registo.horas_arredondadas || 0) * 60);
     setEditRegistoForm({
-      horas_arredondadas: registo.horas_arredondadas || 0,
+      minutos_trabalhados: minutos,
       km: registo.km || 0,
       codigo: registo.codigo || ''
     });
@@ -1558,7 +1560,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     
     try {
       await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${editingRegisto.id}`, {
-        horas_arredondadas: parseFloat(editRegistoForm.horas_arredondadas),
+        minutos_trabalhados: parseInt(editRegistoForm.minutos_trabalhados),
         km: parseFloat(editRegistoForm.km),
         codigo: editRegistoForm.codigo
       });
