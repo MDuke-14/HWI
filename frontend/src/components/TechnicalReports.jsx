@@ -6122,7 +6122,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     type="number"
                     min="0"
                     max="24"
-                    value={Math.floor(editRegistoForm.minutos_trabalhados / 60)}
+                    value={Math.floor(editRegistoForm.minutos_trabalhados / 60) || ''}
                     onChange={(e) => {
                       const horas = parseInt(e.target.value) || 0;
                       const minutos = editRegistoForm.minutos_trabalhados % 60;
@@ -6139,7 +6139,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     type="number"
                     min="0"
                     max="59"
-                    value={editRegistoForm.minutos_trabalhados % 60}
+                    value={editRegistoForm.minutos_trabalhados % 60 || ''}
                     onChange={(e) => {
                       const horas = Math.floor(editRegistoForm.minutos_trabalhados / 60);
                       const minutos = parseInt(e.target.value) || 0;
@@ -6153,9 +6153,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                   />
                   <span className="text-gray-400">min</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total: {editRegistoForm.minutos_trabalhados} minutos
-                </p>
+                {editRegistoForm.minutos_trabalhados > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Total: {editRegistoForm.minutos_trabalhados} minutos
+                  </p>
+                )}
               </div>
 
               <div>
@@ -6164,7 +6166,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   type="number"
                   step="0.1"
                   min="0"
-                  value={editRegistoForm.km}
+                  value={editRegistoForm.km || ''}
                   onChange={(e) => setEditRegistoForm({
                     ...editRegistoForm,
                     km: e.target.value
