@@ -2140,6 +2140,8 @@ async def add_tecnico_relatorio(
         kms_deslocacao=tecnico_data.get("kms_deslocacao", 0),
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
         data_trabalho=tecnico_data.get("data_trabalho", datetime.now(timezone.utc).date()),
+        hora_inicio=tecnico_data.get("hora_inicio"),
+        hora_fim=tecnico_data.get("hora_fim"),
         ordem=count
     )
     
