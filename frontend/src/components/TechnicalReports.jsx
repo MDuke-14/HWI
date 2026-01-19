@@ -3227,7 +3227,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <p className="text-xs text-purple-400 flex items-center gap-1">
                               <Settings className="w-3 h-3" />
                               Equipamento: {(() => {
-                                const eq = equipamentos.find(e => e.id === intervencao.equipamento_id);
+                                const eq = equipamentosOT.find(e => e.id === intervencao.equipamento_id);
                                 return eq ? `${eq.tipologia} - ${eq.marca} ${eq.modelo}` : 'N/A';
                               })()}
                             </p>
