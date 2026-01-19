@@ -7084,46 +7084,68 @@ const TechnicalReports = ({ user, onLogout }) => {
                   Tarifas por Técnico
                 </h3>
                 <p className="text-gray-400 text-sm mb-4">
-                  Selecione a tarifa (valor/hora) para cada técnico. Deixe vazio para não aplicar tarifa.
+                  Selecione a tarifa (valor/hora) para cada técnico e data. Deixe vazio para não aplicar tarifa.
                 </p>
                 
                 {folhaHorasData.tecnicos?.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {folhaHorasData.tecnicos.map(tecnico => (
-                      <div key={tecnico.id} className="bg-[#0f0f0f] p-4 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <User className="w-4 h-4 text-blue-400" />
-                          <span className="text-white font-medium">{tecnico.nome}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Label className="text-gray-400 text-sm">Tarifa (€/h):</Label>
-                          {folhaHorasData.tarifas?.length > 0 ? (
-                            <select
-                              value={folhaHorasTarifas[tecnico.id] || ''}
-                              onChange={(e) => updateFolhaHorasTarifa(tecnico.id, e.target.value)}
-                              className="flex-1 bg-[#1a1a1a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
-                            >
-                              <option value="">Sem tarifa</option>
-                              {folhaHorasData.tarifas.map(tarifa => (
-                                <option key={tarifa.id} value={tarifa.valor_por_hora}>
-                                  Tarifa {tarifa.numero} - {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h)
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              value={folhaHorasTarifas[tecnico.id] || ''}
-                              onChange={(e) => updateFolhaHorasTarifa(tecnico.id, e.target.value)}
-                              className="flex-1 bg-[#1a1a1a] border-gray-700 text-white"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    {/* Ordenar técnicos por data cronológica */}
+                    {folhaHorasData.tecnicos
+                      .map(tecnico => {
+                        const datas = folhaHorasData.datas_por_tecnico?.[tecnico.id] || [];
+                        return datas.map(data => ({ ...tecnico, data }));
+                      })
+                      .flat()
+                      .sort((a, b) => new Date(a.data) - new Date(b.data))
+                      .map((tecnicoData, idx) => {
+                        const dataObj = new Date(tecnicoData.data + 'T00:00:00');
+                        const dataFormatada = dataObj.toLocaleDateString('pt-PT');
+                        const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+                        const diaSemana = diasSemana[dataObj.getDay()];
+                        
+                        return (
+                          <div key={`${tecnicoData.id}_${tecnicoData.data}_${idx}`} className="bg-[#0f0f0f] p-4 rounded-lg">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-blue-400" />
+                                <span className="text-white font-medium">{tecnicoData.nome}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Calendar className="w-4 h-4 text-amber-400" />
+                                <span className="text-amber-400 font-medium">{dataFormatada}</span>
+                                <span className="text-gray-500">({diaSemana})</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-gray-400 text-sm">Tarifa (€/h):</Label>
+                              {folhaHorasData.tarifas?.length > 0 ? (
+                                <select
+                                  value={folhaHorasTarifas[tecnicoData.id] || ''}
+                                  onChange={(e) => updateFolhaHorasTarifa(tecnicoData.id, e.target.value)}
+                                  className="flex-1 bg-[#1a1a1a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                                >
+                                  <option value="">Sem tarifa</option>
+                                  {folhaHorasData.tarifas.map(tarifa => (
+                                    <option key={tarifa.id} value={tarifa.valor_por_hora}>
+                                      Tarifa {tarifa.numero} - {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h)
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={folhaHorasTarifas[tecnicoData.id] || ''}
+                                  onChange={(e) => updateFolhaHorasTarifa(tecnicoData.id, e.target.value)}
+                                  className="flex-1 bg-[#1a1a1a] border-gray-700 text-white"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 ) : (
                   <div className="text-center py-6 text-gray-500">
