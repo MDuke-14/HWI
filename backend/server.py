@@ -3382,8 +3382,7 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
             user_name = user.get("full_name") or user.get("username") if user else current_user["username"]
             user_email = user.get("email") if user else None
             
-            frontend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:3000')
-            base_url = frontend_url.replace('/api', '').rstrip('/')
+            base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
             
             result = await handle_overtime_start(
                 db=db,
