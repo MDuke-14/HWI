@@ -3768,6 +3768,15 @@ async def end_time_entry(
 
 @api_router.get("/time-entries/today")
 async def get_today_entry(current_user: dict = Depends(get_current_user)):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Verificar se já existe entrada hoje com "Fora de Zona de Residência" ativo
+    has_outside_zone_today = await db.time_entries.find_one({
+        "user_id": current_user["sub"],
+        "date": today,
+        "outside_residence_zone": True
+    }) is not None
+    
     # Get active entry (regardless of date)
     active_entry = await db.time_entries.find_one({
         "user_id": current_user["sub"],
@@ -3775,10 +3784,11 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
     }, {"_id": 0})
     
     if active_entry:
+        # Adicionar flag de outside_zone do dia
+        active_entry["day_has_outside_zone"] = has_outside_zone_today
         return active_entry
     
     # If no active entry, get today's completed entries aggregated
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     today_entries = await db.time_entries.find({
         "user_id": current_user["sub"],
         "date": today,
@@ -3786,7 +3796,13 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
     }, {"_id": 0}).sort("created_at", 1).to_list(100)
     
     if not today_entries:
-        return {"entries": [], "has_active": False}
+        return {"entries": [], "has_active": False, "day_has_outside_zone": has_outside_zone_today}
+    
+    return {
+        "entries": today_entries, 
+        "has_active": False, 
+        "day_has_outside_zone": has_outside_zone_today
+    }
 
 @api_router.get("/admin/realtime-status")
 async def get_realtime_status(current_user: dict = Depends(get_current_user)):
