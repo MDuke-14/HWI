@@ -1660,30 +1660,49 @@ async def export_clientes_pdf(current_user: dict = Depends(get_current_user)):
     
     # Tabela de clientes
     if clientes:
-        data = [["#", "Nome", "Email", "NIF"]]
+        # Estilo para células com wrap de texto
+        cell_style = ParagraphStyle(
+            'CellStyle',
+            parent=styles['Normal'],
+            fontSize=9,
+            leading=11,
+            wordWrap='CJK'
+        )
+        header_cell_style = ParagraphStyle(
+            'HeaderCellStyle',
+            parent=styles['Normal'],
+            fontSize=10,
+            leading=12,
+            textColor=colors.white,
+            fontName='Helvetica-Bold'
+        )
+        
+        data = [[
+            Paragraph("#", header_cell_style),
+            Paragraph("Nome", header_cell_style),
+            Paragraph("Email", header_cell_style),
+            Paragraph("NIF", header_cell_style)
+        ]]
         for i, cliente in enumerate(clientes, 1):
             data.append([
-                str(i),
-                cliente.get("nome", ""),
-                cliente.get("email", ""),
-                cliente.get("nif", "")
+                Paragraph(str(i), cell_style),
+                Paragraph(cliente.get("nome", "") or "", cell_style),
+                Paragraph(cliente.get("email", "") or "", cell_style),
+                Paragraph(cliente.get("nif", "") or "", cell_style)
             ])
         
-        table = Table(data, colWidths=[1*cm, 7*cm, 6*cm, 3*cm])
+        table = Table(data, colWidths=[1.2*cm, 6*cm, 7*cm, 3*cm])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a1a')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('TOPPADDING', (0, 0), (-1, 0), 12),
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
             ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
         ]))
