@@ -5285,7 +5285,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, marca: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
-                  disabled={equipamentoOTSelecionado !== 'novo'}
+                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
             </div>
@@ -5298,7 +5298,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, modelo: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
-                  disabled={equipamentoOTSelecionado !== 'novo'}
+                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
               <div>
@@ -5307,7 +5307,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   value={equipamentoFormData.numero_serie}
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, numero_serie: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
-                  disabled={equipamentoOTSelecionado !== 'novo'}
+                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
             </div>
@@ -5319,7 +5319,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onChange={(e) => setEquipamentoFormData({...equipamentoFormData, ano_fabrico: e.target.value})}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
                 placeholder="Ex: 2020, 03/2020, 03-2020"
-                disabled={equipamentoOTSelecionado !== 'novo'}
+                disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
               />
             </div>
 
