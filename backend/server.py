@@ -6654,6 +6654,52 @@ async def delete_registo_tecnico(
     
     return {"message": "Registo removido"}
 
+
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/registos-tecnicos/{registo_id}")
+async def update_registo_tecnico(
+    relatorio_id: str,
+    registo_id: str,
+    registo_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar um registo de técnico (cronómetro)"""
+    # Verificar se existe
+    existing = await db.registos_tecnico_ot.find_one({
+        "id": registo_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Registo não encontrado")
+    
+    # Campos que podem ser atualizados
+    update_data = {}
+    if "minutos_trabalhados" in registo_data:
+        update_data["minutos_trabalhados"] = registo_data["minutos_trabalhados"]
+        # Converter para horas arredondadas para compatibilidade
+        update_data["horas_arredondadas"] = registo_data["minutos_trabalhados"] / 60
+    if "horas_arredondadas" in registo_data:
+        update_data["horas_arredondadas"] = registo_data["horas_arredondadas"]
+        update_data["minutos_trabalhados"] = int(registo_data["horas_arredondadas"] * 60)
+    if "km" in registo_data:
+        update_data["km"] = registo_data["km"]
+    if "codigo" in registo_data:
+        update_data["codigo"] = registo_data["codigo"]
+    
+    if update_data:
+        await db.registos_tecnico_ot.update_one(
+            {"id": registo_id, "relatorio_id": relatorio_id},
+            {"$set": update_data}
+        )
+    
+    updated = await db.registos_tecnico_ot.find_one(
+        {"id": registo_id, "relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    
+    return updated
+
+
 # ============ Material OT Routes ============
 
 @api_router.post("/relatorios-tecnicos/{relatorio_id}/materiais")
