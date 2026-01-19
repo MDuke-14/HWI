@@ -268,26 +268,40 @@ def generate_folha_horas_pdf(
     total_geral_portagens = 0
     total_geral_despesas = 0
     
-    # Iterar por técnico e data
-    for tecnico_id, datas in sorted(dados_por_tecnico_data.items()):
-        for data, registos in sorted(datas.items()):
-            if not registos:
-                continue
-            
-            # Pegar nome do técnico
-            tecnico_nome = registos[0].get('tecnico_nome', 'N/A')
-            
-            # Calcular totais do dia
-            total_minutos = sum(r.get('minutos', 0) for r in registos)
-            total_km = sum(r.get('km', 0) for r in registos)
-            
-            # Tarifa
-            tarifa_valor = tarifas_por_tecnico.get(tecnico_id, 0)
-            total_valor = (total_minutos / 60) * tarifa_valor
-            total_geral_valor += total_valor
-            
-            # Km
-            total_km_valor = total_km * PRECO_KM
+    # Criar lista plana de registos para ordenar por data cronológica
+    registos_ordenados = []
+    for tecnico_id, datas in dados_por_tecnico_data.items():
+        for data, registos in datas.items():
+            if registos:
+                registos_ordenados.append({
+                    'tecnico_id': tecnico_id,
+                    'data': data,
+                    'registos': registos
+                })
+    
+    # Ordenar por data cronológica
+    registos_ordenados.sort(key=lambda x: x['data'])
+    
+    # Iterar pelos registos ordenados por data
+    for item in registos_ordenados:
+        tecnico_id = item['tecnico_id']
+        data = item['data']
+        registos = item['registos']
+        
+        # Pegar nome do técnico
+        tecnico_nome = registos[0].get('tecnico_nome', 'N/A')
+        
+        # Calcular totais do dia
+        total_minutos = sum(r.get('minutos', 0) for r in registos)
+        total_km = sum(r.get('km', 0) for r in registos)
+        
+        # Tarifa
+        tarifa_valor = tarifas_por_tecnico.get(tecnico_id, 0)
+        total_valor = (total_minutos / 60) * tarifa_valor
+        total_geral_valor += total_valor
+        
+        # Km
+        total_km_valor = total_km * PRECO_KM
             total_geral_km_valor += total_km_valor
             
             # Dados extras (dieta, portagens, despesas)
