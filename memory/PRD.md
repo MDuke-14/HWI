@@ -203,6 +203,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 **Nova Página Frontend:**
 - `/authorize/:token` - Página para admin aprovar/rejeitar pedidos de horas extra
 
+**Dashboard de Notificações no Admin (Nova Tab):**
+- Verificações Manuais: botões para executar verificações de entrada/saída
+- Autorizações de Horas Extra: lista com filtro (Todos/Pendentes/Aprovados/Rejeitados)
+- Badge com contador de pedidos pendentes na tab
+- Botões de Autorizar/Rejeitar inline
+- Histórico de Notificações: tabela com logs de emails enviados
+
 **Tecnologias:**
 - APScheduler (cron jobs às 09:30 e 18:15, timezone Europe/Lisbon)
 - aiosmtplib (emails via SMTP Outlook)
