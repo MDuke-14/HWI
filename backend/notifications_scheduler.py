@@ -1,5 +1,5 @@
 """
-Sistema de Notificações por Email - Regras de Ponto e Autorizações
+Sistema de Notificações por Email e Push - Regras de Ponto e Autorizações
 """
 import os
 import logging
@@ -10,6 +10,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import aiosmtplib
 from holidays import is_holiday, is_weekend, is_overtime_day
+from pywebpush import webpush, WebPushException
+import json
 
 # Configuração de horários
 WORK_START_TIME = "09:00"
@@ -20,6 +22,76 @@ TOKEN_VALIDITY_HOURS = 24
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+async def send_push_notification(db, user_id: str, title: str, message: str, notification_type: str = "info", priority: str = "medium") -> bool:
+    """Envia push notification para um utilizador"""
+    try:
+        vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
+        vapid_email = os.environ.get('VAPID_CLAIM_EMAIL', 'geral@hwi.pt')
+        
+        if not vapid_private:
+            logger.warning("VAPID private key não configurada")
+            return False
+        
+        subscriptions = await db.push_subscriptions.find({"user_id": user_id}).to_list(None)
+        
+        if not subscriptions:
+            logger.info(f"Nenhuma subscription push para utilizador {user_id}")
+            return False
+        
+        sent_count = 0
+        for sub in subscriptions:
+            try:
+                payload = json.dumps({
+                    "title": title,
+                    "message": message,
+                    "type": notification_type,
+                    "priority": priority
+                })
+                
+                webpush(
+                    subscription_info={
+                        "endpoint": sub["endpoint"],
+                        "keys": sub["keys"]
+                    },
+                    data=payload,
+                    vapid_private_key=vapid_private,
+                    vapid_claims={"sub": f"mailto:{vapid_email}"}
+                )
+                sent_count += 1
+                logger.info(f"Push enviada para {user_id}: {title}")
+                
+            except WebPushException as e:
+                logger.error(f"Erro push para {user_id}: {e}")
+                if e.response and e.response.status_code in [403, 404, 410]:
+                    await db.push_subscriptions.delete_one({"_id": sub["_id"]})
+            except Exception as e:
+                logger.error(f"Erro inesperado push: {e}")
+        
+        return sent_count > 0
+    except Exception as e:
+        logger.error(f"Erro ao enviar push notification: {e}")
+        return False
+
+
+async def send_push_to_admins(db, title: str, message: str, notification_type: str = "admin_alert", priority: str = "high") -> int:
+    """Envia push notification para todos os administradores"""
+    try:
+        admins = await db.users.find({"is_admin": True}).to_list(None)
+        sent_count = 0
+        
+        for admin in admins:
+            admin_id = admin.get("id")
+            success = await send_push_notification(db, admin_id, title, message, notification_type, priority)
+            if success:
+                sent_count += 1
+        
+        logger.info(f"Push enviada para {sent_count} admins: {title}")
+        return sent_count
+    except Exception as e:
+        logger.error(f"Erro ao enviar push para admins: {e}")
+        return 0
 
 
 async def send_notification_email(
