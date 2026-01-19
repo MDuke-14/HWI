@@ -338,23 +338,23 @@ def generate_folha_horas_pdf(
         
         row = [
             format_date_pt(date_obj),
-                get_weekday_pt(date_obj),
-                tecnico_nome,
-                minutes_to_hhmm(total_minutos),
-                f'{tarifa_valor:.2f}€/h' if tarifa_valor else '-',
-                f'{total_valor:.2f}€',
-                f'{total_km:.1f}',
-                f'{PRECO_KM:.2f}€',
-                f'{total_km_valor:.2f}€',
-                format_time_hhmm(primeiro_inicio),
-                minutes_to_hhmm(pausa_minutos) if pausa_minutos > 0 else '-',
-                format_time_hhmm(ultimo_fim),
-                f'{dieta:.2f}€' if dieta else '0,00€',
-                f'{portagens:.2f}€' if portagens else '0,00€',
-                f'{despesas:.2f}€' if despesas else '0,00€',
-                obs
-            ]
-            table_data.append(row)
+            get_weekday_pt(date_obj),
+            tecnico_nome,
+            minutes_to_hhmm(total_minutos),
+            f'{tarifa_valor:.2f}€/h' if tarifa_valor else '-',
+            f'{total_valor:.2f}€',
+            f'{total_km:.1f}',
+            f'{PRECO_KM:.2f}€',
+            f'{total_km_valor:.2f}€',
+            format_time_hhmm(primeiro_inicio),
+            minutes_to_hhmm(pausa_minutos) if pausa_minutos > 0 else '-',
+            format_time_hhmm(ultimo_fim),
+            f'{dieta:.2f}€' if dieta else '0,00€',
+            f'{portagens:.2f}€' if portagens else '0,00€',
+            f'{despesas:.2f}€' if despesas else '0,00€',
+            obs
+        ]
+        table_data.append(row)
     
     # Linha de totais
     table_data.append([
