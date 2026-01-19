@@ -1702,12 +1702,13 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // ========== Assinatura Functions ==========
   
-  const fetchAssinatura = async (relatorioId) => {
+  const fetchAssinaturas = async (relatorioId) => {
     try {
-      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/assinatura`);
-      setAssinatura(response.data);
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/assinaturas`);
+      setAssinaturas(response.data || []);
     } catch (error) {
-      console.error('Erro ao buscar assinatura:', error);
+      console.error('Erro ao buscar assinaturas:', error);
+      setAssinaturas([]);
     }
   };
 
