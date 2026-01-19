@@ -2013,8 +2013,8 @@ async def update_tecnico_relatorio(
     update_data = {}
     if "tecnico_nome" in tecnico_data:
         update_data["tecnico_nome"] = tecnico_data["tecnico_nome"]
-    if "horas_cliente" in tecnico_data:
-        update_data["horas_cliente"] = tecnico_data["horas_cliente"]
+    if "minutos_cliente" in tecnico_data:
+        update_data["minutos_cliente"] = tecnico_data["minutos_cliente"]
     if "kms_deslocacao" in tecnico_data:
         update_data["kms_deslocacao"] = tecnico_data["kms_deslocacao"]
     if "tipo_horario" in tecnico_data:
