@@ -5932,6 +5932,129 @@ async def get_user_time_entries(user_id: str, current_user: dict = Depends(get_c
     entries = await db.time_entries.find({"user_id": user_id}, {"_id": 0}).sort("date", -1).to_list(1000)
     return entries
 
+@api_router.get("/admin/time-entries/user/{user_id}")
+async def get_user_time_entries_by_month(
+    user_id: str,
+    month: int = None,
+    year: int = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Get time entries for a specific user by month (admin only)"""
+    from datetime import datetime
+    
+    if not month:
+        month = datetime.now().month
+    if not year:
+        year = datetime.now().year
+    
+    # Build date range
+    start_date = f"{year}-{month:02d}-01"
+    if month == 12:
+        end_date = f"{year + 1}-01-01"
+    else:
+        end_date = f"{year}-{month + 1:02d}-01"
+    
+    entries = await db.time_entries.find({
+        "user_id": user_id,
+        "date": {"$gte": start_date, "$lt": end_date}
+    }, {"_id": 0}).sort("date", -1).to_list(1000)
+    
+    return {"entries": entries, "month": month, "year": year}
+
+@api_router.put("/admin/time-entries/{entry_id}")
+async def admin_update_time_entry(
+    entry_id: str,
+    update_data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Update a time entry (admin only)"""
+    from datetime import datetime
+    
+    # Find entry
+    entry = await db.time_entries.find_one({"id": entry_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entrada não encontrada")
+    
+    # Calculate total hours if times are provided
+    if "start_time" in update_data and "end_time" in update_data:
+        start = datetime.fromisoformat(update_data["start_time"].replace("Z", ""))
+        end = datetime.fromisoformat(update_data["end_time"].replace("Z", ""))
+        total_seconds = (end - start).total_seconds()
+        update_data["total_hours"] = total_seconds / 3600
+    
+    # Update entry
+    await db.time_entries.update_one(
+        {"id": entry_id},
+        {"$set": update_data}
+    )
+    
+    logging.info(f"Admin {current_user['sub']} updated time entry {entry_id}")
+    
+    return {"message": "Entrada atualizada com sucesso"}
+
+@api_router.delete("/admin/time-entries/{entry_id}")
+async def admin_delete_time_entry(
+    entry_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Delete a time entry (admin only)"""
+    result = await db.time_entries.delete_one({"id": entry_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Entrada não encontrada")
+    
+    logging.info(f"Admin {current_user['sub']} deleted time entry {entry_id}")
+    
+    return {"message": "Entrada eliminada com sucesso"}
+
+@api_router.post("/admin/time-entries")
+async def admin_create_time_entry(
+    entry_data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Create a time entry for any user (admin only)"""
+    from datetime import datetime
+    import uuid
+    
+    user_id = entry_data.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id é obrigatório")
+    
+    # Verify user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+    
+    # Parse times
+    start_time = datetime.fromisoformat(entry_data["start_time"].replace("Z", ""))
+    end_time = datetime.fromisoformat(entry_data["end_time"].replace("Z", ""))
+    
+    # Calculate total hours
+    total_seconds = (end_time - start_time).total_seconds()
+    total_hours = total_seconds / 3600
+    
+    # Create entry
+    new_entry = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "date": entry_data["date"],
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+        "total_hours": total_hours,
+        "status": "completed",
+        "observations": entry_data.get("observations", ""),
+        "outside_residence_zone": entry_data.get("outside_residence_zone", False),
+        "location_description": entry_data.get("location_description", ""),
+        "created_at": datetime.now().isoformat(),
+        "created_by_admin": current_user["sub"]
+    }
+    
+    await db.time_entries.insert_one(new_entry)
+    
+    logging.info(f"Admin {current_user['sub']} created time entry for user {user_id}")
+    
+    return {"message": "Entrada criada com sucesso", "entry_id": new_entry["id"]}
+
 @api_router.post("/admin/users/create")
 async def admin_create_user(user_data: UserCreate, current_user: dict = Depends(get_current_admin)):
     """Create a new user (admin only)"""
