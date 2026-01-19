@@ -2011,6 +2011,111 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
 
+  // ========== Folha de Horas Functions ==========
+
+  const handleOpenFolhaHoras = async () => {
+    if (!selectedRelatorio) return;
+    
+    setLoadingFolhaHoras(true);
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/folha-horas-data`);
+      setFolhaHorasData(response.data);
+      
+      // Inicializar tarifas vazias para cada técnico
+      const tarifasIniciais = {};
+      response.data.tecnicos.forEach(tec => {
+        tarifasIniciais[tec.id] = '';
+      });
+      setFolhaHorasTarifas(tarifasIniciais);
+      
+      // Inicializar extras vazios para cada técnico/data
+      const extrasIniciais = {};
+      Object.entries(response.data.datas_por_tecnico || {}).forEach(([tecnicoId, datas]) => {
+        datas.forEach(data => {
+          extrasIniciais[`${tecnicoId}_${data}`] = { dieta: '', portagens: '', despesas: '' };
+        });
+      });
+      setFolhaHorasExtras(extrasIniciais);
+      
+      setShowFolhaHorasModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados para Folha de Horas');
+    } finally {
+      setLoadingFolhaHoras(false);
+    }
+  };
+
+  const handleGenerateFolhaHoras = async () => {
+    if (!selectedRelatorio || !folhaHorasData) return;
+    
+    // Preparar dados
+    const tarifasPorTecnico = {};
+    Object.entries(folhaHorasTarifas).forEach(([tecnicoId, valor]) => {
+      if (valor) {
+        tarifasPorTecnico[tecnicoId] = parseFloat(valor);
+      }
+    });
+    
+    const dadosExtras = {};
+    Object.entries(folhaHorasExtras).forEach(([chave, valores]) => {
+      dadosExtras[chave] = {
+        dieta: parseFloat(valores.dieta) || 0,
+        portagens: parseFloat(valores.portagens) || 0,
+        despesas: parseFloat(valores.despesas) || 0
+      };
+    });
+    
+    setGeneratingFolhaHoras(true);
+    try {
+      const response = await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/folha-horas-pdf`,
+        {
+          tarifas_por_tecnico: tarifasPorTecnico,
+          dados_extras: dadosExtras
+        },
+        { responseType: 'blob' }
+      );
+      
+      // Download do PDF
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `FolhaHoras_OT${selectedRelatorio.numero_assistencia}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Folha de Horas gerada com sucesso!');
+      setShowFolhaHorasModal(false);
+    } catch (error) {
+      console.error('Erro ao gerar Folha de Horas:', error);
+      toast.error('Erro ao gerar Folha de Horas');
+    } finally {
+      setGeneratingFolhaHoras(false);
+    }
+  };
+
+  const updateFolhaHorasTarifa = (tecnicoId, valor) => {
+    setFolhaHorasTarifas(prev => ({
+      ...prev,
+      [tecnicoId]: valor
+    }));
+  };
+
+  const updateFolhaHorasExtra = (chave, campo, valor) => {
+    setFolhaHorasExtras(prev => ({
+      ...prev,
+      [chave]: {
+        ...prev[chave],
+        [campo]: valor
+      }
+    }));
+  };
+
+
   // ========== Visualizar PDF Functions ==========
   
   const handlePreviewPDF = async () => {
