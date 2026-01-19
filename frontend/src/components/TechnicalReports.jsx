@@ -193,7 +193,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEditRegistoModal, setShowEditRegistoModal] = useState(false);
   const [editingRegisto, setEditingRegisto] = useState(null);
   const [editRegistoForm, setEditRegistoForm] = useState({
-    horas_arredondadas: 0,
+    minutos_trabalhados: 0,
     km: 0,
     codigo: ''
   });
