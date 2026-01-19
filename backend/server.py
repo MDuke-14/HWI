@@ -32,6 +32,7 @@ from import_excel import parse_excel_timesheet
 from import_pdf import parse_pdf_timesheet
 from ot_pdf_report import generate_ot_pdf
 from pc_pdf_report import generate_pc_pdf
+from folha_horas_pdf import generate_folha_horas_pdf
 from notification_system import notification_loop, NotificationSystem
 from hours_calculator import calcular_breakdown_completo
 from cronometro_logic import segmentar_periodo
