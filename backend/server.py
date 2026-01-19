@@ -2266,8 +2266,19 @@ async def update_tecnico_relatorio(
         update_data["tecnico_nome"] = tecnico_data["tecnico_nome"]
     if "minutos_cliente" in tecnico_data:
         update_data["minutos_cliente"] = tecnico_data["minutos_cliente"]
-    if "kms_deslocacao" in tecnico_data:
-        update_data["kms_deslocacao"] = tecnico_data["kms_deslocacao"]
+    
+    # Atualizar kms - calcular automaticamente se ambos forem fornecidos
+    if "kms_inicial" in tecnico_data:
+        update_data["kms_inicial"] = float(tecnico_data["kms_inicial"])
+    if "kms_final" in tecnico_data:
+        update_data["kms_final"] = float(tecnico_data["kms_final"])
+    
+    # Se pelo menos um dos kms foi atualizado, recalcular kms_deslocacao
+    if "kms_inicial" in tecnico_data or "kms_final" in tecnico_data:
+        kms_inicial = float(tecnico_data.get("kms_inicial", existing.get("kms_inicial", 0)))
+        kms_final = float(tecnico_data.get("kms_final", existing.get("kms_final", 0)))
+        update_data["kms_deslocacao"] = max(0, kms_final - kms_inicial)
+    
     if "tipo_horario" in tecnico_data:
         update_data["tipo_horario"] = tecnico_data["tipo_horario"]
     if "data_trabalho" in tecnico_data:
