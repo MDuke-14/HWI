@@ -2317,6 +2317,47 @@ async def delete_equipamento_ot(
     
     return {"message": "Equipamento removido com sucesso"}
 
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/equipamentos/{equipamento_id}")
+async def update_equipamento_ot(
+    relatorio_id: str,
+    equipamento_id: str,
+    equipamento_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar equipamento de uma OT"""
+    # Verificar se existe
+    existing = await db.equipamentos_ot.find_one({
+        "id": equipamento_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+    
+    # Campos permitidos para atualização
+    update_fields = {}
+    allowed_fields = ["tipologia", "marca", "modelo", "numero_serie", "ano_fabrico"]
+    
+    for field in allowed_fields:
+        if field in equipamento_data:
+            update_fields[field] = equipamento_data[field]
+    
+    if update_fields:
+        await db.equipamentos_ot.update_one(
+            {"id": equipamento_id, "relatorio_id": relatorio_id},
+            {"$set": update_fields}
+        )
+    
+    # Retornar equipamento atualizado
+    updated = await db.equipamentos_ot.find_one(
+        {"id": equipamento_id, "relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    
+    logging.info(f"Equipamento {equipamento_id} atualizado na OT {relatorio_id}")
+    
+    return updated
+
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias")
 async def get_fotografias(
     relatorio_id: str,
