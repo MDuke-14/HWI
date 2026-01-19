@@ -2213,13 +2213,19 @@ async def add_tecnico_relatorio(
     # Contar técnicos existentes para ordem
     count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
     
-    # Criar técnico
+    # Criar técnico - calcular kms_deslocacao automaticamente
+    kms_inicial = float(tecnico_data.get("kms_inicial", 0))
+    kms_final = float(tecnico_data.get("kms_final", 0))
+    kms_deslocacao = max(0, kms_final - kms_inicial)  # Não permitir valores negativos
+    
     tecnico = TecnicoRelatorio(
         relatorio_id=relatorio_id,
         tecnico_id="",  # Se não tiver user_id
         tecnico_nome=tecnico_data.get("tecnico_nome", ""),
         minutos_cliente=tecnico_data.get("minutos_cliente", 0),
-        kms_deslocacao=tecnico_data.get("kms_deslocacao", 0),
+        kms_inicial=kms_inicial,
+        kms_final=kms_final,
+        kms_deslocacao=kms_deslocacao,
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
         data_trabalho=tecnico_data.get("data_trabalho", datetime.now(timezone.utc).date()),
         hora_inicio=tecnico_data.get("hora_inicio"),
