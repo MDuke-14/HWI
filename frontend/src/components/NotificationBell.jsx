@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
+
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBmYRJcwnwXPXRU6t0Bw';
 
 const NotificationBell = ({ user }) => {
   const [notifications, setNotifications] = useState([]);
@@ -10,70 +12,7 @@ const NotificationBell = ({ user }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState('default');
-
-  useEffect(() => {
-    // Verificar suporte a push notifications
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setPushSupported(true);
-      setPushPermission(Notification.permission);
-    }
-
-    // Registrar service worker
-    registerServiceWorker();
-
-    // Buscar notificações iniciais
-    fetchNotifications();
-
-    // Polling a cada 2 minutos para buscar novas notificações
-    const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const registerServiceWorker = async () => {
-    if ('serviceWorker' in navigator) {
-      try {
-        const registration = await navigator.serviceWorker.register('/service-worker.js');
-        console.log('Service Worker registrado:', registration);
-        
-        // Solicitar permissão para notificações após 2 segundos
-        setTimeout(() => requestNotificationPermission(registration), 2000);
-      } catch (error) {
-        console.error('Erro ao registrar Service Worker:', error);
-      }
-    }
-  };
-
-  const requestNotificationPermission = async (registration) => {
-    if (Notification.permission === 'default') {
-      const permission = await Notification.requestPermission();
-      setPushPermission(permission);
-      
-      if (permission === 'granted') {
-        await subscribeToPush(registration);
-      }
-    } else if (Notification.permission === 'granted') {
-      await subscribeToPush(registration);
-    }
-  };
-
-  const subscribeToPush = async (registration) => {
-    try {
-      // VAPID public key (você precisará gerar isso - por enquanto usando uma genérica)
-      const publicVapidKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBmYRJcwnwXPXRU6t0Bw';
-      
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-      });
-
-      // Enviar subscription para o backend
-      await axios.post(`${API}/notifications/subscribe`, subscription);
-      console.log('Push subscription enviada para o backend');
-    } catch (error) {
-      console.error('Erro ao registrar push subscription:', error);
-    }
-  };
+  const [pushSubscribed, setPushSubscribed] = useState(false);
 
   const urlBase64ToUint8Array = (base64String) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -85,6 +24,88 @@ const NotificationBell = ({ user }) => {
     }
     return outputArray;
   };
+
+  const subscribeToPush = useCallback(async (registration) => {
+    try {
+      // Verificar se já existe uma subscription
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        // Criar nova subscription
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        console.log('Nova push subscription criada');
+      }
+
+      // Converter para JSON e enviar para o backend
+      const subscriptionJson = subscription.toJSON();
+      console.log('Enviando subscription para backend:', subscriptionJson);
+      
+      const response = await axios.post(`${API}/notifications/subscribe`, {
+        endpoint: subscriptionJson.endpoint,
+        keys: subscriptionJson.keys
+      });
+      
+      console.log('Push subscription registada com sucesso:', response.data);
+      setPushSubscribed(true);
+      toast.success('Notificações push ativadas!');
+      
+    } catch (error) {
+      console.error('Erro ao registar push subscription:', error);
+      if (error.response) {
+        console.error('Response error:', error.response.data);
+      }
+      toast.error('Erro ao ativar notificações push');
+    }
+  }, []);
+
+  const requestNotificationPermission = useCallback(async () => {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      console.log('Service Worker pronto:', registration);
+      
+      if (Notification.permission === 'default') {
+        const permission = await Notification.requestPermission();
+        setPushPermission(permission);
+        console.log('Permissão de notificação:', permission);
+        
+        if (permission === 'granted') {
+          await subscribeToPush(registration);
+        } else {
+          toast.error('Permissão de notificações negada');
+        }
+      } else if (Notification.permission === 'granted') {
+        await subscribeToPush(registration);
+      }
+    } catch (error) {
+      console.error('Erro ao solicitar permissão:', error);
+    }
+  }, [subscribeToPush]);
+
+  useEffect(() => {
+    // Verificar suporte a push notifications
+    if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
+      setPushSupported(true);
+      setPushPermission(Notification.permission);
+      
+      // Se já tem permissão, verificar/criar subscription
+      if (Notification.permission === 'granted' && user) {
+        navigator.serviceWorker.ready.then(registration => {
+          subscribeToPush(registration);
+        });
+      }
+    }
+
+    // Buscar notificações iniciais
+    if (user) {
+      fetchNotifications();
+      // Polling a cada 2 minutos
+      const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user, subscribeToPush]);
 
   const fetchNotifications = async () => {
     try {
