@@ -3953,9 +3953,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                   />
                   <span className="text-gray-400">min</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total: {tecnicoFormData.minutos_cliente} minutos
-                </p>
+                {tecnicoFormData.minutos_cliente > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Total: {tecnicoFormData.minutos_cliente} minutos
+                  </p>
+                )}
               </div>
 
               <div>
@@ -3968,7 +3970,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   type="number"
                   step="1"
                   min="0"
-                  value={tecnicoFormData.kms_deslocacao}
+                  value={tecnicoFormData.kms_deslocacao || ''}
                   onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, kms_deslocacao: parseFloat(e.target.value) || 0 })}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   placeholder="Ex: 150"
