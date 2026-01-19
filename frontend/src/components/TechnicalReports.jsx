@@ -3262,6 +3262,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">Principal</span>
                           <Button
+                            onClick={openEditEquipamentoPrincipalModal}
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
                             onClick={async () => {
                               if (window.confirm('Tem certeza que deseja remover o equipamento principal?')) {
                                 try {
