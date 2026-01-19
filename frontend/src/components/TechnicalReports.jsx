@@ -1895,11 +1895,6 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // ========== Assinatura Functions ==========
 
-  const openAssinaturaModal = () => {
-    setAssinaturaNome({ primeiro: '', ultimo: '' });
-    setShowAssinaturaModal(true);
-  };
-
   const clearCanvas = () => {
     if (assinaturaCanvas) {
       assinaturaCanvas.clear();
