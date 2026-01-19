@@ -10,7 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { CalendarIcon, Plus, ChevronLeft, ChevronRight, Users, MapPin, Wrench, Edit2, Trash2, Search, Building2 } from 'lucide-react';
+import { 
+  CalendarIcon, Plus, ChevronLeft, ChevronRight, Users, MapPin, Wrench, 
+  Edit2, Trash2, Search, Building2, Clock, CalendarDays, List, 
+  Sparkles, Sun, Umbrella
+} from 'lucide-react';
 
 const Calendar = ({ user, onLogout }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,6 +27,8 @@ const Calendar = ({ user, onLogout }) => {
   const [clientSelectOpen, setClientSelectOpen] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [editingService, setEditingService] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [dayDetailOpen, setDayDetailOpen] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     client_name: '',
     location: '',
@@ -34,9 +40,8 @@ const Calendar = ({ user, onLogout }) => {
     status: 'scheduled'
   });
 
-  // Feriados portugueses (fixos e móveis para 2025-2026)
+  // Feriados portugueses
   const getHolidays = (year) => {
-    // Feriados fixos
     const fixedHolidays = [
       { date: `${year}-01-01`, name: 'Ano Novo' },
       { date: `${year}-04-25`, name: 'Dia da Liberdade' },
@@ -50,7 +55,6 @@ const Calendar = ({ user, onLogout }) => {
       { date: `${year}-12-25`, name: 'Natal' },
     ];
 
-    // Feriados móveis (Páscoa e derivados) - calculados para cada ano
     const easterHolidays = {
       2024: [
         { date: '2024-03-29', name: 'Sexta-feira Santa' },
@@ -72,10 +76,9 @@ const Calendar = ({ user, onLogout }) => {
     return [...fixedHolidays, ...(easterHolidays[year] || [])];
   };
 
-  const getHolidayForDate = (day) => {
-    if (!day) return null;
-    const year = currentDate.getFullYear();
-    const dateStr = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const getHolidayForDate = (dateStr) => {
+    if (!dateStr) return null;
+    const year = parseInt(dateStr.split('-')[0]);
     const holidays = getHolidays(year);
     return holidays.find(h => h.date === dateStr);
   };
@@ -217,12 +220,10 @@ const Calendar = ({ user, onLogout }) => {
 
     const days = [];
     
-    // Add empty cells for days before month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
     
-    // Add days of month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(day);
     }
@@ -230,147 +231,243 @@ const Calendar = ({ user, onLogout }) => {
     return days;
   };
 
-  const getServicesForDate = (day) => {
-    if (!day) return [];
-    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const getDateString = (day) => {
+    if (!day) return '';
+    return `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  const getServicesForDate = (dateStr) => {
+    if (!dateStr) return [];
     return services.filter(s => s.date === dateStr);
   };
 
-  const getVacationsForDate = (day) => {
-    if (!day) return [];
-    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return vacations.filter(v => {
-      return dateStr >= v.start_date && dateStr <= v.end_date;
-    });
+  const getVacationsForDate = (dateStr) => {
+    if (!dateStr) return [];
+    return vacations.filter(v => dateStr >= v.start_date && dateStr <= v.end_date);
   };
+
+  const openDayDetail = (day) => {
+    const dateStr = getDateString(day);
+    setSelectedDay({
+      day,
+      dateStr,
+      services: getServicesForDate(dateStr),
+      vacations: getVacationsForDate(dateStr),
+      holiday: getHolidayForDate(dateStr)
+    });
+    setDayDetailOpen(true);
+  };
+
+  // Statistics
+  const totalServicesThisMonth = services.length;
+  const scheduledServices = services.filter(s => s.status === 'scheduled').length;
+  const completedServices = services.filter(s => s.status === 'completed').length;
 
   const MonthView = () => {
     const days = getDaysInMonth();
     const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const today = new Date();
 
     return (
-      <div className="glass-effect p-6">
-        {/* Month navigation */}
-        <div className="flex items-center justify-between mb-6">
-          <Button onClick={handlePreviousMonth} variant="outline" className="bg-[#1a1a1a] border-gray-700 text-white hover:bg-[#252525]">
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <h2 className="text-2xl font-bold text-white">
-            {currentDate.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
-          </h2>
-          <Button onClick={handleNextMonth} variant="outline" className="bg-[#1a1a1a] border-gray-700 text-white hover:bg-[#252525]">
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap gap-4 mb-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-600 rounded"></div>
-            <span className="text-gray-300">Serviços</span>
+      <div className="space-y-6">
+        {/* Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
+            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Total Serviços</div>
+            <div className="text-3xl font-bold text-white font-mono">{totalServicesThisMonth}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-amber-600 rounded"></div>
-            <span className="text-gray-300">Férias</span>
+          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
+            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Agendados</div>
+            <div className="text-3xl font-bold text-sky-400 font-mono">{scheduledServices}</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-600 rounded"></div>
-            <span className="text-gray-300">Feriados</span>
+          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
+            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Concluídos</div>
+            <div className="text-3xl font-bold text-emerald-400 font-mono">{completedServices}</div>
+          </div>
+          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
+            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Férias Ativas</div>
+            <div className="text-3xl font-bold text-purple-400 font-mono">{vacations.length}</div>
           </div>
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-2">
-          {/* Week day headers */}
-          {weekDays.map(day => (
-            <div key={day} className="text-center font-semibold text-gray-400 py-2">
-              {day}
+        {/* Calendar Container */}
+        <div className="bg-[#121212] border border-white/10 rounded-xl overflow-hidden">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <Button 
+              onClick={handlePreviousMonth} 
+              variant="ghost" 
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+              data-testid="prev-month-btn"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                {currentDate.toLocaleDateString('pt-PT', { month: 'long' })}
+              </h2>
+              <div className="text-sm font-mono text-gray-500">{currentDate.getFullYear()}</div>
             </div>
-          ))}
-          
-          {/* Calendar days */}
-          {days.map((day, index) => {
-            const dayServices = getServicesForDate(day);
-            const dayVacations = getVacationsForDate(day);
-            const holiday = getHolidayForDate(day);
-            const today = new Date();
-            const isToday = day && 
-              day === today.getDate() && 
-              currentDate.getMonth() === today.getMonth() && 
-              currentDate.getFullYear() === today.getFullYear();
+            <Button 
+              onClick={handleNextMonth} 
+              variant="ghost" 
+              className="text-gray-400 hover:text-white hover:bg-white/10"
+              data-testid="next-month-btn"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
 
-            return (
-              <div
-                key={index}
-                className={`min-h-[100px] p-2 rounded-lg border ${
-                  day ? (holiday ? 'bg-red-900/20 border-red-700' : 'bg-[#1a1a1a] border-gray-700') : 'border-transparent'
-                } ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+          {/* Legend */}
+          <div className="flex flex-wrap gap-6 px-6 py-3 border-b border-white/5 bg-white/[0.02]">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-sky-500"></div>
+              <span className="text-xs text-gray-400">Serviços</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-purple-500"></div>
+              <span className="text-xs text-gray-400">Férias</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-amber-500"></div>
+              <span className="text-xs text-gray-400">Feriados</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+              <span className="text-xs text-gray-400">Hoje</span>
+            </div>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 bg-[#0a0a0a]">
+            {/* Week Headers */}
+            {weekDays.map((day, i) => (
+              <div 
+                key={day} 
+                className={`text-center font-medium text-xs uppercase tracking-widest py-4 border-b border-white/10 ${
+                  i === 0 || i === 6 ? 'text-gray-500' : 'text-gray-400'
+                }`}
               >
-                {day && (
-                  <>
-                    <div className={`text-sm font-semibold mb-1 ${
-                      holiday ? 'text-red-400' : (isToday ? 'text-blue-400' : 'text-gray-300')
-                    }`}>
-                      {day}
-                    </div>
-                    
-                    {/* Holiday */}
-                    {holiday && (
-                      <div className="text-xs bg-red-900/30 border border-red-600 rounded px-1 py-0.5 mb-1">
-                        <div className="text-red-400 truncate">🎉 {holiday.name}</div>
-                      </div>
-                    )}
-                    
-                    {/* Services */}
-                    {dayServices.map(service => (
-                      <div
-                        key={service.id}
-                        className="text-xs bg-blue-900/30 border border-blue-600 rounded px-1 py-0.5 mb-1 cursor-pointer hover:bg-blue-900/50"
-                        onClick={() => user.is_admin && handleEditService(service)}
-                      >
-                        <div className="text-blue-400 font-semibold truncate">{service.client_name}</div>
-                        <div className="text-blue-300 truncate">{service.location}</div>
-                      </div>
-                    ))}
-                    
-                    {/* Vacations */}
-                    {dayVacations.map(vacation => (
-                      <div
-                        key={vacation.id}
-                        className="text-xs bg-amber-900/30 border border-amber-600 rounded px-1 py-0.5 mb-1"
-                      >
-                        <div className="text-amber-400 truncate">🏖️ {vacation.username}</div>
-                      </div>
-                    ))}
-                  </>
-                )}
+                {day}
               </div>
-            );
-          })}
+            ))}
+            
+            {/* Calendar Days */}
+            {days.map((day, index) => {
+              const dateStr = getDateString(day);
+              const dayServices = getServicesForDate(dateStr);
+              const dayVacations = getVacationsForDate(dateStr);
+              const holiday = getHolidayForDate(dateStr);
+              const isToday = day && 
+                day === today.getDate() && 
+                currentDate.getMonth() === today.getMonth() && 
+                currentDate.getFullYear() === today.getFullYear();
+              const isWeekend = index % 7 === 0 || index % 7 === 6;
+              const hasEvents = dayServices.length > 0 || dayVacations.length > 0 || holiday;
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => day && openDayDetail(day)}
+                  className={`
+                    min-h-[120px] p-2 border-b border-r border-white/5 relative group
+                    ${day ? 'cursor-pointer hover:bg-white/[0.03] transition-colors' : ''}
+                    ${holiday ? 'bg-amber-500/5' : ''}
+                    ${isWeekend && day && !holiday ? 'bg-white/[0.01]' : ''}
+                  `}
+                  data-testid={day ? `calendar-day-${day}` : undefined}
+                >
+                  {day && (
+                    <>
+                      {/* Day Number */}
+                      <div className={`
+                        text-sm font-mono mb-2 flex items-center justify-between
+                        ${holiday ? 'text-amber-400' : isToday ? 'text-white' : isWeekend ? 'text-gray-600' : 'text-gray-400'}
+                      `}>
+                        <span className={`
+                          ${isToday ? 'bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold' : ''}
+                        `}>
+                          {day}
+                        </span>
+                        {hasEvents && !isToday && (
+                          <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                        )}
+                      </div>
+                      
+                      {/* Holiday Badge */}
+                      {holiday && (
+                        <div className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border-l-2 border-amber-500 truncate mb-1">
+                          {holiday.name}
+                        </div>
+                      )}
+                      
+                      {/* Services */}
+                      {dayServices.slice(0, 2).map(service => (
+                        <div
+                          key={service.id}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300 border-l-2 border-sky-500 truncate mb-1 hover:bg-sky-500/20 transition-colors"
+                          title={`${service.client_name} - ${service.location}`}
+                        >
+                          {service.client_name}
+                        </div>
+                      ))}
+                      
+                      {/* Vacations */}
+                      {dayVacations.slice(0, 1).map(vacation => (
+                        <div
+                          key={vacation.id}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border-l-2 border-purple-500 truncate mb-1"
+                        >
+                          <Umbrella className="w-2.5 h-2.5 inline mr-1" />
+                          {vacation.username}
+                        </div>
+                      ))}
+                      
+                      {/* More Indicator */}
+                      {(dayServices.length > 2 || dayVacations.length > 1) && (
+                        <div className="text-[10px] text-gray-500 font-medium">
+                          +{dayServices.length - 2 + dayVacations.length - 1} mais
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
   };
 
   const ListView = () => {
+    const sortedServices = [...services].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
     return (
       <div className="space-y-4">
-        {services.length === 0 ? (
-          <div className="glass-effect p-12 text-center">
-            <p className="text-gray-400 text-lg">Nenhum serviço agendado</p>
+        {sortedServices.length === 0 ? (
+          <div className="bg-[#121212] border border-white/10 rounded-xl p-12 text-center">
+            <CalendarDays className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 text-lg">Nenhum serviço agendado este mês</p>
           </div>
         ) : (
-          services.map(service => (
-            <div key={service.id} className="glass-effect p-6 hover:bg-[#1f1f1f] transition-colors">
+          sortedServices.map(service => (
+            <div 
+              key={service.id} 
+              className="bg-[#121212] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all group"
+              data-testid={`service-card-${service.id}`}
+            >
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-1">{service.client_name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      service.status === 'completed' ? 'bg-green-700 text-green-200' :
-                      service.status === 'in_progress' ? 'bg-blue-700 text-blue-200' :
-                      service.status === 'cancelled' ? 'bg-red-700 text-red-200' :
-                      'bg-gray-700 text-gray-300'
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                      {service.client_name}
+                    </h3>
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
+                      service.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                      service.status === 'in_progress' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                      service.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                      'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                     }`}>
                       {service.status === 'scheduled' ? 'Agendado' :
                        service.status === 'in_progress' ? 'Em Progresso' :
@@ -379,18 +476,22 @@ const Calendar = ({ user, onLogout }) => {
                   </div>
                 </div>
                 {user.is_admin && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       onClick={() => handleEditService(service)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
+                      variant="ghost"
                       size="sm"
+                      className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+                      data-testid={`edit-service-${service.id}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button
                       onClick={() => handleDeleteService(service.id)}
-                      className="bg-red-600 hover:bg-red-700 text-white rounded-full p-2"
+                      variant="ghost"
                       size="sm"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      data-testid={`delete-service-${service.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -398,50 +499,49 @@ const Calendar = ({ user, onLogout }) => {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 text-gray-300">
-                <div>
-                  <div className="text-sm text-gray-400 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Localidade
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3" />
+                    Localização
                   </div>
-                  <div className="font-semibold text-white">{service.location}</div>
+                  <div className="text-white font-medium">{service.location}</div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-400 flex items-center gap-2">
-                    <CalendarIcon className="w-4 h-4" />
+                <div className="space-y-1">
+                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <CalendarIcon className="w-3 h-3" />
                     Data
                   </div>
-                  <div className="font-semibold text-white">
+                  <div className="text-white font-mono">
                     {new Date(service.date + 'T00:00:00').toLocaleDateString('pt-PT', {
-                      day: 'numeric',
-                      month: 'long',
+                      day: '2-digit',
+                      month: 'short',
                       year: 'numeric'
                     })}
-                    {service.time_slot && ` - ${service.time_slot}`}
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-400 flex items-center gap-2">
-                    <Wrench className="w-4 h-4" />
+                <div className="space-y-1">
+                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <Wrench className="w-3 h-3" />
                     Motivo
                   </div>
-                  <div className="font-semibold text-white">{service.service_reason}</div>
+                  <div className="text-white">{service.service_reason}</div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-400 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
+                <div className="space-y-1">
+                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <Users className="w-3 h-3" />
                     Técnicos
                   </div>
-                  <div className="font-semibold text-white">
+                  <div className="text-white">
                     {service.technicians?.map(t => t.username).join(', ') || service.technician_names?.join(', ')}
                   </div>
                 </div>
               </div>
 
               {service.observations && (
-                <div className="mt-4 pt-4 border-t border-gray-700">
-                  <div className="text-sm text-gray-400 mb-1">Observações</div>
-                  <div className="text-white italic">{service.observations}</div>
+                <div className="mt-4 pt-4 border-t border-white/5">
+                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Observações</div>
+                  <div className="text-gray-300 italic text-sm">{service.observations}</div>
                 </div>
               )}
             </div>
@@ -457,71 +557,79 @@ const Calendar = ({ user, onLogout }) => {
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="fade-in">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-              <CalendarIcon className="w-10 h-10" />
-              Calendário de Serviços
-            </h1>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                <CalendarDays className="w-10 h-10 text-sky-400" />
+                Calendário
+              </h1>
+              <p className="text-gray-500 mt-1">Gestão de serviços e disponibilidade da equipa</p>
+            </div>
             {user.is_admin && (
               <Dialog open={dialogOpen} onOpenChange={(open) => {
                 setDialogOpen(open);
                 if (!open) resetForm();
               }}>
                 <DialogTrigger asChild>
-                  <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full">
+                  <Button 
+                    className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6"
+                    data-testid="new-service-btn"
+                  >
                     <Plus className="w-5 h-5 mr-2" />
                     Novo Serviço
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>{editingService ? 'Editar Serviço' : 'Novo Serviço'}</DialogTitle>
+                    <DialogTitle className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                      {editingService ? 'Editar Serviço' : 'Novo Serviço'}
+                    </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Nome do Cliente *</Label>
-                        <div className="flex gap-2">
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Nome do Cliente *</Label>
+                        <div className="flex gap-2 mt-1">
                           <Input
                             value={serviceForm.client_name}
                             onChange={(e) => setServiceForm({...serviceForm, client_name: e.target.value})}
-                            className="bg-[#0a0a0a] border-gray-700 text-white flex-1"
+                            className="bg-[#121212] border-white/10 text-white flex-1"
                             placeholder="Ex: João Silva"
+                            data-testid="service-client-name"
                           />
                           <Dialog open={clientSelectOpen} onOpenChange={setClientSelectOpen}>
                             <DialogTrigger asChild>
                               <Button
                                 type="button"
                                 variant="outline"
-                                className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white"
+                                className="bg-sky-500/10 hover:bg-sky-500/20 border-sky-500/30 text-sky-400"
                                 title="Selecionar cliente existente"
                               >
                                 <Building2 className="w-4 h-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[80vh]">
+                            <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-lg max-h-[80vh]">
                               <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
-                                  <Building2 className="w-5 h-5 text-blue-400" />
+                                  <Building2 className="w-5 h-5 text-sky-400" />
                                   Selecionar Cliente
                                 </DialogTitle>
                               </DialogHeader>
                               <div className="space-y-4 mt-4">
-                                {/* Search */}
                                 <div className="relative">
-                                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                                   <Input
                                     value={clientSearch}
                                     onChange={(e) => setClientSearch(e.target.value)}
-                                    className="bg-[#0a0a0a] border-gray-700 text-white pl-10"
+                                    className="bg-[#121212] border-white/10 text-white pl-10"
                                     placeholder="Pesquisar cliente..."
                                   />
                                 </div>
                                 
-                                {/* Client list */}
                                 <div className="max-h-[400px] overflow-y-auto space-y-2">
                                   {filteredClients.length === 0 ? (
-                                    <div className="text-center text-gray-400 py-8">
+                                    <div className="text-center text-gray-500 py-8">
                                       {clientSearch ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
                                     </div>
                                   ) : (
@@ -529,18 +637,13 @@ const Calendar = ({ user, onLogout }) => {
                                       <div
                                         key={client.id}
                                         onClick={() => handleSelectClient(client)}
-                                        className="p-3 bg-[#0a0a0a] border border-gray-700 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-900/20 transition"
+                                        className="p-3 bg-[#121212] border border-white/10 rounded-lg cursor-pointer hover:border-sky-500/50 hover:bg-sky-500/5 transition"
                                       >
                                         <div className="font-semibold text-white">{client.nome}</div>
                                         {client.morada && (
                                           <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
                                             <MapPin className="w-3 h-3" />
                                             {client.morada}
-                                          </div>
-                                        )}
-                                        {client.telefone && (
-                                          <div className="text-sm text-gray-500 mt-1">
-                                            📞 {client.telefone}
                                           </div>
                                         )}
                                       </div>
@@ -553,49 +656,52 @@ const Calendar = ({ user, onLogout }) => {
                         </div>
                       </div>
                       <div>
-                        <Label>Localidade *</Label>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Localidade *</Label>
                         <Input
                           value={serviceForm.location}
                           onChange={(e) => setServiceForm({...serviceForm, location: e.target.value})}
-                          className="bg-[#0a0a0a] border-gray-700 text-white"
+                          className="bg-[#121212] border-white/10 text-white mt-1"
                           placeholder="Ex: Lisboa"
+                          data-testid="service-location"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label>Motivo de Assistência *</Label>
+                      <Label className="text-xs uppercase tracking-widest text-gray-400">Motivo de Assistência *</Label>
                       <Input
                         value={serviceForm.service_reason}
                         onChange={(e) => setServiceForm({...serviceForm, service_reason: e.target.value})}
-                        className="bg-[#0a0a0a] border-gray-700 text-white"
+                        className="bg-[#121212] border-white/10 text-white mt-1"
                         placeholder="Ex: Instalação de equipamento"
+                        data-testid="service-reason"
                       />
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Data *</Label>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Data *</Label>
                         <Input
                           type="date"
                           value={serviceForm.date}
                           onChange={(e) => setServiceForm({...serviceForm, date: e.target.value})}
-                          className="bg-[#0a0a0a] border-gray-700 text-white"
+                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          data-testid="service-date"
                         />
                       </div>
                       <div>
-                        <Label>Horário (opcional)</Label>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Horário (opcional)</Label>
                         <Input
                           value={serviceForm.time_slot}
                           onChange={(e) => setServiceForm({...serviceForm, time_slot: e.target.value})}
-                          className="bg-[#0a0a0a] border-gray-700 text-white"
+                          className="bg-[#121212] border-white/10 text-white mt-1"
                           placeholder="Ex: 09:00-12:00"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label>Técnicos *</Label>
+                      <Label className="text-xs uppercase tracking-widest text-gray-400">Técnicos *</Label>
                       <Select
                         value={serviceForm.technician_ids[0] || ''}
                         onValueChange={(value) => {
@@ -605,26 +711,25 @@ const Calendar = ({ user, onLogout }) => {
                           }
                         }}
                       >
-                        <SelectTrigger className="bg-[#0a0a0a] border-gray-700 text-white">
+                        <SelectTrigger className="bg-[#121212] border-white/10 text-white mt-1">
                           <SelectValue placeholder="Selecionar técnico" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                          {users.map(user => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.username}
+                        <SelectContent className="bg-[#121212] border-white/10 text-white">
+                          {users.map(u => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.full_name || u.username}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       
-                      {/* Selected technicians */}
                       {serviceForm.technician_ids.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {serviceForm.technician_ids.map(techId => {
                             const tech = users.find(u => u.id === techId);
                             return tech ? (
-                              <div key={techId} className="bg-blue-900/30 border border-blue-600 rounded px-3 py-1 text-sm flex items-center gap-2">
-                                {tech.username}
+                              <div key={techId} className="bg-sky-500/10 border border-sky-500/30 rounded-md px-3 py-1 text-sm flex items-center gap-2 text-sky-300">
+                                {tech.full_name || tech.username}
                                 <button
                                   onClick={() => setServiceForm({
                                     ...serviceForm,
@@ -643,15 +748,15 @@ const Calendar = ({ user, onLogout }) => {
 
                     {editingService && (
                       <div>
-                        <Label>Estado</Label>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Estado</Label>
                         <Select
                           value={serviceForm.status}
                           onValueChange={(value) => setServiceForm({...serviceForm, status: value})}
                         >
-                          <SelectTrigger className="bg-[#0a0a0a] border-gray-700 text-white">
+                          <SelectTrigger className="bg-[#121212] border-white/10 text-white mt-1">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
+                          <SelectContent className="bg-[#121212] border-white/10 text-white">
                             <SelectItem value="scheduled">Agendado</SelectItem>
                             <SelectItem value="in_progress">Em Progresso</SelectItem>
                             <SelectItem value="completed">Concluído</SelectItem>
@@ -662,11 +767,11 @@ const Calendar = ({ user, onLogout }) => {
                     )}
 
                     <div>
-                      <Label>Observações</Label>
+                      <Label className="text-xs uppercase tracking-widest text-gray-400">Observações</Label>
                       <Textarea
                         value={serviceForm.observations}
                         onChange={(e) => setServiceForm({...serviceForm, observations: e.target.value})}
-                        className="bg-[#0a0a0a] border-gray-700 text-white"
+                        className="bg-[#121212] border-white/10 text-white mt-1"
                         placeholder="Notas adicionais..."
                         rows={3}
                       />
@@ -674,7 +779,8 @@ const Calendar = ({ user, onLogout }) => {
 
                     <Button
                       onClick={handleCreateService}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full py-3"
+                      className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3"
+                      data-testid="submit-service-btn"
                     >
                       {editingService ? 'Atualizar Serviço' : 'Criar Serviço'}
                     </Button>
@@ -684,22 +790,112 @@ const Calendar = ({ user, onLogout }) => {
             )}
           </div>
 
+          {/* Day Detail Modal */}
+          <Dialog open={dayDetailOpen} onOpenChange={setDayDetailOpen}>
+            <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                  <CalendarIcon className="w-5 h-5 text-sky-400" />
+                  {selectedDay && new Date(selectedDay.dateStr + 'T00:00:00').toLocaleDateString('pt-PT', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long'
+                  })}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {/* Holiday */}
+                {selectedDay?.holiday && (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-amber-300">
+                      <Sun className="w-4 h-4" />
+                      <span className="font-medium">{selectedDay.holiday.name}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Services */}
+                {selectedDay?.services.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                      <Wrench className="w-3 h-3" />
+                      Serviços ({selectedDay.services.length})
+                    </h4>
+                    {selectedDay.services.map(service => (
+                      <div 
+                        key={service.id} 
+                        className="bg-sky-500/10 border border-sky-500/30 rounded-lg p-3 cursor-pointer hover:bg-sky-500/20 transition"
+                        onClick={() => {
+                          setDayDetailOpen(false);
+                          if (user.is_admin) handleEditService(service);
+                        }}
+                      >
+                        <div className="font-semibold text-white">{service.client_name}</div>
+                        <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3" />
+                          {service.location}
+                        </div>
+                        {service.time_slot && (
+                          <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                            <Clock className="w-3 h-3" />
+                            {service.time_slot}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Vacations */}
+                {selectedDay?.vacations.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                      <Umbrella className="w-3 h-3" />
+                      Férias ({selectedDay.vacations.length})
+                    </h4>
+                    {selectedDay.vacations.map(vacation => (
+                      <div key={vacation.id} className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+                        <div className="font-semibold text-white flex items-center gap-2">
+                          <Users className="w-4 h-4 text-purple-400" />
+                          {vacation.username}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Empty State */}
+                {!selectedDay?.holiday && selectedDay?.services.length === 0 && selectedDay?.vacations.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum evento neste dia</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {loading ? (
-            <div className="text-center text-gray-400 py-12">A carregar calendário...</div>
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
+            </div>
           ) : (
             <Tabs defaultValue="month" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-[#1a1a1a] mb-8">
+              <TabsList className="grid w-full max-w-sm mx-auto grid-cols-2 bg-[#121212] border border-white/10 mb-8 p-1 rounded-lg">
                 <TabsTrigger
                   value="month"
-                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
+                  className="data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all"
+                  data-testid="month-view-tab"
                 >
-                  <CalendarIcon className="w-4 h-4 mr-2" />
-                  Vista Mensal
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  Mensal
                 </TabsTrigger>
                 <TabsTrigger
                   value="list"
-                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
+                  className="data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all"
+                  data-testid="list-view-tab"
                 >
+                  <List className="w-4 h-4 mr-2" />
                   Lista
                 </TabsTrigger>
               </TabsList>
