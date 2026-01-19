@@ -3339,6 +3339,18 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     today_date = datetime.now(timezone.utc).date()
     is_ot, ot_reason = is_overtime_day(today_date)
     
+    # Verificar se já tem entradas de horas extra completadas hoje (requer autorização para nova entrada)
+    existing_overtime_today = await db.time_entries.find_one({
+        "user_id": current_user["sub"],
+        "date": today,
+        "status": "completed",
+        "is_overtime_day": True
+    }, {"_id": 0})
+    
+    # Flag para indicar se precisa de autorização
+    needs_authorization = is_ot or existing_overtime_today is not None
+    authorization_reason = ot_reason if is_ot else "Entrada adicional em dia com horas extra"
+    
     entry = TimeEntry(
         user_id=current_user["sub"],
         username=current_user["username"],
@@ -3356,11 +3368,16 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     entry_dict['start_time'] = entry_dict['start_time'].isoformat()
     entry_dict['created_at'] = entry_dict['created_at'].isoformat()
     
+    # Se já tem horas extra hoje, marcar como entrada adicional
+    if existing_overtime_today and not is_ot:
+        entry_dict['is_additional_overtime_entry'] = True
+        entry_dict['requires_overtime_authorization'] = True
+    
     await db.time_entries.insert_one(entry_dict)
     
-    # Se é dia especial (fim de semana ou feriado), enviar pedido de autorização
+    # Se precisa de autorização (dia especial OU já tem horas extra hoje), enviar pedido
     overtime_authorization_sent = False
-    if is_ot:
+    if needs_authorization:
         try:
             # Buscar dados do utilizador
             user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
@@ -3376,7 +3393,8 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
                 user_name=user_name,
                 user_email=user_email,
                 entry_id=entry_dict['id'],
-                base_url=base_url
+                base_url=base_url,
+                custom_reason=authorization_reason if existing_overtime_today and not is_ot else None
             )
             overtime_authorization_sent = result.get("status") == "authorization_requested"
             logging.info(f"Overtime authorization request: {result}")
@@ -3392,7 +3410,7 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     if overtime_authorization_sent:
         response["overtime_authorization"] = {
             "sent": True,
-            "message": f"Pedido de autorização enviado para a administração ({ot_reason})"
+            "message": f"Pedido de autorização enviado para a administração ({authorization_reason})"
         }
     
     return response
