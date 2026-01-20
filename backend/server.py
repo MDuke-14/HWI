@@ -300,6 +300,7 @@ class TecnicoRelatorio(BaseModel):
     kms_final: float = 0  # Km's finais
     kms_deslocacao: float = 0  # Calculado automaticamente (kms_final - kms_inicial)
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
+    tipo_registo: str = "manual"  # "manual", "trabalho", "viagem"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     hora_inicio: Optional[str] = None  # Hora de início (HH:MM) para Folha de Horas
     hora_fim: Optional[str] = None  # Hora de fim (HH:MM) para Folha de Horas
