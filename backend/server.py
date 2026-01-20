@@ -7454,6 +7454,16 @@ async def update_registo_tecnico(
         # Permitir alterar o tipo do registo (trabalho/viagem/manual)
         update_data["tipo"] = registo_data["tipo"]
     
+    # Novos campos de Km's Ida e Volta
+    if "kms_inicial" in registo_data:
+        update_data["kms_inicial"] = float(registo_data["kms_inicial"])
+    if "kms_final" in registo_data:
+        update_data["kms_final"] = float(registo_data["kms_final"])
+    if "kms_inicial_volta" in registo_data:
+        update_data["kms_inicial_volta"] = float(registo_data["kms_inicial_volta"])
+    if "kms_final_volta" in registo_data:
+        update_data["kms_final_volta"] = float(registo_data["kms_final_volta"])
+    
     if update_data:
         await db.registos_tecnico_ot.update_one(
             {"id": registo_id, "relatorio_id": relatorio_id},
