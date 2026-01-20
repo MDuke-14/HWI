@@ -88,6 +88,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         ['NIF:', cliente.get('nif', 'N/A')],
         ['Local de Intervenção:', relatorio.get('local_intervencao', 'N/A')],
         ['Pedido por:', relatorio.get('pedido_por', 'N/A')],
+        ['Contacto:', relatorio.get('contacto_pedido', 'N/A') or 'N/A'],
     ]
     
     client_table = Table(client_data, colWidths=[4.5*cm, 13.5*cm])
@@ -107,6 +108,14 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     client_section.append(client_table)
     client_section.append(Spacer(1, 0.2*cm))
     elements.append(KeepTogether(client_section))
+    
+    # Motivo da Assistência - KeepTogether
+    motivo_section = []
+    motivo_section.append(Paragraph("MOTIVO DA ASSISTÊNCIA", heading_style))
+    motivo_text = relatorio.get('motivo_assistencia', 'N/A')
+    motivo_section.append(Paragraph(motivo_text, normal_style))
+    motivo_section.append(Spacer(1, 0.2*cm))
+    elements.append(KeepTogether(motivo_section))
     
     # Equipamentos - KeepTogether
     equip_section = []
