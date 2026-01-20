@@ -247,7 +247,7 @@ def generate_folha_horas_pdf(
             'domingo_feriado': 'D'
         }.get(tec.get('tipo_horario', ''), '-')
         
-        dados_por_tecnico_data[tecnico_id][data].append({
+        dados_por_tecnico_data_codigo[tecnico_id][data][codigo].append({
             'tipo': 'manual',
             'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
             'tipo_cronometro': tipo_registo_atual,  # Usar tipo atual da OT
