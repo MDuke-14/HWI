@@ -225,8 +225,8 @@ const FolhaHorasModal = ({
                           <Label className="text-gray-400 text-sm">Tarifa (€/h):</Label>
                           {folhaHorasData.tarifas?.length > 0 ? (
                             <select
-                              value={folhaHorasTarifas[tecnicoData.id] || ''}
-                              onChange={(e) => updateFolhaHorasTarifa(tecnicoData.id, e.target.value)}
+                              value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
+                              onChange={(e) => updateFolhaHorasTarifa(`${registo.tecnico_id}_${registo.data}_${registo.codigo}`, e.target.value)}
                               className="flex-1 bg-[#1a1a1a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
                             >
                               <option value="">Sem tarifa</option>
@@ -242,8 +242,8 @@ const FolhaHorasModal = ({
                               step="0.01"
                               min="0"
                               placeholder="0.00"
-                              value={folhaHorasTarifas[tecnicoData.id] || ''}
-                              onChange={(e) => updateFolhaHorasTarifa(tecnicoData.id, e.target.value)}
+                              value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
+                              onChange={(e) => updateFolhaHorasTarifa(`${registo.tecnico_id}_${registo.data}_${registo.codigo}`, e.target.value)}
                               className="flex-1 bg-[#1a1a1a] border-gray-700 text-white"
                             />
                           )}
