@@ -235,6 +235,7 @@ def generate_folha_horas_pdf(
             'hora_fim': hora_fim_manual,  # Pode ser HH:MM ou None
             'minutos': tec.get('minutos_cliente', 0),
             'km': tec.get('kms_deslocacao', 0),
+            'incluir_pausa': tec.get('incluir_pausa', False),  # Campo de pausa
             'codigo': {
                 'diurno': '1',
                 'noturno': '2',
