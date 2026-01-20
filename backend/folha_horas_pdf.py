@@ -324,10 +324,13 @@ def generate_folha_horas_pdf(
         tem_horarios = any(r.get('hora_inicio') and r.get('hora_fim') for r in registos)
         pausa_minutos = 60 if tem_horarios else 0
         
-        # Observações (tipo de cronómetro)
-        obs_list = list(set(r.get('tipo_cronometro', '') for r in registos if r.get('tipo_cronometro')))
-        obs_map = {'trabalho': 'Trab.', 'viagem': 'Viag.', 'manual': 'Manual'}
-        obs = ', '.join([obs_map.get(o, o) for o in obs_list])
+        # Tipo de Registo (para coluna "Registo")
+        tipo_registo_list = list(set(r.get('tipo_cronometro', '') for r in registos if r.get('tipo_cronometro')))
+        tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Manual'}
+        tipo_registo = ', '.join([tipo_map.get(t, t) for t in tipo_registo_list]) if tipo_registo_list else '-'
+        
+        # Observações (sem o tipo de registo - só outras observações se existirem)
+        obs = ''
         
         # Formatar data
         try:
