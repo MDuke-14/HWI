@@ -749,22 +749,22 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "high"
     )
     
-    # Enviar email ao admin
-    admin_html = get_authorization_email_html(
-        user_name=user_name,
-        date_str=today_formatted,
-        time_str=current_time,
-        day_type=reason,
-        token=token,
-        base_url=base_url,
-        request_type="overtime_start"
-    )
-    
-    success = await send_notification_email(
-        to_email=admin_email,
-        subject=f"🕐 Pedido de Autorização – Horas Extra ({reason}) - {user_name}",
-        html_content=admin_html
-    )
+    # Email desativado - apenas notificações push
+    # admin_html = get_authorization_email_html(
+    #     user_name=user_name,
+    #     date_str=today_formatted,
+    #     time_str=current_time,
+    #     day_type=reason,
+    #     token=token,
+    #     base_url=base_url,
+    #     request_type="overtime_start"
+    # )
+    # 
+    # success = await send_notification_email(
+    #     to_email=admin_email,
+    #     subject=f"🕐 Pedido de Autorização – Horas Extra ({reason}) - {user_name}",
+    #     html_content=admin_html
+    # )
     
     # Registar notificação
     await db.notification_logs.insert_one({
@@ -774,7 +774,7 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "date": today_str,
         "day_type": reason,
         "sent_at": datetime.now().isoformat(),
-        "success": success,
+        "success": True,
         "authorization_token": token
     })
     
@@ -782,7 +782,7 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "status": "authorization_requested",
         "token": token,
         "day_type": reason,
-        "email_sent": success
+        "push_sent": True
     }
 
 
