@@ -300,19 +300,10 @@ const FolhaHorasModal = ({
               
               {getExtrasOrdenados().length > 0 ? (
                 <div className="space-y-3">
-                  {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data, tipo, codigo }) => {
+                  {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data }) => {
                     const chave = `${tecnicoId}_${data}`;
                     const valores = folhaHorasExtras[chave] || { dieta: '', portagens: '', despesas: '' };
                     const { formatted, weekday } = getDataInfo(data);
-                    
-                    // Labels e cores para tipos
-                    const tipoLabels = {
-                      'trabalho': { label: 'Trabalho', color: 'bg-green-600/20 text-green-400' },
-                      'viagem': { label: 'Viagem', color: 'bg-blue-600/20 text-blue-400' },
-                      'manual': { label: 'Manual', color: 'bg-gray-600/20 text-gray-300' },
-                      'cronómetro': { label: 'Cronómetro', color: 'bg-purple-600/20 text-purple-400' }
-                    };
-                    const tipoInfo = tipoLabels[tipo] || { label: tipo, color: 'bg-gray-600/20 text-gray-400' };
                     
                     return (
                       <div key={chave} className="bg-[#0f0f0f] p-4 rounded-lg">
