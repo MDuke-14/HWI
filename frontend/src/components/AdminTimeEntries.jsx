@@ -20,10 +20,27 @@ const AdminTimeEntries = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(true);
   
-  // Date range
+  // Date range - usando período de faturação (26 a 25)
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [billingPeriod, setBillingPeriod] = useState({ from: '', to: '' });
+  
+  // Calcular período de faturação (26 do mês anterior a 25 do mês atual)
+  const calculateBillingPeriod = (month, year) => {
+    let fromYear = year;
+    let fromMonth = month - 1;
+    
+    if (fromMonth === 0) {
+      fromMonth = 12;
+      fromYear = year - 1;
+    }
+    
+    const fromDate = `${fromYear}-${String(fromMonth).padStart(2, '0')}-26`;
+    const toDate = `${year}-${String(month).padStart(2, '0')}-25`;
+    
+    return { from: fromDate, to: toDate };
+  };
   
   // Edit modal
   const [showEditModal, setShowEditModal] = useState(false);
