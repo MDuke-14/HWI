@@ -507,14 +507,14 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
             "high"
         )
         
-        # Enviar email de lembrete
-        if user_email:
-            html_content = get_clock_in_reminder_email_html(user_name, today_formatted)
-            await send_notification_email(
-                to_email=user_email,
-                subject=f"⚠️ Não Iniciou o Ponto - {today_formatted}",
-                html_content=html_content
-            )
+        # Email desativado - apenas notificações push
+        # if user_email:
+        #     html_content = get_clock_in_reminder_email_html(user_name, today_formatted)
+        #     await send_notification_email(
+        #         to_email=user_email,
+        #         subject=f"⚠️ Não Iniciou o Ponto - {today_formatted}",
+        #         html_content=html_content
+        #     )
         
         notified_users.append({
             "user_id": user_id,
