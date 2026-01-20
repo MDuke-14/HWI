@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileSpreadsheet, DollarSign, FileText, User, Calendar, Download } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FileSpreadsheet, DollarSign, FileText, User, Calendar, Download, Zap } from 'lucide-react';
 
 const FolhaHorasModal = ({
   open,
@@ -17,6 +18,9 @@ const FolhaHorasModal = ({
   onGeneratePDF,
   generatingFolhaHoras
 }) => {
+  const [dietaAutomatica, setDietaAutomatica] = useState(false);
+  const [dietaValor, setDietaValor] = useState('');
+  
   const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
   const getDataInfo = (dataStr) => {
@@ -53,6 +57,28 @@ const FolhaHorasModal = ({
         }));
       })
       .sort((a, b) => new Date(a.data) - new Date(b.data));
+  };
+
+  // Aplicar dieta a todos os técnicos/dias
+  const handleAplicarDietaTodos = (checked) => {
+    setDietaAutomatica(checked);
+    if (checked && dietaValor) {
+      getExtrasOrdenados().forEach(({ tecnicoId, data }) => {
+        const chave = `${tecnicoId}_${data}`;
+        updateFolhaHorasExtra(chave, 'dieta', dietaValor);
+      });
+    }
+  };
+
+  // Quando o valor da dieta muda, aplicar a todos se checkbox ativa
+  const handleDietaValorChange = (valor) => {
+    setDietaValor(valor);
+    if (dietaAutomatica && valor) {
+      getExtrasOrdenados().forEach(({ tecnicoId, data }) => {
+        const chave = `${tecnicoId}_${data}`;
+        updateFolhaHorasExtra(chave, 'dieta', valor);
+      });
+    }
   };
 
   return (
