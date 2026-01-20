@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Clock, Car, Plus, Edit, AlertCircle } from 'lucide-react';
+import { User, Clock, Car, Plus, Edit, AlertCircle, Tag } from 'lucide-react';
 
 const TecnicoModal = ({
   open,
@@ -78,11 +78,28 @@ const TecnicoModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             {isEditing ? <Edit className="w-5 h-5 text-blue-400" /> : <Plus className="w-5 h-5 text-green-400" />}
-            {isEditing ? 'Editar Técnico' : 'Adicionar Técnico'}
+            {isEditing ? 'Editar Registo' : 'Adicionar Registo Manual'}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4 mt-4">
+          {/* Tipo de Registo */}
+          <div>
+            <Label className="text-gray-300 flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Tipo de Registo *
+            </Label>
+            <select
+              value={tecnicoFormData.tipo_registo || 'manual'}
+              onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tipo_registo: e.target.value })}
+              className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+            >
+              <option value="manual">Manual</option>
+              <option value="trabalho">Trabalho</option>
+              <option value="viagem">Viagem</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Seleção de Técnico */}
             <div>
