@@ -2283,6 +2283,8 @@ async def update_tecnico_relatorio(
     
     if "tipo_horario" in tecnico_data:
         update_data["tipo_horario"] = tecnico_data["tipo_horario"]
+    if "tipo_registo" in tecnico_data:
+        update_data["tipo_registo"] = tecnico_data["tipo_registo"]
     if "data_trabalho" in tecnico_data:
         # Converter para string ISO se necessário
         if isinstance(tecnico_data["data_trabalho"], str):
