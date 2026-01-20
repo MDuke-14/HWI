@@ -3433,11 +3433,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300">
                                 {item._source === 'tecnico' 
-                                  ? (item.kms_inicial !== undefined && item.kms_final !== undefined ? (
-                                      <span title={`${item.kms_inicial || 0} → ${item.kms_final || 0}`}>
-                                        {item.kms_deslocacao || Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0))} km
-                                      </span>
-                                    ) : `${item.kms_deslocacao || 0} km`)
+                                  ? (() => {
+                                      const kmsIda = Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0));
+                                      const kmsVolta = Math.max(0, (item.kms_final_volta || 0) - (item.kms_inicial_volta || 0));
+                                      const kmsTotal = item.kms_deslocacao || (kmsIda + kmsVolta);
+                                      return (
+                                        <span title={`Ida: ${kmsIda.toFixed(1)} km | Volta: ${kmsVolta.toFixed(1)} km`}>
+                                          {kmsTotal.toFixed(1)} km
+                                        </span>
+                                      );
+                                    })()
                                   : `${item.km || 0} km`
                                 }
                               </td>
