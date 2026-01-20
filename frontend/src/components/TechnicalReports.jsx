@@ -964,6 +964,29 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowCodigoModal(true);
   };
 
+  const openTipoModal = (tecnico, e) => {
+    if (e) e.stopPropagation();
+    setSelectedTecnicoForTipo(tecnico);
+    setShowTipoModal(true);
+  };
+
+  const handleChangeTipo = async (novoTipo) => {
+    if (!selectedTecnicoForTipo || !selectedRelatorio) return;
+
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos/${selectedTecnicoForTipo.id}`,
+        { tipo_registo: novoTipo }
+      );
+      toast.success('Tipo atualizado com sucesso!');
+      setShowTipoModal(false);
+      setSelectedTecnicoForTipo(null);
+      fetchTecnicosRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error('Erro ao atualizar tipo');
+    }
+  };
+
   const handleChangeCodigo = async (novoCodigo) => {
     if (!selectedTecnicoForCodigo || !selectedRelatorio) return;
 
