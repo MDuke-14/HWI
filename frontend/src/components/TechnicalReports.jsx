@@ -1051,7 +1051,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       tipo_registo: tecnico.tipo_registo || 'manual',
       data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0],
       hora_inicio: tecnico.hora_inicio || '',
-      hora_fim: tecnico.hora_fim || ''
+      hora_fim: tecnico.hora_fim || '',
+      incluir_pausa: tecnico.incluir_pausa || false
     });
     setShowEditTecnicoModal(true);
   };
