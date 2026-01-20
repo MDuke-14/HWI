@@ -2217,10 +2217,14 @@ async def add_tecnico_relatorio(
     # Contar técnicos existentes para ordem
     count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
     
-    # Criar técnico - calcular kms_deslocacao automaticamente
+    # Criar técnico - calcular kms_deslocacao automaticamente (ida + volta)
     kms_inicial = float(tecnico_data.get("kms_inicial", 0))
     kms_final = float(tecnico_data.get("kms_final", 0))
-    kms_deslocacao = max(0, kms_final - kms_inicial)  # Não permitir valores negativos
+    kms_inicial_volta = float(tecnico_data.get("kms_inicial_volta", 0))
+    kms_final_volta = float(tecnico_data.get("kms_final_volta", 0))
+    kms_ida = max(0, kms_final - kms_inicial)
+    kms_volta = max(0, kms_final_volta - kms_inicial_volta)
+    kms_deslocacao = kms_ida + kms_volta
     
     tecnico = TecnicoRelatorio(
         relatorio_id=relatorio_id,
@@ -2229,12 +2233,15 @@ async def add_tecnico_relatorio(
         minutos_cliente=tecnico_data.get("minutos_cliente", 0),
         kms_inicial=kms_inicial,
         kms_final=kms_final,
+        kms_inicial_volta=kms_inicial_volta,
+        kms_final_volta=kms_final_volta,
         kms_deslocacao=kms_deslocacao,
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
         tipo_registo=tecnico_data.get("tipo_registo", "manual"),
         data_trabalho=tecnico_data.get("data_trabalho", datetime.now(timezone.utc).date()),
         hora_inicio=tecnico_data.get("hora_inicio"),
         hora_fim=tecnico_data.get("hora_fim"),
+        incluir_pausa=tecnico_data.get("incluir_pausa", False),
         ordem=count
     )
     
