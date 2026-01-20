@@ -343,6 +343,10 @@ def generate_folha_horas_pdf(
             # Fallback: tentar só com tecnico_id
             tarifa_valor = tarifas_por_tecnico.get(tecnico_id, 0)
         
+        if tarifa_valor == 0 and codigo:
+            # Fallback FINAL: usar tarifa por código (configurada no Admin Dashboard)
+            tarifa_valor = tarifas_por_codigo.get(codigo, 0)
+        
         total_valor = (total_minutos / 60) * tarifa_valor
         total_geral_valor += total_valor
         
