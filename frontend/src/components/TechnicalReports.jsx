@@ -246,6 +246,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showCodigoModal, setShowCodigoModal] = useState(false);
   const [selectedTecnicoForCodigo, setSelectedTecnicoForCodigo] = useState(null);
   
+  const [showTipoModal, setShowTipoModal] = useState(false);
+  const [selectedTecnicoForTipo, setSelectedTecnicoForTipo] = useState(null);
+  
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
