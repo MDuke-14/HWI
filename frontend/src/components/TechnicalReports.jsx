@@ -1051,6 +1051,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       minutos_cliente: 0,
       kms_inicial: 0,
       kms_final: 0,
+      kms_inicial_volta: 0,
+      kms_final_volta: 0,
       tipo_horario: 'diurno',
       tipo_registo: 'manual',
       data_trabalho: new Date().toISOString().split('T')[0],
