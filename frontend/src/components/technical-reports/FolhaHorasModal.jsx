@@ -322,14 +322,6 @@ const FolhaHorasModal = ({
                             <span className="text-white font-medium">{tecnicoNome}</span>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
-                            {/* Tipo de Entrada */}
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${tipoInfo.color}`}>
-                              {tipoInfo.label}
-                            </span>
-                            {/* Código */}
-                            <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-xs font-mono font-bold">
-                              {codigo}
-                            </span>
                             {/* Data */}
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4 text-green-400" />
