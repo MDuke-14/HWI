@@ -177,6 +177,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Correção: Todos os Registos Individuais na Folha de Horas (20 Janeiro 2026)
+- Corrigido bug onde múltiplos registos do mesmo técnico no mesmo dia não apareciam
+- Backend agora retorna lista `registos_individuais` com todos os registos separadamente
+- Modal de Folha de Horas exibe cada registo individualmente com tipo e código próprios
+- Chaves de tarifa agora incluem `tecnico_id_data_codigo` para identificação única
+- Ficheiros: `server.py`, `FolhaHorasModal.jsx`
+
 ### ✅ Modal de Alteração de Tipo de Registo Clicável (20 Janeiro 2026)
 - Adicionado popup modal para alterar o tipo de registo na tabela de Mão de Obra
 - Funciona para registos manuais e de cronómetro
