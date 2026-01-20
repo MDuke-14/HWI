@@ -635,30 +635,29 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "high"
         )
         
-        # Enviar email ao utilizador
-        if user_email:
-            user_html = get_clock_out_reminder_email_html(user_name, today_formatted, clock_in_time)
-            await send_notification_email(
-                to_email=user_email,
-                subject=f"🕐 Não Parou o Ponto - {today_formatted}",
-                html_content=user_html
-            )
+        # Emails desativados - apenas notificações push
+        # if user_email:
+        #     user_html = get_clock_out_reminder_email_html(user_name, today_formatted, clock_in_time)
+        #     await send_notification_email(
+        #         to_email=user_email,
+        #         subject=f"🕐 Não Parou o Ponto - {today_formatted}",
+        #         html_content=user_html
+        #     )
         
-        # Enviar email ao admin
-        admin_html = get_admin_clock_out_alert_html(
-            user_name=user_name,
-            user_email=user_email or "N/A",
-            date_str=today_formatted,
-            current_time=current_time,
-            clock_in_time=clock_in_time,
-            token=token,
-            base_url=base_url
-        )
-        await send_notification_email(
-            to_email=admin_email,
-            subject=f"⚠️ Utilizador sem encerramento de ponto - {user_name}",
-            html_content=admin_html
-        )
+        # admin_html = get_admin_clock_out_alert_html(
+        #     user_name=user_name,
+        #     user_email=user_email or "N/A",
+        #     date_str=today_formatted,
+        #     current_time=current_time,
+        #     clock_in_time=clock_in_time,
+        #     token=token,
+        #     base_url=base_url
+        # )
+        # await send_notification_email(
+        #     to_email=admin_email,
+        #     subject=f"⚠️ Utilizador sem encerramento de ponto - {user_name}",
+        #     html_content=admin_html
+        # )
         
         notified_users.append({
             "user_id": user_id,
