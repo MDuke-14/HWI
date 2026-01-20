@@ -120,8 +120,14 @@ const TecnicoModal = ({
     });
   };
 
-  // Calcular Kms automaticamente
-  const kmsCalculado = Math.max(0, (parseFloat(tecnicoFormData.kms_final) || 0) - (parseFloat(tecnicoFormData.kms_inicial) || 0));
+  // Calcular Kms automaticamente (ida)
+  const kmsCalculadoIda = Math.max(0, (parseFloat(tecnicoFormData.kms_final) || 0) - (parseFloat(tecnicoFormData.kms_inicial) || 0));
+  
+  // Calcular Kms automaticamente (volta)
+  const kmsCalculadoVolta = Math.max(0, (parseFloat(tecnicoFormData.kms_final_volta) || 0) - (parseFloat(tecnicoFormData.kms_inicial_volta) || 0));
+  
+  // Total de Kms (ida + volta)
+  const kmsTotalFinal = kmsCalculadoIda + kmsCalculadoVolta;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
