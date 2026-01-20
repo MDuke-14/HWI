@@ -298,12 +298,15 @@ class TecnicoRelatorio(BaseModel):
     minutos_cliente: int = 0  # Tempo em minutos
     kms_inicial: float = 0  # Km's iniciais
     kms_final: float = 0  # Km's finais
-    kms_deslocacao: float = 0  # Calculado automaticamente (kms_final - kms_inicial)
+    kms_inicial_volta: float = 0  # Km's iniciais volta
+    kms_final_volta: float = 0  # Km's finais volta
+    kms_deslocacao: float = 0  # Calculado automaticamente (kms_final - kms_inicial + volta)
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
     tipo_registo: str = "manual"  # "manual", "trabalho", "viagem"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     hora_inicio: Optional[str] = None  # Hora de início (HH:MM) para Folha de Horas
     hora_fim: Optional[str] = None  # Hora de fim (HH:MM) para Folha de Horas
+    incluir_pausa: bool = False  # Se deve descontar 1h de pausa
     ordem: int = 0
 
 class CronometroOT(BaseModel):
