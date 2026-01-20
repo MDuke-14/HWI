@@ -242,7 +242,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   };
 
   const handleSaveTarifa = async () => {
-    if (!tarifaForm.numero || !tarifaForm.nome || !tarifaForm.valor_por_hora) {
+    if (!tarifaForm.nome || !tarifaForm.valor_por_hora) {
       toast.error('Preencha todos os campos');
       return;
     }
@@ -250,7 +250,6 @@ const AdminDashboard = ({ user, onLogout }) => {
     setLoading(true);
     try {
       const data = {
-        numero: parseInt(tarifaForm.numero),
         nome: tarifaForm.nome,
         valor_por_hora: parseFloat(tarifaForm.valor_por_hora)
       };
