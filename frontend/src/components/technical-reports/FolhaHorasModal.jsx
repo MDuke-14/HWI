@@ -113,7 +113,7 @@ const FolhaHorasModal = ({
                               <option value="">Sem tarifa</option>
                               {folhaHorasData.tarifas.map(tarifa => (
                                 <option key={tarifa.id} value={tarifa.valor_por_hora}>
-                                  Tarifa {tarifa.numero} - {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h)
+                                  {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h)
                                 </option>
                               ))}
                             </select>
