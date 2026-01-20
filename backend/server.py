@@ -6353,29 +6353,39 @@ async def get_user_time_entries_by_month(
     user_id: str,
     month: int = None,
     year: int = None,
+    date_from: str = None,
+    date_to: str = None,
     current_user: dict = Depends(get_current_admin)
 ):
-    """Get time entries for a specific user by month (admin only)"""
+    """Get time entries for a specific user by date range or billing period (admin only)"""
     from datetime import datetime
     
-    if not month:
-        month = datetime.now().month
-    if not year:
-        year = datetime.now().year
-    
-    # Build date range
-    start_date = f"{year}-{month:02d}-01"
-    if month == 12:
-        end_date = f"{year + 1}-01-01"
+    # Se date_from e date_to forem fornecidos, usar esses valores
+    if date_from and date_to:
+        start_date = date_from
+        end_date = date_to
     else:
-        end_date = f"{year}-{month + 1:02d}-01"
+        # Usar período de faturação 26-25 por defeito
+        if not month:
+            month = datetime.now().month
+        if not year:
+            year = datetime.now().year
+        
+        # Período de faturação: dia 26 do mês anterior até dia 25 do mês atual
+        # Para Janeiro, por exemplo: 26 de Dezembro a 25 de Janeiro
+        if month == 1:
+            start_date = f"{year - 1}-12-26"
+        else:
+            start_date = f"{year}-{month - 1:02d}-26"
+        
+        end_date = f"{year}-{month:02d}-25"
     
     entries = await db.time_entries.find({
         "user_id": user_id,
-        "date": {"$gte": start_date, "$lt": end_date}
+        "date": {"$gte": start_date, "$lte": end_date}
     }, {"_id": 0}).sort("date", -1).to_list(1000)
     
-    return {"entries": entries, "month": month, "year": year}
+    return {"entries": entries, "month": month, "year": year, "date_from": start_date, "date_to": end_date}
 
 @api_router.put("/admin/time-entries/{entry_id}")
 async def admin_update_time_entry(
