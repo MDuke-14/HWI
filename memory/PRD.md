@@ -177,6 +177,20 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Modal de Alteração de Tipo de Registo Clicável (20 Janeiro 2026)
+- Adicionado popup modal para alterar o tipo de registo na tabela de Mão de Obra
+- Funciona para registos manuais e de cronómetro
+- Opções: Manual, Trabalho, Viagem
+- Tipo atual é destacado no modal
+- Backend atualizado para suportar alteração de tipo em registos de cronómetro
+- Ficheiros: `TechnicalReports.jsx`, `server.py`
+
+### ✅ Coluna "Registo" na Folha de Horas PDF (20 Janeiro 2026)
+- Nova coluna "Registo" adicionada após "Técnico"
+- Tipo removido das Observações
+- Usa o tipo atual da OT (não o original)
+- Ficheiro: `folha_horas_pdf.py`
+
 ### ✅ Campos de Km's Ida e Volta no Registo Manual (20 Janeiro 2026)
 - Duplicados os campos de Quilómetros para registar ida e volta separadamente
 - **Quilómetros - Ida**: Km's Iniciais, Km's Finais, Total Ida (azul)
