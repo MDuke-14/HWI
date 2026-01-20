@@ -252,7 +252,8 @@ const AdminDashboard = ({ user, onLogout }) => {
     try {
       const data = {
         nome: tarifaForm.nome,
-        valor_por_hora: parseFloat(tarifaForm.valor_por_hora)
+        valor_por_hora: parseFloat(tarifaForm.valor_por_hora),
+        codigo: tarifaForm.codigo || null  // null se vazio
       };
 
       if (editingTarifa) {
@@ -264,6 +265,8 @@ const AdminDashboard = ({ user, onLogout }) => {
       }
       
       setShowTarifaDialog(false);
+      setTarifaForm({ nome: '', valor_por_hora: '', codigo: '' });
+      setEditingTarifa(null);
       fetchTarifas();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao guardar tarifa');
