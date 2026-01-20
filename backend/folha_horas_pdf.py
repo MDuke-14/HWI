@@ -220,7 +220,7 @@ def generate_folha_horas_pdf(
     
     # Processar registos manuais
     for tec in tecnicos_manuais:
-        # IMPORTANTE: Usar o 'id' do registo como chave, não o 'tecnico_id'
+        # IMPORTANTE: Usar o 'id' do registo como chave (igual ao frontend)
         tecnico_id = tec.get('id', 'manual')
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
@@ -233,6 +233,14 @@ def generate_folha_horas_pdf(
         # Usar o tipo_registo atual (que pode ter sido alterado na OT)
         tipo_registo_atual = tec.get('tipo_registo', 'manual')
         
+        # Converter tipo_horario para código
+        codigo = {
+            'diurno': '1',
+            'noturno': '2',
+            'sabado': 'S',
+            'domingo_feriado': 'D'
+        }.get(tec.get('tipo_horario', ''), '-')
+        
         dados_por_tecnico_data[tecnico_id][data].append({
             'tipo': 'manual',
             'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
@@ -242,12 +250,10 @@ def generate_folha_horas_pdf(
             'minutos': tec.get('minutos_cliente', 0),
             'km': tec.get('kms_deslocacao', 0),
             'incluir_pausa': tec.get('incluir_pausa', False),  # Campo de pausa
-            'codigo': {
-                'diurno': '1',
-                'noturno': '2',
-                'sabado': 'S',
-                'domingo_feriado': 'D'
-            }.get(tec.get('tipo_horario', ''), '-')
+            'codigo': codigo,
+            'registo_id': tecnico_id,
+            # Chave para tarifa: tecnico_id_data_codigo (mesmo formato do frontend)
+            'tarifa_key': f"{tecnico_id}_{data}_{codigo}"
         })
     
     # Criar linhas da tabela
