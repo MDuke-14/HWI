@@ -183,10 +183,10 @@ const FolhaHorasModal = ({
                 Selecione a tarifa (valor/hora) para cada técnico e data. Deixe vazio para não aplicar tarifa.
               </p>
               
-              {getTecnicosOrdenados().length > 0 ? (
+              {getRegistosOrdenados().length > 0 ? (
                 <div className="space-y-3">
-                  {getTecnicosOrdenados().map((tecnicoData, idx) => {
-                    const { formatted, weekday } = getDataInfo(tecnicoData.data);
+                  {getRegistosOrdenados().map((registo, idx) => {
+                    const { formatted, weekday } = getDataInfo(registo.data);
                     
                     // Labels e cores para tipos
                     const tipoLabels = {
@@ -195,14 +195,14 @@ const FolhaHorasModal = ({
                       'manual': { label: 'Manual', color: 'bg-gray-600/20 text-gray-300' },
                       'cronómetro': { label: 'Cronómetro', color: 'bg-purple-600/20 text-purple-400' }
                     };
-                    const tipoInfo = tipoLabels[tecnicoData.tipo] || { label: tecnicoData.tipo, color: 'bg-gray-600/20 text-gray-400' };
+                    const tipoInfo = tipoLabels[registo.tipo] || { label: registo.tipo, color: 'bg-gray-600/20 text-gray-400' };
                     
                     return (
-                      <div key={`${tecnicoData.id}_${tecnicoData.data}_${idx}`} className="bg-[#0f0f0f] p-4 rounded-lg">
+                      <div key={`${registo.tecnico_id}_${registo.data}_${registo.registo_id}_${idx}`} className="bg-[#0f0f0f] p-4 rounded-lg">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-blue-400" />
-                            <span className="text-white font-medium">{tecnicoData.nome}</span>
+                            <span className="text-white font-medium">{registo.tecnico_nome}</span>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
                             {/* Tipo de Entrada */}
@@ -211,7 +211,7 @@ const FolhaHorasModal = ({
                             </span>
                             {/* Código */}
                             <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-xs font-mono font-bold">
-                              {tecnicoData.codigo}
+                              {registo.codigo}
                             </span>
                             {/* Data */}
                             <div className="flex items-center gap-1">
