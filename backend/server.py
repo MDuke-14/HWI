@@ -2279,17 +2279,27 @@ async def update_tecnico_relatorio(
     if "minutos_cliente" in tecnico_data:
         update_data["minutos_cliente"] = tecnico_data["minutos_cliente"]
     
-    # Atualizar kms - calcular automaticamente se ambos forem fornecidos
+    # Atualizar kms ida
     if "kms_inicial" in tecnico_data:
         update_data["kms_inicial"] = float(tecnico_data["kms_inicial"])
     if "kms_final" in tecnico_data:
         update_data["kms_final"] = float(tecnico_data["kms_final"])
     
-    # Se pelo menos um dos kms foi atualizado, recalcular kms_deslocacao
-    if "kms_inicial" in tecnico_data or "kms_final" in tecnico_data:
+    # Atualizar kms volta
+    if "kms_inicial_volta" in tecnico_data:
+        update_data["kms_inicial_volta"] = float(tecnico_data["kms_inicial_volta"])
+    if "kms_final_volta" in tecnico_data:
+        update_data["kms_final_volta"] = float(tecnico_data["kms_final_volta"])
+    
+    # Se qualquer km foi atualizado, recalcular kms_deslocacao (ida + volta)
+    if any(k in tecnico_data for k in ["kms_inicial", "kms_final", "kms_inicial_volta", "kms_final_volta"]):
         kms_inicial = float(tecnico_data.get("kms_inicial", existing.get("kms_inicial", 0)))
         kms_final = float(tecnico_data.get("kms_final", existing.get("kms_final", 0)))
-        update_data["kms_deslocacao"] = max(0, kms_final - kms_inicial)
+        kms_inicial_volta = float(tecnico_data.get("kms_inicial_volta", existing.get("kms_inicial_volta", 0)))
+        kms_final_volta = float(tecnico_data.get("kms_final_volta", existing.get("kms_final_volta", 0)))
+        kms_ida = max(0, kms_final - kms_inicial)
+        kms_volta = max(0, kms_final_volta - kms_inicial_volta)
+        update_data["kms_deslocacao"] = kms_ida + kms_volta
     
     if "tipo_horario" in tecnico_data:
         update_data["tipo_horario"] = tecnico_data["tipo_horario"]
@@ -2306,6 +2316,8 @@ async def update_tecnico_relatorio(
         update_data["hora_inicio"] = tecnico_data["hora_inicio"]
     if "hora_fim" in tecnico_data:
         update_data["hora_fim"] = tecnico_data["hora_fim"]
+    if "incluir_pausa" in tecnico_data:
+        update_data["incluir_pausa"] = tecnico_data["incluir_pausa"]
     
     await db.tecnicos_relatorio.update_one(
         {"id": tecnico_id, "relatorio_id": relatorio_id},
