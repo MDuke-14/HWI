@@ -357,11 +357,20 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                       <ChevronLeft className="w-5 h-5" />
                     </Button>
                     
-                    <div className="text-center min-w-[200px]">
+                    <div className="text-center min-w-[280px]">
                       <div className="text-2xl font-bold text-white">
                         {monthNames[selectedMonth - 1]} {selectedYear}
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-blue-400 mt-1">
+                        {billingPeriod.from && billingPeriod.to && (
+                          <>
+                            {new Date(billingPeriod.from + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
+                            {' → '}
+                            {new Date(billingPeriod.to + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
+                          </>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400">
                         {selectedUser.full_name || selectedUser.username}
                       </div>
                     </div>
