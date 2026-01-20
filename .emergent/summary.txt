@@ -1,76 +1,95 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to enhance a full-stack time-tracking and work-order (OT) management application. The project has evolved through several stages:
-1.  **Folha de Horas (Timesheet) Feature:** A feature to generate a detailed PDF timesheet from a work order was implemented and completed.
-2.  **Refactoring :** A massive 7,200-line React component was successfully refactored into smaller, manageable components. This task is complete.
-3.  **Email Notification System:** A comprehensive system was built to send email alerts and handle authorization for time tracking. This includes:
-    *   Scheduled checks for missed clock-ins and clock-outs on weekdays.
-    *   An authorization flow via email for overtime work performed on weekends, holidays, or after hours on weekdays.
-    *   A rule requiring admin approval if a user starts a new shift on a day they already have recorded overtime.
-4.  **Admin Notifications Dashboard:** An admin-facing dashboard was created to view and manage pending overtime authorizations and see a history of all notifications.
-5.  **Incremental Improvements & Bug Fixes:**
-    *   Fixed email authorization links that incorrectly pointed to .
-    *   Made equipment fields on work orders optional.
-    *   Modified the manual technician entry modal to use HH:MM format for time and to calculate Kms from a start and end value, rather than a single input.
-6.  **Current Task: Calendar UI Enhancement:** The user requested an improvement to the calendar's user interface.
+The user's goal is to build a full-stack time-tracking and work-order (OT) management application.
+
+This session focused on implementing and refining several features:
+1.  **Real-time Push Notifications:** Implement a web push notification system to replace email alerts for missed clock-ins/outs and overtime authorizations. This includes a UI for users to subscribe and a testing section for admins.
+2.  **Fora de Zona de Residência Logic:** If a user's first clock-in of the day is marked as outside residence zone, all subsequent clock-ins for that day should automatically have this flag active.
+3.  **Deployment Issues:** The user reported features working in preview but not in production, specifically related to push notifications.
+4.  **OT Mão de Obra Card Refactor:** In the work order (OT) details, the Mão de Obra / Deslocação card needs several improvements:
+    *   Allow changing the record type (Manual, Trabalho, Viagem).
+    *   Combine manual and automatic (timer) entries into a single list.
+    *   Sort all entries chronologically.
+    *   Add a delete button for manual entries.
+5.  **Ajustar para 8h Button:** Add the existing Adjust to 8h functionality to the Gestão de Entradas admin page.
+6.  **Billing Period Adjustment:** Change the date range on the Gestão de Entradas page to reflect the company's billing cycle (26th of the previous month to the 25th of the current month).
+7.  **OT PDF Generation:** Fix issues with the generated OT PDF, including missing data fields (KM, diagnostics, etc.) and tables being split across pages ( issue).
+8.  **Disable Email Notifications:** Turn off email sending for time tracking events, relying solely on the new push notification system.
+9.  **Tariff System Refactor:** Change the Tarifas (rates) system to use names instead of numbers, allow duplicate names, and sort them alphabetically.
+10. **Folha de Horas UI Improvements:**
+    *   Add a checkbox to automatically apply a Dieta (allowance) value to all technicians and days for a given OT.
+    *   Display the entry type (Manual, Trabalho, Viagem) and code (1, 2, S, D) for each time record when selecting rates.
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-The application is a robust work-order management system with advanced time-tracking capabilities. Key features include OT management, PDF report generation, a Folha de Horas (Timesheet) feature, and a newly implemented, fully-functional email notification system for time-tracking rules, complete with an admin dashboard for managing authorizations. The frontend has been significantly improved through major refactoring, and several UI/UX enhancements requested by the user have been applied. The backend uses scheduled jobs (APScheduler) to automate the notification workflow.
+The application is a comprehensive work-order and time management system. It features a React frontend and a FastAPI/MongoDB backend. Key functionalities include user authentication, work order (OT) management, PDF report generation, a calendar view, and an admin dashboard.
+
+This session successfully added a complete web push notification system (using VAPID and ) for real-time alerts, replacing the previous email-based system. Numerous UI/UX enhancements and backend logic changes were implemented across the Admin Dashboard, OT management, and time entry pages to support the user's requests.
 
 **Last working item**:
--   **Last item agent was working:** Improving the UI of the  component. The agent received design guidelines from the , generated a new version of the component, and overwrote the existing file. The implementation is complete, but it has not been tested yet.
+-   **Last item agent was working:** Correcting the placement of UI elements in the  component. The user requested to show the Entry Type and Code for each time record in the **rates selection section**. The agent mistakenly added this information to the **diets section**. The user provided a screenshot to clarify, and the agent's last action was to acknowledge the mistake before correcting it.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend testing agent. The agent should first restart the service and take a screenshot to visually verify the new UI. Then, it should use the testing agent to perform regression tests on all calendar functionalities (e.g., viewing events, navigating months, ensuring data loads correctly) to confirm that the UI overhaul did not break existing features.
+-   **Which testing method agent to use?** Frontend testing. After moving the UI elements to the correct section in , the agent should take a screenshot to confirm the fix visually.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Unresolved Testing Agent Failure (P1)**
-    -   **Description:** From a previous session, the testing agent reported an  and a Testing Not Completed status when testing the Edit OT Equipment feature. This was postponed to prioritize other features. The stability of this core functionality is unknown.
-    -   **Attempted fixes:** None.
+-   **Issue 1: Recurring VAPID Key Mismatch (P1)**
+    -   **Description:** Throughout the session, the agent and user battled  errors. This occurs when the public key used to create a browser subscription does not match the private key on the backend used to send the push. The agent generated new keys and updated both  and , which resolved the issue in the preview environment. However, the user reported the same error in production, indicating a key mismatch between environments.
+    -   **Attempted fixes:** Generated a new VAPID key pair, updated  and frontend component, cleared all existing subscriptions from the database, and added logic to the frontend to force re-subscription if one already exists.
     -   **Next debug checklist:**
-        1.  Invoke the  with a clear instruction to test editing an existing equipment item within a work order.
-        2.  If the test fails again, analyze the test report () and the backend logs ().
-        3.  Inspect the frontend handler  (now inside ) and the backend endpoint  in .
-    -   **Why fix this issue and what will be achieved with the fix?** This is a core CRUD functionality. Fixing it is crucial for data integrity and user trust in the application.
+        1.  Instruct the user to verify that the **exact same** VAPID keys (public, private, and email claim) are set as environment variables in their production environment.
+        2.  Confirm the frontend code deployed to production contains the correct public key.
+        3.  Guide the user to clear site data in their browser for the production URL and re-subscribe to push notifications to create a new subscription with the correct keys.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical blocker for the entire push notification system, which is a core feature the user just requested and wants to rely on.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** None
+
+-   **Issue 2: Unresolved Edit OT Equipment Test Failure (P2)**
+    -   **Description:** A known issue from a previous session where the testing agent reported an  when testing the Edit OT Equipment feature. This task has been consistently postponed.
+    -   **Attempted fixes:** None in this session.
+    -   **Next debug checklist:**
+        1.  Invoke the  to specifically test editing an existing equipment item within a work order.
+        2.  Analyze the test report and backend logs upon failure.
+        3.  Inspect  in  and the  endpoint in .
+    -   **Why fix this issue and what will be achieved with the fix?** Fixes a core CRUD functionality, ensuring data integrity.
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Both
     -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1: Complete and Verify Calendar UI Improvement (P0)**
-    -   **Where to resume:** The file  has been overwritten with a new design. The next step is to restart the frontend service, take a screenshot to visually inspect the new calendar, and then run the frontend testing agent to ensure all functionalities are working correctly.
-    -   **What will be achieved with this?** A modern, more intuitive, and visually appealing calendar interface that aligns with the new design guidelines.
+-   **Task 1: Correct UI in  (P0)**
+    -   **Where to resume:** In , move the logic and UI elements that display the Entry Type and Code from the Dietas section to the Tarifas section, as per the user's latest screenshot and instruction.
+    -   **What will be achieved with this?** The UI will match the user's requirement, showing relevant context when assigning rates to time entries.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on something:** No
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) OneDrive Integration:** Use OneDrive as the central storage for all files (photos, signatures, PDFs) instead of storing Base64 strings in MongoDB.
+    -   **(P1) OneDrive Integration:** Migrate file storage (photos, signatures, PDFs) from MongoDB (Base64) to OneDrive.
 -   **Future Tasks:**
-    -   **(P2) Overtime Reporting:** Create a new report in the admin dashboard summarizing approved/rejected overtime authorizations by user.
-    -   **(P2) Real-time Admin Notifications:** Implement WebSockets to notify admins in real-time about new pending authorization requests, rather than relying on them to check the dashboard.
+    -   **(P2) Overtime Reporting:** Create a new admin report summarizing approved/rejected overtime.
+    -   **(P2) Real-time Admin Notifications (WebSockets):** Upgrade the admin dashboard to show new authorization requests in real-time using WebSockets.
 
 **Completed work in this session**
--   **Refactoring -  (DONE):** Successfully completed the full refactoring of the monolithic component into smaller, modular components (, , , ). The final result passed all regression tests.
--   **Feature - Email Notification & Authorization System (DONE):**
-    -   Implemented a backend scheduler () to send emails for missed clock-ins and clock-outs.
-    -   Created an authorization flow for overtime via secure links sent by email.
-    -   Built a public page () to handle admin decisions.
-    -   Added a new rule to require authorization for additional clock-ins on days with existing overtime.
--   **Feature - Admin Notifications Dashboard (DONE):**
-    -   Added a Notificações tab to the Admin Dashboard to manage pending authorizations and view notification history.
--   **Bugfix - Production URL in Emails (DONE):** Fixed email authorization links by adding and using a  environment variable in the backend, ensuring links work outside of the local environment.
--   **Improvement - OT Equipment & Technician Modals (DONE):**
-    -   Made all equipment fields optional.
-    -   Changed the technician time input to HH:MM format.
-    -   Updated the Kms calculation to use start and end values, removing the previous multiplication logic and updating the UI, backend, and PDF reports accordingly.
+-   **Feature - Web Push Notification System (DONE):** Implemented a full-featured push notification system, including subscription management, UI controls (), and backend sending logic (, ). This replaced the old email system.
+-   **Feature - Admin Notification Test Panel (DONE):** Added buttons to the  for admins to trigger test notifications for various scenarios (simple test, clock-in reminder, etc.).
+-   **Feature - Mão de Obra Card Refactor (DONE):** Merged manual and automatic time entries in the OT view (), added chronological sorting, and implemented delete/edit functionality for all entry types.
+-   **Feature - Ajustar para 8h on Admin Page (DONE):** Added the Adjust to 8h button to the  component.
+-   **Feature - Billing Cycle Date Range (DONE):** Updated  and the corresponding backend endpoint to use a 26th-25th billing period instead of a calendar month.
+-   **Feature - Automatic Outside Zone Flag (DONE):** Implemented backend logic in  to automatically apply the outside residence zone flag to all time entries on a given day if the first entry has it.
+-   **Feature - Tariff System Refactor (DONE):** Reworked the tariff model and UI () to use names instead of numbers and sort alphabetically.
+-   **Feature - Automatic Diet Application (DONE):** Added a checkbox and input field to  to apply a diet value to all technicians automatically.
+-   **Bugfix - OT PDF Generation (DONE):** Updated  to include missing data fields (KM, Diagnóstico, etc.) and improved the  logic to prevent tables from splitting across pages.
+-   **Bugfix - Dashboard  Crash (DONE):** Fixed a null reference error in  when checking .
+-   **Task - Disabled Email Notifications (DONE):** Commented out email-sending code in  as requested by the user.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Testing Agent Failure during Equipment Edit Test:** As described in All Pending/In progress Issue list. This issue was deferred by user request and has not been addressed yet.
+-   **Issue 1: Testing Agent Failure during Equipment Edit Test:** Same as All Pending/In progress Issue list, Issue 2. This was deferred from a previous session and not addressed.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -79,84 +98,89 @@ The application is a robust work-order management system with advanced time-trac
 
 
 **Key Technical Concepts**
--   **Background Scheduled Jobs (APScheduler):** Using a library to run tasks (like checking for missed clock-ins) at specific, recurring times.
--   **Asynchronous Emailing (aiosmtplib):** Sending emails from the backend without blocking the main application thread.
--   **Token-Based URL Authorization:** Generating and managing secure, single-use tokens for actions initiated from external systems (like email).
--   **Environment Configuration:** Separating backend and frontend configuration and ensuring the backend has access to necessary frontend URLs for generating correct links.
--   **Complex Form Logic:** Managing state for dynamic forms with calculated fields (e.g., Kms calculation, total minutes from HH:MM).
+-   **Web Push Notifications:** Using Service Workers, the Push API, and VAPID keys to send real-time notifications from the backend () to the frontend.
+-   **Environment Variable Management:** The critical importance of synchronizing API keys (like VAPID keys) between development, preview, and production environments to ensure feature parity.
+-   **Complex State Management in React:** Combining multiple data sources ( and ) into a single, sorted, and rendered list with derived state.
+-   **Date Manipulation:** Calculating custom date ranges (e.g., a 26th-25th billing cycle) for filtering data on both frontend and backend.
+-   **PDF Generation (ReportLab):** Dynamically building complex PDF documents with tables, styled text, and layout controls like  and .
 
 **key DB schema**
--   **overtime_authorizations** (NEW): 
--   **time_entries**: Modified to include , .
--   **tecnicos_relatorio**: Modified to replace  with  and .
+-   **push_subscriptions** (NEW): 
+-   **tecnicos_relatorio**: Modified to include  (e.g., 'manual', 'trabalho', 'viagem').
+-   **tarifas**: Modified to remove the unique  field and rely on  for display and sorting.
 
 **All files of reference**
--   /app/frontend/src/components/Calendar.jsx
--   /app/backend/notifications_scheduler.py
+-   /app/frontend/src/components/technical-reports/FolhaHorasModal.jsx
+-   /app/frontend/src/components/NotificationBell.jsx
 -   /app/backend/server.py
--   /app/frontend/src/components/AdminDashboard.jsx
--   /app/frontend/src/components/OvertimeAuthorization.jsx
--   /app/frontend/src/components/technical-reports/TecnicoModal.jsx
+-   /app/frontend/src/components/TechnicalReports.jsx
+-   /app/frontend/src/components/AdminTimeEntries.jsx
+-   /app/backend/ot_pdf_report.py
+-   /app/backend/.env
 
 **Areas that need refactoring**:
--    has grown significantly with the addition of the notifications tab. It could be a candidate for future refactoring, breaking each tab into a separate sub-component.
+-    is extremely large (over 8,000 lines) and difficult to maintain. It should be broken down into multiple files by functionality (e.g., , , ).
+-    has become very complex again, managing multiple data sources and combined lists. The logic for combining and sorting  and  could be extracted into a custom hook.
 
 **key api endpoints**
 -   **New Endpoints:**
-    -   : Manually triggers the check for users who haven't clocked in.
-    -   : Manually triggers the check for users who haven't clocked out.
-    -   : Retrieves all authorization requests for the admin dashboard.
-    -   : Processes an admin's decision (approve/reject) from an authorization request.
-    -   : Retrieves the details of a single authorization request for the public page.
+    -   : Saves a user's push subscription to the DB.
+    -   : Sends a test push to the current user.
+    -   : Triggers the missed clock-in push notification flow for testing.
+    -   : Triggers the missed clock-out push notification flow.
+    -   : Triggers the overtime authorization push flow.
+    -   : Creates a new time entry to adjust a user's total daily hours to 8.
 -   **Modified Endpoints:**
-    -   : Logic was added to check if the clock-in requires overtime authorization.
-    -   : Endpoints for adding/editing technicians were updated to handle  and .
+    -   : Now accepts  and  query parameters to support the custom billing cycle.
+    -   : The response now includes a  boolean flag.
+    -   : Logic was added to check for  and apply it automatically.
+    -   : Now accepts and updates the  field.
+    -   : Endpoints were updated to remove logic related to the  field and to sort results by .
 
 **Critical Info for New Agent**
--   **Priority 1 is testing the Calendar.** The file  was just overwritten. You must restart the services, visually inspect the new UI via a screenshot, and then run regression tests to ensure no functionality was broken.
--   **Address the pending equipment bug.** After the calendar task is verified by the user, the P1 issue regarding the Edit OT Equipment test failure should be investigated and resolved.
--   **The user is highly engaged.** Expect to work in small, incremental steps, seeking user feedback after each one. The user provides clear directions and priorities.
--   The notification system's email links depend on the  variable in . The user has provided the correct production URL to use.
+-   **Immediate Task:** The highest priority (P0) is to fix the UI in . Move the Type/Code display from the Dieta section to the Tarifas section.
+-   **Push Notification Stability:** The VAPID key mismatch is a critical, recurring issue. Be prepared to guide the user on synchronizing their production environment variables. The system is functional in preview but likely broken in production due to this config drift.
+-   **User Interaction Model:** The user is highly engaged and provides specific, iterative feedback. Work in small, verifiable steps and confirm with the user frequently. They actively use both preview and production environments.
+-   **Deferred Technical Debt:** The Edit OT Equipment bug is a known, low-priority issue that has been carried over. Do not address it unless the user prioritizes it.
 
 **documents and test reports created in this job**
--   /app/test_reports/iteration_4.json
--   /app/test_reports/iteration_5.json
--   /app/memory/PRD.md (updated multiple times)
+-   None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request**: Improve the Calendar UI. (IN PROGRESS)
-2.  **Request**: Update the Kms calculation on OTs to use initial Kms and final Kms instead of a single value. (DONE)
-3.  **Request**: Update the technician modal: Time at client should be in HH:MM format, and Kms can be 0. (DONE)
-4.  **Request**: Make equipment data fields on OTs optional. (DONE)
-5.  **Confirmation**: User provided the final production URL to be used in email links. (DONE)
-6.  **Bug Report**: User reported that authorization links in emails were broken because they pointed to . (DONE)
-7.  **Request**: Add a new rule to the notification system: require admin approval if a user starts a new shift on a day they already have overtime. (DONE)
-8.  **Confirmation**: User approved the plan to build the notifications dashboard. (DONE)
-9.  **Finish Action**: Agent finished the notification system and suggested building a dashboard for it. (DONE)
-10. **Confirmation**: User approved the plan to start the notification system implementation. (DONE)
+1.  **Request:** In the , besides date and day of the week, I want the Entry Type and Code to be visible. (IN PROGRESS - Agent implemented in wrong place).
+2.  **Correction:** its not in the diet section, its here where the rates are chosen (user provided screenshot). (PENDING - This is the current task).
+3.  **Request:** In the , add a checkbox to automatically apply a Dieta value to all technicians/days. (DONE).
+4.  **Request:** For Tariffs, use names instead of numbers, allow duplicate names, and sort them alphabetically. (DONE).
+5.  **Request:** Cancel email sending for clock-in/out and overtime alerts, but keep the push notifications. (DONE).
+6.  **Bug Report:** The generated OT PDF is missing data and tables are being split across pages. (DONE - Agent added fields and improved ).
+7.  **Request:** On the Gestão de Entradas page, the date range should be the billing period (26th to 25th), not the calendar month. (DONE).
+8.  **Request:** Add the Ajustar para 8h button to the Gestão de Entradas page. (DONE).
+9.  **Bug Report:** Features are not working in production deployment. Specifically, a 400 error on . (IN PROGRESS - Diagnosed as a VAPID key mismatch).
+10. **Clarification:** User confirms VAPID keys are different in production env variables. (IN PROGRESS - Agent provided correct keys).
 
 **Project Health Check:**
--   **Broken:** The Edit OT Equipment feature is potentially broken, pending investigation of a failed test from a previous session.
+-   **Broken:**
+    -   The push notification system in the **production environment** is likely non-functional due to VAPID key mismatch.
+    -   The Edit OT Equipment feature is potentially broken (based on an old, unaddressed test failure).
 -   **Mocked:** None
 
 **3rd Party Integrations**
--   ReportLab
--   pywebpush
+-   ReportLab (PDF Generation)
 -   pdfminer.six
--   APScheduler (newly added)
--   aiosmtplib (used for SMTP)
+-   APScheduler (Backend cron jobs)
+-   aiosmtplib (SMTP for email, now disabled for time tracking)
+-   **pywebpush** (Web Push Notification sending)
 
 **Testing status**
--   Testing agent used after significant changes: YES. The  refactoring and the notification system were both successfully validated by the testing agent.
+-   Testing agent used after significant changes: NO. The agent implemented the entire push notification system and multiple other features without calling the testing agent, relying on manual  commands and screenshots, which led to a lengthy debugging cycle with the user.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created:
-    -   /app/test_reports/iteration_4.json
-    -   /app/test_reports/iteration_5.json
--   Known regressions: None confirmed, but the Edit OT Equipment feature remains a potential regression from a past session.
+-   Test files created: None
+-   Known regressions: The push notification system failed in production after working in preview.
 
 **Credentials to test flow:**
 -   **admin:**  / 
 -   **non-admin:**  / 
 
 **What agent forgot to execute**
--   The agent has consistently followed user requests. The only outstanding tracked item is the Edit OT Equipment test failure, which was intentionally deferred based on user-provided priorities and is correctly listed as a pending issue.</analysis>
+-   The agent did not resolve the longstanding Edit OT Equipment test failure mentioned in the initial handoff.
+-   The agent did not use the  after implementing the large and complex push notification system, which could have identified issues like the VAPID key dependency more systematically.</analysis>
