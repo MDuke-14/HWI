@@ -43,18 +43,48 @@ const FolhaHorasModal = ({
       .sort((a, b) => new Date(a.data) - new Date(b.data));
   };
 
-  // Ordenar extras por data cronológica
+  // Ordenar extras por data cronológica - incluindo tipo e código
   const getExtrasOrdenados = () => {
     if (!folhaHorasData?.datas_por_tecnico) return [];
+    
+    const registos = folhaHorasData.registos || [];
+    const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
     
     return Object.entries(folhaHorasData.datas_por_tecnico)
       .flatMap(([tecnicoId, datas]) => {
         const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
-        return datas.map(data => ({
-          tecnicoId,
-          tecnicoNome: tecnico?.nome || 'Técnico',
-          data
-        }));
+        return datas.map(data => {
+          // Procurar nos registos de cronómetro
+          const registoCrono = registos.find(r => r.tecnico_id === tecnicoId && (r.data === data || r.data?.split('T')[0] === data));
+          // Procurar nos técnicos manuais
+          const registoManual = tecnicosManuais.find(t => t.id === tecnicoId && (t.data_trabalho === data || t.data_trabalho?.split('T')[0] === data));
+          
+          let tipo = '-';
+          let codigo = '-';
+          
+          if (registoCrono) {
+            tipo = registoCrono.tipo || 'cronómetro';
+            codigo = registoCrono.codigo || '-';
+          } else if (registoManual) {
+            tipo = registoManual.tipo_registo || 'manual';
+            // Converter tipo_horario para código
+            const codigosMap = {
+              'diurno': '1',
+              'noturno': '2',
+              'sabado': 'S',
+              'domingo_feriado': 'D'
+            };
+            codigo = codigosMap[registoManual.tipo_horario] || '-';
+          }
+          
+          return {
+            tecnicoId,
+            tecnicoNome: tecnico?.nome || 'Técnico',
+            data,
+            tipo,
+            codigo
+          };
+        });
       })
       .sort((a, b) => new Date(a.data) - new Date(b.data));
   };
