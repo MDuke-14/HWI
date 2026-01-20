@@ -177,6 +177,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Cálculo Automático do Tempo no Cliente (20 Janeiro 2026)
+- Quando o utilizador preenche "Hora de Início" e "Hora de Fim" no registo manual, o campo "Tempo no Cliente" é calculado automaticamente
+- Fórmula: `(Hora Fim - Hora Início) - 1h de pausa`
+- Exemplo: 07:30 → 18:30 = 11h - 1h = **10h** de tempo no cliente
+- Mensagem informativa verde mostra o cálculo realizado
+- Ficheiro: `/app/frontend/src/components/technical-reports/TecnicoModal.jsx`
+
 ### ✅ Pausa Automática de 1h na Folha de Horas (20 Janeiro 2026)
 - Quando um registo tem hora de início e hora de fim definidas, a coluna "Pausa" no PDF mostra automaticamente **1:00** (1 hora)
 - Ficheiro: `/app/backend/folha_horas_pdf.py`
