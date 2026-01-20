@@ -362,6 +362,31 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         mat_section.append(Spacer(1, 0.2*cm))
         elements.append(KeepTogether(mat_section))
     
+    # Diagnóstico / Ações / Resolução - se existirem
+    has_diagnostico = relatorio.get('diagnostico') or relatorio.get('acoes_realizadas') or relatorio.get('resolucao') or relatorio.get('relatorio_assistencia')
+    if has_diagnostico:
+        diag_section = []
+        diag_section.append(Paragraph("DIAGNÓSTICO E RESOLUÇÃO", heading_style))
+        
+        if relatorio.get('diagnostico'):
+            diag_section.append(Paragraph(f"<b>Diagnóstico:</b> {relatorio.get('diagnostico')}", normal_style))
+        
+        if relatorio.get('acoes_realizadas'):
+            diag_section.append(Paragraph(f"<b>Ações Realizadas:</b> {relatorio.get('acoes_realizadas')}", normal_style))
+        
+        if relatorio.get('resolucao'):
+            diag_section.append(Paragraph(f"<b>Resolução:</b> {relatorio.get('resolucao')}", normal_style))
+        
+        if relatorio.get('relatorio_assistencia'):
+            diag_section.append(Paragraph(f"<b>Relatório de Assistência:</b> {relatorio.get('relatorio_assistencia')}", normal_style))
+        
+        problema_resolvido = relatorio.get('problema_resolvido', False)
+        status_prob = "✓ Sim" if problema_resolvido else "✗ Não"
+        diag_section.append(Paragraph(f"<b>Problema Resolvido:</b> {status_prob}", normal_style))
+        
+        diag_section.append(Spacer(1, 0.2*cm))
+        elements.append(KeepTogether(diag_section))
+    
     # Fotografias (2 por linha, layout compacto) - cada par KeepTogether
     if fotografias:
         elements.append(Paragraph("COMPONENTES ADICIONAIS", heading_style))
