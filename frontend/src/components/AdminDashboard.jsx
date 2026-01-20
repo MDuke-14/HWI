@@ -39,7 +39,6 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [showTarifaDialog, setShowTarifaDialog] = useState(false);
   const [editingTarifa, setEditingTarifa] = useState(null);
   const [tarifaForm, setTarifaForm] = useState({
-    numero: '',
     nome: '',
     valor_por_hora: ''
   });
