@@ -1005,6 +1005,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_inicial: tecnico.kms_inicial || 0,
       kms_final: tecnico.kms_final || 0,
       tipo_horario: tecnico.tipo_horario,
+      tipo_registo: tecnico.tipo_registo || 'manual',
       data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0],
       hora_inicio: tecnico.hora_inicio || '',
       hora_fim: tecnico.hora_fim || ''
