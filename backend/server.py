@@ -7428,6 +7428,9 @@ async def update_registo_tecnico(
         update_data["km"] = registo_data["km"]
     if "codigo" in registo_data:
         update_data["codigo"] = registo_data["codigo"]
+    if "tipo" in registo_data:
+        # Permitir alterar o tipo do registo (trabalho/viagem/manual)
+        update_data["tipo"] = registo_data["tipo"]
     
     if update_data:
         await db.registos_tecnico_ot.update_one(
