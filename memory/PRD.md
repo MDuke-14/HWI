@@ -177,6 +177,12 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Correção UI FolhaHorasModal - Tipo/Código na Secção Tarifas (20 Janeiro 2026)
+- Movida a exibição de "Tipo de Entrada" e "Código" da secção de Dietas para a secção de Tarifas
+- Badge de tipo: trabalho (verde), viagem (azul), manual (cinza), cronómetro (roxo)
+- Badge de código: 1 (diurno), 2 (noturno), S (sábado), D (domingo/feriado)
+- Ficheiro: `/app/frontend/src/components/technical-reports/FolhaHorasModal.jsx`
+
 ### ✅ Sistema de Notificações por Email - Regras de Ponto (19 Janeiro 2026)
 **Sistema automático de verificação e autorização de horas extra:**
 
