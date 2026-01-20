@@ -616,8 +616,8 @@ class Tarifa(BaseModel):
     """Tarifas para cálculo de valores na Folha de Horas"""
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    numero: int  # 1, 2, 3...
-    nome: str  # Ex: "Tarifa 1", "Tarifa Premium"
+    numero: Optional[int] = None  # Opcional - mantido para compatibilidade
+    nome: str  # Ex: "Viagem Tarifa 1", "Mão de Obra"
     valor_por_hora: float  # Valor em euros por hora
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -625,9 +625,9 @@ class Tarifa(BaseModel):
 
 
 class TarifaCreate(BaseModel):
-    numero: int
     nome: str
     valor_por_hora: float
+    numero: Optional[int] = None  # Opcional
 
 
 class TarifaUpdate(BaseModel):
