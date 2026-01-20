@@ -3381,10 +3381,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <tbody>
                           {/* Combinar e ordenar todos os registos cronologicamente */}
                           {[
-                            // Registos Manuais (técnicos)
+                            // Registos Manuais (técnicos) - agora com tipo_registo dinâmico
                             ...tecnicos.map(tec => ({
                               ...tec,
-                              _tipo_registo: 'manual',
+                              _tipo_registo: tec.tipo_registo || 'manual',
+                              _source: 'tecnico',
                               _data_sort: tec.data_trabalho || tec.created_at || '',
                               _key: `manual-${tec.id}`
                             })),
@@ -3392,6 +3393,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             ...registosTecnicos.map(reg => ({
                               ...reg,
                               _tipo_registo: reg.tipo,
+                              _source: 'cronometro',
                               _data_sort: reg.data || reg.created_at || '',
                               _key: `crono-${reg.id}`
                             }))
