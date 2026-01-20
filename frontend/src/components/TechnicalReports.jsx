@@ -1052,6 +1052,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_inicial: 0,
       kms_final: 0,
       tipo_horario: 'diurno',
+      tipo_registo: 'manual',
       data_trabalho: new Date().toISOString().split('T')[0],
       hora_inicio: '',
       hora_fim: ''
