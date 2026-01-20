@@ -522,21 +522,23 @@ const AdminDashboard = ({ user, onLogout }) => {
         </div>
 
         <Tabs defaultValue="vacations" className="w-full">
-          <TabsList className="grid w-full max-w-5xl mx-auto grid-cols-6 bg-[#1a1a1a] mb-8">
-            <TabsTrigger value="vacations" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Calendar className="w-4 h-4 mr-2" />Férias</TabsTrigger>
-            <TabsTrigger value="absences" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-2" />Faltas</TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-2" />Utilizadores</TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative">
-              <Bell className="w-4 h-4 mr-2" />Notificações
-              {overtimeAuthorizations.filter(a => a.status === 'pending').length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {overtimeAuthorizations.filter(a => a.status === 'pending').length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="tarifas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><DollarSign className="w-4 h-4 mr-2" />Tarifas</TabsTrigger>
-            <TabsTrigger value="reports" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><TrendingUp className="w-4 h-4 mr-2" />Relatórios</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2 mb-6 -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg md:grid md:grid-cols-6 md:w-full md:max-w-5xl md:mx-auto">
+              <TabsTrigger value="vacations" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Calendar className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Férias</span></TabsTrigger>
+              <TabsTrigger value="absences" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Faltas</span></TabsTrigger>
+              <TabsTrigger value="users" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Utilizadores</span></TabsTrigger>
+              <TabsTrigger value="notifications" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative">
+                <Bell className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Notificações</span>
+                {overtimeAuthorizations.filter(a => a.status === 'pending').length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {overtimeAuthorizations.filter(a => a.status === 'pending').length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="tarifas" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><DollarSign className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Tarifas</span></TabsTrigger>
+              <TabsTrigger value="reports" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><TrendingUp className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Relatórios</span></TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="vacations">
             <div className="glass-effect p-6 rounded-xl">
