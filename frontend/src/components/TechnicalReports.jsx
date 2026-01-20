@@ -3448,28 +3448,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <tr key={item._key} className="border-b border-gray-800 hover:bg-gray-800/50">
                               <td className="py-2 px-2 text-white">{item.tecnico_nome}</td>
                               <td className="py-2 px-2 text-center">
-                                {item._source === 'tecnico' ? (
-                                  <span 
-                                    className={`px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity ${
-                                      item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300 hover:bg-gray-600/50' :
-                                      item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30' : 
-                                      'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
-                                    }`}
-                                    onClick={(e) => openTipoModal(item, e)}
-                                  >
-                                    {item._tipo_registo === 'manual' ? 'Manual' : 
-                                     item._tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
-                                  </span>
-                                ) : (
-                                  <span className={`px-2 py-1 rounded text-xs ${
-                                    item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
-                                    item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
-                                    'bg-blue-600/20 text-blue-400'
-                                  }`}>
-                                    {item._tipo_registo === 'manual' ? 'Manual' : 
-                                     item._tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
-                                  </span>
-                                )}
+                                <span 
+                                  className={`px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity ${
+                                    item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300 hover:bg-gray-600/50' :
+                                    item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30' : 
+                                    'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                                  }`}
+                                  onClick={(e) => openTipoModal(item, e)}
+                                >
+                                  {item._tipo_registo === 'manual' ? 'Manual' : 
+                                   item._tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                                </span>
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300">
                                 {item._source === 'tecnico' 
