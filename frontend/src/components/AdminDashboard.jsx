@@ -1390,7 +1390,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
               
               <p className="text-gray-400 text-sm mb-6">
-                Configure as tarifas que serão utilizadas na Folha de Horas. Cada tarifa representa um valor por hora de trabalho.
+                Configure as tarifas que serão utilizadas na Folha de Horas. Cada tarifa representa um valor por hora de trabalho. Associe a um código para aplicação automática.
               </p>
               
               {tarifas.filter(t => t.ativo).length > 0 ? (
@@ -1404,12 +1404,29 @@ const AdminDashboard = ({ user, onLogout }) => {
                           </div>
                           <div>
                             <div className="text-white font-semibold">{tarifa.nome}</div>
+                            {tarifa.codigo && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mt-1 ${
+                                tarifa.codigo === '1' ? 'bg-green-500/20 text-green-400' :
+                                tarifa.codigo === '2' ? 'bg-blue-500/20 text-blue-400' :
+                                tarifa.codigo === 'S' ? 'bg-orange-500/20 text-orange-400' :
+                                'bg-red-500/20 text-red-400'
+                              }`}>
+                                Código {tarifa.codigo}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="text-3xl font-bold text-amber-400 mb-4">
+                      <div className="text-3xl font-bold text-amber-400 mb-2">
                         {tarifa.valor_por_hora.toFixed(2)}€<span className="text-lg text-gray-500">/hora</span>
                       </div>
+                      {tarifa.codigo && (
+                        <p className="text-xs text-gray-500 mb-3">
+                          Aplica-se a: {tarifa.codigo === '1' ? 'Dias úteis (07h-19h)' :
+                                        tarifa.codigo === '2' ? 'Dias úteis (19h-07h)' :
+                                        tarifa.codigo === 'S' ? 'Sábados' : 'Domingos/Feriados'}
+                        </p>
+                      )}
                       <div className="flex gap-2">
                         <Button 
                           onClick={() => handleOpenTarifaDialog(tarifa)} 
