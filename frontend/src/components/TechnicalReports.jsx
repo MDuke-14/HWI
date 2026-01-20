@@ -1948,10 +1948,19 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleUpdateRegisto = async () => {
     if (!editingRegisto) return;
     
+    // Calcular km total (ida + volta)
+    const kmsIda = Math.max(0, parseFloat(editRegistoForm.kms_final || 0) - parseFloat(editRegistoForm.kms_inicial || 0));
+    const kmsVolta = Math.max(0, parseFloat(editRegistoForm.kms_final_volta || 0) - parseFloat(editRegistoForm.kms_inicial_volta || 0));
+    const kmTotal = kmsIda + kmsVolta;
+    
     try {
       await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${editingRegisto.id}`, {
         minutos_trabalhados: parseInt(editRegistoForm.minutos_trabalhados),
-        km: parseFloat(editRegistoForm.km),
+        km: kmTotal,
+        kms_inicial: parseFloat(editRegistoForm.kms_inicial || 0),
+        kms_final: parseFloat(editRegistoForm.kms_final || 0),
+        kms_inicial_volta: parseFloat(editRegistoForm.kms_inicial_volta || 0),
+        kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0),
         codigo: editRegistoForm.codigo
       });
       
