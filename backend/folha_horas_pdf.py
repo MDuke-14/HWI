@@ -224,10 +224,13 @@ def generate_folha_horas_pdf(
         hora_inicio_manual = tec.get('hora_inicio')
         hora_fim_manual = tec.get('hora_fim')
         
+        # Usar o tipo_registo atual (que pode ter sido alterado na OT)
+        tipo_registo_atual = tec.get('tipo_registo', 'manual')
+        
         dados_por_tecnico_data[tecnico_id][data].append({
             'tipo': 'manual',
             'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
-            'tipo_cronometro': 'manual',
+            'tipo_cronometro': tipo_registo_atual,  # Usar tipo atual da OT
             'hora_inicio': hora_inicio_manual,  # Pode ser HH:MM ou None
             'hora_fim': hora_fim_manual,  # Pode ser HH:MM ou None
             'minutos': tec.get('minutos_cliente', 0),
