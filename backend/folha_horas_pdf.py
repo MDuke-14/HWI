@@ -319,11 +319,9 @@ def generate_folha_horas_pdf(
         primeiro_inicio = registos_ordenados_hora[0].get('hora_inicio') if registos_ordenados_hora else None
         ultimo_fim = registos_ordenados_hora[-1].get('hora_fim') if registos_ordenados_hora else None
         
-        # Pausa
-        pausa_minutos = calculate_pause_time([
-            {'hora_inicio_segmento': r.get('hora_inicio'), 'hora_fim_segmento': r.get('hora_fim')}
-            for r in registos if r.get('hora_inicio') and r.get('hora_fim')
-        ])
+        # Pausa - Sempre 1h (60 minutos) se houver hora de início e fim definidas
+        tem_horarios = any(r.get('hora_inicio') and r.get('hora_fim') for r in registos)
+        pausa_minutos = 60 if tem_horarios else 0
         
         # Observações (tipo de cronómetro)
         obs_list = list(set(r.get('tipo_cronometro', '') for r in registos if r.get('tipo_cronometro')))
