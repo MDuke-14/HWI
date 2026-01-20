@@ -177,6 +177,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Campos Km's Ida/Volta no Modal de Edição de Cronómetro (21 Janeiro 2026)
+- Adicionados campos de Quilómetros Ida (Km Inicial, Km Final, Total)
+- Adicionados campos de Quilómetros Volta (Km Inicial, Km Final, Total)
+- Card de Total de Quilómetros (Ida + Volta) com cálculo automático
+- Backend atualizado para guardar os novos campos em registos_tecnico_ot
+- Ficheiros: `TechnicalReports.jsx`, `server.py`
+
 ### ✅ Checkbox de Pausa Opcional no Registo Manual (20 Janeiro 2026)
 - Removida a pausa automática de 1h ao preencher horas de início e fim
 - Adicionado checkbox "Incluir 1 hora de pausa" que aparece quando há horários
