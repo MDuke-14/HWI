@@ -342,6 +342,7 @@ def generate_folha_horas_pdf(
             format_date_pt(date_obj),
             get_weekday_pt(date_obj),
             tecnico_nome,
+            tipo_registo,
             minutes_to_hhmm(total_minutos),
             f'{tarifa_valor:.2f}€/h' if tarifa_valor else '-',
             f'{total_valor:.2f}€',
