@@ -32,7 +32,9 @@ import {
   Upload,
   Calendar,
   FileSpreadsheet,
-  DollarSign
+  DollarSign,
+  Tag,
+  Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
