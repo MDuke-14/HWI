@@ -229,6 +229,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [editRegistoForm, setEditRegistoForm] = useState({
     minutos_trabalhados: 0,
     km: 0,
+    kms_inicial: 0,
+    kms_final: 0,
+    kms_inicial_volta: 0,
+    kms_final_volta: 0,
     codigo: ''
   });
 
