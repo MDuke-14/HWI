@@ -1100,7 +1100,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       tipo_registo: 'manual',
       data_trabalho: new Date().toISOString().split('T')[0],
       hora_inicio: '',
-      hora_fim: ''
+      hora_fim: '',
+      incluir_pausa: false
     });
   };
 
