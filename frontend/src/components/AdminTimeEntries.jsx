@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { 
   Users, Calendar, Clock, Edit, Trash2, Plus, Save, X, 
-  ChevronLeft, ChevronRight, User, FileText, AlertTriangle 
+  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap 
 } from 'lucide-react';
 
 const AdminTimeEntries = ({ user, onLogout }) => {
