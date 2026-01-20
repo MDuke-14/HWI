@@ -31,47 +31,62 @@ const FolhaHorasModal = ({
     };
   };
 
-  // Ordenar técnicos por data cronológica - incluindo tipo e código
-  const getTecnicosOrdenados = () => {
+  // Usar registos individuais do backend (já ordenados)
+  const getRegistosOrdenados = () => {
+    // Usar a nova lista registos_individuais se disponível
+    if (folhaHorasData?.registos_individuais) {
+      return folhaHorasData.registos_individuais;
+    }
+    
+    // Fallback para compatibilidade com dados antigos
     if (!folhaHorasData?.tecnicos) return [];
     
     const registos = folhaHorasData.registos || [];
     const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
     
-    return folhaHorasData.tecnicos
-      .flatMap(tecnico => {
-        const datas = folhaHorasData.datas_por_tecnico?.[tecnico.id] || [];
-        return datas.map(data => {
-          // Procurar nos registos de cronómetro
-          const registoCrono = registos.find(r => r.tecnico_id === tecnico.id && (r.data === data || r.data?.split('T')[0] === data));
-          // Procurar nos técnicos manuais
-          const registoManual = tecnicosManuais.find(t => t.id === tecnico.id && (t.data_trabalho === data || t.data_trabalho?.split('T')[0] === data));
-          
-          let tipo = '-';
-          let codigo = '-';
-          
-          if (registoCrono) {
-            tipo = registoCrono.tipo || 'cronómetro';
-            codigo = registoCrono.codigo || '-';
-          } else if (registoManual) {
-            tipo = registoManual.tipo_registo || 'manual';
-            // Converter tipo_horario para código
-            const codigosMap = {
-              'diurno': '1',
-              'noturno': '2',
-              'sabado': 'S',
-              'domingo_feriado': 'D'
-            };
-            codigo = codigosMap[registoManual.tipo_horario] || '-';
-          }
-          
-          return { ...tecnico, data, tipo, codigo };
-        });
-      })
-      .sort((a, b) => new Date(a.data) - new Date(b.data));
+    // Combinar todos os registos
+    const todosRegistos = [];
+    
+    // Adicionar registos de cronómetro
+    registos.forEach(reg => {
+      let data = reg.data || '';
+      if (typeof data === 'string' && data.includes('T')) {
+        data = data.split('T')[0];
+      }
+      todosRegistos.push({
+        tecnico_id: reg.tecnico_id,
+        tecnico_nome: reg.tecnico_nome,
+        data: data,
+        tipo: reg.tipo || 'cronómetro',
+        codigo: reg.codigo || '-',
+        source: 'cronometro',
+        registo_id: reg.id
+      });
+    });
+    
+    // Adicionar registos manuais
+    tecnicosManuais.forEach(tec => {
+      let data = tec.data_trabalho || '';
+      if (typeof data === 'string' && data.includes('T')) {
+        data = data.split('T')[0];
+      }
+      const codigosMap = { 'diurno': '1', 'noturno': '2', 'sabado': 'S', 'domingo_feriado': 'D' };
+      todosRegistos.push({
+        tecnico_id: tec.id,
+        tecnico_nome: tec.tecnico_nome,
+        data: data,
+        tipo: tec.tipo_registo || 'manual',
+        codigo: codigosMap[tec.tipo_horario] || '-',
+        source: 'manual',
+        registo_id: tec.id
+      });
+    });
+    
+    // Ordenar por data
+    return todosRegistos.sort((a, b) => new Date(a.data) - new Date(b.data));
   };
 
-  // Ordenar extras por data cronológica - incluindo tipo e código
+  // Para extras (dietas, portagens, despesas) - manter agrupado por técnico/data
   const getExtrasOrdenados = () => {
     if (!folhaHorasData?.datas_por_tecnico) return [];
     
