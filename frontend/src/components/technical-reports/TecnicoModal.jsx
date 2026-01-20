@@ -378,13 +378,31 @@ const TecnicoModal = ({
               <p className="text-xs text-gray-500 mt-1">Para Folha de Horas</p>
             </div>
           </div>
+
+          {/* Checkbox de Pausa */}
+          {tecnicoFormData.hora_inicio && tecnicoFormData.hora_fim && (
+            <div className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-lg border border-gray-700">
+              <input
+                type="checkbox"
+                id="incluir_pausa"
+                checked={tecnicoFormData.incluir_pausa || false}
+                onChange={(e) => handlePausaChange(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-600 bg-[#1a1a1a] text-amber-500 focus:ring-amber-500"
+              />
+              <label htmlFor="incluir_pausa" className="text-gray-300 cursor-pointer flex-1">
+                <span className="font-medium">Incluir 1 hora de pausa</span>
+                <p className="text-xs text-gray-500">Descontar automaticamente 1h do tempo total</p>
+              </label>
+            </div>
+          )}
           
           {/* Info sobre cálculo automático */}
           {tecnicoFormData.hora_inicio && tecnicoFormData.hora_fim && (
-            <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-3 flex items-start gap-2">
-              <Clock className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-green-300">
-                <strong>Cálculo automático:</strong> {tecnicoFormData.hora_inicio} → {tecnicoFormData.hora_fim} = {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}h{String((tecnicoFormData.minutos_cliente || 0) % 60).padStart(2, '0')} (já descontada 1h de pausa)
+            <div className={`${tecnicoFormData.incluir_pausa ? 'bg-green-900/20 border-green-600/30' : 'bg-blue-900/20 border-blue-600/30'} border rounded-lg p-3 flex items-start gap-2`}>
+              <Clock className={`w-4 h-4 ${tecnicoFormData.incluir_pausa ? 'text-green-400' : 'text-blue-400'} mt-0.5 flex-shrink-0`} />
+              <p className={`text-xs ${tecnicoFormData.incluir_pausa ? 'text-green-300' : 'text-blue-300'}`}>
+                <strong>Cálculo automático:</strong> {tecnicoFormData.hora_inicio} → {tecnicoFormData.hora_fim} = {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}h{String((tecnicoFormData.minutos_cliente || 0) % 60).padStart(2, '0')} 
+                {tecnicoFormData.incluir_pausa ? ' (descontada 1h de pausa)' : ' (sem pausa)'}
               </p>
             </div>
           )}
