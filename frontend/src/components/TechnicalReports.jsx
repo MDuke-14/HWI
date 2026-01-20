@@ -1031,6 +1031,18 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleDeleteTecnico = async (tecnicoId) => {
+    if (!selectedRelatorio) return;
+    
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos/${tecnicoId}`);
+      toast.success('Registo removido com sucesso!');
+      await fetchTecnicosRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   const resetTecnicoForm = () => {
     setTecnicoFormData({
       tecnico_id: '',
