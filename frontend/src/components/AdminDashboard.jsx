@@ -40,7 +40,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [editingTarifa, setEditingTarifa] = useState(null);
   const [tarifaForm, setTarifaForm] = useState({
     nome: '',
-    valor_por_hora: ''
+    valor_por_hora: '',
+    codigo: ''  // "1", "2", "S", "D" ou vazio para todos
   });
 
   // Estados para Notificações e Autorizações
