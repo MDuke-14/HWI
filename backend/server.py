@@ -8261,8 +8261,10 @@ async def get_folha_horas_data(
                 'nome': reg.get('tecnico_nome')
             }
     
-    # Extrair datas únicas por técnico
+    # Extrair datas únicas por técnico E criar lista de todos os registos individuais
     datas_por_tecnico = {}
+    registos_individuais = []  # Nova lista com todos os registos
+    
     for reg in registos:
         tid = reg.get('tecnico_id')
         data = reg.get('data', '')
@@ -8272,6 +8274,18 @@ async def get_folha_horas_data(
             if tid not in datas_por_tecnico:
                 datas_por_tecnico[tid] = set()
             datas_por_tecnico[tid].add(data)
+            # Adicionar registo individual
+            registos_individuais.append({
+                'tecnico_id': tid,
+                'tecnico_nome': reg.get('tecnico_nome'),
+                'data': data,
+                'tipo': reg.get('tipo', ''),
+                'codigo': reg.get('codigo', '-'),
+                'source': 'cronometro',
+                'registo_id': reg.get('id'),
+                'minutos': int((reg.get('horas_arredondadas', 0) or 0) * 60),
+                'km': reg.get('km', 0)
+            })
     
     for tec in tecnicos:
         # Para registos manuais, usar o 'id' do registo
@@ -8283,6 +8297,23 @@ async def get_folha_horas_data(
             if tid not in datas_por_tecnico:
                 datas_por_tecnico[tid] = set()
             datas_por_tecnico[tid].add(data)
+            # Converter tipo_horario para código
+            codigo_map = {'diurno': '1', 'noturno': '2', 'sabado': 'S', 'domingo_feriado': 'D'}
+            # Adicionar registo individual
+            registos_individuais.append({
+                'tecnico_id': tid,
+                'tecnico_nome': tec.get('tecnico_nome'),
+                'data': data,
+                'tipo': tec.get('tipo_registo', 'manual'),
+                'codigo': codigo_map.get(tec.get('tipo_horario', ''), '-'),
+                'source': 'manual',
+                'registo_id': tec.get('id'),
+                'minutos': tec.get('minutos_cliente', 0),
+                'km': tec.get('kms_deslocacao', 0)
+            })
+    
+    # Ordenar registos individuais por data
+    registos_individuais.sort(key=lambda x: x['data'])
     
     # Converter sets para listas ordenadas
     datas_por_tecnico = {k: sorted(list(v)) for k, v in datas_por_tecnico.items()}
@@ -8294,7 +8325,8 @@ async def get_folha_horas_data(
         "registos": registos,
         "tecnicos_manuais": tecnicos,
         "tarifas": tarifas,
-        "datas_por_tecnico": datas_por_tecnico
+        "datas_por_tecnico": datas_por_tecnico,
+        "registos_individuais": registos_individuais  # Nova lista
     }
 
 
