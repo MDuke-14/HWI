@@ -1454,7 +1454,13 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
             
             {/* Dialog para criar/editar tarifa */}
-            <Dialog open={showTarifaDialog} onOpenChange={setShowTarifaDialog}>
+            <Dialog open={showTarifaDialog} onOpenChange={(open) => {
+              setShowTarifaDialog(open);
+              if (!open) {
+                setTarifaForm({ nome: '', valor_por_hora: '', codigo: '' });
+                setEditingTarifa(null);
+              }
+            }}>
               <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
@@ -1484,6 +1490,23 @@ const AdminDashboard = ({ user, onLogout }) => {
                       className="bg-[#0a0a0a] border-gray-700 text-white"
                       placeholder="Ex: 35.00"
                     />
+                  </div>
+                  <div>
+                    <Label>Código Horário</Label>
+                    <select
+                      value={tarifaForm.codigo}
+                      onChange={(e) => setTarifaForm({...tarifaForm, codigo: e.target.value})}
+                      className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
+                    >
+                      <option value="">Todos os códigos</option>
+                      <option value="1">1 - Dias úteis (07h-19h)</option>
+                      <option value="2">2 - Dias úteis (19h-07h)</option>
+                      <option value="S">S - Sábado</option>
+                      <option value="D">D - Domingos/Feriados</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      A tarifa será aplicada automaticamente aos registos com este código na Folha de Horas
+                    </p>
                   </div>
                   <Button 
                     onClick={handleSaveTarifa} 
