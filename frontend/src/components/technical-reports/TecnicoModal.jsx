@@ -28,6 +28,57 @@ const TecnicoModal = ({
     }
   }, [tecnicoFormData.minutos_cliente, open]);
 
+  // Calcular Tempo no Cliente automaticamente quando hora_inicio e hora_fim mudam
+  const calcularTempoCliente = (horaInicio, horaFim) => {
+    if (horaInicio && horaFim) {
+      const [inicioH, inicioM] = horaInicio.split(':').map(Number);
+      const [fimH, fimM] = horaFim.split(':').map(Number);
+      
+      const inicioMinutos = inicioH * 60 + inicioM;
+      const fimMinutos = fimH * 60 + fimM;
+      
+      // Calcular diferença (menos 1 hora de pausa = 60 minutos)
+      let diferencaMinutos = fimMinutos - inicioMinutos - 60;
+      
+      // Se o fim for antes do início (atravessa meia-noite), adicionar 24h
+      if (diferencaMinutos < -60) {
+        diferencaMinutos = (24 * 60) + fimMinutos - inicioMinutos - 60;
+      }
+      
+      // Garantir que não é negativo
+      return Math.max(0, diferencaMinutos);
+    }
+    return null;
+  };
+
+  const handleHoraInicioChange = (value) => {
+    const novoFormData = { ...tecnicoFormData, hora_inicio: value };
+    
+    // Calcular tempo no cliente automaticamente
+    const tempoCalculado = calcularTempoCliente(value, tecnicoFormData.hora_fim);
+    if (tempoCalculado !== null) {
+      novoFormData.minutos_cliente = tempoCalculado;
+      setHoras(Math.floor(tempoCalculado / 60).toString());
+      setMinutos((tempoCalculado % 60).toString());
+    }
+    
+    setTecnicoFormData(novoFormData);
+  };
+
+  const handleHoraFimChange = (value) => {
+    const novoFormData = { ...tecnicoFormData, hora_fim: value };
+    
+    // Calcular tempo no cliente automaticamente
+    const tempoCalculado = calcularTempoCliente(tecnicoFormData.hora_inicio, value);
+    if (tempoCalculado !== null) {
+      novoFormData.minutos_cliente = tempoCalculado;
+      setHoras(Math.floor(tempoCalculado / 60).toString());
+      setMinutos((tempoCalculado % 60).toString());
+    }
+    
+    setTecnicoFormData(novoFormData);
+  };
+
   const getTipoHorarioCodigo = (tipo) => {
     const codigos = {
       'diurno': '1 (Diurno)',
