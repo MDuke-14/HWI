@@ -185,6 +185,20 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
   };
 
+  const handleAdjustTo8Hours = async (entryId) => {
+    if (!window.confirm('Ajustar automaticamente este dia para 8 horas totais?')) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/admin/time-entries/${entryId}/adjust-to-8h`);
+      toast.success('Dia ajustado para 8 horas com sucesso!');
+      fetchUserEntries();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao ajustar horas');
+    }
+  };
+
   const handleAddEntry = async () => {
     if (!selectedUser || !addForm.date || !addForm.start_time || !addForm.end_time) {
       toast.error('Preencha todos os campos obrigatórios');
