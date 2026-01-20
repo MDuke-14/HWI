@@ -197,9 +197,9 @@ def generate_folha_horas_pdf(
     # Preço por km fixo
     PRECO_KM = 0.65
     
-    # Organizar dados por técnico e data
-    # Estrutura: {tecnico_id: {data: [registos]}}
-    dados_por_tecnico_data = defaultdict(lambda: defaultdict(list))
+    # Organizar dados por técnico, data E código
+    # Estrutura: {tecnico_id: {data: {codigo: [registos]}}}
+    dados_por_tecnico_data_codigo = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     
     # Processar registos de cronómetros
     for reg in registos_mao_obra:
@@ -210,7 +210,7 @@ def generate_folha_horas_pdf(
             data = data.split('T')[0]
         codigo = reg.get('codigo', '-')
         
-        dados_por_tecnico_data[tecnico_id][data].append({
+        dados_por_tecnico_data_codigo[tecnico_id][data][codigo].append({
             'tipo': 'cronometro',
             'tecnico_nome': reg.get('tecnico_nome', 'N/A'),
             'tipo_cronometro': reg.get('tipo', ''),  # trabalho/viagem
