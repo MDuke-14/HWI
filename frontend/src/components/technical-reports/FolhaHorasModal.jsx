@@ -31,14 +31,42 @@ const FolhaHorasModal = ({
     };
   };
 
-  // Ordenar técnicos por data cronológica
+  // Ordenar técnicos por data cronológica - incluindo tipo e código
   const getTecnicosOrdenados = () => {
     if (!folhaHorasData?.tecnicos) return [];
+    
+    const registos = folhaHorasData.registos || [];
+    const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
     
     return folhaHorasData.tecnicos
       .flatMap(tecnico => {
         const datas = folhaHorasData.datas_por_tecnico?.[tecnico.id] || [];
-        return datas.map(data => ({ ...tecnico, data }));
+        return datas.map(data => {
+          // Procurar nos registos de cronómetro
+          const registoCrono = registos.find(r => r.tecnico_id === tecnico.id && (r.data === data || r.data?.split('T')[0] === data));
+          // Procurar nos técnicos manuais
+          const registoManual = tecnicosManuais.find(t => t.id === tecnico.id && (t.data_trabalho === data || t.data_trabalho?.split('T')[0] === data));
+          
+          let tipo = '-';
+          let codigo = '-';
+          
+          if (registoCrono) {
+            tipo = registoCrono.tipo || 'cronómetro';
+            codigo = registoCrono.codigo || '-';
+          } else if (registoManual) {
+            tipo = registoManual.tipo_registo || 'manual';
+            // Converter tipo_horario para código
+            const codigosMap = {
+              'diurno': '1',
+              'noturno': '2',
+              'sabado': 'S',
+              'domingo_feriado': 'D'
+            };
+            codigo = codigosMap[registoManual.tipo_horario] || '-';
+          }
+          
+          return { ...tecnico, data, tipo, codigo };
+        });
       })
       .sort((a, b) => new Date(a.data) - new Date(b.data));
   };
