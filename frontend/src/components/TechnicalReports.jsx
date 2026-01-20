@@ -3413,13 +3413,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </span>
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300">
-                                {item._tipo_registo === 'manual' 
+                                {item._source === 'tecnico' 
                                   ? (item.data_trabalho ? new Date(item.data_trabalho).toLocaleDateString('pt-PT') : '-')
                                   : new Date(item.data).toLocaleDateString('pt-PT')
                                 }
                               </td>
                               <td className="py-2 px-2 text-center text-white font-medium">
-                                {item._tipo_registo === 'manual' 
+                                {item._source === 'tecnico' 
                                   ? `${Math.floor((item.minutos_cliente || 0) / 60)}h ${(item.minutos_cliente || 0) % 60}min`
                                   : (() => {
                                       const mins = item.minutos_trabalhados || Math.round((item.horas_arredondadas || 0) * 60);
@@ -3428,7 +3428,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 }
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300">
-                                {item._tipo_registo === 'manual' 
+                                {item._source === 'tecnico' 
                                   ? (item.kms_inicial !== undefined && item.kms_final !== undefined ? (
                                       <span title={`${item.kms_inicial || 0} → ${item.kms_final || 0}`}>
                                         {item.kms_deslocacao || Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0))} km
