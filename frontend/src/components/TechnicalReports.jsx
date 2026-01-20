@@ -3377,90 +3377,99 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </tr>
                         </thead>
                         <tbody>
-                          {/* Registos Manuais (técnicos) */}
-                          {tecnicos.map((tec) => (
-                            <tr key={`manual-${tec.id}`} className="border-b border-gray-800 hover:bg-gray-800/50">
-                              <td className="py-2 px-2 text-white">{tec.tecnico_nome}</td>
+                          {/* Combinar e ordenar todos os registos cronologicamente */}
+                          {[
+                            // Registos Manuais (técnicos)
+                            ...tecnicos.map(tec => ({
+                              ...tec,
+                              _tipo_registo: 'manual',
+                              _data_sort: tec.data_trabalho || tec.created_at || '',
+                              _key: `manual-${tec.id}`
+                            })),
+                            // Registos do Cronómetro
+                            ...registosTecnicos.map(reg => ({
+                              ...reg,
+                              _tipo_registo: reg.tipo,
+                              _data_sort: reg.data || reg.created_at || '',
+                              _key: `crono-${reg.id}`
+                            }))
+                          ]
+                          .sort((a, b) => new Date(a._data_sort) - new Date(b._data_sort))
+                          .map((item) => (
+                            <tr key={item._key} className="border-b border-gray-800 hover:bg-gray-800/50">
+                              <td className="py-2 px-2 text-white">{item.tecnico_nome}</td>
                               <td className="py-2 px-2 text-center">
-                                <span className="px-2 py-1 rounded text-xs bg-gray-600/30 text-gray-300">Manual</span>
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
+                                  item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
+                                  'bg-blue-600/20 text-blue-400'
+                                }`}>
+                                  {item._tipo_registo === 'manual' ? 'Manual' : 
+                                   item._tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                                </span>
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300">
-                                {tec.data_trabalho ? new Date(tec.data_trabalho).toLocaleDateString('pt-PT') : '-'}
+                                {item._tipo_registo === 'manual' 
+                                  ? (item.data_trabalho ? new Date(item.data_trabalho).toLocaleDateString('pt-PT') : '-')
+                                  : new Date(item.data).toLocaleDateString('pt-PT')
+                                }
                               </td>
                               <td className="py-2 px-2 text-center text-white font-medium">
-                                {Math.floor((tec.minutos_cliente || 0) / 60)}h {(tec.minutos_cliente || 0) % 60}min
+                                {item._tipo_registo === 'manual' 
+                                  ? `${Math.floor((item.minutos_cliente || 0) / 60)}h ${(item.minutos_cliente || 0) % 60}min`
+                                  : (() => {
+                                      const mins = item.minutos_trabalhados || Math.round((item.horas_arredondadas || 0) * 60);
+                                      return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+                                    })()
+                                }
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300">
-                                {tec.kms_inicial !== undefined && tec.kms_final !== undefined ? (
-                                  <span title={`${tec.kms_inicial || 0} → ${tec.kms_final || 0}`}>
-                                    {tec.kms_deslocacao || Math.max(0, (tec.kms_final || 0) - (tec.kms_inicial || 0))} km
+                                {item._tipo_registo === 'manual' 
+                                  ? (item.kms_inicial !== undefined && item.kms_final !== undefined ? (
+                                      <span title={`${item.kms_inicial || 0} → ${item.kms_final || 0}`}>
+                                        {item.kms_deslocacao || Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0))} km
+                                      </span>
+                                    ) : `${item.kms_deslocacao || 0} km`)
+                                  : `${item.km || 0} km`
+                                }
+                              </td>
+                              <td className="py-2 px-2 text-center">
+                                {item._tipo_registo === 'manual' ? (
+                                  <span 
+                                    className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs cursor-pointer hover:bg-blue-500/20"
+                                    onClick={(e) => openCodigoModal(item, e)}
+                                  >
+                                    {getTipoHorarioCodigo(item.tipo_horario)}
                                   </span>
                                 ) : (
-                                  `${tec.kms_deslocacao || 0} km`
+                                  <span className="font-mono text-purple-400">{item.codigo}</span>
                                 )}
                               </td>
                               <td className="py-2 px-2 text-center">
-                                <span 
-                                  className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs cursor-pointer hover:bg-blue-500/20"
-                                  onClick={(e) => openCodigoModal(tec, e)}
-                                >
-                                  {getTipoHorarioCodigo(tec.tipo_horario)}
-                                </span>
-                              </td>
-                              <td className="py-2 px-2 text-center">
-                                <Button
-                                  onClick={() => openEditTecnicoModal(tec)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 p-1"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-
-                          {/* Registos do Cronómetro (automáticos) */}
-                          {registosTecnicos.map((reg) => (
-                            <tr key={`crono-${reg.id}`} className="border-b border-gray-800 hover:bg-gray-800/50">
-                              <td className="py-2 px-2 text-white">{reg.tecnico_nome}</td>
-                              <td className="py-2 px-2 text-center">
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  reg.tipo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 'bg-blue-600/20 text-blue-400'
-                                }`}>
-                                  {reg.tipo === 'trabalho' ? 'Trabalho' : 'Viagem'}
-                                </span>
-                              </td>
-                              <td className="py-2 px-2 text-center text-gray-300">
-                                {new Date(reg.data).toLocaleDateString('pt-PT')}
-                              </td>
-                              <td className="py-2 px-2 text-center text-white font-medium">
-                                {(() => {
-                                  const mins = reg.minutos_trabalhados || Math.round((reg.horas_arredondadas || 0) * 60);
-                                  return `${Math.floor(mins / 60)}h ${mins % 60}min`;
-                                })()}
-                              </td>
-                              <td className="py-2 px-2 text-center text-gray-300">{reg.km || 0}</td>
-                              <td className="py-2 px-2 text-center">
-                                <span className="font-mono text-purple-400">{reg.codigo}</span>
-                              </td>
-                              <td className="py-2 px-2 text-center flex items-center justify-center gap-1">
-                                <Button
-                                  onClick={() => openEditRegistoModal(reg)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 p-1"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  onClick={() => handleDeleteRegisto(reg.id)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-1"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                                <div className="flex items-center justify-center gap-1">
+                                  <Button
+                                    onClick={() => item._tipo_registo === 'manual' 
+                                      ? openEditTecnicoModal(item) 
+                                      : openEditRegistoModal(item)
+                                    }
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 p-1"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => item._tipo_registo === 'manual' 
+                                      ? handleDeleteTecnico(item.id) 
+                                      : handleDeleteRegisto(item.id)
+                                    }
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-1"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           ))}
