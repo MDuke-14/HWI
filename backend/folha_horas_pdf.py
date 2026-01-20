@@ -311,20 +311,31 @@ def generate_folha_horas_pdf(
         # Pegar código (primeiro registo)
         codigo = registos[0].get('codigo', '-')
         
+        # Pegar tarifa_key se existir
+        tarifa_key = registos[0].get('tarifa_key', '')
+        
         # Calcular totais do dia
         total_minutos = sum(r.get('minutos', 0) for r in registos)
         total_km = sum(r.get('km', 0) for r in registos)
         
-        # Tarifa - tentar chave completa (tecnico_id_data_codigo) ou fallback para tecnico_id
-        chave_tarifa_completa = f"{tecnico_id}_{data}_{codigo}"
-        tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_completa, 0)
+        # Tarifa - tentar chave tarifa_key (formato frontend) primeiro
+        tarifa_valor = 0
+        if tarifa_key:
+            tarifa_valor = tarifas_por_tecnico.get(tarifa_key, 0)
+        
         if tarifa_valor == 0:
-            # Fallback: tentar só com tecnico_id
-            tarifa_valor = tarifas_por_tecnico.get(tecnico_id, 0)
+            # Fallback: tentar chave completa (tecnico_id_data_codigo)
+            chave_tarifa_completa = f"{tecnico_id}_{data}_{codigo}"
+            tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_completa, 0)
+        
         if tarifa_valor == 0:
             # Fallback: tentar só com tecnico_id_data
             chave_tarifa_data = f"{tecnico_id}_{data}"
             tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_data, 0)
+            
+        if tarifa_valor == 0:
+            # Fallback: tentar só com tecnico_id
+            tarifa_valor = tarifas_por_tecnico.get(tecnico_id, 0)
         
         total_valor = (total_minutos / 60) * tarifa_valor
         total_geral_valor += total_valor
