@@ -423,8 +423,20 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                               year: 'numeric'
                             })}
                           </div>
-                          <div className="text-green-400 font-bold text-xl">
-                            {formatHours(day.totalHours)}
+                          <div className="flex items-center gap-3">
+                            {day.entries.length > 0 && (
+                              <Button
+                                onClick={() => handleAdjustTo8Hours(day.entries[0].id)}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm"
+                                title="Ajustar automaticamente para 8h totais no dia"
+                              >
+                                <Zap className="w-4 h-4 mr-1" />
+                                Ajustar para 8h
+                              </Button>
+                            )}
+                            <div className="text-green-400 font-bold text-xl">
+                              {formatHours(day.totalHours)}
+                            </div>
                           </div>
                         </div>
 
