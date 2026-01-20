@@ -385,22 +385,23 @@ def generate_folha_horas_pdf(
     
     # Criar tabela
     col_widths = [
-        2*cm,    # Data
-        2.5*cm,  # Dia Semana
-        2.5*cm,  # Técnico
-        1.5*cm,  # Horas
-        1.8*cm,  # Tarifa
-        1.8*cm,  # Total Valor
-        1.2*cm,  # Km's
-        1.5*cm,  # Preço/Km
-        1.5*cm,  # Total Km
-        1.3*cm,  # Início
-        1.3*cm,  # Pausa
-        1.3*cm,  # Fim
-        1.5*cm,  # Dieta
-        1.5*cm,  # Portagens
-        1.5*cm,  # Despesas
-        1.8*cm,  # Obs.
+        1.8*cm,    # Data
+        2.2*cm,  # Dia Semana
+        2.2*cm,  # Técnico
+        1.6*cm,  # Registo (NOVA)
+        1.3*cm,  # Horas
+        1.6*cm,  # Tarifa
+        1.6*cm,  # Total Valor
+        1.1*cm,  # Km's
+        1.4*cm,  # Preço/Km
+        1.4*cm,  # Total Km
+        1.2*cm,  # Início
+        1.2*cm,  # Pausa
+        1.2*cm,  # Fim
+        1.4*cm,  # Dieta
+        1.4*cm,  # Portagens
+        1.4*cm,  # Despesas
+        1.5*cm,  # Obs.
     ]
     
     table = Table(table_data, colWidths=col_widths)
