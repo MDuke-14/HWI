@@ -246,6 +246,7 @@ def generate_folha_horas_pdf(
         'Data',
         'Dia Semana',
         'Técnico',
+        'Registo',
         'Horas',
         'Tarifa',
         'Total Valor',
