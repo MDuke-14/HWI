@@ -177,6 +177,14 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Checkbox de Pausa Opcional no Registo Manual (20 Janeiro 2026)
+- Removida a pausa automática de 1h ao preencher horas de início e fim
+- Adicionado checkbox "Incluir 1 hora de pausa" que aparece quando há horários
+- Se desmarcado: tempo = Fim - Início (sem desconto)
+- Se marcado: tempo = Fim - Início - 1h
+- Campo `incluir_pausa` guardado no backend e usado no PDF
+- Ficheiros: `TecnicoModal.jsx`, `TechnicalReports.jsx`, `server.py`, `folha_horas_pdf.py`
+
 ### ✅ Correção: Todos os Registos Individuais na Folha de Horas (20 Janeiro 2026)
 - Corrigido bug onde múltiplos registos do mesmo técnico no mesmo dia não apareciam
 - Backend agora retorna lista `registos_individuais` com todos os registos separadamente
