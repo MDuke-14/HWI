@@ -290,7 +290,7 @@ const TecnicoModal = ({
               <Input
                 type="time"
                 value={tecnicoFormData.hora_inicio || ''}
-                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, hora_inicio: e.target.value })}
+                onChange={(e) => handleHoraInicioChange(e.target.value)}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
               />
               <p className="text-xs text-gray-500 mt-1">Para Folha de Horas</p>
@@ -303,12 +303,22 @@ const TecnicoModal = ({
               <Input
                 type="time"
                 value={tecnicoFormData.hora_fim || ''}
-                onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, hora_fim: e.target.value })}
+                onChange={(e) => handleHoraFimChange(e.target.value)}
                 className="bg-[#0f0f0f] border-gray-700 text-white"
               />
               <p className="text-xs text-gray-500 mt-1">Para Folha de Horas</p>
             </div>
           </div>
+          
+          {/* Info sobre cálculo automático */}
+          {tecnicoFormData.hora_inicio && tecnicoFormData.hora_fim && (
+            <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-3 flex items-start gap-2">
+              <Clock className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-green-300">
+                <strong>Cálculo automático:</strong> {tecnicoFormData.hora_inicio} → {tecnicoFormData.hora_fim} = {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}h{String((tecnicoFormData.minutos_cliente || 0) % 60).padStart(2, '0')} (já descontada 1h de pausa)
+              </p>
+            </div>
+          )}
 
           {/* Tipo de Horário */}
           <div>
