@@ -8395,6 +8395,13 @@ async def generate_folha_horas(
         {"_id": 0}
     ).to_list(length=None)
     
+    # Buscar tarifas por código (configuradas no Admin Dashboard)
+    tarifas_db = await db.tarifas.find({"ativo": True, "codigo": {"$ne": None}}, {"_id": 0}).to_list(length=None)
+    tarifas_por_codigo = {}
+    for tarifa in tarifas_db:
+        if tarifa.get('codigo'):
+            tarifas_por_codigo[tarifa['codigo']] = tarifa.get('valor_por_hora', 0)
+    
     # Gerar PDF
     pdf_buffer = generate_folha_horas_pdf(
         relatorio=relatorio,
@@ -8402,7 +8409,8 @@ async def generate_folha_horas(
         registos_mao_obra=registos_mao_obra,
         tecnicos_manuais=tecnicos_manuais,
         tarifas_por_tecnico=request.tarifas_por_tecnico,
-        dados_extras=request.dados_extras
+        dados_extras=request.dados_extras,
+        tarifas_por_codigo=tarifas_por_codigo
     )
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
