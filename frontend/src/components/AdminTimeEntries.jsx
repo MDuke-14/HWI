@@ -133,10 +133,13 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     
     setLoading(true);
     try {
+      const period = calculateBillingPeriod(selectedMonth, selectedYear);
+      setBillingPeriod(period);
+      
       const response = await axios.get(`${API}/admin/time-entries/user/${selectedUser.id}`, {
         params: {
-          month: selectedMonth,
-          year: selectedYear
+          date_from: period.from,
+          date_to: period.to
         }
       });
       setEntries(response.data.entries || []);
