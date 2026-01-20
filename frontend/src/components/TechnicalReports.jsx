@@ -976,14 +976,27 @@ const TechnicalReports = ({ user, onLogout }) => {
     if (!selectedTecnicoForTipo || !selectedRelatorio) return;
 
     try {
-      await axios.put(
-        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos/${selectedTecnicoForTipo.id}`,
-        { tipo_registo: novoTipo }
-      );
+      // Verificar se é um registo manual ou de cronómetro
+      if (selectedTecnicoForTipo._source === 'cronometro') {
+        // Atualizar registo de cronómetro
+        await axios.put(
+          `${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos/${selectedTecnicoForTipo.id}`,
+          { tipo: novoTipo }
+        );
+        // Recarregar registos de cronómetro
+        fetchRegistosTecnicosOT(selectedRelatorio.id);
+      } else {
+        // Atualizar registo manual
+        await axios.put(
+          `${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos/${selectedTecnicoForTipo.id}`,
+          { tipo_registo: novoTipo }
+        );
+        // Recarregar registos manuais
+        fetchTecnicosRelatorio(selectedRelatorio.id);
+      }
       toast.success('Tipo atualizado com sucesso!');
       setShowTipoModal(false);
       setSelectedTecnicoForTipo(null);
-      fetchTecnicosRelatorio(selectedRelatorio.id);
     } catch (error) {
       toast.error('Erro ao atualizar tipo');
     }
