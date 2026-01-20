@@ -252,10 +252,19 @@ const FolhaHorasModal = ({
               
               {getExtrasOrdenados().length > 0 ? (
                 <div className="space-y-3">
-                  {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data }) => {
+                  {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data, tipo, codigo }) => {
                     const chave = `${tecnicoId}_${data}`;
                     const valores = folhaHorasExtras[chave] || { dieta: '', portagens: '', despesas: '' };
                     const { formatted, weekday } = getDataInfo(data);
+                    
+                    // Labels e cores para tipos
+                    const tipoLabels = {
+                      'trabalho': { label: 'Trabalho', color: 'bg-green-600/20 text-green-400' },
+                      'viagem': { label: 'Viagem', color: 'bg-blue-600/20 text-blue-400' },
+                      'manual': { label: 'Manual', color: 'bg-gray-600/20 text-gray-300' },
+                      'cronómetro': { label: 'Cronómetro', color: 'bg-purple-600/20 text-purple-400' }
+                    };
+                    const tipoInfo = tipoLabels[tipo] || { label: tipo, color: 'bg-gray-600/20 text-gray-400' };
                     
                     return (
                       <div key={chave} className="bg-[#0f0f0f] p-4 rounded-lg">
@@ -264,10 +273,21 @@ const FolhaHorasModal = ({
                             <User className="w-4 h-4 text-blue-400" />
                             <span className="text-white font-medium">{tecnicoNome}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="w-4 h-4 text-green-400" />
-                            <span className="text-green-400 font-medium">{formatted}</span>
-                            <span className="text-gray-500">({weekday})</span>
+                          <div className="flex items-center gap-3 text-sm">
+                            {/* Tipo de Entrada */}
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${tipoInfo.color}`}>
+                              {tipoInfo.label}
+                            </span>
+                            {/* Código */}
+                            <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-xs font-mono font-bold">
+                              {codigo}
+                            </span>
+                            {/* Data */}
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4 text-green-400" />
+                              <span className="text-green-400 font-medium">{formatted}</span>
+                              <span className="text-gray-500">({weekday})</span>
+                            </div>
                           </div>
                         </div>
                         
