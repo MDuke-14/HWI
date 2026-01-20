@@ -292,35 +292,36 @@ def generate_folha_horas_pdf(
     total_geral_despesas = 0
     
     # Criar lista plana de registos para ordenar por data cronológica
+    # Agora cada combinação tecnico_id/data/codigo é uma linha separada
     registos_ordenados = []
-    for tecnico_id, datas in dados_por_tecnico_data.items():
-        for data, registos in datas.items():
-            if registos:
-                registos_ordenados.append({
-                    'tecnico_id': tecnico_id,
-                    'data': data,
-                    'registos': registos
-                })
+    for tecnico_id, datas in dados_por_tecnico_data_codigo.items():
+        for data, codigos in datas.items():
+            for codigo, registos in codigos.items():
+                if registos:
+                    registos_ordenados.append({
+                        'tecnico_id': tecnico_id,
+                        'data': data,
+                        'codigo': codigo,
+                        'registos': registos
+                    })
     
-    # Ordenar por data cronológica
-    registos_ordenados.sort(key=lambda x: x['data'])
+    # Ordenar por data cronológica, depois por código
+    registos_ordenados.sort(key=lambda x: (x['data'], x['codigo']))
     
-    # Iterar pelos registos ordenados por data
+    # Iterar pelos registos ordenados por data e código
     for item in registos_ordenados:
         tecnico_id = item['tecnico_id']
         data = item['data']
+        codigo = item['codigo']
         registos = item['registos']
         
         # Pegar nome do técnico
         tecnico_nome = registos[0].get('tecnico_nome', 'N/A')
         
-        # Pegar código (primeiro registo)
-        codigo = registos[0].get('codigo', '-')
-        
         # Pegar tarifa_key se existir
         tarifa_key = registos[0].get('tarifa_key', '')
         
-        # Calcular totais do dia
+        # Calcular totais para este grupo (tecnico/data/codigo)
         total_minutos = sum(r.get('minutos', 0) for r in registos)
         total_km = sum(r.get('km', 0) for r in registos)
         
