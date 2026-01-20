@@ -8165,7 +8165,8 @@ async def create_tarifa(
     tarifa = Tarifa(
         numero=tarifa_data.numero,
         nome=tarifa_data.nome,
-        valor_por_hora=tarifa_data.valor_por_hora
+        valor_por_hora=tarifa_data.valor_por_hora,
+        codigo=tarifa_data.codigo  # Código associado (1, 2, S, D)
     )
     
     tarifa_dict = tarifa.model_dump()
@@ -8174,7 +8175,7 @@ async def create_tarifa(
     await db.tarifas.insert_one(tarifa_dict)
     tarifa_dict.pop("_id", None)
     
-    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h por {current_user['sub']}")
+    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} por {current_user['sub']}")
     
     return tarifa_dict
 
