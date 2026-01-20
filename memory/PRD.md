@@ -177,6 +177,10 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Pausa Automática de 1h na Folha de Horas (20 Janeiro 2026)
+- Quando um registo tem hora de início e hora de fim definidas, a coluna "Pausa" no PDF mostra automaticamente **1:00** (1 hora)
+- Ficheiro: `/app/backend/folha_horas_pdf.py`
+
 ### ✅ Correção UI FolhaHorasModal - Tipo/Código na Secção Tarifas (20 Janeiro 2026)
 - Movida a exibição de "Tipo de Entrada" e "Código" da secção de Dietas para a secção de Tarifas
 - Badge de tipo: trabalho (verde), viagem (azul), manual (cinza), cronómetro (roxo)
