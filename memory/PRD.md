@@ -177,6 +177,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Tarifas por Código no Admin Dashboard (21 Janeiro 2026)
+- Adicionado dropdown para associar tarifas a códigos (1, 2, S, D)
+- Badge colorido mostra o código associado a cada tarifa
+- Descrição automática do horário aplicável
+- Na geração da Folha de Horas, se não houver tarifa manual selecionada, o sistema aplica automaticamente a tarifa do código
+- Ficheiros: `AdminDashboard.jsx`, `server.py`, `folha_horas_pdf.py`
+
 ### ✅ Campos Km's Ida/Volta no Modal de Edição de Cronómetro (21 Janeiro 2026)
 - Adicionados campos de Quilómetros Ida (Km Inicial, Km Final, Total)
 - Adicionados campos de Quilómetros Volta (Km Inicial, Km Final, Total)
