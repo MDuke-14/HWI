@@ -8098,22 +8098,22 @@ async def update_company_info(
 
 @api_router.get("/tarifas")
 async def get_tarifas(current_user: dict = Depends(get_current_user)):
-    """Listar todas as tarifas ativas"""
+    """Listar todas as tarifas ativas - ordenadas por nome alfabeticamente"""
     tarifas = await db.tarifas.find(
         {"ativo": True},
         {"_id": 0}
-    ).sort("numero", 1).to_list(length=None)
+    ).sort("nome", 1).to_list(length=None)
     
     return tarifas
 
 
 @api_router.get("/tarifas/all")
 async def get_all_tarifas(current_user: dict = Depends(get_current_admin)):
-    """Listar todas as tarifas (admin only)"""
+    """Listar todas as tarifas (admin only) - ordenadas por nome alfabeticamente"""
     tarifas = await db.tarifas.find(
         {},
         {"_id": 0}
-    ).sort("numero", 1).to_list(length=None)
+    ).sort("nome", 1).to_list(length=None)
     
     return tarifas
 
@@ -8123,12 +8123,7 @@ async def create_tarifa(
     tarifa_data: TarifaCreate,
     current_user: dict = Depends(get_current_admin)
 ):
-    """Criar nova tarifa (admin only)"""
-    # Verificar se já existe tarifa com mesmo número
-    existing = await db.tarifas.find_one({"numero": tarifa_data.numero, "ativo": True})
-    if existing:
-        raise HTTPException(status_code=400, detail=f"Já existe uma tarifa com o número {tarifa_data.numero}")
-    
+    """Criar nova tarifa (admin only) - permite nomes duplicados"""
     tarifa = Tarifa(
         numero=tarifa_data.numero,
         nome=tarifa_data.nome,
@@ -8141,7 +8136,7 @@ async def create_tarifa(
     await db.tarifas.insert_one(tarifa_dict)
     tarifa_dict.pop("_id", None)
     
-    logging.info(f"Tarifa criada: {tarifa.numero} - {tarifa.nome} por {current_user['sub']}")
+    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h por {current_user['sub']}")
     
     return tarifa_dict
 
