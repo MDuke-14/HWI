@@ -6190,7 +6190,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         setShowEditRegistoModal(open);
         if (!open) setEditingRegisto(null);
       }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Edit className="w-5 h-5 text-blue-400" />
@@ -6268,19 +6268,110 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
-              <div>
-                <Label className="text-gray-300">KM</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={editRegistoForm.km || ''}
-                  onChange={(e) => setEditRegistoForm({
-                    ...editRegistoForm,
-                    km: e.target.value
-                  })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                />
+              {/* Km's Ida */}
+              <div className="space-y-3">
+                <Label className="text-gray-300 flex items-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Quilómetros - Ida
+                </Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-gray-400 text-sm">Km's Iniciais</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={editRegistoForm.kms_inicial || ''}
+                      onChange={(e) => setEditRegistoForm({
+                        ...editRegistoForm,
+                        kms_inicial: parseFloat(e.target.value) || 0
+                      })}
+                      className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-400 text-sm">Km's Finais</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={editRegistoForm.kms_final || ''}
+                      onChange={(e) => setEditRegistoForm({
+                        ...editRegistoForm,
+                        kms_final: parseFloat(e.target.value) || 0
+                      })}
+                      className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-400 text-sm">Total Ida</Label>
+                    <div className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1 font-semibold text-blue-400">
+                      {Math.max(0, (parseFloat(editRegistoForm.kms_final) || 0) - (parseFloat(editRegistoForm.kms_inicial) || 0)).toFixed(1)} km
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Km's Volta */}
+              <div className="space-y-3">
+                <Label className="text-gray-300 flex items-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Quilómetros - Volta
+                </Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-gray-400 text-sm">Km's Iniciais</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={editRegistoForm.kms_inicial_volta || ''}
+                      onChange={(e) => setEditRegistoForm({
+                        ...editRegistoForm,
+                        kms_inicial_volta: parseFloat(e.target.value) || 0
+                      })}
+                      className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-400 text-sm">Km's Finais</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={editRegistoForm.kms_final_volta || ''}
+                      onChange={(e) => setEditRegistoForm({
+                        ...editRegistoForm,
+                        kms_final_volta: parseFloat(e.target.value) || 0
+                      })}
+                      className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-400 text-sm">Total Volta</Label>
+                    <div className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1 font-semibold text-orange-400">
+                      {Math.max(0, (parseFloat(editRegistoForm.kms_final_volta) || 0) - (parseFloat(editRegistoForm.kms_inicial_volta) || 0)).toFixed(1)} km
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Final de Kms */}
+              <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-500/30 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-green-400 font-semibold flex items-center gap-2">
+                    <Car className="w-4 h-4" />
+                    Total KM (Ida + Volta)
+                  </Label>
+                  <div className="text-xl font-bold text-green-400">
+                    {(Math.max(0, (parseFloat(editRegistoForm.kms_final) || 0) - (parseFloat(editRegistoForm.kms_inicial) || 0)) + 
+                      Math.max(0, (parseFloat(editRegistoForm.kms_final_volta) || 0) - (parseFloat(editRegistoForm.kms_inicial_volta) || 0))).toFixed(1)} km
+                  </div>
+                </div>
               </div>
 
               <div>
