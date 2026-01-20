@@ -106,8 +106,9 @@ def generate_folha_horas_pdf(
     cliente,
     registos_mao_obra,
     tecnicos_manuais,
-    tarifas_por_tecnico,  # dict: {tecnico_id: tarifa_valor}
-    dados_extras  # dict: {tecnico_id_data: {dieta, portagens, despesas}}
+    tarifas_por_tecnico,  # dict: {tecnico_id: tarifa_valor} ou {tecnico_id_data_codigo: valor}
+    dados_extras,  # dict: {tecnico_id_data: {dieta, portagens, despesas}}
+    tarifas_por_codigo=None  # dict: {"1": valor, "2": valor, "S": valor, "D": valor}
 ):
     """
     Gera PDF da Folha de Horas em formato horizontal (landscape)
@@ -117,9 +118,14 @@ def generate_folha_horas_pdf(
         cliente: dados do cliente
         registos_mao_obra: registos de cronómetros (db.registos_tecnico_ot)
         tecnicos_manuais: registos manuais (db.tecnicos_relatorio)
-        tarifas_por_tecnico: {tecnico_id: valor_hora}
+        tarifas_por_tecnico: {tecnico_id: valor_hora} ou com chave composta
         dados_extras: {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
+        tarifas_por_codigo: {codigo: valor_hora} para aplicação automática
     """
+    # Inicializar tarifas por código se não fornecido
+    if tarifas_por_codigo is None:
+        tarifas_por_codigo = {}
+    
     buffer = BytesIO()
     
     # PDF em formato horizontal (landscape)
