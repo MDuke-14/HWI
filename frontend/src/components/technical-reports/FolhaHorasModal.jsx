@@ -184,6 +184,42 @@ const FolhaHorasModal = ({
                 Preencha os valores extras por técnico e data. Campos vazios serão considerados 0,00€.
               </p>
               
+              {/* Opção de Dieta Automática */}
+              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 p-4 rounded-lg mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="dieta-automatica"
+                      checked={dietaAutomatica}
+                      onCheckedChange={handleAplicarDietaTodos}
+                      className="border-green-500 data-[state=checked]:bg-green-600"
+                    />
+                    <Label htmlFor="dieta-automatica" className="text-green-400 font-medium cursor-pointer flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      Aplicar dieta a todos os dias/técnicos
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-gray-400 text-sm">Valor (€):</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={dietaValor}
+                      onChange={(e) => handleDietaValorChange(e.target.value)}
+                      className="w-24 bg-[#1a1a1a] border-green-500/50 text-white h-8"
+                      disabled={!dietaAutomatica}
+                    />
+                  </div>
+                </div>
+                {dietaAutomatica && dietaValor && (
+                  <p className="text-green-400/70 text-xs mt-2">
+                    ✓ Dieta de {parseFloat(dietaValor).toFixed(2)}€ aplicada a {getExtrasOrdenados().length} registo(s)
+                  </p>
+                )}
+              </div>
+              
               {getExtrasOrdenados().length > 0 ? (
                 <div className="space-y-3">
                   {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data }) => {
