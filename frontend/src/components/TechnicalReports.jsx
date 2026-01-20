@@ -3452,7 +3452,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <td className="py-2 px-2 text-center">
                                 <div className="flex items-center justify-center gap-1">
                                   <Button
-                                    onClick={() => item._tipo_registo === 'manual' 
+                                    onClick={() => item._source === 'tecnico' 
                                       ? openEditTecnicoModal(item) 
                                       : openEditRegistoModal(item)
                                     }
@@ -3463,7 +3463,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     <Edit className="w-3 h-3" />
                                   </Button>
                                   <Button
-                                    onClick={() => item._tipo_registo === 'manual' 
+                                    onClick={() => item._source === 'tecnico' 
                                       ? handleDeleteTecnico(item.id) 
                                       : handleDeleteRegisto(item.id)
                                     }
