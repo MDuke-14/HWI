@@ -1397,8 +1397,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <DollarSign className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <div className="text-white font-semibold">Tarifa {tarifa.numero}</div>
-                            <div className="text-gray-400 text-sm">{tarifa.nome}</div>
+                            <div className="text-white font-semibold">{tarifa.nome}</div>
                           </div>
                         </div>
                       </div>
@@ -1439,7 +1438,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                   <div className="grid md:grid-cols-3 gap-3">
                     {tarifas.filter(t => !t.ativo).map((tarifa) => (
                       <div key={tarifa.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 opacity-60">
-                        <div className="text-gray-500 text-sm">Tarifa {tarifa.numero} - {tarifa.nome}</div>
+                        <div className="text-gray-500 text-sm">{tarifa.nome}</div>
                         <div className="text-gray-600">{tarifa.valor_por_hora.toFixed(2)}€/hora</div>
                       </div>
                     ))}
