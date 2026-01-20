@@ -198,9 +198,12 @@ def generate_folha_horas_pdf(
     # Processar registos de cronómetros
     for reg in registos_mao_obra:
         tecnico_id = reg.get('tecnico_id', 'unknown')
+        registo_id = reg.get('id', '')  # ID único do registo
         data = reg.get('data', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
+        codigo = reg.get('codigo', '-')
+        
         dados_por_tecnico_data[tecnico_id][data].append({
             'tipo': 'cronometro',
             'tecnico_nome': reg.get('tecnico_nome', 'N/A'),
@@ -209,7 +212,10 @@ def generate_folha_horas_pdf(
             'hora_fim': reg.get('hora_fim_segmento'),
             'minutos': int((reg.get('horas_arredondadas', 0) or 0) * 60),
             'km': reg.get('km', 0),
-            'codigo': reg.get('codigo', '-')
+            'codigo': codigo,
+            'registo_id': registo_id,
+            # Chave para tarifa: tecnico_id_data_codigo (mesmo formato do frontend)
+            'tarifa_key': f"{tecnico_id}_{data}_{codigo}"
         })
     
     # Processar registos manuais
