@@ -361,7 +361,7 @@ def generate_folha_horas_pdf(
     
     # Linha de totais
     table_data.append([
-        '', '', 'TOTAIS:', '', '',
+        '', '', 'TOTAIS:', '', '', '',
         f'{total_geral_valor:.2f}€',
         '', '',
         f'{total_geral_km_valor:.2f}€',
@@ -375,7 +375,7 @@ def generate_folha_horas_pdf(
     # Grande total
     grande_total = total_geral_valor + total_geral_km_valor + total_geral_dietas + total_geral_portagens + total_geral_despesas
     table_data.append([
-        '', '', '', '', '',
+        '', '', '', '', '', '',
         '', '', '',
         '', '', '', '',
         '', f'TOTAL GERAL:',
