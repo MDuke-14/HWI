@@ -228,14 +228,12 @@ const AdminDashboard = ({ user, onLogout }) => {
     if (tarifa) {
       setEditingTarifa(tarifa);
       setTarifaForm({
-        numero: tarifa.numero.toString(),
         nome: tarifa.nome,
         valor_por_hora: tarifa.valor_por_hora.toString()
       });
     } else {
       setEditingTarifa(null);
       setTarifaForm({
-        numero: '',
         nome: '',
         valor_por_hora: ''
       });
