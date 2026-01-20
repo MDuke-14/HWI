@@ -28,8 +28,8 @@ const TecnicoModal = ({
     }
   }, [tecnicoFormData.minutos_cliente, open]);
 
-  // Calcular Tempo no Cliente automaticamente quando hora_inicio e hora_fim mudam
-  const calcularTempoCliente = (horaInicio, horaFim) => {
+  // Calcular Tempo no Cliente automaticamente quando hora_inicio, hora_fim ou incluirPausa mudam
+  const calcularTempoCliente = (horaInicio, horaFim, incluirPausa) => {
     if (horaInicio && horaFim) {
       const [inicioH, inicioM] = horaInicio.split(':').map(Number);
       const [fimH, fimM] = horaFim.split(':').map(Number);
@@ -37,12 +37,13 @@ const TecnicoModal = ({
       const inicioMinutos = inicioH * 60 + inicioM;
       const fimMinutos = fimH * 60 + fimM;
       
-      // Calcular diferença (menos 1 hora de pausa = 60 minutos)
-      let diferencaMinutos = fimMinutos - inicioMinutos - 60;
+      // Calcular diferença (descontar 1h de pausa APENAS se checkbox estiver selecionado)
+      const pausaMinutos = incluirPausa ? 60 : 0;
+      let diferencaMinutos = fimMinutos - inicioMinutos - pausaMinutos;
       
       // Se o fim for antes do início (atravessa meia-noite), adicionar 24h
-      if (diferencaMinutos < -60) {
-        diferencaMinutos = (24 * 60) + fimMinutos - inicioMinutos - 60;
+      if (diferencaMinutos < -pausaMinutos) {
+        diferencaMinutos = (24 * 60) + fimMinutos - inicioMinutos - pausaMinutos;
       }
       
       // Garantir que não é negativo
@@ -55,7 +56,7 @@ const TecnicoModal = ({
     const novoFormData = { ...tecnicoFormData, hora_inicio: value };
     
     // Calcular tempo no cliente automaticamente
-    const tempoCalculado = calcularTempoCliente(value, tecnicoFormData.hora_fim);
+    const tempoCalculado = calcularTempoCliente(value, tecnicoFormData.hora_fim, tecnicoFormData.incluir_pausa);
     if (tempoCalculado !== null) {
       novoFormData.minutos_cliente = tempoCalculado;
       setHoras(Math.floor(tempoCalculado / 60).toString());
@@ -69,7 +70,21 @@ const TecnicoModal = ({
     const novoFormData = { ...tecnicoFormData, hora_fim: value };
     
     // Calcular tempo no cliente automaticamente
-    const tempoCalculado = calcularTempoCliente(tecnicoFormData.hora_inicio, value);
+    const tempoCalculado = calcularTempoCliente(tecnicoFormData.hora_inicio, value, tecnicoFormData.incluir_pausa);
+    if (tempoCalculado !== null) {
+      novoFormData.minutos_cliente = tempoCalculado;
+      setHoras(Math.floor(tempoCalculado / 60).toString());
+      setMinutos((tempoCalculado % 60).toString());
+    }
+    
+    setTecnicoFormData(novoFormData);
+  };
+
+  const handlePausaChange = (checked) => {
+    const novoFormData = { ...tecnicoFormData, incluir_pausa: checked };
+    
+    // Recalcular tempo no cliente
+    const tempoCalculado = calcularTempoCliente(tecnicoFormData.hora_inicio, tecnicoFormData.hora_fim, checked);
     if (tempoCalculado !== null) {
       novoFormData.minutos_cliente = tempoCalculado;
       setHoras(Math.floor(tempoCalculado / 60).toString());
