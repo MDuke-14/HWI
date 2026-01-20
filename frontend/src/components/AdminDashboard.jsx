@@ -1458,24 +1458,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div>
-                    <Label>Número da Tarifa *</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={tarifaForm.numero}
-                      onChange={(e) => setTarifaForm({...tarifaForm, numero: e.target.value})}
-                      className="bg-[#0a0a0a] border-gray-700 text-white"
-                      placeholder="Ex: 1, 2, 3..."
-                    />
-                  </div>
-                  <div>
-                    <Label>Nome/Descrição *</Label>
+                    <Label>Nome da Tarifa *</Label>
                     <Input
                       value={tarifaForm.nome}
                       onChange={(e) => setTarifaForm({...tarifaForm, nome: e.target.value})}
                       className="bg-[#0a0a0a] border-gray-700 text-white"
-                      placeholder="Ex: Tarifa Normal, Tarifa Premium..."
+                      placeholder="Ex: Viagem Tarifa 1, Mão de Obra..."
                     />
+                    <p className="text-xs text-gray-500 mt-1">As tarifas serão ordenadas alfabeticamente</p>
                   </div>
                   <div>
                     <Label>Valor por Hora (€) *</Label>
