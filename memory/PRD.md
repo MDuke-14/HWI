@@ -177,6 +177,14 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Campos de Km's Ida e Volta no Registo Manual (20 Janeiro 2026)
+- Duplicados os campos de Quilómetros para registar ida e volta separadamente
+- **Quilómetros - Ida**: Km's Iniciais, Km's Finais, Total Ida (azul)
+- **Quilómetros - Volta**: Km's Iniciais, Km's Finais, Total Volta (laranja)
+- **Total Final**: Soma automática de Ida + Volta (card verde)
+- Tooltip na tabela de Mão de Obra mostra "Ida: X km | Volta: Y km"
+- Ficheiros: `TecnicoModal.jsx`, `TechnicalReports.jsx`
+
 ### ✅ Tabs Responsivas no Admin Dashboard Mobile (20 Janeiro 2026)
 - Corrigido problema de tabs comprimidas em versão mobile
 - Implementado scroll horizontal para navegar entre as tabs
