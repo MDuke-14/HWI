@@ -177,6 +177,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - `CronometroStartModal.jsx` - Modal para iniciar cronómetro após criar OT
 - **Resultado dos Testes:** 100% de sucesso - Todos os modais funcionam corretamente em modos Add e Edit
 
+### ✅ Tabs Responsivas no Admin Dashboard Mobile (20 Janeiro 2026)
+- Corrigido problema de tabs comprimidas em versão mobile
+- Implementado scroll horizontal para navegar entre as tabs
+- Cada tab agora mostra o texto completo e legível
+- Em desktop mantém o layout grid de 6 colunas
+- Ficheiro: `/app/frontend/src/components/AdminDashboard.jsx`
+
 ### ✅ Cálculo Automático do Tempo no Cliente (20 Janeiro 2026)
 - Quando o utilizador preenche "Hora de Início" e "Hora de Fim" no registo manual, o campo "Tempo no Cliente" é calculado automaticamente
 - Fórmula: `(Hora Fim - Hora Início) - 1h de pausa`
