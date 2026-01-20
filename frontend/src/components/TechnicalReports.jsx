@@ -1936,6 +1936,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     setEditRegistoForm({
       minutos_trabalhados: minutos,
       km: registo.km || 0,
+      kms_inicial: registo.kms_inicial || 0,
+      kms_final: registo.kms_final || 0,
+      kms_inicial_volta: registo.kms_inicial_volta || 0,
+      kms_final_volta: registo.kms_final_volta || 0,
       codigo: registo.codigo || ''
     });
     setShowEditRegistoModal(true);
