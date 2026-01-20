@@ -230,13 +230,15 @@ const AdminDashboard = ({ user, onLogout }) => {
       setEditingTarifa(tarifa);
       setTarifaForm({
         nome: tarifa.nome,
-        valor_por_hora: tarifa.valor_por_hora.toString()
+        valor_por_hora: tarifa.valor_por_hora.toString(),
+        codigo: tarifa.codigo || ''
       });
     } else {
       setEditingTarifa(null);
       setTarifaForm({
         nome: '',
-        valor_por_hora: ''
+        valor_por_hora: '',
+        codigo: ''
       });
     }
     setShowTarifaDialog(true);
