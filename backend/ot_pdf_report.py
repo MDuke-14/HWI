@@ -14,7 +14,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     assinaturas: pode ser uma lista de assinaturas ou uma única assinatura (compatibilidade)
     """
     buffer = BytesIO()
-    # Margens reduzidas
+    # Margens reduzidas - allowSplitting=False para evitar divisão de elementos
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*cm, bottomMargin=0.8*cm, leftMargin=1*cm, rightMargin=1*cm)
     elements = []
     styles = getSampleStyleSheet()
