@@ -1663,6 +1663,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       fetchDespesas(selectedRelatorio.id);
       setShowAddDespesaModal(false);
       setDespesaFormData({
+        tipo: 'outras',
         descricao: '',
         valor: '',
         tecnico_id: '',
