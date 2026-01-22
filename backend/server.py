@@ -445,6 +445,7 @@ class DespesaOT(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
+    tipo: str = "outras"  # "outras", "combustivel", "ferramentas", "portagens"
     descricao: str
     valor: float
     tecnico_id: str  # ID do técnico que pagou
