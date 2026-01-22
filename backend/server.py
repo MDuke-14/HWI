@@ -8703,6 +8703,20 @@ async def get_folha_horas_data(
     # Converter sets para listas ordenadas
     datas_por_tecnico = {k: sorted(list(v)) for k, v in datas_por_tecnico.items()}
     
+    # Buscar despesas da OT para pré-preencher na folha de horas
+    despesas = await db.despesas_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Agrupar despesas por técnico e data para pré-preencher dados_extras
+    despesas_por_tecnico_data = {}
+    for desp in despesas:
+        key = f"{desp['tecnico_id']}_{desp['data']}"
+        if key not in despesas_por_tecnico_data:
+            despesas_por_tecnico_data[key] = 0
+        despesas_por_tecnico_data[key] += desp.get('valor', 0)
+    
     return {
         "relatorio": relatorio,
         "cliente": cliente,
@@ -8711,7 +8725,9 @@ async def get_folha_horas_data(
         "tecnicos_manuais": tecnicos,
         "tarifas": tarifas,
         "datas_por_tecnico": datas_por_tecnico,
-        "registos_individuais": registos_individuais  # Nova lista
+        "registos_individuais": registos_individuais,
+        "despesas": despesas,
+        "despesas_por_tecnico_data": despesas_por_tecnico_data
     }
 
 
