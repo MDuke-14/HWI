@@ -4229,6 +4229,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <h4 className="text-emerald-400 font-semibold flex items-center gap-2">
                     <Receipt className="w-4 h-4" />
                     Despesas ({despesas.length})
+                    <HelpTooltip section="despesas" />
                     {despesas.length > 0 && (
                       <span className="ml-2 px-2 py-0.5 bg-emerald-500/20 rounded text-sm">
                         Total: {despesas.reduce((sum, d) => sum + (d.valor || 0), 0).toFixed(2)}€
