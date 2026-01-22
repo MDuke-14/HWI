@@ -186,9 +186,31 @@ const OvertimeAuthorization = () => {
     }
   };
   
-  const requestTypeLabel = authorization.request_type === 'overtime_start' 
-    ? 'Início de Trabalho em Dia Especial'
-    : 'Horas Extra Após Horário Normal';
+  const requestTypeLabel = authorization.request_type === 'vacation_work'
+    ? 'Trabalho Durante Período de Férias'
+    : authorization.request_type === 'overtime_start' 
+      ? 'Início de Trabalho em Dia Especial'
+      : 'Horas Extra Após Horário Normal';
+  
+  const getApproveConsequence = () => {
+    if (authorization.request_type === 'vacation_work') {
+      return 'O ponto continua ativo e 1 dia de férias será devolvido ao saldo do utilizador.';
+    }
+    if (authorization.request_type === 'overtime_start') {
+      return 'O ponto continua ativo e as horas serão contabilizadas como horas extra.';
+    }
+    return 'As horas após as 18:00 serão contabilizadas como horas extra.';
+  };
+
+  const getRejectConsequence = () => {
+    if (authorization.request_type === 'vacation_work') {
+      return 'A entrada de ponto será eliminada e o dia de férias permanece inalterado.';
+    }
+    if (authorization.request_type === 'overtime_start') {
+      return 'A entrada de ponto será eliminada e não ficam horas registadas.';
+    }
+    return 'O ponto será encerrado automaticamente às 18:00 e o tempo adicional será ignorado.';
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
