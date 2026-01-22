@@ -3511,6 +3511,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <h4 className="text-green-400 font-semibold flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     Mão de Obra / Deslocação
+                    <HelpTooltip section="cronometros" />
                   </h4>
                   <Button
                     onClick={() => openAddTecnicoModal()}
