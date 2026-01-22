@@ -200,6 +200,22 @@ const TechnicalReports = ({ user, onLogout }) => {
     fornecido_por: 'Cliente'
   });
 
+  // Despesas OT
+  const [despesas, setDespesas] = useState([]);
+  const [showAddDespesaModal, setShowAddDespesaModal] = useState(false);
+  const [showEditDespesaModal, setShowEditDespesaModal] = useState(false);
+  const [selectedDespesa, setSelectedDespesa] = useState(null);
+  const [despesaFormData, setDespesaFormData] = useState({
+    descricao: '',
+    valor: '',
+    tecnico_id: '',
+    data: new Date().toISOString().split('T')[0],
+    factura_data: null,
+    factura_filename: null,
+    factura_mimetype: null
+  });
+  const [uploadingFactura, setUploadingFactura] = useState(false);
+
   // Pedidos de Cotação
   const [pedidosCotacao, setPedidosCotacao] = useState([]);
   const [showPCModal, setShowPCModal] = useState(false);
