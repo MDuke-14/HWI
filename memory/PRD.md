@@ -19,6 +19,34 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Janeiro 2026 - Sessão Atual (22 Janeiro 2026)
 
+#### ✅ PWA Melhorado com Offline Mode (22 Janeiro 2026)
+**Service Worker v2:**
+- Cache de recursos estáticos para funcionamento offline
+- Queue offline para ações de ponto (sync automático quando online)
+- IndexedDB para armazenar ações pendentes
+- Página offline dedicada (`/offline.html`)
+- Detecção automática de estado online/offline
+- Notificação push quando sync completo
+
+**Geolocalização no Clock-in:**
+- Captura automática de coordenadas GPS ao iniciar ponto
+- Armazena latitude, longitude, precisão e timestamp
+- Não bloqueia se permissão negada
+- Toast de feedback ao utilizador
+
+**UI Indicators:**
+- Indicador verde "Online" / amarelo "Offline" no Dashboard
+- Banner de aviso quando em modo offline
+- Animação pulse no estado offline
+
+**Ficheiros modificados:**
+- `/app/frontend/public/service-worker.js` - Reescrito para offline mode
+- `/app/frontend/public/offline.html` - Nova página offline
+- `/app/frontend/src/components/Dashboard.jsx` - Geolocalização + indicadores
+- `/app/backend/server.py` - Campo geo_location no TimeEntry
+
+---
+
 #### ✅ Sistema de Notificações Melhorado (22 Janeiro 2026)
 **Todas as notificações agora aparecem no sino do utilizador:**
 - 📝 Pedido de Férias Submetido (confirmação ao utilizador)
