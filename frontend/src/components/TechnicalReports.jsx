@@ -4362,14 +4362,34 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <PenTool className="w-4 h-4" />
                     Assinaturas do Cliente ({assinaturas.length})
                   </h4>
-                  <Button
-                    onClick={() => openAssinaturaModal()}
-                    size="sm"
-                    className="bg-green-500 hover:bg-green-600"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Nova Assinatura
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          toast.loading('A sincronizar assinaturas...', { id: 'refresh-assinaturas' });
+                          await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/refresh-assinaturas`);
+                          await fetchAssinaturas(selectedRelatorio.id);
+                          toast.success('Assinaturas sincronizadas!', { id: 'refresh-assinaturas' });
+                        } catch (error) {
+                          toast.error('Erro ao sincronizar assinaturas', { id: 'refresh-assinaturas' });
+                        }
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                      title="Sincronizar assinaturas (corrige problemas no PDF)"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => openAssinaturaModal()}
+                      size="sm"
+                      className="bg-green-500 hover:bg-green-600"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Nova Assinatura
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-gray-400 text-sm mb-4">
                   Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.
