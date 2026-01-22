@@ -7856,8 +7856,13 @@ async def create_despesa_ot(
     tecnico_nome = tecnico.get("nome", tecnico.get("username", "Desconhecido")) if tecnico else despesa_data.get("tecnico_nome", "Desconhecido")
     
     # Criar despesa
+    tipo_despesa = despesa_data.get("tipo", "outras")
+    if tipo_despesa not in ["outras", "combustivel", "ferramentas", "portagens"]:
+        tipo_despesa = "outras"
+    
     despesa = DespesaOT(
         relatorio_id=relatorio_id,
+        tipo=tipo_despesa,
         descricao=despesa_data["descricao"],
         valor=float(despesa_data["valor"]),
         tecnico_id=despesa_data["tecnico_id"],
