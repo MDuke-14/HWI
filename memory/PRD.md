@@ -27,12 +27,16 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - 🔄 Dia de Férias Devolvido (trabalho em férias aprovado)
 - ⏰ Lembretes de Entrada/Saída
 
+**Push Notifications:**
+- 📅 Admins recebem push quando alguém submete pedido de férias
+- ✅/❌ Utilizadores recebem push quando férias são aprovadas/rejeitadas
+
 **Ficheiros modificados:**
 - `/app/backend/notifications_scheduler.py` - Notificações para overtime_start, overtime_end
-- `/app/backend/server.py` - Notificação de confirmação ao submeter férias
+- `/app/backend/server.py` - Push notifications para pedidos de férias e decisões
 - `/app/frontend/src/components/NotificationBell.jsx` - Mapeamento de tipos para títulos e cores
 
-**Testado:** ✅ Backend + ✅ Frontend (screenshot)
+**Testado:** ✅ Backend (logs confirmam envio de push)
 
 ---
 
