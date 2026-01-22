@@ -115,6 +115,61 @@ const Dashboard = ({ user, onLogout }) => {
     });
   };
 
+  // Testar GPS e verificar se está fora de Portugal
+  const testGeoLocation = async () => {
+    try {
+      const location = await getGeoLocation();
+      toast.success('Localização capturada!');
+      
+      // Fazer reverse geocoding
+      if (location && location.latitude && location.longitude) {
+        try {
+          const geoResponse = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&addressdetails=1&accept-language=pt`,
+            { headers: { 'User-Agent': 'HWI-Ponto/1.0' } }
+          );
+          
+          if (geoResponse.ok) {
+            const geoData = await geoResponse.json();
+            const countryCode = geoData.address?.country_code?.toUpperCase();
+            const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.municipality;
+            const country = geoData.address?.country;
+            
+            // Atualizar geoLocation com endereço
+            setGeoLocation(prev => ({
+              ...prev,
+              address: {
+                city: city,
+                region: geoData.address?.state || geoData.address?.county,
+                country: country,
+                country_code: countryCode,
+                formatted: geoData.display_name
+              }
+            }));
+            
+            // Se não estiver em Portugal, ativar automaticamente "Fora de Zona"
+            if (countryCode && countryCode !== 'PT') {
+              const autoLocation = city ? `${city}, ${country}` : country || 'Estrangeiro';
+              setOutsideResidenceZone(true);
+              setLocationDescription(autoLocation);
+              
+              toast.warning(`🌍 Detectado fora de Portugal: ${autoLocation}`, {
+                duration: 5000,
+                description: 'Checkbox "Fora de Zona" ativado automaticamente'
+              });
+            } else if (city) {
+              toast.info(`📍 ${city}, ${country}`);
+            }
+          }
+        } catch (geoErr) {
+          console.log('Reverse geocoding falhou:', geoErr.message);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
     if (!decimalHours) return '0h00m';
