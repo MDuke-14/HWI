@@ -171,6 +171,13 @@ const NotificationBell = ({ user }) => {
       'absence_approved': { title: '✅ Falta Aprovada', color: 'border-green-500/50' },
       'absence_rejected': { title: '❌ Falta Rejeitada', color: 'border-red-500/50' },
       
+      // Serviços
+      'service_assigned': { title: '📅 Novo Serviço Atribuído', color: 'border-blue-500/50' },
+      'service_reminder': { title: '⏰ Lembrete de Serviço', color: 'border-orange-500/50' },
+      
+      // Pedidos de Cotação
+      'pc_created': { title: '📋 Novo Pedido de Cotação', color: 'border-yellow-500/50' },
+      
       // Ponto
       'missing_clock_in': { title: '⏰ Lembrete de Entrada', color: 'border-orange-500/50' },
       'missing_clock_out': { title: '⏰ Lembrete de Saída', color: 'border-purple-500/50' },
