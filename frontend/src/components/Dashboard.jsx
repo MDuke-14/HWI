@@ -228,18 +228,37 @@ const Dashboard = ({ user, onLogout }) => {
   const handleStart = async () => {
     setLoading(true);
     try {
+      // Tentar obter geolocalização (não bloqueia se falhar)
+      let location = null;
+      try {
+        location = await getGeoLocation();
+        toast.success('Localização capturada!');
+      } catch (geoErr) {
+        console.log('Geolocalização não disponível:', geoErr.message);
+        // Continua sem localização
+      }
+      
       await axios.post(`${API}/time-entries/start`, { 
         observations,
         outside_residence_zone: outsideResidenceZone,
-        location_description: outsideResidenceZone ? locationDescription : null
+        location_description: outsideResidenceZone ? locationDescription : null,
+        geo_location: location
       });
       toast.success('Relógio iniciado!');
       setObservations('');
       // Não resetar outsideResidenceZone se o dia já tem essa flag (será definido pelo fetchTodayEntry)
       setLocationDescription('');
+      setGeoLocation(null);
       fetchTodayEntry();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao iniciar');
+      // Verificar se foi guardado offline
+      if (error.response?.data?.offline) {
+        toast.warning('Ação guardada offline. Será sincronizada automaticamente.');
+        setObservations('');
+        setLocationDescription('');
+      } else {
+        toast.error(error.response?.data?.detail || 'Erro ao iniciar');
+      }
     } finally {
       setLoading(false);
     }
