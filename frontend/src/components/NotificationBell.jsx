@@ -152,6 +152,35 @@ const NotificationBell = ({ user }) => {
     return colors[priority] || colors['low'];
   };
 
+  // Mapear tipos de notificação para títulos e cores
+  const getNotificationStyle = (type) => {
+    const styles = {
+      // Férias
+      'vacation_request_submitted': { title: '📝 Pedido de Férias Submetido', color: 'border-blue-500/50' },
+      'vacation_approved': { title: '✅ Férias Aprovadas', color: 'border-green-500/50' },
+      'vacation_rejected': { title: '❌ Férias Rejeitadas', color: 'border-red-500/50' },
+      'vacation_request': { title: '📅 Novo Pedido de Férias', color: 'border-yellow-500/50' },
+      'vacation_day_refunded': { title: '🔄 Dia de Férias Devolvido', color: 'border-green-500/50' },
+      'vacation_work_rejected': { title: '❌ Trabalho em Férias Rejeitado', color: 'border-red-500/50' },
+      
+      // Horas Extra
+      'overtime_approved': { title: '✅ Horas Extra Autorizadas', color: 'border-green-500/50' },
+      'overtime_rejected': { title: '❌ Horas Extra Rejeitadas', color: 'border-red-500/50' },
+      
+      // Faltas
+      'absence_approved': { title: '✅ Falta Aprovada', color: 'border-green-500/50' },
+      'absence_rejected': { title: '❌ Falta Rejeitada', color: 'border-red-500/50' },
+      
+      // Ponto
+      'missing_clock_in': { title: '⏰ Lembrete de Entrada', color: 'border-orange-500/50' },
+      'missing_clock_out': { title: '⏰ Lembrete de Saída', color: 'border-purple-500/50' },
+      
+      // Default
+      'default': { title: '📢 Notificação', color: 'border-gray-500/50' }
+    };
+    return styles[type] || styles['default'];
+  };
+
   if (!user) return null;
 
   return (
