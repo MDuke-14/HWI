@@ -519,23 +519,43 @@ const Dashboard = ({ user, onLogout }) => {
 
               {/* Geolocalização capturada */}
               {entry.geo_location && (
-                <div className="mb-4 p-3 bg-green-900/30 border border-green-600 rounded-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-green-400" />
-                  <div className="flex-1">
-                    <div className="text-green-400 font-semibold">📍 Localização Registada</div>
-                    <div className="text-green-300 text-xs">
-                      {entry.geo_location.latitude?.toFixed(6)}, {entry.geo_location.longitude?.toFixed(6)}
-                      <span className="text-gray-400 ml-2">(±{Math.round(entry.geo_location.accuracy || 0)}m)</span>
+                <div className="mb-4 p-3 bg-green-900/30 border border-green-600 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-green-400" />
+                      <div>
+                        <div className="text-green-400 font-semibold">📍 Localização Registada</div>
+                        {entry.geo_location.address ? (
+                          <div className="text-green-300 text-sm">
+                            {entry.geo_location.address.city && (
+                              <span className="font-medium">{entry.geo_location.address.city}</span>
+                            )}
+                            {entry.geo_location.address.region && (
+                              <span className="text-gray-400">, {entry.geo_location.address.region}</span>
+                            )}
+                            {entry.geo_location.address.country && (
+                              <span className="text-gray-400"> - {entry.geo_location.address.country}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-green-300 text-xs">
+                            {entry.geo_location.latitude?.toFixed(6)}, {entry.geo_location.longitude?.toFixed(6)}
+                          </div>
+                        )}
+                        <div className="text-gray-500 text-xs mt-1">
+                          Precisão: ±{Math.round(entry.geo_location.accuracy || 0)}m
+                        </div>
+                      </div>
                     </div>
+                    <a 
+                      href={`https://www.google.com/maps?q=${entry.geo_location.latitude},${entry.geo_location.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-400 hover:text-green-300 text-xs underline"
+                    >
+                      Ver Mapa
+                    </a>
                   </div>
-                  <a 
-                    href={`https://www.google.com/maps?q=${entry.geo_location.latitude},${entry.geo_location.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-green-400 hover:text-green-300 text-xs underline"
-                  >
-                    Ver Mapa
-                  </a>
                 </div>
               )}
               
