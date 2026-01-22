@@ -423,14 +423,44 @@ const Dashboard = ({ user, onLogout }) => {
                   </div>
                 )}
 
+                {/* Geolocation Status Indicator */}
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <MapPin className={`w-4 h-4 ${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400 animate-pulse' : 'text-gray-500'}`} />
+                    <span className={geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400' : 'text-gray-500'}>
+                      {geoLoading ? 'A obter localização...' : 
+                       geoLocation ? `📍 Localização capturada (±${Math.round(geoLocation.accuracy)}m)` : 
+                       geoError ? `⚠️ ${geoError}` :
+                       'GPS será capturado ao iniciar'}
+                    </span>
+                  </div>
+                  {!geoLocation && !geoLoading && (
+                    <button 
+                      onClick={getGeoLocation}
+                      className="text-blue-400 hover:text-blue-300 text-xs underline"
+                    >
+                      Testar GPS
+                    </button>
+                  )}
+                </div>
+
                 <Button
                   data-testid="start-button"
                   onClick={handleStart}
                   disabled={loading || (outsideResidenceZone && !locationDescription.trim())}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Play className="w-6 h-6 mr-2" />
-                  Iniciar Relógio
+                  {loading ? (
+                    <>
+                      <RefreshCw className="w-6 h-6 mr-2 animate-spin" />
+                      {geoLoading ? 'A obter localização...' : 'A iniciar...'}
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-6 h-6 mr-2" />
+                      Iniciar Relógio
+                    </>
+                  )}
                 </Button>
               </div>
             ) : entry.status === 'active' ? (
