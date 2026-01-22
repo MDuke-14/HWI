@@ -800,13 +800,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const openViewRelatorioModal = async (relatorio) => {
     setSelectedRelatorio(relatorio);
     setShowViewRelatorioModal(true);
-    // Buscar técnicos, intervenções, fotografias, assinatura, equipamentos, materiais, PCs, cronómetros e registos
+    // Buscar técnicos, intervenções, fotografias, assinatura, equipamentos, materiais, despesas, PCs, cronómetros e registos
     await fetchTecnicosRelatorio(relatorio.id);
     await fetchIntervencoesRelatorio(relatorio.id);
     await fetchFotografiasRelatorio(relatorio.id);
     await fetchAssinaturas(relatorio.id);
     await fetchEquipamentosOT(relatorio.id);
     await fetchMateriais(relatorio.id);
+    await fetchDespesas(relatorio.id);
     await fetchPedidosCotacao(relatorio.id);
     await fetchCronometros(relatorio.id);
     await fetchRegistosTecnicos(relatorio.id);
