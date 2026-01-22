@@ -4140,6 +4140,98 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
+              {/* Despesas */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-emerald-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-emerald-400 font-semibold flex items-center gap-2">
+                    <Receipt className="w-4 h-4" />
+                    Despesas ({despesas.length})
+                    {despesas.length > 0 && (
+                      <span className="ml-2 px-2 py-0.5 bg-emerald-500/20 rounded text-sm">
+                        Total: {despesas.reduce((sum, d) => sum + (d.valor || 0), 0).toFixed(2)}€
+                      </span>
+                    )}
+                  </h4>
+                  <Button
+                    onClick={() => {
+                      setDespesaFormData({
+                        descricao: '',
+                        valor: '',
+                        tecnico_id: '',
+                        data: new Date().toISOString().split('T')[0],
+                        factura_data: null,
+                        factura_filename: null,
+                        factura_mimetype: null
+                      });
+                      setShowAddDespesaModal(true);
+                    }}
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Despesa
+                  </Button>
+                </div>
+
+                {despesas.length > 0 ? (
+                  <div className="space-y-2">
+                    {despesas.map((despesa) => (
+                      <div
+                        key={despesa.id}
+                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-white font-medium">{despesa.descricao}</p>
+                            {despesa.factura_data && (
+                              <span className="text-emerald-400 text-xs">📎 Factura</span>
+                            )}
+                          </div>
+                          <div className="flex gap-4 mt-1 text-sm text-gray-400">
+                            <span className="text-emerald-400 font-semibold">{despesa.valor?.toFixed(2)}€</span>
+                            <span>Pago por: {despesa.tecnico_nome}</span>
+                            <span>{new Date(despesa.data).toLocaleDateString('pt-PT')}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {despesa.factura_data && (
+                            <Button
+                              onClick={() => downloadFactura(despesa)}
+                              size="sm"
+                              variant="outline"
+                              className="border-emerald-500 text-emerald-500"
+                              title="Download Factura"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => openEditDespesaModal(despesa)}
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-500 text-blue-500"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteDespesa(despesa.id)}
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">
+                    Nenhuma despesa registada
+                  </p>
+                )}
+              </div>
+
               {/* Pedidos de Cotação */}
               {pedidosCotacao.length > 0 && (
                 <div className="bg-[#0f0f0f] p-4 rounded-lg border border-yellow-600">
