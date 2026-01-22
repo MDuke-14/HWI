@@ -3609,6 +3609,9 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
             
             base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
             
+            # Determinar se é trabalho em férias
+            vacation_request_id = vacation_request.get("id") if is_on_vacation and vacation_request else None
+            
             result = await handle_overtime_start(
                 db=db,
                 user_id=current_user["sub"],
@@ -3616,7 +3619,8 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
                 user_email=user_email,
                 entry_id=entry_dict['id'],
                 base_url=base_url,
-                custom_reason=authorization_reason if existing_overtime_today and not is_ot else None
+                custom_reason=authorization_reason if (existing_overtime_today and not is_ot) or is_on_vacation else None,
+                vacation_request_id=vacation_request_id
             )
             overtime_authorization_sent = result.get("status") == "authorization_requested"
             logging.info(f"Overtime authorization request: {result}")
