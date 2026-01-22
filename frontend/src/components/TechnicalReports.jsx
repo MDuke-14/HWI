@@ -4,6 +4,8 @@ import { API } from '@/App';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
 import SignatureCanvas from 'react-signature-canvas';
+import OfflineStatusBar from './OfflineStatusBar';
+import { useOfflineData } from '@/hooks/useOfflineData';
 import {
   Building2,
   Plus,
@@ -34,7 +36,9 @@ import {
   FileSpreadsheet,
   DollarSign,
   Tag,
-  Briefcase
+  Briefcase,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
