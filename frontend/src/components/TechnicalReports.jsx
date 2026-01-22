@@ -1708,6 +1708,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const openEditDespesaModal = (despesa) => {
     setSelectedDespesa(despesa);
     setDespesaFormData({
+      tipo: despesa.tipo || 'outras',
       descricao: despesa.descricao,
       valor: despesa.valor,
       tecnico_id: despesa.tecnico_id,
