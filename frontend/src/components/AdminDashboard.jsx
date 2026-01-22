@@ -46,6 +46,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   // Estados para Notificações e Autorizações
   const [overtimeAuthorizations, setOvertimeAuthorizations] = useState([]);
+  const [vacationWorkRequests, setVacationWorkRequests] = useState([]); // Pedidos de trabalho em férias
   const [notificationLogs, setNotificationLogs] = useState([]);
   const [authStatusFilter, setAuthStatusFilter] = useState('all');
   const [loadingNotifications, setLoadingNotifications] = useState(false);
