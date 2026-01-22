@@ -19,6 +19,48 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Janeiro 2026 - Sessão Atual (22 Janeiro 2026)
 
+#### ✅ Sistema de Ajuda Completo (22 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Componente reutilizável `HelpTooltip.jsx`:**
+- Ícone de ajuda ("i" azul) que abre popup modal com informação detalhada
+- Design consistente em toda a aplicação
+- Conteúdo HTML renderizado com estilos adequados
+- Botão "Entendi" para fechar
+
+**Secções de Ajuda nas OTs (TechnicalReports.jsx):**
+- ot_geral: Como funcionam as OTs
+- tecnicos: Gestão de técnicos
+- intervencoes: Registo de intervenções
+- fotografias: Upload de fotos
+- equipamentos: Gestão de equipamentos
+- materiais: Registo de materiais
+- despesas: Sistema de despesas
+- pedidos_cotacao: Pedidos de cotação
+- assinaturas: Obtenção de assinaturas
+- cronometros: Registo de tempo
+- folha_horas: Geração de folha de horas
+
+**Secções de Ajuda no Calendário (Calendar.jsx):**
+- calendario_geral: Visão geral do calendário
+- calendario_servicos: Gestão de serviços agendados
+
+**Secções de Ajuda no Admin Dashboard (AdminDashboard.jsx):**
+- admin_ferias: Gestão de férias e trabalho durante férias
+- admin_faltas: Gestão de faltas
+- admin_utilizadores: Gestão de utilizadores
+- admin_notificacoes: Sistema de notificações
+- admin_tarifas: Configuração de tarifas
+- admin_relatorios: Relatórios consolidados
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/HelpTooltip.jsx` - Componente reutilizável com todo o conteúdo
+- `/app/frontend/src/components/Calendar.jsx` - Integração do HelpTooltip
+- `/app/frontend/src/components/AdminDashboard.jsx` - Integração do HelpTooltip em todos os tabs
+- `/app/frontend/src/components/TechnicalReports.jsx` - Já tinha integração (sessão anterior)
+
+**Testado:** ✅ Frontend verificado via screenshot - Modal abre e mostra conteúdo correto
+
+---
+
 #### ✅ Sistema de Despesas nas OTs (22 Janeiro 2026)
 **Novo card de Despesas nas OTs (não aparece no PDF da OT):**
 - Campos: Descrição, Valor (€), Pago por (dropdown de técnicos), Data
