@@ -317,6 +317,14 @@ const Dashboard = ({ user, onLogout }) => {
       
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="fade-in">
+          {/* Online/Offline Indicator */}
+          {!isOnline && (
+            <div className="mb-4 bg-amber-500/20 border border-amber-500 rounded-lg px-4 py-3 flex items-center gap-3">
+              <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
+              <span className="text-amber-400 font-medium">Modo Offline - As ações serão sincronizadas quando houver conexão</span>
+            </div>
+          )}
+          
           {/* Current Time Display */}
           <div className="text-center mb-8">
             <div className="text-6xl font-bold text-white mb-2" data-testid="current-time">
@@ -329,6 +337,13 @@ const Dashboard = ({ user, onLogout }) => {
                 month: 'long', 
                 day: 'numeric' 
               })}
+            </div>
+            {/* Connection Status */}
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
+              <span className={`text-xs ${isOnline ? 'text-green-400' : 'text-amber-400'}`}>
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
             </div>
           </div>
 
