@@ -43,7 +43,8 @@ from notifications_scheduler import (
     handle_overtime_start,
     process_authorization_decision,
     send_push_to_admins,
-    send_push_notification
+    send_push_notification,
+    check_upcoming_services
 )
 
 ROOT_DIR = Path(__file__).parent
