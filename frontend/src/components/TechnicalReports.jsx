@@ -96,6 +96,19 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [statusFilter, setStatusFilter] = useState('');
   const [filteredByStatus, setFilteredByStatus] = useState([]);
   
+  // Hook de dados offline
+  const { 
+    isOnline, 
+    isSyncing, 
+    pendingCount, 
+    lastSyncTime,
+    cacheData,
+    getCachedData,
+    queueOperation,
+    forceSync,
+    STORES
+  } = useOfflineData(API);
+  
   // Clientes modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
