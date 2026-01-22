@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import SignatureCanvas from 'react-signature-canvas';
 import OfflineStatusBar from './OfflineStatusBar';
 import { useOfflineData } from '@/hooks/useOfflineData';
+import HelpTooltip from './HelpTooltip';
 import {
   Building2,
   Plus,
