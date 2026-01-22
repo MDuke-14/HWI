@@ -3667,8 +3667,19 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     
     # Adicionar geolocalização se disponível
     if entry_data.geo_location:
-        entry_dict['geo_location'] = entry_data.geo_location
-        logging.info(f"Geolocalização registada: lat={entry_data.geo_location.get('latitude')}, lng={entry_data.geo_location.get('longitude')}")
+        geo = entry_data.geo_location
+        entry_dict['geo_location'] = geo
+        logging.info(f"Geolocalização registada: lat={geo.get('latitude')}, lng={geo.get('longitude')}")
+        
+        # Fazer reverse geocoding para obter cidade/país
+        if geo.get('latitude') and geo.get('longitude'):
+            try:
+                address_info = await reverse_geocode(geo['latitude'], geo['longitude'])
+                if address_info:
+                    entry_dict['geo_location']['address'] = address_info
+                    logging.info(f"📍 Local: {address_info.get('city')}, {address_info.get('country')}")
+            except Exception as e:
+                logging.error(f"Erro no reverse geocoding: {str(e)}")
     
     # Se já tem horas extra hoje, marcar como entrada adicional
     if existing_overtime_today and not is_ot:
