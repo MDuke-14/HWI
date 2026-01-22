@@ -738,14 +738,24 @@ const Dashboard = ({ user, onLogout }) => {
                         </div>
                       </div>
                     </div>
-                    <a 
-                      href={`https://www.google.com/maps?q=${entry.geo_location.latitude},${entry.geo_location.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-400 hover:text-green-300 text-xs underline"
-                    >
-                      Ver Mapa
-                    </a>
+                    <div className="flex gap-3 mt-2">
+                      <a 
+                        href={`https://www.google.com/maps?q=${entry.geo_location.latitude},${entry.geo_location.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1"
+                      >
+                        🗺️ Google Maps
+                      </a>
+                      <a 
+                        href={`https://www.openstreetmap.org/?mlat=${entry.geo_location.latitude}&mlon=${entry.geo_location.longitude}&zoom=15`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-400 hover:text-green-300 text-xs underline flex items-center gap-1"
+                      >
+                        🌐 OpenStreetMap
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
