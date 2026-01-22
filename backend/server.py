@@ -8803,10 +8803,14 @@ async def generate_folha_horas(
     ).to_list(length=None)
     
     # Buscar tarifas por código (configuradas no Admin Dashboard)
-    tarifas_db = await db.tarifas.find({"ativo": True, "codigo": {"$ne": None}}, {"_id": 0}).to_list(length=None)
+    # Excluir tarifas com código "manual" pois são apenas para seleção manual
+    tarifas_db = await db.tarifas.find({
+        "ativo": True, 
+        "codigo": {"$ne": None, "$ne": "", "$nin": ["manual"]}
+    }, {"_id": 0}).to_list(length=None)
     tarifas_por_codigo = {}
     for tarifa in tarifas_db:
-        if tarifa.get('codigo'):
+        if tarifa.get('codigo') and tarifa.get('codigo') != 'manual':
             tarifas_por_codigo[tarifa['codigo']] = tarifa.get('valor_por_hora', 0)
     
     # Gerar PDF
