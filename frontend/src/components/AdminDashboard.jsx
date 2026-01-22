@@ -158,7 +158,14 @@ const AdminDashboard = ({ user, onLogout }) => {
         ? `${API}/overtime/authorizations?status=${status}`
         : `${API}/overtime/authorizations`;
       const response = await axios.get(url);
-      setOvertimeAuthorizations(response.data);
+      
+      // Separar pedidos de trabalho em férias dos outros
+      const allAuths = response.data;
+      const vacationWork = allAuths.filter(a => a.request_type === 'vacation_work');
+      const overtimeOnly = allAuths.filter(a => a.request_type !== 'vacation_work');
+      
+      setVacationWorkRequests(vacationWork);
+      setOvertimeAuthorizations(overtimeOnly);
     } catch (error) {
       console.error('Erro ao carregar autorizações');
     } finally {
