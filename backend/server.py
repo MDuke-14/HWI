@@ -7823,6 +7823,168 @@ async def delete_material_ot(
     
     return {"message": "Material removido"}
 
+
+# ============ Despesas OT Routes ============
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/despesas")
+async def create_despesa_ot(
+    relatorio_id: str,
+    despesa_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Criar nova despesa para uma OT"""
+    from notifications_scheduler import send_push_notification
+    
+    # Validar campos obrigatórios
+    if not despesa_data.get("descricao"):
+        raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+    if not despesa_data.get("valor") or despesa_data.get("valor") <= 0:
+        raise HTTPException(status_code=400, detail="Valor deve ser maior que zero")
+    if not despesa_data.get("tecnico_id"):
+        raise HTTPException(status_code=400, detail="Técnico é obrigatório")
+    if not despesa_data.get("data"):
+        raise HTTPException(status_code=400, detail="Data é obrigatória")
+    
+    # Verificar se OT existe
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Buscar nome do técnico
+    tecnico = await db.users.find_one({"id": despesa_data["tecnico_id"]}, {"_id": 0})
+    tecnico_nome = tecnico.get("nome", tecnico.get("username", "Desconhecido")) if tecnico else despesa_data.get("tecnico_nome", "Desconhecido")
+    
+    # Criar despesa
+    despesa = DespesaOT(
+        relatorio_id=relatorio_id,
+        descricao=despesa_data["descricao"],
+        valor=float(despesa_data["valor"]),
+        tecnico_id=despesa_data["tecnico_id"],
+        tecnico_nome=tecnico_nome,
+        data=despesa_data["data"],
+        factura_data=despesa_data.get("factura_data"),
+        factura_filename=despesa_data.get("factura_filename"),
+        factura_mimetype=despesa_data.get("factura_mimetype"),
+        created_by=current_user["sub"]
+    )
+    
+    despesa_dict = despesa.model_dump()
+    despesa_dict["created_at"] = despesa_dict["created_at"].isoformat()
+    
+    await db.despesas_ot.insert_one(despesa_dict)
+    
+    # Enviar push notification para admins
+    admins = await db.users.find({"role": "admin"}, {"_id": 0}).to_list(length=None)
+    ot_numero = relatorio.get("numero", relatorio_id[:8])
+    
+    for admin in admins:
+        try:
+            await send_push_notification(
+                admin["id"],
+                f"💰 Nova Despesa - OT #{ot_numero}",
+                f"Despesa de {despesa.valor:.2f}€ criada por {tecnico_nome}\n{despesa.descricao[:50]}",
+                "despesa_created",
+                "medium"
+            )
+        except Exception as e:
+            logging.error(f"Erro ao enviar push para admin {admin['id']}: {e}")
+    
+    # Criar notificação in-app para admins
+    for admin in admins:
+        notification = Notification(
+            user_id=admin["id"],
+            title=f"💰 Nova Despesa - OT #{ot_numero}",
+            message=f"Despesa de {despesa.valor:.2f}€ criada por {tecnico_nome}",
+            notification_type="despesa_created",
+            priority="medium",
+            data={"relatorio_id": relatorio_id, "despesa_id": despesa.id}
+        )
+        notif_dict = notification.model_dump()
+        notif_dict["created_at"] = notif_dict["created_at"].isoformat()
+        await db.notifications.insert_one(notif_dict)
+    
+    logging.info(f"💰 Despesa criada: {despesa.valor:.2f}€ na OT {relatorio_id} por {tecnico_nome}")
+    
+    return despesa
+
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/despesas")
+async def get_despesas_ot(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar despesas de uma OT"""
+    despesas = await db.despesas_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(length=None)
+    
+    return despesas
+
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/despesas/{despesa_id}")
+async def get_despesa_ot(
+    relatorio_id: str,
+    despesa_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter detalhes de uma despesa"""
+    despesa = await db.despesas_ot.find_one(
+        {"id": despesa_id, "relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    
+    if not despesa:
+        raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    
+    return despesa
+
+
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/despesas/{despesa_id}")
+async def update_despesa_ot(
+    relatorio_id: str,
+    despesa_id: str,
+    despesa_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar despesa de uma OT"""
+    despesa = await db.despesas_ot.find_one({"id": despesa_id, "relatorio_id": relatorio_id})
+    if not despesa:
+        raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    
+    # Validar valor se fornecido
+    if "valor" in despesa_data and despesa_data["valor"] <= 0:
+        raise HTTPException(status_code=400, detail="Valor deve ser maior que zero")
+    
+    # Se mudou o técnico, buscar o nome
+    if "tecnico_id" in despesa_data and despesa_data["tecnico_id"] != despesa.get("tecnico_id"):
+        tecnico = await db.users.find_one({"id": despesa_data["tecnico_id"]}, {"_id": 0})
+        if tecnico:
+            despesa_data["tecnico_nome"] = tecnico.get("nome", tecnico.get("username", "Desconhecido"))
+    
+    await db.despesas_ot.update_one(
+        {"id": despesa_id},
+        {"$set": despesa_data}
+    )
+    
+    return {"message": "Despesa atualizada"}
+
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/despesas/{despesa_id}")
+async def delete_despesa_ot(
+    relatorio_id: str,
+    despesa_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remover despesa de uma OT"""
+    result = await db.despesas_ot.delete_one({"id": despesa_id, "relatorio_id": relatorio_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    
+    return {"message": "Despesa removida"}
+
+
 # ============ Pedidos de Cotação Routes ============
 
 @api_router.get("/pedidos-cotacao")
