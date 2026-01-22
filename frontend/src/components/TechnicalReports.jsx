@@ -4092,6 +4092,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <h4 className="text-blue-400 font-semibold flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" />
                     Componentes Adicionais
+                    <HelpTooltip section="fotografias" />
                   </h4>
                   <Button
                     onClick={() => openAddFotoModal()}
