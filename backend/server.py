@@ -8719,10 +8719,28 @@ async def get_folha_horas_data(
     # Agrupar despesas por técnico e data, separando portagens das outras
     despesas_por_tecnico_data = {}  # Para despesas (outras, combustivel, ferramentas)
     portagens_por_tecnico_data = {}  # Para portagens
+    tecnicos_com_despesas = {}  # Para guardar info dos técnicos que têm despesas
     
     for desp in despesas:
         key = f"{desp['tecnico_id']}_{desp['data']}"
         tipo = desp.get('tipo', 'outras')
+        
+        # Guardar info do técnico para mostrar na UI
+        if desp['tecnico_id'] not in tecnicos_com_despesas:
+            tecnicos_com_despesas[desp['tecnico_id']] = {
+                'id': desp['tecnico_id'],
+                'nome': desp.get('tecnico_nome', 'Técnico'),
+                'username': desp.get('tecnico_nome', 'Técnico')
+            }
+        
+        # Adicionar ao datas_por_tecnico se não existir
+        if desp['tecnico_id'] not in datas_por_tecnico:
+            datas_por_tecnico[desp['tecnico_id']] = set()
+        datas_por_tecnico[desp['tecnico_id']].add(desp['data'])
+        
+        # Adicionar técnico aos tecnicos_unicos se não existir
+        if desp['tecnico_id'] not in tecnicos_unicos:
+            tecnicos_unicos[desp['tecnico_id']] = tecnicos_com_despesas[desp['tecnico_id']]
         
         if tipo == 'portagens':
             if key not in portagens_por_tecnico_data:
@@ -8733,6 +8751,9 @@ async def get_folha_horas_data(
             if key not in despesas_por_tecnico_data:
                 despesas_por_tecnico_data[key] = 0
             despesas_por_tecnico_data[key] += desp.get('valor', 0)
+    
+    # Converter sets para listas ordenadas (novamente, pois podem ter mudado)
+    datas_por_tecnico = {k: sorted(list(v)) for k, v in datas_por_tecnico.items()}
     
     return {
         "relatorio": relatorio,
