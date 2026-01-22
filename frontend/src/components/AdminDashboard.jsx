@@ -688,7 +688,10 @@ const AdminDashboard = ({ user, onLogout }) => {
 
           <TabsContent value="absences">
             <div className="glass-effect p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-white mb-6">Todas as Faltas ({allAbsences.length})</h2>
+              <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
+                Todas as Faltas ({allAbsences.length})
+                <HelpTooltip section="admin_faltas" />
+              </h2>
               {allAbsences.length > 0 ? (
                 <div className="space-y-4">
                   {allAbsences.map((absence) => (
