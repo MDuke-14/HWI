@@ -4231,6 +4231,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="text-white font-medium">{despesa.descricao}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              despesa.tipo === 'portagens' ? 'bg-orange-600/20 text-orange-400' :
+                              despesa.tipo === 'combustivel' ? 'bg-red-600/20 text-red-400' :
+                              despesa.tipo === 'ferramentas' ? 'bg-blue-600/20 text-blue-400' :
+                              'bg-gray-600/20 text-gray-400'
+                            }`}>
+                              {tiposDespesa.find(t => t.value === despesa.tipo)?.label || 'Outras'}
+                            </span>
                             {despesa.factura_data && (
                               <span className="text-emerald-400 text-xs">📎 Factura</span>
                             )}
