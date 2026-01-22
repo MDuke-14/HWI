@@ -584,8 +584,9 @@ const Calendar = ({ user, onLogout }) => {
                 </DialogTrigger>
                 <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                    <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ fontFamily: "'Chivo', sans-serif" }}>
                       {editingService ? 'Editar Serviço' : 'Novo Serviço'}
+                      <HelpTooltip section="calendario_servicos" />
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
