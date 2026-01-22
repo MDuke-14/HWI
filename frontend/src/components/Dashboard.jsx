@@ -830,6 +830,37 @@ const Dashboard = ({ user, onLogout }) => {
         </Button>
       )}
 
+      {/* Botão Flutuante Manual de Instruções */}
+      <Button
+        onClick={async () => {
+          try {
+            toast.info('A gerar manual...');
+            const response = await axios.get(`${API}/manual/download`, {
+              responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'Manual_HWI_Unipessoal.pdf');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success('Manual descarregado!');
+          } catch (error) {
+            toast.error('Erro ao descarregar manual');
+          }
+        }}
+        className="fixed bottom-16 sm:bottom-4 right-4 sm:right-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full p-3 sm:p-4 shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-110 z-50 group"
+        title="Manual de Instruções"
+        data-testid="download-manual-btn"
+      >
+        <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span className="hidden sm:block absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          Manual de Instruções
+        </span>
+      </Button>
+
       {/* Real-Time Status Modal */}
       <Dialog open={showRealtimeModal} onOpenChange={setShowRealtimeModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
