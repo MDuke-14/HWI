@@ -746,48 +746,41 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
     }
     await db.overtime_authorizations.insert_one(auth_request)
     
-    # Enviar PUSH notification aos admins
+    # Enviar PUSH notification aos admins com título específico para férias
+    if is_vacation_work:
+        push_title = f"⚠️ Trabalho em Férias - {user_name}"
+        push_body = f"{user_name} iniciou ponto às {current_time} durante período de férias. Se autorizado, o dia de férias será devolvido."
+    else:
+        push_title = f"🕐 Pedido de Horas Extra - {reason}"
+        push_body = f"{user_name} iniciou ponto às {current_time}. Autorize ou rejeite."
+    
     await send_push_to_admins(
         db,
-        f"🕐 Pedido de Horas Extra - {reason}",
-        f"{user_name} iniciou ponto às {current_time}. Autorize ou rejeite.",
+        push_title,
+        push_body,
         "overtime_authorization",
         "high"
     )
     
-    # Email desativado - apenas notificações push
-    # admin_html = get_authorization_email_html(
-    #     user_name=user_name,
-    #     date_str=today_formatted,
-    #     time_str=current_time,
-    #     day_type=reason,
-    #     token=token,
-    #     base_url=base_url,
-    #     request_type="overtime_start"
-    # )
-    # 
-    # success = await send_notification_email(
-    #     to_email=admin_email,
-    #     subject=f"🕐 Pedido de Autorização – Horas Extra ({reason}) - {user_name}",
-    #     html_content=admin_html
-    # )
-    
     # Registar notificação
+    log_type = "vacation_work_request" if is_vacation_work else "overtime_start_request"
     await db.notification_logs.insert_one({
-        "type": "overtime_start_request",
+        "type": log_type,
         "user_id": user_id,
         "user_name": user_name,
         "date": today_str,
         "day_type": reason,
         "sent_at": datetime.now().isoformat(),
         "success": True,
-        "authorization_token": token
+        "authorization_token": token,
+        "vacation_request_id": vacation_request_id
     })
     
     return {
         "status": "authorization_requested",
         "token": token,
         "day_type": reason,
+        "is_vacation_work": is_vacation_work,
         "push_sent": True
     }
 
