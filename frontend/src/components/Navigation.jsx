@@ -32,8 +32,12 @@ const Navigation = ({ user, onLogout, activePage }) => {
         <div className="flex justify-between items-center h-14 sm:h-16">
           <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/" className="flex items-center gap-1 sm:gap-2 text-white hover:text-blue-400 transition-colors">
-              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-1.5 sm:p-2 rounded-lg">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="p-1 sm:p-1.5 rounded-lg">
+                <img 
+                  src="/hwi-logo.png" 
+                  alt="HWI Logo" 
+                  className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                />
               </div>
               <span className="font-bold text-base sm:text-xl hidden xs:inline">HWI Ponto</span>
             </Link>
