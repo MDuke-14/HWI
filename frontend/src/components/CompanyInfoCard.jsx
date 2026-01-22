@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Info, X, Building2, Phone, Globe, Mail, MapPin, CreditCard, Smartphone, Edit, Save, FileText } from 'lucide-react';
+import { Info, X, Building2, Phone, Globe, Mail, MapPin, CreditCard, Smartphone, Edit, Save, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
 import {
   Dialog,
   DialogContent,
