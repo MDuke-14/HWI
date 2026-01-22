@@ -564,6 +564,7 @@ const Calendar = ({ user, onLogout }) => {
               <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3" style={{ fontFamily: "'Chivo', sans-serif" }}>
                 <CalendarDays className="w-10 h-10 text-sky-400" />
                 Calendário
+                <HelpTooltip section="calendario_geral" />
               </h1>
               <p className="text-gray-500 mt-1">Gestão de serviços e disponibilidade da equipa</p>
             </div>
