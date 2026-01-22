@@ -3539,6 +3539,16 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     today_date = datetime.now(timezone.utc).date()
     is_ot, ot_reason = is_overtime_day(today_date)
     
+    # Verificar se o utilizador está de férias aprovadas hoje
+    vacation_request = await db.vacation_requests.find_one({
+        "user_id": current_user["sub"],
+        "status": "approved",
+        "start_date": {"$lte": today},
+        "end_date": {"$gte": today}
+    }, {"_id": 0})
+    
+    is_on_vacation = vacation_request is not None
+    
     # Verificar se já tem entradas de horas extra completadas hoje (requer autorização para nova entrada)
     existing_overtime_today = await db.time_entries.find_one({
         "user_id": current_user["sub"],
@@ -3561,8 +3571,8 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         logging.info(f"Aplicando outside_residence_zone=True automaticamente (já existe entrada com esta flag hoje)")
     
     # Flag para indicar se precisa de autorização
-    needs_authorization = is_ot or existing_overtime_today is not None
-    authorization_reason = ot_reason if is_ot else "Entrada adicional em dia com horas extra"
+    needs_authorization = is_ot or existing_overtime_today is not None or is_on_vacation
+    authorization_reason = ot_reason if is_ot else ("Trabalho durante período de férias" if is_on_vacation else "Entrada adicional em dia com horas extra")
     
     entry = TimeEntry(
         user_id=current_user["sub"],
