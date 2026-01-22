@@ -7893,14 +7893,15 @@ async def create_despesa_ot(
     for admin in admins:
         notification = Notification(
             user_id=admin["id"],
+            username=admin.get("username", admin.get("nome", "Admin")),
+            type="despesa_created",
             title=f"💰 Nova Despesa - OT #{ot_numero}",
             message=f"Despesa de {despesa.valor:.2f}€ criada por {tecnico_nome}",
-            notification_type="despesa_created",
-            priority="medium",
-            data={"relatorio_id": relatorio_id, "despesa_id": despesa.id}
+            priority="medium"
         )
         notif_dict = notification.model_dump()
         notif_dict["created_at"] = notif_dict["created_at"].isoformat()
+        notif_dict["related_id"] = relatorio_id  # Adicionar referência à OT
         await db.notifications.insert_one(notif_dict)
     
     logging.info(f"💰 Despesa criada: {despesa.valor:.2f}€ na OT {relatorio_id} por {tecnico_nome}")
