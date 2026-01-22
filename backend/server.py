@@ -90,8 +90,8 @@ async def reverse_geocode(latitude: float, longitude: float) -> dict:
             "User-Agent": "HWI-Ponto/1.0 (geral@hwi.pt)"  # Obrigatório para Nominatim
         }
         
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, params=params, headers=headers)
+        async with httpx.AsyncClient(timeout=5.0) as http_client:
+            response = await http_client.get(url, params=params, headers=headers)
             
             if response.status_code == 200:
                 data = response.json()
@@ -115,6 +115,12 @@ async def reverse_geocode(latitude: float, longitude: float) -> dict:
                 logging.warning(f"Geocoding failed: HTTP {response.status_code}")
                 return None
                 
+    except httpx.ConnectError:
+        logging.warning("Geocoding: Sem acesso à internet externa (normal em ambiente de preview)")
+        return None
+    except httpx.TimeoutException:
+        logging.warning("Geocoding: Timeout ao contactar servidor")
+        return None
     except Exception as e:
         logging.error(f"Geocoding error: {str(e)}")
         return None
