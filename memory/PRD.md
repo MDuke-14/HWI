@@ -19,6 +19,44 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Janeiro 2026 - Sessão Atual (22 Janeiro 2026)
 
+#### ✅ Sistema de Despesas nas OTs (22 Janeiro 2026)
+**Novo card de Despesas nas OTs (não aparece no PDF da OT):**
+- Campos: Descrição, Valor (€), Pago por (dropdown de técnicos), Data
+- Upload de factura (PDF, JPG, PNG) - guardado em base64
+- Botão "Gerar Despesa" cria registo e notifica admins
+- Lista de despesas com total calculado
+- Botões: Download factura, Editar, Eliminar
+
+**Push Notification para Admins:**
+- Quando uma despesa é criada, todos os admins recebem push notification
+- Título: "💰 Nova Despesa - OT #X"
+- Mensagem: "Despesa de XX.XX€ criada por [Técnico]"
+
+**Notificação In-App:**
+- Tipo `despesa_created` adicionado ao NotificationBell
+- Cor: emerald (verde esmeralda)
+- Aparece no sino do admin
+
+**Integração com Folha de Horas:**
+- Despesas são automaticamente agrupadas por técnico e data
+- Ao abrir modal da Folha de Horas, campo "Despesas" é pré-preenchido
+- Valor total das despesas do técnico naquele dia
+
+**Ficheiros modificados:**
+- `/app/backend/server.py` - Modelo `DespesaOT` e endpoints CRUD
+- `/app/frontend/src/components/TechnicalReports.jsx` - Card de despesas e modais
+- `/app/frontend/src/components/NotificationBell.jsx` - Tipo despesa_created
+
+**Endpoints:**
+- `POST /api/relatorios-tecnicos/{id}/despesas` - Criar despesa
+- `GET /api/relatorios-tecnicos/{id}/despesas` - Listar despesas
+- `PUT /api/relatorios-tecnicos/{id}/despesas/{despesa_id}` - Atualizar
+- `DELETE /api/relatorios-tecnicos/{id}/despesas/{despesa_id}` - Eliminar
+
+**Testado:** ✅ Backend via curl | Frontend compilado
+
+---
+
 #### ✅ PWA Melhorado com Offline Mode (22 Janeiro 2026)
 **Service Worker v2:**
 - Cache de recursos estáticos para funcionamento offline
