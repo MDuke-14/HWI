@@ -4370,6 +4370,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <h4 className="text-blue-400 font-semibold flex items-center gap-2">
                     <PenTool className="w-4 h-4" />
                     Assinaturas do Cliente ({assinaturas.length})
+                    <HelpTooltip section="assinaturas" />
                   </h4>
                   <div className="flex items-center gap-2">
                     <Button
