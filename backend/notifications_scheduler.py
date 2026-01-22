@@ -856,6 +856,92 @@ async def process_authorization_decision(
                 "message": "Horas extra não autorizadas. A entrada de ponto foi eliminada."
             }
     
+    elif request_type == "vacation_work":
+        # Trabalho durante período de férias aprovadas
+        vacation_request_id = auth_request.get("vacation_request_id")
+        user_id = auth_request.get("user_id")
+        
+        if approved:
+            # 1. Marcar entrada como autorizada
+            await db.time_entries.update_one(
+                {"id": entry_id},
+                {"$set": {
+                    "overtime_authorized": True,
+                    "overtime_authorized_by": decided_by,
+                    "overtime_authorized_at": datetime.now().isoformat(),
+                    "vacation_work_approved": True
+                }}
+            )
+            
+            # 2. Anular o dia de férias correspondente
+            if vacation_request_id:
+                vacation_request = await db.vacation_requests.find_one({"id": vacation_request_id})
+                
+                if vacation_request:
+                    # Calcular quantos dias a anular (apenas 1 dia - o dia de trabalho)
+                    days_to_refund = 1
+                    
+                    # Atualizar o pedido de férias para indicar que teve 1 dia anulado
+                    current_voided = vacation_request.get("days_voided", 0)
+                    new_voided = current_voided + days_to_refund
+                    
+                    await db.vacation_requests.update_one(
+                        {"id": vacation_request_id},
+                        {"$set": {
+                            "days_voided": new_voided,
+                            "voided_dates": vacation_request.get("voided_dates", []) + [date_str],
+                            "last_voided_at": datetime.now().isoformat(),
+                            "last_voided_reason": f"Trabalho autorizado em {date_str}"
+                        }}
+                    )
+                    
+                    # 3. Devolver o dia ao saldo de férias do utilizador
+                    await db.vacation_balances.update_one(
+                        {"user_id": user_id},
+                        {"$inc": {"days_taken": -days_to_refund}}
+                    )
+                    
+                    # 4. Criar notificação para o utilizador
+                    from uuid import uuid4
+                    notification = {
+                        "id": str(uuid4()),
+                        "user_id": user_id,
+                        "type": "vacation_day_refunded",
+                        "message": f"O seu trabalho em {date_str} foi autorizado. 1 dia de férias foi devolvido ao seu saldo.",
+                        "read": False,
+                        "related_id": vacation_request_id,
+                        "created_at": datetime.now().isoformat()
+                    }
+                    await db.notifications.insert_one(notification)
+            
+            return {
+                "status": "success",
+                "decision": "approved",
+                "message": "Trabalho em férias autorizado. O dia de férias foi devolvido ao saldo do utilizador."
+            }
+        else:
+            # Eliminar entrada de ponto (o dia de férias mantém-se)
+            await db.time_entries.delete_one({"id": entry_id})
+            
+            # Notificar utilizador
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "vacation_work_rejected",
+                "message": f"O seu pedido para trabalhar em {date_str} (durante férias) foi rejeitado. A entrada de ponto foi eliminada.",
+                "read": False,
+                "related_id": vacation_request_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+            
+            return {
+                "status": "success",
+                "decision": "rejected",
+                "message": "Trabalho em férias não autorizado. A entrada de ponto foi eliminada."
+            }
+    
     elif request_type == "overtime_end":
         # Ponto não encerrado após 18:00
         if approved:
