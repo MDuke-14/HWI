@@ -976,6 +976,9 @@ async def process_authorization_decision(
     
     elif request_type == "overtime_end":
         # Ponto não encerrado após 18:00
+        user_id = auth_request.get("user_id")
+        date_str = auth_request.get("date")
+        
         if approved:
             # Marcar como horas extra autorizadas
             await db.time_entries.update_one(
@@ -986,6 +989,20 @@ async def process_authorization_decision(
                     "overtime_authorized_at": datetime.now().isoformat()
                 }}
             )
+            
+            # Criar notificação para o utilizador
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "overtime_approved",
+                "message": f"As suas horas extra de {date_str} (após horário) foram autorizadas por {decided_by}.",
+                "read": False,
+                "related_id": entry_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+            
             return {
                 "status": "success",
                 "decision": "approved",
@@ -1015,6 +1032,19 @@ async def process_authorization_decision(
                         "auto_closed_at_18": True
                     }}
                 )
+            
+            # Criar notificação para o utilizador
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "overtime_rejected",
+                "message": f"As suas horas extra de {date_str} foram rejeitadas por {decided_by}. O ponto foi encerrado às 18:00.",
+                "read": False,
+                "related_id": entry_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
             
             return {
                 "status": "success",
