@@ -3010,6 +3010,74 @@ async def get_all_assinaturas(
     
     return assinaturas
 
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/refresh-assinaturas")
+async def refresh_assinaturas(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Regenerar/sincronizar assinaturas - garante que base64 e ficheiros estão sincronizados"""
+    import base64
+    from pathlib import Path
+    
+    assinaturas = await db.assinaturas_relatorio.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    updated_count = 0
+    errors = []
+    
+    for assinatura in assinaturas:
+        try:
+            update_data = {}
+            
+            # Se tem path mas não tem base64, ler o ficheiro e criar base64
+            if assinatura.get('assinatura_path') and not assinatura.get('assinatura_base64'):
+                path = Path(assinatura['assinatura_path'])
+                if path.exists():
+                    with open(path, 'rb') as f:
+                        img_data = f.read()
+                        update_data['assinatura_base64'] = base64.b64encode(img_data).decode('utf-8')
+            
+            # Se tem base64 mas não tem path ou o ficheiro não existe, criar ficheiro
+            if assinatura.get('assinatura_base64'):
+                path_str = assinatura.get('assinatura_path')
+                should_create_file = not path_str or not Path(path_str).exists()
+                
+                if should_create_file:
+                    # Criar directório se não existir
+                    signatures_dir = Path('/app/backend/signatures')
+                    signatures_dir.mkdir(exist_ok=True)
+                    
+                    # Criar ficheiro
+                    new_path = signatures_dir / f"{assinatura['id']}.png"
+                    img_data = base64.b64decode(assinatura['assinatura_base64'])
+                    with open(new_path, 'wb') as f:
+                        f.write(img_data)
+                    update_data['assinatura_path'] = str(new_path)
+            
+            # Actualizar na BD se houver mudanças
+            if update_data:
+                await db.assinaturas_relatorio.update_one(
+                    {"id": assinatura['id']},
+                    {"$set": update_data}
+                )
+                updated_count += 1
+                
+        except Exception as e:
+            errors.append(f"Assinatura {assinatura.get('id', 'N/A')}: {str(e)}")
+    
+    logging.info(f"Refresh assinaturas OT {relatorio_id}: {updated_count} atualizadas, {len(errors)} erros")
+    
+    return {
+        "message": f"Assinaturas sincronizadas",
+        "updated": updated_count,
+        "total": len(assinaturas),
+        "errors": errors
+    }
+
+
 @api_router.delete("/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_id}")
 async def delete_assinatura(
     relatorio_id: str,
