@@ -3613,6 +3613,11 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     entry_dict['start_time'] = entry_dict['start_time'].isoformat()
     entry_dict['created_at'] = entry_dict['created_at'].isoformat()
     
+    # Adicionar geolocalização se disponível
+    if entry_data.geo_location:
+        entry_dict['geo_location'] = entry_data.geo_location
+        logging.info(f"Geolocalização registada: lat={entry_data.geo_location.get('latitude')}, lng={entry_data.geo_location.get('longitude')}")
+    
     # Se já tem horas extra hoje, marcar como entrada adicional
     if existing_overtime_today and not is_ot:
         entry_dict['is_additional_overtime_entry'] = True
