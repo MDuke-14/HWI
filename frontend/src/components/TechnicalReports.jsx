@@ -1598,6 +1598,128 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowEditMaterialModal(true);
   };
 
+  // ========== Despesas OT Functions ==========
+
+  const fetchDespesas = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/despesas`);
+      setDespesas(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar despesas:', error);
+    }
+  };
+
+  const handleFacturaUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validar tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Ficheiro demasiado grande. Máximo 5MB.');
+      return;
+    }
+    
+    setUploadingFactura(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setDespesaFormData(prev => ({
+        ...prev,
+        factura_data: reader.result,
+        factura_filename: file.name,
+        factura_mimetype: file.type
+      }));
+      setUploadingFactura(false);
+      toast.success('Factura carregada!');
+    };
+    reader.onerror = () => {
+      toast.error('Erro ao carregar factura');
+      setUploadingFactura(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddDespesa = async (e) => {
+    e.preventDefault();
+    
+    if (!despesaFormData.descricao || !despesaFormData.valor || !despesaFormData.tecnico_id || !despesaFormData.data) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas`, despesaFormData);
+      toast.success('Despesa registada! Admin notificado.');
+      fetchDespesas(selectedRelatorio.id);
+      setShowAddDespesaModal(false);
+      setDespesaFormData({
+        descricao: '',
+        valor: '',
+        tecnico_id: '',
+        data: new Date().toISOString().split('T')[0],
+        factura_data: null,
+        factura_filename: null,
+        factura_mimetype: null
+      });
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleUpdateDespesa = async (e) => {
+    e.preventDefault();
+    
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${selectedDespesa.id}`,
+        despesaFormData
+      );
+      toast.success('Despesa atualizada!');
+      fetchDespesas(selectedRelatorio.id);
+      setShowEditDespesaModal(false);
+      setSelectedDespesa(null);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDeleteDespesa = async (despesaId) => {
+    if (!window.confirm('Tem certeza que deseja eliminar esta despesa?')) return;
+    
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${despesaId}`);
+      toast.success('Despesa eliminada!');
+      fetchDespesas(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const openEditDespesaModal = (despesa) => {
+    setSelectedDespesa(despesa);
+    setDespesaFormData({
+      descricao: despesa.descricao,
+      valor: despesa.valor,
+      tecnico_id: despesa.tecnico_id,
+      data: despesa.data,
+      factura_data: despesa.factura_data,
+      factura_filename: despesa.factura_filename,
+      factura_mimetype: despesa.factura_mimetype
+    });
+    setShowEditDespesaModal(true);
+  };
+
+  const downloadFactura = (despesa) => {
+    if (!despesa.factura_data) {
+      toast.error('Esta despesa não tem factura');
+      return;
+    }
+    
+    const link = document.createElement('a');
+    link.href = despesa.factura_data;
+    link.download = despesa.factura_filename || 'factura';
+    link.click();
+  };
+
   // ========== Pedidos de Cotação Functions ==========
 
   const fetchPedidosCotacao = async (relatorioId) => {
