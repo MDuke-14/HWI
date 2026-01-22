@@ -1631,13 +1631,16 @@ const AdminDashboard = ({ user, onLogout }) => {
                       className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
                     >
                       <option value="">Todos os códigos</option>
+                      <option value="manual">Apenas Selecionar (manual)</option>
                       <option value="1">1 - Dias úteis (07h-19h)</option>
                       <option value="2">2 - Dias úteis (19h-07h)</option>
                       <option value="S">S - Sábado</option>
                       <option value="D">D - Domingos/Feriados</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      A tarifa será aplicada automaticamente aos registos com este código na Folha de Horas
+                      {tarifaForm.codigo === 'manual' 
+                        ? 'Esta tarifa só será aplicada quando selecionada manualmente na Folha de Horas'
+                        : 'A tarifa será aplicada automaticamente aos registos com este código na Folha de Horas'}
                     </p>
                   </div>
                   <Button 
