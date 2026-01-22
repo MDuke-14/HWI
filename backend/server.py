@@ -6316,6 +6316,14 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
             vac_request.id
         )
     
+    # Notificar o próprio utilizador (confirmação de submissão)
+    await create_notification(
+        current_user["sub"],
+        "vacation_request_submitted",
+        f"O seu pedido de férias de {request_data.start_date} a {request_data.end_date} ({days_requested} dias) foi submetido e aguarda aprovação.",
+        vac_request.id
+    )
+    
     return {"message": "Pedido de férias submetido", "request_id": vac_request.id, "days_requested": days_requested}
 
 @api_router.get("/vacations/my-requests")
