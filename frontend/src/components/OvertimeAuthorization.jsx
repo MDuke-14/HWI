@@ -266,20 +266,18 @@ const OvertimeAuthorization = () => {
           </div>
           
           {/* Informação sobre consequências */}
-          <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4">
-            <h4 className="text-blue-400 font-semibold mb-2">ℹ️ Consequências da Decisão</h4>
+          <div className={`${authorization.request_type === 'vacation_work' ? 'bg-orange-900/20 border-orange-600' : 'bg-blue-900/20 border-blue-600'} border rounded-lg p-4`}>
+            <h4 className={`${authorization.request_type === 'vacation_work' ? 'text-orange-400' : 'text-blue-400'} font-semibold mb-2`}>
+              {authorization.request_type === 'vacation_work' ? '⚠️ Trabalho em Férias' : 'ℹ️ Consequências da Decisão'}
+            </h4>
             <div className="text-gray-300 text-sm space-y-2">
               <p>
                 <strong className="text-green-400">✅ Autorizar:</strong>{' '}
-                {authorization.request_type === 'overtime_start'
-                  ? 'O ponto continua ativo e as horas serão contabilizadas como horas extra.'
-                  : 'As horas após as 18:00 serão contabilizadas como horas extra.'}
+                {getApproveConsequence()}
               </p>
               <p>
                 <strong className="text-red-400">❌ Não Autorizar:</strong>{' '}
-                {authorization.request_type === 'overtime_start'
-                  ? 'A entrada de ponto será eliminada e não ficam horas registadas.'
-                  : 'O ponto será encerrado automaticamente às 18:00 e o tempo adicional será ignorado.'}
+                {getRejectConsequence()}
               </p>
             </div>
           </div>
