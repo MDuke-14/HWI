@@ -566,6 +566,12 @@ const AdminDashboard = ({ user, onLogout }) => {
 
           <TabsContent value="vacations">
             <div className="space-y-6">
+              {/* Header com ajuda */}
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-2xl font-semibold text-white">Gestão de Férias</h2>
+                <HelpTooltip section="admin_ferias" />
+              </div>
+              
               {/* Secção: Trabalho em Férias (pedidos prioritários) */}
               {vacationWorkRequests.filter(r => r.status === 'pending').length > 0 && (
                 <div className="glass-effect p-6 rounded-xl border-2 border-orange-500/50">
