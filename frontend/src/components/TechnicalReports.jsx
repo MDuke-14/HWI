@@ -353,10 +353,31 @@ const TechnicalReports = ({ user, onLogout }) => {
   const fetchClientes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/clientes`);
-      setClientes(response.data);
+      
+      if (navigator.onLine) {
+        const response = await axios.get(`${API}/clientes`);
+        setClientes(response.data);
+        // Guardar no cache
+        await cacheData(STORES.CLIENTES, response.data);
+      } else {
+        // Modo offline - usar cache
+        const cachedClientes = await getCachedData(STORES.CLIENTES);
+        if (cachedClientes && cachedClientes.length > 0) {
+          setClientes(cachedClientes);
+          toast.info('Dados carregados do cache offline');
+        } else {
+          toast.error('Sem dados em cache. Conecte à internet para carregar.');
+        }
+      }
     } catch (error) {
-      toast.error('Erro ao carregar clientes');
+      // Tentar cache em caso de erro
+      const cachedClientes = await getCachedData(STORES.CLIENTES);
+      if (cachedClientes && cachedClientes.length > 0) {
+        setClientes(cachedClientes);
+        toast.warning('Erro de conexão. Dados carregados do cache.');
+      } else {
+        toast.error('Erro ao carregar clientes');
+      }
       console.error(error);
     } finally {
       setLoading(false);
@@ -366,10 +387,31 @@ const TechnicalReports = ({ user, onLogout }) => {
   const fetchRelatorios = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API}/relatorios-tecnicos`);
-      setRelatorios(response.data);
+      
+      if (navigator.onLine) {
+        const response = await axios.get(`${API}/relatorios-tecnicos`);
+        setRelatorios(response.data);
+        // Guardar no cache
+        await cacheData(STORES.RELATORIOS, response.data);
+      } else {
+        // Modo offline - usar cache
+        const cachedRelatorios = await getCachedData(STORES.RELATORIOS);
+        if (cachedRelatorios && cachedRelatorios.length > 0) {
+          setRelatorios(cachedRelatorios);
+          toast.info('OTs carregadas do cache offline');
+        } else {
+          toast.error('Sem OTs em cache. Conecte à internet para carregar.');
+        }
+      }
     } catch (error) {
-      toast.error('Erro ao carregar OTs');
+      // Tentar cache em caso de erro
+      const cachedRelatorios = await getCachedData(STORES.RELATORIOS);
+      if (cachedRelatorios && cachedRelatorios.length > 0) {
+        setRelatorios(cachedRelatorios);
+        toast.warning('Erro de conexão. OTs carregadas do cache.');
+      } else {
+        toast.error('Erro ao carregar OTs');
+      }
       console.error(error);
     } finally {
       setLoading(false);
