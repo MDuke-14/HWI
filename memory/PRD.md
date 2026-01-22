@@ -19,6 +19,23 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Janeiro 2026 - Sessão Atual (22 Janeiro 2026)
 
+#### ✅ Sistema de Notificações Melhorado (22 Janeiro 2026)
+**Todas as notificações agora aparecem no sino do utilizador:**
+- 📝 Pedido de Férias Submetido (confirmação ao utilizador)
+- ✅ Férias Aprovadas / ❌ Férias Rejeitadas
+- ✅ Horas Extra Autorizadas / ❌ Horas Extra Rejeitadas
+- 🔄 Dia de Férias Devolvido (trabalho em férias aprovado)
+- ⏰ Lembretes de Entrada/Saída
+
+**Ficheiros modificados:**
+- `/app/backend/notifications_scheduler.py` - Notificações para overtime_start, overtime_end
+- `/app/backend/server.py` - Notificação de confirmação ao submeter férias
+- `/app/frontend/src/components/NotificationBell.jsx` - Mapeamento de tipos para títulos e cores
+
+**Testado:** ✅ Backend + ✅ Frontend (screenshot)
+
+---
+
 #### ✅ Trabalho Durante Período de Férias (P0 - Completo)
 **Quando um utilizador em férias aprovadas faz clock-in:**
 - Sistema detecta automaticamente que o utilizador está de férias
