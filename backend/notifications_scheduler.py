@@ -685,10 +685,11 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
     }
 
 
-async def handle_overtime_start(db, user_id: str, user_name: str, user_email: str, entry_id: str, base_url: str, custom_reason: str = None) -> Dict:
+async def handle_overtime_start(db, user_id: str, user_name: str, user_email: str, entry_id: str, base_url: str, custom_reason: str = None, vacation_request_id: str = None) -> Dict:
     """
     Quando um utilizador inicia ponto num sábado/domingo/feriado
     OU quando já tem horas extra nesse dia e inicia novamente
+    OU quando está de férias aprovadas
     Envia pedido de autorização ao admin
     """
     today = date.today()
@@ -704,13 +705,17 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         if not is_ot:
             return {"status": "not_overtime_day", "reason": reason}
     
+    # Determinar tipo de pedido
+    is_vacation_work = vacation_request_id is not None
+    request_type = "vacation_work" if is_vacation_work else "overtime_start"
+    
     admin_email = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
     
     # Verificar se já existe autorização pendente para este entry específico
     existing_auth = await db.overtime_authorizations.find_one({
         "user_id": user_id,
         "entry_id": entry_id,
-        "request_type": "overtime_start",
+        "request_type": request_type,
         "status": "pending"
     })
     
@@ -728,7 +733,7 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "user_email": user_email,
         "entry_id": entry_id,
         "date": today_str,
-        "request_type": "overtime_start",
+        "request_type": request_type,
         "day_type": reason,
         "start_time": current_time,
         "requested_at": datetime.now().isoformat(),
@@ -736,7 +741,8 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "status": "pending",
         "decided_by": None,
         "decided_at": None,
-        "decision": None
+        "decision": None,
+        "vacation_request_id": vacation_request_id  # ID do pedido de férias a anular (se aplicável)
     }
     await db.overtime_authorizations.insert_one(auth_request)
     
