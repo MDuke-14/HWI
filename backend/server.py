@@ -8716,13 +8716,23 @@ async def get_folha_horas_data(
         {"_id": 0}
     ).to_list(length=None)
     
-    # Agrupar despesas por técnico e data para pré-preencher dados_extras
-    despesas_por_tecnico_data = {}
+    # Agrupar despesas por técnico e data, separando portagens das outras
+    despesas_por_tecnico_data = {}  # Para despesas (outras, combustivel, ferramentas)
+    portagens_por_tecnico_data = {}  # Para portagens
+    
     for desp in despesas:
         key = f"{desp['tecnico_id']}_{desp['data']}"
-        if key not in despesas_por_tecnico_data:
-            despesas_por_tecnico_data[key] = 0
-        despesas_por_tecnico_data[key] += desp.get('valor', 0)
+        tipo = desp.get('tipo', 'outras')
+        
+        if tipo == 'portagens':
+            if key not in portagens_por_tecnico_data:
+                portagens_por_tecnico_data[key] = 0
+            portagens_por_tecnico_data[key] += desp.get('valor', 0)
+        else:
+            # outras, combustivel, ferramentas vão para despesas
+            if key not in despesas_por_tecnico_data:
+                despesas_por_tecnico_data[key] = 0
+            despesas_por_tecnico_data[key] += desp.get('valor', 0)
     
     return {
         "relatorio": relatorio,
@@ -8734,7 +8744,8 @@ async def get_folha_horas_data(
         "datas_por_tecnico": datas_por_tecnico,
         "registos_individuais": registos_individuais,
         "despesas": despesas,
-        "despesas_por_tecnico_data": despesas_por_tecnico_data
+        "despesas_por_tecnico_data": despesas_por_tecnico_data,
+        "portagens_por_tecnico_data": portagens_por_tecnico_data
     }
 
 
