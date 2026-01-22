@@ -4770,6 +4770,244 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
+      {/* Add Despesa Modal */}
+      <Dialog open={showAddDespesaModal} onOpenChange={setShowAddDespesaModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Receipt className="w-5 h-5 text-emerald-400" />
+              Nova Despesa
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddDespesa} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="despesa-descricao" className="text-gray-300">Descrição *</Label>
+              <Input
+                id="despesa-descricao"
+                value={despesaFormData.descricao}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, descricao: e.target.value }))}
+                placeholder="Ex: Combustível, Almoço, Parque..."
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="despesa-valor" className="text-gray-300">Valor (€) *</Label>
+              <Input
+                id="despesa-valor"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={despesaFormData.valor}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))}
+                placeholder="0.00"
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="despesa-tecnico" className="text-gray-300">Pago por (Técnico) *</Label>
+              <select
+                id="despesa-tecnico"
+                value={despesaFormData.tecnico_id}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tecnico_id: e.target.value }))}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                required
+              >
+                <option value="">Selecionar técnico...</option>
+                {allSystemUsers.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.nome || user.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="despesa-data" className="text-gray-300">Data *</Label>
+              <Input
+                id="despesa-data"
+                type="date"
+                value={despesaFormData.data}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, data: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300">Factura (opcional)</Label>
+              <div className="mt-1">
+                {despesaFormData.factura_filename ? (
+                  <div className="flex items-center gap-2 p-2 bg-emerald-900/30 border border-emerald-700 rounded">
+                    <span className="text-emerald-400">📎 {despesaFormData.factura_filename}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-400 hover:text-red-300"
+                      onClick={() => setDespesaFormData(prev => ({ ...prev, factura_data: null, factura_filename: null, factura_mimetype: null }))}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-emerald-500 transition-colors">
+                    <Upload className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-400">Carregar factura (PDF, JPG, PNG)</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFacturaUpload}
+                      className="hidden"
+                      disabled={uploadingFactura}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowAddDespesaModal(false);
+                  setDespesaFormData({
+                    descricao: '',
+                    valor: '',
+                    tecnico_id: '',
+                    data: new Date().toISOString().split('T')[0],
+                    factura_data: null,
+                    factura_filename: null,
+                    factura_mimetype: null
+                  });
+                }}
+                className="border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                <Receipt className="w-4 h-4 mr-1" />
+                Gerar Despesa
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Despesa Modal */}
+      <Dialog open={showEditDespesaModal} onOpenChange={setShowEditDespesaModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Receipt className="w-5 h-5 text-emerald-400" />
+              Editar Despesa
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateDespesa} className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="edit-despesa-descricao" className="text-gray-300">Descrição *</Label>
+              <Input
+                id="edit-despesa-descricao"
+                value={despesaFormData.descricao}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, descricao: e.target.value }))}
+                placeholder="Ex: Combustível, Almoço, Parque..."
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-despesa-valor" className="text-gray-300">Valor (€) *</Label>
+              <Input
+                id="edit-despesa-valor"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={despesaFormData.valor}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))}
+                placeholder="0.00"
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-despesa-tecnico" className="text-gray-300">Pago por (Técnico) *</Label>
+              <select
+                id="edit-despesa-tecnico"
+                value={despesaFormData.tecnico_id}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tecnico_id: e.target.value }))}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                required
+              >
+                <option value="">Selecionar técnico...</option>
+                {allSystemUsers.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.nome || user.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="edit-despesa-data" className="text-gray-300">Data *</Label>
+              <Input
+                id="edit-despesa-data"
+                type="date"
+                value={despesaFormData.data}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, data: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300">Factura</Label>
+              <div className="mt-1">
+                {despesaFormData.factura_filename ? (
+                  <div className="flex items-center gap-2 p-2 bg-emerald-900/30 border border-emerald-700 rounded">
+                    <span className="text-emerald-400">📎 {despesaFormData.factura_filename}</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-400 hover:text-red-300"
+                      onClick={() => setDespesaFormData(prev => ({ ...prev, factura_data: null, factura_filename: null, factura_mimetype: null }))}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-emerald-500 transition-colors">
+                    <Upload className="w-5 h-5 text-gray-400" />
+                    <span className="text-gray-400">Carregar factura (PDF, JPG, PNG)</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFacturaUpload}
+                      className="hidden"
+                      disabled={uploadingFactura}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowEditDespesaModal(false);
+                  setSelectedDespesa(null);
+                }}
+                className="border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                <Receipt className="w-4 h-4 mr-1" />
+                Guardar Alterações
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* PC Modal */}
       <Dialog open={showPCModal} onOpenChange={(open) => {
         setShowPCModal(open);
