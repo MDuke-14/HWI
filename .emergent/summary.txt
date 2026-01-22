@@ -1,42 +1,44 @@
 <analysis>**original_problem_statement:**
 The user's goal is to build and iteratively enhance a full-stack time-tracking and work-order (OT) management application.
 
-This session focused on implementing a wide range of new features and improvements based on user requests. The key new requirements were:
-
-1.  **Work on Vacation Feature:** Complete the logic for allowing users to clock in while on vacation, which triggers an admin approval request. If approved, the vacation day is refunded to the user's balance. The approval UI for this was also moved to the Férias (Vacations) tab in the admin dashboard for better organization.
-2.  **Notification System Overhaul:**
-    *   Significantly expand the in-app bell notifications to include updates for vacation submissions, approvals/rejections, and overtime decisions.
-    *   Implement a comprehensive push notification system for critical events:
-        *   **Admins:** Receive push alerts for new vacation requests, new overtime requests, and new quote requests (PCs).
-        *   **Users:** Receive push alerts when their vacation or overtime requests are approved or rejected.
-        *   **Technicians:** Receive push alerts when assigned to a new service and a reminder 1 hour before the service starts.
-3.  **UI/UX and Branding Enhancements:**
-    *   Add a feature to download the company's information as a PDF from the info card modal.
-    *   Replace the default application icon and browser favicon with the company's HWI logo.
-4.  **Offline & Geolocation Capabilities (PWA Improvement):**
-    *   Implement geolocation capture (latitude/longitude) upon clock-in.
-    *   Add **Reverse Geocoding** to convert coordinates into a human-readable city and country using the OpenStreetMap API.
-    *   Implement logic to automatically check the Fora de Zona de Residência (Outside Residence Zone) box and pre-fill the location if the user clocks in from outside Portugal.
-    *   Provide clear visual feedback to the user regarding the status of GPS capture (pending, success, error).
-    *   Introduce an **Offline Mode** for the OTs (Technical Reports) page, allowing users to view cached data when they have no internet connection.
+In this session, the user requested several new features and bug fixes:
+1.  **Expense Management System:**
+    *   Create a new Despesas (Expenses) card within each OT.
+    *   The card should include fields for description, value, and a dropdown to select which technician paid.
+    *   Add a file upload button for the invoice/receipt.
+    *   When an expense is created, send a push notification to admins.
+    *   Add a type field to expenses with options: Outras, Combustivel, Ferramentas, and Portagens.
+    *   The total value of Portagens should go to the Portagens column on the timesheet PDF.
+    *   The total value of all other types should go to the Despesas column on the timesheet PDF.
+2.  **Bug Fixes & UI Improvements:**
+    *   Equipment details were not appearing on the OT list cards.
+    *   Expenses were not appearing on the timesheet PDF for OT-356. This was traced to a complex issue with duplicate user IDs for the same technician (Nuno Santos).
+    *   Signatures, although present in the OT, were not appearing in the generated PDF.
+    *   The timesheet modal showed two entries for Nuno Santos, causing confusion and incorrect data display.
+3.  **Feature Enhancements:**
+    *   Add a Refresh button for OT signatures to fix sync issues with the PDF.
+    *   Update the Fora de Zona de Residência (Outside Residence Zone) logic to also activate for any location in Portugal, excluding the districts of Sintra, Lisboa, and Setúbal.
+    *   Add a visible link/button to view the clock-in location on OpenStreetMap.
+    *   Add an Apenas Selecionar (Select Only) option to the rate code dropdown in the admin panel, which prevents that rate from being automatically applied on the timesheet.
+    *   Create a new help system using an information icon (i) on all cards within the OTs page, the Calendar page, and all tabs of the Admin Dashboard. The icon should open a popup with explanatory text and images.
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-The application is a feature-rich, full-stack work order and time management system using React, FastAPI, and MongoDB. It includes user authentication, an admin dashboard, OT management, PDF generation, a calendar, and a sophisticated notification system (both in-app and push).
+The application is a comprehensive full-stack work order and time management system with a React frontend, FastAPI backend, and MongoDB database. Key features include user authentication, an admin dashboard, OT management, a calendar, PDF generation for OTs and timesheets, and a notification system (in-app and push).
 
-This session successfully completed several major features, significantly enhancing the application's automation and user experience. The Work on Vacation logic is now complete. The notification system is far more robust, providing timely push and in-app alerts for most critical workflows. The application now has enhanced PWA capabilities, including geolocation capture with reverse geocoding and an offline mode for the crucial OTs page. Branding has also been updated with the company logo.
+This session successfully implemented a complete expense management system, fixed several critical bugs related to data display and aggregation on timesheets, and introduced a new, extensible help system across the application.
 
 **Last working item**:
--   **Last item agent was working:** Implementing the logic to automatically detect when a user is clocking in from outside Portugal. The goal was to use the reverse geocoding data to auto-check the Fora de Zona de Residência checkbox and pre-fill the Local da Deslocação input with the detected city and country.
+-   **Last item agent was working:** Expanding the new help system to the Calendar and Admin Dashboard pages. The agent had already created the reusable  component and was in the process of adding the specific help content for these new sections into the component.
 -   **Status:** IN PROGRESS
--   **Agent Testing Done:** Y
--   **Which testing method agent to use?** Frontend testing agent. The agent implemented and visually verified the frontend logic in . However, the backend's reverse geocoding functionality could not be fully tested in the preview environment due to network restrictions preventing external API calls. The code includes graceful error handling for this scenario.
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent. The agent should verify that the help icons appear correctly on the  page and on each tab within the  component, and that clicking them opens the correct help content.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
 -   **Issue 1: Recurring VAPID Key Mismatch (P1)**
-    -   **Description:** Push notifications are likely non-functional in the user's production environment due to a persistent mismatch between VAPID keys in the code and the production environment variables.
+    -   **Description:** A persistent mismatch between VAPID keys in the code and the user's production environment variables is likely preventing push notifications from working in production.
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** Y
 -   **Issue 2: Unresolved Edit OT Equipment Test Failure (P2)**
@@ -44,113 +46,115 @@ This session successfully completed several major features, significantly enhanc
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** Y
 -   **Issue 3: Reverse Geocoding Fails in Preview Environment (P2)**
-    -   **Description:** The backend feature to convert GPS coordinates to a city/country fails in the preview environment because the container has no outbound internet access. The code handles this gracefully with a  block, but it means the feature cannot be end-to-end tested by the agent.
+    -   **Description:** The backend's reverse geocoding feature cannot be end-to-end tested by the agent because the preview container lacks outbound internet access.
     -   **Status:** BLOCKED (on environment limitations)
+    -   **Is recurring issue?** N
 
 **In progress Task List**:
-- **Task 1: Complete Work on Vacation Logic (P0)**
-    - **Where to resume:** The backend . The agent has started the logic in the  endpoint.
-    - **What's left:**
-        1. Create or modify an endpoint for admins to approve the  request.
-        2. Implement the logic in the approval endpoint to find the corresponding approved vacation request, mark it as void or cancelled, and increment the user's available vacation days.
-        3. Ensure notifications are sent correctly for this workflow.
-    - **What will be achieved with this?** A complete, automated workflow for handling exceptions when employees work during their vacation periods.
-    - **Status:** IN PROGRESS
-    - **Should Test frontend/backend/both after fix?** Both
-    - **Blocked on something:** No
+-   **Task 1: Complete Help System Expansion (P0)**
+    -   **Where to resume:** The agent needs to modify  to include the help text and images for the Calendar and Admin Dashboard sections.
+    -   **What will be achieved with this?** The user's request to have a consistent help system across all major application pages will be fulfilled.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on something:** No
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P0) Refactor Backend:** The highest priority technical debt is to break down the monolithic  file (over 8,600 lines) into smaller, feature-specific route files (e.g., , ).
-    -   **(P1) OneDrive Integration:** Migrate file storage (photos, signatures, PDFs) from MongoDB to OneDrive.
-    -   **(P1) Refactor Frontend:** Break down massive components like  (6,500+ lines) and  (1,800+ lines) into smaller, manageable components and custom hooks.
+    -   **(P1) Complete Work on Vacation Logic:** Finish the backend workflow for admins to approve work on vacation requests and have the system automatically refund the vacation day to the user.
+    -   **(P1) Refactor Backend:** The monolithic  file is now over 8,800 lines and urgently needs to be broken down into smaller, feature-specific route files (e.g., , , ).
+    -   **(P1) Refactor Frontend:** Decompose massive components like  (now over 7,000 lines) into smaller, manageable components and custom hooks.
+    -   **(P1) OneDrive Integration:** Migrate file storage (photos, signatures, PDFs) from the local filesystem/MongoDB to OneDrive.
 -   **Future Tasks:**
     -   **(P2) Overtime Reporting:** Create a new admin report summarizing approved/rejected overtime.
     -   **(P2) Real-time Admin Notifications:** Implement WebSockets to show new authorization requests on the admin dashboard in real-time.
-    -   **(P2) Metrics Dashboard:** Create a dashboard with charts and graphs for key metrics (hours per week, OTs per month).
+    -   **(P2) Metrics Dashboard:** Create a dashboard with charts and graphs for key metrics.
     -   **(P2) Data Export:** Add functionality to export reports to Excel/CSV.
 
 **Completed work in this session**
--   **Feature (Work on Vacation):** Fully implemented the backend logic and frontend UI for handling clock-ins during approved vacation, including the admin approval workflow and refunding vacation days.
--   **UI ():** Relocated the Work on Vacation approval section to the Férias (Vacations) tab for better usability.
--   **Feature (In-App Notifications):** Expanded the bell notification system to show alerts for vacation submissions/decisions and overtime decisions, with custom icons and colors.
--   **Feature (Push Notifications):** Implemented push notifications for:
-    -   Admins: New vacation/overtime/quote requests.
-    -   Users: Decisions on their vacation/overtime requests.
-    -   Technicians: New service assignments and reminders.
--   **Feature ():** Added a button to download company information as a PDF, generated on the frontend with .
--   **Branding:** Replaced the application icon, header logo, and browser favicon with the HWI company logo.
--   **Feature (PWA/Offline):** Implemented an offline mode for the OTs page () using a service worker and IndexedDB to cache data.
--   **Feature (Geolocation):** Implemented geolocation capture on clock-in, with reverse geocoding on the backend to identify city/country.
--   **Feature (UI Automation):** Added logic to the frontend to automatically manage the Fora de Zona de Residência fields if the user's location is detected outside of Portugal.
+-   **Feature (Expense Management):**
+    -   Created backend model (), CRUD endpoints, and database collection for expenses.
+    -   Added a new Despesas card in  with fields for type, description, value, technician, and receipt upload.
+    -   Implemented push notifications to admins on new expense creation.
+    -   Modified the timesheet generation logic ( and ) to correctly aggregate and display Portagens and other Despesas in separate columns.
+-   **Bug Fix (Duplicate User):**
+    -   Resolved a critical bug where a single technician (Nuno Santos) had two different user IDs, causing expenses not to appear on the timesheet. The fix involved updating existing expense records to use the correct technician ID and modifying the backend data aggregation to correctly merge data from both sources.
+-   **Bug Fix (Missing Equipment):** Fixed an issue in  where equipment details were not being displayed on OT cards.
+-   **Bug Fix (Missing Signatures):** Corrected the PDF generation logic in  to use  image data as a fallback, ensuring signatures are always included in the PDF.
+-   **Feature (Signature Refresh):** Added a new API endpoint and a Refresh button in the UI to sync signature data and resolve caching issues.
+-   **Feature (Geolocation Update):** Updated the Fora de Zona logic in  to activate for locations in Portugal outside of the Lisbon metropolitan area.
+-   **Feature (Map Links):** Added Ver no Mapa links to OpenStreetMap for clock-in locations in .
+-   **Feature (Select Only Rate Code):** Implemented the Apenas Selecionar option for rate codes, preventing them from being auto-applied on timesheets.
+-   **Feature (Help System):** Created a reusable  component and integrated it throughout the OT view ().
 
 **Earlier issues found/mentioned but not fixed**
 -   Same as All Pending/In progress Issue list.
 
 **Known issue recurrence from previous fork**
--   The VAPID key mismatch issue is a recurring problem from a previous fork and remains a high-risk blocker for production push notifications.
+-   The VAPID key mismatch issue for production push notifications remains unresolved.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **PWA & Offline First:** Using a Service Worker to cache API routes (, ) and static assets. A new  custom hook was created to manage caching and retrieval of dynamic data from IndexedDB, providing a seamless offline experience for the OTs page.
--   **Geolocation & Reverse Geocoding:** Capturing user location via the browser's  API on the frontend. The backend was enhanced to receive these coordinates and use an external API (OpenStreetMap Nominatim via ) to perform reverse geocoding, converting lat/long to a city and country.
--   **Conditional UI Automation:** Using React state to automatically trigger UI changes based on asynchronous data. For example, when reverse geocoding returns a country other than Portugal, the UI automatically checks a box and fills an input field for the user.
--   **Frontend PDF Generation:** Utilizing the  library to generate a PDF document directly in the browser based on data available in a React component.
--   **Advanced Push Notifications:** Expanding the use of  and  to create a variety of event-driven and scheduled push notifications for different user roles (admins vs. regular users).
+-   **Complex Data Aggregation:** The timesheet data endpoint () now performs complex aggregation, merging data from time entries (), manual OT technicians (), and the new expenses collection (), while correctly handling distinct user IDs that represent the same person.
+-   **Data Integrity & Migration:** The agent had to perform a one-time data migration (via a script in ) to fix incorrect  associations in existing expense records, resolving a critical data integrity issue.
+-   **Reusable Components:** A new  component was created to provide a consistent, content-driven help system across the application.
+-   **Defensive Programming:** The PDF generation logic was improved to use  data as a fallback if a signature image file path is broken, making the system more resilient.
 
 **key DB schema**
--   **registos_ponto** (Time Entries):
-    -    was added. It now stores , , , and is enriched with , , and  from reverse geocoding.
--   **vacation_requests**:
-    -    and  were added to track refunded vacation days when work is approved.
+-   **despesas_ot** (New Collection):
+    -   , etc.
+-   **tarifas**:
+    -   The  field can now have a special value  to indicate it should not be auto-applied.
 
 **All files of reference**
 -   /app/backend/server.py
--   /app/backend/notifications_scheduler.py
+-   /app/frontend/src/components/TechnicalReports.jsx
 -   /app/frontend/src/components/Dashboard.jsx
 -   /app/frontend/src/components/AdminDashboard.jsx
--   /app/frontend/src/components/TechnicalReports.jsx
--   /app/frontend/public/service-worker.js
--   /app/frontend/src/hooks/useOfflineData.js
+-   /app/frontend/src/components/HelpTooltip.jsx
+-   /app/backend/ot_pdf_report.py
+-   /app/backend/folha_horas_pdf.py
+-   /app/frontend/src/components/technical-reports/FolhaHorasModal.jsx
+-   /app/memory/PRD.md
 
 **Areas that need refactoring**:
--    is critically oversized at over 8,600 lines. It is a major maintenance risk and must be broken down into a proper route-based structure.
--    (over 6,500 lines) and  (over 1,800 lines) are extremely large and complex. They should be decomposed into smaller, single-responsibility components and custom hooks.
+-    is critically oversized at over 8,800 lines. It is a major maintenance risk and must be broken down. The recent addition of expense logic and complex timesheet aggregation has made this even more urgent.
+-    is now over 7,000 lines and is almost unmaintainable. It must be decomposed into smaller components for each card (Técnicos, Intervenções, Materiais, Despesas, etc.) and custom hooks for its numerous data-fetching and state management functions.
 
 **key api endpoints**
+-   **New Endpoints:**
+    -   : Full CRUD for expenses.
+    -   : To regenerate and sync signature data.
 -   **Modified Endpoints:**
-    -   : Now accepts an optional  object in the request body. The backend processes this to perform reverse geocoding and saves the enriched location data.
-    -   : Modified to trigger push notifications to assigned technicians upon creation.
-    -   : Logic was added to detect when a quote request () is being created and to send a push notification to admins.
-    -   : Modified to send push notifications to the user upon approval or rejection.
+    -   : Heavily modified to aggregate expense and toll data and resolve duplicate technician IDs.
+    -   : Modified to filter out  rate codes from being automatically applied.
 
 **Critical Info for New Agent**
--   **Environment Limitation:** The reverse geocoding feature cannot be fully tested in the preview environment due to a lack of outbound internet access from the container. The code has been made resilient to this failure, but end-to-end testing requires a different environment.
--   **Technical Debt:** The monolithic nature of  and the huge frontend components (, ) are the biggest risks to future development. Refactoring should be a top priority.
--   **Production Push Notifications:** The VAPID key mismatch is a recurring, unresolved issue that will prevent push notifications from working in production. This requires coordination with the user to ensure their production environment variables are set correctly.
+-   **User ID Duplication:** Be aware of the distinction between system users (from the  collection, e.g., ID  for Nuno) and manual technicians added to an OT ( collection, e.g., ID  for Nuno). The timesheet logic now correctly consolidates data from both, but this is a fragile part of the system. Future features related to technicians must handle this carefully.
+-   **Massive Components:** The  and  files are extremely large. Proceed with extreme caution when modifying them. Prioritize refactoring them as soon as possible.
+-   **UI Navigation:** The  tool has had difficulty navigating the frontend via clicks. It's more reliable to navigate directly to URLs or to confirm functionality via  and backend logs if the UI becomes unresponsive in the test environment.
 
 **documents and test reports created in this job**
--    was consistently updated with all completed features.
--    was created as a fallback page for the PWA.
+-   /app/memory/PRD.md
+-   /app/frontend/src/components/HelpTooltip.jsx
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Add suggestions for new push notifications. (DONE)
-2.  **Request:** Implement push notifications for service assignment reminders and new quote requests. (DONE)
-3.  **Request:** Add a PDF download button for company info. (DONE)
-4.  **Request:** Replace app icon and favicon with HWI logo. (DONE)
-5.  **Request:** Provide suggestions for design and production improvements. (DONE)
-6.  **Request:** Implement PWA improvements (offline mode) and geolocation on clock-in. (DONE)
-7.  **Request:** Add more prominent visual feedback for the geolocation capture process. (DONE)
-8.  **Request:** Implement a dedicated offline mode for the OTs page. (DONE)
-9.  **Request:** Add reverse geocoding to identify city and country from GPS coordinates. (DONE)
-10. **Request:** Automatically check Fora de Zona de Residência and fill the location if the user is outside Portugal. (IN PROGRESS)
+1.  **User:** Requests Apenas Selecionar option for rate codes in the admin tarifario. (DONE)
+2.  **User:** Asks to update the Fora de Zona de Residência logic to include Portugal outside Lisbon/Sintra/Setúbal. (DONE)
+3.  **User:** Asks to add a link to view the clock-in location on a map. (DONE)
+4.  **User:** Asks to remove Google Maps links, leaving only OpenStreetMap. (DONE)
+5.  **User:** Reports signatures missing from OT PDFs and requests a refresh button. (DONE)
+6.  **User:** Asks for a help system with info icons on all cards in the OTs page. (DONE)
+7.  **User:** Asks to expand the help system to the Calendar and Admin Dashboard pages. (IN PROGRESS)
+8.  **User:** Provides screenshot of the Apenas Selecionar dropdown for context. (Acknowledged)
+9.  **User:** Says continua (continue) after agent fixes a bug and rebuilds. (Acknowledged)
+10. **User:** Says continua a nao aparecer (still not showing up) regarding the timesheet bug and provides screenshots pointing out the duplicate Nuno Santos entries. (Root cause identified and fixed).
 
 **Project Health Check:**
 -   **Broken:**
-    -   Push notification system in the **production environment** is likely non-functional due to the unresolved VAPID key mismatch.
-    -   The Edit OT Equipment feature remains potentially broken from a previous session's failed test.
+    -   Production push notification system (due to VAPID key mismatch).
+    -   Edit OT Equipment feature (due to unresolved test failure from a previous session).
 -   **Mocked:** None.
 
 **3rd Party Integrations**
@@ -158,15 +162,15 @@ This session successfully completed several major features, significantly enhanc
 -   pdfminer.six
 -   APScheduler (Backend cron jobs)
 -   pywebpush (Web Push Notification sending)
--   jspdf (New: Frontend PDF generation)
--   httpx (New: Backend HTTP client for external APIs)
+-   jspdf (Frontend PDF generation)
+-   httpx (Backend HTTP client)
 -   **External Services:** OpenStreetMap Nominatim (for Reverse Geocoding)
 
 **Testing status**
--   Testing agent used after significant changes: NO
--   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: None
--   Known regressions: The production push notification issue persists.
+-   **Testing agent used after significant changes:** NO
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None
+-   **Known regressions:** The production push notification issue persists.
 
 **Credentials to test flow:**
 -   **admin:**  / 
@@ -174,5 +178,6 @@ This session successfully completed several major features, significantly enhanc
 -   **non-admin:**  / 
 
 **What agent forgot to execute**
--   The longstanding Edit OT Equipment test failure was not addressed.
--   The  was not utilized, despite numerous large-scale feature implementations, which could have helped identify regressions or bugs earlier in the process.</analysis>
+-   The Work on Vacation feature, marked as P0 in the previous handoff, was not started as the agent prioritized the user's immediate bug fixes and feature requests.
+-   The Edit OT Equipment test failure was not addressed.
+-   The  was not used for regression testing after implementing the complex expense system and fixing the user ID bug, which would have been appropriate.</analysis>
