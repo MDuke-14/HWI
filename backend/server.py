@@ -6713,6 +6713,18 @@ async def approve_vacation(
         request_id
     )
     
+    # Enviar PUSH notification ao utilizador
+    push_title = f"{'✅ Férias Aprovadas' if approved else '❌ Férias Rejeitadas'}"
+    push_message = f"O seu pedido de férias ({vac_request['start_date']} a {vac_request['end_date']}) foi {'aprovado' if approved else 'rejeitado'} por {current_user['username']}"
+    await send_push_notification(
+        db,
+        vac_request["user_id"],
+        push_title,
+        push_message,
+        f"vacation_{'approved' if approved else 'rejected'}",
+        "high"
+    )
+    
     return {"message": f"Pedido {'aprovado' if approved else 'rejeitado'} com sucesso"}
 
 @api_router.get("/admin/reports/all")
