@@ -6318,6 +6318,15 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
             vac_request.id
         )
     
+    # Enviar PUSH notification aos admins
+    await send_push_to_admins(
+        db,
+        f"📅 Novo Pedido de Férias",
+        f"{current_user['username']} pediu {days_requested} dias de férias ({request_data.start_date} a {request_data.end_date})",
+        "vacation_request",
+        "high"
+    )
+    
     # Notificar o próprio utilizador (confirmação de submissão)
     await create_notification(
         current_user["sub"],
