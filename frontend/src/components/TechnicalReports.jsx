@@ -3466,6 +3466,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <DialogTitle className="flex items-center gap-2 text-white">
                 <FileText className="w-5 h-5 text-blue-400" />
                 OT #{selectedRelatorio?.numero_assistencia}
+                <HelpTooltip section="ot_geral" />
               </DialogTitle>
               <Button
                 onClick={() => {
