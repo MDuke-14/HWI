@@ -74,6 +74,82 @@ const CompanyInfoCard = ({ user }) => {
     setIsEditing(false);
   };
 
+  const handleDownloadPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let y = 20;
+      
+      // Título
+      doc.setFontSize(22);
+      doc.setTextColor(41, 128, 185); // Azul
+      doc.text('Informações da Empresa', pageWidth / 2, y, { align: 'center' });
+      y += 15;
+      
+      // Nome da empresa
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
+      doc.text(companyData.nome_empresa || 'N/A', pageWidth / 2, y, { align: 'center' });
+      y += 20;
+      
+      // Linha separadora
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, y, pageWidth - 20, y);
+      y += 15;
+      
+      // Dados da empresa
+      doc.setFontSize(11);
+      
+      const addField = (label, value) => {
+        doc.setTextColor(100, 100, 100);
+        doc.text(label + ':', 20, y);
+        doc.setTextColor(0, 0, 0);
+        doc.text(value || 'N/A', 70, y);
+        y += 10;
+      };
+      
+      addField('NIF', companyData.nif);
+      addField('Telemóvel', companyData.telemovel);
+      addField('Website', companyData.website);
+      addField('Email', companyData.email);
+      
+      y += 5;
+      doc.setTextColor(100, 100, 100);
+      doc.text('Morada:', 20, y);
+      y += 8;
+      doc.setTextColor(0, 0, 0);
+      doc.text(companyData.morada_linha1 || 'N/A', 30, y);
+      y += 7;
+      doc.text(companyData.morada_linha2 || '', 30, y);
+      y += 15;
+      
+      // IBAN com destaque
+      doc.setFillColor(240, 248, 255);
+      doc.rect(20, y - 5, pageWidth - 40, 20, 'F');
+      doc.setTextColor(100, 100, 100);
+      doc.text('IBAN:', 25, y + 5);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'bold');
+      doc.text(companyData.iban || 'N/A', 50, y + 5);
+      doc.setFont(undefined, 'normal');
+      y += 30;
+      
+      // Footer
+      doc.setFontSize(9);
+      doc.setTextColor(150, 150, 150);
+      const today = new Date().toLocaleDateString('pt-PT');
+      doc.text(`Documento gerado em ${today}`, pageWidth / 2, 280, { align: 'center' });
+      doc.text('© HWI Unipessoal, Lda.', pageWidth / 2, 287, { align: 'center' });
+      
+      // Download
+      doc.save(`${companyData.nome_empresa || 'Empresa'}_Info.pdf`);
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar PDF');
+    }
+  };
+
   const isAdmin = user?.is_admin === true;
 
   return (
