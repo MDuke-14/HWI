@@ -181,8 +181,26 @@ async def startup_event():
         replace_existing=True
     )
     
+    # Verificar serviços próximos a cada 15 minutos (dias úteis, 07:00-20:00)
+    async def scheduled_service_reminder():
+        logging.info("🔔 Verificando serviços próximos...")
+        try:
+            result = await check_upcoming_services(db)
+            if result.get('notified_count', 0) > 0:
+                logging.info(f"Lembretes de serviço: {result.get('notified_count', 0)} enviados")
+        except Exception as e:
+            logging.error(f"Erro na verificação de serviços: {str(e)}")
+    
+    scheduler.add_job(
+        scheduled_service_reminder,
+        CronTrigger(minute='0,15,30,45', hour='7-20', day_of_week='mon-fri'),
+        id='service_reminder_check',
+        replace_existing=True
+    )
+    
     scheduler.start()
     logging.info("📅 Scheduler de verificações de ponto iniciado (09:30 e 18:15)")
+    logging.info(f"   + Lembretes de serviço a cada 15 min (07:00-20:00)")
     logging.info(f"   Timezone: Europe/Lisbon")
     logging.info(f"   Base URL: {base_url}")
 
