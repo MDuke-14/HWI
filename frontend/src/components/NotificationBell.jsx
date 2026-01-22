@@ -178,6 +178,9 @@ const NotificationBell = ({ user }) => {
       // Pedidos de Cotação
       'pc_created': { title: '📋 Novo Pedido de Cotação', color: 'border-yellow-500/50' },
       
+      // Despesas
+      'despesa_created': { title: '💰 Nova Despesa', color: 'border-emerald-500/50' },
+      
       // Ponto
       'missing_clock_in': { title: '⏰ Lembrete de Entrada', color: 'border-orange-500/50' },
       'missing_clock_out': { title: '⏰ Lembrete de Saída', color: 'border-purple-500/50' },
