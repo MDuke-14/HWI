@@ -439,6 +439,24 @@ class MaterialOT(BaseModel):
     pc_id: Optional[str] = None  # ID do Pedido de Cotação (se fornecido_por = Cotação)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class DespesaOT(BaseModel):
+    """Despesa associada a uma OT"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    descricao: str
+    valor: float
+    tecnico_id: str  # ID do técnico que pagou
+    tecnico_nome: str  # Nome do técnico
+    data: str  # Data da despesa (YYYY-MM-DD)
+    factura_data: Optional[str] = None  # Base64 da factura
+    factura_filename: Optional[str] = None
+    factura_mimetype: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str  # User ID de quem criou
+
+
 class PedidoCotacao(BaseModel):
     """Pedido de Cotação (PC)"""
     model_config = ConfigDict(extra="ignore")
