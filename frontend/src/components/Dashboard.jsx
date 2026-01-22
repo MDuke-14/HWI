@@ -602,9 +602,9 @@ const Dashboard = ({ user, onLogout }) => {
                       Testar GPS
                     </button>
                   )}
-                  {geoLocation && geoLocation.address?.country_code && geoLocation.address.country_code !== 'PT' && (
+                  {geoLocation && geoLocation.address && isForaZonaResidencia(geoLocation.address) && (
                     <span className="text-amber-400 text-xs font-medium flex items-center gap-1">
-                      🌍 Fora de PT
+                      {geoLocation.address.country_code !== 'PT' ? '🌍 Fora de PT' : '📍 Fora da Zona'}
                     </span>
                   )}
                 </div>
