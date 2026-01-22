@@ -965,6 +965,16 @@ async def process_authorization_decision(
                         "created_at": datetime.now().isoformat()
                     }
                     await db.notifications.insert_one(notification)
+                    
+                    # 5. Enviar PUSH notification ao utilizador
+                    await send_push_notification(
+                        db,
+                        user_id,
+                        "✅ Trabalho em Férias Autorizado",
+                        f"O seu trabalho em {date_str} foi autorizado. 1 dia de férias foi devolvido ao seu saldo.",
+                        "vacation_day_refunded",
+                        "high"
+                    )
             
             return {
                 "status": "success",
@@ -987,6 +997,16 @@ async def process_authorization_decision(
                 "created_at": datetime.now().isoformat()
             }
             await db.notifications.insert_one(notification)
+            
+            # Enviar PUSH notification ao utilizador
+            await send_push_notification(
+                db,
+                user_id,
+                "❌ Trabalho em Férias Rejeitado",
+                f"O seu pedido para trabalhar em {date_str} foi rejeitado. A entrada de ponto foi eliminada.",
+                "vacation_work_rejected",
+                "high"
+            )
             
             return {
                 "status": "success",
