@@ -3856,8 +3856,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <div className="bg-black/30 p-3 rounded border border-gray-600">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-white font-medium">{selectedRelatorio.equipamento_marca} - {selectedRelatorio.equipamento_tipologia}</p>
-                          <p className="text-gray-400 text-sm">Modelo: {selectedRelatorio.equipamento_modelo}</p>
+                          <p className="text-white font-medium">
+                            {selectedRelatorio.equipamento_tipologia && <span>{selectedRelatorio.equipamento_tipologia}</span>}
+                            {selectedRelatorio.equipamento_tipologia && selectedRelatorio.equipamento_marca && <span> • </span>}
+                            {selectedRelatorio.equipamento_marca && <span>{selectedRelatorio.equipamento_marca}</span>}
+                          </p>
+                          {selectedRelatorio.equipamento_modelo && (
+                            <p className="text-gray-400 text-sm">Modelo: {selectedRelatorio.equipamento_modelo}</p>
+                          )}
                           {selectedRelatorio.equipamento_numero_serie && (
                             <p className="text-gray-400 text-xs">Série: {selectedRelatorio.equipamento_numero_serie}</p>
                           )}
