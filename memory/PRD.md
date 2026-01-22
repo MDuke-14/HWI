@@ -36,13 +36,19 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Saldo de férias permanece inalterado
 - Notificação enviada ao utilizador sobre a rejeição
 
+**UI Admin Dashboard (aba Férias):**
+- Nova secção "Trabalho Durante Férias" com destaque laranja
+- Badge na aba mostra total de pedidos pendentes (férias + trabalho em férias)
+- Botões "Autorizar" e "Rejeitar" com consequências explicadas
+- Histórico de decisões anteriores
+
 **Ficheiros modificados:**
 - `/app/backend/notifications_scheduler.py` - `handle_overtime_start()` e `process_authorization_decision()`
 - `/app/backend/server.py` - Endpoint `/api/time-entries/start`
-- `/app/frontend/src/components/AdminDashboard.jsx` - UI para tipo `vacation_work`
-- `/app/frontend/src/components/OvertimeAuthorization.jsx` - Página de decisão
+- `/app/frontend/src/components/AdminDashboard.jsx` - UI completa na aba Férias
+- `/app/frontend/src/components/OvertimeAuthorization.jsx` - Página de decisão (opcional)
 
-**Testado:** ✅ Backend 100% (aprovação e rejeição)
+**Testado:** ✅ Backend 100% | ✅ Frontend verificado via screenshot
 
 ---
 
