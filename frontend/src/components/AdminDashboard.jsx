@@ -1681,7 +1681,10 @@ const AdminDashboard = ({ user, onLogout }) => {
             {reports && (
               <div className="glass-effect p-6 rounded-xl">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                  <h2 className="text-2xl font-semibold text-white">Relatório Consolidado</h2>
+                  <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+                    Relatório Consolidado
+                    <HelpTooltip section="admin_relatorios" />
+                  </h2>
                   
                   {/* Seletor de Mês/Ano */}
                   <div className="flex items-center gap-3">
