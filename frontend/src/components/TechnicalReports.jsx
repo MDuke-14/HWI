@@ -4969,6 +4969,27 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
           <form onSubmit={handleUpdateDespesa} className="space-y-4 mt-4">
             <div>
+              <Label htmlFor="edit-despesa-tipo" className="text-gray-300">Tipo de Despesa *</Label>
+              <select
+                id="edit-despesa-tipo"
+                value={despesaFormData.tipo}
+                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tipo: e.target.value }))}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                required
+              >
+                {tiposDespesa.map(tipo => (
+                  <option key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {despesaFormData.tipo === 'portagens' 
+                  ? '→ Vai para a coluna "Portagens" na Folha de Horas'
+                  : '→ Vai para a coluna "Despesas" na Folha de Horas'}
+              </p>
+            </div>
+            <div>
               <Label htmlFor="edit-despesa-descricao" className="text-gray-300">Descrição *</Label>
               <Input
                 id="edit-despesa-descricao"
