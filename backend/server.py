@@ -508,6 +508,7 @@ class TimeEntryStart(BaseModel):
     observations: Optional[str] = None
     outside_residence_zone: Optional[bool] = False
     location_description: Optional[str] = None
+    geo_location: Optional[dict] = None  # {latitude, longitude, accuracy, timestamp}
 
 class TimeEntryEnd(BaseModel):
     observations: Optional[str] = None
