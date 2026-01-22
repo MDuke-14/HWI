@@ -15,6 +15,7 @@ import {
   Edit2, Trash2, Search, Building2, Clock, CalendarDays, List, 
   Sparkles, Sun, Umbrella
 } from 'lucide-react';
+import HelpTooltip from '@/components/HelpTooltip';
 
 const Calendar = ({ user, onLogout }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
