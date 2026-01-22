@@ -748,7 +748,10 @@ const AdminDashboard = ({ user, onLogout }) => {
           <TabsContent value="users">
             <div className="glass-effect p-6 rounded-xl">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Utilizadores ({users.length})</h2>
+                <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+                  Utilizadores ({users.length})
+                  <HelpTooltip section="admin_utilizadores" />
+                </h2>
                 <div className="flex gap-3">
                   <Dialog open={showManualEntryDialog} onOpenChange={setShowManualEntryDialog}>
                     <DialogTrigger asChild>
