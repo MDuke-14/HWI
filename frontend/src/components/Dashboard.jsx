@@ -336,7 +336,7 @@ const Dashboard = ({ user, onLogout }) => {
         location = await getGeoLocation();
         toast.success('Localização capturada!');
         
-        // Verificar se está fora de Portugal (fazer reverse geocoding no frontend para auto-detect)
+        // Verificar se está fora da zona de residência (fazer reverse geocoding no frontend para auto-detect)
         if (location && location.latitude && location.longitude) {
           try {
             const geoResponse = await fetch(
@@ -348,30 +348,41 @@ const Dashboard = ({ user, onLogout }) => {
               const geoData = await geoResponse.json();
               const countryCode = geoData.address?.country_code?.toUpperCase();
               const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.municipality;
+              const county = geoData.address?.county || geoData.address?.state;
               const country = geoData.address?.country;
               
-              // Se não estiver em Portugal, ativar automaticamente "Fora de Zona"
-              if (countryCode && countryCode !== 'PT') {
+              const addressInfo = {
+                city: city,
+                region: county,
+                country: country,
+                country_code: countryCode,
+                county: geoData.address?.county,
+                formatted: geoData.display_name
+              };
+              
+              // Verificar se está fora da zona de residência
+              if (isForaZonaResidencia(addressInfo)) {
                 autoOutsideZone = true;
-                autoLocationDesc = city ? `${city}, ${country}` : country || 'Estrangeiro';
+                autoLocationDesc = city ? `${city}${county ? `, ${county}` : ''}${country && countryCode !== 'PT' ? `, ${country}` : ''}` : country || 'Local desconhecido';
                 
                 // Atualizar estado para feedback visual
                 setOutsideResidenceZone(true);
                 setLocationDescription(autoLocationDesc);
                 
-                toast.info(`📍 Detectado fora de Portugal: ${autoLocationDesc}`, {
-                  duration: 5000
-                });
+                if (countryCode !== 'PT') {
+                  toast.info(`📍 Detectado fora de Portugal: ${autoLocationDesc}`, {
+                    duration: 5000
+                  });
+                } else {
+                  toast.info(`📍 Fora da zona de residência: ${autoLocationDesc}`, {
+                    duration: 5000,
+                    description: 'Fora de Lisboa/Sintra/Setúbal'
+                  });
+                }
               }
               
               // Guardar info de endereço na localização
-              location.address = {
-                city: city,
-                region: geoData.address?.state || geoData.address?.county,
-                country: country,
-                country_code: countryCode,
-                formatted: geoData.display_name
-              };
+              location.address = addressInfo;
             }
           } catch (geoErr) {
             console.log('Reverse geocoding falhou:', geoErr.message);
