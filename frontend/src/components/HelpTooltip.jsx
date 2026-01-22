@@ -284,6 +284,255 @@ const helpContent = {
         </div>
       </div>
     `
+  },
+
+  // ============ CALENDÁRIO ============
+  calendario_geral: {
+    title: '📅 Como funciona o Calendário',
+    content: `
+      <div class="space-y-4">
+        <p>O <strong>Calendário</strong> permite gerir serviços agendados e visualizar disponibilidade da equipa.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Funcionalidades:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Vista Mensal:</strong> Veja todos os serviços e férias do mês</li>
+            <li><strong>Vista Lista:</strong> Visualize serviços em formato de lista</li>
+            <li><strong>Criar Serviço:</strong> Agende novos serviços (apenas admins)</li>
+            <li><strong>Detalhe do Dia:</strong> Clique num dia para ver detalhes</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">🎨 Legenda de Cores:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><span class="text-sky-400">■</span> <strong>Azul:</strong> Serviços agendados</li>
+            <li><span class="text-purple-400">■</span> <strong>Roxo:</strong> Férias de colaboradores</li>
+            <li><span class="text-amber-400">■</span> <strong>Âmbar:</strong> Feriados nacionais</li>
+            <li><span class="text-emerald-400">●</span> <strong>Verde:</strong> Dia atual</li>
+          </ul>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">💡 Dica:</h4>
+          <p class="text-sm">Os técnicos recebem notificações push quando são atribuídos a um novo serviço.</p>
+        </div>
+      </div>
+    `
+  },
+
+  calendario_servicos: {
+    title: '🔧 Serviços Agendados',
+    content: `
+      <div class="space-y-4">
+        <p>Os serviços representam trabalhos agendados com clientes.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Criar Serviço:</h4>
+          <ol class="list-decimal list-inside space-y-1 text-sm">
+            <li>Clique em "Novo Serviço"</li>
+            <li>Preencha cliente, localização e motivo</li>
+            <li>Selecione data e técnicos responsáveis</li>
+            <li>Adicione observações se necessário</li>
+          </ol>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">📊 Estados:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Agendado:</strong> Serviço marcado, aguarda execução</li>
+            <li><strong>Em Progresso:</strong> Técnicos a trabalhar</li>
+            <li><strong>Concluído:</strong> Trabalho finalizado</li>
+            <li><strong>Cancelado:</strong> Serviço anulado</li>
+          </ul>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">✅ Notificações:</h4>
+          <p class="text-sm">Ao criar/editar um serviço, os técnicos selecionados recebem notificação automática.</p>
+        </div>
+      </div>
+    `
+  },
+
+  // ============ ADMIN DASHBOARD ============
+  admin_ferias: {
+    title: '🏖️ Gestão de Férias',
+    content: `
+      <div class="space-y-4">
+        <p>Nesta secção gere os pedidos de férias dos colaboradores.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Tipos de Pedidos:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Pedidos Pendentes:</strong> Aguardam aprovação</li>
+            <li><strong>Trabalho em Férias:</strong> Colaborador iniciou ponto durante férias</li>
+          </ul>
+        </div>
+
+        <div class="bg-orange-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-orange-400 mb-2">⚠️ Trabalho em Férias:</h4>
+          <p class="text-sm">Se autorizar trabalho em dia de férias:</p>
+          <ul class="list-disc list-inside space-y-1 text-sm mt-2">
+            <li><strong>Autorizar:</strong> Devolve 1 dia ao saldo de férias</li>
+            <li><strong>Rejeitar:</strong> Elimina a entrada de ponto</li>
+          </ul>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">✅ Saldo de Férias:</h4>
+          <p class="text-sm">Cada colaborador tem direito a 22 dias úteis por ano. O saldo é automaticamente calculado.</p>
+        </div>
+      </div>
+    `
+  },
+
+  admin_faltas: {
+    title: '📋 Gestão de Faltas',
+    content: `
+      <div class="space-y-4">
+        <p>Visualize e aprove faltas justificadas e injustificadas.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Tipos de Faltas:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Justificadas:</strong> Com motivo e/ou documento comprovativo</li>
+            <li><strong>Injustificadas:</strong> Sem justificação apresentada</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">📎 Documentos:</h4>
+          <p class="text-sm">Os colaboradores podem anexar documentos (atestados, etc.) que podem ser visualizados clicando em "Ver Justificação".</p>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">✅ Aprovar/Rejeitar:</h4>
+          <p class="text-sm">A decisão fica registada com o nome do admin que a tomou.</p>
+        </div>
+      </div>
+    `
+  },
+
+  admin_utilizadores: {
+    title: '👥 Gestão de Utilizadores',
+    content: `
+      <div class="space-y-4">
+        <p>Crie, edite e gerencie os colaboradores do sistema.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Ações Disponíveis:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Criar Utilizador:</strong> Novo colaborador no sistema</li>
+            <li><strong>Editar:</strong> Alterar dados, password ou privilégios</li>
+            <li><strong>Eliminar:</strong> Remove utilizador (irreversível)</li>
+            <li><strong>Verificar Horas:</strong> Recalcula horas de um período</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">⏱️ Entrada Manual:</h4>
+          <p class="text-sm">Use "Adicionar Entrada" para registar manualmente horas de trabalho (útil para correções ou trabalho offline).</p>
+        </div>
+
+        <div class="bg-purple-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-purple-400 mb-2">🔒 Privilégios Admin:</h4>
+          <p class="text-sm">Utilizadores com privilégios admin têm acesso a este painel e podem gerir outros utilizadores.</p>
+        </div>
+      </div>
+    `
+  },
+
+  admin_notificacoes: {
+    title: '🔔 Sistema de Notificações',
+    content: `
+      <div class="space-y-4">
+        <p>Gerencie notificações automáticas e pedidos de autorização de horas extra.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Verificações Automáticas:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>09:30:</strong> Notifica quem não iniciou ponto</li>
+            <li><strong>18:15:</strong> Notifica quem não parou ponto (solicita autorização)</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">⏰ Horas Extra:</h4>
+          <p class="text-sm">Quando um colaborador trabalha após as 18:00, o sistema envia pedido de autorização aos admins:</p>
+          <ul class="list-disc list-inside space-y-1 text-sm mt-2">
+            <li><strong>Autorizar:</strong> As horas extra são registadas</li>
+            <li><strong>Rejeitar:</strong> Ponto fechado às 18:00</li>
+          </ul>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">🧪 Testes:</h4>
+          <p class="text-sm">Use os botões de teste para verificar se as notificações push estão a funcionar no seu dispositivo.</p>
+        </div>
+      </div>
+    `
+  },
+
+  admin_tarifas: {
+    title: '💰 Tarifário',
+    content: `
+      <div class="space-y-4">
+        <p>Configure as tarifas horárias para cálculo nas Folhas de Horas.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Códigos Horários:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>1:</strong> Dias úteis (07:00-19:00)</li>
+            <li><strong>2:</strong> Noturno (19:00-07:00)</li>
+            <li><strong>S:</strong> Sábados</li>
+            <li><strong>D:</strong> Domingos e Feriados</li>
+            <li><strong>Todos:</strong> Aplica-se a qualquer código</li>
+            <li><strong>Manual:</strong> Apenas seleção manual na folha de horas</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">💡 Apenas Selecionar (Manual):</h4>
+          <p class="text-sm">Tarifas com código "Manual" não são automaticamente aplicadas. O utilizador deve selecioná-las manualmente ao gerar a folha de horas.</p>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">✅ Auto-Aplicação:</h4>
+          <p class="text-sm">Ao gerar folha de horas, as tarifas são automaticamente sugeridas com base no código horário do trabalho realizado.</p>
+        </div>
+      </div>
+    `
+  },
+
+  admin_relatorios: {
+    title: '📊 Relatórios Consolidados',
+    content: `
+      <div class="space-y-4">
+        <p>Visualize estatísticas e resumos de horas de todos os colaboradores.</p>
+        
+        <div class="bg-blue-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-blue-400 mb-2">📌 Período de Faturação:</h4>
+          <p class="text-sm">O período vai do dia <strong>26 do mês anterior</strong> até ao dia <strong>25 do mês selecionado</strong>.</p>
+          <p class="text-sm mt-2">Exemplo: Janeiro 2025 = 26/Dez/2024 a 25/Jan/2025</p>
+        </div>
+
+        <div class="bg-amber-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-amber-400 mb-2">📈 Dados Incluídos:</h4>
+          <ul class="list-disc list-inside space-y-1 text-sm">
+            <li><strong>Total de Horas:</strong> Soma de todas as horas do período</li>
+            <li><strong>Horas Normais:</strong> Trabalho em horário regular</li>
+            <li><strong>Horas Extras:</strong> Trabalho fora do horário (autorizadas)</li>
+            <li><strong>Dias Trabalhados:</strong> Número de dias com registo</li>
+          </ul>
+        </div>
+
+        <div class="bg-green-900/30 p-3 rounded-lg">
+          <h4 class="font-semibold text-green-400 mb-2">📥 Exportar:</h4>
+          <p class="text-sm">Pode exportar os dados para Excel/CSV para análise externa ou processamento de salários.</p>
+        </div>
+      </div>
+    `
   }
 };
 
