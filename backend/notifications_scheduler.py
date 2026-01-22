@@ -685,6 +685,103 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
     }
 
 
+async def check_upcoming_services(db) -> Dict:
+    """
+    Verifica serviços agendados para a próxima hora e envia lembretes aos técnicos.
+    Deve ser executado a cada 15 minutos.
+    """
+    now = datetime.now()
+    today_str = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+    
+    # Calcular janela de tempo: próximos 45-75 minutos (para capturar ~1h antes)
+    time_min = (now + timedelta(minutes=45)).strftime("%H:%M")
+    time_max = (now + timedelta(minutes=75)).strftime("%H:%M")
+    
+    logger.info(f"Verificando serviços entre {time_min} e {time_max} para {today_str}")
+    
+    # Buscar serviços de hoje com horário definido
+    services = await db.service_appointments.find({
+        "date": today_str,
+        "status": {"$in": ["scheduled", "in_progress"]},
+        "time_slot": {"$exists": True, "$ne": None}
+    }, {"_id": 0}).to_list(100)
+    
+    notified_count = 0
+    
+    for service in services:
+        time_slot = service.get("time_slot", "")
+        
+        # Extrair hora de início (formato "09:00-12:00" ou "09:00")
+        start_time = time_slot.split("-")[0].strip() if "-" in time_slot else time_slot.strip()
+        
+        if not start_time:
+            continue
+        
+        # Verificar se está na janela de 1h antes
+        if time_min <= start_time <= time_max:
+            service_id = service.get("id")
+            
+            # Verificar se já enviámos lembrete para este serviço hoje
+            existing_reminder = await db.notification_logs.find_one({
+                "type": "service_reminder_1h",
+                "service_id": service_id,
+                "date": today_str
+            })
+            
+            if existing_reminder:
+                continue  # Já enviámos lembrete
+            
+            # Enviar lembrete a todos os técnicos atribuídos
+            for tech_id in service.get("technician_ids", []):
+                tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "full_name": 1, "username": 1})
+                tech_name = tech.get("full_name") or tech.get("username", "Técnico") if tech else "Técnico"
+                
+                # Push notification
+                await send_push_notification(
+                    db,
+                    tech_id,
+                    "⏰ Serviço em 1 hora",
+                    f"{service.get('client_name')} - {service.get('location')}\nInício: {start_time}",
+                    "service_reminder",
+                    "high"
+                )
+                
+                # Notificação no sino
+                from uuid import uuid4
+                notification = {
+                    "id": str(uuid4()),
+                    "user_id": tech_id,
+                    "type": "service_reminder",
+                    "message": f"Lembrete: Serviço em {service.get('client_name')} às {start_time}",
+                    "read": False,
+                    "related_id": service_id,
+                    "created_at": datetime.now().isoformat()
+                }
+                await db.notifications.insert_one(notification)
+                
+                notified_count += 1
+            
+            # Registar que enviámos lembrete
+            await db.notification_logs.insert_one({
+                "type": "service_reminder_1h",
+                "service_id": service_id,
+                "date": today_str,
+                "sent_at": datetime.now().isoformat(),
+                "technician_ids": service.get("technician_ids", []),
+                "success": True
+            })
+            
+            logger.info(f"Lembrete enviado para serviço {service_id} às {start_time}")
+    
+    return {
+        "status": "completed",
+        "date": today_str,
+        "time": current_time,
+        "notified_count": notified_count
+    }
+
+
 async def handle_overtime_start(db, user_id: str, user_name: str, user_email: str, entry_id: str, base_url: str, custom_reason: str = None, vacation_request_id: str = None) -> Dict:
     """
     Quando um utilizador inicia ponto num sábado/domingo/feriado
