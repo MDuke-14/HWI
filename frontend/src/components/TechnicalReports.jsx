@@ -3067,7 +3067,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <div className="mb-3 pb-3 border-b border-gray-700">
                         <p className="text-xs text-gray-500 mb-1">Equipamento</p>
                         <p className="text-sm text-gray-300">
-                          {relatorio.equipamento_marca} - {relatorio.equipamento_tipologia}
+                          {relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
+                            <>
+                              {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
+                              {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
+                              {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
+                              {(relatorio.equipamento_tipologia || relatorio.equipamento_marca) && relatorio.equipamento_modelo && <span className="text-gray-500"> • </span>}
+                              {relatorio.equipamento_modelo && <span className="text-gray-400">{relatorio.equipamento_modelo}</span>}
+                            </>
+                          ) : (
+                            <span className="text-gray-500 italic">Não especificado</span>
+                          )}
                         </p>
                       </div>
 
