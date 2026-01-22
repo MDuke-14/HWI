@@ -616,20 +616,12 @@ const Dashboard = ({ user, onLogout }) => {
                   {geoLocation && geoLocation.latitude && geoLocation.longitude && (
                     <div className="flex items-center gap-3 pl-6">
                       <a
-                        href={`https://www.google.com/maps?q=${geoLocation.latitude},${geoLocation.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 underline"
-                      >
-                        🗺️ Ver no Google Maps
-                      </a>
-                      <a
                         href={`https://www.openstreetmap.org/?mlat=${geoLocation.latitude}&mlon=${geoLocation.longitude}&zoom=15`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-400 hover:text-green-300 text-xs flex items-center gap-1 underline"
                       >
-                        🌐 OpenStreetMap
+                        🗺️ Ver no Mapa
                       </a>
                     </div>
                   )}
@@ -738,24 +730,14 @@ const Dashboard = ({ user, onLogout }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-3 mt-2">
-                      <a 
-                        href={`https://www.google.com/maps?q=${entry.geo_location.latitude},${entry.geo_location.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1"
-                      >
-                        🗺️ Google Maps
-                      </a>
-                      <a 
-                        href={`https://www.openstreetmap.org/?mlat=${entry.geo_location.latitude}&mlon=${entry.geo_location.longitude}&zoom=15`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-400 hover:text-green-300 text-xs underline flex items-center gap-1"
-                      >
-                        🌐 OpenStreetMap
-                      </a>
-                    </div>
+                    <a 
+                      href={`https://www.openstreetmap.org/?mlat=${entry.geo_location.latitude}&mlon=${entry.geo_location.longitude}&zoom=15`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-400 hover:text-green-300 text-xs underline flex items-center gap-1"
+                    >
+                      🗺️ Ver no Mapa
+                    </a>
                   </div>
                 </div>
               )}
