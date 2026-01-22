@@ -8,6 +8,7 @@ import os
 import logging
 import asyncio
 import math
+import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
