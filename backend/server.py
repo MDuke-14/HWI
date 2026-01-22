@@ -7140,12 +7140,32 @@ async def create_service(service_data: ServiceAppointmentCreate, current_user: d
     
     await db.service_appointments.insert_one(service_dict)
     
-    # Get technician emails for notification
+    # Get technician emails and send notifications
     technician_emails = []
     for tech_id in service_data.technician_ids:
-        tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "email": 1})
-        if tech and tech.get('email'):
-            technician_emails.append(tech['email'])
+        tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "email": 1, "full_name": 1, "username": 1})
+        if tech:
+            if tech.get('email'):
+                technician_emails.append(tech['email'])
+            
+            # Criar notificação no sino
+            await create_notification(
+                tech_id,
+                "service_assigned",
+                f"Foi atribuído ao serviço em {service_data.client_name} ({service_data.location}) no dia {service_data.date}" + (f" às {service_data.time_slot}" if service_data.time_slot else ""),
+                service.id
+            )
+            
+            # Enviar PUSH notification ao técnico
+            time_info = f" às {service_data.time_slot}" if service_data.time_slot else ""
+            await send_push_notification(
+                db,
+                tech_id,
+                "📅 Novo Serviço Atribuído",
+                f"{service_data.client_name} - {service_data.location}\n{service_data.date}{time_info}",
+                "service_assigned",
+                "high"
+            )
     
     # Send email notifications
     if technician_emails:
