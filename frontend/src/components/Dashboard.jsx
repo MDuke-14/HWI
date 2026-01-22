@@ -35,6 +35,85 @@ const Dashboard = ({ user, onLogout }) => {
 
   const [outsideResidenceZone, setOutsideResidenceZone] = useState(false);
   const [locationDescription, setLocationDescription] = useState('');
+  
+  // Geolocalização
+  const [geoLocation, setGeoLocation] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Detectar estado online/offline
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success('Conexão restabelecida!');
+      // Notificar service worker para sincronizar
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'ONLINE' });
+      }
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning('Sem conexão. Modo offline ativo.');
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Função para obter geolocalização
+  const getGeoLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocalização não suportada'));
+        return;
+      }
+      
+      setGeoLoading(true);
+      setGeoError(null);
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString()
+          };
+          setGeoLocation(location);
+          setGeoLoading(false);
+          resolve(location);
+        },
+        (error) => {
+          let errorMsg = 'Erro ao obter localização';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = 'Permissão de localização negada';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = 'Localização indisponível';
+              break;
+            case error.TIMEOUT:
+              errorMsg = 'Tempo esgotado ao obter localização';
+              break;
+          }
+          setGeoError(errorMsg);
+          setGeoLoading(false);
+          reject(new Error(errorMsg));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      );
+    });
+  };
 
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
