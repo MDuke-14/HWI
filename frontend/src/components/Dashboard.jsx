@@ -115,7 +115,40 @@ const Dashboard = ({ user, onLogout }) => {
     });
   };
 
-  // Testar GPS e verificar se está fora de Portugal
+  // Distritos considerados "zona de residência" (não ativa Fora de Zona)
+  const ZONA_RESIDENCIA = ['Lisboa', 'Sintra', 'Setúbal', 'Setubal'];
+  
+  // Verificar se localização está fora da zona de residência
+  const isForaZonaResidencia = (address) => {
+    if (!address) return false;
+    
+    const countryCode = address.country_code?.toUpperCase();
+    
+    // Se está fora de Portugal, está fora de zona
+    if (countryCode && countryCode !== 'PT') {
+      return true;
+    }
+    
+    // Se está em Portugal, verificar se está fora dos distritos de residência
+    if (countryCode === 'PT') {
+      const city = address.city || address.town || address.village || address.municipality || '';
+      const county = address.county || address.state || '';
+      const region = address.region || '';
+      
+      // Verificar se algum dos campos corresponde à zona de residência
+      const localNormalizado = `${city} ${county} ${region}`.toLowerCase();
+      
+      const estaEmZonaResidencia = ZONA_RESIDENCIA.some(zona => 
+        localNormalizado.includes(zona.toLowerCase())
+      );
+      
+      return !estaEmZonaResidencia;
+    }
+    
+    return false;
+  };
+
+  // Testar GPS e verificar se está fora da zona de residência
   const testGeoLocation = async () => {
     try {
       const location = await getGeoLocation();
@@ -133,32 +166,43 @@ const Dashboard = ({ user, onLogout }) => {
             const geoData = await geoResponse.json();
             const countryCode = geoData.address?.country_code?.toUpperCase();
             const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.municipality;
+            const county = geoData.address?.county || geoData.address?.state;
             const country = geoData.address?.country;
+            
+            const addressInfo = {
+              city: city,
+              region: county,
+              country: country,
+              country_code: countryCode,
+              county: geoData.address?.county,
+              formatted: geoData.display_name
+            };
             
             // Atualizar geoLocation com endereço
             setGeoLocation(prev => ({
               ...prev,
-              address: {
-                city: city,
-                region: geoData.address?.state || geoData.address?.county,
-                country: country,
-                country_code: countryCode,
-                formatted: geoData.display_name
-              }
+              address: addressInfo
             }));
             
-            // Se não estiver em Portugal, ativar automaticamente "Fora de Zona"
-            if (countryCode && countryCode !== 'PT') {
-              const autoLocation = city ? `${city}, ${country}` : country || 'Estrangeiro';
+            // Verificar se está fora da zona de residência (fora de Portugal OU em Portugal fora de Lisboa/Sintra/Setúbal)
+            if (isForaZonaResidencia(addressInfo)) {
+              const autoLocation = city ? `${city}${county ? `, ${county}` : ''}${country && countryCode !== 'PT' ? `, ${country}` : ''}` : country || 'Local desconhecido';
               setOutsideResidenceZone(true);
               setLocationDescription(autoLocation);
               
-              toast.warning(`🌍 Detectado fora de Portugal: ${autoLocation}`, {
-                duration: 5000,
-                description: 'Checkbox "Fora de Zona" ativado automaticamente'
-              });
+              if (countryCode !== 'PT') {
+                toast.warning(`🌍 Detectado fora de Portugal: ${autoLocation}`, {
+                  duration: 5000,
+                  description: 'Checkbox "Fora de Zona" ativado automaticamente'
+                });
+              } else {
+                toast.warning(`📍 Fora da zona de residência: ${autoLocation}`, {
+                  duration: 5000,
+                  description: 'Checkbox "Fora de Zona" ativado automaticamente (fora de Lisboa/Sintra/Setúbal)'
+                });
+              }
             } else if (city) {
-              toast.info(`📍 ${city}, ${country}`);
+              toast.info(`📍 ${city}${county ? `, ${county}` : ''} (Zona de residência)`);
             }
           }
         } catch (geoErr) {
