@@ -207,6 +207,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEditDespesaModal, setShowEditDespesaModal] = useState(false);
   const [selectedDespesa, setSelectedDespesa] = useState(null);
   const [despesaFormData, setDespesaFormData] = useState({
+    tipo: 'outras',
     descricao: '',
     valor: '',
     tecnico_id: '',
@@ -216,6 +217,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     factura_mimetype: null
   });
   const [uploadingFactura, setUploadingFactura] = useState(false);
+
+  // Tipos de despesa disponíveis
+  const tiposDespesa = [
+    { value: 'outras', label: 'Outras' },
+    { value: 'combustivel', label: 'Combustível' },
+    { value: 'ferramentas', label: 'Ferramentas' },
+    { value: 'portagens', label: 'Portagens' }
+  ];
 
   // Pedidos de Cotação
   const [pedidosCotacao, setPedidosCotacao] = useState([]);
