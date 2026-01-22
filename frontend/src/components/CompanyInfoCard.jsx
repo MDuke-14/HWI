@@ -183,6 +183,16 @@ const CompanyInfoCard = ({ user }) => {
                 Informações da Empresa
               </div>
               <div className="flex items-center gap-2">
+                {!isEditing && (
+                  <Button
+                    onClick={handleDownloadPDF}
+                    className="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1"
+                    data-testid="download-company-pdf"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    PDF
+                  </Button>
+                )}
                 {isAdmin && !isEditing && (
                   <Button
                     onClick={() => setIsEditing(true)}
