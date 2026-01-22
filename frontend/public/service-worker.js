@@ -17,13 +17,21 @@ const STATIC_ASSETS = [
 const CACHEABLE_APIS = [
   '/api/auth/me',
   '/api/time-entries/today',
-  '/api/company-info'
+  '/api/company-info',
+  '/api/clientes',
+  '/api/relatorios-tecnicos',
+  '/api/equipamentos'
 ];
 
 // APIs que devem ser queued quando offline
 const OFFLINE_QUEUE_APIS = [
   '/api/time-entries/start',
-  '/api/time-entries/end'
+  '/api/time-entries/end',
+  '/api/relatorios-tecnicos',
+  '/api/clientes',
+  '/api/equipamentos',
+  '/api/tecnicos-relatorio',
+  '/api/materiais-ot'
 ];
 
 // ============ Install Event ============
