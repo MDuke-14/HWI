@@ -4332,6 +4332,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <h4 className="text-yellow-400 font-semibold flex items-center gap-2">
                       <FileText className="w-4 h-4" />
                       Pedidos de Cotação ({pedidosCotacao.length})
+                      <HelpTooltip section="pedidos_cotacao" />
                     </h4>
                   </div>
                   <div className="space-y-2">
