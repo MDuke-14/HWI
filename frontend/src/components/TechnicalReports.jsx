@@ -2343,6 +2343,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       const despesasPorTecnicoData = response.data.despesas_por_tecnico_data || {};
       const portagensPorTecnicoData = response.data.portagens_por_tecnico_data || {};
       const extrasIniciais = {};
+      
+      // Primeiro, inicializar para todos os técnicos que têm registos de trabalho
       Object.entries(response.data.datas_por_tecnico || {}).forEach(([tecnicoId, datas]) => {
         datas.forEach(data => {
           const key = `${tecnicoId}_${data}`;
@@ -2355,6 +2357,33 @@ const TechnicalReports = ({ user, onLogout }) => {
           };
         });
       });
+      
+      // Depois, adicionar entradas para técnicos que têm despesas mas não têm registos de trabalho
+      Object.keys(despesasPorTecnicoData).forEach(key => {
+        if (!extrasIniciais[key]) {
+          const despesaValue = despesasPorTecnicoData[key] || 0;
+          const portagensValue = portagensPorTecnicoData[key] || 0;
+          extrasIniciais[key] = { 
+            dieta: '', 
+            portagens: portagensValue > 0 ? portagensValue.toFixed(2) : '', 
+            despesas: despesaValue > 0 ? despesaValue.toFixed(2) : '' 
+          };
+        }
+      });
+      
+      // Adicionar também para portagens que não têm despesas
+      Object.keys(portagensPorTecnicoData).forEach(key => {
+        if (!extrasIniciais[key]) {
+          const despesaValue = despesasPorTecnicoData[key] || 0;
+          const portagensValue = portagensPorTecnicoData[key] || 0;
+          extrasIniciais[key] = { 
+            dieta: '', 
+            portagens: portagensValue > 0 ? portagensValue.toFixed(2) : '', 
+            despesas: despesaValue > 0 ? despesaValue.toFixed(2) : '' 
+          };
+        }
+      });
+      
       setFolhaHorasExtras(extrasIniciais);
       
       setShowFolhaHorasModal(true);
