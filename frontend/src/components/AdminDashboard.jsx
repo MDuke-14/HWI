@@ -1357,11 +1357,13 @@ const AdminDashboard = ({ user, onLogout }) => {
                                 log.type === 'clock_in_reminder' ? 'bg-orange-600/20 text-orange-400' :
                                 log.type === 'clock_out_reminder' ? 'bg-purple-600/20 text-purple-400' :
                                 log.type === 'overtime_start_request' ? 'bg-yellow-600/20 text-yellow-400' :
+                                log.type === 'vacation_work_request' ? 'bg-red-600/20 text-red-400' :
                                 'bg-gray-600/20 text-gray-400'
                               }`}>
                                 {log.type === 'clock_in_reminder' ? 'Lembrete Entrada' :
                                  log.type === 'clock_out_reminder' ? 'Lembrete Saída' :
                                  log.type === 'overtime_start_request' ? 'Pedido Horas Extra' :
+                                 log.type === 'vacation_work_request' ? 'Trabalho em Férias' :
                                  log.type}
                               </span>
                             </td>
