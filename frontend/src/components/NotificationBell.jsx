@@ -262,24 +262,27 @@ const NotificationBell = ({ user }) => {
 
           <div className="divide-y divide-gray-700">
             {notifications.length > 0 ? (
-              notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className={`p-4 hover:bg-gray-800/50 cursor-pointer border-l-4 ${getPriorityColor(notif.priority)}`}
-                  onClick={() => markAsRead(notif.id)}
-                  data-testid={`notification-item-${notif.id}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium text-sm">{notif.title}</h4>
-                      <p className="text-gray-400 text-xs mt-1">{notif.message}</p>
-                      <p className="text-gray-500 text-xs mt-2">
-                        {new Date(notif.created_at).toLocaleString('pt-PT')}
-                      </p>
+              notifications.map((notif) => {
+                const style = getNotificationStyle(notif.type);
+                return (
+                  <div
+                    key={notif.id}
+                    className={`p-4 hover:bg-gray-800/50 cursor-pointer border-l-4 ${style.color}`}
+                    onClick={() => markAsRead(notif.id)}
+                    data-testid={`notification-item-${notif.id}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-white font-medium text-sm">{style.title}</h4>
+                        <p className="text-gray-400 text-xs mt-1">{notif.message}</p>
+                        <p className="text-gray-500 text-xs mt-2">
+                          {new Date(notif.created_at).toLocaleString('pt-PT')}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="p-8 text-center">
                 <Bell className="w-12 h-12 text-gray-600 mx-auto mb-2" />
