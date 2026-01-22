@@ -30,20 +30,33 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 **Geolocalização no Clock-in:**
 - Captura automática de coordenadas GPS ao iniciar ponto
-- Armazena latitude, longitude, precisão e timestamp
-- Não bloqueia se permissão negada
+- **Reverse Geocoding** - Converte coordenadas em cidade/região/país
+- Usa OpenStreetMap Nominatim (gratuito)
+- Armazena: latitude, longitude, precisão, timestamp, endereço
+- Não bloqueia se permissão negada ou geocoding falhar
 - Toast de feedback ao utilizador
 
 **UI Indicators:**
 - Indicador verde "Online" / amarelo "Offline" no Dashboard
 - Banner de aviso quando em modo offline
-- Animação pulse no estado offline
+- Mostra cidade e país no card de localização quando disponível
+- Link "Ver Mapa" para Google Maps
+
+**Modo Offline na Página de OTs:**
+- Hook `useOfflineData.js` para gestão de cache
+- Componente `OfflineStatusBar.jsx` para estado de sync
+- Cache automático de Clientes e OTs
+- Indicador Online/Offline no header
+- Operações guardadas para sync posterior
 
 **Ficheiros modificados:**
 - `/app/frontend/public/service-worker.js` - Reescrito para offline mode
 - `/app/frontend/public/offline.html` - Nova página offline
 - `/app/frontend/src/components/Dashboard.jsx` - Geolocalização + indicadores
-- `/app/backend/server.py` - Campo geo_location no TimeEntry
+- `/app/frontend/src/hooks/useOfflineData.js` - Novo hook de dados offline
+- `/app/frontend/src/components/OfflineStatusBar.jsx` - Novo componente
+- `/app/frontend/src/components/TechnicalReports.jsx` - Integração offline
+- `/app/backend/server.py` - Reverse geocoding com httpx
 
 ---
 
