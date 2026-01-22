@@ -832,6 +832,10 @@ async def process_authorization_decision(
     
     if request_type == "overtime_start":
         # Início de ponto em dia especial
+        user_id = auth_request.get("user_id")
+        date_str = auth_request.get("date")
+        day_type = auth_request.get("day_type", "dia especial")
+        
         if approved:
             # Marcar entrada como autorizada
             await db.time_entries.update_one(
@@ -842,6 +846,20 @@ async def process_authorization_decision(
                     "overtime_authorized_at": datetime.now().isoformat()
                 }}
             )
+            
+            # Criar notificação para o utilizador
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "overtime_approved",
+                "message": f"As suas horas extra de {date_str} ({day_type}) foram autorizadas por {decided_by}.",
+                "read": False,
+                "related_id": entry_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+            
             return {
                 "status": "success",
                 "decision": "approved",
@@ -850,6 +868,20 @@ async def process_authorization_decision(
         else:
             # Eliminar entrada de ponto
             await db.time_entries.delete_one({"id": entry_id})
+            
+            # Criar notificação para o utilizador
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "overtime_rejected",
+                "message": f"As suas horas extra de {date_str} ({day_type}) foram rejeitadas por {decided_by}. A entrada de ponto foi eliminada.",
+                "read": False,
+                "related_id": entry_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+            
             return {
                 "status": "success",
                 "decision": "rejected",
