@@ -69,6 +69,57 @@ security = HTTPBearer()
 SECRET_KEY = os.environ.get('SECRET_KEY', 'hwi-timeclock-secret-key-2025')
 ALGORITHM = "HS256"
 
+
+# ============ Reverse Geocoding ============
+
+async def reverse_geocode(latitude: float, longitude: float) -> dict:
+    """
+    Converte coordenadas GPS em endereço usando OpenStreetMap Nominatim.
+    Retorna cidade, região, país e endereço formatado.
+    """
+    try:
+        url = f"https://nominatim.openstreetmap.org/reverse"
+        params = {
+            "lat": latitude,
+            "lon": longitude,
+            "format": "json",
+            "addressdetails": 1,
+            "accept-language": "pt"
+        }
+        headers = {
+            "User-Agent": "HWI-Ponto/1.0 (geral@hwi.pt)"  # Obrigatório para Nominatim
+        }
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, params=params, headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                address = data.get("address", {})
+                
+                # Extrair informação relevante
+                result = {
+                    "city": address.get("city") or address.get("town") or address.get("village") or address.get("municipality"),
+                    "region": address.get("state") or address.get("county"),
+                    "country": address.get("country"),
+                    "country_code": address.get("country_code", "").upper(),
+                    "postcode": address.get("postcode"),
+                    "road": address.get("road"),
+                    "formatted": data.get("display_name"),
+                    "raw_address": address
+                }
+                
+                logging.info(f"📍 Geocoding: {result.get('city')}, {result.get('country')}")
+                return result
+            else:
+                logging.warning(f"Geocoding failed: HTTP {response.status_code}")
+                return None
+                
+    except Exception as e:
+        logging.error(f"Geocoding error: {str(e)}")
+        return None
+
+
 # Create the main app without a prefix
 app = FastAPI()
 
