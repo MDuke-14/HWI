@@ -1043,6 +1043,16 @@ async def process_authorization_decision(
             }
             await db.notifications.insert_one(notification)
             
+            # Enviar PUSH notification ao utilizador
+            await send_push_notification(
+                db,
+                user_id,
+                "✅ Horas Extra Autorizadas",
+                f"As suas horas extra de {date_str} (após horário) foram autorizadas por {decided_by}.",
+                "overtime_approved",
+                "high"
+            )
+            
             return {
                 "status": "success",
                 "decision": "approved",
@@ -1085,6 +1095,16 @@ async def process_authorization_decision(
                 "created_at": datetime.now().isoformat()
             }
             await db.notifications.insert_one(notification)
+            
+            # Enviar PUSH notification ao utilizador
+            await send_push_notification(
+                db,
+                user_id,
+                "❌ Horas Extra Rejeitadas",
+                f"As suas horas extra de {date_str} foram rejeitadas. O ponto foi encerrado às 18:00.",
+                "overtime_rejected",
+                "high"
+            )
             
             return {
                 "status": "success",
