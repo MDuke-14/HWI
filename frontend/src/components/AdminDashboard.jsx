@@ -1214,6 +1214,12 @@ const AdminDashboard = ({ user, onLogout }) => {
           {/* Notificações Tab Content */}
           <TabsContent value="notifications">
             <div className="space-y-6">
+              {/* Header com ajuda */}
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-2xl font-semibold text-white">Sistema de Notificações</h2>
+                <HelpTooltip section="admin_notificacoes" />
+              </div>
+              
               {/* Verificações Manuais */}
               <div className="glass-effect p-6 rounded-xl">
                 <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2">
