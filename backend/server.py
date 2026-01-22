@@ -7874,7 +7874,7 @@ async def create_despesa_ot(
     await db.despesas_ot.insert_one(despesa_dict)
     
     # Enviar push notification para admins
-    admins = await db.users.find({"role": "admin"}, {"_id": 0}).to_list(length=None)
+    admins = await db.users.find({"is_admin": True}, {"_id": 0}).to_list(length=None)
     ot_numero = relatorio.get("numero", relatorio_id[:8])
     
     for admin in admins:
