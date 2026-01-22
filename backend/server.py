@@ -1958,6 +1958,27 @@ async def export_clientes_pdf(current_user: dict = Depends(get_current_user)):
         headers={"Content-Disposition": "attachment; filename=lista_clientes.pdf"}
     )
 
+
+# ============ Manual de Instruções ============
+
+@api_router.get("/manual/download")
+async def download_manual(current_user: dict = Depends(get_current_user)):
+    """Gerar e descarregar o manual de instruções em PDF"""
+    try:
+        pdf_bytes = create_manual_pdf()
+        
+        logging.info(f"Manual de instruções descarregado por {current_user['sub']}")
+        
+        return StreamingResponse(
+            BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=Manual_HWI_Unipessoal.pdf"}
+        )
+    except Exception as e:
+        logging.error(f"Erro ao gerar manual: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar manual: {str(e)}")
+
+
 # ============ Equipamentos Routes ============
 
 @api_router.get("/equipamentos")
