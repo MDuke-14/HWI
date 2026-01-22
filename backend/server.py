@@ -8707,9 +8707,6 @@ async def get_folha_horas_data(
     # Ordenar registos individuais por data
     registos_individuais.sort(key=lambda x: x['data'])
     
-    # Converter sets para listas ordenadas
-    datas_por_tecnico = {k: sorted(list(v)) for k, v in datas_por_tecnico.items()}
-    
     # Buscar despesas da OT para pré-preencher na folha de horas
     despesas = await db.despesas_ot.find(
         {"relatorio_id": relatorio_id},
@@ -8724,9 +8721,12 @@ async def get_folha_horas_data(
         key = f"{desp['tecnico_id']}_{desp['data']}"
         tipo = desp.get('tipo', 'outras')
         
-        # Adicionar ao datas_por_tecnico se não existir
+        # Adicionar ao datas_por_tecnico se não existir (antes de converter para lista!)
         if desp['tecnico_id'] not in datas_por_tecnico:
             datas_por_tecnico[desp['tecnico_id']] = set()
+        elif isinstance(datas_por_tecnico[desp['tecnico_id']], list):
+            # Se já foi convertido para lista, converter de volta para set
+            datas_por_tecnico[desp['tecnico_id']] = set(datas_por_tecnico[desp['tecnico_id']])
         datas_por_tecnico[desp['tecnico_id']].add(desp['data'])
         
         # Adicionar técnico aos tecnicos_unicos se não existir (buscar da BD)
@@ -8755,8 +8755,8 @@ async def get_folha_horas_data(
                 despesas_por_tecnico_data[key] = 0
             despesas_por_tecnico_data[key] += desp.get('valor', 0)
     
-    # Converter sets para listas ordenadas (novamente, pois podem ter mudado)
-    datas_por_tecnico = {k: sorted(list(v)) for k, v in datas_por_tecnico.items()}
+    # Converter sets para listas ordenadas (depois de processar despesas)
+    datas_por_tecnico = {k: sorted(list(v)) if isinstance(v, set) else sorted(v) for k, v in datas_por_tecnico.items()}
     
     return {
         "relatorio": relatorio,
