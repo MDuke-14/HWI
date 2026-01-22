@@ -4004,6 +4004,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <h4 className="text-blue-400 font-semibold flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Intervenções / Assistências
+                    <HelpTooltip section="intervencoes" />
                   </h4>
                   <Button
                     onClick={() => setShowAddIntervencaoModal(true)}
