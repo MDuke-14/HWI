@@ -4939,6 +4939,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onClick={() => {
                   setShowAddDespesaModal(false);
                   setDespesaFormData({
+                    tipo: 'outras',
                     descricao: '',
                     valor: '',
                     tecnico_id: '',
