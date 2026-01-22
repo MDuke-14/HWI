@@ -486,15 +486,33 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 if data_intervencao:
                     assin_section.append(Paragraph(f"<b>Data da Intervenção:</b> {data_intervencao}", normal_style))
                 
-                if assinatura.get('tipo') == 'digital' and assinatura.get('assinatura_path'):
-                    # Incluir imagem da assinatura
-                    img_path = Path(assinatura['assinatura_path'])
-                    if img_path.exists():
+                if assinatura.get('tipo') == 'digital':
+                    # Tentar incluir imagem da assinatura
+                    img_added = False
+                    
+                    # Primeiro tentar pelo caminho do ficheiro
+                    if assinatura.get('assinatura_path'):
+                        img_path = Path(assinatura['assinatura_path'])
+                        if img_path.exists():
+                            try:
+                                img = RLImage(str(img_path), width=6*cm, height=3*cm, kind='proportional')
+                                assin_section.append(img)
+                                img_added = True
+                            except Exception as e:
+                                print(f"Erro ao carregar imagem do ficheiro: {e}")
+                    
+                    # Se não conseguiu pelo ficheiro, tentar pelo base64
+                    if not img_added and assinatura.get('assinatura_base64'):
                         try:
-                            img = RLImage(str(img_path), width=6*cm, height=3*cm, kind='proportional')
+                            import base64
+                            from io import BytesIO
+                            img_data = base64.b64decode(assinatura['assinatura_base64'])
+                            img_buffer = BytesIO(img_data)
+                            img = RLImage(img_buffer, width=6*cm, height=3*cm, kind='proportional')
                             assin_section.append(img)
-                        except:
-                            pass
+                            img_added = True
+                        except Exception as e:
+                            print(f"Erro ao carregar imagem do base64: {e}")
                 
                 nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
                 assin_section.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
