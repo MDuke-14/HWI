@@ -1284,7 +1284,13 @@ const AdminDashboard = ({ user, onLogout }) => {
                               <span className="text-gray-500">Hora:</span> {auth.start_time || auth.clock_in_time || 'N/A'}
                             </p>
                             <p className="text-gray-400 text-sm">
-                              <span className="text-gray-500">Tipo:</span> {auth.request_type === 'overtime_start' ? 'Início em dia especial' : 'Horas extra após 18:00'}
+                              <span className="text-gray-500">Tipo:</span> {
+                                auth.request_type === 'vacation_work' 
+                                  ? 'Trabalho em férias' 
+                                  : auth.request_type === 'overtime_start' 
+                                    ? 'Início em dia especial' 
+                                    : 'Horas extra após 18:00'
+                              }
                             </p>
                             {auth.decided_by && (
                               <p className="text-gray-500 text-xs mt-2">
