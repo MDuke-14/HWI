@@ -30,10 +30,10 @@ Este endpoint retorna informações sobre:
 **Como usar:**
 ```bash
 # Aceder diretamente no navegador
-https://pushtracker-1.preview.emergentagent.com/api/debug/db-info
+https://worktrack-90.preview.emergentagent.com/api/debug/db-info
 
 # Ou via curl
-curl https://pushtracker-1.preview.emergentagent.com/api/debug/db-info
+curl https://worktrack-90.preview.emergentagent.com/api/debug/db-info
 ```
 
 ### 3. **Script para Resetar Senhas**
@@ -59,7 +59,7 @@ Corrigido `/app/backend/check_users.py` para usar `DB_NAME` do `.env` em vez de 
 
 1. Abrir navegador e aceder:
    ```
-   https://pushtracker-1.preview.emergentagent.com/api/debug/db-info
+   https://worktrack-90.preview.emergentagent.com/api/debug/db-info
    ```
 
 2. Verificar a resposta JSON:

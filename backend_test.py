@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import uuid
 
 class HWITimeTrackerTester:
-    def __init__(self, base_url="https://pushtracker-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://worktrack-90.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
