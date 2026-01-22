@@ -230,9 +230,55 @@ const Dashboard = ({ user, onLogout }) => {
     try {
       // Tentar obter geolocalização (não bloqueia se falhar)
       let location = null;
+      let autoOutsideZone = outsideResidenceZone;
+      let autoLocationDesc = locationDescription;
+      
       try {
         location = await getGeoLocation();
         toast.success('Localização capturada!');
+        
+        // Verificar se está fora de Portugal (fazer reverse geocoding no frontend para auto-detect)
+        if (location && location.latitude && location.longitude) {
+          try {
+            const geoResponse = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&addressdetails=1&accept-language=pt`,
+              { headers: { 'User-Agent': 'HWI-Ponto/1.0' } }
+            );
+            
+            if (geoResponse.ok) {
+              const geoData = await geoResponse.json();
+              const countryCode = geoData.address?.country_code?.toUpperCase();
+              const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.municipality;
+              const country = geoData.address?.country;
+              
+              // Se não estiver em Portugal, ativar automaticamente "Fora de Zona"
+              if (countryCode && countryCode !== 'PT') {
+                autoOutsideZone = true;
+                autoLocationDesc = city ? `${city}, ${country}` : country || 'Estrangeiro';
+                
+                // Atualizar estado para feedback visual
+                setOutsideResidenceZone(true);
+                setLocationDescription(autoLocationDesc);
+                
+                toast.info(`📍 Detectado fora de Portugal: ${autoLocationDesc}`, {
+                  duration: 5000
+                });
+              }
+              
+              // Guardar info de endereço na localização
+              location.address = {
+                city: city,
+                region: geoData.address?.state || geoData.address?.county,
+                country: country,
+                country_code: countryCode,
+                formatted: geoData.display_name
+              };
+            }
+          } catch (geoErr) {
+            console.log('Reverse geocoding falhou:', geoErr.message);
+            // Continua sem a informação de cidade/país
+          }
+        }
       } catch (geoErr) {
         console.log('Geolocalização não disponível:', geoErr.message);
         // Continua sem localização
@@ -240,8 +286,8 @@ const Dashboard = ({ user, onLogout }) => {
       
       await axios.post(`${API}/time-entries/start`, { 
         observations,
-        outside_residence_zone: outsideResidenceZone,
-        location_description: outsideResidenceZone ? locationDescription : null,
+        outside_residence_zone: autoOutsideZone,
+        location_description: autoOutsideZone ? autoLocationDesc : null,
         geo_location: location
       });
       toast.success('Relógio iniciado!');
