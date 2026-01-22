@@ -7614,6 +7614,15 @@ async def add_material_ot(
             
             material_dict["pc_id"] = novo_pc.id
             logging.info(f"PC criado automaticamente: {numero_pc} para OT {relatorio_id}")
+            
+            # Notificar admins sobre novo PC
+            await send_push_to_admins(
+                db,
+                f"📋 Novo Pedido de Cotação",
+                f"{numero_pc} criado para OT {relatorio_id}\nMaterial: {material_data.get('descricao', 'N/A')[:50]}",
+                "pc_created",
+                "medium"
+            )
     
     await db.materiais_ot.insert_one(material_dict)
     
