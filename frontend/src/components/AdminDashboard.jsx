@@ -555,29 +555,117 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
 
           <TabsContent value="vacations">
-            <div className="glass-effect p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-white mb-6">Pedidos Pendentes ({pendingVacations.length})</h2>
-              {pendingVacations.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingVacations.map((req) => (
-                    <div key={req.id} className="bg-[#1a1a1a] p-5 rounded-lg">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="text-white font-semibold text-lg">{req.username}</div>
-                          <div className="text-gray-400 text-sm">{new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
-                          <div className="text-amber-400 font-semibold mt-1">{req.days_requested} dias</div>
+            <div className="space-y-6">
+              {/* Secção: Trabalho em Férias (pedidos prioritários) */}
+              {vacationWorkRequests.filter(r => r.status === 'pending').length > 0 && (
+                <div className="glass-effect p-6 rounded-xl border-2 border-orange-500/50">
+                  <div className="flex items-center gap-2 mb-6">
+                    <AlertTriangle className="w-6 h-6 text-orange-400" />
+                    <h2 className="text-2xl font-semibold text-orange-400">
+                      Trabalho Durante Férias ({vacationWorkRequests.filter(r => r.status === 'pending').length})
+                    </h2>
+                  </div>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Utilizadores que iniciaram ponto durante período de férias aprovadas. Se autorizado, 1 dia de férias será devolvido ao saldo.
+                  </p>
+                  <div className="space-y-4">
+                    {vacationWorkRequests.filter(r => r.status === 'pending').map((req) => (
+                      <div key={req.id} className="bg-orange-900/20 border border-orange-600/50 p-5 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-white font-semibold text-lg">{req.user_name}</div>
+                            <div className="text-gray-400 text-sm">
+                              Data: {new Date(req.date).toLocaleDateString('pt-PT')}
+                            </div>
+                            <div className="text-gray-400 text-sm">
+                              Hora de entrada: {req.start_time || req.clock_in_time || 'N/A'}
+                            </div>
+                            {req.day_type && (
+                              <div className="text-orange-400 font-semibold mt-1">{req.day_type}</div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => handleDecideAuthorization(req.id, 'approve')} 
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Autorizar
+                            </Button>
+                            <Button 
+                              onClick={() => handleDecideAuthorization(req.id, 'reject')} 
+                              variant="outline"
+                              className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Rejeitar
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button onClick={() => handleVacationApproval(req.id, true)} className="bg-green-600 hover:bg-green-700 text-white rounded-full"><CheckCircle className="w-4 h-4 mr-1" />Aprovar</Button>
-                          <Button onClick={() => handleVacationApproval(req.id, false)} className="bg-red-600 hover:bg-red-700 text-white rounded-full"><XCircle className="w-4 h-4 mr-1" />Rejeitar</Button>
+                        <div className="mt-3 pt-3 border-t border-orange-600/30 text-sm">
+                          <span className="text-green-400">✓ Autorizar:</span> <span className="text-gray-400">Devolve 1 dia de férias</span>
+                          <span className="mx-2 text-gray-600">|</span>
+                          <span className="text-red-400">✗ Rejeitar:</span> <span className="text-gray-400">Elimina entrada de ponto</span>
                         </div>
                       </div>
-                      {req.reason && <div className="text-gray-300 text-sm mt-2 pt-2 border-t border-gray-700">Motivo: {req.reason}</div>}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center text-gray-400 py-12">Não há pedidos pendentes</div>
+              )}
+
+              {/* Secção: Pedidos de Férias Pendentes */}
+              <div className="glass-effect p-6 rounded-xl">
+                <h2 className="text-2xl font-semibold text-white mb-6">Pedidos de Férias Pendentes ({pendingVacations.length})</h2>
+                {pendingVacations.length > 0 ? (
+                  <div className="space-y-4">
+                    {pendingVacations.map((req) => (
+                      <div key={req.id} className="bg-[#1a1a1a] p-5 rounded-lg">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="text-white font-semibold text-lg">{req.username}</div>
+                            <div className="text-gray-400 text-sm">{new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
+                            <div className="text-amber-400 font-semibold mt-1">{req.days_requested} dias</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={() => handleVacationApproval(req.id, true)} className="bg-green-600 hover:bg-green-700 text-white rounded-full"><CheckCircle className="w-4 h-4 mr-1" />Aprovar</Button>
+                            <Button onClick={() => handleVacationApproval(req.id, false)} className="bg-red-600 hover:bg-red-700 text-white rounded-full"><XCircle className="w-4 h-4 mr-1" />Rejeitar</Button>
+                          </div>
+                        </div>
+                        {req.reason && <div className="text-gray-300 text-sm mt-2 pt-2 border-t border-gray-700">Motivo: {req.reason}</div>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-400 py-12">Não há pedidos de férias pendentes</div>
+                )}
+              </div>
+
+              {/* Histórico de Trabalho em Férias (decididos) */}
+              {vacationWorkRequests.filter(r => r.status !== 'pending').length > 0 && (
+                <div className="glass-effect p-6 rounded-xl">
+                  <h2 className="text-xl font-semibold text-gray-400 mb-4">Histórico - Trabalho em Férias</h2>
+                  <div className="space-y-2">
+                    {vacationWorkRequests.filter(r => r.status !== 'pending').slice(0, 10).map((req) => (
+                      <div key={req.id} className="bg-[#1a1a1a] p-3 rounded-lg flex justify-between items-center">
+                        <div>
+                          <span className="text-white">{req.user_name}</span>
+                          <span className="text-gray-500 mx-2">•</span>
+                          <span className="text-gray-400 text-sm">{new Date(req.date).toLocaleDateString('pt-PT')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            req.status === 'approved' ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'
+                          }`}>
+                            {req.status === 'approved' ? 'Autorizado' : 'Rejeitado'}
+                          </span>
+                          {req.decided_by && (
+                            <span className="text-gray-500 text-xs">por {req.decided_by}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </TabsContent>
