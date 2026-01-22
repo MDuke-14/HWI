@@ -657,8 +657,8 @@ class OvertimeAuthorization(BaseModel):
     user_email: Optional[str] = None
     entry_id: Optional[str] = None
     date: str
-    request_type: str  # "overtime_start" or "overtime_end"
-    day_type: Optional[str] = None  # "Sábado", "Domingo", "Feriado: X"
+    request_type: str  # "overtime_start", "overtime_end", "vacation_work"
+    day_type: Optional[str] = None  # "Sábado", "Domingo", "Feriado: X", "Férias"
     start_time: Optional[str] = None
     clock_in_time: Optional[str] = None
     requested_at: str
@@ -667,6 +667,7 @@ class OvertimeAuthorization(BaseModel):
     decided_by: Optional[str] = None
     decided_at: Optional[str] = None
     decision: Optional[str] = None
+    vacation_request_id: Optional[str] = None  # ID do pedido de férias a anular
 
 
 class OvertimeDecision(BaseModel):
