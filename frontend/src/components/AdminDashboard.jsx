@@ -1513,7 +1513,10 @@ const AdminDashboard = ({ user, onLogout }) => {
           <TabsContent value="tarifas">
             <div className="glass-effect p-6 rounded-xl">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Tarifas ({tarifas.filter(t => t.ativo).length})</h2>
+                <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+                  Tarifas ({tarifas.filter(t => t.ativo).length})
+                  <HelpTooltip section="admin_tarifas" />
+                </h2>
                 <Button 
                   onClick={() => handleOpenTarifaDialog()}
                   className="bg-green-600 hover:bg-green-700 text-white rounded-full"
