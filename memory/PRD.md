@@ -4,8 +4,8 @@
 Sistema de gestão de tempo e ordens de trabalho para empresa de assistência técnica. Permite controlo de ponto, gestão de OTs, cronómetros de trabalho/viagem, e geração de relatórios PDF.
 
 ## Utilizadores
-- **Admin**: Pedro Duarte (username: pedro)
-- **Técnicos**: Miguel Moreira, Gichelson Leite, Nuno Santos
+- **Admin**: Pedro Duarte (username: pedro), Miguel (username: miguel)
+- **Técnicos**: Gichelson Leite, Nuno Santos
 
 ## Stack Tecnológico
 - **Frontend**: React com shadcn/ui
@@ -17,7 +17,36 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ## Funcionalidades Implementadas
 
-### Janeiro 2026 - Sessão Atual
+### Janeiro 2026 - Sessão Atual (22 Janeiro 2026)
+
+#### ✅ Trabalho Durante Período de Férias (P0 - Completo)
+**Quando um utilizador em férias aprovadas faz clock-in:**
+- Sistema detecta automaticamente que o utilizador está de férias
+- Cria pedido de autorização especial (`vacation_work`)
+- Envia notificação push ao admin: "⚠️ Trabalho em Férias - [Nome]"
+
+**Se admin APROVAR:**
+- Entrada de ponto é marcada como autorizada
+- 1 dia de férias é devolvido ao saldo do utilizador
+- Pedido de férias é atualizado com `days_voided` e `voided_dates`
+- Notificação enviada ao utilizador sobre a devolução
+
+**Se admin REJEITAR:**
+- Entrada de ponto é eliminada
+- Saldo de férias permanece inalterado
+- Notificação enviada ao utilizador sobre a rejeição
+
+**Ficheiros modificados:**
+- `/app/backend/notifications_scheduler.py` - `handle_overtime_start()` e `process_authorization_decision()`
+- `/app/backend/server.py` - Endpoint `/api/time-entries/start`
+- `/app/frontend/src/components/AdminDashboard.jsx` - UI para tipo `vacation_work`
+- `/app/frontend/src/components/OvertimeAuthorization.jsx` - Página de decisão
+
+**Testado:** ✅ Backend 100% (aprovação e rejeição)
+
+---
+
+### Janeiro 2026 - Sessão Anterior
 
 #### ✅ Início Automático de Cronómetro após Criar OT (P0 - Completo)
 - Quando o utilizador cria uma nova OT, aparece automaticamente um modal
