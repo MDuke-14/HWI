@@ -530,18 +530,27 @@ const Dashboard = ({ user, onLogout }) => {
                     <MapPin className={`w-4 h-4 ${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400 animate-pulse' : 'text-gray-500'}`} />
                     <span className={geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400' : 'text-gray-500'}>
                       {geoLoading ? 'A obter localização...' : 
-                       geoLocation ? `📍 Localização capturada (±${Math.round(geoLocation.accuracy)}m)` : 
+                       geoLocation ? (
+                         geoLocation.address?.city 
+                           ? `📍 ${geoLocation.address.city}, ${geoLocation.address.country} (±${Math.round(geoLocation.accuracy)}m)`
+                           : `📍 Localização capturada (±${Math.round(geoLocation.accuracy)}m)`
+                       ) : 
                        geoError ? `⚠️ ${geoError}` :
                        'GPS será capturado ao iniciar'}
                     </span>
                   </div>
                   {!geoLocation && !geoLoading && (
                     <button 
-                      onClick={getGeoLocation}
+                      onClick={testGeoLocation}
                       className="text-blue-400 hover:text-blue-300 text-xs underline"
                     >
                       Testar GPS
                     </button>
+                  )}
+                  {geoLocation && geoLocation.address?.country_code && geoLocation.address.country_code !== 'PT' && (
+                    <span className="text-amber-400 text-xs font-medium flex items-center gap-1">
+                      🌍 Fora de PT
+                    </span>
                   )}
                 </div>
 
