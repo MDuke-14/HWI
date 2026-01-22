@@ -2337,16 +2337,18 @@ const TechnicalReports = ({ user, onLogout }) => {
       });
       setFolhaHorasTarifas(tarifasIniciais);
       
-      // Inicializar extras vazios para cada técnico/data, mas pré-preencher despesas do backend
+      // Inicializar extras vazios para cada técnico/data, mas pré-preencher despesas e portagens do backend
       const despesasPorTecnicoData = response.data.despesas_por_tecnico_data || {};
+      const portagensPorTecnicoData = response.data.portagens_por_tecnico_data || {};
       const extrasIniciais = {};
       Object.entries(response.data.datas_por_tecnico || {}).forEach(([tecnicoId, datas]) => {
         datas.forEach(data => {
           const key = `${tecnicoId}_${data}`;
           const despesaValue = despesasPorTecnicoData[key] || 0;
+          const portagensValue = portagensPorTecnicoData[key] || 0;
           extrasIniciais[key] = { 
             dieta: '', 
-            portagens: '', 
+            portagens: portagensValue > 0 ? portagensValue.toFixed(2) : '', 
             despesas: despesaValue > 0 ? despesaValue.toFixed(2) : '' 
           };
         });
