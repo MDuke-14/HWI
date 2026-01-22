@@ -36,11 +36,23 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Não bloqueia se permissão negada ou geocoding falhar
 - Toast de feedback ao utilizador
 
+**✅ Auto-detecção "Fora de Zona de Residência" (22 Janeiro 2026):**
+- Ao fazer clock-in, sistema obtém GPS e faz reverse geocoding
+- Se país detetado NÃO é Portugal (country_code !== 'PT'):
+  - Checkbox "Fora de Zona de Residência" marcado automaticamente
+  - Campo "Local da Deslocação" preenchido com "Cidade, País"
+  - Toast notification: "📍 Detectado fora de Portugal: [Local]"
+  - Badge visual "🌍 Fora de PT" aparece no indicador GPS
+- Se utilizador já teve entrada "Fora de Zona" no mesmo dia:
+  - Checkbox mantém-se marcado para próximas entradas
+- Utilizador pode sempre desmarcar/editar manualmente
+
 **UI Indicators:**
 - Indicador verde "Online" / amarelo "Offline" no Dashboard
 - Banner de aviso quando em modo offline
 - Mostra cidade e país no card de localização quando disponível
 - Link "Ver Mapa" para Google Maps
+- Badge "🌍 Fora de PT" quando fora de Portugal
 
 **Modo Offline na Página de OTs:**
 - Hook `useOfflineData.js` para gestão de cache
