@@ -3884,7 +3884,10 @@ const TechnicalReports = ({ user, onLogout }) => {
               {/* Equipamentos */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-blue-400 font-semibold">Equipamentos</h4>
+                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
+                    Equipamentos
+                    <HelpTooltip section="equipamentos" />
+                  </h4>
                   <Button
                     onClick={openAddEquipamentoModal}
                     size="sm"
