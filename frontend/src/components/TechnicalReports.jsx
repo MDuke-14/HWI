@@ -4202,6 +4202,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <Button
                     onClick={() => {
                       setDespesaFormData({
+                        tipo: 'outras',
                         descricao: '',
                         valor: '',
                         tecnico_id: '',
