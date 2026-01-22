@@ -580,32 +580,58 @@ const Dashboard = ({ user, onLogout }) => {
                 )}
 
                 {/* Geolocation Status Indicator */}
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <MapPin className={`w-4 h-4 ${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400 animate-pulse' : 'text-gray-500'}`} />
-                    <span className={geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400' : 'text-gray-500'}>
-                      {geoLoading ? 'A obter localização...' : 
-                       geoLocation ? (
-                         geoLocation.address?.city 
-                           ? `📍 ${geoLocation.address.city}, ${geoLocation.address.country} (±${Math.round(geoLocation.accuracy)}m)`
-                           : `📍 Localização capturada (±${Math.round(geoLocation.accuracy)}m)`
-                       ) : 
-                       geoError ? `⚠️ ${geoError}` :
-                       'GPS será capturado ao iniciar'}
-                    </span>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <MapPin className={`w-4 h-4 ${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400 animate-pulse' : 'text-gray-500'}`} />
+                      <span className={geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400' : 'text-gray-500'}>
+                        {geoLoading ? 'A obter localização...' : 
+                         geoLocation ? (
+                           geoLocation.address?.city 
+                             ? `📍 ${geoLocation.address.city}${geoLocation.address.region ? `, ${geoLocation.address.region}` : ''} (±${Math.round(geoLocation.accuracy)}m)`
+                             : `📍 Localização capturada (±${Math.round(geoLocation.accuracy)}m)`
+                         ) : 
+                         geoError ? `⚠️ ${geoError}` :
+                         'GPS será capturado ao iniciar'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!geoLocation && !geoLoading && (
+                        <button 
+                          onClick={testGeoLocation}
+                          className="text-blue-400 hover:text-blue-300 text-xs underline"
+                        >
+                          Testar GPS
+                        </button>
+                      )}
+                      {geoLocation && geoLocation.address && isForaZonaResidencia(geoLocation.address) && (
+                        <span className="text-amber-400 text-xs font-medium flex items-center gap-1">
+                          {geoLocation.address.country_code !== 'PT' ? '🌍 Fora de PT' : '📍 Fora da Zona'}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {!geoLocation && !geoLoading && (
-                    <button 
-                      onClick={testGeoLocation}
-                      className="text-blue-400 hover:text-blue-300 text-xs underline"
-                    >
-                      Testar GPS
-                    </button>
-                  )}
-                  {geoLocation && geoLocation.address && isForaZonaResidencia(geoLocation.address) && (
-                    <span className="text-amber-400 text-xs font-medium flex items-center gap-1">
-                      {geoLocation.address.country_code !== 'PT' ? '🌍 Fora de PT' : '📍 Fora da Zona'}
-                    </span>
+                  
+                  {/* Link para ver no mapa quando GPS capturado */}
+                  {geoLocation && geoLocation.latitude && geoLocation.longitude && (
+                    <div className="flex items-center gap-3 pl-6">
+                      <a
+                        href={`https://www.google.com/maps?q=${geoLocation.latitude},${geoLocation.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 underline"
+                      >
+                        🗺️ Ver no Google Maps
+                      </a>
+                      <a
+                        href={`https://www.openstreetmap.org/?mlat=${geoLocation.latitude}&mlon=${geoLocation.longitude}&zoom=15`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-400 hover:text-green-300 text-xs flex items-center gap-1 underline"
+                      >
+                        🌐 OpenStreetMap
+                      </a>
+                    </div>
                   )}
                 </div>
 
