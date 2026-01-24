@@ -4005,53 +4005,65 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
             except Exception as e:
                 logging.error(f"Erro no reverse geocoding: {str(e)}")
     
-    # Se já tem horas extra hoje, marcar como entrada adicional
-    if existing_overtime_today and not is_ot:
-        entry_dict['is_additional_overtime_entry'] = True
-        entry_dict['requires_overtime_authorization'] = True
-    
+    # Inserir entrada na base de dados
     await db.time_entries.insert_one(entry_dict)
     
-    # Se precisa de autorização (dia especial OU já tem horas extra hoje), enviar pedido
-    overtime_authorization_sent = False
-    if needs_authorization:
+    # Se é dia especial e é a primeira picagem, criar pedido de autorização
+    authorization_created = False
+    if day_info["is_special"] and not day_authorization:
         try:
-            # Buscar dados do utilizador
             user = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0})
             user_name = user.get("full_name") or user.get("username") if user else current_user["username"]
-            user_email = user.get("email") if user else None
             
-            base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
-            
-            # Determinar se é trabalho em férias
-            vacation_request_id = vacation_request.get("id") if is_on_vacation and vacation_request else None
-            
-            result = await handle_overtime_start(
-                db=db,
+            new_auth = await create_day_authorization_request(
                 user_id=current_user["sub"],
                 user_name=user_name,
-                user_email=user_email,
+                date_str=today,
+                day_type=day_info["day_type"],
+                day_type_display=day_info["day_type_display"],
                 entry_id=entry_dict['id'],
-                base_url=base_url,
-                custom_reason=authorization_reason if (existing_overtime_today and not is_ot) or is_on_vacation else None,
-                vacation_request_id=vacation_request_id
+                entry_time=current_time_str,
+                vacation_request_id=day_info.get("vacation_request_id")
             )
-            overtime_authorization_sent = result.get("status") == "authorization_requested"
-            logging.info(f"Overtime authorization request: {result}")
+            
+            # Atualizar entry com referência à autorização
+            await db.time_entries.update_one(
+                {"id": entry_dict['id']},
+                {"$set": {
+                    "day_authorization_id": new_auth["id"],
+                    "day_authorization_status": "pending"
+                }}
+            )
+            
+            authorization_created = True
+            authorization_status_message = f"Pedido de autorização enviado ({day_info['day_type_display']})"
+            
         except Exception as e:
-            logging.error(f"Error sending overtime authorization: {str(e)}")
+            logging.error(f"Erro ao criar pedido de autorização diária: {str(e)}")
     
-    # Return entry without MongoDB's _id field
+    # Preparar resposta
     response = {
         "message": "Relógio iniciado",
         "entry": {k: v for k, v in entry_dict.items() if k != '_id'}
     }
     
-    if overtime_authorization_sent:
-        response["overtime_authorization"] = {
-            "sent": True,
-            "message": f"Pedido de autorização enviado para a administração ({authorization_reason})"
+    if day_info["is_special"]:
+        response["special_day"] = {
+            "type": day_info["day_type"],
+            "display": day_info["day_type_display"],
+            "authorization_required": True
         }
+        
+        if authorization_created:
+            response["authorization"] = {
+                "status": "pending",
+                "message": authorization_status_message
+            }
+        elif day_authorization:
+            response["authorization"] = {
+                "status": day_authorization.get("status"),
+                "message": authorization_status_message
+            }
     
     return response
 
