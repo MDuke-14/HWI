@@ -156,8 +156,9 @@ const Calendar = ({ user, onLogout }) => {
   };
 
   const handleCreateService = async () => {
-    if (!serviceForm.client_name || !serviceForm.location || !serviceForm.service_reason || serviceForm.technician_ids.length === 0 || !serviceForm.date) {
-      toast.error('Por favor preencha todos os campos obrigatórios');
+    // Validação - service_reason já não é obrigatório
+    if (!serviceForm.client_name || !serviceForm.location || serviceForm.technician_ids.length === 0 || !serviceForm.date) {
+      toast.error('Por favor preencha todos os campos obrigatórios (Cliente, Localidade, Data e Técnicos)');
       return;
     }
 
@@ -166,8 +167,9 @@ const Calendar = ({ user, onLogout }) => {
         await axios.put(`${API}/services/${editingService.id}`, serviceForm);
         toast.success('Serviço atualizado com sucesso!');
       } else {
-        await axios.post(`${API}/services`, serviceForm);
-        toast.success('Serviço criado e notificações enviadas!');
+        // Criar serviço e OT associada
+        await axios.post(`${API}/services/with-ot`, serviceForm);
+        toast.success('Serviço e OT criados com sucesso!');
       }
       setDialogOpen(false);
       resetForm();
