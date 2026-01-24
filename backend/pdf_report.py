@@ -207,7 +207,7 @@ def generate_monthly_pdf_report(report_data):
     
     # Style the table
     table_style = [
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2d3748')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
