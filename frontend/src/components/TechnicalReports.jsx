@@ -7090,29 +7090,115 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* KM (apenas para viagem) */}
-            {addRegistoManualForm.tipo === 'viagem' && (
-              <div>
-                <Label className="text-gray-300">Quilómetros</Label>
-                <Input
-                  type="number"
-                  value={addRegistoManualForm.km}
-                  onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, km: parseFloat(e.target.value) || 0 }))}
-                  className="bg-gray-800 border-gray-700 text-white"
-                  placeholder="0"
-                />
+            {/* KMs Ida e Volta - sempre visíveis */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300 flex items-center gap-2">
+                  <Car className="w-4 h-4 text-blue-400" />
+                  Km's Ida
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-gray-500">Início</Label>
+                    <Input
+                      type="number"
+                      value={addRegistoManualForm.kms_inicial}
+                      onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, kms_inicial: parseFloat(e.target.value) || 0 }))}
+                      className="bg-gray-800 border-gray-700 text-white"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Fim</Label>
+                    <Input
+                      type="number"
+                      value={addRegistoManualForm.kms_final}
+                      onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, kms_final: parseFloat(e.target.value) || 0 }))}
+                      className="bg-gray-800 border-gray-700 text-white"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Total Ida: {Math.max(0, (addRegistoManualForm.kms_final || 0) - (addRegistoManualForm.kms_inicial || 0)).toFixed(1)} km
+                </p>
               </div>
-            )}
+              <div className="space-y-2">
+                <Label className="text-gray-300 flex items-center gap-2">
+                  <Car className="w-4 h-4 text-orange-400" />
+                  Km's Volta
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-gray-500">Início</Label>
+                    <Input
+                      type="number"
+                      value={addRegistoManualForm.kms_inicial_volta}
+                      onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, kms_inicial_volta: parseFloat(e.target.value) || 0 }))}
+                      className="bg-gray-800 border-gray-700 text-white"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Fim</Label>
+                    <Input
+                      type="number"
+                      value={addRegistoManualForm.kms_final_volta}
+                      onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, kms_final_volta: parseFloat(e.target.value) || 0 }))}
+                      className="bg-gray-800 border-gray-700 text-white"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Total Volta: {Math.max(0, (addRegistoManualForm.kms_final_volta || 0) - (addRegistoManualForm.kms_inicial_volta || 0)).toFixed(1)} km
+                </p>
+              </div>
+            </div>
 
-            {/* Info sobre segmentação */}
-            <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
-              <p className="text-blue-400 text-sm">
-                <strong>Códigos horários:</strong><br />
-                • 1 = Dias úteis (07:00-19:00)<br />
-                • 2 = Noturno (19:00-07:00)<br />
-                • S = Sábado (todo o dia)<br />
-                • D = Domingo/Feriado (todo o dia)
-              </p>
+            {/* Checkbox de Pausa e Total de Horas */}
+            <div className="flex items-center gap-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="checkbox"
+                  id="incluir_pausa_modal"
+                  checked={addRegistoManualForm.incluir_pausa}
+                  onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, incluir_pausa: e.target.checked }))}
+                  className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-amber-500"
+                />
+                <label htmlFor="incluir_pausa_modal" className="text-gray-300 cursor-pointer">
+                  <span className="font-medium">1h de Pausa</span>
+                </label>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500">Total de Horas</p>
+                <p className="text-xl font-bold text-green-400">
+                  {(() => {
+                    if (!addRegistoManualForm.hora_inicio || !addRegistoManualForm.hora_fim) return '0h 0min';
+                    const [hi, mi] = addRegistoManualForm.hora_inicio.split(':').map(Number);
+                    const [hf, mf] = addRegistoManualForm.hora_fim.split(':').map(Number);
+                    let totalMins = (hf * 60 + mf) - (hi * 60 + mi);
+                    if (totalMins < 0) totalMins += 24 * 60;
+                    if (addRegistoManualForm.incluir_pausa) totalMins -= 60;
+                    if (totalMins < 0) totalMins = 0;
+                    return `${Math.floor(totalMins / 60)}h ${totalMins % 60}min`;
+                  })()}
+                </p>
+              </div>
+            </div>
+
+            {/* Total KMs */}
+            <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-500/30 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-green-400 font-medium flex items-center gap-2">
+                  <Car className="w-4 h-4" />
+                  Total KM (Ida + Volta)
+                </span>
+                <span className="text-xl font-bold text-green-400">
+                  {(Math.max(0, (addRegistoManualForm.kms_final || 0) - (addRegistoManualForm.kms_inicial || 0)) + 
+                    Math.max(0, (addRegistoManualForm.kms_final_volta || 0) - (addRegistoManualForm.kms_inicial_volta || 0))).toFixed(1)} km
+                </span>
+              </div>
             </div>
 
             {/* Botões */}
