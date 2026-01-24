@@ -334,7 +334,8 @@ const FolhaHorasModal = ({
               {getExtrasOrdenados().length > 0 ? (
                 <div className="space-y-3">
                   {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data }) => {
-                    const chave = `${tecnicoId}_${data}`;
+                    // Chave baseada em NOME + DATA para consistência
+                    const chave = `${tecnicoNome}_${data}`;
                     const valores = folhaHorasExtras[chave] || { dieta: '', portagens: '', despesas: '' };
                     const { formatted, weekday } = getDataInfo(data);
                     
