@@ -8617,6 +8617,9 @@ async def create_registo_tecnico_manual(
         codigo = get_codigo_horario(hora_inicio)
         
         duracao_minutos = (hora_fim - hora_inicio).total_seconds() / 60
+        # Aplicar desconto de pausa se selecionado
+        if incluir_pausa:
+            duracao_minutos = max(0, duracao_minutos - 60)
         from cronometro_logic import arredondar_horas
         horas_arredondadas = arredondar_horas(duracao_minutos)
         
@@ -8632,6 +8635,11 @@ async def create_registo_tecnico_manual(
             "horas_arredondadas": horas_arredondadas,
             "minutos_trabalhados": int(duracao_minutos),
             "km": km,
+            "kms_inicial": kms_inicial,
+            "kms_final": kms_final,
+            "kms_inicial_volta": kms_inicial_volta,
+            "kms_final_volta": kms_final_volta,
+            "incluir_pausa": incluir_pausa,
             "codigo": codigo,
             "origem": "manual",
             "sobreposicao": True,
