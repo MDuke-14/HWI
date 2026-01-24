@@ -297,7 +297,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         mao_obra_table = Table(mao_obra_data, colWidths=[4.5*cm, 2.5*cm, 2.5*cm, 2*cm, 2*cm, 1.5*cm])
         mao_obra_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8b5cf6')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
