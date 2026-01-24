@@ -210,10 +210,13 @@ const Calendar = ({ user, onLogout }) => {
     setEditingService(null);
     setServiceForm({
       client_name: '',
+      client_id: '',
       location: '',
+      service_type: 'assistencia',
       service_reason: '',
       technician_ids: [],
       date: '',
+      date_end: '',
       time_slot: '',
       observations: '',
       status: 'scheduled'
