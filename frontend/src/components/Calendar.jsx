@@ -632,7 +632,7 @@ const Calendar = ({ user, onLogout }) => {
                         <div className="flex gap-2 mt-1">
                           <Input
                             value={serviceForm.client_name}
-                            onChange={(e) => setServiceForm({...serviceForm, client_name: e.target.value})}
+                            onChange={(e) => setServiceForm({...serviceForm, client_name: e.target.value, client_id: ''})}
                             className="bg-[#121212] border-white/10 text-white flex-1"
                             placeholder="Ex: João Silva"
                             data-testid="service-client-name"
@@ -706,18 +706,35 @@ const Calendar = ({ user, onLogout }) => {
                       </div>
                     </div>
 
-                    <div>
-                      <Label className="text-xs uppercase tracking-widest text-gray-400">Motivo de Assistência *</Label>
-                      <Input
-                        value={serviceForm.service_reason}
-                        onChange={(e) => setServiceForm({...serviceForm, service_reason: e.target.value})}
-                        className="bg-[#121212] border-white/10 text-white mt-1"
-                        placeholder="Ex: Instalação de equipamento"
-                        data-testid="service-reason"
-                      />
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Tipo de Serviço *</Label>
+                        <Select
+                          value={serviceForm.service_type}
+                          onValueChange={(value) => setServiceForm({...serviceForm, service_type: value})}
+                        >
+                          <SelectTrigger className="bg-[#121212] border-white/10 text-white mt-1" data-testid="service-type-select">
+                            <SelectValue placeholder="Selecionar tipo" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#121212] border-white/10 text-white">
+                            <SelectItem value="assistencia">Assistência</SelectItem>
+                            <SelectItem value="montagem">Montagem</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Motivo de Assistência</Label>
+                        <Input
+                          value={serviceForm.service_reason}
+                          onChange={(e) => setServiceForm({...serviceForm, service_reason: e.target.value})}
+                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          placeholder="Ex: Instalação de equipamento (opcional)"
+                          data-testid="service-reason"
+                        />
+                      </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
                       <div>
                         <Label className="text-xs uppercase tracking-widest text-gray-400">Data *</Label>
                         <Input
@@ -726,6 +743,17 @@ const Calendar = ({ user, onLogout }) => {
                           onChange={(e) => setServiceForm({...serviceForm, date: e.target.value})}
                           className="bg-[#121212] border-white/10 text-white mt-1"
                           data-testid="service-date"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Até (opcional)</Label>
+                        <Input
+                          type="date"
+                          value={serviceForm.date_end}
+                          onChange={(e) => setServiceForm({...serviceForm, date_end: e.target.value})}
+                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          data-testid="service-date-end"
+                          min={serviceForm.date || undefined}
                         />
                       </div>
                       <div>
