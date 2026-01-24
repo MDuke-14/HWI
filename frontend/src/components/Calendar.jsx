@@ -948,18 +948,8 @@ const Calendar = ({ user, onLogout }) => {
                         }`}>
                           {ot.status === 'concluido' ? 'Concluído' : 
                            ot.status === 'em_execucao' ? 'Em Execução' : 
-                           ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'} 
-                             ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'}
-                          </span>
-                        </div>
-                        <div className="text-sm text-white mt-1">{ot.cliente_nome}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          <MapPin className="w-3 h-3 inline mr-1" />
-                          {ot.local}
-                        </div>
-                        {ot.motivo && (
-                          <div className="text-xs text-gray-500 mt-1 truncate">{ot.motivo}</div>
-                        )}
+                           ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'}
+                        </span>
                         {ot.data_fim && (
                           <div className="text-xs text-orange-400/70 mt-1">
                             {new Date(ot.data_inicio).toLocaleDateString('pt-PT')} → {new Date(ot.data_fim).toLocaleDateString('pt-PT')}
