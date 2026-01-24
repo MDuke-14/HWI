@@ -308,6 +308,10 @@ def generate_folha_horas_pdf(
     # Ordenar por data cronológica, depois por código
     registos_ordenados.sort(key=lambda x: (x['data'], x['codigo']))
     
+    # REGRA DE DIETA: Apenas 1 dieta por técnico por dia
+    # Manter registo de quais técnicos/dias já tiveram dieta aplicada
+    dietas_aplicadas = set()  # Set de chaves "tecnico_id_data"
+    
     # Iterar pelos registos ordenados por data e código
     for item in registos_ordenados:
         tecnico_id = item['tecnico_id']
