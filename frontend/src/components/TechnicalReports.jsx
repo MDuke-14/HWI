@@ -3630,14 +3630,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                     Mão de Obra / Deslocação
                     <HelpTooltip section="cronometros" />
                   </h4>
-                  <Button
-                    onClick={() => openAddTecnicoModal()}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Registo Manual
-                  </Button>
                 </div>
 
                 {/* Cronómetros */}
