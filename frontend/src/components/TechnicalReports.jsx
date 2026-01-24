@@ -6993,6 +6993,142 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal Adicionar Registo Manual */}
+      <Dialog open={showAddRegistoManualModal} onOpenChange={setShowAddRegistoManualModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Plus className="w-5 h-5 text-blue-400" />
+              Novo Registo de Mão de Obra
+            </DialogTitle>
+            <p className="text-gray-400 text-sm">
+              Se o período atravessar diferentes códigos horários (07:00/19:00), será automaticamente dividido em múltiplos registos.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {/* Técnico */}
+            <div>
+              <Label className="text-gray-300">Técnico *</Label>
+              <Select
+                value={addRegistoManualForm.tecnico_id}
+                onValueChange={(val) => {
+                  const user = allSystemUsers.find(u => u.id === val);
+                  setAddRegistoManualForm(prev => ({
+                    ...prev,
+                    tecnico_id: val,
+                    tecnico_nome: user?.full_name || user?.username || ''
+                  }));
+                }}
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectValue placeholder="Selecionar técnico" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {allSystemUsers.map(user => (
+                    <SelectItem key={user.id} value={user.id} className="text-white">
+                      {user.full_name || user.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tipo */}
+            <div>
+              <Label className="text-gray-300">Tipo *</Label>
+              <Select
+                value={addRegistoManualForm.tipo}
+                onValueChange={(val) => setAddRegistoManualForm(prev => ({ ...prev, tipo: val }))}
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="trabalho" className="text-white">Trabalho</SelectItem>
+                  <SelectItem value="viagem" className="text-white">Viagem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Data */}
+            <div>
+              <Label className="text-gray-300">Data *</Label>
+              <Input
+                type="date"
+                value={addRegistoManualForm.data}
+                onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, data: e.target.value }))}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+
+            {/* Horas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-300">Hora Início *</Label>
+                <Input
+                  type="time"
+                  value={addRegistoManualForm.hora_inicio}
+                  onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, hora_inicio: e.target.value }))}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Hora Fim *</Label>
+                <Input
+                  type="time"
+                  value={addRegistoManualForm.hora_fim}
+                  onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, hora_fim: e.target.value }))}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+            </div>
+
+            {/* KM (apenas para viagem) */}
+            {addRegistoManualForm.tipo === 'viagem' && (
+              <div>
+                <Label className="text-gray-300">Quilómetros</Label>
+                <Input
+                  type="number"
+                  value={addRegistoManualForm.km}
+                  onChange={(e) => setAddRegistoManualForm(prev => ({ ...prev, km: parseFloat(e.target.value) || 0 }))}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  placeholder="0"
+                />
+              </div>
+            )}
+
+            {/* Info sobre segmentação */}
+            <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
+              <p className="text-blue-400 text-sm">
+                <strong>Códigos horários:</strong><br />
+                • 1 = Dias úteis (07:00-19:00)<br />
+                • 2 = Noturno (19:00-07:00)<br />
+                • S = Sábado (todo o dia)<br />
+                • D = Domingo/Feriado (todo o dia)
+              </p>
+            </div>
+
+            {/* Botões */}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddRegistoManualModal(false)}
+                className="border-gray-600 text-gray-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddRegistoManual}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Criar Registo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal Editar Registo Cronómetro */}
       <Dialog open={showEditRegistoModal} onOpenChange={(open) => {
         setShowEditRegistoModal(open);
