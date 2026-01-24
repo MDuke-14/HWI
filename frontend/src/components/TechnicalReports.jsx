@@ -858,7 +858,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     setSelectedRelatorio(relatorio);
     setRelatorioFormData({
       cliente_id: relatorio.cliente_id,
-      data_servico: relatorio.data_servico.split('T')[0], // Formato YYYY-MM-DD
+      data_servico: relatorio.data_servico?.split('T')[0] || '', // Formato YYYY-MM-DD
+      data_fim: relatorio.data_fim?.split('T')[0] || '', // Campo "Até"
       local_intervencao: relatorio.local_intervencao,
       pedido_por: relatorio.pedido_por,
       equipamento_tipologia: relatorio.equipamento_tipologia,
