@@ -297,7 +297,12 @@ const TechnicalReports = ({ user, onLogout }) => {
     data: new Date().toISOString().split('T')[0],
     hora_inicio: '09:00',
     hora_fim: '18:00',
-    km: 0
+    km: 0,
+    kms_inicial: 0,
+    kms_final: 0,
+    kms_inicial_volta: 0,
+    kms_final_volta: 0,
+    incluir_pausa: false
   });
 
   
