@@ -427,21 +427,20 @@ const Calendar = ({ user, onLogout }) => {
                         <div
                           key={`ot-${ot.id}-${dateStr}`}
                           className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-1 hover:bg-orange-500/20 transition-colors"
-                          title={`OT-${ot.numero_ot} - ${ot.cliente_nome} - ${ot.local}`}
+                          title={`${ot.cliente_nome} - OT#${ot.numero_ot} - ${ot.local}`}
                         >
-                          <Wrench className="w-2.5 h-2.5 inline mr-1" />
-                          OT-{ot.numero_ot}
+                          {ot.cliente_nome} OT#{ot.numero_ot}
                         </div>
                       ))}
                       
-                      {/* Services */}
+                      {/* Services - mesma cor das OTs */}
                       {dayServices.slice(0, dayOts.length > 0 ? 1 : 2).map(service => (
                         <div
                           key={service.id}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300 border-l-2 border-sky-500 truncate mb-1 hover:bg-sky-500/20 transition-colors"
-                          title={`${service.client_name} - ${service.location}`}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-1 hover:bg-orange-500/20 transition-colors"
+                          title={`${service.client_name} - ${service.ot_numero ? `OT#${service.ot_numero}` : 'Serviço'} - ${service.location}`}
                         >
-                          {service.client_name}
+                          {service.client_name} {service.ot_numero ? `OT#${service.ot_numero}` : ''}
                         </div>
                       ))}
                       
