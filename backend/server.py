@@ -6696,16 +6696,14 @@ async def import_pdf_timesheet(
                     start_parts = start_time_str.split(":")
                     end_parts = end_time_str.split(":")
                     
-                    # Create datetime objects
+                    # Create datetime objects (hora local portuguesa)
                     start_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
                         hour=int(start_parts[0]),
-                        minute=int(start_parts[1]),
-                        tzinfo=timezone.utc
+                        minute=int(start_parts[1])
                     )
                     end_datetime = datetime.combine(entry_date, datetime.min.time()).replace(
                         hour=int(end_parts[0]),
-                        minute=int(end_parts[1]),
-                        tzinfo=timezone.utc
+                        minute=int(end_parts[1])
                     )
                     
                     # Calculate hours
