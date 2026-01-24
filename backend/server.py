@@ -8654,8 +8654,15 @@ async def create_registo_tecnico_manual(
     # Sem sobreposição - segmentar normalmente
     segmentos = segmentar_periodo(hora_inicio, hora_fim, tipo)
     
+    # Se incluir pausa, descontar 60 minutos do primeiro segmento
+    if incluir_pausa and segmentos:
+        primeiro = segmentos[0]
+        primeiro["duracao_minutos"] = max(0, primeiro["duracao_minutos"] - 60)
+        from cronometro_logic import arredondar_horas
+        primeiro["horas_arredondadas"] = arredondar_horas(primeiro["duracao_minutos"])
+    
     registos_criados = []
-    for seg in segmentos:
+    for i, seg in enumerate(segmentos):
         registo = {
             "id": str(uuid.uuid4()),
             "relatorio_id": relatorio_id,
@@ -8667,7 +8674,12 @@ async def create_registo_tecnico_manual(
             "hora_fim_segmento": seg["hora_fim_segmento"].isoformat(),
             "horas_arredondadas": seg["horas_arredondadas"],
             "minutos_trabalhados": int(seg["duracao_minutos"]),
-            "km": km,
+            "km": km if i == 0 else 0,  # KMs apenas no primeiro segmento
+            "kms_inicial": kms_inicial if i == 0 else 0,
+            "kms_final": kms_final if i == 0 else 0,
+            "kms_inicial_volta": kms_inicial_volta if i == 0 else 0,
+            "kms_final_volta": kms_final_volta if i == 0 else 0,
+            "incluir_pausa": incluir_pausa if i == 0 else False,
             "codigo": seg["codigo"],
             "origem": "manual",
             "created_at": datetime.now(timezone.utc).isoformat()
