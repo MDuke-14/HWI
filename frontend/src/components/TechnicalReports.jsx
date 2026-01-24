@@ -287,7 +287,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     kms_final_volta: 0,
     codigo: '',
     hora_inicio: '',
-    hora_fim: ''
+    hora_fim: '',
+    incluir_pausa: false
   });
 
   // Modal para adicionar registo manual
