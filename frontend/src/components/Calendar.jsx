@@ -367,13 +367,14 @@ const Calendar = ({ user, onLogout }) => {
               const dateStr = getDateString(day);
               const dayServices = getServicesForDate(dateStr);
               const dayVacations = getVacationsForDate(dateStr);
+              const dayOts = getOtsForDate(dateStr);
               const holiday = getHolidayForDate(dateStr);
               const isToday = day && 
                 day === today.getDate() && 
                 currentDate.getMonth() === today.getMonth() && 
                 currentDate.getFullYear() === today.getFullYear();
               const isWeekend = index % 7 === 0 || index % 7 === 6;
-              const hasEvents = dayServices.length > 0 || dayVacations.length > 0 || holiday;
+              const hasEvents = dayServices.length > 0 || dayVacations.length > 0 || dayOts.length > 0 || holiday;
 
               return (
                 <div
@@ -411,8 +412,20 @@ const Calendar = ({ user, onLogout }) => {
                         </div>
                       )}
                       
+                      {/* OTs */}
+                      {dayOts.slice(0, 2).map(ot => (
+                        <div
+                          key={`ot-${ot.id}-${dateStr}`}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-1 hover:bg-orange-500/20 transition-colors"
+                          title={`OT-${ot.numero_ot} - ${ot.cliente_nome} - ${ot.local}`}
+                        >
+                          <Wrench className="w-2.5 h-2.5 inline mr-1" />
+                          OT-{ot.numero_ot}
+                        </div>
+                      ))}
+                      
                       {/* Services */}
-                      {dayServices.slice(0, 2).map(service => (
+                      {dayServices.slice(0, dayOts.length > 0 ? 1 : 2).map(service => (
                         <div
                           key={service.id}
                           className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300 border-l-2 border-sky-500 truncate mb-1 hover:bg-sky-500/20 transition-colors"
@@ -434,9 +447,9 @@ const Calendar = ({ user, onLogout }) => {
                       ))}
                       
                       {/* More Indicator */}
-                      {(dayServices.length > 2 || dayVacations.length > 1) && (
+                      {(dayOts.length > 2 || dayServices.length > (dayOts.length > 0 ? 1 : 2) || dayVacations.length > 1) && (
                         <div className="text-[10px] text-gray-500 font-medium">
-                          +{dayServices.length - 2 + dayVacations.length - 1} mais
+                          +{Math.max(0, dayOts.length - 2) + Math.max(0, dayServices.length - (dayOts.length > 0 ? 1 : 2)) + Math.max(0, dayVacations.length - 1)} mais
                         </div>
                       )}
                     </>
