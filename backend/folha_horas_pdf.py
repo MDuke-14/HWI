@@ -411,7 +411,7 @@ def generate_folha_horas_pdf(
             tecnico_nome,
             tipo_registo,
             minutes_to_hhmm(total_minutos),
-            f'{tarifa_valor:.2f}€/h' if tarifa_valor else '-',
+            f'{codigo} - {tarifa_valor:.2f}€/h' if tarifa_valor else f'{codigo} - -',
             f'{total_valor:.2f}€',
             f'{total_km:.1f}',
             f'{PRECO_KM:.2f}€',
