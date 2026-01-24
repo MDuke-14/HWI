@@ -857,7 +857,7 @@ const Calendar = ({ user, onLogout }) => {
             <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ fontFamily: "'Chivo', sans-serif" }}>
-                  <CalendarIcon className="w-5 h-5 text-sky-400" />
+                  <CalendarIcon className="w-5 h-5 text-orange-400" />
                   {selectedDay && new Date(selectedDay.dateStr + 'T00:00:00').toLocaleDateString('pt-PT', {
                     weekday: 'long',
                     day: 'numeric',
@@ -876,7 +876,7 @@ const Calendar = ({ user, onLogout }) => {
                   </div>
                 )}
                 
-                {/* Services */}
+                {/* Services - mesma cor das OTs */}
                 {selectedDay?.services.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
@@ -886,13 +886,22 @@ const Calendar = ({ user, onLogout }) => {
                     {selectedDay.services.map(service => (
                       <div 
                         key={service.id} 
-                        className="bg-sky-500/10 border border-sky-500/30 rounded-lg p-3 cursor-pointer hover:bg-sky-500/20 transition"
+                        className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 cursor-pointer hover:bg-orange-500/20 transition"
                         onClick={() => {
                           setDayDetailOpen(false);
-                          if (user.is_admin) handleEditService(service);
+                          if (service.ot_id) {
+                            window.location.href = `/technical-reports?ot=${service.ot_id}`;
+                          } else if (user.is_admin) {
+                            handleEditService(service);
+                          }
                         }}
                       >
-                        <div className="font-semibold text-white">{service.client_name}</div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-white">{service.client_name}</span>
+                          {service.ot_numero && (
+                            <span className="font-bold text-orange-400">OT#{service.ot_numero}</span>
+                          )}
+                        </div>
                         <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
                           <MapPin className="w-3 h-3" />
                           {service.location}
@@ -925,14 +934,21 @@ const Calendar = ({ user, onLogout }) => {
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-orange-400">OT-{ot.numero_ot}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded ${
-                            ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
-                            ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {ot.status === 'concluido' ? 'Concluído' : 
-                             ot.status === 'em_execucao' ? 'Em Execução' : 
+                          <span className="font-semibold text-white">{ot.cliente_nome}</span>
+                          <span className="font-bold text-orange-400">OT#{ot.numero_ot}</span>
+                        </div>
+                        <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3" />
+                          {ot.local}
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded mt-1 inline-block ${
+                          ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
+                          ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {ot.status === 'concluido' ? 'Concluído' : 
+                           ot.status === 'em_execucao' ? 'Em Execução' : 
+                           ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'} 
                              ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'}
                           </span>
                         </div>
