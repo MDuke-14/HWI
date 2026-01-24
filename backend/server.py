@@ -7855,6 +7855,154 @@ async def create_service(service_data: ServiceAppointmentCreate, current_user: d
     
     return {"message": "Serviço criado com sucesso", "service": {k: v for k, v in service_dict.items() if k != '_id'}}
 
+@api_router.post("/services/with-ot")
+async def create_service_with_ot(service_data: ServiceWithOTCreate, current_user: dict = Depends(get_current_admin)):
+    """Criar serviço e OT associada automaticamente"""
+    from datetime import date as dt_date
+    
+    # Validar técnicos existem
+    for tech_id in service_data.technician_ids:
+        tech = await db.users.find_one({"id": tech_id}, {"_id": 0})
+        if not tech:
+            raise HTTPException(status_code=404, detail=f"Técnico com ID {tech_id} não encontrado")
+    
+    # Buscar ou criar cliente
+    cliente = None
+    cliente_id = service_data.client_id
+    
+    if cliente_id:
+        cliente = await db.clientes.find_one({"id": cliente_id}, {"_id": 0})
+    
+    if not cliente:
+        # Criar cliente temporário se não existir
+        cliente_id = str(uuid.uuid4())
+        cliente = {
+            "id": cliente_id,
+            "nome": service_data.client_name,
+            "morada": service_data.location,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.clientes.insert_one(cliente)
+    
+    # Gerar número de assistência para OT
+    last_relatorio = await db.relatorios_tecnicos.find_one(
+        {},
+        sort=[("numero_assistencia", -1)]
+    )
+    last_numero = last_relatorio.get("numero_assistencia", 0) if last_relatorio else 0
+    numero_assistencia = max(last_numero + 1, 354)
+    
+    # Converter datas
+    data_inicio = dt_date.fromisoformat(service_data.date)
+    data_fim = dt_date.fromisoformat(service_data.date_end) if service_data.date_end else None
+    
+    # Construir motivo combinando tipo + motivo
+    tipo_label = "Assistência" if service_data.service_type == "assistencia" else "Montagem"
+    motivo = service_data.service_reason if service_data.service_reason else tipo_label
+    if service_data.service_reason:
+        motivo = f"{tipo_label}: {service_data.service_reason}"
+    
+    # Criar Relatório Técnico (OT)
+    relatorio = RelatorioTecnico(
+        numero_assistencia=numero_assistencia,
+        cliente_id=cliente_id,
+        created_by_id=current_user["sub"],
+        cliente_nome=cliente.get("nome", service_data.client_name),
+        data_servico=data_inicio,
+        data_fim=data_fim,
+        local_intervencao=service_data.location,
+        pedido_por=service_data.client_name,
+        motivo_assistencia=motivo,
+        status="em_execucao"
+    )
+    
+    relatorio_dict = relatorio.dict()
+    relatorio_dict["data_criacao"] = relatorio_dict["data_criacao"].isoformat()
+    relatorio_dict["data_servico"] = relatorio_dict["data_servico"].isoformat()
+    if relatorio_dict.get("data_fim"):
+        relatorio_dict["data_fim"] = relatorio_dict["data_fim"].isoformat()
+    
+    await db.relatorios_tecnicos.insert_one(relatorio_dict)
+    
+    # Criar Service Appointment associado à OT
+    service = ServiceAppointment(
+        client_name=service_data.client_name,
+        location=service_data.location,
+        service_reason=motivo,
+        technician_ids=service_data.technician_ids,
+        date=service_data.date,
+        time_slot=service_data.time_slot,
+        observations=service_data.observations,
+        created_by=current_user["sub"]
+    )
+    
+    service_dict = service.model_dump()
+    service_dict['created_at'] = service_dict['created_at'].isoformat()
+    service_dict['ot_id'] = relatorio.id  # Link para OT
+    service_dict['ot_numero'] = numero_assistencia
+    
+    # Se tem data fim, criar serviços para cada dia no intervalo
+    if data_fim and data_fim > data_inicio:
+        # Inserir serviço original
+        await db.service_appointments.insert_one(service_dict)
+        
+        # Criar serviços adicionais para cada dia do intervalo (sem duplicar o primeiro)
+        current_date = data_inicio + timedelta(days=1)
+        while current_date <= data_fim:
+            additional_service = service_dict.copy()
+            additional_service['id'] = str(uuid.uuid4())
+            additional_service['date'] = current_date.isoformat()
+            await db.service_appointments.insert_one(additional_service)
+            current_date += timedelta(days=1)
+    else:
+        await db.service_appointments.insert_one(service_dict)
+    
+    # Enviar notificações para técnicos
+    technician_emails = []
+    for tech_id in service_data.technician_ids:
+        tech = await db.users.find_one({"id": tech_id}, {"_id": 0, "email": 1, "full_name": 1, "username": 1})
+        if tech:
+            if tech.get('email'):
+                technician_emails.append(tech['email'])
+            
+            # Criar notificação
+            date_info = f"{service_data.date}"
+            if service_data.date_end:
+                date_info += f" até {service_data.date_end}"
+            
+            await create_notification(
+                tech_id,
+                "service_assigned",
+                f"Foi atribuído ao serviço OT-{numero_assistencia} em {service_data.client_name} ({service_data.location}) - {date_info}" + (f" às {service_data.time_slot}" if service_data.time_slot else ""),
+                service.id
+            )
+            
+            # Enviar PUSH notification
+            time_info = f" às {service_data.time_slot}" if service_data.time_slot else ""
+            await send_push_notification(
+                db,
+                tech_id,
+                f"📅 Novo Serviço - OT-{numero_assistencia}",
+                f"{service_data.client_name} - {service_data.location}\n{date_info}{time_info}",
+                "service_assigned",
+                "high"
+            )
+    
+    # Send email notifications
+    if technician_emails:
+        await send_service_email(technician_emails, service_dict, "created")
+    
+    return {
+        "message": "Serviço e OT criados com sucesso",
+        "service": {k: v for k, v in service_dict.items() if k != '_id'},
+        "ot": {
+            "id": relatorio.id,
+            "numero_assistencia": numero_assistencia,
+            "data_inicio": service_data.date,
+            "data_fim": service_data.date_end
+        }
+    }
+
 @api_router.get("/services")
 async def get_services(
     start_date: Optional[str] = None,
