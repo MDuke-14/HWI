@@ -8603,6 +8603,11 @@ async def create_registo_tecnico_manual(
     tem_sobreposicao = verificar_sobreposicao(registos_existentes, hora_inicio, hora_fim, tecnico_id)
     
     km = registo_data.get("km", 0)
+    kms_inicial = registo_data.get("kms_inicial", 0)
+    kms_final = registo_data.get("kms_final", 0)
+    kms_inicial_volta = registo_data.get("kms_inicial_volta", 0)
+    kms_final_volta = registo_data.get("kms_final_volta", 0)
+    incluir_pausa = registo_data.get("incluir_pausa", False)
     
     # Se há sobreposição, criar registo único no fim do dia (não segmentar)
     if tem_sobreposicao:
