@@ -249,6 +249,11 @@ const Calendar = ({ user, onLogout }) => {
     return vacations.filter(v => dateStr >= v.start_date && dateStr <= v.end_date);
   };
 
+  const getOtsForDate = (dateStr) => {
+    if (!dateStr) return [];
+    return ots.filter(ot => ot.date === dateStr);
+  };
+
   const openDayDetail = (day) => {
     const dateStr = getDateString(day);
     setSelectedDay({
@@ -256,6 +261,7 @@ const Calendar = ({ user, onLogout }) => {
       dateStr,
       services: getServicesForDate(dateStr),
       vacations: getVacationsForDate(dateStr),
+      ots: getOtsForDate(dateStr),
       holiday: getHolidayForDate(dateStr)
     });
     setDayDetailOpen(true);
@@ -265,6 +271,7 @@ const Calendar = ({ user, onLogout }) => {
   const totalServicesThisMonth = services.length;
   const scheduledServices = services.filter(s => s.status === 'scheduled').length;
   const completedServices = services.filter(s => s.status === 'completed').length;
+  const totalOtsThisMonth = [...new Set(ots.map(o => o.id))].length; // OTs únicas
 
   const MonthView = () => {
     const days = getDaysInMonth();
