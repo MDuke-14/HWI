@@ -101,6 +101,7 @@ const Calendar = ({ user, onLogout }) => {
       });
       setServices(response.data.services || []);
       setVacations(response.data.vacations || []);
+      setOts(response.data.ots || []);
     } catch (error) {
       toast.error('Erro ao carregar calendário');
     } finally {
