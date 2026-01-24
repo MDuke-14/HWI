@@ -3042,7 +3042,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <div className="mb-3 pb-3 border-b border-gray-700 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
                     <p className="text-xs text-gray-500 mb-1">Equipamento</p>
                     <p className="text-sm text-gray-300">
-                      {relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
+                      {relatorio.equipamento_display ? (
+                        relatorio.equipamento_display === 'Não especificado' ? (
+                          <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
+                        ) : relatorio.equipamento_display === 'Vários' ? (
+                          <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
+                        ) : (
+                          <span>{relatorio.equipamento_display}</span>
+                        )
+                      ) : relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
                         <>
                           {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
                           {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
