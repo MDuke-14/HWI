@@ -7400,21 +7400,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               </div>
 
+              {/* Código - Apenas exibição (calculado automaticamente) */}
               <div>
-                <Label className="text-gray-300">Código</Label>
-                <select
-                  value={editRegistoForm.codigo}
-                  onChange={(e) => setEditRegistoForm({
-                    ...editRegistoForm,
-                    codigo: e.target.value
-                  })}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
-                >
-                  <option value="1">1 - Dias úteis (07h-19h)</option>
-                  <option value="2">2 - Dias úteis (19h-07h)</option>
-                  <option value="S">S - Sábado</option>
-                  <option value="D">D - Domingos/Feriados</option>
-                </select>
+                <Label className="text-gray-300">Código Horário</Label>
+                <div className="w-full bg-[#0f0f0f] border border-gray-700 text-purple-400 rounded-md p-2 font-mono cursor-not-allowed">
+                  {editRegistoForm.codigo || '-'} 
+                  <span className="text-gray-500 text-xs ml-2">
+                    ({editRegistoForm.codigo === '1' ? 'Dias úteis 07h-19h' :
+                      editRegistoForm.codigo === '2' ? 'Dias úteis noturno' :
+                      editRegistoForm.codigo === 'S' ? 'Sábado' :
+                      editRegistoForm.codigo === 'D' ? 'Domingo/Feriado' : 'N/A'})
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">O código é calculado automaticamente e não pode ser alterado</p>
               </div>
 
               {/* Botões */}
