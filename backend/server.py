@@ -770,6 +770,28 @@ class OvertimeAuthorization(BaseModel):
     vacation_request_id: Optional[str] = None  # ID do pedido de férias a anular
 
 
+class DayAuthorization(BaseModel):
+    """
+    Estado de autorização diária para dias especiais (férias, feriados, fins de semana)
+    Uma decisão desbloqueia ou bloqueia o dia inteiro
+    """
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_name: str
+    date: str  # YYYY-MM-DD
+    day_type: str  # "ferias", "feriado", "sabado", "domingo"
+    day_type_display: str  # "Férias", "Feriado: Natal", "Sábado", "Domingo"
+    status: str = "pending"  # "pending", "authorized", "rejected"
+    first_entry_id: str  # ID da primeira picagem que gerou o pedido
+    first_entry_time: str  # Hora da primeira picagem (HH:MM)
+    vacation_request_id: Optional[str] = None  # ID do pedido de férias (se aplicável)
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    decided_by: Optional[str] = None
+    decided_at: Optional[str] = None
+    notification_sent: bool = False
+
+
 class OvertimeDecision(BaseModel):
     """Decisão sobre autorização de horas extra"""
     action: str  # "approve" or "reject"
