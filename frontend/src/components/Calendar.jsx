@@ -33,10 +33,13 @@ const Calendar = ({ user, onLogout }) => {
   const [dayDetailOpen, setDayDetailOpen] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     client_name: '',
+    client_id: '',  // ID do cliente para criar OT
     location: '',
+    service_type: 'assistencia',  // 'assistencia' ou 'montagem'
     service_reason: '',
     technician_ids: [],
     date: '',
+    date_end: '',  // Data "Até"
     time_slot: '',
     observations: '',
     status: 'scheduled'
