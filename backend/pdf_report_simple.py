@@ -64,7 +64,7 @@ def generate_monthly_pdf_report(report_data):
     
     summary_table = Table(summary_data, colWidths=[8*cm, 6*cm])
     summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 9),
