@@ -413,7 +413,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             cell1 = []
             if foto1.get('foto_base64'):
                 try:
-                    import base64
+                    # base64 já importado no topo
                     foto_bytes = base64.b64decode(foto1['foto_base64'])
                     foto_buffer = BytesIO(foto_bytes)
                     img = RLImage(foto_buffer, width=8*cm, height=6*cm, kind='proportional')
@@ -430,7 +430,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 cell2 = []
                 if foto2.get('foto_base64'):
                     try:
-                        import base64
+                        # base64 já importado no topo
                         foto_bytes = base64.b64decode(foto2['foto_base64'])
                         foto_buffer = BytesIO(foto_bytes)
                         img = RLImage(foto_buffer, width=8*cm, height=6*cm, kind='proportional')
@@ -505,7 +505,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     # Se não conseguiu pelo ficheiro, tentar pelo base64
                     if not img_added and assinatura.get('assinatura_base64'):
                         try:
-                            import base64
+                            # base64 já importado no topo
                             img_data = base64.b64decode(assinatura['assinatura_base64'])
                             img_buffer = BytesIO(img_data)
                             img = RLImage(img_buffer, width=6*cm, height=3*cm, kind='proportional')
