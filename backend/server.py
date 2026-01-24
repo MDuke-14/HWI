@@ -7876,7 +7876,9 @@ async def get_calendar_data(
     year: int,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get calendar data including services and vacations for a specific month"""
+    """Get calendar data including services, vacations, and OTs for a specific month"""
+    from datetime import timedelta
+    
     # Calculate start and end dates for the month
     start_date = f"{year}-{month:02d}-01"
     if month == 12:
@@ -7912,9 +7914,109 @@ async def get_calendar_data(
         if user:
             vacation["username"] = user["username"]
     
+    # Get OTs that should appear in this month
+    # 1. OTs with data_servico in this month
+    # 2. OTs with data_fim that spans into this month
+    # 3. OTs with intervenções in this month
+    
+    ots_for_calendar = []
+    
+    # Buscar todas as OTs que podem aparecer neste mês
+    # (data_servico no mês OU data_fim que abrange o mês)
+    relatorios = await db.relatorios_tecnicos.find({
+        "$or": [
+            # OTs que começam neste mês
+            {"data_servico": {"$gte": start_date, "$lt": end_date}},
+            # OTs com data_fim que abrange este mês
+            {"data_servico": {"$lt": end_date}, "data_fim": {"$gte": start_date}},
+        ]
+    }, {"_id": 0}).to_list(1000)
+    
+    for rel in relatorios:
+        rel_id = rel.get("id")
+        data_servico = rel.get("data_servico", "")
+        data_fim = rel.get("data_fim")
+        numero_ot = rel.get("numero_assistencia")
+        cliente_nome = rel.get("cliente_nome", "")
+        motivo = rel.get("motivo_assistencia", "")
+        local = rel.get("local_intervencao", "")
+        status = rel.get("status", "em_execucao")
+        
+        # Converter datas para objetos date
+        try:
+            data_inicio_obj = datetime.strptime(data_servico[:10], "%Y-%m-%d").date() if data_servico else None
+        except:
+            data_inicio_obj = None
+        
+        try:
+            data_fim_obj = datetime.strptime(data_fim[:10], "%Y-%m-%d").date() if data_fim else None
+        except:
+            data_fim_obj = None
+        
+        # Se tem data_fim, gerar entrada para cada dia do intervalo
+        if data_inicio_obj and data_fim_obj:
+            current = data_inicio_obj
+            while current <= data_fim_obj:
+                current_str = current.strftime("%Y-%m-%d")
+                # Verificar se está dentro do mês solicitado
+                if start_date <= current_str < end_date:
+                    ots_for_calendar.append({
+                        "id": rel_id,
+                        "date": current_str,
+                        "numero_ot": numero_ot,
+                        "cliente_nome": cliente_nome,
+                        "motivo": motivo,
+                        "local": local,
+                        "status": status,
+                        "type": "ot_range",  # OT com intervalo de datas
+                        "data_inicio": data_servico,
+                        "data_fim": data_fim
+                    })
+                current += timedelta(days=1)
+        else:
+            # Sem data_fim - buscar datas das intervenções
+            intervencoes = await db.intervencoes_relatorio.find({
+                "relatorio_id": rel_id
+            }, {"_id": 0, "data": 1}).to_list(100)
+            
+            # Coletar datas únicas das intervenções
+            datas_intervencoes = set()
+            for interv in intervencoes:
+                data_interv = interv.get("data")
+                if data_interv:
+                    try:
+                        # Pode ser string ou date
+                        if isinstance(data_interv, str):
+                            datas_intervencoes.add(data_interv[:10])
+                        else:
+                            datas_intervencoes.add(data_interv.strftime("%Y-%m-%d"))
+                    except:
+                        pass
+            
+            # Adicionar a data de início se não tiver intervenções
+            if not datas_intervencoes and data_inicio_obj:
+                datas_intervencoes.add(data_servico[:10])
+            
+            # Criar entrada para cada data de intervenção dentro do mês
+            for data_interv_str in datas_intervencoes:
+                if start_date <= data_interv_str < end_date:
+                    ots_for_calendar.append({
+                        "id": rel_id,
+                        "date": data_interv_str,
+                        "numero_ot": numero_ot,
+                        "cliente_nome": cliente_nome,
+                        "motivo": motivo,
+                        "local": local,
+                        "status": status,
+                        "type": "ot_intervention",  # OT baseada em intervenções
+                        "data_inicio": data_servico,
+                        "data_fim": None
+                    })
+    
     return {
         "services": services,
-        "vacations": vacations
+        "vacations": vacations,
+        "ots": ots_for_calendar
     }
 
 @api_router.put("/services/{service_id}")
