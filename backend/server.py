@@ -9822,8 +9822,8 @@ async def get_folha_horas_data(
             })
     
     for tec in tecnicos:
-        # Para registos manuais, usar o 'id' do registo
-        tid = tec.get('id')
+        # Para registos manuais, usar o tecnico_id do registo
+        tid = tec.get('tecnico_id') or tec.get('id')
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
