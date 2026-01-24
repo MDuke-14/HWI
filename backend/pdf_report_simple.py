@@ -98,7 +98,7 @@ def generate_monthly_pdf_report(report_data):
     
     daily_table = Table(daily_data, colWidths=[2*cm, 3*cm, 3*cm, 6*cm])
     daily_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
