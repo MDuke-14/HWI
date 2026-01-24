@@ -17,9 +17,45 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ## Funcionalidades Implementadas
 
-### Janeiro 2026 - Sessão Atual (22 Janeiro 2026)
+### Janeiro 2026 - Sessão Atual (24 Janeiro 2026)
 
-#### ✅ Sistema de Ajuda Completo (22 Janeiro 2026) - NOVA FUNCIONALIDADE
+#### ✅ Segmentação Automática de Registos por Código Horário (24 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Lógica de segmentação implementada em `cronometro_logic.py`:**
+- Registos que atravessam fronteiras de código horário são automaticamente divididos
+- Códigos: 1 (07:00-19:00 dias úteis), 2 (noturno), S (Sábados todo dia), D (Domingos/Feriados todo dia)
+- Feriados portugueses 2025-2027 incluídos
+
+**Backend (`server.py`):**
+- Novo endpoint POST `/api/relatorios-tecnicos/{id}/registos-tecnicos` para criar registos manuais
+- Endpoint PUT atualizado para aceitar hora_inicio e hora_fim
+- Verificação de sobreposição: registos com conflito vão para fim do dia
+- Migração automática aplicada a registos existentes
+
+**Frontend (`TechnicalReports.jsx`):**
+- Tabela de "Registos de Mão de Obra" com colunas: Técnico, Tipo, Data, Início, Fim, Horas, KM, Código, Ações
+- Ordenação cronológica por data → hora início → hora fim
+- Botão "Novo Registo" para criar registos manuais
+- Modal com campos: Técnico, Tipo, Data, Hora Início, Hora Fim, KM
+
+**Migração (`migrations.py`):**
+- Nova migração `segmentar_registos_codigo_horario` que:
+  - Divide registos existentes que atravessam fronteiras de código
+  - Atualiza códigos incorretos
+  - Executa automaticamente no startup
+
+**Ficheiros modificados:**
+- `/app/backend/cronometro_logic.py` - Reescrito com nova lógica de segmentação
+- `/app/backend/server.py` - Novos endpoints e updates
+- `/app/backend/migrations.py` - Nova migração
+- `/app/frontend/src/components/TechnicalReports.jsx` - Tabela com hora início/fim + modal novo registo
+
+**Testado:** ✅ API testada via curl - Segmentação funcionando corretamente
+- Exemplo: Viagem 06:00→10:00 num dia útil → 2 registos (06:00-07:00 código 2 + 07:00-10:00 código 1)
+- Exemplo: Trabalho 06:00→10:00 num Sábado → 1 registo código S
+
+---
+
+#### ✅ Sistema de Ajuda Completo (22 Janeiro 2026)
 **Componente reutilizável `HelpTooltip.jsx`:**
 - Ícone de ajuda ("i" azul) que abre popup modal com informação detalhada
 - Design consistente em toda a aplicação
