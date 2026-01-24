@@ -120,32 +120,60 @@ export const useOfflineData = (apiBaseUrl) => {
    * Guardar dados no cache local
    */
   const cacheData = async (storeName, data) => {
-    try {
-      const db = await initDB();
-      const transaction = db.transaction([storeName], 'readwrite');
-      const store = transaction.objectStore(storeName);
-      
-      if (Array.isArray(data)) {
-        // Limpar store e adicionar novos dados
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Cache timeout')), 5000)
+    );
+    
+    const cacheOperation = async () => {
+      try {
+        const db = await initDB();
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        
+        if (Array.isArray(data)) {
+          // Limpar store e adicionar novos dados
+          await new Promise((resolve, reject) => {
+            const clearRequest = store.clear();
+            clearRequest.onsuccess = () => resolve();
+            clearRequest.onerror = () => reject(clearRequest.error);
+          });
+          
+          // Wait for all puts to complete
+          const putPromises = data.map(item => 
+            new Promise((resolve, reject) => {
+              const request = store.put(item);
+              request.onsuccess = () => resolve();
+              request.onerror = () => reject(request.error);
+            })
+          );
+          await Promise.all(putPromises);
+        } else {
+          await new Promise((resolve, reject) => {
+            const request = store.put(data);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+          });
+        }
+        
+        // Guardar timestamp de última sincronização
+        const syncTransaction = db.transaction([STORES.SYNC_STATUS], 'readwrite');
+        const syncStore = syncTransaction.objectStore(STORES.SYNC_STATUS);
         await new Promise((resolve, reject) => {
-          const clearRequest = store.clear();
-          clearRequest.onsuccess = () => resolve();
-          clearRequest.onerror = () => reject(clearRequest.error);
+          const request = syncStore.put({ key: `${storeName}_lastSync`, timestamp: new Date().toISOString() });
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
         });
         
-        for (const item of data) {
-          store.put(item);
-        }
-      } else {
-        store.put(data);
+      } catch (error) {
+        console.error(`Erro ao guardar cache ${storeName}:`, error);
       }
-      
-      // Guardar timestamp de última sincronização
-      const syncStore = db.transaction([STORES.SYNC_STATUS], 'readwrite').objectStore(STORES.SYNC_STATUS);
-      syncStore.put({ key: `${storeName}_lastSync`, timestamp: new Date().toISOString() });
-      
+    };
+    
+    try {
+      await Promise.race([cacheOperation(), timeoutPromise]);
     } catch (error) {
-      console.error(`Erro ao guardar cache ${storeName}:`, error);
+      console.warn(`Cache operation timed out or failed for ${storeName}:`, error.message);
     }
   };
 
