@@ -5784,31 +5784,32 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
 
           <form onSubmit={handleEditRelatorio} className="space-y-6 mt-4">
-            {/* Cliente e Data */}
+            {/* Cliente */}
+            <div>
+              <Label htmlFor="edit_cliente_id" className="text-gray-300">
+                Cliente *
+              </Label>
+              <select
+                id="edit_cliente_id"
+                value={relatorioFormData.cliente_id}
+                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, cliente_id: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
+                required
+              >
+                <option value="">Selecione um cliente</option>
+                {clientes.map((cliente) => (
+                  <option key={cliente.id} value={cliente.id}>
+                    {cliente.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Datas: Início e Até */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit_cliente_id" className="text-gray-300">
-                  Cliente *
-                </Label>
-                <select
-                  id="edit_cliente_id"
-                  value={relatorioFormData.cliente_id}
-                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, cliente_id: e.target.value })}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2"
-                  required
-                >
-                  <option value="">Selecione um cliente</option>
-                  {clientes.map((cliente) => (
-                    <option key={cliente.id} value={cliente.id}>
-                      {cliente.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <Label htmlFor="edit_data_servico" className="text-gray-300">
-                  Data do Serviço *
+                  Data de Início *
                 </Label>
                 <Input
                   id="edit_data_servico"
@@ -5818,6 +5819,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="edit_data_fim" className="text-gray-300">
+                  Até (Opcional)
+                </Label>
+                <Input
+                  id="edit_data_fim"
+                  type="date"
+                  value={relatorioFormData.data_fim || ''}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, data_fim: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  min={relatorioFormData.data_servico}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Se preenchido, a OT aparece no calendário em todos os dias do intervalo
+                </p>
               </div>
             </div>
 
