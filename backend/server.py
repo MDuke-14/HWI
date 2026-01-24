@@ -7826,6 +7826,8 @@ async def update_registo_tecnico(
     current_user: dict = Depends(get_current_user)
 ):
     """Atualizar um registo de técnico (cronómetro)"""
+    from cronometro_logic import get_codigo_horario, arredondar_horas
+    
     # Verificar se existe
     existing = await db.registos_tecnico_ot.find_one({
         "id": registo_id,
@@ -7837,19 +7839,68 @@ async def update_registo_tecnico(
     
     # Campos que podem ser atualizados
     update_data = {}
-    if "minutos_trabalhados" in registo_data:
+    
+    # Atualização de horários (recalcula duração e código automaticamente)
+    hora_inicio_str = registo_data.get("hora_inicio")
+    hora_fim_str = registo_data.get("hora_fim")
+    data_str = registo_data.get("data")
+    
+    if hora_inicio_str and hora_fim_str:
+        try:
+            # Parse data
+            if data_str:
+                data_obj = datetime.strptime(data_str, "%Y-%m-%d").date()
+            elif existing.get("data"):
+                data_obj = datetime.fromisoformat(existing["data"]).date() if isinstance(existing["data"], str) else existing["data"]
+            else:
+                data_obj = datetime.now().date()
+            
+            # Parse horas
+            hora_inicio_parts = hora_inicio_str.split(":")
+            hora_fim_parts = hora_fim_str.split(":")
+            
+            hora_inicio = datetime.combine(
+                data_obj,
+                time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1])),
+                tzinfo=timezone.utc
+            )
+            hora_fim = datetime.combine(
+                data_obj,
+                time(int(hora_fim_parts[0]), int(hora_fim_parts[1])),
+                tzinfo=timezone.utc
+            )
+            
+            # Se hora fim <= hora início, assumir que passa para o dia seguinte
+            if hora_fim <= hora_inicio:
+                hora_fim = hora_fim + timedelta(days=1)
+            
+            # Calcular duração e código
+            duracao_minutos = (hora_fim - hora_inicio).total_seconds() / 60
+            codigo = get_codigo_horario(hora_inicio)
+            horas_arredondadas = arredondar_horas(duracao_minutos)
+            
+            update_data["hora_inicio_segmento"] = hora_inicio.isoformat()
+            update_data["hora_fim_segmento"] = hora_fim.isoformat()
+            update_data["data"] = data_obj.isoformat()
+            update_data["minutos_trabalhados"] = int(duracao_minutos)
+            update_data["horas_arredondadas"] = horas_arredondadas
+            update_data["codigo"] = codigo
+            
+        except Exception as e:
+            logging.error(f"Erro ao processar horários: {str(e)}")
+    
+    # Outros campos
+    if "minutos_trabalhados" in registo_data and "hora_inicio" not in registo_data:
         update_data["minutos_trabalhados"] = registo_data["minutos_trabalhados"]
-        # Converter para horas arredondadas para compatibilidade
         update_data["horas_arredondadas"] = registo_data["minutos_trabalhados"] / 60
-    if "horas_arredondadas" in registo_data:
+    if "horas_arredondadas" in registo_data and "hora_inicio" not in registo_data:
         update_data["horas_arredondadas"] = registo_data["horas_arredondadas"]
         update_data["minutos_trabalhados"] = int(registo_data["horas_arredondadas"] * 60)
     if "km" in registo_data:
         update_data["km"] = registo_data["km"]
-    if "codigo" in registo_data:
+    if "codigo" in registo_data and "hora_inicio" not in registo_data:
         update_data["codigo"] = registo_data["codigo"]
     if "tipo" in registo_data:
-        # Permitir alterar o tipo do registo (trabalho/viagem/manual)
         update_data["tipo"] = registo_data["tipo"]
     
     # Novos campos de Km's Ida e Volta
