@@ -89,51 +89,61 @@ const FolhaHorasModal = ({
   // Para extras (dietas, portagens, despesas) - UMA entrada por técnico/dia
   // Regra: Apenas 1 dieta por técnico por dia, independentemente do número de registos
   const getExtrasOrdenados = () => {
-    if (!folhaHorasData?.datas_por_tecnico) return [];
+    if (!folhaHorasData) return [];
     
-    const registos = folhaHorasData.registos || [];
-    const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
-    const registosIndividuais = folhaHorasData.registos_individuais || [];
-    
-    // Usar Set para garantir unicidade por técnico+data
+    // Usar Map para garantir unicidade absoluta por técnico+data
     const tecnicoDiasUnicos = new Map();
     
-    // Processar datas_por_tecnico (fonte principal)
-    Object.entries(folhaHorasData.datas_por_tecnico).forEach(([tecnicoId, datas]) => {
-      const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
-      const tecnicoNome = tecnico?.nome || 'Técnico';
-      
-      datas.forEach(data => {
-        const chave = `${tecnicoId}_${data}`;
-        if (!tecnicoDiasUnicos.has(chave)) {
-          tecnicoDiasUnicos.set(chave, {
-            tecnicoId,
-            tecnicoNome,
-            data
-          });
-        }
+    // Fonte 1: datas_por_tecnico (já agrupado)
+    if (folhaHorasData.datas_por_tecnico) {
+      Object.entries(folhaHorasData.datas_por_tecnico).forEach(([tecnicoId, datas]) => {
+        const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
+        const tecnicoNome = tecnico?.nome || tecnicoId;
+        
+        const datasArray = Array.isArray(datas) ? datas : [datas];
+        datasArray.forEach(data => {
+          // Normalizar data para YYYY-MM-DD
+          let dataStr = data;
+          if (typeof dataStr === 'string' && dataStr.includes('T')) {
+            dataStr = dataStr.split('T')[0];
+          }
+          const chave = `${tecnicoId}_${dataStr}`;
+          if (!tecnicoDiasUnicos.has(chave)) {
+            tecnicoDiasUnicos.set(chave, {
+              tecnicoId,
+              tecnicoNome,
+              data: dataStr
+            });
+          }
+        });
       });
-    });
+    }
     
-    // Também processar registos individuais para capturar técnicos adicionais
+    // Fonte 2: registos individuais (como fallback para técnicos não cobertos)
+    const registosIndividuais = folhaHorasData.registos_individuais || [];
     registosIndividuais.forEach(reg => {
-      let data = reg.data || '';
-      if (typeof data === 'string' && data.includes('T')) {
-        data = data.split('T')[0];
+      let dataStr = reg.data || '';
+      if (typeof dataStr === 'string' && dataStr.includes('T')) {
+        dataStr = dataStr.split('T')[0];
       }
-      const chave = `${reg.tecnico_id}_${data}`;
-      if (!tecnicoDiasUnicos.has(chave)) {
+      const chave = `${reg.tecnico_id}_${dataStr}`;
+      // Só adiciona se não existir ainda
+      if (!tecnicoDiasUnicos.has(chave) && reg.tecnico_id && dataStr) {
         tecnicoDiasUnicos.set(chave, {
           tecnicoId: reg.tecnico_id,
-          tecnicoNome: reg.tecnico_nome,
-          data
+          tecnicoNome: reg.tecnico_nome || 'Técnico',
+          data: dataStr
         });
       }
     });
     
-    // Converter Map para array e ordenar por data
+    // Converter Map para array e ordenar por data, depois por nome
     return Array.from(tecnicoDiasUnicos.values())
-      .sort((a, b) => new Date(a.data) - new Date(b.data));
+      .sort((a, b) => {
+        const dateCompare = new Date(a.data) - new Date(b.data);
+        if (dateCompare !== 0) return dateCompare;
+        return a.tecnicoNome.localeCompare(b.tecnicoNome);
+      });
   };
 
   // Aplicar dieta a todos os técnicos/dias
