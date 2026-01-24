@@ -8751,6 +8751,12 @@ async def update_registo_tecnico(
             
             # Calcular duração e código
             duracao_minutos = (hora_fim - hora_inicio).total_seconds() / 60
+            
+            # Aplicar desconto de pausa se necessário
+            incluir_pausa = registo_data.get("incluir_pausa", existing.get("incluir_pausa", False))
+            if incluir_pausa:
+                duracao_minutos = max(0, duracao_minutos - 60)
+            
             codigo = get_codigo_horario(hora_inicio)
             horas_arredondadas = arredondar_horas(duracao_minutos)
             
@@ -8760,6 +8766,7 @@ async def update_registo_tecnico(
             update_data["minutos_trabalhados"] = int(duracao_minutos)
             update_data["horas_arredondadas"] = horas_arredondadas
             update_data["codigo"] = codigo
+            update_data["incluir_pausa"] = incluir_pausa
             
         except Exception as e:
             logging.error(f"Erro ao processar horários: {str(e)}")
