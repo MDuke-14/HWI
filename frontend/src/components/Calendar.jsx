@@ -342,11 +342,7 @@ const Calendar = ({ user, onLogout }) => {
           <div className="flex flex-wrap gap-6 px-6 py-3 border-b border-white/5 bg-white/[0.02]">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
-              <span className="text-xs text-gray-400">OTs</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-sky-500"></div>
-              <span className="text-xs text-gray-400">Serviços</span>
+              <span className="text-xs text-gray-400">OTs / Serviços</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-purple-500"></div>
