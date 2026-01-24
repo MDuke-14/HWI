@@ -3891,7 +3891,18 @@ async def create_day_authorization_request(
 
 @api_router.post("/time-entries/start")
 async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depends(get_current_user)):
+    """
+    Iniciar picagem de ponto.
+    
+    Em dias especiais (férias, feriados, sábados, domingos):
+    - Primeira picagem: envia pedido de autorização ao admin
+    - Picagens seguintes: verificam estado do dia (autorizado/rejeitado/pendente)
+    - Uma autorização desbloqueia o dia inteiro
+    - Uma rejeição bloqueia todas as picagens desse dia
+    """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_date = datetime.now(timezone.utc).date()
+    current_time_str = datetime.now(timezone.utc).strftime("%H:%M")
     
     # Check if there's already an active (not completed) entry for this user
     existing_active = await db.time_entries.find_one({
@@ -3902,27 +3913,40 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     if existing_active:
         raise HTTPException(status_code=400, detail="Por favor finalize o registo anterior antes de iniciar um novo")
     
-    # Check if today is overtime day
-    today_date = datetime.now(timezone.utc).date()
-    is_ot, ot_reason = is_overtime_day(today_date)
+    # Obter informações sobre o tipo de dia
+    day_info = await get_special_day_info(today_date, current_user["sub"])
     
-    # Verificar se o utilizador está de férias aprovadas hoje
-    vacation_request = await db.vacation_requests.find_one({
-        "user_id": current_user["sub"],
-        "status": "approved",
-        "start_date": {"$lte": today},
-        "end_date": {"$gte": today}
-    }, {"_id": 0})
+    # Se é dia especial, verificar estado de autorização
+    day_authorization = None
+    authorization_status_message = None
     
-    is_on_vacation = vacation_request is not None
-    
-    # Verificar se já tem entradas de horas extra completadas hoje (requer autorização para nova entrada)
-    existing_overtime_today = await db.time_entries.find_one({
-        "user_id": current_user["sub"],
-        "date": today,
-        "status": "completed",
-        "is_overtime_day": True
-    }, {"_id": 0})
+    if day_info["is_special"]:
+        # Verificar se já existe autorização para este dia
+        day_authorization = await get_day_authorization(current_user["sub"], today)
+        
+        if day_authorization:
+            status = day_authorization.get("status")
+            
+            if status == "rejected":
+                # Dia rejeitado - bloquear picagem
+                logging.info(f"Picagem bloqueada: {current_user['username']} em {today} (dia rejeitado)")
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"Trabalho não autorizado para este dia ({day_info['day_type_display']}). Contacte a administração."
+                )
+            
+            elif status == "authorized":
+                # Dia autorizado - permitir picagem sem nova notificação
+                logging.info(f"Picagem permitida: {current_user['username']} em {today} (dia já autorizado)")
+                authorization_status_message = f"Dia autorizado ({day_info['day_type_display']})"
+            
+            elif status == "pending":
+                # Ainda pendente - permitir picagem mas informar
+                authorization_status_message = f"Aguarda autorização ({day_info['day_type_display']})"
+        
+        else:
+            # Primeira picagem do dia - criar pedido de autorização
+            logging.info(f"Primeira picagem em dia especial: {current_user['username']} em {today} ({day_info['day_type_display']})")
     
     # Verificar se já existe uma entrada hoje com "Fora de Zona de Residência" ativo
     existing_outside_zone = await db.time_entries.find_one({
@@ -3931,15 +3955,13 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         "outside_residence_zone": True
     }, {"_id": 0})
     
-    # Se já existe entrada com outside_residence_zone=True, aplicar automaticamente a esta também
     outside_zone_value = entry_data.outside_residence_zone or False
     if existing_outside_zone:
         outside_zone_value = True
-        logging.info(f"Aplicando outside_residence_zone=True automaticamente (já existe entrada com esta flag hoje)")
+        logging.info(f"Aplicando outside_residence_zone=True automaticamente")
     
-    # Flag para indicar se precisa de autorização
-    needs_authorization = is_ot or existing_overtime_today is not None or is_on_vacation
-    authorization_reason = ot_reason if is_ot else ("Trabalho durante período de férias" if is_on_vacation else "Entrada adicional em dia com horas extra")
+    # Criar a entrada de tempo
+    is_ot, ot_reason = is_overtime_day(today_date)
     
     entry = TimeEntry(
         user_id=current_user["sub"],
@@ -3957,6 +3979,15 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     entry_dict = entry.model_dump()
     entry_dict['start_time'] = entry_dict['start_time'].isoformat()
     entry_dict['created_at'] = entry_dict['created_at'].isoformat()
+    
+    # Adicionar campos de autorização diária
+    if day_info["is_special"]:
+        entry_dict['is_special_day'] = True
+        entry_dict['special_day_type'] = day_info["day_type"]
+        entry_dict['special_day_display'] = day_info["day_type_display"]
+        if day_authorization:
+            entry_dict['day_authorization_id'] = day_authorization.get("id")
+            entry_dict['day_authorization_status'] = day_authorization.get("status")
     
     # Adicionar geolocalização se disponível
     if entry_data.geo_location:
