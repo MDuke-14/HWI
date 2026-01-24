@@ -3946,7 +3946,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 }
                               </td>
                               <td className="py-2 px-2 text-center">
-                                {item._source === 'tecnico' ? (
+                                {item.codigo ? (
+                                  <span className="font-mono text-purple-400">{item.codigo}</span>
+                                ) : item._source === 'tecnico' ? (
                                   <span 
                                     className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs cursor-pointer hover:bg-blue-500/20"
                                     onClick={(e) => openCodigoModal(item, e)}
@@ -3954,7 +3956,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     {getTipoHorarioCodigo(item.tipo_horario)}
                                   </span>
                                 ) : (
-                                  <span className="font-mono text-purple-400">{item.codigo}</span>
+                                  <span className="text-gray-500">-</span>
                                 )}
                               </td>
                               <td className="py-2 px-2 text-center">
