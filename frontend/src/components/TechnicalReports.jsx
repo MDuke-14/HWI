@@ -3733,6 +3733,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <th className="text-left py-2 px-2 text-gray-400">Técnico</th>
                             <th className="text-center py-2 px-2 text-gray-400">Tipo</th>
                             <th className="text-center py-2 px-2 text-gray-400">Data</th>
+                            <th className="text-center py-2 px-2 text-gray-400">Início</th>
+                            <th className="text-center py-2 px-2 text-gray-400">Fim</th>
                             <th className="text-center py-2 px-2 text-gray-400">Horas</th>
                             <th className="text-center py-2 px-2 text-gray-400">KM</th>
                             <th className="text-center py-2 px-2 text-gray-400">Código</th>
@@ -3756,10 +3758,22 @@ const TechnicalReports = ({ user, onLogout }) => {
                               _tipo_registo: reg.tipo,
                               _source: 'cronometro',
                               _data_sort: reg.data || reg.created_at || '',
+                              _hora_inicio_sort: reg.hora_inicio_segmento || '',
                               _key: `crono-${reg.id}`
                             }))
                           ]
-                          .sort((a, b) => new Date(a._data_sort) - new Date(b._data_sort))
+                          .sort((a, b) => {
+                            // Ordenar por data primeiro
+                            const dataA = new Date(a._data_sort);
+                            const dataB = new Date(b._data_sort);
+                            if (dataA.getTime() !== dataB.getTime()) {
+                              return dataA - dataB;
+                            }
+                            // Se mesma data, ordenar por hora de início
+                            const horaA = a._hora_inicio_sort ? new Date(a._hora_inicio_sort) : new Date(0);
+                            const horaB = b._hora_inicio_sort ? new Date(b._hora_inicio_sort) : new Date(0);
+                            return horaA - horaB;
+                          })
                           .map((item) => (
                             <tr key={item._key} className="border-b border-gray-800 hover:bg-gray-800/50">
                               <td className="py-2 px-2 text-white">{item.tecnico_nome}</td>
@@ -3780,6 +3794,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {item._source === 'tecnico' 
                                   ? (item.data_trabalho ? new Date(item.data_trabalho).toLocaleDateString('pt-PT') : '-')
                                   : new Date(item.data).toLocaleDateString('pt-PT')
+                                }
+                              </td>
+                              <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
+                                {item._source === 'cronometro' && item.hora_inicio_segmento
+                                  ? new Date(item.hora_inicio_segmento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+                                  : '-'
+                                }
+                              </td>
+                              <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
+                                {item._source === 'cronometro' && item.hora_fim_segmento
+                                  ? new Date(item.hora_fim_segmento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+                                  : '-'
                                 }
                               </td>
                               <td className="py-2 px-2 text-center text-white font-medium">
