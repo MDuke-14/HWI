@@ -7,6 +7,28 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Admin**: Pedro Duarte (username: pedro), Miguel (username: miguel)
 - **Técnicos**: Gichelson Leite, Nuno Santos
 
+## Backlog Prioritizado
+
+### P0 (Crítico)
+- ✅ ~~Edição de hora início/fim em registos de tempo~~ (24 Janeiro 2026)
+
+### P1 (Alta Prioridade)
+- Testar funcionalidade "Associar OT ao Calendário" (implementado mas não testado formalmente)
+- Completar lógica "Trabalhar em Férias" - devolver dia de férias ao saldo
+- Investigar performance lenta na página `/technical-reports`
+- Integração OneDrive para armazenamento de ficheiros
+
+### P2 (Média Prioridade)
+- Resolver problema de VAPID Key para notificações push em produção
+- Corrigir falha no teste "Editar Equipamento OT"
+- Refactoring de `server.py` e `TechnicalReports.jsx` (ficheiros críticos >7000 linhas)
+- Relatório de horas extra para admins
+- Notificações em tempo real para admin (WebSockets)
+- Dashboard com métricas e gráficos
+- Exportação de dados para Excel/CSV
+
+---
+
 ## Stack Tecnológico
 - **Frontend**: React com shadcn/ui
 - **Backend**: FastAPI (Python)
