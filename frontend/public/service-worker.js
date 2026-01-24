@@ -90,6 +90,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Static assets - Network first, fallback to cache
+  // Only cache GET requests (POST/PUT/DELETE cannot be cached)
+  if (request.method !== 'GET') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   event.respondWith(
     fetch(request)
       .then((response) => {
