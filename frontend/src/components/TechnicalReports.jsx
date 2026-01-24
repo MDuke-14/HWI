@@ -5090,7 +5090,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <option value="">Selecionar técnico...</option>
                 {allSystemUsers.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.nome || user.username}
+                    {user.full_name || user.username}
                   </option>
                 ))}
               </select>
