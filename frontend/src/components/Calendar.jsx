@@ -473,21 +473,58 @@ const Calendar = ({ user, onLogout }) => {
   };
 
   const ListView = () => {
-    const sortedServices = [...services].sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Combinar serviços e OTs numa lista unificada
+    const serviceItems = services.map(s => ({
+      type: 'service',
+      id: s.id,
+      client_name: s.client_name,
+      location: s.location,
+      date: s.date,
+      ot_numero: s.ot_numero,
+      ot_id: s.ot_id,
+      service_reason: s.service_reason,
+      technician_names: s.technician_names,
+      status: s.status,
+      observations: s.observations,
+      time_slot: s.time_slot
+    }));
+
+    const otItems = ots.map(ot => ({
+      type: 'ot',
+      id: ot.id,
+      client_name: ot.cliente_nome,
+      location: ot.local,
+      date: ot.date,
+      ot_numero: ot.numero_ot,
+      ot_id: ot.id,
+      service_reason: ot.motivo,
+      technician_names: [],
+      status: ot.status,
+      observations: null,
+      time_slot: null,
+      data_inicio: ot.data_inicio,
+      data_fim: ot.data_fim
+    }));
+
+    // Combinar e remover duplicados (serviços que já têm OT associada)
+    const serviceOtIds = new Set(services.filter(s => s.ot_id).map(s => s.ot_id));
+    const uniqueOtItems = otItems.filter(ot => !serviceOtIds.has(ot.id));
+    
+    const allItems = [...serviceItems, ...uniqueOtItems].sort((a, b) => new Date(a.date) - new Date(b.date));
     
     return (
       <div className="space-y-4">
-        {sortedServices.length === 0 ? (
+        {allItems.length === 0 ? (
           <div className="bg-[#121212] border border-white/10 rounded-xl p-12 text-center">
             <CalendarDays className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">Nenhum serviço agendado este mês</p>
+            <p className="text-gray-400 text-lg">Nenhum serviço ou OT agendada este mês</p>
           </div>
         ) : (
-          sortedServices.map(service => (
+          allItems.map(item => (
             <div 
-              key={service.id} 
+              key={`${item.type}-${item.id}-${item.date}`} 
               className="bg-[#121212] border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition-all group cursor-pointer"
-              data-testid={`service-card-${service.id}`}
+              data-testid={`${item.type}-card-${item.id}`}
               onClick={() => {
                 if (service.ot_id) {
                   window.location.href = `/technical-reports?ot=${service.ot_id}`;
