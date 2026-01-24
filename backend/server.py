@@ -2461,15 +2461,14 @@ async def add_tecnico_relatorio(
             hora_inicio_parts = hora_inicio_str.split(":")
             hora_fim_parts = hora_fim_str.split(":")
             
+            # Criar datetime sem timezone (hora local portuguesa)
             hora_inicio = datetime.combine(
                 data_obj,
-                time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1])),
-                tzinfo=timezone.utc
+                time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1]))
             )
             hora_fim = datetime.combine(
                 data_obj,
-                time(int(hora_fim_parts[0]), int(hora_fim_parts[1])),
-                tzinfo=timezone.utc
+                time(int(hora_fim_parts[0]), int(hora_fim_parts[1]))
             )
             
             # Se hora fim <= hora início, passa para dia seguinte
@@ -8714,15 +8713,14 @@ async def update_registo_tecnico(
             hora_inicio_parts = hora_inicio_str.split(":")
             hora_fim_parts = hora_fim_str.split(":")
             
+            # Criar datetime sem timezone (hora local portuguesa)
             hora_inicio = datetime.combine(
                 data_obj,
-                time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1])),
-                tzinfo=timezone.utc
+                time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1]))
             )
             hora_fim = datetime.combine(
                 data_obj,
-                time(int(hora_fim_parts[0]), int(hora_fim_parts[1])),
-                tzinfo=timezone.utc
+                time(int(hora_fim_parts[0]), int(hora_fim_parts[1]))
             )
             
             # Se hora fim <= hora início, assumir que passa para o dia seguinte
