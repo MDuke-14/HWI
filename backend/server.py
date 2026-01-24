@@ -25,7 +25,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 sys.path.insert(0, str(Path(__file__).parent))
-from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates
+from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates, is_holiday, is_weekend
 from excel_report import generate_monthly_report
 from pdf_report import generate_monthly_pdf_report
 from pdf_report_simple import generate_monthly_pdf_report as generate_pdf_simple
