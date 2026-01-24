@@ -1729,13 +1729,22 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const handleDeleteDespesa = async (despesaId) => {
+    console.log('handleDeleteDespesa chamado com ID:', despesaId);
+    
+    if (!despesaId) {
+      toast.error('ID da despesa não encontrado');
+      return;
+    }
+    
     if (!window.confirm('Tem certeza que deseja eliminar esta despesa?')) return;
     
     try {
+      console.log('Enviando DELETE para:', `${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${despesaId}`);
       await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${despesaId}`);
       toast.success('Despesa eliminada!');
       fetchDespesas(selectedRelatorio.id);
     } catch (error) {
+      console.error('Erro ao eliminar despesa:', error);
       toast.error(formatErrorMessage(error));
     }
   };
