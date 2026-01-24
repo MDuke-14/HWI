@@ -7692,6 +7692,132 @@ async def delete_registo_tecnico(
     return {"message": "Registo removido"}
 
 
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/registos-tecnicos")
+async def create_registo_tecnico_manual(
+    relatorio_id: str,
+    registo_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Criar um registo manual de técnico com segmentação automática
+    
+    Se o registo atravessar diferentes códigos horários, será automaticamente
+    dividido em múltiplos registos.
+    """
+    from cronometro_logic import segmentar_periodo, verificar_sobreposicao, get_codigo_horario
+    
+    tecnico_id = registo_data.get("tecnico_id")
+    tecnico_nome = registo_data.get("tecnico_nome")
+    tipo = registo_data.get("tipo", "manual")  # trabalho, viagem, manual
+    
+    # Obter horários
+    data_str = registo_data.get("data")  # YYYY-MM-DD
+    hora_inicio_str = registo_data.get("hora_inicio")  # HH:MM
+    hora_fim_str = registo_data.get("hora_fim")  # HH:MM
+    
+    if not all([tecnico_id, tecnico_nome, data_str, hora_inicio_str, hora_fim_str]):
+        raise HTTPException(status_code=400, detail="Campos obrigatórios: tecnico_id, tecnico_nome, data, hora_inicio, hora_fim")
+    
+    # Parse data e horas
+    try:
+        data_obj = datetime.strptime(data_str, "%Y-%m-%d").date()
+        hora_inicio_parts = hora_inicio_str.split(":")
+        hora_fim_parts = hora_fim_str.split(":")
+        
+        hora_inicio = datetime.combine(
+            data_obj,
+            time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1])),
+            tzinfo=timezone.utc
+        )
+        hora_fim = datetime.combine(
+            data_obj,
+            time(int(hora_fim_parts[0]), int(hora_fim_parts[1])),
+            tzinfo=timezone.utc
+        )
+        
+        # Se hora fim <= hora início, assumir que passa para o dia seguinte
+        if hora_fim <= hora_inicio:
+            hora_fim = hora_fim + timedelta(days=1)
+            
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Formato inválido de data/hora: {str(e)}")
+    
+    # Buscar registos existentes para verificar sobreposição
+    registos_existentes = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Verificar sobreposição
+    tem_sobreposicao = verificar_sobreposicao(registos_existentes, hora_inicio, hora_fim, tecnico_id)
+    
+    km = registo_data.get("km", 0)
+    
+    # Se há sobreposição, criar registo único no fim do dia (não segmentar)
+    if tem_sobreposicao:
+        logging.warning(f"Registo manual com sobreposição detectada para {tecnico_nome} - será adicionado ao fim do dia")
+        
+        # Criar registo único com código baseado na data
+        codigo = get_codigo_horario(hora_inicio)
+        
+        duracao_minutos = (hora_fim - hora_inicio).total_seconds() / 60
+        from cronometro_logic import arredondar_horas
+        horas_arredondadas = arredondar_horas(duracao_minutos)
+        
+        registo = {
+            "id": str(uuid.uuid4()),
+            "relatorio_id": relatorio_id,
+            "tecnico_id": tecnico_id,
+            "tecnico_nome": tecnico_nome,
+            "tipo": tipo,
+            "data": data_obj.isoformat(),
+            "hora_inicio_segmento": hora_inicio.isoformat(),
+            "hora_fim_segmento": hora_fim.isoformat(),
+            "horas_arredondadas": horas_arredondadas,
+            "minutos_trabalhados": int(duracao_minutos),
+            "km": km,
+            "codigo": codigo,
+            "origem": "manual",
+            "sobreposicao": True,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.registos_tecnico_ot.insert_one(registo)
+        registo.pop("_id", None)
+        
+        return {"message": "Registo criado (com sobreposição)", "registos": [registo]}
+    
+    # Sem sobreposição - segmentar normalmente
+    segmentos = segmentar_periodo(hora_inicio, hora_fim, tipo)
+    
+    registos_criados = []
+    for seg in segmentos:
+        registo = {
+            "id": str(uuid.uuid4()),
+            "relatorio_id": relatorio_id,
+            "tecnico_id": tecnico_id,
+            "tecnico_nome": tecnico_nome,
+            "tipo": tipo,
+            "data": seg["data"].isoformat(),
+            "hora_inicio_segmento": seg["hora_inicio_segmento"].isoformat(),
+            "hora_fim_segmento": seg["hora_fim_segmento"].isoformat(),
+            "horas_arredondadas": seg["horas_arredondadas"],
+            "minutos_trabalhados": int(seg["duracao_minutos"]),
+            "km": km,
+            "codigo": seg["codigo"],
+            "origem": "manual",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.registos_tecnico_ot.insert_one(registo)
+        registo.pop("_id", None)
+        registos_criados.append(registo)
+    
+    logging.info(f"Registo manual criado para {tecnico_nome}: {len(registos_criados)} segmento(s)")
+    
+    return {"message": f"{len(registos_criados)} registo(s) criado(s)", "registos": registos_criados}
+
+
 @api_router.put("/relatorios-tecnicos/{relatorio_id}/registos-tecnicos/{registo_id}")
 async def update_registo_tecnico(
     relatorio_id: str,
