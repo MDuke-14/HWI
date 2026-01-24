@@ -2150,6 +2150,7 @@ async def create_relatorio(
         created_by_id=current_user["sub"],
         cliente_nome=cliente["nome"],
         data_servico=relatorio_data.data_servico,
+        data_fim=relatorio_data.data_fim,
         local_intervencao=relatorio_data.local_intervencao,
         pedido_por=relatorio_data.pedido_por,
         contacto_pedido=relatorio_data.contacto_pedido,
@@ -2163,6 +2164,8 @@ async def create_relatorio(
     relatorio_dict = relatorio.dict()
     relatorio_dict["data_criacao"] = relatorio_dict["data_criacao"].isoformat()
     relatorio_dict["data_servico"] = relatorio_dict["data_servico"].isoformat()
+    if relatorio_dict.get("data_fim"):
+        relatorio_dict["data_fim"] = relatorio_dict["data_fim"].isoformat()
     
     await db.relatorios_tecnicos.insert_one(relatorio_dict)
     
