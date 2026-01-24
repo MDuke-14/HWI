@@ -179,7 +179,15 @@ const TecnicoModal = ({
                 <User className="w-4 h-4" />
                 Nome do Técnico *
               </Label>
-              {allUsers.length > 0 ? (
+              {isEditing ? (
+                /* Ao editar, o técnico não pode ser alterado */
+                <Input
+                  value={tecnicoFormData.tecnico_nome || ''}
+                  className="bg-[#0f0f0f] border-gray-700 text-white cursor-not-allowed opacity-70"
+                  readOnly
+                  disabled
+                />
+              ) : allUsers.length > 0 ? (
                 <select
                   value={tecnicoFormData.tecnico_id || ''}
                   onChange={(e) => handleUserSelect(e.target.value)}
