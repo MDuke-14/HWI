@@ -2195,9 +2195,18 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
 
     try {
+      // Calcular total de KMs
+      const kmsIda = Math.max(0, (addRegistoManualForm.kms_final || 0) - (addRegistoManualForm.kms_inicial || 0));
+      const kmsVolta = Math.max(0, (addRegistoManualForm.kms_final_volta || 0) - (addRegistoManualForm.kms_inicial_volta || 0));
+      
+      const dataToSend = {
+        ...addRegistoManualForm,
+        km: kmsIda + kmsVolta
+      };
+      
       const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`,
-        addRegistoManualForm
+        dataToSend
       );
       
       const numRegistos = response.data.registos?.length || 1;
@@ -2215,7 +2224,12 @@ const TechnicalReports = ({ user, onLogout }) => {
         data: new Date().toISOString().split('T')[0],
         hora_inicio: '09:00',
         hora_fim: '18:00',
-        km: 0
+        km: 0,
+        kms_inicial: 0,
+        kms_final: 0,
+        kms_inicial_volta: 0,
+        kms_final_volta: 0,
+        incluir_pausa: false
       });
       fetchRegistosTecnicos(selectedRelatorio.id);
     } catch (error) {
