@@ -21,6 +21,7 @@ const Calendar = ({ user, onLogout }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [services, setServices] = useState([]);
   const [vacations, setVacations] = useState([]);
+  const [ots, setOts] = useState([]);  // OTs para mostrar no calendário
   const [users, setUsers] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
