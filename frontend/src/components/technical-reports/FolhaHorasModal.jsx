@@ -88,10 +88,11 @@ const FolhaHorasModal = ({
 
   // Para extras (dietas, portagens, despesas) - UMA entrada por técnico/dia
   // Regra: Apenas 1 dieta por técnico por dia, independentemente do número de registos
+  // IMPORTANTE: Agrupamos por NOME do técnico + data (não por ID) para evitar duplicados de nomes
   const getExtrasOrdenados = () => {
     if (!folhaHorasData) return [];
     
-    // Usar Map para garantir unicidade absoluta por técnico+data
+    // Usar Map para garantir unicidade absoluta por NOME+data
     const tecnicoDiasUnicos = new Map();
     
     // Fonte 1: datas_por_tecnico (já agrupado)
@@ -107,10 +108,11 @@ const FolhaHorasModal = ({
           if (typeof dataStr === 'string' && dataStr.includes('T')) {
             dataStr = dataStr.split('T')[0];
           }
-          const chave = `${tecnicoId}_${dataStr}`;
+          // Chave baseada em NOME + DATA (não ID) para evitar duplicados
+          const chave = `${tecnicoNome}_${dataStr}`;
           if (!tecnicoDiasUnicos.has(chave)) {
             tecnicoDiasUnicos.set(chave, {
-              tecnicoId,
+              tecnicoId,  // Guardar primeiro ID encontrado
               tecnicoNome,
               data: dataStr
             });
@@ -126,12 +128,14 @@ const FolhaHorasModal = ({
       if (typeof dataStr === 'string' && dataStr.includes('T')) {
         dataStr = dataStr.split('T')[0];
       }
-      const chave = `${reg.tecnico_id}_${dataStr}`;
+      const tecnicoNome = reg.tecnico_nome || 'Técnico';
+      // Chave baseada em NOME + DATA
+      const chave = `${tecnicoNome}_${dataStr}`;
       // Só adiciona se não existir ainda
-      if (!tecnicoDiasUnicos.has(chave) && reg.tecnico_id && dataStr) {
+      if (!tecnicoDiasUnicos.has(chave) && dataStr) {
         tecnicoDiasUnicos.set(chave, {
           tecnicoId: reg.tecnico_id,
-          tecnicoNome: reg.tecnico_nome || 'Técnico',
+          tecnicoNome,
           data: dataStr
         });
       }
