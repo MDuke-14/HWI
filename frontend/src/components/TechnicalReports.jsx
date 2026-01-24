@@ -2289,7 +2289,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_inicial: parseFloat(editRegistoForm.kms_inicial || 0),
       kms_final: parseFloat(editRegistoForm.kms_final || 0),
       kms_inicial_volta: parseFloat(editRegistoForm.kms_inicial_volta || 0),
-      kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0)
+      kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0),
+      incluir_pausa: editRegistoForm.incluir_pausa
     };
     
     // Se temos hora início e fim, enviar para recalcular duração e código
