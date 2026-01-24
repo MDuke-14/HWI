@@ -851,7 +851,7 @@ const Dashboard = ({ user, onLogout }) => {
             toast.error('Erro ao descarregar manual');
           }
         }}
-        className="fixed bottom-16 sm:bottom-4 right-4 sm:right-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full p-3 sm:p-4 shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-110 z-50 group"
+        className="fixed bottom-64 sm:bottom-52 right-4 sm:right-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full p-3 sm:p-4 shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-110 z-50 group"
         title="Manual de Instruções"
         data-testid="download-manual-btn"
       >
