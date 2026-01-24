@@ -2373,16 +2373,23 @@ async def add_tecnico_relatorio(
     tecnico_data: dict,
     current_user: dict = Depends(get_current_user)
 ):
-    """Adicionar técnico a um relatório"""
+    """Adicionar técnico a um relatório com segmentação automática por código horário"""
+    from cronometro_logic import segmentar_periodo, get_codigo_horario
+    
     # Verificar se relatório existe
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id})
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     
-    # Contar técnicos existentes para ordem
-    count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
+    # Obter dados básicos
+    tecnico_id_user = tecnico_data.get("tecnico_id", "")
+    tecnico_nome = tecnico_data.get("tecnico_nome", "")
+    tipo_registo = tecnico_data.get("tipo_registo", "manual")
+    data_trabalho_str = tecnico_data.get("data_trabalho")
+    hora_inicio_str = tecnico_data.get("hora_inicio")
+    hora_fim_str = tecnico_data.get("hora_fim")
     
-    # Criar técnico - calcular kms_deslocacao automaticamente (ida + volta)
+    # Calcular kms
     kms_inicial = float(tecnico_data.get("kms_inicial", 0))
     kms_final = float(tecnico_data.get("kms_final", 0))
     kms_inicial_volta = float(tecnico_data.get("kms_inicial_volta", 0))
@@ -2391,10 +2398,79 @@ async def add_tecnico_relatorio(
     kms_volta = max(0, kms_final_volta - kms_inicial_volta)
     kms_deslocacao = kms_ida + kms_volta
     
+    # Se temos hora_inicio e hora_fim, fazer segmentação
+    if hora_inicio_str and hora_fim_str and data_trabalho_str:
+        try:
+            # Parse data e horas
+            if isinstance(data_trabalho_str, str):
+                data_obj = datetime.strptime(data_trabalho_str.split('T')[0], "%Y-%m-%d").date()
+            else:
+                data_obj = data_trabalho_str
+            
+            hora_inicio_parts = hora_inicio_str.split(":")
+            hora_fim_parts = hora_fim_str.split(":")
+            
+            hora_inicio = datetime.combine(
+                data_obj,
+                time(int(hora_inicio_parts[0]), int(hora_inicio_parts[1])),
+                tzinfo=timezone.utc
+            )
+            hora_fim = datetime.combine(
+                data_obj,
+                time(int(hora_fim_parts[0]), int(hora_fim_parts[1])),
+                tzinfo=timezone.utc
+            )
+            
+            # Se hora fim <= hora início, passa para dia seguinte
+            if hora_fim <= hora_inicio:
+                hora_fim = hora_fim + timedelta(days=1)
+            
+            # Segmentar período
+            segmentos = segmentar_periodo(hora_inicio, hora_fim, tipo_registo)
+            
+            registos_criados = []
+            for i, seg in enumerate(segmentos):
+                registo = {
+                    "id": str(uuid.uuid4()),
+                    "relatorio_id": relatorio_id,
+                    "tecnico_id": tecnico_id_user,
+                    "tecnico_nome": tecnico_nome,
+                    "tipo": tipo_registo,
+                    "data": seg["data"].isoformat(),
+                    "hora_inicio_segmento": seg["hora_inicio_segmento"].isoformat(),
+                    "hora_fim_segmento": seg["hora_fim_segmento"].isoformat(),
+                    "horas_arredondadas": seg["horas_arredondadas"],
+                    "minutos_trabalhados": int(seg["duracao_minutos"]),
+                    "km": kms_deslocacao if i == 0 else 0,  # KMs apenas no primeiro segmento
+                    "kms_inicial": kms_inicial if i == 0 else 0,
+                    "kms_final": kms_final if i == 0 else 0,
+                    "kms_inicial_volta": kms_inicial_volta if i == 0 else 0,
+                    "kms_final_volta": kms_final_volta if i == 0 else 0,
+                    "kms_deslocacao": kms_deslocacao if i == 0 else 0,
+                    "codigo": seg["codigo"],
+                    "origem": "manual",
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                
+                await db.registos_tecnico_ot.insert_one(registo)
+                registo.pop("_id", None)
+                registos_criados.append(registo)
+            
+            logging.info(f"Técnico adicionado com segmentação ao relatório {relatorio_id}: {tecnico_nome} - {len(registos_criados)} segmento(s)")
+            
+            return {"message": f"{len(registos_criados)} registo(s) criado(s)", "registos": registos_criados}
+            
+        except Exception as e:
+            logging.error(f"Erro na segmentação: {str(e)}")
+            # Fallback para registo único se segmentação falhar
+    
+    # Sem hora_inicio/hora_fim ou fallback - criar registo tradicional
+    count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
+    
     tecnico = TecnicoRelatorio(
         relatorio_id=relatorio_id,
-        tecnico_id="",  # Se não tiver user_id
-        tecnico_nome=tecnico_data.get("tecnico_nome", ""),
+        tecnico_id=tecnico_id_user,
+        tecnico_nome=tecnico_nome,
         minutos_cliente=tecnico_data.get("minutos_cliente", 0),
         kms_inicial=kms_inicial,
         kms_final=kms_final,
@@ -2402,21 +2478,20 @@ async def add_tecnico_relatorio(
         kms_final_volta=kms_final_volta,
         kms_deslocacao=kms_deslocacao,
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
-        tipo_registo=tecnico_data.get("tipo_registo", "manual"),
-        data_trabalho=tecnico_data.get("data_trabalho", datetime.now(timezone.utc).date()),
-        hora_inicio=tecnico_data.get("hora_inicio"),
-        hora_fim=tecnico_data.get("hora_fim"),
+        tipo_registo=tipo_registo,
+        data_trabalho=data_trabalho_str if data_trabalho_str else datetime.now(timezone.utc).date(),
+        hora_inicio=hora_inicio_str,
+        hora_fim=hora_fim_str,
         incluir_pausa=tecnico_data.get("incluir_pausa", False),
         ordem=count
     )
     
     tecnico_dict = tecnico.dict()
-    # Converter data para string ISO
     if isinstance(tecnico_dict.get("data_trabalho"), date):
         tecnico_dict["data_trabalho"] = tecnico_dict["data_trabalho"].isoformat()
     await db.tecnicos_relatorio.insert_one(tecnico_dict)
     
-    logging.info(f"Técnico adicionado ao relatório {relatorio_id}: {tecnico_data.get('tecnico_nome')}")
+    logging.info(f"Técnico adicionado ao relatório {relatorio_id}: {tecnico_nome}")
     
     return tecnico
 
