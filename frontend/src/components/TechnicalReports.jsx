@@ -3369,18 +3369,37 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </select>
               </div>
 
-              <div>
-                <Label htmlFor="data_servico" className="text-gray-300">
-                  Data do Serviço *
-                </Label>
-                <Input
-                  id="data_servico"
-                  type="date"
-                  value={relatorioFormData.data_servico}
-                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, data_servico: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="data_servico" className="text-gray-300">
+                    Data de Início *
+                  </Label>
+                  <Input
+                    id="data_servico"
+                    type="date"
+                    value={relatorioFormData.data_servico}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, data_servico: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="data_fim" className="text-gray-300">
+                    Até (Opcional)
+                  </Label>
+                  <Input
+                    id="data_fim"
+                    type="date"
+                    value={relatorioFormData.data_fim}
+                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, data_fim: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    min={relatorioFormData.data_servico}
+                    placeholder="Deixe vazio para OT de um só dia"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se preenchido, a OT aparecerá no calendário em todos os dias do intervalo
+                  </p>
+                </div>
               </div>
             </div>
 
