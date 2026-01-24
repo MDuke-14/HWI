@@ -486,8 +486,13 @@ const Calendar = ({ user, onLogout }) => {
           sortedServices.map(service => (
             <div 
               key={service.id} 
-              className="bg-[#121212] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all group"
+              className="bg-[#121212] border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition-all group cursor-pointer"
               data-testid={`service-card-${service.id}`}
+              onClick={() => {
+                if (service.ot_id) {
+                  window.location.href = `/technical-reports?ot=${service.ot_id}`;
+                }
+              }}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -495,9 +500,14 @@ const Calendar = ({ user, onLogout }) => {
                     <h3 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
                       {service.client_name}
                     </h3>
+                    {service.ot_numero && (
+                      <span className="px-2.5 py-1 rounded-md text-sm font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                        OT#{service.ot_numero}
+                      </span>
+                    )}
                     <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
                       service.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      service.status === 'in_progress' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                      service.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
                       service.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
                       'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                     }`}>
@@ -510,16 +520,16 @@ const Calendar = ({ user, onLogout }) => {
                 {user.is_admin && (
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
-                      onClick={() => handleEditService(service)}
+                      onClick={(e) => { e.stopPropagation(); handleEditService(service); }}
                       variant="ghost"
                       size="sm"
-                      className="text-sky-400 hover:text-sky-300 hover:bg-sky-500/10"
+                      className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
                       data-testid={`edit-service-${service.id}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button
-                      onClick={() => handleDeleteService(service.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteService(service.id); }}
                       variant="ghost"
                       size="sm"
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
@@ -544,7 +554,7 @@ const Calendar = ({ user, onLogout }) => {
                     <CalendarIcon className="w-3 h-3" />
                     Data
                   </div>
-                  <div className="text-white font-mono">
+                  <div className="text-orange-300 font-mono">
                     {new Date(service.date + 'T00:00:00').toLocaleDateString('pt-PT', {
                       day: '2-digit',
                       month: 'short',
@@ -557,7 +567,7 @@ const Calendar = ({ user, onLogout }) => {
                     <Wrench className="w-3 h-3" />
                     Motivo
                   </div>
-                  <div className="text-white">{service.service_reason}</div>
+                  <div className="text-white">{service.service_reason || '-'}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
@@ -565,13 +575,13 @@ const Calendar = ({ user, onLogout }) => {
                     Técnicos
                   </div>
                   <div className="text-white">
-                    {service.technicians?.map(t => t.username).join(', ') || service.technician_names?.join(', ')}
+                    {service.technicians?.map(t => t.username).join(', ') || service.technician_names?.join(', ') || '-'}
                   </div>
                 </div>
               </div>
 
               {service.observations && (
-                <div className="mt-4 pt-4 border-t border-white/5">
+                <div className="mt-4 pt-4 border-t border-orange-500/10">
                   <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Observações</div>
                   <div className="text-gray-300 italic text-sm">{service.observations}</div>
                 </div>
