@@ -6806,6 +6806,246 @@ async def update_company_start_date(
     
     return {"message": "Data atualizada com sucesso", **calc}
 
+
+# ============ Day Authorization Routes ============
+
+@api_router.get("/admin/day-authorizations")
+async def get_day_authorizations(
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Listar pedidos de autorização diária (admin only)
+    
+    Query params:
+        status: filtrar por status (pending, authorized, rejected)
+    """
+    query = {}
+    if status:
+        query["status"] = status
+    
+    authorizations = await db.day_authorizations.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return authorizations
+
+
+@api_router.get("/admin/day-authorizations/pending")
+async def get_pending_day_authorizations(current_user: dict = Depends(get_current_admin)):
+    """Listar apenas pedidos de autorização pendentes (admin only)"""
+    authorizations = await db.day_authorizations.find(
+        {"status": "pending"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return authorizations
+
+
+@api_router.post("/admin/day-authorizations/{auth_id}/decide")
+async def decide_day_authorization(
+    auth_id: str,
+    decision: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Aprovar ou rejeitar autorização diária
+    
+    Uma aprovação desbloqueia o dia inteiro (todas as picagens seguintes são permitidas)
+    Uma rejeição bloqueia todas as picagens desse dia
+    
+    Para dias de férias aprovados: devolve 1 dia de férias ao saldo
+    
+    Body:
+        action: "approve" ou "reject"
+    """
+    action = decision.get("action")
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Ação inválida. Use 'approve' ou 'reject'")
+    
+    # Buscar autorização
+    auth = await db.day_authorizations.find_one({"id": auth_id}, {"_id": 0})
+    if not auth:
+        raise HTTPException(status_code=404, detail="Autorização não encontrada")
+    
+    if auth.get("status") != "pending":
+        raise HTTPException(status_code=400, detail=f"Autorização já foi decidida: {auth.get('status')}")
+    
+    new_status = "authorized" if action == "approve" else "rejected"
+    admin_name = current_user.get("full_name") or current_user.get("username")
+    
+    # Atualizar autorização
+    await db.day_authorizations.update_one(
+        {"id": auth_id},
+        {"$set": {
+            "status": new_status,
+            "decided_by": admin_name,
+            "decided_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Se rejeitado, eliminar a primeira entrada de ponto
+    if action == "reject":
+        first_entry_id = auth.get("first_entry_id")
+        if first_entry_id:
+            await db.time_entries.delete_one({"id": first_entry_id})
+            logging.info(f"Entrada de ponto {first_entry_id} eliminada após rejeição")
+    
+    # Se aprovado E é dia de férias, devolver 1 dia ao saldo
+    vacation_day_returned = False
+    if action == "approve" and auth.get("day_type") == "ferias":
+        user_id = auth.get("user_id")
+        vacation_request_id = auth.get("vacation_request_id")
+        
+        # Buscar saldo de férias do utilizador
+        current_year = datetime.now().year
+        balance = await db.vacation_balances.find_one({
+            "user_id": user_id,
+            "year": current_year
+        })
+        
+        if balance:
+            # Devolver 1 dia
+            new_used = max(0, balance.get("used_days", 0) - 1)
+            new_remaining = balance.get("total_days", 22) - new_used
+            
+            await db.vacation_balances.update_one(
+                {"user_id": user_id, "year": current_year},
+                {"$set": {
+                    "used_days": new_used,
+                    "remaining_days": new_remaining
+                }}
+            )
+            
+            vacation_day_returned = True
+            logging.info(f"1 dia de férias devolvido ao utilizador {auth.get('user_name')}")
+    
+    # Atualizar status nas entradas de ponto deste utilizador/dia
+    await db.time_entries.update_many(
+        {
+            "user_id": auth.get("user_id"),
+            "date": auth.get("date")
+        },
+        {"$set": {
+            "day_authorization_status": new_status
+        }}
+    )
+    
+    # Enviar notificação ao utilizador
+    user_id = auth.get("user_id")
+    day_type_display = auth.get("day_type_display", "Dia especial")
+    date_formatted = datetime.strptime(auth["date"], "%Y-%m-%d").strftime("%d/%m/%Y")
+    
+    if action == "approve":
+        if auth.get("day_type") == "ferias":
+            notif_message = f"Trabalho em dia de férias ({date_formatted}) autorizado. 1 dia de férias foi devolvido ao seu saldo."
+        else:
+            notif_message = f"Trabalho em {day_type_display} ({date_formatted}) autorizado."
+        
+        await send_push_notification(
+            db, user_id,
+            "✅ Trabalho Autorizado",
+            notif_message,
+            "day_authorization_approved",
+            "normal"
+        )
+    else:
+        notif_message = f"Trabalho em {day_type_display} ({date_formatted}) não autorizado. A entrada de ponto foi eliminada."
+        
+        await send_push_notification(
+            db, user_id,
+            "❌ Trabalho Não Autorizado",
+            notif_message,
+            "day_authorization_rejected",
+            "normal"
+        )
+    
+    # Criar notificação interna
+    notification = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "type": f"day_authorization_{action}d",
+        "title": "Trabalho Autorizado" if action == "approve" else "Trabalho Não Autorizado",
+        "message": notif_message,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "read": False
+    }
+    await db.notifications.insert_one(notification)
+    
+    response = {
+        "message": f"Autorização {'aprovada' if action == 'approve' else 'rejeitada'}",
+        "authorization_id": auth_id,
+        "status": new_status,
+        "user_name": auth.get("user_name"),
+        "date": auth.get("date"),
+        "day_type": auth.get("day_type_display")
+    }
+    
+    if vacation_day_returned:
+        response["vacation_day_returned"] = True
+        response["vacation_message"] = "1 dia de férias devolvido ao saldo"
+    
+    return response
+
+
+@api_router.get("/day-authorization/status")
+async def get_my_day_authorization_status(
+    date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Verificar estado de autorização do dia para o utilizador atual
+    
+    Query params:
+        date: Data no formato YYYY-MM-DD (default: hoje)
+    """
+    if not date:
+        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Verificar se é dia especial
+    check_date = datetime.strptime(date, "%Y-%m-%d").date()
+    day_info = await get_special_day_info(check_date, current_user["sub"])
+    
+    if not day_info["is_special"]:
+        return {
+            "date": date,
+            "is_special_day": False,
+            "day_type": "normal",
+            "can_clock_in": True
+        }
+    
+    # Verificar autorização
+    auth = await get_day_authorization(current_user["sub"], date)
+    
+    if not auth:
+        return {
+            "date": date,
+            "is_special_day": True,
+            "day_type": day_info["day_type"],
+            "day_type_display": day_info["day_type_display"],
+            "authorization_status": None,
+            "can_clock_in": True,
+            "message": "Primeira picagem irá criar pedido de autorização"
+        }
+    
+    status = auth.get("status")
+    can_clock_in = status in ["pending", "authorized"]
+    
+    return {
+        "date": date,
+        "is_special_day": True,
+        "day_type": day_info["day_type"],
+        "day_type_display": day_info["day_type_display"],
+        "authorization_id": auth.get("id"),
+        "authorization_status": status,
+        "decided_by": auth.get("decided_by"),
+        "decided_at": auth.get("decided_at"),
+        "can_clock_in": can_clock_in,
+        "message": "Autorizado" if status == "authorized" else ("Aguarda aprovação" if status == "pending" else "Não autorizado")
+    }
+
+
 # ============ Admin Routes ============
 
 @api_router.get("/admin/users")
