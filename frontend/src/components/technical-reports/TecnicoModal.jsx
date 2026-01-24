@@ -394,30 +394,26 @@ const TecnicoModal = ({
             </div>
           )}
           
-          {/* Info sobre cálculo automático */}
+          {/* Info sobre cálculo automático do tempo e código */}
           {tecnicoFormData.hora_inicio && tecnicoFormData.hora_fim && (
-            <div className={`${tecnicoFormData.incluir_pausa ? 'bg-green-900/20 border-green-600/30' : 'bg-blue-900/20 border-blue-600/30'} border rounded-lg p-3 flex items-start gap-2`}>
-              <Clock className={`w-4 h-4 ${tecnicoFormData.incluir_pausa ? 'text-green-400' : 'text-blue-400'} mt-0.5 flex-shrink-0`} />
-              <p className={`text-xs ${tecnicoFormData.incluir_pausa ? 'text-green-300' : 'text-blue-300'}`}>
-                <strong>Cálculo automático:</strong> {tecnicoFormData.hora_inicio} → {tecnicoFormData.hora_fim} = {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}h{String((tecnicoFormData.minutos_cliente || 0) % 60).padStart(2, '0')} 
-                {tecnicoFormData.incluir_pausa ? ' (descontada 1h de pausa)' : ' (sem pausa)'}
+            <div className="bg-purple-900/20 border border-purple-600/30 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Clock className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-purple-300">
+                  <strong>Cálculo automático:</strong> {tecnicoFormData.hora_inicio} → {tecnicoFormData.hora_fim} = {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}h{String((tecnicoFormData.minutos_cliente || 0) % 60).padStart(2, '0')} 
+                  {tecnicoFormData.incluir_pausa ? ' (descontada 1h de pausa)' : ''}
+                </div>
+              </div>
+              <p className="text-xs text-purple-400/70 mt-2">
+                <strong>Código horário calculado automaticamente:</strong><br />
+                • Código 1 = Dias úteis (07:00-19:00)<br />
+                • Código 2 = Dias úteis noturno (antes 07:00 ou após 19:00)<br />
+                • Código S = Sábados<br />
+                • Código D = Domingos e Feriados<br />
+                Se o horário atravessar códigos diferentes, serão criados registos separados.
               </p>
             </div>
           )}
-
-          {/* Tipo de Horário */}
-          <div>
-            <Label className="text-gray-300">Tipo de Horário *</Label>
-            <select
-              value={tecnicoFormData.tipo_horario || 'diurno'}
-              onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, tipo_horario: e.target.value })}
-              className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
-            >
-              <option value="diurno">Diurno (07h-19h) - Código 1</option>
-              <option value="noturno">Noturno (19h-07h) - Código 2</option>
-              <option value="sabado">Sábado - Código S</option>
-              <option value="domingo_feriado">Domingo/Feriado - Código D</option>
-            </select>
           </div>
 
           {/* Botões */}
