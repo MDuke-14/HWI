@@ -3565,9 +3565,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <span className={`px-3 py-1 rounded text-sm ${getStatusColor(selectedRelatorio.status)}`}>
                   {getStatusLabel(selectedRelatorio.status)}
                 </span>
-                <span className="text-gray-400 text-sm">
-                  {new Date(selectedRelatorio.data_servico).toLocaleDateString('pt-PT')}
-                </span>
+                <div className="text-right">
+                  <span className="text-gray-400 text-sm">
+                    {new Date(selectedRelatorio.data_servico).toLocaleDateString('pt-PT')}
+                    {selectedRelatorio.data_fim && (
+                      <span className="text-blue-400"> → {new Date(selectedRelatorio.data_fim).toLocaleDateString('pt-PT')}</span>
+                    )}
+                  </span>
+                </div>
               </div>
 
               {/* Cliente */}
