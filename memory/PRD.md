@@ -19,6 +19,40 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Janeiro 2026 - Sessão Atual (24 Janeiro 2026)
 
+#### ✅ Novo Serviço no Calendário com Criação de OT (24 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Popup "Novo Serviço" no Calendário completamente reformulado:**
+- Campo "Localidade" já NÃO é preenchido automaticamente ao selecionar cliente - deve ser manual
+- Novo dropdown "Tipo de Serviço" com opções: Assistência / Montagem
+- Campo "Motivo de Assistência" agora é OPCIONAL
+- Novo campo "Até" (data fim) para serviços de múltiplos dias
+- Ao clicar "Criar Serviço", cria automaticamente uma OT associada
+
+**Backend (`server.py`):**
+- Novo modelo `ServiceWithOTCreate` com campos: client_name, client_id, location, service_type, service_reason, date, date_end
+- Novo endpoint `POST /api/services/with-ot` que:
+  - Cria ou usa cliente existente
+  - Gera número de OT automático
+  - Cria RelatorioTecnico com data_servico e data_fim
+  - Cria ServiceAppointments para cada dia no intervalo
+  - Envia notificações push aos técnicos atribuídos
+  - Retorna dados do serviço e OT criados
+
+**Frontend (`Calendar.jsx`):**
+- `serviceForm` agora inclui: client_id, service_type, date_end
+- `handleSelectClient()` não preenche mais `location` automaticamente
+- `handleCreateService()` chama endpoint `/services/with-ot` para novos serviços
+- Formulário com 3 colunas para datas: Data, Até (opcional), Horário
+
+**Testado:** ✅ Backend testado via curl + Frontend testado via screenshots
+- Serviços criados em Janeiro 2025 aparecem no calendário em todos os dias do intervalo
+- OTs criadas com número automático (OT-360) e datas corretas
+
+**Ficheiros modificados:**
+- `/app/backend/server.py` - Novo modelo e endpoint
+- `/app/frontend/src/components/Calendar.jsx` - Formulário reformulado
+
+---
+
 #### ✅ Segmentação Automática de Registos por Código Horário (24 Janeiro 2026) - NOVA FUNCIONALIDADE
 **Lógica de segmentação implementada em `cronometro_logic.py`:**
 - Registos que atravessam fronteiras de código horário são automaticamente divididos
