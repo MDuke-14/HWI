@@ -7410,6 +7410,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     }}
                     className="bg-[#0f0f0f] border-gray-700 text-white w-20"
                     placeholder="0"
+                    disabled={!!(editRegistoForm.hora_inicio && editRegistoForm.hora_fim)}
                   />
                   <span className="text-gray-400">min</span>
                 </div>
