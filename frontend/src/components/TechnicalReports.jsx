@@ -2243,6 +2243,22 @@ const TechnicalReports = ({ user, onLogout }) => {
     setEditingRegisto(registo);
     // Converter horas para minutos se existir horas_arredondadas
     const minutos = registo.minutos_trabalhados || Math.round((registo.horas_arredondadas || 0) * 60);
+    
+    // Extrair hora início e fim do registo (formato HH:MM)
+    let horaInicio = '';
+    let horaFim = '';
+    
+    if (registo.hora_inicio_segmento) {
+      // Se é string ISO, extrair a hora
+      const dt = new Date(registo.hora_inicio_segmento);
+      horaInicio = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    }
+    
+    if (registo.hora_fim_segmento) {
+      const dt = new Date(registo.hora_fim_segmento);
+      horaFim = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    }
+    
     setEditRegistoForm({
       minutos_trabalhados: minutos,
       km: registo.km || 0,
@@ -2250,7 +2266,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_final: registo.kms_final || 0,
       kms_inicial_volta: registo.kms_inicial_volta || 0,
       kms_final_volta: registo.kms_final_volta || 0,
-      codigo: registo.codigo || ''
+      codigo: registo.codigo || '',
+      hora_inicio: horaInicio,
+      hora_fim: horaFim
     });
     setShowEditRegistoModal(true);
   };
@@ -2263,16 +2281,34 @@ const TechnicalReports = ({ user, onLogout }) => {
     const kmsVolta = Math.max(0, parseFloat(editRegistoForm.kms_final_volta || 0) - parseFloat(editRegistoForm.kms_inicial_volta || 0));
     const kmTotal = kmsIda + kmsVolta;
     
+    // Preparar dados para envio
+    const updatePayload = {
+      km: kmTotal,
+      kms_inicial: parseFloat(editRegistoForm.kms_inicial || 0),
+      kms_final: parseFloat(editRegistoForm.kms_final || 0),
+      kms_inicial_volta: parseFloat(editRegistoForm.kms_inicial_volta || 0),
+      kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0)
+    };
+    
+    // Se temos hora início e fim, enviar para recalcular duração e código
+    if (editRegistoForm.hora_inicio && editRegistoForm.hora_fim) {
+      updatePayload.hora_inicio = editRegistoForm.hora_inicio;
+      updatePayload.hora_fim = editRegistoForm.hora_fim;
+      // Obter data do registo para enviar ao backend
+      if (editingRegisto.data) {
+        const dataStr = typeof editingRegisto.data === 'string' 
+          ? editingRegisto.data.substring(0, 10) 
+          : new Date(editingRegisto.data).toISOString().substring(0, 10);
+        updatePayload.data = dataStr;
+      }
+    } else {
+      // Sem horas, usar minutos_trabalhados e codigo existentes
+      updatePayload.minutos_trabalhados = parseInt(editRegistoForm.minutos_trabalhados);
+      updatePayload.codigo = editRegistoForm.codigo;
+    }
+    
     try {
-      await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${editingRegisto.id}`, {
-        minutos_trabalhados: parseInt(editRegistoForm.minutos_trabalhados),
-        km: kmTotal,
-        kms_inicial: parseFloat(editRegistoForm.kms_inicial || 0),
-        kms_final: parseFloat(editRegistoForm.kms_final || 0),
-        kms_inicial_volta: parseFloat(editRegistoForm.kms_inicial_volta || 0),
-        kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0),
-        codigo: editRegistoForm.codigo
-      });
+      await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${editingRegisto.id}`, updatePayload);
       
       toast.success('Registo atualizado!');
       setShowEditRegistoModal(false);
