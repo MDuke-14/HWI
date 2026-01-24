@@ -7545,6 +7545,51 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <p className="text-xs text-gray-500 mt-1">O código é calculado automaticamente e não pode ser alterado</p>
               </div>
 
+              {/* Pausa de 1 hora */}
+              <div className="bg-gradient-to-r from-orange-900/20 to-amber-900/20 border border-orange-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="edit_incluir_pausa"
+                    checked={editRegistoForm.incluir_pausa}
+                    onChange={(e) => {
+                      const novaPausa = e.target.checked;
+                      setEditRegistoForm(prev => {
+                        const updated = { ...prev, incluir_pausa: novaPausa };
+                        // Se temos horas definidas, recalcular minutos
+                        if (prev.hora_inicio && prev.hora_fim) {
+                          const [h1, m1] = prev.hora_inicio.split(':').map(Number);
+                          const [h2, m2] = prev.hora_fim.split(':').map(Number);
+                          let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                          if (mins < 0) mins += 24 * 60;
+                          if (novaPausa) mins -= 60;
+                          updated.minutos_trabalhados = Math.max(0, mins);
+                        } else {
+                          // Ajustar minutos diretamente
+                          if (novaPausa && !prev.incluir_pausa) {
+                            updated.minutos_trabalhados = Math.max(0, prev.minutos_trabalhados - 60);
+                          } else if (!novaPausa && prev.incluir_pausa) {
+                            updated.minutos_trabalhados = prev.minutos_trabalhados + 60;
+                          }
+                        }
+                        return updated;
+                      });
+                    }}
+                    className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-orange-500 focus:ring-orange-500"
+                    data-testid="edit-registo-incluir-pausa"
+                  />
+                  <label htmlFor="edit_incluir_pausa" className="text-gray-300 cursor-pointer flex items-center gap-2">
+                    <Coffee className="w-4 h-4 text-orange-400" />
+                    <span>Descontar 1 hora de pausa</span>
+                  </label>
+                </div>
+                {editRegistoForm.incluir_pausa && (
+                  <p className="text-xs text-orange-400 mt-2 ml-8">
+                    1 hora será descontada do tempo total
+                  </p>
+                )}
+              </div>
+
               {/* Botões */}
               <div className="flex gap-3 pt-4">
                 <Button
