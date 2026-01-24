@@ -228,36 +228,26 @@ const TecnicoModal = ({
             </div>
           </div>
 
-          {/* Tempo no Cliente (HH:MM) */}
+          {/* Tempo no Cliente (HH:MM) - Calculado automaticamente */}
           <div>
             <Label className="text-gray-300 flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              Tempo no Cliente *
+              Tempo no Cliente (calculado)
             </Label>
             <div className="flex items-center gap-2 mt-1">
-              <Input
-                type="number"
-                min="0"
-                max="24"
-                value={horas}
-                onChange={(e) => handleHorasChange(e.target.value)}
-                className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
-                placeholder="0"
-              />
+              <div className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 w-20 text-center font-semibold text-green-400">
+                {Math.floor((tecnicoFormData.minutos_cliente || 0) / 60)}
+              </div>
               <span className="text-gray-400 font-bold">:</span>
-              <Input
-                type="number"
-                min="0"
-                max="59"
-                value={minutos}
-                onChange={(e) => handleMinutosChange(e.target.value)}
-                className="bg-[#0f0f0f] border-gray-700 text-white w-20 text-center"
-                placeholder="00"
-              />
+              <div className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 w-20 text-center font-semibold text-green-400">
+                {String((tecnicoFormData.minutos_cliente || 0) % 60).padStart(2, '0')}
+              </div>
               <span className="text-gray-500 text-sm">(HH:MM)</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Total: {tecnicoFormData.minutos_cliente || 0} minutos
+              {tecnicoFormData.hora_inicio && tecnicoFormData.hora_fim 
+                ? 'Calculado com base nas horas de início e fim' 
+                : 'Preencha as horas de início e fim para calcular'}
             </p>
           </div>
 
