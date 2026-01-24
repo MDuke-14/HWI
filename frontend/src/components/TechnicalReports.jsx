@@ -4483,10 +4483,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
+                            type="button"
                             onClick={() => handleDeleteDespesa(despesa.id)}
                             size="sm"
                             variant="outline"
-                            className="border-red-500 text-red-500"
+                            className="border-red-500 text-red-500 hover:bg-red-500/10"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
