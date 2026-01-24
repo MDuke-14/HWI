@@ -414,7 +414,6 @@ const TecnicoModal = ({
               </p>
             </div>
           )}
-          </div>
 
           {/* Botões */}
           <div className="flex gap-3 pt-4">
