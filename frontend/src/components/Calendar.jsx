@@ -134,7 +134,9 @@ const Calendar = ({ user, onLogout }) => {
     setServiceForm({
       ...serviceForm,
       client_name: client.nome,
-      location: client.morada || ''
+      client_id: client.id,
+      // Não preencher localidade automaticamente - deve ser manual
+      location: ''
     });
     setClientSelectOpen(false);
     setClientSearch('');
