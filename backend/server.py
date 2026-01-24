@@ -339,7 +339,8 @@ class RelatorioTecnico(BaseModel):
     
     # Datas
     data_criacao: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    data_servico: date
+    data_servico: date  # Data de início
+    data_fim: Optional[date] = None  # Data "Até" - opcional, para OTs de múltiplos dias
     data_conclusao: Optional[datetime] = None
     
     # Relações
