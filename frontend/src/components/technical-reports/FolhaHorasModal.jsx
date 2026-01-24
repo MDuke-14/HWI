@@ -226,7 +226,7 @@ const FolhaHorasModal = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Label className="text-gray-400 text-sm">Tarifa (€/h):</Label>
+                          <Label className="text-gray-400 text-sm">Tarifa ({registo.codigo} - €/h):</Label>
                           {folhaHorasData.tarifas?.length > 0 ? (
                             <select
                               value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
