@@ -15,6 +15,9 @@ async def run_migrations(db: AsyncIOMotorDatabase):
     
     # Migration 2: Renomear campo telefone para nif na company_info
     await migrate_telefone_to_nif(db)
+    
+    # Migration 3: Segmentar registos de cronómetro por código horário
+    await migrate_segmentar_registos(db)
 
 
 async def migrate_ot_numbers(db: AsyncIOMotorDatabase):
