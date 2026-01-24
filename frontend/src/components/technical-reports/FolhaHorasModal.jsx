@@ -154,8 +154,9 @@ const FolhaHorasModal = ({
   const handleAplicarDietaTodos = (checked) => {
     setDietaAutomatica(checked);
     if (checked && dietaValor) {
-      getExtrasOrdenados().forEach(({ tecnicoId, data }) => {
-        const chave = `${tecnicoId}_${data}`;
+      getExtrasOrdenados().forEach(({ tecnicoNome, data }) => {
+        // Chave baseada em NOME + DATA
+        const chave = `${tecnicoNome}_${data}`;
         updateFolhaHorasExtra(chave, 'dieta', dietaValor);
       });
     }
