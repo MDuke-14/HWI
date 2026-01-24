@@ -2,7 +2,7 @@
 # Script to test production debug endpoint
 # Usage: bash test_production_debug.sh
 
-PROD_URL="https://clockwise-66.preview.emergentagent.com"
+PROD_URL="https://timeclock-38.preview.emergentagent.com"
 
 echo "======================================"
 echo "  TESTE DE DEBUG EM PRODUÇÃO"
