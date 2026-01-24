@@ -61,6 +61,38 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Manual de Instruções em PDF (24 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Gerador de PDF completo com ReportLab:**
+- Manual de ~15 páginas com todas as instruções do sistema
+- Formatação profissional com cores, estilos e secções
+- Índice navegável
+
+**Conteúdo do Manual:**
+1. Introdução ao sistema
+2. Acesso ao Sistema (Login/Registo/Recuperação)
+3. Dashboard - Relógio de Ponto
+4. Ordens de Trabalho (OTs) - todas as secções detalhadas
+5. Calendário
+6. Painel de Administração (todos os tabs)
+7. Notificações
+8. Sistema de Ajuda
+9. Perguntas Frequentes
+
+**Implementação:**
+- Backend: `/app/backend/manual_pdf.py` - Gerador do PDF
+- Backend: Endpoint `GET /api/manual/download` 
+- Frontend: Botão flutuante verde no Dashboard com ícone de livro
+- Download automático do ficheiro `Manual_HWI_Unipessoal.pdf`
+
+**Ficheiros modificados:**
+- `/app/backend/manual_pdf.py` - Novo ficheiro
+- `/app/backend/server.py` - Novo endpoint
+- `/app/frontend/src/components/Dashboard.jsx` - Botão de download
+
+**Testado:** ✅ Backend endpoint testado via curl, Frontend botão visível no Dashboard
+
+---
+
 #### ✅ Sistema de Despesas nas OTs (22 Janeiro 2026)
 **Novo card de Despesas nas OTs (não aparece no PDF da OT):**
 - Campos: Descrição, Valor (€), Pago por (dropdown de técnicos), Data
