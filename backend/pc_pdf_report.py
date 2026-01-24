@@ -144,7 +144,7 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     
     material_table = Table(material_rows, colWidths=[1.5*cm, 14*cm, 2.5*cm])
     material_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('ALIGN', (1, 1), (1, -1), 'LEFT'),
