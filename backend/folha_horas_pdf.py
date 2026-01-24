@@ -360,9 +360,21 @@ def generate_folha_horas_pdf(
         total_geral_km_valor += total_km_valor
         
         # Dados extras (dieta, portagens, despesas)
+        # REGRA: Apenas 1 dieta por técnico por dia
         chave_extras = f"{tecnico_id}_{data}"
         extras = dados_extras.get(chave_extras, {})
-        dieta = extras.get('dieta', 0)
+        
+        # Verificar se já aplicou dieta para este técnico neste dia
+        if chave_extras in dietas_aplicadas:
+            # Já aplicou dieta - não adicionar novamente
+            dieta = 0
+        else:
+            # Primeira vez neste dia para este técnico - aplicar dieta
+            dieta = extras.get('dieta', 0)
+            if dieta > 0:
+                dietas_aplicadas.add(chave_extras)
+        
+        # Portagens e despesas podem ser aplicados por linha
         portagens = extras.get('portagens', 0)
         despesas = extras.get('despesas', 0)
         total_geral_dietas += dieta
