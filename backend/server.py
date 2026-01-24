@@ -547,7 +547,8 @@ class PushSubscription(BaseModel):
 
 class RelatorioTecnicoCreate(BaseModel):
     cliente_id: str
-    data_servico: date
+    data_servico: date  # Data de início
+    data_fim: Optional[date] = None  # Data "Até" - opcional
     local_intervencao: str
     pedido_por: str
     contacto_pedido: Optional[str] = None
