@@ -201,6 +201,38 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Edição de Hora Início/Fim em Registos de Tempo (24 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Modal de edição de registos agora permite alterar horas:**
+- Novos campos "Hora Início" e "Hora Fim" no modal de edição de registos
+- Campos tipo `time` para fácil seleção de horas
+- Duração recalculada automaticamente quando ambas as horas são definidas
+- Campo "Tempo Trabalhado" (horas/minutos) fica desativado quando há horas definidas
+- Código horário recalculado automaticamente pelo backend
+
+**Frontend (`TechnicalReports.jsx`):**
+- Função `openEditRegistoModal()` agora extrai `hora_inicio_segmento` e `hora_fim_segmento`
+- Estado `editRegistoForm` inclui `hora_inicio` e `hora_fim`
+- Modal com secção "Horário do Registo" destacada em azul
+- Campos com `data-testid`: `edit-registo-hora-inicio` e `edit-registo-hora-fim`
+- Cálculo em tempo real: ao alterar uma hora, duração é recalculada instantaneamente
+- Função `handleUpdateRegisto()` envia `hora_inicio` e `hora_fim` ao backend
+
+**Backend (`server.py`):**
+- Endpoint PUT `/api/relatorios-tecnicos/{id}/registos-tecnicos/{id}` já suportava este cenário
+- Quando `hora_inicio` e `hora_fim` são enviados, recalcula `minutos_trabalhados`, `horas_arredondadas` e `codigo`
+- Suporta turnos noturnos (hora_fim < hora_inicio)
+
+**Bug corrigido:**
+- `useOfflineData.js`: Função `cacheData` adicionado timeout de 5 segundos para evitar carregamento infinito
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/TechnicalReports.jsx` - Modal com novos campos de hora
+- `/app/frontend/src/hooks/useOfflineData.js` - Corrigido bug de timeout
+
+**Testado:** ✅ Backend via curl (atualização de 08:00-19:00 para 09:00-18:00 funcionou) | Frontend verificado pelo testing agent
+
+---
+
 #### ✅ Sistema de Despesas nas OTs (22 Janeiro 2026)
 **Novo card de Despesas nas OTs (não aparece no PDF da OT):**
 - Campos: Descrição, Valor (€), Pago por (dropdown de técnicos), Data
