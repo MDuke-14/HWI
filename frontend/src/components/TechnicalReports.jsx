@@ -2153,6 +2153,42 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Criar registo manual com segmentação automática
+  const handleAddRegistoManual = async () => {
+    if (!addRegistoManualForm.tecnico_id || !addRegistoManualForm.hora_inicio || !addRegistoManualForm.hora_fim) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`,
+        addRegistoManualForm
+      );
+      
+      const numRegistos = response.data.registos?.length || 1;
+      if (numRegistos > 1) {
+        toast.success(`${numRegistos} registos criados (segmentação automática)`);
+      } else {
+        toast.success('Registo criado!');
+      }
+      
+      setShowAddRegistoManualModal(false);
+      setAddRegistoManualForm({
+        tecnico_id: '',
+        tecnico_nome: '',
+        tipo: 'trabalho',
+        data: new Date().toISOString().split('T')[0],
+        hora_inicio: '09:00',
+        hora_fim: '18:00',
+        km: 0
+      });
+      fetchRegistosTecnicos(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   const openEditRegistoModal = (registo) => {
     setEditingRegisto(registo);
     // Converter horas para minutos se existir horas_arredondadas
