@@ -2047,11 +2047,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   
   const fetchAllSystemUsers = async () => {
     try {
-      const response = await axios.get(`${API}/admin/users`);
+      // Usar endpoint /users que está disponível para todos os utilizadores autenticados
+      const response = await axios.get(`${API}/users`);
       setAllSystemUsers(response.data);
     } catch (error) {
       console.error('Erro ao buscar utilizadores do sistema:', error);
-      // Fallback para utilizadores da OT se não tiver permissão admin
       setAllSystemUsers([]);
     }
   };
