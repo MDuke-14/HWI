@@ -2241,6 +2241,57 @@ async def get_relatorios(
         {"_id": 0}
     ).sort("numero_assistencia", -1).to_list(1000)
     
+    # Para cada relatório, calcular informação de equipamentos
+    for relatorio in relatorios:
+        relatorio_id = relatorio.get("id")
+        
+        # Contar equipamentos associados na colecção equipamentos_ot
+        equipamentos_count = await db.equipamentos_ot.count_documents({"relatorio_id": relatorio_id})
+        
+        # Verificar se tem equipamento principal (campos directos na OT)
+        tem_equip_principal = bool(
+            relatorio.get("equipamento_marca") or 
+            relatorio.get("equipamento_tipologia") or 
+            relatorio.get("equipamento_modelo")
+        )
+        
+        # Calcular total de equipamentos
+        total_equipamentos = equipamentos_count + (1 if tem_equip_principal else 0)
+        
+        # Definir texto a mostrar
+        if total_equipamentos == 0:
+            relatorio["equipamento_display"] = "Não especificado"
+        elif total_equipamentos == 1:
+            # Mostrar o nome do equipamento
+            if tem_equip_principal:
+                # Usar equipamento principal
+                parts = []
+                if relatorio.get("equipamento_tipologia"):
+                    parts.append(relatorio["equipamento_tipologia"])
+                if relatorio.get("equipamento_marca"):
+                    parts.append(relatorio["equipamento_marca"])
+                if relatorio.get("equipamento_modelo"):
+                    parts.append(relatorio["equipamento_modelo"])
+                relatorio["equipamento_display"] = " • ".join(parts) if parts else "Equipamento"
+            else:
+                # Buscar o único equipamento da colecção
+                equip = await db.equipamentos_ot.find_one({"relatorio_id": relatorio_id}, {"_id": 0})
+                if equip:
+                    parts = []
+                    if equip.get("tipologia"):
+                        parts.append(equip["tipologia"])
+                    if equip.get("marca"):
+                        parts.append(equip["marca"])
+                    if equip.get("modelo"):
+                        parts.append(equip["modelo"])
+                    relatorio["equipamento_display"] = " • ".join(parts) if parts else "Equipamento"
+                else:
+                    relatorio["equipamento_display"] = "Equipamento"
+        else:
+            relatorio["equipamento_display"] = "Vários"
+        
+        relatorio["equipamentos_count"] = total_equipamentos
+    
     return relatorios
 
 @api_router.get("/relatorios-tecnicos/{relatorio_id}", response_model=RelatorioTecnico)
