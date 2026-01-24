@@ -1138,11 +1138,21 @@ const TechnicalReports = ({ user, onLogout }) => {
     if (!selectedRelatorio) return;
 
     try {
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos`, tecnicoFormData);
-      toast.success('Técnico adicionado com sucesso!');
+      const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos`, tecnicoFormData);
+      
+      // Verificar se criou múltiplos segmentos
+      if (response.data?.registos && response.data.registos.length > 1) {
+        toast.success(`${response.data.registos.length} registos criados (segmentação automática)`);
+      } else {
+        toast.success('Técnico adicionado com sucesso!');
+      }
+      
       setShowAddTecnicoModal(false);
       resetTecnicoForm();
+      
+      // Recarregar ambas as colecções de registos
       await fetchTecnicosRelatorio(selectedRelatorio.id);
+      await fetchRegistosTecnicos(selectedRelatorio.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
