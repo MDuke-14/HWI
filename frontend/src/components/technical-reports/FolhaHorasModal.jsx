@@ -86,49 +86,53 @@ const FolhaHorasModal = ({
     return todosRegistos.sort((a, b) => new Date(a.data) - new Date(b.data));
   };
 
-  // Para extras (dietas, portagens, despesas) - manter agrupado por técnico/data
+  // Para extras (dietas, portagens, despesas) - UMA entrada por técnico/dia
+  // Regra: Apenas 1 dieta por técnico por dia, independentemente do número de registos
   const getExtrasOrdenados = () => {
     if (!folhaHorasData?.datas_por_tecnico) return [];
     
     const registos = folhaHorasData.registos || [];
     const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
+    const registosIndividuais = folhaHorasData.registos_individuais || [];
     
-    return Object.entries(folhaHorasData.datas_por_tecnico)
-      .flatMap(([tecnicoId, datas]) => {
-        const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
-        return datas.map(data => {
-          // Procurar nos registos de cronómetro
-          const registoCrono = registos.find(r => r.tecnico_id === tecnicoId && (r.data === data || r.data?.split('T')[0] === data));
-          // Procurar nos técnicos manuais
-          const registoManual = tecnicosManuais.find(t => t.id === tecnicoId && (t.data_trabalho === data || t.data_trabalho?.split('T')[0] === data));
-          
-          let tipo = '-';
-          let codigo = '-';
-          
-          if (registoCrono) {
-            tipo = registoCrono.tipo || 'cronómetro';
-            codigo = registoCrono.codigo || '-';
-          } else if (registoManual) {
-            tipo = registoManual.tipo_registo || 'manual';
-            // Converter tipo_horario para código
-            const codigosMap = {
-              'diurno': '1',
-              'noturno': '2',
-              'sabado': 'S',
-              'domingo_feriado': 'D'
-            };
-            codigo = codigosMap[registoManual.tipo_horario] || '-';
-          }
-          
-          return {
+    // Usar Set para garantir unicidade por técnico+data
+    const tecnicoDiasUnicos = new Map();
+    
+    // Processar datas_por_tecnico (fonte principal)
+    Object.entries(folhaHorasData.datas_por_tecnico).forEach(([tecnicoId, datas]) => {
+      const tecnico = folhaHorasData.tecnicos?.find(t => t.id === tecnicoId);
+      const tecnicoNome = tecnico?.nome || 'Técnico';
+      
+      datas.forEach(data => {
+        const chave = `${tecnicoId}_${data}`;
+        if (!tecnicoDiasUnicos.has(chave)) {
+          tecnicoDiasUnicos.set(chave, {
             tecnicoId,
-            tecnicoNome: tecnico?.nome || 'Técnico',
-            data,
-            tipo,
-            codigo
-          };
+            tecnicoNome,
+            data
+          });
+        }
+      });
+    });
+    
+    // Também processar registos individuais para capturar técnicos adicionais
+    registosIndividuais.forEach(reg => {
+      let data = reg.data || '';
+      if (typeof data === 'string' && data.includes('T')) {
+        data = data.split('T')[0];
+      }
+      const chave = `${reg.tecnico_id}_${data}`;
+      if (!tecnicoDiasUnicos.has(chave)) {
+        tecnicoDiasUnicos.set(chave, {
+          tecnicoId: reg.tecnico_id,
+          tecnicoNome: reg.tecnico_nome,
+          data
         });
-      })
+      }
+    });
+    
+    // Converter Map para array e ordenar por data
+    return Array.from(tecnicoDiasUnicos.values())
       .sort((a, b) => new Date(a.data) - new Date(b.data));
   };
 
