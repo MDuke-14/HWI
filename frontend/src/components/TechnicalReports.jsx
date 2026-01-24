@@ -3942,7 +3942,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
                                 {item.hora_inicio_segmento
-                                  ? new Date(item.hora_inicio_segmento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+                                  ? item.hora_inicio_segmento.substring(11, 16)
                                   : (item.hora_inicio 
                                     ? item.hora_inicio 
                                     : '-')
@@ -3950,7 +3950,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
                                 {item.hora_fim_segmento
-                                  ? new Date(item.hora_fim_segmento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+                                  ? item.hora_fim_segmento.substring(11, 16)
                                   : (item.hora_fim 
                                     ? item.hora_fim 
                                     : '-')
