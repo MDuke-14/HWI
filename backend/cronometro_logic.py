@@ -245,6 +245,12 @@ def verificar_sobreposicao(registos_existentes, novo_inicio, novo_fim, tecnico_i
     Returns:
         bool: True se há sobreposição, False caso contrário
     """
+    # Normalizar novo_inicio e novo_fim para naive (remover timezone se existir)
+    if novo_inicio.tzinfo is not None:
+        novo_inicio = novo_inicio.replace(tzinfo=None)
+    if novo_fim.tzinfo is not None:
+        novo_fim = novo_fim.replace(tzinfo=None)
+    
     for reg in registos_existentes:
         if reg.get("tecnico_id") != tecnico_id:
             continue
@@ -260,6 +266,12 @@ def verificar_sobreposicao(registos_existentes, novo_inicio, novo_fim, tecnico_i
         
         if reg_inicio is None or reg_fim is None:
             continue
+        
+        # Normalizar para naive (remover timezone)
+        if reg_inicio.tzinfo is not None:
+            reg_inicio = reg_inicio.replace(tzinfo=None)
+        if reg_fim.tzinfo is not None:
+            reg_fim = reg_fim.replace(tzinfo=None)
         
         # Verificar sobreposição
         # Há sobreposição se: novo_inicio < reg_fim AND novo_fim > reg_inicio
