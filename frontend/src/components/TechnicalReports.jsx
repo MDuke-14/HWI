@@ -3720,10 +3720,20 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                 {/* Tabela de Registos (Manuais + Automáticos do Cronómetro) */}
                 <div>
-                  <h5 className="text-white font-medium flex items-center gap-2 mb-3">
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    Registos de Mão de Obra
-                  </h5>
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="text-white font-medium flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-400" />
+                      Registos de Mão de Obra
+                    </h5>
+                    <Button
+                      onClick={() => setShowAddRegistoManualModal(true)}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Novo Registo
+                    </Button>
+                  </div>
 
                   {(tecnicos.length > 0 || registosTecnicos.length > 0) ? (
                     <div className="overflow-x-auto">
