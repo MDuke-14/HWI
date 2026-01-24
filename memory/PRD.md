@@ -55,6 +55,44 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Sistema de Autorização Diária para Dias Especiais (24 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Nova collection `day_authorizations` para estado diário:**
+- Cada utilizador + data tem um estado: pending, authorized, rejected
+- Uma decisão desbloqueia ou bloqueia o dia inteiro
+- Máximo 1 notificação por utilizador por dia
+
+**Tipos de dias especiais:**
+- `ferias` - Dias de férias aprovadas
+- `feriado` - Feriados nacionais portugueses
+- `sabado` - Sábados
+- `domingo` - Domingos
+
+**Fluxo implementado:**
+1. Primeira picagem em dia especial → cria pedido de autorização + notificação push aos admins
+2. Admin aprova → desbloqueia dia inteiro (múltiplas picagens permitidas)
+3. Admin rejeita → bloqueia dia inteiro (entrada eliminada + novas picagens bloqueadas)
+4. Para dias de férias aprovados → devolve 1 dia de férias ao saldo
+
+**Novos endpoints:**
+- `GET /api/day-authorization/status` - Verificar estado do dia atual
+- `GET /api/admin/day-authorizations` - Listar autorizações (admin)
+- `GET /api/admin/day-authorizations/pending` - Listar pendentes (admin)
+- `POST /api/admin/day-authorizations/{id}/decide` - Aprovar/rejeitar (admin)
+
+**Endpoint `POST /api/time-entries/start` modificado:**
+- Verifica tipo de dia especial
+- Verifica estado de autorização existente
+- Cria pedido de autorização na primeira picagem
+- Bloqueia picagem se dia foi rejeitado
+- Permite picagem sem nova notificação se dia foi aprovado
+
+**Testado:** ✅ API testada via curl - Todos os cenários funcionando
+- Primeira picagem → pedido criado
+- Aprovação → múltiplas picagens permitidas
+- Rejeição → entrada eliminada + novas picagens bloqueadas
+
+---
+
 #### ✅ Sistema de Ajuda Completo (22 Janeiro 2026)
 **Componente reutilizável `HelpTooltip.jsx`:**
 - Ícone de ajuda ("i" azul) que abre popup modal com informação detalhada
