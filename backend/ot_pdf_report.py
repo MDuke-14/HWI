@@ -162,7 +162,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         equip_table = Table(equip_header, colWidths=[1*cm, 3.5*cm, 3.5*cm, 4*cm, 4*cm, 2*cm])
         equip_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
