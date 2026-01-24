@@ -3821,15 +3821,32 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }))
                           ]
                           .sort((a, b) => {
-                            // Ordenar por data primeiro
-                            const dataA = new Date(a._data_sort);
-                            const dataB = new Date(b._data_sort);
+                            // Ordenar por data primeiro (com fallback seguro)
+                            const dataAStr = a._data_sort || '1970-01-01';
+                            const dataBStr = b._data_sort || '1970-01-01';
+                            const dataA = new Date(dataAStr);
+                            const dataB = new Date(dataBStr);
+                            
+                            // Verificar se as datas são válidas
+                            const dataAValid = !isNaN(dataA.getTime());
+                            const dataBValid = !isNaN(dataB.getTime());
+                            
+                            if (!dataAValid && !dataBValid) return 0;
+                            if (!dataAValid) return 1;
+                            if (!dataBValid) return -1;
+                            
                             if (dataA.getTime() !== dataB.getTime()) {
                               return dataA - dataB;
                             }
                             // Se mesma data, ordenar por hora de início
-                            const horaA = a._hora_inicio_sort ? new Date(a._hora_inicio_sort) : new Date(0);
-                            const horaB = b._hora_inicio_sort ? new Date(b._hora_inicio_sort) : new Date(0);
+                            const horaAStr = a._hora_inicio_sort || '';
+                            const horaBStr = b._hora_inicio_sort || '';
+                            if (!horaAStr && !horaBStr) return 0;
+                            if (!horaAStr) return 1;
+                            if (!horaBStr) return -1;
+                            const horaA = new Date(horaAStr);
+                            const horaB = new Date(horaBStr);
+                            if (isNaN(horaA.getTime()) || isNaN(horaB.getTime())) return 0;
                             return horaA - horaB;
                           })
                           .map((item) => (
