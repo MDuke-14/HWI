@@ -3731,6 +3731,162 @@ async def health_check():
     }
 
 
+# ============ Day Authorization Helper Functions ============
+
+async def get_special_day_info(check_date: date, user_id: str):
+    """
+    Verifica se um dia é especial (férias, feriado, sábado, domingo)
+    e retorna informações sobre o tipo de dia
+    
+    Returns:
+        dict: {
+            "is_special": bool,
+            "day_type": str (ferias/feriado/sabado/domingo/normal),
+            "day_type_display": str,
+            "vacation_request_id": str or None
+        }
+    """
+    today_str = check_date.strftime("%Y-%m-%d")
+    
+    # 1. Verificar se está de férias
+    vacation_request = await db.vacation_requests.find_one({
+        "user_id": user_id,
+        "status": "approved",
+        "start_date": {"$lte": today_str},
+        "end_date": {"$gte": today_str}
+    }, {"_id": 0})
+    
+    if vacation_request:
+        return {
+            "is_special": True,
+            "day_type": "ferias",
+            "day_type_display": "Férias",
+            "vacation_request_id": vacation_request.get("id")
+        }
+    
+    # 2. Verificar se é feriado
+    is_hol, hol_name = is_holiday(check_date)
+    if is_hol:
+        return {
+            "is_special": True,
+            "day_type": "feriado",
+            "day_type_display": f"Feriado: {hol_name}",
+            "vacation_request_id": None
+        }
+    
+    # 3. Verificar se é sábado
+    if check_date.weekday() == 5:
+        return {
+            "is_special": True,
+            "day_type": "sabado",
+            "day_type_display": "Sábado",
+            "vacation_request_id": None
+        }
+    
+    # 4. Verificar se é domingo
+    if check_date.weekday() == 6:
+        return {
+            "is_special": True,
+            "day_type": "domingo",
+            "day_type_display": "Domingo",
+            "vacation_request_id": None
+        }
+    
+    # Dia normal
+    return {
+        "is_special": False,
+        "day_type": "normal",
+        "day_type_display": "Dia útil",
+        "vacation_request_id": None
+    }
+
+
+async def get_day_authorization(user_id: str, date_str: str):
+    """
+    Obtém o estado de autorização do dia para um utilizador
+    
+    Returns:
+        dict or None: O documento de autorização do dia se existir
+    """
+    return await db.day_authorizations.find_one({
+        "user_id": user_id,
+        "date": date_str
+    }, {"_id": 0})
+
+
+async def create_day_authorization_request(
+    user_id: str,
+    user_name: str,
+    date_str: str,
+    day_type: str,
+    day_type_display: str,
+    entry_id: str,
+    entry_time: str,
+    vacation_request_id: str = None
+):
+    """
+    Cria um pedido de autorização diária e envia notificação push aos admins
+    
+    Args:
+        user_id: ID do utilizador
+        user_name: Nome do utilizador
+        date_str: Data no formato YYYY-MM-DD
+        day_type: Tipo do dia (ferias/feriado/sabado/domingo)
+        day_type_display: Descrição legível do tipo de dia
+        entry_id: ID da primeira picagem
+        entry_time: Hora da primeira picagem (HH:MM)
+        vacation_request_id: ID do pedido de férias (se aplicável)
+    
+    Returns:
+        dict: O documento de autorização criado
+    """
+    auth_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "user_name": user_name,
+        "date": date_str,
+        "day_type": day_type,
+        "day_type_display": day_type_display,
+        "status": "pending",
+        "first_entry_id": entry_id,
+        "first_entry_time": entry_time,
+        "vacation_request_id": vacation_request_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "decided_by": None,
+        "decided_at": None,
+        "notification_sent": True
+    }
+    
+    await db.day_authorizations.insert_one(auth_doc)
+    
+    # Enviar notificação push aos admins
+    date_formatted = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+    
+    if day_type == "ferias":
+        push_title = f"⚠️ Trabalho em Férias - {user_name}"
+        push_body = f"{user_name} iniciou ponto às {entry_time} em dia de férias ({date_formatted}). Se autorizado, 1 dia de férias será devolvido."
+    elif day_type == "feriado":
+        push_title = f"🏛️ Trabalho em Feriado - {user_name}"
+        push_body = f"{user_name} iniciou ponto às {entry_time} ({day_type_display} - {date_formatted}). Autorizar trabalho?"
+    else:
+        push_title = f"📅 Trabalho em {day_type_display} - {user_name}"
+        push_body = f"{user_name} iniciou ponto às {entry_time} ({date_formatted}). Autorizar trabalho?"
+    
+    await send_push_to_admins(
+        db,
+        push_title,
+        push_body,
+        "day_authorization",
+        "high"
+    )
+    
+    logging.info(f"Pedido de autorização diária criado: {user_name} em {date_str} ({day_type_display})")
+    
+    # Remover _id antes de retornar
+    auth_doc.pop("_id", None)
+    return auth_doc
+
+
 # ============ Time Entry Routes ============
 
 @api_router.post("/time-entries/start")
