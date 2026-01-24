@@ -526,8 +526,8 @@ const Calendar = ({ user, onLogout }) => {
               className="bg-[#121212] border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition-all group cursor-pointer"
               data-testid={`${item.type}-card-${item.id}`}
               onClick={() => {
-                if (service.ot_id) {
-                  window.location.href = `/technical-reports?ot=${service.ot_id}`;
+                if (item.ot_id) {
+                  window.location.href = `/technical-reports?ot=${item.ot_id}`;
                 }
               }}
             >
@@ -535,42 +535,44 @@ const Calendar = ({ user, onLogout }) => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
-                      {service.client_name}
+                      {item.client_name}
                     </h3>
-                    {service.ot_numero && (
+                    {item.ot_numero && (
                       <span className="px-2.5 py-1 rounded-md text-sm font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                        OT#{service.ot_numero}
+                        OT#{item.ot_numero}
                       </span>
                     )}
                     <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
-                      service.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      service.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                      service.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                      item.status === 'completed' || item.status === 'concluido' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                      item.status === 'in_progress' || item.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                      item.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
                       'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                     }`}>
-                      {service.status === 'scheduled' ? 'Agendado' :
-                       service.status === 'in_progress' ? 'Em Progresso' :
-                       service.status === 'completed' ? 'Concluído' : 'Cancelado'}
+                      {item.status === 'scheduled' ? 'Agendado' :
+                       item.status === 'in_progress' || item.status === 'em_execucao' ? 'Em Execução' :
+                       item.status === 'completed' || item.status === 'concluido' ? 'Concluído' : 
+                       item.status === 'cancelled' ? 'Cancelado' :
+                       item.status === 'orcamento' ? 'Orçamento' : 'Agendado'}
                     </span>
                   </div>
                 </div>
-                {user.is_admin && (
+                {user.is_admin && item.type === 'service' && (
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
-                      onClick={(e) => { e.stopPropagation(); handleEditService(service); }}
+                      onClick={(e) => { e.stopPropagation(); handleEditService(item); }}
                       variant="ghost"
                       size="sm"
                       className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
-                      data-testid={`edit-service-${service.id}`}
+                      data-testid={`edit-service-${item.id}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteService(service.id); }}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteService(item.id); }}
                       variant="ghost"
                       size="sm"
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                      data-testid={`delete-service-${service.id}`}
+                      data-testid={`delete-service-${item.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -584,7 +586,7 @@ const Calendar = ({ user, onLogout }) => {
                     <MapPin className="w-3 h-3" />
                     Localização
                   </div>
-                  <div className="text-white font-medium">{service.location}</div>
+                  <div className="text-white font-medium">{item.location}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
@@ -592,11 +594,17 @@ const Calendar = ({ user, onLogout }) => {
                     Data
                   </div>
                   <div className="text-orange-300 font-mono">
-                    {new Date(service.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                    {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-PT', {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric'
                     })}
+                    {item.data_fim && (
+                      <span className="text-gray-500"> → {new Date(item.data_fim).toLocaleDateString('pt-PT', {
+                        day: '2-digit',
+                        month: 'short'
+                      })}</span>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -604,7 +612,7 @@ const Calendar = ({ user, onLogout }) => {
                     <Wrench className="w-3 h-3" />
                     Motivo
                   </div>
-                  <div className="text-white">{service.service_reason || '-'}</div>
+                  <div className="text-white">{item.service_reason || '-'}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
@@ -612,15 +620,15 @@ const Calendar = ({ user, onLogout }) => {
                     Técnicos
                   </div>
                   <div className="text-white">
-                    {service.technicians?.map(t => t.username).join(', ') || service.technician_names?.join(', ') || '-'}
+                    {item.technician_names?.join(', ') || '-'}
                   </div>
                 </div>
               </div>
 
-              {service.observations && (
+              {item.observations && (
                 <div className="mt-4 pt-4 border-t border-orange-500/10">
                   <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Observações</div>
-                  <div className="text-gray-300 italic text-sm">{service.observations}</div>
+                  <div className="text-gray-300 italic text-sm">{item.observations}</div>
                 </div>
               )}
             </div>
