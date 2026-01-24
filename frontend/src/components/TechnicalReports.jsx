@@ -2269,7 +2269,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_final_volta: registo.kms_final_volta || 0,
       codigo: registo.codigo || '',
       hora_inicio: horaInicio,
-      hora_fim: horaFim
+      hora_fim: horaFim,
+      incluir_pausa: registo.incluir_pausa || false
     });
     setShowEditRegistoModal(true);
   };
