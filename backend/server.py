@@ -7949,7 +7949,7 @@ async def create_service_with_ot(service_data: ServiceWithOTCreate, current_user
         # Criar serviços adicionais para cada dia do intervalo (sem duplicar o primeiro)
         current_date = data_inicio + timedelta(days=1)
         while current_date <= data_fim:
-            additional_service = service_dict.copy()
+            additional_service = {k: v for k, v in service_dict.items() if k != '_id'}
             additional_service['id'] = str(uuid.uuid4())
             additional_service['date'] = current_date.isoformat()
             await db.service_appointments.insert_one(additional_service)
