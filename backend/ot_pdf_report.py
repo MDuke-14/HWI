@@ -348,7 +348,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         mat_table = Table(mat_data, colWidths=[1*cm, 10*cm, 2*cm, 5*cm])
         mat_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f59e0b')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('ALIGN', (1, 1), (1, -1), 'LEFT'),
