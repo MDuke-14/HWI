@@ -686,9 +686,22 @@ class ServiceAppointment(BaseModel):
 class ServiceAppointmentCreate(BaseModel):
     client_name: str
     location: str
-    service_reason: str
+    service_reason: Optional[str] = None  # Agora opcional
     technician_ids: List[str]
     date: str
+    time_slot: Optional[str] = None
+    observations: Optional[str] = None
+
+class ServiceWithOTCreate(BaseModel):
+    """Modelo para criar serviço que gera OT automaticamente"""
+    client_name: str
+    client_id: Optional[str] = None  # ID do cliente para criar OT
+    location: str
+    service_type: str = "assistencia"  # 'assistencia' ou 'montagem'
+    service_reason: Optional[str] = None  # Opcional
+    technician_ids: List[str]
+    date: str  # Data início
+    date_end: Optional[str] = None  # Data fim (Até)
     time_slot: Optional[str] = None
     observations: Optional[str] = None
 
