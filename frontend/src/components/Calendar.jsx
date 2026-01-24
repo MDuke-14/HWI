@@ -871,6 +871,52 @@ const Calendar = ({ user, onLogout }) => {
                   </div>
                 )}
                 
+                {/* OTs */}
+                {selectedDay?.ots?.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                      <Wrench className="w-3 h-3" />
+                      Ordens de Trabalho ({selectedDay.ots.length})
+                    </h4>
+                    {selectedDay.ots.map(ot => (
+                      <div 
+                        key={`ot-detail-${ot.id}-${selectedDay.dateStr}`} 
+                        className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 cursor-pointer hover:bg-orange-500/20 transition-colors"
+                        onClick={() => {
+                          setDayDetailOpen(false);
+                          window.location.href = `/technical-reports?ot=${ot.id}`;
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-orange-400">OT-{ot.numero_ot}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
+                            ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {ot.status === 'concluido' ? 'Concluído' : 
+                             ot.status === 'em_execucao' ? 'Em Execução' : 
+                             ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-white mt-1">{ot.cliente_nome}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          <MapPin className="w-3 h-3 inline mr-1" />
+                          {ot.local}
+                        </div>
+                        {ot.motivo && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">{ot.motivo}</div>
+                        )}
+                        {ot.data_fim && (
+                          <div className="text-xs text-orange-400/70 mt-1">
+                            {new Date(ot.data_inicio).toLocaleDateString('pt-PT')} → {new Date(ot.data_fim).toLocaleDateString('pt-PT')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 {/* Vacations */}
                 {selectedDay?.vacations.length > 0 && (
                   <div className="space-y-2">
@@ -890,7 +936,7 @@ const Calendar = ({ user, onLogout }) => {
                 )}
                 
                 {/* Empty State */}
-                {!selectedDay?.holiday && selectedDay?.services.length === 0 && selectedDay?.vacations.length === 0 && (
+                {!selectedDay?.holiday && selectedDay?.services.length === 0 && selectedDay?.vacations.length === 0 && (!selectedDay?.ots || selectedDay?.ots.length === 0) && (
                   <div className="text-center py-8 text-gray-500">
                     <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p>Nenhum evento neste dia</p>
