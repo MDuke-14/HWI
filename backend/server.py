@@ -8788,6 +8788,24 @@ async def update_registo_tecnico(
     if "kms_final_volta" in registo_data:
         update_data["kms_final_volta"] = float(registo_data["kms_final_volta"])
     
+    # Campo de pausa
+    if "incluir_pausa" in registo_data:
+        old_pausa = existing.get("incluir_pausa", False)
+        new_pausa = registo_data["incluir_pausa"]
+        update_data["incluir_pausa"] = new_pausa
+        
+        # Ajustar minutos se mudou o estado da pausa e não temos hora_inicio/hora_fim
+        if "hora_inicio" not in registo_data and old_pausa != new_pausa:
+            current_mins = existing.get("minutos_trabalhados", 0)
+            if new_pausa and not old_pausa:
+                # Adicionou pausa - desconta 60 min
+                update_data["minutos_trabalhados"] = max(0, current_mins - 60)
+                update_data["horas_arredondadas"] = max(0, current_mins - 60) / 60
+            elif not new_pausa and old_pausa:
+                # Removeu pausa - adiciona 60 min
+                update_data["minutos_trabalhados"] = current_mins + 60
+                update_data["horas_arredondadas"] = (current_mins + 60) / 60
+    
     if update_data:
         await db.registos_tecnico_ot.update_one(
             {"id": registo_id, "relatorio_id": relatorio_id},
