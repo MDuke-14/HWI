@@ -331,6 +331,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [relatorioFormData, setRelatorioFormData] = useState({
     cliente_id: '',
     data_servico: new Date().toISOString().split('T')[0],
+    data_fim: '',  // Campo "Até" - opcional
     local_intervencao: '',
     pedido_por: '',
     equipamento_tipologia: '',
