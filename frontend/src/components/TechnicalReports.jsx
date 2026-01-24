@@ -3906,15 +3906,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 }
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
-                                {item._source === 'cronometro' && item.hora_inicio_segmento
+                                {item.hora_inicio_segmento
                                   ? new Date(item.hora_inicio_segmento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
-                                  : '-'
+                                  : (item.hora_inicio 
+                                    ? item.hora_inicio 
+                                    : '-')
                                 }
                               </td>
                               <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
-                                {item._source === 'cronometro' && item.hora_fim_segmento
+                                {item.hora_fim_segmento
                                   ? new Date(item.hora_fim_segmento).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
-                                  : '-'
+                                  : (item.hora_fim 
+                                    ? item.hora_fim 
+                                    : '-')
                                 }
                               </td>
                               <td className="py-2 px-2 text-center text-white font-medium">
