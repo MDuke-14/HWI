@@ -281,6 +281,18 @@ const TechnicalReports = ({ user, onLogout }) => {
     codigo: ''
   });
 
+  // Modal para adicionar registo manual
+  const [showAddRegistoManualModal, setShowAddRegistoManualModal] = useState(false);
+  const [addRegistoManualForm, setAddRegistoManualForm] = useState({
+    tecnico_id: '',
+    tecnico_nome: '',
+    tipo: 'trabalho',
+    data: new Date().toISOString().split('T')[0],
+    hora_inicio: '09:00',
+    hora_fim: '18:00',
+    km: 0
+  });
+
   
   const [tecnicoFormData, setTecnicoFormData] = useState({
     tecnico_id: '',
