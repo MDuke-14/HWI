@@ -505,7 +505,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     if not img_added and assinatura.get('assinatura_base64'):
                         try:
                             import base64
-                            from io import BytesIO
                             img_data = base64.b64decode(assinatura['assinatura_base64'])
                             img_buffer = BytesIO(img_data)
                             img = RLImage(img_buffer, width=6*cm, height=3*cm, kind='proportional')
