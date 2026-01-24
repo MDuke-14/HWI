@@ -7310,9 +7310,72 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               </div>
 
-              {/* Campos Editáveis */}
+              {/* Campos de Hora Início e Fim */}
+              <div className="bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-lg p-4">
+                <Label className="text-blue-400 font-semibold flex items-center gap-2 mb-3">
+                  <Clock className="w-4 h-4" />
+                  Horário do Registo
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-gray-400 text-sm">Hora Início</Label>
+                    <Input
+                      type="time"
+                      value={editRegistoForm.hora_inicio || ''}
+                      onChange={(e) => {
+                        const newHoraInicio = e.target.value;
+                        setEditRegistoForm(prev => {
+                          const updated = { ...prev, hora_inicio: newHoraInicio };
+                          // Recalcular minutos se ambas horas estiverem definidas
+                          if (newHoraInicio && prev.hora_fim) {
+                            const [h1, m1] = newHoraInicio.split(':').map(Number);
+                            const [h2, m2] = prev.hora_fim.split(':').map(Number);
+                            let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                            if (mins < 0) mins += 24 * 60; // passar para dia seguinte
+                            updated.minutos_trabalhados = mins;
+                          }
+                          return updated;
+                        });
+                      }}
+                      className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      data-testid="edit-registo-hora-inicio"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-gray-400 text-sm">Hora Fim</Label>
+                    <Input
+                      type="time"
+                      value={editRegistoForm.hora_fim || ''}
+                      onChange={(e) => {
+                        const newHoraFim = e.target.value;
+                        setEditRegistoForm(prev => {
+                          const updated = { ...prev, hora_fim: newHoraFim };
+                          // Recalcular minutos se ambas horas estiverem definidas
+                          if (prev.hora_inicio && newHoraFim) {
+                            const [h1, m1] = prev.hora_inicio.split(':').map(Number);
+                            const [h2, m2] = newHoraFim.split(':').map(Number);
+                            let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                            if (mins < 0) mins += 24 * 60; // passar para dia seguinte
+                            updated.minutos_trabalhados = mins;
+                          }
+                          return updated;
+                        });
+                      }}
+                      className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      data-testid="edit-registo-hora-fim"
+                    />
+                  </div>
+                </div>
+                {editRegistoForm.hora_inicio && editRegistoForm.hora_fim && (
+                  <p className="text-xs text-blue-400 mt-2">
+                    Duração calculada: {Math.floor(editRegistoForm.minutos_trabalhados / 60)}h {editRegistoForm.minutos_trabalhados % 60}min
+                  </p>
+                )}
+              </div>
+
+              {/* Campos de Tempo (desabilitado se horas definidas) */}
               <div>
-                <Label className="text-gray-300">Tempo Trabalhado</Label>
+                <Label className="text-gray-300">Tempo Trabalhado {editRegistoForm.hora_inicio && editRegistoForm.hora_fim && <span className="text-xs text-gray-500 ml-2">(calculado automaticamente)</span>}</Label>
                 <div className="flex gap-2 items-center mt-1">
                   <Input
                     type="number"
@@ -7329,6 +7392,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     }}
                     className="bg-[#0f0f0f] border-gray-700 text-white w-20"
                     placeholder="0"
+                    disabled={!!(editRegistoForm.hora_inicio && editRegistoForm.hora_fim)}
                   />
                   <span className="text-gray-400">h</span>
                   <Input
