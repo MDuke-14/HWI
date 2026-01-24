@@ -730,6 +730,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     setRelatorioFormData({
       cliente_id: '',
       data_servico: new Date().toISOString().split('T')[0],
+      data_fim: '',
       local_intervencao: '',
       pedido_por: '',
       equipamento_tipologia: '',
