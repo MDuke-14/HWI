@@ -230,8 +230,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             'manual': 'Manual'
         }
         
-        # Criar tabela unificada com todos os registos (incluindo KM)
-        mao_obra_data = [['Técnico', 'Data', 'Horas', 'KM', 'Tipo', 'Cód']]
+        # Criar tabela unificada com todos os registos (incluindo Início, Fim, KM)
+        mao_obra_data = [['Técnico', 'Tipo', 'Data', 'Início', 'Fim', 'Horas', 'KM', 'Cód']]
         
         # Combinar todos os registos e ordenar cronologicamente
         todos_registos = []
@@ -243,6 +243,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 todos_registos.append({
                     'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
                     'data': data_trab,
+                    'hora_inicio': tec.get('hora_inicio', ''),
+                    'hora_fim': tec.get('hora_fim', ''),
                     'minutos': tec.get('minutos_cliente', 0),
                     'km': tec.get('kms_deslocacao', 0) or (max(0, (tec.get('kms_final', 0) or 0) - (tec.get('kms_inicial', 0) or 0))),
                     'tipo': tec.get('tipo_registo', 'manual'),
@@ -254,9 +256,39 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         if registos_mao_obra:
             for reg in registos_mao_obra:
                 minutos_total = reg.get('minutos_trabalhados') or int((reg.get('horas_arredondadas', 0) or 0) * 60)
+                
+                # Extrair hora início e fim do segmento
+                hora_inicio_str = ''
+                hora_fim_str = ''
+                
+                hora_inicio_seg = reg.get('hora_inicio_segmento', '')
+                hora_fim_seg = reg.get('hora_fim_segmento', '')
+                
+                if hora_inicio_seg:
+                    try:
+                        if isinstance(hora_inicio_seg, str):
+                            dt = datetime.fromisoformat(hora_inicio_seg.replace('Z', '+00:00'))
+                        else:
+                            dt = hora_inicio_seg
+                        hora_inicio_str = dt.strftime('%H:%M')
+                    except:
+                        pass
+                
+                if hora_fim_seg:
+                    try:
+                        if isinstance(hora_fim_seg, str):
+                            dt = datetime.fromisoformat(hora_fim_seg.replace('Z', '+00:00'))
+                        else:
+                            dt = hora_fim_seg
+                        hora_fim_str = dt.strftime('%H:%M')
+                    except:
+                        pass
+                
                 todos_registos.append({
                     'tecnico_nome': reg.get('tecnico_nome', 'N/A'),
                     'data': reg.get('data', ''),
+                    'hora_inicio': hora_inicio_str,
+                    'hora_fim': hora_fim_str,
                     'minutos': minutos_total,
                     'km': reg.get('km', 0) or 0,
                     'tipo': reg.get('tipo', '-'),
@@ -264,8 +296,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     'source': 'cronometro'
                 })
         
-        # Ordenar cronologicamente
-        todos_registos.sort(key=lambda x: x.get('data', '') or '')
+        # Ordenar cronologicamente por data e hora início
+        def sort_key(x):
+            data = x.get('data', '') or ''
+            hora = x.get('hora_inicio', '') or '00:00'
+            return (data, hora)
+        todos_registos.sort(key=sort_key)
         
         # Preencher tabela
         for reg in todos_registos:
@@ -280,22 +316,29 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             minutos_total = reg.get('minutos', 0)
             horas = minutos_total // 60
             mins = minutos_total % 60
-            tempo_formatado = f"{horas}h {mins}min"
+            tempo_formatado = f"{horas}h{mins:02d}"
             
             # KM formatado
             km_value = reg.get('km', 0)
-            km_formatado = f"{km_value} km" if km_value else "-"
+            km_formatado = f"{km_value}" if km_value else "-"
+            
+            # Hora início e fim
+            hora_inicio = reg.get('hora_inicio', '') or '-'
+            hora_fim = reg.get('hora_fim', '') or '-'
             
             mao_obra_data.append([
                 reg.get('tecnico_nome', 'N/A'),
+                tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
                 data_reg or 'N/A',
+                hora_inicio,
+                hora_fim,
                 tempo_formatado,
                 km_formatado,
-                tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
                 reg.get('codigo', '-')
             ])
         
-        mao_obra_table = Table(mao_obra_data, colWidths=[4.5*cm, 2.5*cm, 2.5*cm, 2*cm, 2*cm, 1.5*cm])
+        # Ajustar larguras das colunas para caber todas
+        mao_obra_table = Table(mao_obra_data, colWidths=[3.2*cm, 1.4*cm, 2.2*cm, 1.4*cm, 1.4*cm, 1.6*cm, 1.4*cm, 1.2*cm])
         mao_obra_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
