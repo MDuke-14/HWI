@@ -5136,6 +5136,71 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal Editar Descrição da Foto */}
+      <Dialog open={showEditFotoModal} onOpenChange={(open) => {
+        setShowEditFotoModal(open);
+        if (!open) {
+          setSelectedFoto(null);
+          setEditFotoDescricao('');
+        }
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Descrição da Fotografia
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedFoto && (
+            <div className="space-y-4 mt-4">
+              {/* Preview da imagem */}
+              <div className="bg-black/30 rounded-lg p-3">
+                <img
+                  src={`${API}${selectedFoto.foto_url}`}
+                  alt={selectedFoto.descricao || 'Fotografia'}
+                  className="w-full max-h-48 object-contain rounded"
+                />
+              </div>
+
+              {/* Campo de descrição */}
+              <div>
+                <Label className="text-gray-300">Descrição / Observações</Label>
+                <textarea
+                  value={editFotoDescricao}
+                  onChange={(e) => setEditFotoDescricao(e.target.value)}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px] mt-1"
+                  placeholder="Descreva o componente ou situação na fotografia..."
+                  data-testid="edit-foto-descricao"
+                />
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    setShowEditFotoModal(false);
+                    setSelectedFoto(null);
+                    setEditFotoDescricao('');
+                  }}
+                  variant="outline"
+                  className="flex-1 border-gray-600"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleUpdateFotoDescricao}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                  data-testid="save-foto-descricao"
+                >
+                  Guardar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Add Material Modal - Componente Extraído */}
       <MaterialModal
         open={showAddMaterialModal}
