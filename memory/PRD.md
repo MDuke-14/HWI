@@ -223,6 +223,48 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ PDF da OT - Tabela de Mão de Obra Actualizada (25 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Tabela de Mão de Obra/Deslocação no PDF agora inclui:**
+- 8 colunas: Técnico | Tipo | Data | Início | Fim | Horas | KM | Cód
+- Hora Início e Fim extraídas de `hora_inicio_segmento` e `hora_fim_segmento`
+- Ordenação cronológica por data e hora início
+- Legenda actualizada: 1=07h-19h | 2=19h-07h | S=Sábado | D=Domingo/Feriado
+
+**Ficheiros modificados:**
+- `/app/backend/ot_pdf_report.py` - Tabela reformulada com novas colunas
+
+**Testado:** ✅ PDF gerado e validado via extração de dados
+
+---
+
+#### ✅ Checkbox de Pausa no Modal de Edição (25 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Modal de edição de registos agora inclui opção de pausa:**
+- Checkbox "Descontar 1 hora de pausa" com styling laranja
+- Ao adicionar pausa: desconta 60 minutos do total
+- Ao remover pausa: adiciona 60 minutos ao total
+- Backend processa `incluir_pausa` e ajusta minutos automaticamente
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/TechnicalReports.jsx` - Checkbox no modal de edição
+- `/app/backend/server.py` - Endpoint PUT processa incluir_pausa
+
+**Testado:** ✅ Backend via curl (555 -> 615 min ao remover pausa)
+
+---
+
+#### ✅ Bug Fix: Criação de Novo Registo de Mão de Obra (25 Janeiro 2026)
+**Corrigido erro de timezone na verificação de sobreposição:**
+- Erro: "can't compare offset-naive and offset-aware datetimes"
+- Causa: `hora_inicio` e `hora_fim` sem timezone vs registos no DB com timezone
+- Solução: Normalização de todos os datetimes para "naive" antes da comparação
+
+**Ficheiros modificados:**
+- `/app/backend/cronometro_logic.py` - Função `verificar_sobreposicao` corrigida
+
+**Testado:** ✅ Backend via curl (criação de registos funciona)
+
+---
+
 #### ✅ Edição de Hora Início/Fim em Registos de Tempo (24 Janeiro 2026) - NOVA FUNCIONALIDADE
 **Modal de edição de registos agora permite alterar horas:**
 - Novos campos "Hora Início" e "Hora Fim" no modal de edição de registos
