@@ -4379,23 +4379,47 @@ const TechnicalReports = ({ user, onLogout }) => {
                             onLoad={() => console.log('Imagem carregada com sucesso:', foto.foto_url)}
                             title="Clique para ampliar"
                           />
-                          {/* Botão de remover */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteFoto(foto.id);
-                            }}
-                            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition"
-                            title="Remover fotografia"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Botões de ação */}
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            {/* Botão de editar */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditFotoModal(foto);
+                              }}
+                              className="bg-blue-500/80 hover:bg-blue-600 text-white p-1.5 rounded-full transition"
+                              title="Editar descrição"
+                              data-testid={`edit-foto-${foto.id}`}
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            {/* Botão de remover */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteFoto(foto.id);
+                              }}
+                              className="bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition"
+                              title="Remover fotografia"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         {/* Descrição */}
                         <div className="p-3">
-                          <p className="text-sm text-gray-300">
-                            {foto.descricao || 'Sem descrição'}
-                          </p>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm text-gray-300 flex-1">
+                              {foto.descricao || 'Sem descrição'}
+                            </p>
+                            <button
+                              onClick={() => openEditFotoModal(foto)}
+                              className="text-gray-500 hover:text-blue-400 transition"
+                              title="Editar descrição"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                           <p className="text-xs text-gray-500 mt-2">
                             {new Date(foto.uploaded_at).toLocaleString('pt-PT')}
                           </p>
