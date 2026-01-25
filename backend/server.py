@@ -3045,10 +3045,12 @@ async def delete_fotografia(
 async def update_fotografia_descricao(
     relatorio_id: str,
     foto_id: str,
-    descricao: str,
+    data: dict,
     current_user: dict = Depends(get_current_user)
 ):
     """Atualizar descrição de uma fotografia"""
+    descricao = data.get("descricao", "")
+    
     result = await db.fotos_relatorio.update_one(
         {"id": foto_id, "relatorio_id": relatorio_id},
         {"$set": {"descricao": descricao}}
