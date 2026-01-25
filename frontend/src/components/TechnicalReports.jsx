@@ -175,6 +175,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoDescricao, setFotoDescricao] = useState('');
   const [uploadingFoto, setUploadingFoto] = useState(false);
+  const [showEditFotoModal, setShowEditFotoModal] = useState(false);
+  const [editFotoDescricao, setEditFotoDescricao] = useState('');
 
   // Assinaturas (múltiplas)
   const [assinaturas, setAssinaturas] = useState([]);
