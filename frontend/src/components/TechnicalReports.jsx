@@ -1408,6 +1408,30 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const openEditFotoModal = (foto) => {
+    setSelectedFoto(foto);
+    setEditFotoDescricao(foto.descricao || '');
+    setShowEditFotoModal(true);
+  };
+
+  const handleUpdateFotoDescricao = async () => {
+    if (!selectedFoto || !selectedRelatorio) return;
+    
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${selectedFoto.id}`,
+        { descricao: editFotoDescricao }
+      );
+      toast.success('Descrição atualizada!');
+      setShowEditFotoModal(false);
+      setSelectedFoto(null);
+      setEditFotoDescricao('');
+      fetchFotografiasRelatorio(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
   // ========== Equipamentos OT Functions ==========
   
   const fetchEquipamentosOT = async (relatorioId) => {
