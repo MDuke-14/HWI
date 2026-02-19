@@ -164,6 +164,33 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro ao executar migrações: {str(e)}")
     
+    # Criar índices para melhorar performance
+    logging.info("🔧 Criando índices de base de dados...")
+    try:
+        # Índices para relatórios técnicos
+        await db.relatorios_tecnicos.create_index("numero_assistencia")
+        await db.relatorios_tecnicos.create_index("status")
+        await db.relatorios_tecnicos.create_index("cliente_id")
+        await db.relatorios_tecnicos.create_index([("numero_assistencia", -1)])
+        
+        # Índices para equipamentos
+        await db.equipamentos_ot.create_index("relatorio_id")
+        
+        # Índices para clientes
+        await db.clientes.create_index("nome")
+        await db.clientes.create_index("ativo")
+        
+        # Índices para registos de tempo
+        await db.registos_tecnico_ot.create_index("relatorio_id")
+        await db.registos_tecnico_ot.create_index("tecnico_id")
+        
+        # Índices para users
+        await db.users.create_index("username", unique=True)
+        
+        logging.info("✅ Índices criados com sucesso!")
+    except Exception as e:
+        logging.warning(f"⚠️ Alguns índices já existem ou erro: {str(e)}")
+    
     # Verificar se existe algum usuário
     user_count = await db.users.count_documents({})
     
