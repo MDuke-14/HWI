@@ -590,6 +590,42 @@ const AssinaturaModal = ({
         });
         
         tempCanvas.toBlob(async (blob) => {
+          const formData = new FormData();
+          formData.append('file', blob, 'assinatura.png');
+          formData.append('primeiro_nome', assinaturaNome.primeiro);
+          formData.append('ultimo_nome', assinaturaNome.ultimo);
+          formData.append('data_intervencao', assinaturaDataIntervencao);
+
+          try {
+            await axios.post(
+              `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-digital`,
+              formData,
+              { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+
+            toast.success('Assinatura digital guardada com sucesso!');
+            fullscreenCanvasRef.current = null;
+            fullscreenBlobRef.current = null;
+            resetForm();
+            onAssinaturaSaved();
+          } catch (error) {
+            toast.error(error.response?.data?.detail || 'Erro ao guardar assinatura');
+          } finally {
+            setUploadingAssinatura(false);
+          }
+        }, 'image/png', 0.95);
+        return;
+      }
+      
+      // Fallback: usar o canvas pequeno diretamente
+      const canvas = sigCanvasRef.current?.getCanvas();
+      if (!canvas) {
+        toast.error('Erro: Canvas não encontrado');
+        setUploadingAssinatura(false);
+        return;
+      }
+      
+      canvas.toBlob(async (blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'assinatura.png');
         formData.append('primeiro_nome', assinaturaNome.primeiro);
@@ -604,7 +640,8 @@ const AssinaturaModal = ({
           );
 
           toast.success('Assinatura digital guardada com sucesso!');
-          fullscreenCanvasRef.current = null; // Limpar referência
+          fullscreenCanvasRef.current = null;
+          fullscreenBlobRef.current = null;
           resetForm();
           onAssinaturaSaved();
         } catch (error) {
