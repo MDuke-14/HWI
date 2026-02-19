@@ -836,3 +836,43 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Depois:** `int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'`
 
 **Testado:** ✅ Verificado via screenshot - datas agora mostram corretamente (ex: 19/11/2025)
+
+---
+
+### ✅ Visualização de Geolocalização para Administradores (19 Fevereiro 2026)
+
+**Funcionalidade completa implementada:**
+
+#### 1. Mapa em Tempo Real (Admin Dashboard)
+- Botão "Mapa em Tempo Real" na aba Utilizadores
+- Modal com mapa OpenStreetMap mostrando todas as localizações atuais
+- Legenda: A trabalhar (verde), Último registo (azul), Fora de zona (laranja)
+- Lista de colaboradores com localização, endereço completo e status
+- Botão "Atualizar" para refresh
+
+#### 2. Histórico de Localização por Dia (Gestão de Entradas)
+- Mapa OpenStreetMap integrado na página "Gestão de Entradas"
+- Tag verde "GPS" aparece em dias com dados de geolocalização
+- Cada dia mostra:
+  - Mapa com marcadores de localização
+  - Hora e endereço (reverse geocoding)
+  - Precisão do GPS (±Xm)
+  - Link para ver no OpenStreetMap.org
+- Indicação visual de "Fora de Zona" para entradas fora da zona de residência
+
+**Alterações feitas:**
+- `AdminDashboard.jsx`: Removido botão "Localização" individual de cada utilizador
+- `AdminDashboard.jsx`: Mantido modal "Mapa em Tempo Real" com todas as localizações
+- `AdminTimeEntries.jsx`: Adicionado componente LocationMap para cada dia com GPS
+- `location-map.jsx`: Componente reutilizado (já existia)
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/AdminDashboard.jsx`
+- `/app/frontend/src/components/AdminTimeEntries.jsx`
+
+**Testado:** ✅ Frontend testado via Playwright - 100% dos testes passaram
+- Botão "Localização" removido com sucesso da aba Utilizadores
+- Mapa em Tempo Real funciona corretamente
+- Gestão de Entradas mostra mapa com GPS por dia
+
+---
