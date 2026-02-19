@@ -2711,6 +2711,72 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // ========== Visualização HTML estilo PDF ==========
+  
+  const handleHTMLPreview = async () => {
+    if (!selectedRelatorio) return;
+    
+    setLoadingHTMLPreview(true);
+    try {
+      // Buscar todos os dados necessários
+      const [intervRes, fotosRes, equipRes, materiaisRes, registosRes] = await Promise.all([
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes`),
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`),
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`),
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`),
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`)
+      ]);
+      
+      setHtmlPreviewData({
+        relatorio: selectedRelatorio,
+        intervencoes: intervRes.data,
+        fotografias: fotosRes.data,
+        equipamentos: equipRes.data,
+        materiais: materiaisRes.data,
+        registos: registosRes.data
+      });
+      setShowHTMLPreviewModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados para visualização');
+    } finally {
+      setLoadingHTMLPreview(false);
+    }
+  };
+
+  const handleSaveSignatureFromPreview = async () => {
+    if (!signatureCanvasPreviewRef.current || signatureCanvasPreviewRef.current.isEmpty()) {
+      toast.error('Por favor, adicione uma assinatura');
+      return;
+    }
+    
+    try {
+      const signatureData = signatureCanvasPreviewRef.current.toDataURL();
+      
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas`, {
+        tipo: 'cliente',
+        assinatura_base64: signatureData,
+        nome: selectedRelatorio.cliente_nome || 'Cliente'
+      });
+      
+      toast.success('Assinatura guardada com sucesso!');
+      setShowSignatureInPreview(false);
+      
+      // Atualizar dados locais
+      if (htmlPreviewData) {
+        setHtmlPreviewData({
+          ...htmlPreviewData,
+          relatorio: {
+            ...htmlPreviewData.relatorio,
+            assinatura_cliente: signatureData
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('Erro ao guardar assinatura');
+    }
+  };
+
 
   // ========== Email PDF Functions ==========
   
