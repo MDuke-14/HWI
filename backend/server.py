@@ -3811,7 +3811,6 @@ async def send_push_to_user(user_id: str, title: str, message: str, notification
     """Função utilitária para enviar push notification para um usuário"""
     from pywebpush import webpush, WebPushException
     import json
-    import json
     
     vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
     vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
