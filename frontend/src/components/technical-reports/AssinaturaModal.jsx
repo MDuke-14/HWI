@@ -492,10 +492,11 @@ const AssinaturaModal = ({
   const handleSaveAssinaturaDigital = async () => {
     const isEmpty = sigCanvasRef.current?.isEmpty();
     const hasSavedPaths = savedPaths.length > 0;
+    const hasFullscreenBlob = !!fullscreenBlobRef.current;
     
-    console.log('handleSaveAssinaturaDigital:', { isEmpty, hasSavedPaths, savedPathsCount: savedPaths.length });
+    console.log('handleSaveAssinaturaDigital:', { isEmpty, hasSavedPaths, savedPathsCount: savedPaths.length, hasFullscreenBlob });
     
-    if (isEmpty && !hasSavedPaths) {
+    if (isEmpty && !hasSavedPaths && !hasFullscreenBlob) {
       toast.error('Por favor, desenhe sua assinatura');
       return;
     }
@@ -508,35 +509,49 @@ const AssinaturaModal = ({
     setUploadingAssinatura(true);
 
     try {
-      // Usar o canvas do fullscreen se existir, senão usar o canvas normal
-      let canvasToUse = fullscreenCanvasRef.current;
-      
-      if (!canvasToUse || !savedPaths.length) {
-        canvasToUse = sigCanvasRef.current?.getCanvas();
-      }
-      
-      if (!canvasToUse) {
-        toast.error('Erro: Canvas não encontrado');
-        setUploadingAssinatura(false);
+      // Se temos um blob do fullscreen, usar directamente
+      if (fullscreenBlobRef.current) {
+        const blob = fullscreenBlobRef.current;
+        const formData = new FormData();
+        formData.append('file', blob, 'assinatura.png');
+        formData.append('primeiro_nome', assinaturaNome.primeiro);
+        formData.append('ultimo_nome', assinaturaNome.ultimo);
+        formData.append('data_intervencao', assinaturaDataIntervencao);
+
+        try {
+          await axios.post(
+            `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-digital`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+          );
+
+          toast.success('Assinatura digital guardada com sucesso!');
+          fullscreenCanvasRef.current = null;
+          fullscreenBlobRef.current = null;
+          resetForm();
+          onAssinaturaSaved();
+        } catch (error) {
+          toast.error(error.response?.data?.detail || 'Erro ao guardar assinatura');
+        } finally {
+          setUploadingAssinatura(false);
+        }
         return;
       }
       
-      // Criar um canvas temporário com fundo branco e a assinatura
-      const tempCanvas = document.createElement('canvas');
-      const ctx = tempCanvas.getContext('2d');
-      
-      // Definir tamanho adequado para a assinatura (600x200 é um bom tamanho)
-      const outputWidth = 600;
-      const outputHeight = 200;
-      tempCanvas.width = outputWidth;
-      tempCanvas.height = outputHeight;
-      
-      // Fundo branco
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, outputWidth, outputHeight);
-      
-      // Se temos paths guardados, redesenhar escalados
+      // Se temos paths guardados, criar imagem a partir dos paths
       if (savedPaths.length > 0) {
+        // Criar um canvas temporário com fundo branco e a assinatura
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        
+        const outputWidth = 600;
+        const outputHeight = 200;
+        tempCanvas.width = outputWidth;
+        tempCanvas.height = outputHeight;
+        
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, outputWidth, outputHeight);
+        
         // Encontrar bounding box dos paths
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         savedPaths.forEach(path => {
@@ -551,17 +566,14 @@ const AssinaturaModal = ({
         const pathWidth = maxX - minX;
         const pathHeight = maxY - minY;
         
-        // Calcular escala para caber no output com margem
         const margin = 20;
         const scaleX = (outputWidth - margin * 2) / pathWidth;
         const scaleY = (outputHeight - margin * 2) / pathHeight;
-        const scale = Math.min(scaleX, scaleY, 1.5); // Limitar escala máxima
+        const scale = Math.min(scaleX, scaleY, 1.5);
         
-        // Calcular offset para centrar
         const offsetX = (outputWidth - pathWidth * scale) / 2 - minX * scale;
         const offsetY = (outputHeight - pathHeight * scale) / 2 - minY * scale;
         
-        // Desenhar paths escalados
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
@@ -576,12 +588,8 @@ const AssinaturaModal = ({
           }
           ctx.stroke();
         });
-      } else {
-        // Usar o canvas diretamente
-        ctx.drawImage(canvasToUse, 0, 0, outputWidth, outputHeight);
-      }
-      
-      tempCanvas.toBlob(async (blob) => {
+        
+        tempCanvas.toBlob(async (blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'assinatura.png');
         formData.append('primeiro_nome', assinaturaNome.primeiro);
