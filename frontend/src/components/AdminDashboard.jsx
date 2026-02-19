@@ -190,23 +190,6 @@ const AdminDashboard = ({ user, onLogout }) => {
   };
 
   // ============ Geolocation Functions ============
-  const fetchUserLocationHistory = async (userId, startDate = null, endDate = null) => {
-    setLocationLoading(true);
-    try {
-      const start = startDate || locationHistoryDate;
-      const end = endDate || locationHistoryDate;
-      const response = await axios.get(`${API}/admin/user-locations/${userId}?start_date=${start}&end_date=${end}`);
-      setUserLocationHistory(response.data.locations || []);
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao carregar histórico de localização:', error);
-      toast.error('Erro ao carregar histórico de localização');
-      setUserLocationHistory([]);
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
   const fetchAllCurrentLocations = async () => {
     setLocationLoading(true);
     try {
@@ -220,12 +203,6 @@ const AdminDashboard = ({ user, onLogout }) => {
     } finally {
       setLocationLoading(false);
     }
-  };
-
-  const handleOpenLocationHistory = async (user) => {
-    setLocationUser(user);
-    setShowLocationDialog(true);
-    await fetchUserLocationHistory(user.id);
   };
 
   const handleOpenAllLocations = async () => {
