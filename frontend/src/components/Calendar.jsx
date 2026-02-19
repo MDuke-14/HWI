@@ -545,14 +545,16 @@ const Calendar = ({ user, onLogout }) => {
                     <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
                       item.status === 'completed' || item.status === 'concluido' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
                       item.status === 'in_progress' || item.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                      item.status === 'agendado' || item.status === 'scheduled' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                      item.status === 'orcamento' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
                       item.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
                       'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                     }`}>
-                      {item.status === 'scheduled' ? 'Agendado' :
+                      {item.status === 'agendado' || item.status === 'scheduled' ? 'Agendado' :
                        item.status === 'in_progress' || item.status === 'em_execucao' ? 'Em Execução' :
                        item.status === 'completed' || item.status === 'concluido' ? 'Concluído' : 
-                       item.status === 'cancelled' ? 'Cancelado' :
-                       item.status === 'orcamento' ? 'Orçamento' : 'Agendado'}
+                       item.status === 'orcamento' ? 'Orçamento' :
+                       item.status === 'cancelled' ? 'Cancelado' : item.status}
                     </span>
                   </div>
                 </div>
