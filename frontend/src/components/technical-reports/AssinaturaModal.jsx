@@ -316,6 +316,7 @@ const FullscreenSignature = ({
   };
   
   const handlePathChange = (paths) => {
+    console.log('handlePathChange:', { pathsCount: paths.length });
     setCurrentPaths(paths);
   };
   
