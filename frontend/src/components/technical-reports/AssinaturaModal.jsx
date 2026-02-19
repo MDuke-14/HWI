@@ -1,5 +1,4 @@
-import React, { useState, useRef } from 'react';
-import SignatureCanvas from 'react-signature-canvas';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +7,417 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { PenTool, Trash2, Calendar, User, Plus, Edit } from 'lucide-react';
+import { PenTool, Trash2, Calendar, User, Plus, Edit, Maximize2, X, RotateCcw, Save } from 'lucide-react';
+
+// Componente de Canvas de Assinatura Otimizado
+const SignatureCanvasOptimized = React.forwardRef(({ 
+  width = 500, 
+  height = 150, 
+  onSignatureChange,
+  initialData = null,
+  disabled = false 
+}, ref) => {
+  const canvasRef = useRef(null);
+  const contextRef = useRef(null);
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef(null);
+  const pathsRef = useRef([]); // Guardar todos os traços
+  const currentPathRef = useRef([]);
+  
+  // Inicializar canvas com suporte a devicePixelRatio
+  const initCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Ajustar para resolução real do dispositivo
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    const ctx = canvas.getContext('2d', { 
+      alpha: false,
+      desynchronized: true // Melhor performance em alguns browsers
+    });
+    
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    
+    // Configurações de linha otimizadas
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    contextRef.current = ctx;
+    
+    // Redesenhar traços existentes
+    redrawPaths();
+  }, []);
+  
+  // Redesenhar todos os traços
+  const redrawPaths = useCallback(() => {
+    const ctx = contextRef.current;
+    const canvas = canvasRef.current;
+    if (!ctx || !canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    pathsRef.current.forEach(path => {
+      if (path.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+      }
+      ctx.stroke();
+    });
+  }, []);
+  
+  useEffect(() => {
+    initCanvas();
+    
+    // Restaurar dados iniciais se existirem
+    if (initialData && pathsRef.current.length === 0) {
+      pathsRef.current = initialData;
+      redrawPaths();
+    }
+    
+    // Re-inicializar em resize
+    const handleResize = () => {
+      setTimeout(initCanvas, 100);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, [initCanvas, initialData, redrawPaths]);
+  
+  // Obter coordenadas do evento
+  const getCoordinates = useCallback((e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }, []);
+  
+  // Iniciar desenho
+  const startDrawing = useCallback((e) => {
+    if (disabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const coords = getCoordinates(e);
+    if (!coords) return;
+    
+    isDrawingRef.current = true;
+    lastPointRef.current = coords;
+    currentPathRef.current = [coords];
+    
+    const ctx = contextRef.current;
+    if (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(coords.x, coords.y);
+    }
+  }, [disabled, getCoordinates]);
+  
+  // Desenhar (com interpolação suave)
+  const draw = useCallback((e) => {
+    if (!isDrawingRef.current || disabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const coords = getCoordinates(e);
+    if (!coords || !lastPointRef.current) return;
+    
+    const ctx = contextRef.current;
+    if (!ctx) return;
+    
+    // Desenhar linha direta para resposta imediata
+    ctx.lineTo(coords.x, coords.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
+    
+    currentPathRef.current.push(coords);
+    lastPointRef.current = coords;
+  }, [disabled, getCoordinates]);
+  
+  // Finalizar desenho
+  const stopDrawing = useCallback((e) => {
+    if (!isDrawingRef.current) return;
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    isDrawingRef.current = false;
+    
+    // Guardar o traço atual
+    if (currentPathRef.current.length > 1) {
+      pathsRef.current.push([...currentPathRef.current]);
+      if (onSignatureChange) {
+        onSignatureChange(pathsRef.current);
+      }
+    }
+    
+    currentPathRef.current = [];
+    lastPointRef.current = null;
+  }, [onSignatureChange]);
+  
+  // Limpar canvas
+  const clear = useCallback(() => {
+    pathsRef.current = [];
+    currentPathRef.current = [];
+    const ctx = contextRef.current;
+    const canvas = canvasRef.current;
+    if (ctx && canvas) {
+      const rect = canvas.getBoundingClientRect();
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+    }
+    if (onSignatureChange) {
+      onSignatureChange([]);
+    }
+  }, [onSignatureChange]);
+  
+  // Verificar se está vazio
+  const isEmpty = useCallback(() => {
+    return pathsRef.current.length === 0;
+  }, []);
+  
+  // Obter canvas element
+  const getCanvas = useCallback(() => {
+    return canvasRef.current;
+  }, []);
+  
+  // Obter dados dos traços
+  const getPaths = useCallback(() => {
+    return pathsRef.current;
+  }, []);
+  
+  // Definir dados dos traços
+  const setPaths = useCallback((paths) => {
+    pathsRef.current = paths || [];
+    redrawPaths();
+  }, [redrawPaths]);
+  
+  // Expor métodos via ref
+  React.useImperativeHandle(ref, () => ({
+    clear,
+    isEmpty,
+    getCanvas,
+    getPaths,
+    setPaths,
+    redraw: redrawPaths
+  }));
+  
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        touchAction: 'none', // Prevenir scroll/zoom
+        cursor: disabled ? 'not-allowed' : 'crosshair',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
+      }}
+      onMouseDown={startDrawing}
+      onMouseMove={draw}
+      onMouseUp={stopDrawing}
+      onMouseLeave={stopDrawing}
+      onTouchStart={startDrawing}
+      onTouchMove={draw}
+      onTouchEnd={stopDrawing}
+      onTouchCancel={stopDrawing}
+    />
+  );
+});
+
+SignatureCanvasOptimized.displayName = 'SignatureCanvasOptimized';
+
+// Modal de Fullscreen para Assinatura
+const FullscreenSignature = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  initialPaths = [],
+  nome = ''
+}) => {
+  const canvasRef = useRef(null);
+  const [currentPaths, setCurrentPaths] = useState(initialPaths);
+  
+  useEffect(() => {
+    if (isOpen && canvasRef.current && initialPaths.length > 0) {
+      canvasRef.current.setPaths(initialPaths);
+    }
+  }, [isOpen, initialPaths]);
+  
+  const handleClear = () => {
+    if (canvasRef.current) {
+      canvasRef.current.clear();
+      setCurrentPaths([]);
+    }
+  };
+  
+  const handleSave = () => {
+    if (canvasRef.current) {
+      const canvas = canvasRef.current.getCanvas();
+      const paths = canvasRef.current.getPaths();
+      onSave(canvas, paths);
+    }
+  };
+  
+  const handleExit = () => {
+    // Guardar estado atual antes de sair
+    if (canvasRef.current) {
+      const paths = canvasRef.current.getPaths();
+      onClose(paths);
+    } else {
+      onClose(currentPaths);
+    }
+  };
+  
+  const handlePathChange = (paths) => {
+    setCurrentPaths(paths);
+  };
+  
+  // Prevenir scroll e zoom no body quando fullscreen está aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      
+      // Forçar orientação horizontal em dispositivos móveis (se suportado)
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+          // Ignorar erro - nem todos os browsers suportam
+        });
+      }
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+      
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, [isOpen]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div 
+      className="fixed inset-0 z-[9999] bg-white flex flex-col"
+      style={{ touchAction: 'none' }}
+    >
+      {/* Header com botões */}
+      <div className="flex justify-between items-center p-3 bg-gray-100 border-b border-gray-300">
+        <div className="flex gap-2">
+          <Button
+            onClick={handleClear}
+            variant="outline"
+            size="sm"
+            className="bg-white border-red-300 text-red-600 hover:bg-red-50"
+          >
+            <RotateCcw className="w-4 h-4 mr-1" />
+            Limpar
+          </Button>
+          <Button
+            onClick={handleSave}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Save className="w-4 h-4 mr-1" />
+            Guardar
+          </Button>
+        </div>
+        
+        <div className="text-center flex-1">
+          <p className="text-sm text-gray-600 font-medium">
+            {nome ? `Assinatura de ${nome}` : 'Assine no espaço abaixo'}
+          </p>
+        </div>
+        
+        <Button
+          onClick={handleExit}
+          variant="outline"
+          size="sm"
+          className="bg-white border-gray-300"
+        >
+          <X className="w-4 h-4 mr-1" />
+          Sair
+        </Button>
+      </div>
+      
+      {/* Área de Assinatura */}
+      <div className="flex-1 p-4 bg-gray-50">
+        <div className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-300 shadow-inner overflow-hidden">
+          <SignatureCanvasOptimized
+            ref={canvasRef}
+            initialData={initialPaths}
+            onSignatureChange={handlePathChange}
+          />
+        </div>
+      </div>
+      
+      {/* Instrução */}
+      <div className="p-2 bg-gray-100 text-center">
+        <p className="text-xs text-gray-500">
+          Use o dedo ou caneta stylus para assinar. A assinatura será guardada ao clicar em "Guardar".
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const AssinaturaModal = ({
   open,
@@ -17,21 +426,59 @@ const AssinaturaModal = ({
   assinaturas,
   onAssinaturaSaved
 }) => {
-  const [assinaturaCanvas, setAssinaturaCanvas] = useState(null);
+  const sigCanvasRef = useRef(null);
   const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
   const [assinaturaDataIntervencao, setAssinaturaDataIntervencao] = useState(new Date().toISOString().split('T')[0]);
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
   const [editingAssinatura, setEditingAssinatura] = useState(null);
-  const sigCanvasRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [savedPaths, setSavedPaths] = useState([]);
 
   const clearCanvas = () => {
     if (sigCanvasRef.current) {
       sigCanvasRef.current.clear();
+      setSavedPaths([]);
     }
   };
 
+  const openFullscreen = () => {
+    // Guardar estado atual antes de abrir fullscreen
+    if (sigCanvasRef.current) {
+      setSavedPaths(sigCanvasRef.current.getPaths());
+    }
+    setIsFullscreen(true);
+  };
+
+  const closeFullscreen = (paths) => {
+    setIsFullscreen(false);
+    // Restaurar traços quando fechar fullscreen
+    if (paths && paths.length > 0) {
+      setSavedPaths(paths);
+      setTimeout(() => {
+        if (sigCanvasRef.current) {
+          sigCanvasRef.current.setPaths(paths);
+        }
+      }, 100);
+    }
+  };
+
+  const saveFromFullscreen = (canvas, paths) => {
+    setSavedPaths(paths);
+    setIsFullscreen(false);
+    
+    // Restaurar no canvas pequeno
+    setTimeout(() => {
+      if (sigCanvasRef.current) {
+        sigCanvasRef.current.setPaths(paths);
+      }
+    }, 100);
+  };
+
   const handleSaveAssinaturaDigital = async () => {
-    if (!sigCanvasRef.current || sigCanvasRef.current.isEmpty()) {
+    const isEmpty = sigCanvasRef.current?.isEmpty();
+    const hasSavedPaths = savedPaths.length > 0;
+    
+    if (isEmpty && !hasSavedPaths) {
       toast.error('Por favor, desenhe sua assinatura');
       return;
     }
@@ -45,6 +492,7 @@ const AssinaturaModal = ({
 
     try {
       const canvas = sigCanvasRef.current.getCanvas();
+      
       canvas.toBlob(async (blob) => {
         const formData = new FormData();
         formData.append('file', blob, 'assinatura.png');
@@ -59,15 +507,15 @@ const AssinaturaModal = ({
             { headers: { 'Content-Type': 'multipart/form-data' } }
           );
 
-          toast.success('Assinatura digital salva com sucesso!');
+          toast.success('Assinatura digital guardada com sucesso!');
           resetForm();
           onAssinaturaSaved();
         } catch (error) {
-          toast.error(error.response?.data?.detail || 'Erro ao salvar assinatura');
+          toast.error(error.response?.data?.detail || 'Erro ao guardar assinatura');
         } finally {
           setUploadingAssinatura(false);
         }
-      }, 'image/png');
+      }, 'image/png', 0.95);
     } catch (error) {
       toast.error('Erro ao processar assinatura');
       setUploadingAssinatura(false);
@@ -93,11 +541,11 @@ const AssinaturaModal = ({
         formData
       );
 
-      toast.success('Assinatura manual salva com sucesso!');
+      toast.success('Assinatura manual guardada com sucesso!');
       resetForm();
       onAssinaturaSaved();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao salvar assinatura');
+      toast.error(error.response?.data?.detail || 'Erro ao guardar assinatura');
     } finally {
       setUploadingAssinatura(false);
     }
@@ -132,183 +580,218 @@ const AssinaturaModal = ({
   const resetForm = () => {
     setAssinaturaNome({ primeiro: '', ultimo: '' });
     setAssinaturaDataIntervencao(new Date().toISOString().split('T')[0]);
+    setSavedPaths([]);
     if (sigCanvasRef.current) {
       sigCanvasRef.current.clear();
     }
   };
 
+  // Restaurar paths quando o componente monta ou paths mudam
+  useEffect(() => {
+    if (open && savedPaths.length > 0 && sigCanvasRef.current) {
+      setTimeout(() => {
+        sigCanvasRef.current?.setPaths(savedPaths);
+      }, 200);
+    }
+  }, [open, savedPaths]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white">
-            <PenTool className="w-5 h-5 text-blue-400" />
-            Assinaturas - OT #{selectedRelatorio?.numero_assistencia}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open && !isFullscreen} onOpenChange={onOpenChange}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <PenTool className="w-5 h-5 text-blue-400" />
+              Assinaturas - OT #{selectedRelatorio?.numero_assistencia}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Lista de Assinaturas Existentes */}
-          {assinaturas && assinaturas.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-400">Assinaturas Existentes ({assinaturas.length})</h4>
-              {assinaturas.map((ass, index) => (
-                <div key={ass.id || index} className="bg-[#0f0f0f] p-3 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {ass.assinatura_base64 && (
-                      <img
-                        src={`data:image/png;base64,${ass.assinatura_base64}`}
-                        alt="Assinatura"
-                        className="h-10 bg-white rounded"
-                      />
-                    )}
-                    <div>
-                      <p className="text-white font-medium">
-                        {ass.primeiro_nome} {ass.ultimo_nome}
-                      </p>
-                      {editingAssinatura === ass.id ? (
-                        <div className="flex items-center gap-2 mt-1">
-                          <Input
-                            type="date"
-                            defaultValue={ass.data_intervencao?.split('T')[0]}
-                            className="bg-[#1a1a1a] border-gray-700 text-white h-8 w-40"
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                handleUpdateAssinaturaData(ass.id, e.target.value);
-                              }
-                            }}
-                          />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditingAssinatura(null)}
-                            className="h-8 text-gray-400"
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      ) : (
-                        <p className="text-gray-400 text-sm flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {ass.data_intervencao ? new Date(ass.data_intervencao).toLocaleDateString('pt-PT') : 'Sem data'}
-                          <button
-                            onClick={() => setEditingAssinatura(ass.id)}
-                            className="ml-2 text-blue-400 hover:text-blue-300"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                        </p>
+          <div className="space-y-6 mt-4">
+            {/* Lista de Assinaturas Existentes */}
+            {assinaturas && assinaturas.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-400">Assinaturas Existentes ({assinaturas.length})</h4>
+                {assinaturas.map((ass, index) => (
+                  <div key={ass.id || index} className="bg-[#0f0f0f] p-3 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {ass.assinatura_base64 && (
+                        <img
+                          src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`}
+                          alt="Assinatura"
+                          className="h-10 bg-white rounded"
+                        />
                       )}
+                      <div>
+                        <p className="text-white font-medium">
+                          {ass.primeiro_nome} {ass.ultimo_nome}
+                        </p>
+                        {editingAssinatura === ass.id ? (
+                          <div className="flex items-center gap-2 mt-1">
+                            <Input
+                              type="date"
+                              defaultValue={ass.data_intervencao?.split('T')[0]}
+                              className="bg-[#1a1a1a] border-gray-700 text-white h-8 w-40"
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handleUpdateAssinaturaData(ass.id, e.target.value);
+                                }
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingAssinatura(null)}
+                              className="h-8 text-gray-400"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-gray-400 text-sm flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {ass.data_intervencao ? new Date(ass.data_intervencao).toLocaleDateString('pt-PT') : 'Sem data'}
+                            <button
+                              onClick={() => setEditingAssinatura(ass.id)}
+                              className="ml-2 text-blue-400 hover:text-blue-300"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                          </p>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDeleteAssinatura(ass.id)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleDeleteAssinatura(ass.id)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Adicionar Nova Assinatura */}
-          <div className="border-t border-gray-700 pt-4">
-            <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Adicionar Nova Assinatura
-            </h4>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <Label className="text-gray-400 text-sm">Primeiro Nome *</Label>
-                <Input
-                  value={assinaturaNome.primeiro}
-                  onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  placeholder="Ex: João"
-                />
+                ))}
               </div>
-              <div>
-                <Label className="text-gray-400 text-sm">Último Nome *</Label>
-                <Input
-                  value={assinaturaNome.ultimo}
-                  onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  placeholder="Ex: Silva"
-                />
-              </div>
-            </div>
+            )}
 
-            <div className="mb-4">
-              <Label className="text-gray-400 text-sm">Data da Intervenção *</Label>
-              <Input
-                type="date"
-                value={assinaturaDataIntervencao}
-                onChange={(e) => setAssinaturaDataIntervencao(e.target.value)}
-                className="bg-[#0f0f0f] border-gray-700 text-white w-48"
-              />
-            </div>
+            {/* Adicionar Nova Assinatura */}
+            <div className="border-t border-gray-700 pt-4">
+              <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Adicionar Nova Assinatura
+              </h4>
 
-            <Tabs defaultValue="digital" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-[#0f0f0f]">
-                <TabsTrigger value="digital" className="data-[state=active]:bg-blue-600">
-                  Assinatura Digital
-                </TabsTrigger>
-                <TabsTrigger value="manual" className="data-[state=active]:bg-blue-600">
-                  Apenas Nome
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="digital" className="mt-4">
-                <div className="bg-white rounded-lg p-2 mb-3">
-                  <SignatureCanvas
-                    ref={sigCanvasRef}
-                    canvasProps={{
-                      width: 500,
-                      height: 150,
-                      className: 'signature-canvas w-full'
-                    }}
-                    backgroundColor="white"
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label className="text-gray-400 text-sm">Primeiro Nome *</Label>
+                  <Input
+                    value={assinaturaNome.primeiro}
+                    onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    placeholder="Ex: João"
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={clearCanvas}
-                    className="border-gray-600"
-                  >
-                    Limpar
-                  </Button>
-                  <Button
-                    onClick={handleSaveAssinaturaDigital}
-                    disabled={uploadingAssinatura}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  >
-                    {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Digital'}
-                  </Button>
+                <div>
+                  <Label className="text-gray-400 text-sm">Último Nome *</Label>
+                  <Input
+                    value={assinaturaNome.ultimo}
+                    onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
+                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    placeholder="Ex: Silva"
+                  />
                 </div>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="manual" className="mt-4">
-                <p className="text-gray-400 text-sm mb-3">
-                  A assinatura será registada apenas com o nome fornecido, sem imagem.
-                </p>
-                <Button
-                  onClick={handleSaveAssinaturaManual}
-                  disabled={uploadingAssinatura}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Manual'}
-                </Button>
-              </TabsContent>
-            </Tabs>
+              <div className="mb-4">
+                <Label className="text-gray-400 text-sm">Data da Intervenção *</Label>
+                <Input
+                  type="date"
+                  value={assinaturaDataIntervencao}
+                  onChange={(e) => setAssinaturaDataIntervencao(e.target.value)}
+                  className="bg-[#0f0f0f] border-gray-700 text-white w-48"
+                />
+              </div>
+
+              <Tabs defaultValue="digital" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-[#0f0f0f]">
+                  <TabsTrigger value="digital" className="data-[state=active]:bg-blue-600">
+                    Assinatura Digital
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="data-[state=active]:bg-blue-600">
+                    Apenas Nome
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="digital" className="mt-4">
+                  {/* Botão Fullscreen */}
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={openFullscreen}
+                      className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                    >
+                      <Maximize2 className="w-4 h-4 mr-1" />
+                      Ecrã Completo
+                    </Button>
+                  </div>
+                  
+                  {/* Área de Assinatura */}
+                  <div className="bg-white rounded-lg p-2 mb-3" style={{ height: '150px' }}>
+                    <SignatureCanvasOptimized
+                      ref={sigCanvasRef}
+                      initialData={savedPaths}
+                      onSignatureChange={setSavedPaths}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={clearCanvas}
+                      className="border-gray-600"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Limpar
+                    </Button>
+                    <Button
+                      onClick={handleSaveAssinaturaDigital}
+                      disabled={uploadingAssinatura}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Digital'}
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="manual" className="mt-4">
+                  <p className="text-gray-400 text-sm mb-3">
+                    A assinatura será registada apenas com o nome fornecido, sem imagem.
+                  </p>
+                  <Button
+                    onClick={handleSaveAssinaturaManual}
+                    disabled={uploadingAssinatura}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Manual'}
+                  </Button>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen Signature Modal */}
+      <FullscreenSignature
+        isOpen={isFullscreen}
+        onClose={closeFullscreen}
+        onSave={saveFromFullscreen}
+        initialPaths={savedPaths}
+        nome={assinaturaNome.primeiro && assinaturaNome.ultimo 
+          ? `${assinaturaNome.primeiro} ${assinaturaNome.ultimo}` 
+          : ''}
+      />
+    </>
   );
 };
 
