@@ -423,24 +423,13 @@ const Calendar = ({ user, onLogout }) => {
                       )}
                       
                       {/* OTs */}
-                      {dayOts.slice(0, 2).map(ot => (
+                      {dayOts.slice(0, 3).map(ot => (
                         <div
                           key={`ot-${ot.id}-${dateStr}`}
                           className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-1 hover:bg-orange-500/20 transition-colors"
                           title={`${ot.cliente_nome} - OT#${ot.numero_ot} - ${ot.local}`}
                         >
                           {ot.cliente_nome} OT#{ot.numero_ot}
-                        </div>
-                      ))}
-                      
-                      {/* Services - mesma cor das OTs */}
-                      {dayServices.slice(0, dayOts.length > 0 ? 1 : 2).map(service => (
-                        <div
-                          key={service.id}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-1 hover:bg-orange-500/20 transition-colors"
-                          title={`${service.client_name} - ${service.ot_numero ? `OT#${service.ot_numero}` : 'Serviço'} - ${service.location}`}
-                        >
-                          {service.client_name} {service.ot_numero ? `OT#${service.ot_numero}` : ''}
                         </div>
                       ))}
                       
@@ -456,9 +445,9 @@ const Calendar = ({ user, onLogout }) => {
                       ))}
                       
                       {/* More Indicator */}
-                      {(dayOts.length > 2 || dayServices.length > (dayOts.length > 0 ? 1 : 2) || dayVacations.length > 1) && (
+                      {(dayOts.length > 3 || dayVacations.length > 1) && (
                         <div className="text-[10px] text-gray-500 font-medium">
-                          +{Math.max(0, dayOts.length - 2) + Math.max(0, dayServices.length - (dayOts.length > 0 ? 1 : 2)) + Math.max(0, dayVacations.length - 1)} mais
+                          +{Math.max(0, dayOts.length - 3) + Math.max(0, dayVacations.length - 1)} mais
                         </div>
                       )}
                     </>
