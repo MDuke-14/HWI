@@ -4858,6 +4858,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <FileSpreadsheet className="w-5 h-5 mr-2" />
                   {loadingFolhaHoras ? 'A carregar...' : 'Folha de Horas'}
                 </Button>
+                {user.is_admin && (
+                  <Button
+                    onClick={openEmailModal}
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4"
+                    data-testid="enviar-email-btn"
+                  >
+                    <Mail className="w-5 h-5 mr-2" />
+                    Enviar Por Email
+                  </Button>
+                )}
               </div>
 
 
