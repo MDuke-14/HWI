@@ -407,6 +407,37 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   }, [activeTab]);
   
+  // Processar parâmetro ot da URL para abrir OT diretamente
+  useEffect(() => {
+    const otId = searchParams.get('ot');
+    if (otId && !urlOtProcessed && !loading) {
+      // Marcar como processado para não abrir novamente
+      setUrlOtProcessed(true);
+      
+      // Mudar para tab de relatórios
+      setActiveTab('relatorios');
+      
+      // Buscar e abrir a OT
+      const openOtFromUrl = async () => {
+        try {
+          const response = await axios.get(`${API}/relatorios-tecnicos/${otId}`);
+          if (response.data) {
+            // Abrir modal de visualização
+            openViewRelatorioModal(response.data);
+            // Limpar o parâmetro da URL
+            setSearchParams({});
+          }
+        } catch (error) {
+          console.error('Erro ao abrir OT da URL:', error);
+          toast.error('OT não encontrada');
+          setSearchParams({});
+        }
+      };
+      
+      openOtFromUrl();
+    }
+  }, [searchParams, urlOtProcessed, loading]);
+  
   // Buscar clientes quando abre modal de criar relatório
   useEffect(() => {
     if (showAddRelatorioModal && clientes.length === 0) {
