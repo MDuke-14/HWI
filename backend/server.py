@@ -6326,12 +6326,28 @@ async def justify_day(
                 ]
             })
             
+            # Criar registo de cancelamento para mostrar no UI
+            import uuid
+            cancel_entry = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "type": "cancelamento_ferias",
+                "date": date_str,
+                "start_date": date_str,
+                "end_date": date_str,
+                "status": "cancelled",
+                "cancelled_by": current_user.get("sub"),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "reason": f"Férias canceladas pelo admin {admin_name}"
+            }
+            await db.vacation_requests.insert_one(cancel_entry)
+            
             if result.deleted_count > 0:
                 message = f"Férias canceladas para o dia {date_formatted}"
                 observation_text = f"CANCELAMENTO FÉRIAS: {date_formatted} - Cancelado pelo admin {admin_name}"
             else:
-                message = f"Não foram encontradas férias para cancelar no dia {date_formatted}"
-                observation_text = f"CANCELAMENTO FÉRIAS (tentativa): {date_formatted} - Não havia férias marcadas"
+                message = f"Dia {date_formatted} marcado como cancelamento de férias"
+                observation_text = f"CANCELAMENTO FÉRIAS: {date_formatted} - Registado pelo admin {admin_name}"
         
         # Registar observação no relatório mensal
         await register_admin_observation(
