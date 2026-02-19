@@ -43,7 +43,8 @@ import {
   WifiOff,
   Receipt,
   RefreshCw,
-  Coffee
+  Coffee,
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
