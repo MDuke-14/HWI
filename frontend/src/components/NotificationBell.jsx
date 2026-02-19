@@ -271,20 +271,35 @@ const NotificationBell = ({ user }) => {
           </div>
 
           {/* Banner para ativar notificações push */}
-          {pushSupported && !pushSubscribed && (
-            <div className="p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-gray-700">
+          {pushSupported && (!pushSubscribed || needsResubscribe) && (
+            <div className={`p-3 ${needsResubscribe ? 'bg-gradient-to-r from-orange-600/20 to-red-600/20' : 'bg-gradient-to-r from-blue-600/20 to-purple-600/20'} border-b border-gray-700`}>
               <div className="flex items-center gap-3">
-                <BellRing className="w-8 h-8 text-blue-400 flex-shrink-0" />
+                {needsResubscribe ? (
+                  <AlertTriangle className="w-8 h-8 text-orange-400 flex-shrink-0" />
+                ) : (
+                  <BellRing className="w-8 h-8 text-blue-400 flex-shrink-0" />
+                )}
                 <div className="flex-1">
-                  <p className="text-white text-sm font-medium">Ativar notificações push</p>
-                  <p className="text-gray-400 text-xs">Receba alertas no seu dispositivo</p>
+                  <p className="text-white text-sm font-medium">
+                    {needsResubscribe ? 'Atualização necessária' : 'Ativar notificações push'}
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    {needsResubscribe 
+                      ? 'As chaves de segurança foram atualizadas. Clique para reativar.' 
+                      : 'Receba alertas no seu dispositivo'}
+                  </p>
                 </div>
                 <button
                   onClick={requestNotificationPermission}
-                  className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition"
+                  disabled={isSubscribing}
+                  className={`px-3 py-1.5 ${needsResubscribe ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-500 hover:bg-blue-600'} text-white text-xs font-medium rounded-lg transition disabled:opacity-50`}
                   data-testid="enable-push-btn"
                 >
-                  Ativar
+                  {isSubscribing ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    needsResubscribe ? 'Reativar' : 'Ativar'
+                  )}
                 </button>
               </div>
             </div>
