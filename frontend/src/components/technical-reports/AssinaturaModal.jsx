@@ -598,7 +598,7 @@ const AssinaturaModal = ({
   return (
     <>
       <Dialog open={open && !isFullscreen} onOpenChange={onOpenChange}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto z-[100]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <PenTool className="w-5 h-5 text-blue-400" />
