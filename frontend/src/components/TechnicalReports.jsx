@@ -4802,15 +4802,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </Button>
                         </div>
                         <div className="flex items-start gap-4">
-                          {/* Assinatura Digital - Sempre mostrar se tiver URL */}
-                          {assinatura.assinatura_url && (
+                          {/* Assinatura Digital - Sempre mostrar se tiver URL ou base64 */}
+                          {(assinatura.assinatura_url || assinatura.assinatura_base64) && (
                             <div className="flex-1">
                               <p className="text-xs text-gray-500 mb-2">
                                 {assinatura.tipo === 'digital' ? 'Assinatura Digital:' : 'Assinatura:'}
                               </p>
                               <div className="bg-white p-3 rounded border-2 border-gray-300">
                                 <img
-                                  src={`${API}${assinatura.assinatura_url}?t=${assinatura.data_assinatura || Date.now()}`}
+                                  src={assinatura.assinatura_base64 
+                                    ? (assinatura.assinatura_base64.startsWith('data:') 
+                                        ? assinatura.assinatura_base64 
+                                        : `data:image/png;base64,${assinatura.assinatura_base64}`)
+                                    : `${API}/relatorios-tecnicos/${selectedRelatorio?.id}/assinaturas/${assinatura.id}/imagem?t=${assinatura.data_assinatura || Date.now()}`
+                                  }
                                   alt="Assinatura"
                                   className="max-h-32 w-full object-contain"
                                   onError={(e) => {
