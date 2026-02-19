@@ -523,7 +523,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                           <div className="flex items-center gap-3">
                             {day.entries.length > 0 && (
                               <Button
-                                onClick={() => handleAdjustTo8Hours(day.entries[0].id)}
+                                onClick={() => handleAdjustTo8Hours(day.entries[0].id, day.date)}
                                 className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm"
                                 title="Ajustar automaticamente para 8h totais no dia"
                               >
@@ -531,6 +531,15 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 Ajustar para 8h
                               </Button>
                             )}
+                            <Button
+                              onClick={() => openJustifyModal(day)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white text-sm"
+                              title="Justificar este dia"
+                              data-testid={`justify-day-btn-${day.date}`}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Justificar Dia
+                            </Button>
                             <div className="text-green-400 font-bold text-xl">
                               {formatHours(day.totalHours)}
                             </div>
