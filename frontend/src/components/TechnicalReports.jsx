@@ -6366,15 +6366,32 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {htmlPreviewData.assinaturas.map((ass, idx) => (
                         <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                           <p className="text-sm font-semibold text-green-800 mb-2">
-                            {ass.tipo === 'cliente' ? 'Cliente' : ass.tipo === 'tecnico' ? 'Técnico' : ass.tipo}
+                            {ass.tipo === 'cliente' ? 'Cliente' : ass.tipo === 'tecnico' ? 'Técnico' : ass.tipo === 'digital' ? 'Assinatura Digital' : ass.tipo}
                           </p>
-                          <img 
-                            src={ass.assinatura_base64} 
-                            alt={`Assinatura ${ass.nome}`} 
-                            className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
-                          />
-                          <p className="text-xs text-green-700 mt-2">{ass.nome}</p>
-                          <p className="text-xs text-gray-500">{new Date(ass.created_at).toLocaleString('pt-PT')}</p>
+                          {ass.assinatura_base64 ? (
+                            <img 
+                              src={ass.assinatura_base64} 
+                              alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
+                              className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
+                            />
+                          ) : ass.assinatura_url ? (
+                            <img 
+                              src={`${API}${ass.assinatura_url}`} 
+                              alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
+                              className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
+                            />
+                          ) : (
+                            <div className="h-20 flex items-center justify-center text-gray-400">
+                              <PenTool className="w-8 h-8" />
+                            </div>
+                          )}
+                          <p className="text-xs text-green-700 mt-2">
+                            {ass.primeiro_nome || ass.nome || ''} {ass.ultimo_nome || ''}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : 
+                             ass.created_at ? new Date(ass.created_at).toLocaleString('pt-PT') : ''}
+                          </p>
                         </div>
                       ))}
                     </div>
