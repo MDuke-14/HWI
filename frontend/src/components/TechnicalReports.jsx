@@ -210,8 +210,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showHTMLPreviewModal, setShowHTMLPreviewModal] = useState(false);
   const [htmlPreviewData, setHtmlPreviewData] = useState(null);
   const [loadingHTMLPreview, setLoadingHTMLPreview] = useState(false);
-  const [showSignatureInPreview, setShowSignatureInPreview] = useState(false);
-  const signatureCanvasPreviewRef = useRef(null);
 
   // Folha de Horas
   const [showFolhaHorasModal, setShowFolhaHorasModal] = useState(false);
