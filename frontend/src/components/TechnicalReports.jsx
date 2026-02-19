@@ -6392,7 +6392,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </p>
                           {ass.assinatura_base64 ? (
                             <img 
-                              src={ass.assinatura_base64} 
+                              src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
                               alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
                               className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
                             />
