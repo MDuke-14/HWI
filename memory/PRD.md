@@ -223,6 +223,22 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Novo Estado "Agendado" para OTs (25 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Estado especial para OTs criadas via Calendário:**
+- Estado `agendado` (cor cyan) definido automaticamente quando OT é criada pelo Admin via Calendário
+- OTs criadas por outros métodos mantêm o estado padrão `em_execucao`
+- "Agendado" NÃO pode ser selecionado manualmente no dropdown de alteração de estado
+- "Agendado" aparece nos filtros de pesquisa e na visualização de OTs
+
+**Ficheiros modificados:**
+- `/app/backend/server.py` - Endpoint `/services/with-ot` define `status: "agendado"`
+- `/app/frontend/src/components/TechnicalReports.jsx` - Cor e label para estado agendado
+- `/app/frontend/src/components/Calendar.jsx` - Cor e label para estado agendado
+
+**Testado:** ✅ Backend via curl (OT criada via calendário = agendado, OT normal = em_execucao)
+
+---
+
 #### ✅ Edição de Observações de Fotografias nas OTs (25 Janeiro 2026) - NOVA FUNCIONALIDADE
 **Modal de edição de descrição de fotografias:**
 - Botão de edição (ícone lápis) em cada fotografia na lista
