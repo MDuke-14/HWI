@@ -627,75 +627,77 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                         )}
 
                         {/* Entries for this day */}
-                        <div className="space-y-2">
-                          {day.entries.map((entry, index) => (
-                            <div
-                              key={entry.id || index}
-                              className="flex justify-between items-center bg-[#0f0f0f] p-3 rounded"
-                            >
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400">
-                                  <span className="text-blue-400 font-semibold">Entrada #{index + 1}</span>
-                                  {' • '}
-                                  {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  }) : '-'}
-                                  {' → '}
-                                  {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  }) : '-'}
-                                  {entry.geo_location?.latitude && (
-                                    <span className="ml-2 text-emerald-400 text-xs">
-                                      <MapPin className="w-3 h-3 inline mr-1" />
-                                      GPS
-                                    </span>
-                                  )}
-                                </div>
-                                {entry.observations && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    💬 {entry.observations}
-                                  </div>
-                                )}
-                                {entry.outside_residence_zone && (
-                                  <div className="text-xs text-orange-400 mt-1">
-                                    📍 Fora da zona de residência: {entry.location_description}
-                                  </div>
-                                )}
-                                {entry.geo_location?.address && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    📍 {entry.geo_location.address.locality || entry.geo_location.address.city || entry.geo_location.address.formatted}
-                                    {entry.geo_location.accuracy && (
-                                      <span className="text-gray-600 ml-2">(±{Math.round(entry.geo_location.accuracy)}m)</span>
+                        {day.hasEntries && (
+                          <div className="space-y-2 mt-3">
+                            {day.entries.map((entry, index) => (
+                              <div
+                                key={entry.id || index}
+                                className="flex justify-between items-center bg-[#0f0f0f] p-3 rounded"
+                              >
+                                <div className="flex-1">
+                                  <div className="text-sm text-gray-400">
+                                    <span className="text-blue-400 font-semibold">Entrada #{index + 1}</span>
+                                    {' • '}
+                                    {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }) : '-'}
+                                    {' → '}
+                                    {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }) : '-'}
+                                    {entry.geo_location?.latitude && (
+                                      <span className="ml-2 text-emerald-400 text-xs">
+                                        <MapPin className="w-3 h-3 inline mr-1" />
+                                        GPS
+                                      </span>
                                     )}
                                   </div>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 ml-4">
-                                <div className="text-green-400 font-semibold mr-2">
-                                  {formatHours(entry.total_hours)}
+                                  {entry.observations && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      💬 {entry.observations}
+                                    </div>
+                                  )}
+                                  {entry.outside_residence_zone && (
+                                    <div className="text-xs text-orange-400 mt-1">
+                                      📍 Fora da zona de residência: {entry.location_description}
+                                    </div>
+                                  )}
+                                  {entry.geo_location?.address && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      📍 {entry.geo_location.address.locality || entry.geo_location.address.city || entry.geo_location.address.formatted}
+                                      {entry.geo_location.accuracy && (
+                                        <span className="text-gray-600 ml-2">(±{Math.round(entry.geo_location.accuracy)}m)</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                <Button
-                                  onClick={() => handleEditEntry(entry)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  onClick={() => handleDeleteEntry(entry.id)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-red-500 text-red-500 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <div className="flex items-center gap-2 ml-4">
+                                  <div className="text-green-400 font-semibold mr-2">
+                                    {formatHours(entry.total_hours)}
+                                  </div>
+                                  <Button
+                                    onClick={() => handleEditEntry(entry)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleDeleteEntry(entry.id)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-red-500 text-red-500 hover:bg-red-500/10"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
