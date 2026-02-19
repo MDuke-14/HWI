@@ -8038,7 +8038,7 @@ async def create_service_with_ot(service_data: ServiceWithOTCreate, current_user
         local_intervencao=service_data.location,
         pedido_por=service_data.client_name,
         motivo_assistencia=motivo,
-        status="em_execucao"
+        status="agendado"  # Estado especial para OTs criadas via Calendário
     )
     
     relatorio_dict = relatorio.dict()
