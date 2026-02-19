@@ -466,13 +466,21 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                       >
                         {/* Day Header */}
                         <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-700">
-                          <div className="text-white font-bold text-lg">
-                            {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-PT', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })}
+                          <div className="flex items-center gap-3">
+                            <div className="text-white font-bold text-lg">
+                              {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </div>
+                            {day.hasGeoData && (
+                              <span className="text-xs bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded-full flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                GPS
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-3">
                             {day.entries.length > 0 && (
@@ -490,6 +498,49 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                             </div>
                           </div>
                         </div>
+
+                        {/* Map with locations for this day */}
+                        {day.hasGeoData && (
+                          <div className="mb-4 space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                              <Map className="w-4 h-4 text-emerald-400" />
+                              <span>Localização GPS do dia</span>
+                            </div>
+                            <LocationMap
+                              locations={day.locations}
+                              height="200px"
+                              zoom={14}
+                            />
+                            {/* Location details */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {day.locations.map((loc, idx) => (
+                                <div key={loc.id || idx} className="flex items-center gap-2 bg-[#0f0f0f] px-3 py-2 rounded-lg text-xs">
+                                  <div className={`w-2 h-2 rounded-full ${loc.outside_residence_zone ? 'bg-orange-500' : 'bg-emerald-500'}`} />
+                                  <div>
+                                    <span className="text-white">
+                                      {loc.timestamp ? new Date(loc.timestamp).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                    </span>
+                                    {loc.address && (
+                                      <span className="text-gray-400 ml-2">{loc.address}</span>
+                                    )}
+                                    {loc.outside_residence_zone && (
+                                      <span className="text-orange-400 ml-2">(Fora de zona)</span>
+                                    )}
+                                  </div>
+                                  <a
+                                    href={`https://www.openstreetmap.org/?mlat=${loc.latitude}&mlon=${loc.longitude}&zoom=17`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 ml-2"
+                                    title="Ver no OpenStreetMap"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Entries for this day */}
                         <div className="space-y-2">
@@ -511,6 +562,12 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                     hour: '2-digit',
                                     minute: '2-digit'
                                   }) : '-'}
+                                  {entry.geo_location?.latitude && (
+                                    <span className="ml-2 text-emerald-400 text-xs">
+                                      <MapPin className="w-3 h-3 inline mr-1" />
+                                      GPS
+                                    </span>
+                                  )}
                                 </div>
                                 {entry.observations && (
                                   <div className="text-xs text-gray-500 mt-1">
@@ -520,6 +577,14 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 {entry.outside_residence_zone && (
                                   <div className="text-xs text-orange-400 mt-1">
                                     📍 Fora da zona de residência: {entry.location_description}
+                                  </div>
+                                )}
+                                {entry.geo_location?.address && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    📍 {entry.geo_location.address.locality || entry.geo_location.address.city || entry.geo_location.address.formatted}
+                                    {entry.geo_location.accuracy && (
+                                      <span className="text-gray-600 ml-2">(±{Math.round(entry.geo_location.accuracy)}m)</span>
+                                    )}
                                   </div>
                                 )}
                               </div>
