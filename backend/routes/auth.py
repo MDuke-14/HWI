@@ -70,7 +70,6 @@ async def register(user_data: UserCreate):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    from datetime import datetime, timezone
     await db.users.insert_one(user_dict)
     
     # Criar token
