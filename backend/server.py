@@ -4633,6 +4633,17 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             status_info["elapsed_hours"] = round(elapsed_hours, 2)  # SOMA de tudo
             status_info["outside_residence_zone"] = active_entry.get("outside_residence_zone", False)
             status_info["location"] = active_entry.get("location_description")
+            
+            # Adicionar geolocalização se disponível
+            geo = active_entry.get("geo_location")
+            if geo:
+                status_info["geo_location"] = {
+                    "latitude": geo.get("latitude"),
+                    "longitude": geo.get("longitude"),
+                    "accuracy": geo.get("accuracy"),
+                    "timestamp": geo.get("timestamp"),
+                    "address": geo.get("address", {})
+                }
         elif completed_entries:
             # Worked today (finished)
             total_hours = sum(e.get("total_hours", 0) for e in completed_entries)
