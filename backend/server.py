@@ -6027,6 +6027,7 @@ async def download_monthly_pdf_report(
 @api_router.post("/admin/time-entries/{entry_id}/adjust-to-8h")
 async def adjust_entry_to_8hours(
     entry_id: str,
+    data: Optional[dict] = None,
     current_user: dict = Depends(get_current_admin)
 ):
     """
@@ -6107,6 +6108,15 @@ async def adjust_entry_to_8hours(
             }}
         )
         
+        # Registar alteração no relatório mensal
+        entry_date = entry["date"]
+        await register_admin_observation(
+            user_id=entry["user_id"],
+            date=entry_date,
+            observation=f"AJUSTAR PARA 8H: Dia {entry_date} ajustado de {original_end_str} para {new_end_time.strftime('%H:%M')} pelo admin {current_user.get('username', 'admin')}",
+            admin_user=current_user
+        )
+        
         logging.info(f"Entrada {entry_id} ajustada para 8h totais no dia")
         
         return {
@@ -6121,6 +6131,229 @@ async def adjust_entry_to_8hours(
         raise
     except Exception as e:
         logging.error(f"Erro ao ajustar entrada para 8h: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Função auxiliar para registar observações no relatório mensal
+async def register_admin_observation(user_id: str, date: str, observation: str, admin_user: dict):
+    """Registar uma observação de admin no relatório mensal do utilizador"""
+    try:
+        # Extrair mês e ano da data
+        date_obj = datetime.strptime(date, "%Y-%m-%d")
+        month = date_obj.month
+        year = date_obj.year
+        
+        # Verificar se já existe um relatório mensal para este utilizador/mês
+        existing_report = await db.monthly_reports.find_one({
+            "user_id": user_id,
+            "month": month,
+            "year": year
+        })
+        
+        timestamp = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+        full_observation = f"[{timestamp}] {observation}"
+        
+        if existing_report:
+            # Adicionar à observação existente
+            current_obs = existing_report.get("observations", "") or ""
+            if current_obs:
+                new_obs = f"{current_obs}\n{full_observation}"
+            else:
+                new_obs = full_observation
+            
+            await db.monthly_reports.update_one(
+                {"_id": existing_report["_id"]},
+                {"$set": {"observations": new_obs}}
+            )
+        else:
+            # Criar novo relatório mensal com a observação
+            import uuid
+            new_report = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "month": month,
+                "year": year,
+                "observations": full_observation,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.monthly_reports.insert_one(new_report)
+        
+        logging.info(f"Observação registada no relatório mensal: {observation[:50]}...")
+    except Exception as e:
+        logging.error(f"Erro ao registar observação no relatório mensal: {e}")
+
+
+@api_router.post("/admin/time-entries/justify-day")
+async def justify_day(
+    data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Justificar um dia específico de um utilizador
+    Tipos: ferias, dar_dia, folga, falta, cancelamento_ferias
+    Admin only
+    """
+    user_id = data.get("user_id")
+    date_str = data.get("date")
+    justification_type = data.get("justification_type")
+    
+    if not user_id or not date_str or not justification_type:
+        raise HTTPException(status_code=400, detail="user_id, date e justification_type são obrigatórios")
+    
+    valid_types = ["ferias", "dar_dia", "folga", "falta", "cancelamento_ferias"]
+    if justification_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Tipo inválido. Válidos: {valid_types}")
+    
+    try:
+        # Buscar utilizador
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+        
+        user_name = user.get("full_name") or user.get("username")
+        date_formatted = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+        admin_name = current_user.get("username", "admin")
+        
+        message = ""
+        observation_text = ""
+        
+        if justification_type == "ferias":
+            # Marcar dia como férias
+            import uuid
+            vacation_entry = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "type": "vacation",
+                "start_date": date_str,
+                "end_date": date_str,
+                "status": "approved",
+                "approved_by": current_user.get("sub"),
+                "approved_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "reason": f"Justificado pelo admin {admin_name}"
+            }
+            await db.vacation_requests.insert_one(vacation_entry)
+            message = f"Dia {date_formatted} marcado como Férias"
+            observation_text = f"FÉRIAS: {date_formatted} - Justificado pelo admin {admin_name}"
+            
+        elif justification_type == "dar_dia":
+            # Criar duas entradas: 09:00-13:00 e 14:00-18:00
+            import uuid
+            
+            # Remover entradas existentes desse dia
+            await db.time_entries.delete_many({"user_id": user_id, "date": date_str})
+            
+            # Criar entrada da manhã (09:00-13:00)
+            morning_start = datetime.strptime(f"{date_str} 09:00:00", "%Y-%m-%d %H:%M:%S")
+            morning_end = datetime.strptime(f"{date_str} 13:00:00", "%Y-%m-%d %H:%M:%S")
+            morning_entry = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "date": date_str,
+                "start_time": morning_start.isoformat(),
+                "end_time": morning_end.isoformat(),
+                "total_hours": 4.0,
+                "status": "completed",
+                "observations": f"[Dia oferecido pelo admin {admin_name}]",
+                "created_by_admin": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.time_entries.insert_one(morning_entry)
+            
+            # Criar entrada da tarde (14:00-18:00)
+            afternoon_start = datetime.strptime(f"{date_str} 14:00:00", "%Y-%m-%d %H:%M:%S")
+            afternoon_end = datetime.strptime(f"{date_str} 18:00:00", "%Y-%m-%d %H:%M:%S")
+            afternoon_entry = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "date": date_str,
+                "start_time": afternoon_start.isoformat(),
+                "end_time": afternoon_end.isoformat(),
+                "total_hours": 4.0,
+                "status": "completed",
+                "observations": f"[Dia oferecido pelo admin {admin_name}]",
+                "created_by_admin": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.time_entries.insert_one(afternoon_entry)
+            
+            message = f"Dia {date_formatted} oferecido (8h: 09:00-13:00 + 14:00-18:00)"
+            observation_text = f"DAR DIA: {date_formatted} - 8h criadas automaticamente (09:00-13:00 + 14:00-18:00) pelo admin {admin_name}"
+            
+        elif justification_type == "folga":
+            # Marcar dia como folga (tipo especial)
+            import uuid
+            folga_entry = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "type": "folga",
+                "start_date": date_str,
+                "end_date": date_str,
+                "status": "approved",
+                "approved_by": current_user.get("sub"),
+                "approved_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "reason": f"Folga justificada pelo admin {admin_name}"
+            }
+            await db.vacation_requests.insert_one(folga_entry)
+            message = f"Dia {date_formatted} marcado como Folga"
+            observation_text = f"FOLGA: {date_formatted} - Justificado pelo admin {admin_name}"
+            
+        elif justification_type == "falta":
+            # Marcar dia como falta
+            import uuid
+            falta_entry = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "type": "absence",
+                "date": date_str,
+                "status": "registered",
+                "registered_by": current_user.get("sub"),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "reason": f"Falta registada pelo admin {admin_name}"
+            }
+            await db.absences.insert_one(falta_entry)
+            message = f"Dia {date_formatted} marcado como Falta"
+            observation_text = f"FALTA: {date_formatted} - Registada pelo admin {admin_name}"
+            
+        elif justification_type == "cancelamento_ferias":
+            # Cancelar férias desse dia
+            result = await db.vacation_requests.delete_many({
+                "user_id": user_id,
+                "$or": [
+                    {"start_date": date_str, "end_date": date_str},
+                    {"start_date": {"$lte": date_str}, "end_date": {"$gte": date_str}}
+                ]
+            })
+            
+            if result.deleted_count > 0:
+                message = f"Férias canceladas para o dia {date_formatted}"
+                observation_text = f"CANCELAMENTO FÉRIAS: {date_formatted} - Cancelado pelo admin {admin_name}"
+            else:
+                message = f"Não foram encontradas férias para cancelar no dia {date_formatted}"
+                observation_text = f"CANCELAMENTO FÉRIAS (tentativa): {date_formatted} - Não havia férias marcadas"
+        
+        # Registar observação no relatório mensal
+        await register_admin_observation(
+            user_id=user_id,
+            date=date_str,
+            observation=observation_text,
+            admin_user=current_user
+        )
+        
+        logging.info(f"Dia justificado: {justification_type} para {user_name} em {date_str} por {admin_name}")
+        
+        return {
+            "message": message,
+            "justification_type": justification_type,
+            "date": date_str,
+            "user_id": user_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Erro ao justificar dia: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/time-entries/reports/custom-range-pdf")
