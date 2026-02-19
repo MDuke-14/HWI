@@ -100,6 +100,7 @@ const formatErrorMessage = (error) => {
 };
 
 const TechnicalReports = ({ user, onLogout }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('clientes'); // 'relatorios', 'clientes', ou 'pesquisa'
   const [clientes, setClientes] = useState([]);
   const [relatorios, setRelatorios] = useState([]);
@@ -107,6 +108,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [filteredByStatus, setFilteredByStatus] = useState([]);
+  
+  // Flag para controlar se já processamos o parâmetro ot da URL
+  const [urlOtProcessed, setUrlOtProcessed] = useState(false);
   
   // Hook de dados offline
   const { 
