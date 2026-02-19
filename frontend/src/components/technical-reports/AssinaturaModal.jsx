@@ -299,9 +299,19 @@ const FullscreenSignature = ({
       const canvas = canvasRef.current.getCanvas();
       const paths = canvasRef.current.getPaths();
       console.log('FullscreenSignature handleSave:', { pathsCount: paths.length, currentPathsCount: currentPaths.length });
-      // Usar currentPaths se getPaths retornar vazio
-      const pathsToSave = paths.length > 0 ? paths : currentPaths;
-      onSave(canvas, pathsToSave);
+      
+      // Converter canvas para imagem e guardar directamente
+      if (canvas) {
+        canvas.toBlob((blob) => {
+          if (blob && blob.size > 5000) { // Se o blob tem conteúdo significativo
+            onSave(canvas, paths.length > 0 ? paths : currentPaths, blob);
+          } else {
+            onSave(canvas, paths.length > 0 ? paths : currentPaths, null);
+          }
+        }, 'image/png', 0.95);
+      } else {
+        onSave(canvas, paths.length > 0 ? paths : currentPaths, null);
+      }
     }
   };
   
