@@ -3141,7 +3141,7 @@ async def salvar_assinatura_digital(
         relatorio_id=relatorio_id,
         tipo="digital",
         assinatura_path=str(file_path),
-        assinatura_url=f"/relatorios-tecnicos/{relatorio_id}/assinatura/imagem",
+        assinatura_url="",  # Será atualizado com o ID
         primeiro_nome=primeiro_nome,
         ultimo_nome=ultimo_nome,
         assinado_por=nome_completo if nome_completo else None,
@@ -3149,6 +3149,8 @@ async def salvar_assinatura_digital(
     )
     
     assinatura_dict = assinatura.dict()
+    # Atualizar URL com o ID da assinatura para evitar conflitos com múltiplas assinaturas
+    assinatura_dict["assinatura_url"] = f"/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_dict['id']}/imagem"
     assinatura_dict["data_assinatura"] = assinatura_dict["data_assinatura"].isoformat()
     assinatura_dict["assinatura_base64"] = assinatura_base64  # Adicionar base64
     
