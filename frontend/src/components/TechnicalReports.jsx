@@ -6279,7 +6279,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <div key={idx} className="bg-gray-50 p-3 rounded text-sm">
                           <div className="flex justify-between mb-2">
                             <span className="font-semibold">{int.tecnico_nome}</span>
-                            <span className="text-gray-500">{new Date(int.data).toLocaleDateString('pt-PT')}</span>
+                            <span className="text-gray-500">
+                              {int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'}
+                            </span>
                           </div>
                           <p className="text-gray-700 whitespace-pre-wrap">{int.descricao}</p>
                         </div>
