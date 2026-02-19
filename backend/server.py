@@ -2224,6 +2224,8 @@ async def create_relatorio(
 async def get_relatorios(
     status: Optional[str] = None,
     cliente_id: Optional[str] = None,
+    limit: int = 100,
+    skip: int = 0,
     current_user: dict = Depends(get_current_user)
 ):
     """Listar relatórios técnicos - visível para todos os utilizadores"""
@@ -2235,18 +2237,32 @@ async def get_relatorios(
     if cliente_id:
         query["cliente_id"] = cliente_id
     
-    # Todos os utilizadores autenticados podem ver todas as OTs
+    # Buscar relatórios com paginação
     relatorios = await db.relatorios_tecnicos.find(
         query,
         {"_id": 0}
-    ).sort("numero_assistencia", -1).to_list(1000)
+    ).sort("numero_assistencia", -1).skip(skip).limit(limit).to_list(limit)
     
-    # Para cada relatório, calcular informação de equipamentos
+    if not relatorios:
+        return relatorios
+    
+    # Buscar contagem de equipamentos em batch (uma única query)
+    relatorio_ids = [r.get("id") for r in relatorios]
+    
+    # Agregação para contar equipamentos por relatório
+    equipamentos_pipeline = [
+        {"$match": {"relatorio_id": {"$in": relatorio_ids}}},
+        {"$group": {"_id": "$relatorio_id", "count": {"$sum": 1}}}
+    ]
+    equipamentos_counts = await db.equipamentos_ot.aggregate(equipamentos_pipeline).to_list(None)
+    
+    # Criar mapa de contagens
+    counts_map = {item["_id"]: item["count"] for item in equipamentos_counts}
+    
+    # Processar relatórios (sem queries adicionais no loop)
     for relatorio in relatorios:
         relatorio_id = relatorio.get("id")
-        
-        # Contar equipamentos associados na colecção equipamentos_ot
-        equipamentos_count = await db.equipamentos_ot.count_documents({"relatorio_id": relatorio_id})
+        equipamentos_count = counts_map.get(relatorio_id, 0)
         
         # Verificar se tem equipamento principal (campos directos na OT)
         tem_equip_principal = bool(
@@ -2258,13 +2274,11 @@ async def get_relatorios(
         # Calcular total de equipamentos
         total_equipamentos = equipamentos_count + (1 if tem_equip_principal else 0)
         
-        # Definir texto a mostrar
+        # Definir texto a mostrar (sem queries adicionais)
         if total_equipamentos == 0:
             relatorio["equipamento_display"] = "Não especificado"
         elif total_equipamentos == 1:
-            # Mostrar o nome do equipamento
             if tem_equip_principal:
-                # Usar equipamento principal
                 parts = []
                 if relatorio.get("equipamento_tipologia"):
                     parts.append(relatorio["equipamento_tipologia"])
@@ -2274,19 +2288,8 @@ async def get_relatorios(
                     parts.append(relatorio["equipamento_modelo"])
                 relatorio["equipamento_display"] = " • ".join(parts) if parts else "Equipamento"
             else:
-                # Buscar o único equipamento da colecção
-                equip = await db.equipamentos_ot.find_one({"relatorio_id": relatorio_id}, {"_id": 0})
-                if equip:
-                    parts = []
-                    if equip.get("tipologia"):
-                        parts.append(equip["tipologia"])
-                    if equip.get("marca"):
-                        parts.append(equip["marca"])
-                    if equip.get("modelo"):
-                        parts.append(equip["modelo"])
-                    relatorio["equipamento_display"] = " • ".join(parts) if parts else "Equipamento"
-                else:
-                    relatorio["equipamento_display"] = "Equipamento"
+                # Se não tem principal, mostra "Equipamento" (sem query adicional)
+                relatorio["equipamento_display"] = "Equipamento"
         else:
             relatorio["equipamento_display"] = "Vários"
         
