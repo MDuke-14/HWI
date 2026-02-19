@@ -7997,6 +7997,8 @@ async def get_user_time_entries_by_month(
                     if date_str >= start_date and date_str <= end_date:
                         if vac_type == "folga":
                             justifications[date_str] = {"type": "folga", "label": "Dia de Folga"}
+                        elif vac_type == "cancelamento_ferias":
+                            justifications[date_str] = {"type": "cancelamento_ferias", "label": "Férias Canceladas"}
                         else:
                             justifications[date_str] = {"type": "ferias", "label": "Dia de Férias"}
                     current_dt += timedelta(days=1)
