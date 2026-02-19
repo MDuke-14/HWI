@@ -1001,11 +1001,15 @@ const Calendar = ({ user, onLogout }) => {
                         <span className={`text-xs px-2 py-0.5 rounded mt-1 inline-block ${
                           ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
                           ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
+                          ot.status === 'agendado' ? 'bg-cyan-500/20 text-cyan-400' :
+                          ot.status === 'orcamento' ? 'bg-amber-500/20 text-amber-400' :
                           'bg-gray-500/20 text-gray-400'
                         }`}>
-                          {ot.status === 'concluido' ? 'Concluído' : 
+                          {ot.status === 'agendado' ? 'Agendado' :
+                           ot.status === 'concluido' ? 'Concluído' : 
                            ot.status === 'em_execucao' ? 'Em Execução' : 
-                           ot.status === 'orcamento' ? 'Orçamento' : 'Facturado'}
+                           ot.status === 'orcamento' ? 'Orçamento' : 
+                           ot.status === 'facturado' ? 'Facturado' : ot.status}
                         </span>
                         {ot.data_fim && (
                           <div className="text-xs text-orange-400/70 mt-1">
