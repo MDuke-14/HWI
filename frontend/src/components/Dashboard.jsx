@@ -154,28 +154,62 @@ const Dashboard = ({ user, onLogout }) => {
       const location = await getGeoLocation();
       toast.success('Localização capturada!');
       
-      // Fazer reverse geocoding
+      // Fazer reverse geocoding com alta precisão
       if (location && location.latitude && location.longitude) {
         try {
           const geoResponse = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&addressdetails=1&accept-language=pt`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&addressdetails=1&accept-language=pt&zoom=18`,
             { headers: { 'User-Agent': 'HWI-Ponto/1.0' } }
           );
           
           if (geoResponse.ok) {
             const geoData = await geoResponse.json();
-            const countryCode = geoData.address?.country_code?.toUpperCase();
-            const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.municipality;
-            const county = geoData.address?.county || geoData.address?.state;
-            const country = geoData.address?.country;
+            const addr = geoData.address || {};
+            const countryCode = addr.country_code?.toUpperCase();
+            
+            // Priorizar localidade específica sobre município
+            // Ordem: village > town > suburb > neighbourhood > city_district > hamlet > city > municipality
+            const locality = (
+              addr.village ||      // Vila/aldeia (ex: Fernão Ferro)
+              addr.town ||         // Cidade pequena
+              addr.suburb ||       // Subúrbio/freguesia
+              addr.neighbourhood || // Bairro
+              addr.city_district || // Distrito da cidade
+              addr.hamlet          // Lugar pequeno
+            );
+            
+            // Município/Concelho (informação secundária)
+            const municipality = (
+              addr.city ||         // Cidade principal
+              addr.municipality || // Município
+              addr.county          // Concelho
+            );
+            
+            // Zona específica (parque industrial, etc.)
+            const zone = (
+              addr.industrial ||   // Parque industrial
+              addr.commercial ||   // Zona comercial
+              addr.retail ||       // Zona de retalho
+              addr.aeroway ||      // Aeroporto
+              addr.amenity         // Serviço
+            );
+            
+            // Usar localidade específica, ou município se não houver
+            const city = locality || municipality;
+            const county = locality ? municipality : (addr.county || addr.state);
+            const country = addr.country;
             
             const addressInfo = {
+              locality: locality,
+              zone: zone,
+              municipality: municipality,
               city: city,
               region: county,
               country: country,
               country_code: countryCode,
-              county: geoData.address?.county,
-              formatted: geoData.display_name
+              county: addr.county,
+              formatted: geoData.display_name,
+              raw_address: addr
             };
             
             // Atualizar geoLocation com endereço
@@ -184,9 +218,24 @@ const Dashboard = ({ user, onLogout }) => {
               address: addressInfo
             }));
             
-            // Verificar se está fora da zona de residência (fora de Portugal OU em Portugal fora de Lisboa/Sintra/Setúbal)
+            // Verificar se está fora da zona de residência
             if (isForaZonaResidencia(addressInfo)) {
-              const autoLocation = city ? `${city}${county ? `, ${county}` : ''}${country && countryCode !== 'PT' ? `, ${country}` : ''}` : country || 'Local desconhecido';
+              // Construir descrição da localização
+              let autoLocation = '';
+              if (zone) {
+                autoLocation = zone;
+                if (city) autoLocation += `, ${city}`;
+              } else if (city) {
+                autoLocation = city;
+              }
+              if (county && county !== city) {
+                autoLocation += `, ${county}`;
+              }
+              if (country && countryCode !== 'PT') {
+                autoLocation += `, ${country}`;
+              }
+              autoLocation = autoLocation || country || 'Local desconhecido';
+              
               setOutsideResidenceZone(true);
               setLocationDescription(autoLocation);
               
@@ -202,7 +251,12 @@ const Dashboard = ({ user, onLogout }) => {
                 });
               }
             } else if (city) {
-              toast.info(`📍 ${city}${county ? `, ${county}` : ''} (Zona de residência)`);
+              // Mostrar localização mesmo na zona de residência
+              let locationMsg = zone ? `${zone}, ${city}` : city;
+              if (county && county !== city) {
+                locationMsg += ` (${county})`;
+              }
+              toast.info(`📍 ${locationMsg} - Zona de residência`);
             }
           }
         } catch (geoErr) {
