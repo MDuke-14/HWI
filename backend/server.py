@@ -3732,32 +3732,85 @@ async def subscribe_push(
     current_user: dict = Depends(get_current_user)
 ):
     """Registrar subscription de push notifications"""
+    from pywebpush import webpush, WebPushException
+    
+    # Validar dados da subscription
+    endpoint = subscription.get("endpoint", "")
+    keys = subscription.get("keys", {})
+    
+    if not endpoint or not keys.get("p256dh") or not keys.get("auth"):
+        raise HTTPException(status_code=400, detail="Subscription inválida: endpoint ou keys em falta")
+    
+    # Verificar se as VAPID keys estão configuradas
+    vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
+    vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
+    
+    if not vapid_private or not vapid_public:
+        raise HTTPException(status_code=500, detail="VAPID keys não configuradas no servidor")
+    
     # Remover subscription antiga do usuário
     await db.push_subscriptions.delete_many({"user_id": current_user["sub"]})
     
     # Criar nova subscription
     push_sub = PushSubscription(
         user_id=current_user["sub"],
-        endpoint=subscription.get("endpoint", ""),
-        keys=subscription.get("keys", {})
+        endpoint=endpoint,
+        keys=keys
     )
     
     sub_dict = push_sub.dict()
     sub_dict["created_at"] = sub_dict["created_at"].isoformat()
+    # Guardar também a chave pública usada para criar esta subscription
+    sub_dict["vapid_public_key_hash"] = hash(vapid_public) % 10000  # Hash curto para comparação
     
     await db.push_subscriptions.insert_one(sub_dict)
     
-    logging.info(f"Push subscription registrada para usuário {current_user['sub']}")
+    logging.info(f"Push subscription registrada para usuário {current_user['sub']} (endpoint: {endpoint[:50]}...)")
     
-    # Nota: A notificação de boas-vindas é enviada via frontend após confirmação
-    # para evitar problemas de timing com a subscription
+    return {"message": "Subscription registrada com sucesso", "status": "active"}
+
+
+@api_router.get("/notifications/vapid-public-key")
+async def get_vapid_public_key():
+    """Retorna a chave pública VAPID para o frontend usar"""
+    vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
+    if not vapid_public:
+        raise HTTPException(status_code=500, detail="VAPID public key não configurada")
+    return {"publicKey": vapid_public}
+
+
+@api_router.get("/notifications/push-status")
+async def get_push_status(current_user: dict = Depends(get_current_user)):
+    """Verificar estado da subscription de push do usuário"""
+    subscription = await db.push_subscriptions.find_one({"user_id": current_user["sub"]})
     
-    return {"message": "Subscription registrada com sucesso"}
+    if not subscription:
+        return {"status": "not_subscribed", "message": "Nenhuma subscription encontrada"}
+    
+    # Verificar se a subscription foi criada com a chave VAPID atual
+    vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
+    current_hash = hash(vapid_public) % 10000 if vapid_public else 0
+    stored_hash = subscription.get("vapid_public_key_hash", 0)
+    
+    if stored_hash != 0 and stored_hash != current_hash:
+        return {
+            "status": "key_mismatch",
+            "message": "A subscription foi criada com chaves VAPID diferentes. Por favor, reative as notificações.",
+            "needs_resubscribe": True
+        }
+    
+    return {
+        "status": "active",
+        "endpoint": subscription["endpoint"][:50] + "...",
+        "created_at": subscription.get("created_at"),
+        "needs_resubscribe": False
+    }
 
 
 async def send_push_to_user(user_id: str, title: str, message: str, notification_type: str = "info", priority: str = "medium"):
     """Função utilitária para enviar push notification para um usuário"""
     from pywebpush import webpush, WebPushException
+    import json
     import json
     
     vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
