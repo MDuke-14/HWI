@@ -298,7 +298,10 @@ const FullscreenSignature = ({
     if (canvasRef.current) {
       const canvas = canvasRef.current.getCanvas();
       const paths = canvasRef.current.getPaths();
-      onSave(canvas, paths);
+      console.log('FullscreenSignature handleSave:', { pathsCount: paths.length, currentPathsCount: currentPaths.length });
+      // Usar currentPaths se getPaths retornar vazio
+      const pathsToSave = paths.length > 0 ? paths : currentPaths;
+      onSave(canvas, pathsToSave);
     }
   };
   
