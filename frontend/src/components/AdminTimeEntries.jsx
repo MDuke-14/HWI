@@ -232,17 +232,50 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
   };
 
-  const handleAdjustTo8Hours = async (entryId) => {
+  const handleAdjustTo8Hours = async (entryId, dayDate) => {
     if (!window.confirm('Ajustar automaticamente este dia para 8 horas totais?')) {
       return;
     }
 
     try {
-      await axios.post(`${API}/admin/time-entries/${entryId}/adjust-to-8h`);
+      await axios.post(`${API}/admin/time-entries/${entryId}/adjust-to-8h`, {
+        register_observation: true,
+        user_id: selectedUser?.id,
+        date: dayDate
+      });
       toast.success('Dia ajustado para 8 horas com sucesso!');
       fetchUserEntries();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao ajustar horas');
+    }
+  };
+
+  // Abrir modal de justificar dia
+  const openJustifyModal = (day) => {
+    setJustifyingDay(day);
+    setShowJustifyModal(true);
+  };
+
+  // Aplicar justificação ao dia
+  const handleJustifyDay = async (justificationType) => {
+    if (!selectedUser || !justifyingDay) return;
+
+    setJustifyLoading(true);
+    try {
+      const response = await axios.post(`${API}/admin/time-entries/justify-day`, {
+        user_id: selectedUser.id,
+        date: justifyingDay.date,
+        justification_type: justificationType
+      });
+      
+      toast.success(response.data.message || 'Dia justificado com sucesso!');
+      setShowJustifyModal(false);
+      setJustifyingDay(null);
+      fetchUserEntries();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao justificar dia');
+    } finally {
+      setJustifyLoading(false);
     }
   };
 
