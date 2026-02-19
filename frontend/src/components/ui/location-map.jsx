@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -38,14 +38,42 @@ const icons = {
   default: createIcon('#6b7280'),
 };
 
-// Componente para ajustar o centro do mapa
-const ChangeView = ({ center, zoom }) => {
+// Componente para ajustar o centro do mapa APENAS na primeira renderização
+// ou quando as localizações mudam significativamente
+const FitBoundsOnLoad = ({ locations, initialCenter, initialZoom }) => {
   const map = useMap();
+  const hasInitialized = useRef(false);
+  const prevLocationsCount = useRef(0);
+
   useEffect(() => {
-    if (center) {
-      map.setView(center, zoom);
+    // Só ajusta a vista se:
+    // 1. Ainda não inicializou, OU
+    // 2. O número de localizações mudou significativamente (ex: de 0 para N ou vice-versa)
+    const locationsChanged = prevLocationsCount.current === 0 && locations.length > 0;
+    
+    if (!hasInitialized.current || locationsChanged) {
+      hasInitialized.current = true;
+      prevLocationsCount.current = locations.length;
+      
+      if (locations.length > 1) {
+        // Se há múltiplas localizações, ajusta para mostrar todas
+        const validLocations = locations.filter(loc => loc.latitude && loc.longitude);
+        if (validLocations.length > 1) {
+          const bounds = L.latLngBounds(
+            validLocations.map(loc => [loc.latitude, loc.longitude])
+          );
+          map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+        } else if (validLocations.length === 1) {
+          map.setView([validLocations[0].latitude, validLocations[0].longitude], initialZoom);
+        }
+      } else if (locations.length === 1 && locations[0].latitude && locations[0].longitude) {
+        map.setView([locations[0].latitude, locations[0].longitude], initialZoom);
+      } else if (initialCenter) {
+        map.setView(initialCenter, initialZoom);
+      }
     }
-  }, [center, zoom, map]);
+  }, [locations, initialCenter, initialZoom, map]);
+
   return null;
 };
 
@@ -61,8 +89,8 @@ const LocationMap = ({
   // Centro padrão em Portugal se não houver localizações
   const defaultCenter = [38.7223, -9.1393]; // Lisboa
   
-  // Calcular centro baseado nas localizações
-  const calculateCenter = () => {
+  // Calcular centro inicial baseado nas localizações
+  const calculateInitialCenter = () => {
     if (center) return center;
     if (locations.length === 0) return defaultCenter;
     
@@ -75,17 +103,21 @@ const LocationMap = ({
     return [avgLat, avgLng];
   };
 
-  const mapCenter = calculateCenter();
+  const initialCenter = calculateInitialCenter();
 
   return (
     <div className={`rounded-lg overflow-hidden ${className}`} style={{ height }}>
       <MapContainer
-        center={mapCenter}
+        center={initialCenter}
         zoom={zoom}
         style={{ height: '100%', width: '100%' }}
         scrollWheelZoom={true}
       >
-        <ChangeView center={mapCenter} zoom={zoom} />
+        <FitBoundsOnLoad 
+          locations={locations} 
+          initialCenter={initialCenter} 
+          initialZoom={zoom} 
+        />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
