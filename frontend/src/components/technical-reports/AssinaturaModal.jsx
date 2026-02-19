@@ -478,11 +478,13 @@ const AssinaturaModal = ({
 
   // Referência para guardar o canvas do fullscreen
   const fullscreenCanvasRef = useRef(null);
+  const fullscreenBlobRef = useRef(null);
 
-  const saveFromFullscreen = (canvas, paths) => {
-    console.log('saveFromFullscreen:', { pathsCount: paths.length });
+  const saveFromFullscreen = (canvas, paths, blob) => {
+    console.log('saveFromFullscreen:', { pathsCount: paths.length, hasBlob: !!blob });
     // Guardar referência ao canvas do fullscreen para usar ao guardar
     fullscreenCanvasRef.current = canvas;
+    fullscreenBlobRef.current = blob;
     setSavedPaths(paths);
     setIsFullscreen(false);
   };
