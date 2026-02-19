@@ -2369,11 +2369,12 @@ async def delete_relatorio(
 @api_router.patch("/relatorios-tecnicos/{relatorio_id}/status")
 async def update_relatorio_status(
     relatorio_id: str,
-    status: str,
+    data: dict,
     current_user: dict = Depends(get_current_user)
 ):
     """Atualizar status do relatório"""
-    valid_status = ["rascunho", "em_andamento", "concluido", "enviado"]
+    status = data.get("status")
+    valid_status = ["agendado", "orcamento", "em_execucao", "em_andamento", "concluido", "facturado", "enviado", "rascunho"]
     if status not in valid_status:
         raise HTTPException(status_code=400, detail=f"Status inválido. Use: {', '.join(valid_status)}")
     
@@ -2382,10 +2383,7 @@ async def update_relatorio_status(
     if not existing:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     
-    # Verificar permissão
-    if not current_user.get("is_admin", False) and existing["tecnico_id"] != current_user["sub"]:
-        raise HTTPException(status_code=403, detail="Sem permissão")
-    
+    # Todos os utilizadores autenticados podem mudar o status
     update_data = {"status": status}
     if status == "concluido":
         update_data["data_conclusao"] = datetime.now(timezone.utc).isoformat()
