@@ -5124,7 +5124,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             {/* Descrição - usando ref para evitar re-renders em mobile */}
             <div>
               <Label htmlFor="foto_descricao" className="text-gray-300">
-                Descrição / Observações *
+                Descrição / Observações <span className="text-gray-500 text-xs">(opcional)</span>
               </Label>
               <textarea
                 id="foto_descricao"
@@ -5132,7 +5132,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onBlur={(e) => setFotoDescricao(e.target.value)}
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
                 placeholder="Descreva o componente ou situação na fotografia..."
-                required
               />
             </div>
 
