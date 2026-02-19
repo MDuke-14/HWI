@@ -525,21 +525,43 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {groupEntriesByDate(entries, billingPeriod).map((day) => (
+                    {groupEntriesByDate(entries, billingPeriod, justifications).map((day) => (
                       <div
                         key={day.date}
                         className={`rounded-lg p-4 border ${
-                          day.isWeekend 
-                            ? 'bg-[#1a1a2e] border-indigo-900/50' 
-                            : day.hasEntries 
-                              ? 'bg-[#1a1a1a] border-gray-700' 
-                              : 'bg-[#151515] border-gray-800'
+                          day.justification?.type === 'ferias' 
+                            ? 'bg-blue-950/40 border-blue-700/50'
+                            : day.justification?.type === 'folga'
+                              ? 'bg-amber-950/40 border-amber-700/50'
+                              : day.justification?.type === 'falta'
+                                ? 'bg-red-950/40 border-red-700/50'
+                                : day.justification?.type === 'cancelamento_ferias'
+                                  ? 'bg-cyan-950/40 border-cyan-700/50'
+                                  : day.isWeekend 
+                                    ? 'bg-[#1a1a2e] border-indigo-900/50' 
+                                    : day.hasEntries 
+                                      ? 'bg-[#1a1a1a] border-gray-700' 
+                                      : 'bg-[#151515] border-gray-800'
                         }`}
                       >
                         {/* Day Header */}
-                        <div className={`flex justify-between items-center ${day.hasEntries ? 'mb-3 pb-3 border-b border-gray-700' : ''}`}>
+                        <div className={`flex justify-between items-center ${day.hasEntries || day.justification ? 'mb-3 pb-3 border-b border-gray-700' : ''}`}>
                           <div className="flex items-center gap-3">
-                            <div className={`font-bold text-lg ${day.isWeekend ? 'text-indigo-300' : day.hasEntries ? 'text-white' : 'text-gray-400'}`}>
+                            <div className={`font-bold text-lg ${
+                              day.justification?.type === 'ferias' 
+                                ? 'text-blue-300'
+                                : day.justification?.type === 'folga'
+                                  ? 'text-amber-300'
+                                  : day.justification?.type === 'falta'
+                                    ? 'text-red-300'
+                                    : day.justification?.type === 'cancelamento_ferias'
+                                      ? 'text-cyan-300'
+                                      : day.isWeekend 
+                                        ? 'text-indigo-300' 
+                                        : day.hasEntries 
+                                          ? 'text-white' 
+                                          : 'text-gray-400'
+                            }`}>
                               {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-PT', {
                                 weekday: 'long',
                                 day: 'numeric',
@@ -547,12 +569,34 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 year: 'numeric'
                               })}
                             </div>
-                            {day.isWeekend && (
+                            {/* Badge de justificação */}
+                            {day.justification?.type === 'ferias' && (
+                              <span className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full font-medium">
+                                {day.justification.label}
+                              </span>
+                            )}
+                            {day.justification?.type === 'folga' && (
+                              <span className="text-xs bg-amber-600/30 text-amber-300 px-2 py-1 rounded-full font-medium">
+                                {day.justification.label}
+                              </span>
+                            )}
+                            {day.justification?.type === 'falta' && (
+                              <span className="text-xs bg-red-600/30 text-red-300 px-2 py-1 rounded-full font-medium">
+                                {day.justification.label}
+                              </span>
+                            )}
+                            {day.justification?.type === 'cancelamento_ferias' && (
+                              <span className="text-xs bg-cyan-600/30 text-cyan-300 px-2 py-1 rounded-full font-medium">
+                                {day.justification.label}
+                              </span>
+                            )}
+                            {/* Badges de fim de semana e sem registo (só se não tiver justificação) */}
+                            {!day.justification && day.isWeekend && (
                               <span className="text-xs bg-indigo-600/20 text-indigo-400 px-2 py-1 rounded-full">
                                 Fim de semana
                               </span>
                             )}
-                            {!day.hasEntries && !day.isWeekend && (
+                            {!day.justification && !day.hasEntries && !day.isWeekend && (
                               <span className="text-xs bg-gray-700/50 text-gray-400 px-2 py-1 rounded-full">
                                 Sem registo
                               </span>
