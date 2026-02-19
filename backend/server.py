@@ -76,7 +76,18 @@ ALGORITHM = "HS256"
 async def reverse_geocode(latitude: float, longitude: float) -> dict:
     """
     Converte coordenadas GPS em endereço usando OpenStreetMap Nominatim.
-    Retorna cidade, região, país e endereço formatado.
+    Retorna localidade, zona, município, país e endereço formatado.
+    
+    Prioridade para localidade:
+    1. village (vila/aldeia) - ex: Fernão Ferro
+    2. town (cidade pequena)
+    3. suburb (subúrbio/freguesia)
+    4. neighbourhood (bairro)
+    5. city (cidade grande)
+    6. municipality (concelho) - ex: Seixal (só se não houver outra opção)
+    
+    Zona específica (se existir):
+    - industrial, commercial, retail, aeroway, etc.
     """
     try:
         url = f"https://nominatim.openstreetmap.org/reverse"
@@ -85,7 +96,8 @@ async def reverse_geocode(latitude: float, longitude: float) -> dict:
             "lon": longitude,
             "format": "json",
             "addressdetails": 1,
-            "accept-language": "pt"
+            "accept-language": "pt",
+            "zoom": 18  # Máxima precisão (nível de rua/edifício)
         }
         headers = {
             "User-Agent": "HWI-Ponto/1.0 (geral@hwi.pt)"  # Obrigatório para Nominatim
@@ -98,19 +110,61 @@ async def reverse_geocode(latitude: float, longitude: float) -> dict:
                 data = response.json()
                 address = data.get("address", {})
                 
-                # Extrair informação relevante
+                # Priorizar localidade específica sobre município
+                # Ordem: village > town > suburb > neighbourhood > city_district > city > municipality
+                locality = (
+                    address.get("village") or      # Vila/aldeia (ex: Fernão Ferro)
+                    address.get("town") or         # Cidade pequena
+                    address.get("suburb") or       # Subúrbio/freguesia
+                    address.get("neighbourhood") or # Bairro
+                    address.get("city_district") or # Distrito da cidade
+                    address.get("hamlet")          # Lugar pequeno
+                )
+                
+                # Município/Concelho (informação secundária)
+                municipality = (
+                    address.get("city") or         # Cidade principal
+                    address.get("municipality") or # Município
+                    address.get("county")          # Concelho
+                )
+                
+                # Zona específica (parque industrial, zona comercial, etc.)
+                zone = (
+                    address.get("industrial") or   # Parque industrial
+                    address.get("commercial") or   # Zona comercial
+                    address.get("retail") or       # Zona de retalho
+                    address.get("aeroway") or      # Aeroporto
+                    address.get("amenity") or      # Serviço/amenidade
+                    address.get("building") or     # Edifício específico
+                    address.get("leisure")         # Zona de lazer
+                )
+                
+                # Se não encontrou localidade específica, usar município
+                if not locality:
+                    locality = municipality
+                    municipality = address.get("county") or address.get("state")
+                
                 result = {
-                    "city": address.get("city") or address.get("town") or address.get("village") or address.get("municipality"),
+                    "locality": locality,           # Localidade principal (ex: Fernão Ferro)
+                    "zone": zone,                   # Zona específica (ex: Parque Industrial)
+                    "municipality": municipality,   # Concelho (ex: Seixal) - secundário
+                    "city": locality,               # Manter compatibilidade
                     "region": address.get("state") or address.get("county"),
                     "country": address.get("country"),
                     "country_code": address.get("country_code", "").upper(),
                     "postcode": address.get("postcode"),
                     "road": address.get("road"),
+                    "house_number": address.get("house_number"),
                     "formatted": data.get("display_name"),
                     "raw_address": address
                 }
                 
-                logging.info(f"📍 Geocoding: {result.get('city')}, {result.get('country')}")
+                # Log detalhado
+                location_str = locality or municipality or "Desconhecido"
+                if zone:
+                    location_str = f"{zone}, {location_str}"
+                logging.info(f"📍 Geocoding: {location_str} ({result.get('country')})")
+                
                 return result
             else:
                 logging.warning(f"Geocoding failed: HTTP {response.status_code}")
