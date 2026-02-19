@@ -577,6 +577,7 @@ const AssinaturaModal = ({
           );
 
           toast.success('Assinatura digital guardada com sucesso!');
+          fullscreenCanvasRef.current = null; // Limpar referência
           resetForm();
           onAssinaturaSaved();
         } catch (error) {
