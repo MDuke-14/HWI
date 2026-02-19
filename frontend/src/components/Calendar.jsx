@@ -375,7 +375,6 @@ const Calendar = ({ user, onLogout }) => {
             {/* Calendar Days */}
             {days.map((day, index) => {
               const dateStr = getDateString(day);
-              const dayServices = getServicesForDate(dateStr);
               const dayVacations = getVacationsForDate(dateStr);
               const dayOts = getOtsForDate(dateStr);
               const holiday = getHolidayForDate(dateStr);
@@ -384,7 +383,7 @@ const Calendar = ({ user, onLogout }) => {
                 currentDate.getMonth() === today.getMonth() && 
                 currentDate.getFullYear() === today.getFullYear();
               const isWeekend = index % 7 === 0 || index % 7 === 6;
-              const hasEvents = dayServices.length > 0 || dayVacations.length > 0 || dayOts.length > 0 || holiday;
+              const hasEvents = dayVacations.length > 0 || dayOts.length > 0 || holiday;
 
               return (
                 <div
