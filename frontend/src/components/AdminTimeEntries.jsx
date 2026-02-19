@@ -66,6 +66,11 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     location_description: ''
   });
 
+  // Justify Day modal
+  const [showJustifyModal, setShowJustifyModal] = useState(false);
+  const [justifyingDay, setJustifyingDay] = useState(null);
+  const [justifyLoading, setJustifyLoading] = useState(false);
+
   // Helper function to format decimal hours as HH:MM
   const formatHours = (decimalHours) => {
     if (!decimalHours) return '0h00m';
