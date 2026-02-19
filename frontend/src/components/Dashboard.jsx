@@ -29,6 +29,8 @@ const Dashboard = ({ user, onLogout }) => {
   const [showRealtimeModal, setShowRealtimeModal] = useState(false);
   const [realtimeData, setRealtimeData] = useState(null);
   const [realtimeLoading, setRealtimeLoading] = useState(false);
+  const [showRealtimeMap, setShowRealtimeMap] = useState(false);
+  const [realtimeLocations, setRealtimeLocations] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showMyRealtimePopup, setShowMyRealtimePopup] = useState(false);
