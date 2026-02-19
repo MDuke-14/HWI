@@ -837,9 +837,12 @@ const TechnicalReports = ({ user, onLogout }) => {
     
     try {
       // Criar o relatório técnico com motivo_assistencia da primeira intervenção
+      // Se data_fim estiver vazia, usar a mesma data de início (data_servico)
       const relatorioData = {
         ...relatorioFormData,
-        motivo_assistencia: intervencoesValidas[0].motivo_assistencia
+        motivo_assistencia: intervencoesValidas[0].motivo_assistencia,
+        // Se data_fim estiver vazia, não enviar o campo (será null no backend)
+        data_fim: relatorioFormData.data_fim || null
       };
       const response = await axios.post(`${API}/relatorios-tecnicos`, relatorioData);
       const relatorioId = response.data.id;
