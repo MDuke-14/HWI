@@ -293,7 +293,7 @@ const Calendar = ({ user, onLogout }) => {
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Total Serviços</div>
+            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Total OTs</div>
             <div className="text-3xl font-bold text-white font-mono">{totalServicesThisMonth}</div>
           </div>
           <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
