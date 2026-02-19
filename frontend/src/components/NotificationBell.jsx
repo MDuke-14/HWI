@@ -120,11 +120,34 @@ const NotificationBell = ({ user }) => {
           try {
             const registration = await navigator.serviceWorker.ready;
             const existingSub = await registration.pushManager.getSubscription();
+            
             if (existingSub) {
-              console.log('Subscription existente encontrada');
-              setPushSubscribed(true);
+              console.log('Subscription local encontrada');
+              
+              // Verificar estado no servidor
+              try {
+                const statusResponse = await axios.get(`${API}/notifications/push-status`);
+                const status = statusResponse.data;
+                
+                if (status.needs_resubscribe) {
+                  console.log('Servidor indica necessidade de resubscrever:', status.message);
+                  setNeedsResubscribe(true);
+                  setPushSubscribed(false);
+                } else if (status.status === 'active') {
+                  setPushSubscribed(true);
+                  setNeedsResubscribe(false);
+                } else {
+                  // Subscription local existe mas não no servidor
+                  console.log('Subscription não encontrada no servidor, a recriar...');
+                  await subscribeToPush(registration);
+                }
+              } catch (statusError) {
+                // Se falhar a verificação, assumir que está OK
+                console.log('Não foi possível verificar estado no servidor');
+                setPushSubscribed(true);
+              }
             } else {
-              console.log('Nenhuma subscription encontrada');
+              console.log('Nenhuma subscription local encontrada');
               setPushSubscribed(false);
             }
           } catch (error) {
@@ -143,7 +166,7 @@ const NotificationBell = ({ user }) => {
       const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, subscribeToPush]);
 
   const fetchNotifications = async () => {
     try {
