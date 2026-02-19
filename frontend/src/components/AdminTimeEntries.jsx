@@ -92,6 +92,25 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     return sortedDays.map(date => {
       const dayEntries = grouped[date];
       const totalHours = dayEntries.reduce((sum, entry) => sum + (entry.total_hours || 0), 0);
+      
+      // Extrair localizações GPS dos registos do dia
+      const locations = dayEntries
+        .filter(entry => entry.geo_location?.latitude && entry.geo_location?.longitude)
+        .map((entry, idx) => ({
+          id: `${entry.id}_${idx}`,
+          latitude: entry.geo_location.latitude,
+          longitude: entry.geo_location.longitude,
+          accuracy: entry.geo_location.accuracy,
+          timestamp: entry.start_time,
+          address: entry.geo_location.address?.locality || 
+                   entry.geo_location.address?.city || 
+                   entry.geo_location.address?.formatted ||
+                   entry.location_description,
+          type: entry.status === 'active' ? 'Entrada' : 'Registo',
+          color: entry.outside_residence_zone ? 'orange' : 'green',
+          outside_residence_zone: entry.outside_residence_zone
+        }));
+      
       return {
         date,
         entries: dayEntries.sort((a, b) => {
@@ -99,7 +118,9 @@ const AdminTimeEntries = ({ user, onLogout }) => {
           if (!b.start_time) return -1;
           return new Date(a.start_time) - new Date(b.start_time);
         }),
-        totalHours
+        totalHours,
+        locations,
+        hasGeoData: locations.length > 0
       };
     });
   };
