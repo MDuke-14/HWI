@@ -530,9 +530,9 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                         }`}
                       >
                         {/* Day Header */}
-                        <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-700">
+                        <div className={`flex justify-between items-center ${day.hasEntries ? 'mb-3 pb-3 border-b border-gray-700' : ''}`}>
                           <div className="flex items-center gap-3">
-                            <div className="text-white font-bold text-lg">
+                            <div className={`font-bold text-lg ${day.isWeekend ? 'text-indigo-300' : day.hasEntries ? 'text-white' : 'text-gray-400'}`}>
                               {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-PT', {
                                 weekday: 'long',
                                 day: 'numeric',
@@ -540,6 +540,16 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 year: 'numeric'
                               })}
                             </div>
+                            {day.isWeekend && (
+                              <span className="text-xs bg-indigo-600/20 text-indigo-400 px-2 py-1 rounded-full">
+                                Fim de semana
+                              </span>
+                            )}
+                            {!day.hasEntries && !day.isWeekend && (
+                              <span className="text-xs bg-gray-700/50 text-gray-400 px-2 py-1 rounded-full">
+                                Sem registo
+                              </span>
+                            )}
                             {day.hasGeoData && (
                               <span className="text-xs bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded-full flex items-center gap-1">
                                 <MapPin className="w-3 h-3" />
@@ -567,7 +577,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                               <FileText className="w-4 h-4 mr-1" />
                               Justificar Dia
                             </Button>
-                            <div className="text-green-400 font-bold text-xl">
+                            <div className={`font-bold text-xl ${day.totalHours > 0 ? 'text-green-400' : 'text-gray-500'}`}>
                               {formatHours(day.totalHours)}
                             </div>
                           </div>
