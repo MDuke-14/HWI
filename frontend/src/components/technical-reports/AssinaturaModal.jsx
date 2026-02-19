@@ -476,6 +476,8 @@ const AssinaturaModal = ({
     const isEmpty = sigCanvasRef.current?.isEmpty();
     const hasSavedPaths = savedPaths.length > 0;
     
+    console.log('handleSaveAssinaturaDigital:', { isEmpty, hasSavedPaths, savedPathsCount: savedPaths.length });
+    
     if (isEmpty && !hasSavedPaths) {
       toast.error('Por favor, desenhe sua assinatura');
       return;
