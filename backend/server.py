@@ -2085,6 +2085,157 @@ async def export_clientes_pdf(current_user: dict = Depends(get_current_user)):
     )
 
 
+@api_router.get("/clientes/export/emails-pdf")
+async def export_clientes_emails_pdf(current_user: dict = Depends(get_current_user)):
+    """Exportar lista de emails dos clientes para PDF - Apenas admin
+    
+    Gera um PDF com todos os emails dos clientes, separados por ';',
+    pronto para copiar/colar no campo 'PARA' de um email.
+    """
+    # Verificar permissão (admin)
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores podem exportar emails")
+    
+    # Buscar todos os clientes ativos
+    clientes = await db.clientes.find(
+        {"ativo": True},
+        {"_id": 0, "email": 1, "emails_adicionais": 1}
+    ).to_list(length=None)
+    
+    # Recolher todos os emails
+    all_emails = set()  # Usar set para remover duplicados automaticamente
+    
+    for cliente in clientes:
+        # Email principal
+        email = cliente.get("email", "")
+        if email and "@" in email:
+            all_emails.add(email.strip().lower())
+        
+        # Emails adicionais (podem estar separados por ; ou ,)
+        emails_adicionais = cliente.get("emails_adicionais", "")
+        if emails_adicionais:
+            for e in emails_adicionais.replace(",", ";").split(";"):
+                e = e.strip().lower()
+                if e and "@" in e:
+                    all_emails.add(e)
+    
+    # Ordenar alfabeticamente
+    sorted_emails = sorted(all_emails)
+    
+    # Concatenar com ;
+    emails_string = ";".join(sorted_emails)
+    
+    # Gerar PDF
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Flowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    import io
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm, leftMargin=2*cm, rightMargin=2*cm)
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=20,
+        alignment=1  # Center
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.gray,
+        alignment=1,
+        spaceAfter=30
+    )
+    
+    # Estilo para a caixa de emails - fonte monoespaçada para facilitar cópia
+    email_box_style = ParagraphStyle(
+        'EmailBox',
+        parent=styles['Normal'],
+        fontSize=9,
+        fontName='Courier',
+        leading=14,
+        textColor=colors.HexColor('#1a1a1a'),
+        backColor=colors.HexColor('#f5f5f5'),
+        borderColor=colors.HexColor('#cccccc'),
+        borderWidth=1,
+        borderPadding=10,
+        wordWrap='CJK'
+    )
+    
+    info_style = ParagraphStyle(
+        'Info',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.gray,
+        spaceBefore=20
+    )
+    
+    elements = []
+    
+    # Título
+    elements.append(Paragraph("Lista de Emails - Clientes", title_style))
+    
+    # Data
+    from datetime import datetime
+    elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", subtitle_style))
+    
+    # Instruções
+    elements.append(Paragraph(
+        "<b>Instruções:</b> Copie o bloco abaixo e cole diretamente no campo 'PARA' do seu email.",
+        info_style
+    ))
+    elements.append(Spacer(1, 15))
+    
+    # Caixa com emails
+    if emails_string:
+        # Criar uma caixa visual com fundo
+        from reportlab.platypus import Table, TableStyle
+        
+        email_paragraph = Paragraph(emails_string, email_box_style)
+        
+        # Wrap em tabela para criar efeito de caixa
+        table_data = [[email_paragraph]]
+        email_table = Table(table_data, colWidths=[16*cm])
+        email_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9f9f9')),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#cccccc')),
+            ('TOPPADDING', (0, 0), (-1, -1), 15),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
+            ('LEFTPADDING', (0, 0), (-1, -1), 15),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+        ]))
+        elements.append(email_table)
+    else:
+        elements.append(Paragraph("Nenhum email encontrado.", styles['Normal']))
+    
+    # Estatísticas
+    elements.append(Spacer(1, 25))
+    elements.append(Paragraph(f"<b>Total:</b> {len(sorted_emails)} email(s) únicos", info_style))
+    elements.append(Paragraph(f"<b>Clientes analisados:</b> {len(clientes)}", info_style))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    logging.info(f"Lista de emails de clientes exportada para PDF por {current_user['sub']} ({len(sorted_emails)} emails)")
+    
+    # Nome do ficheiro: Emails_Clientes_DD-MM-AAAA.pdf
+    filename = f"Emails_Clientes_{datetime.now().strftime('%d-%m-%Y')}.pdf"
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # ============ Manual de Instruções ============
 
 @api_router.get("/manual/download")
