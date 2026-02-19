@@ -876,3 +876,42 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Gestão de Entradas mostra mapa com GPS por dia
 
 ---
+
+---
+
+### ✅ Refatoração de server.py e TechnicalReports.jsx (19 Fevereiro 2026)
+
+**Análise realizada:**
+- `server.py`: 10.416 linhas - Ficheiro monolítico com todas as rotas
+- `TechnicalReports.jsx`: 8.283 linhas - Componente gigante com muitos estados
+
+**Estrutura criada para Backend:**
+```
+/app/backend/routes/
+├── __init__.py           # Exportações
+├── dependencies.py       # ✅ Funções comuns (auth, db, utils)
+└── auth.py              # ✅ Exemplo de router separado
+```
+
+**Estrutura criada para Frontend:**
+```
+/app/frontend/src/components/technical-reports/hooks/
+├── index.js              # ✅ Exportações
+├── useRelatorios.js      # ✅ Hook para gestão de relatórios
+└── useClientes.js        # ✅ Hook para gestão de clientes
+```
+
+**Documentação criada:**
+- `/app/memory/REFACTORING_PLAN.md` - Plano completo de refatoração
+
+**Estratégia adoptada:** Refatoração incremental
+- Novas features devem usar a nova estrutura
+- Migração gradual do código existente
+- Manter sistema funcional durante a transição
+
+**Próximos passos:**
+1. Criar hooks para estados restantes (técnicos, intervenções, etc.)
+2. Extrair mais modais do TechnicalReports.jsx
+3. Migrar rotas do server.py uma secção de cada vez
+
+---
