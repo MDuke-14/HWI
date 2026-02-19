@@ -806,7 +806,16 @@ const AdminDashboard = ({ user, onLogout }) => {
                   Utilizadores ({users.length})
                   <HelpTooltip section="admin_utilizadores" />
                 </h2>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
+                  {/* Mapa de Localizações Atuais */}
+                  <Button 
+                    onClick={handleOpenAllLocations}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                    data-testid="view-all-locations-btn"
+                  >
+                    <Map className="w-4 h-4 mr-2" />Mapa em Tempo Real
+                  </Button>
+                  
                   <Dialog open={showManualEntryDialog} onOpenChange={setShowManualEntryDialog}>
                     <DialogTrigger asChild>
                       <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
