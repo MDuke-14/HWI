@@ -223,6 +223,20 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Edição de Observações de Fotografias nas OTs (25 Janeiro 2026) - NOVA FUNCIONALIDADE
+**Modal de edição de descrição de fotografias:**
+- Botão de edição (ícone lápis) em cada fotografia na lista
+- Modal com preview da imagem e campo de texto para descrição
+- Endpoint PUT corrigido para aceitar JSON body
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/TechnicalReports.jsx` - Modal de edição + botões
+- `/app/backend/server.py` - Endpoint PUT corrigido
+
+**Testado:** ✅ Backend via curl
+
+---
+
 #### ✅ PDF da OT - Tabela de Mão de Obra Actualizada (25 Janeiro 2026) - NOVA FUNCIONALIDADE
 **Tabela de Mão de Obra/Deslocação no PDF agora inclui:**
 - 8 colunas: Técnico | Tipo | Data | Início | Fim | Horas | KM | Cód
