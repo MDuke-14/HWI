@@ -669,13 +669,13 @@ const Calendar = ({ user, onLogout }) => {
                     data-testid="new-service-btn"
                   >
                     <Plus className="w-5 h-5 mr-2" />
-                    Novo Serviço
+                    Nova OT
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ fontFamily: "'Chivo', sans-serif" }}>
-                      {editingService ? 'Editar Serviço' : 'Novo Serviço'}
+                      {editingService ? 'Editar OT' : 'Nova OT'}
                       <HelpTooltip section="calendario_servicos" />
                     </DialogTitle>
                   </DialogHeader>
