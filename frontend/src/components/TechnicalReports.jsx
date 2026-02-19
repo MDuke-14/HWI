@@ -205,6 +205,13 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [loadingPDFPreview, setLoadingPDFPreview] = useState(false);
   const [downloadingAllPDFs, setDownloadingAllPDFs] = useState(false);
   const [downloadingClientesPDF, setDownloadingClientesPDF] = useState(false);
+  
+  // Visualização HTML estilo PDF para cliente
+  const [showHTMLPreviewModal, setShowHTMLPreviewModal] = useState(false);
+  const [htmlPreviewData, setHtmlPreviewData] = useState(null);
+  const [loadingHTMLPreview, setLoadingHTMLPreview] = useState(false);
+  const [showSignatureInPreview, setShowSignatureInPreview] = useState(false);
+  const signatureCanvasPreviewRef = useRef(null);
 
   // Folha de Horas
   const [showFolhaHorasModal, setShowFolhaHorasModal] = useState(false);
