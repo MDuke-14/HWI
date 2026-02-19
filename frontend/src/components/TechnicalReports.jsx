@@ -2763,6 +2763,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const getStatusColor = (status) => {
     const colors = {
+      'agendado': 'text-cyan-400 bg-cyan-500/10',
       'orcamento': 'text-amber-400 bg-amber-500/10',
       'em_execucao': 'text-blue-400 bg-blue-500/10',
       'em_andamento': 'text-blue-400 bg-blue-500/10', // Backward compatibility
