@@ -4858,6 +4858,53 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <FileSpreadsheet className="w-5 h-5 mr-2" />
                   {loadingFolhaHoras ? 'A carregar...' : 'Folha de Horas'}
                 </Button>
+                
+                {/* Botões de Mudança de Estado - Todos os utilizadores */}
+                {selectedRelatorio?.status !== 'concluido' && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/status`, {
+                          status: 'concluido'
+                        });
+                        toast.success('OT marcada como Concluída!');
+                        setSelectedRelatorio({ ...selectedRelatorio, status: 'concluido' });
+                        fetchRelatorios();
+                      } catch (error) {
+                        toast.error('Erro ao atualizar estado');
+                      }
+                    }}
+                    size="lg"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4"
+                    data-testid="marcar-concluido-btn"
+                  >
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Marcar como Concluída
+                  </Button>
+                )}
+                {selectedRelatorio?.status === 'concluido' && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/status`, {
+                          status: 'em_execucao'
+                        });
+                        toast.success('OT reaberta - Em Execução!');
+                        setSelectedRelatorio({ ...selectedRelatorio, status: 'em_execucao' });
+                        fetchRelatorios();
+                      } catch (error) {
+                        toast.error('Erro ao atualizar estado');
+                      }
+                    }}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4"
+                    data-testid="reabrir-ot-btn"
+                  >
+                    <RefreshCw className="w-5 h-5 mr-2" />
+                    Reabrir OT (Em Execução)
+                  </Button>
+                )}
+                
                 {user.is_admin && (
                   <Button
                     onClick={openEmailModal}
