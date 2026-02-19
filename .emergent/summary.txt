@@ -1,98 +1,89 @@
 <analysis>**original_problem_statement:**
 The user's goal is to build and iteratively enhance a full-stack time-tracking and work-order (OT) management application.
 
-**Initial Handoff Requests:**
-1.  **Help System:** Complete the help system. (DONE in previous session)
-2.  **PDF User Manual:** Create a comprehensive user manual. (DONE in previous session)
-3.  **Automatic Time Segmentation:** Implement automatic time segmentation. (DONE in previous session)
-4.  **Daily Authorization for Clock-ins:** Implement daily authorization for clock-ins on non-working days. (DONE in previous session)
-5.  **OT-Calendar Association:** Add a Data Fim (End Date) to OTs and display them on the calendar. (Implementation was DONE, but testing is still pending).
-6.  **Bug Fixes:** Fix PDF generation and other frontend errors. (DONE in previous session)
+**Initial Handoff Requests (now completed or in backlog):**
+*   Complete Help System, PDF Manual, Automatic Time Segmentation, Daily Clock-in Authorization, OT-Calendar Association, and various bug fixes.
 
-**New Requests in this Session:**
-1.  **New Service Modal in Calendar:**
-    *   When creating a new service from the calendar, selecting a client should NOT autofill the location.
-    *   Add a dropdown for Motivo de Assitencia (Reason for Assistance) with Assistencia or Montagem.
-    *   Make the Motivo de Assitencia field optional.
-    *   Add an Até (End Date) field.
-    *   Creating a service should also generate an OT and associate it with the calendar for the specified date range.
-2.  **Calendar UI Unification:**
-    *   Make OTs (Amber) and associated Services (Blue) appear with the same color (Amber/Orange).
-    *   Use a unified layout: .
-    *   Apply this unified view to both the monthly and list views of the calendar.
-3.  **Technician List Unification:** In the OT details, the list of technicians available in the Despesas (Expenses) card must be identical to the list available in the Mão de Obra (Labor) card.
-4.  **Manual Time Entry Fixes:**
-    *   Manually entered time records must also show the start and end times in the labor list.
-    *   The Tempo no Cliente (Time at Client) field should not be manually editable.
-    *   When editing a time record, the technician's name should be locked and unchangeable.
-    *   The time code (1, 2, S, D) must be assigned automatically based on the time and date, and the entry should be segmented if it crosses time code boundaries.
-5.  **Remove Manual Time Code Selection:** Remove the ability for users to manually select or edit the time code in all forms (new entry, edit entry). The system should always calculate it automatically.
-6.  **Diet/Allowance Rule:** In the Timesheet generation (Folha de Horas), ensure only one dieta (allowance) is applied per technician, per day, regardless of how many time entries they have on that day.
-7.  **Equipment Display on OT Card:** The Equipamento field on the main OT identification card should display Não especificado if no equipment is linked, the equipment name if one is linked, and Vários (Various) if multiple are linked.
-8.  **PDF Header Color:** Change the header color of all tables in all generated PDFs to a standard grey color.
-9.  **Timesheet Tariff Display:** In the Timesheet PDF, the Tarifas column should display the code along with the value (e.g., 1 - 15.00€/h).
-10. **Delete Expense Bug:** The button to delete an expense in an OT is not working.
-11. **Timezone Bug:** When adding a manual time entry (e.g., 08:00 to 19:00), it appears in the list with an hour added (09:00 to 20:00).
-12. **Unify Manual Entry UI:** Remove the separate + Adicionar Registo Manual button. Integrate its functionality into the main + Novo Registo button, including fields for KM tracking (start/end for there and back), a 1h pause checkbox, and a display for total calculated hours.
-13. **Edit Time Entry:** It must be possible to edit the start and end time of an existing time record.
+**New User Requests This Session:**
+1.  **OT/Calendar:** Implement an Agendado (Scheduled) status for OTs created via the calendar.
+2.  **OT/Calendar:** Remove the Services section from the calendar, unifying all events as Ordens de Trabalho (Work Orders). Clicking an OT in the calendar should open its details directly. Fix OT duplication on the calendar view.
+3.  **OT Details:** Allow editing the start and end times of labor records.
+4.  **OT Details:** Fix a bug preventing the creation of new labor records.
+5.  **OT Details:** Add a 1h pause checkbox to both the new and edit labor record modals.
+6.  **OT Details:** Update the OT PDF's labor table to include recently added fields (Start Time, End Time, KM, etc.).
+7.  **OT Details:** Allow editing the description/observation of photos attached to an OT.
+8.  **OT Details:** Make the photo description field optional.
+9.  **OT Details:** Add an Enviar por Email (Send by Email) button for admins in the OT view, which opens a popup to select client emails.
+10. **OT Details:** Add mandatory Em Execução (In Progress) and Concluído (Completed) status change buttons for all users in the OT view.
+11. **OT Details:** Implement a new HTML-based preview page for OTs (instead of a direct PDF link) that includes existing signatures and a button to add a new one.
+12. **Bug Fix:** Fix a crash when clicking the Add Signature button in the new preview modal.
+13. **Bug Fix:** Fix an issue where the Equipamentos (Equipment) section was showing in the preview even when empty.
+14. **Bug Fix:** Fix an Invalid Date error in the Intervenções Realizadas section of the HTML preview. (Last user request).
+15. **Performance:** Investigate and fix slow performance on the  page.
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-The application is a comprehensive full-stack work order and time management system with a React frontend, FastAPI backend, and MongoDB database.
-
-In this session, the agent successfully implemented a large number of user requests, significantly enhancing the calendar and OT management functionality. Key accomplishments include:
-- Reworked the New Service creation flow to automatically generate OTs and display them over date ranges in the calendar.
-- Unified the visual representation of OTs and Services in both monthly and list calendar views.
-- Fixed several critical bugs related to manual time entry, including automatic segmentation, timezone errors, and UI consistency.
-- Implemented business rules for technician selection, diet/allowance calculation, and equipment display.
-- Standardized the look and feel of all generated PDFs by changing table header colors.
-- Investigated and fixed the non-functional delete expense button.
-- Refactored the manual time entry UI to be more streamlined and feature-rich.
-- Corrected a recurring issue where duplicate user names caused multiple diet entries.
+The application is a feature-rich full-stack work order and time management system (React/FastAPI/MongoDB). This session saw a massive number of features and bug fixes completed. The agent successfully implemented editable time records, a new Agendado status for calendar-created OTs, a unified calendar view, enhanced OT PDF generation, editable photo descriptions, and a new HTML-based report preview with signature support. Crucially, a major performance bottleneck on the main OT listing page was investigated and resolved by fixing N+1 queries on the backend and adding database indexes. The UI/UX of the calendar and OT details pages were significantly refactored based on user feedback.
 
 **Last working item**:
--   **Last item agent was working:** Making it possible to edit the start and end time of an existing time record. The user reported this was not possible, and the agent began investigating the Edit Registration modal.
+-   **Last item agent was working:** The user reported that the INTERVENÇÕES REALIZADAS section of the new HTML preview page was showing Invalid Date. The agent was investigating the cause.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend testing agent. The test should open an OT, click to edit an existing time record, and verify that Hora Início and Hora Fim input fields are present and editable. A  test should also be performed on the  endpoint to confirm the backend logic.
+-   **Which testing method agent to use?** Frontend testing agent. The test should log in, navigate to the  page, open an OT with interventions, click Visualizar Relatório, and verify that the dates in the Intervenções Realizadas table are formatted correctly (e.g., DD/MM/YYYY) and not Invalid Date.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Allow editing of start and end times in time records (P0)**
-    -   **Description:** The user cannot edit the start and end times of an existing labor record. The Edit Registration modal needs to be updated to include these fields.
+-   **Issue 1: Invalid Date in HTML Preview's Intervenções Table (P0)**
+-   **Issue 2: Recurring VAPID Key Mismatch (P1)**
+-   **Issue 3: Unresolved Edit OT Equipment Test Failure (P2)**
+-   **Issue 4: Reverse Geocoding Fails in Preview Environment (P2)**
+
+**Issues Detail:**
+-   **Issue 1: Invalid Date in HTML Preview's Intervenções Table**
+    -   **Attempted fixes:** The agent identified the section in the code () but has not yet applied a fix.
+    -   **Next debug checklist:**
+        1.  In , inspect the  component.
+        2.  Locate where  is mapped and rendered.
+        3.  Examine the line . The  field is likely in a format that  cannot parse correctly.
+        4.  Use  to see the raw date string format.
+        5.  Correct the date parsing. If it's a simple  string, it should work. If it includes timezones or other characters, it may need to be cleaned before being passed to .
+    -   **Why fix this issue and what will be achieved with the fix?** The report preview is unusable with invalid dates, breaking a key feature just implemented. Fixing it will make the HTML report view functional.
     -   **Status:** IN PROGRESS
--   **Issue 2: Slow performance of the Technical Reports page (P1)**
-    -   **Description:** The agent repeatedly encountered extremely long load times when accessing the  page via screenshot tool, often timing out. The issue seems related to fetching the initial list of clients or OTs. This severely hinders testing and development.
-    -   **Status:** NOT STARTED
--   **Issue 3: Recurring VAPID Key Mismatch (P1)**
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None
+
+-   **Issue 2: Recurring VAPID Key Mismatch**
     -   **Description:** A persistent mismatch between VAPID keys in the code and the user's production environment is likely preventing push notifications from working in production. This issue was carried over.
-    *   **Status:** NOT STARTED
-    *   **Is recurring issue?** Y
--   **Issue 4: Unresolved Edit OT Equipment Test Failure (P2)**
-    *   **Description:** A known test failure from a previous session related to editing OT equipment was not addressed.
-    *   **Status:** NOT STARTED
-    *   **Is recurring issue?** Y
--   **Issue 5: Reverse Geocoding Fails in Preview Environment (P2)**
-    *   **Description:** The backend's reverse geocoding feature cannot be tested by the agent because the preview container lacks outbound internet access.
-    *   **Status:** BLOCKED (on environment limitations)
-    *   **Is recurring issue?** N
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Backend
+
+-   **Issue 3: Unresolved Edit OT Equipment Test Failure**
+    -   **Description:** A known test failure from a previous session related to editing OT equipment was not addressed.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
+
+-   **Issue 4: Reverse Geocoding Fails in Preview Environment**
+    -   **Description:** The backend's reverse geocoding feature cannot be tested by the agent because the preview container lacks outbound internet access.
+    -   **Status:** BLOCKED (on environment limitations)
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Backend
 
 **In progress Task List**:
--   **Task 1: Implement Editable Start/End Times in Edit Modal (P0)**
-    -   **Where to resume:** The agent has identified the  state in . The next steps are:
-        1.  Update the  state to include  and .
-        2.  Update the function that opens the modal () to populate these fields from the selected record.
-        3.  Add the  components for start and end time to the  JSX for editing a record.
-        4.  Update the backend  endpoint to accept and process the updated times, potentially re-running the segmentation logic.
-    -   **What will be achieved with this?** Users will be able to correct mistakes in time entries without having to delete and recreate them.
+-   **Task 1: Resolve Invalid Date in HTML Preview (P0)**
+    -   **Where to resume:** Resume work in , focusing on the date formatting within the .
+    -   **What will be achieved with this?** This will complete the HTML Preview feature by ensuring all data is displayed correctly.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Should Test frontend/backend/both after fix?** Frontend
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P0) Refactor  & :** These files are critically oversized (>9,000 and >7,500 lines, respectively) and are becoming unmaintainable. The constant stream of changes in these files this session has made this the highest priority technical debt.
-    -   **(P1) Test the Associate OT to Calendar feature:** The original goal of the session was to test this. The implementation is done, but it was never formally verified.
+    -   **(P0) Refactor  & :** These files are critically oversized (>9,000 and >8,000 lines, respectively) and are unmaintainable. The constant stream of changes makes this the highest priority technical debt. Propose a plan to break  into a route-based structure (e.g., , ) and to decompose  into smaller, specialized components and custom hooks.
+    -   **(P1) User Verification for Performance Fix:** The  page performance was drastically improved, but the user has not confirmed the fix. The agent should verify with the user if the page speed is now acceptable.
+    -   **(P1) Test the Associate OT to Calendar feature:** The original goal of a previous session was to test this. The implementation is done, but it was never formally verified.
     -   **(P1) Complete Work on Vacation Logic:** The logic authorizes work on a vacation day but does not yet refund the vacation day to the user's balance.
     -   **(P1) OneDrive Integration:** Migrate file storage to OneDrive.
 -   **Future Tasks:**
@@ -102,97 +93,101 @@ In this session, the agent successfully implemented a large number of user reque
     -   **(P2) Data Export:** Add functionality to export reports to Excel/CSV.
 
 **Completed work in this session**
-- **Feature: Enhanced New Service Modal & OT Creation:** Implemented a new flow where creating a service from the calendar also generates an OT and populates the calendar over a date range. (Verified via UI screenshots and )
-- **Feature: Unified Calendar UI:** OTs and Services now share the same color and format () in both monthly and list views. (Verified via UI screenshots)
-- **Feature: Unified Technician Lists:** Ensured the Expenses and Labor cards in an OT pull the technician list from the same source (). (Verified by code analysis and )
-- **Feature: Time Code Automation:** Removed all manual selection of time codes; the system now calculates them automatically based on date/time and segments entries correctly. (Verified by code changes and )
-- **Feature: Diet/Allowance Rule:** Implemented logic in both frontend and backend to ensure only one allowance is applied per technician per day in the Timesheet. (Verified by code changes)
-- **Feature: Dynamic Equipment Display:** The OT card now correctly displays equipment status as Não especificado, the equipment name, or Vários. (Verified via  and code changes)
-- **Feature: Unified Manual Entry UI:** Merged two manual entry buttons into one, adding KM tracking, a pause option, and total hours calculation to the modal. (Verified via code changes)
-- **Bug Fix: Timezone Error:** Corrected an issue where manually entered times were shifted by +1 hour due to incorrect timezone handling. (Verified by code changes and )
-- **Bug Fix: Delete Expense Button:** Investigated and fixed the non-functional Delete Expense button. (Verified via )
-- **Bug Fix: Duplicate Diet Entries:** Fixed an issue where duplicate user names caused multiple diet entries by changing the grouping key from user ID to user name. (Verified via code changes)
-- **Enhancement: PDF Styling:** Standardized all PDF table headers to a uniform grey color. (Verified by code changes)
-- **Enhancement: Timesheet Tariff Display:** The tariff column in the Timesheet PDF now includes the time code (e.g., 1 - 15.00€/h). (Verified by code changes)
+- **Feature: Editable Labor Record Times:** Implemented and tested the ability to edit start and end times for labor records. (DONE)
+- **Feature: Pause in Labor Records:** Added a 1h pause checkbox to both creation and editing of labor records. (DONE)
+- **Feature: New 'Agendado' OT Status:** OTs created from the calendar now default to a new Agendado (Scheduled) status, with corresponding UI updates. (DONE)
+- **Feature: Unified Calendar View:** Refactored the Calendar page to remove the separate Services section, showing all items as Work Orders (OTs) and ensuring a click on an OT opens its details directly. (DONE)
+- **Feature: Editable Photo Descriptions:** Implemented functionality to edit the descriptions of photos attached to an OT. (DONE)
+- **Feature: Send by Email Button:** Added a button for admins to send the OT PDF via email, with a popup to select recipient emails from the client's contact list. (DONE)
+- **Feature: OT Status Change Buttons:** Added Mark as In Progress and Mark as Completed buttons to the OT view for all users. (DONE)
+- **Feature: HTML Report Preview:** Created a new HTML-based report preview modal that displays OT data, including existing signatures, and provides a button to open the signature-adding modal. (DONE)
+- **Performance:  Page Optimization:** Drastically improved page load times by fixing a major N+1 query problem on the backend using a MongoDB aggregation pipeline and creating database indexes on startup. (USER VERIFICATION PENDING)
+- **Bug Fix: Labor Record Creation:** Fixed a timezone-related bug that was preventing new labor records from being created. (DONE)
+- **Bug Fix: OT PDF Labor Table:** Updated the PDF generation logic in  to include new labor record columns (Start, End, KM, Code). (DONE)
+- **Bug Fix: Optional Photo Description:** Removed the requirement for a description when uploading a photo. (DONE)
+- **Bug Fix: Calendar OT Duplication:** Fixed an issue where OTs created via the calendar would appear twice. (DONE)
+- **Bug Fix: Signature Modal Crash:** Fixed a  that occurred when clicking the Add Signature button in the new HTML preview. (DONE)
+- **Bug Fix: Empty Equipment in Preview:** Fixed a bug where the equipment section in the HTML preview was rendered even if the OT had no equipment. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
--   **Slow page loading on :** This was observed multiple times but not investigated.
--   **VAPID Key Mismatch:** Carried over from the previous session.
--   **Edit OT Equipment Test Failure:** Carried over from the previous session.
+- The issues of VAPID Key Mismatch, Edit OT Equipment Test Failure, and Reverse Geocoding from the previous handoff remain unfixed and are tracked in the pending issue list.
 
 **Known issue recurrence from previous fork**
 -   The **VAPID key mismatch** issue for production push notifications remains unresolved.
 -   The **Edit OT Equipment test failure** remains unresolved.
 
 **Code Architecture**
-
+verificar_sobreposicao
 
 **Key Technical Concepts**
--   **Backend Logic Centralization:** The agent modified several  endpoints (, ) to reuse the core time segmentation logic from , ensuring consistent behavior for all manual time entries.
--   **Timezone Handling:** Fixed a bug by removing explicit  from  objects on the backend and parsing time from ISO strings directly on the frontend () to avoid browser-based timezone conversion.
--   **Data-Driven UI:** The backend was modified to return a pre-formatted  string, simplifying the frontend logic for displaying equipment status on OT cards.
--   **Data Integrity Workaround:** Resolved an issue with duplicate diet entries by changing the unique key for grouping from  +  to  +  in the frontend, handling cases where the database contains users with the same name but different IDs.
--   **Complex Frontend State:** The  component now manages an extremely large and complex state with numerous  hooks for modals, forms, and fetched data, reinforcing the urgent need for refactoring.
+-   **Backend Performance Optimization:** Resolved a critical N+1 query problem by replacing a loop of database calls with a single, efficient MongoDB aggregation pipeline using .
+-   **Database Indexing:** Implemented logic in the  of the FastAPI application to create MongoDB indexes () on commonly queried fields, significantly speeding up data retrieval.
+-   **Timezone Correction:** Fixed a subtle but critical bug in  by making timezone-naive  objects timezone-aware () before comparison with timezone-aware objects from the database.
+-   **Complex Modal Interactions:** Implemented a flow where one modal (HTML Preview) contains a button that triggers another existing modal (Add Signature), requiring careful state management ().
+-   **URL Parameter-based Actions:** Used a  hook in  to read a URL query parameter () with  on page load, find the corresponding report, and automatically open its view modal.
+-   **Conditional Rendering (Role-based):** Used the  flag to conditionally render UI elements like the Send by Email button, ensuring they are only visible to authorized users.
 
 **key DB schema**
--   **registos_tecnico_ot** (Modified Collection):
-    -   Now includes , , , , , and  to support the enhanced manual entry form.
--   **relatorios_tecnicos** (Modified Collection):
-    -   No direct schema change, but the data returned by the  endpoint now includes derived fields  and .
+-   **relatorios_tecnicos**:
+    -   : Now includes  as a valid state.
+    -   *Indexes Added*: , , .
+-   **registos_tecnico_ot**:
+    -    (Boolean): Added to track if a 1-hour pause should be deducted.
+    -   *Index Added*: .
+-   **service_appointments**:
+    -   *Index Added*: .
 
 **All files of reference**
 -   /app/backend/server.py
--   /app/backend/folha_horas_pdf.py
 -   /app/backend/ot_pdf_report.py
--   /app/backend/pc_pdf_report.py
--   /app/backend/pdf_report.py
--   /app/backend/pdf_report_simple.py
--   /app/frontend/src/components/Calendar.jsx
+-   /app/backend/cronometro_logic.py
 -   /app/frontend/src/components/TechnicalReports.jsx
--   /app/frontend/src/components/technical-reports/TecnicoModal.jsx
--   /app/frontend/src/components/technical-reports/FolhaHorasModal.jsx
+-   /app/frontend/src/components/Calendar.jsx
 -   /app/memory/PRD.md
+-   /app/test_reports/iteration_6.json
+-   /app/test_reports/iteration_7.json
 
 **Areas that need refactoring**:
--   : This monolithic file is now even larger and more complex, making it extremely difficult to maintain and debug. It is the #1 candidate for refactoring into a route-based structure (e.g., , ).
--   : This component has become a god component responsible for far too much logic, state management, and rendering. It urgently needs to be broken down into smaller, specialized components (e.g., , , ) and custom hooks (, ). The performance issues on this page are likely a symptom of its complexity.
+-   **/app/backend/server.py**: This monolithic file is now over 9900 lines. It is the #1 priority for refactoring into a route-based structure (e.g., , , ).
+-   **/app/frontend/src/components/TechnicalReports.jsx**: This component is a god component of over 8000 lines, managing far too much state and logic. It urgently needs to be broken down into smaller, specialized components (e.g., , , ) and custom hooks (, ). The performance issues were likely a symptom of its complexity.
 
 **key api endpoints**
--   **New:**
-    -   : Creates a service and an associated OT.
 -   **Modified:**
-    -   : Now uses time segmentation logic.
-    -   : Now accepts KM and pause fields.
-    -   : Verified and fixed.
-    -   : Now returns  and .
-    -   : Logic updated to correctly identify technicians.
-    -   : Logic updated to apply only one diet per technician/day.
+    -   : Rewritten to use a MongoDB aggregation pipeline to fix the N+1 query problem, dramatically improving performance.
+    -   : Updated to accept a JSON body and handle more states (, ).
+    -   : Updated to accept and process the  field.
+    -   : Timezone bug fixed in overlap check.
+    -   : Changed from requiring form data to accepting a JSON body for easier frontend updates.
+    -   : Logic modified to set the new OT's status to .
 
 **Critical Info for New Agent**
--   **Refactoring is CRITICAL:** Do not add more features to  or  without first proposing a refactoring plan. The complexity is causing bugs and slowing down development. The slow performance of the  page should be investigated as part of this.
--   **Data Inconsistency:** Be aware that the database contains duplicate users (same name, different IDs). The workaround for the diet calculation (grouping by  instead of ) was implemented on the frontend. This might be a recurring pattern if other features rely on unique technicians.
--   **Time Entry Logic is Centralized:** All manual time entries, regardless of which form is used, now flow through backend endpoints that use the same segmentation logic. This is a good pattern to maintain.
+-   **Refactoring is CRITICAL:** Do not add more features to  or  without first proposing a refactoring plan. The complexity is the source of bugs and is slowing down development.
+-   **Performance Fix Verification:** A major performance optimization was applied to the  endpoint. You should confirm with the user that the  page is now acceptably fast before closing the ticket.
+-   **State Management:** Be mindful of the large number of modals and states within . When adding a new feature, trace the state flow carefully to avoid introducing regressions, as seen with the Add Signature button crash.
+-   **Date Handling:** Be cautious with date formats. The Invalid Date bug is a reminder that dates from the backend might not be directly parsable by  on the frontend without sanitization.
 
 **documents and test reports created in this job**
--   /app/memory/PRD.md (Updated with new features)
+-   /app/memory/PRD.md (Updated)
+-   /app/test_reports/iteration_6.json
+-   /app/test_reports/iteration_7.json
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. **Request:** Edit start/end time of a record. (IN PROGRESS)
-9.  **Feedback:** The diet allowance is still appearing multiple times for the same technician on the same day. (RESOLVED)
-8.  **Request:** Unify the UI for manual time entries, merging two buttons and adding KM tracking, a pause option, and total hours display. (RESOLVED)
-7.  **Feedback:** Timezone bug is causing manually entered hours to be off by +1. (RESOLVED)
-6.  **Feedback:** The delete expense button doesn't work. (RESOLVED)
-5.  **Request:** In the Timesheet PDF, the Tariff column should show the code and the value (e.g., 1 - 15.00€/h). (RESOLVED)
-4.  **Request:** Change all PDF table headers to a uniform grey color. (RESOLVED)
-3.  **Request:** The equipment name on the OT card should show Não especificado, the name, or Vários based on the number of linked equipments. (RESOLVED)
-2.  **Request:** Implement a rule for only one diet per technician per day in the Timesheet. (Initial fix was incomplete, addressed again in message #9)
-1.  **Request:** The user should not be able to manually select or edit the time code for an entry; it must be automatic. (RESOLVED)
+10. **Request:** The INTERVENÇÕES REALIZADAS field in the HTML preview shows Invalid Date. (IN PROGRESS)
+9.  **Feedback:** The equipment field in the preview is not showing existing equipment. (RESOLVED - was a misunderstanding, fixed logic for empty state).
+8.  **Feedback:** Clicking the add new signature button crashes the app with . (RESOLVED)
+7.  **Request:** The add signature button in the preview should be a shortcut to the existing signature modal, and the preview should show existing signatures. (RESOLVED)
+6.  **Request:** The Visualizar PDF button should open an HTML page styled like a PDF, with a button to add a signature at the end. (RESOLVED)
+5.  **Request:** The performance of the  page is slow. (RESOLVED - backend optimized, user verification pending)
+4.  **Request:** Add Em Execução and Concluido status change buttons to the OT view for all users. (RESOLVED)
+3.  **Request:** Add an Enviar por Email button for admins at the end of the OT view, with a popup to select client emails. (RESOLVED)
+2.  **Request:** Make the photo description field optional. (RESOLVED)
+1.  **Feedback:** The calendar is showing the same OT twice. (RESOLVED)
 
 **Project Health Check:**
 -   **Broken:**
-    -   Production push notification system (due to VAPID key mismatch).
-    -   Edit OT Equipment feature (due to an unresolved test failure from a previous session).
-    -   Performance of the  page is severely degraded, often timing out during testing.
+    -   HTML Report Preview: The Intervenções date is not displaying correctly (Invalid Date).
+    -   Production Push Notifications: Likely non-functional due to the persistent VAPID key mismatch.
+    -   Edit OT Equipment feature: An unresolved test failure from a previous session remains.
 -   **Mocked:** None.
 
 **3rd Party Integrations**
@@ -205,10 +200,10 @@ In this session, the agent successfully implemented a large number of user reque
 -   **External Services:** OpenStreetMap Nominatim (for Reverse Geocoding)
 
 **Testing status**
--   **Testing agent used after significant changes:** NO
+-   **Testing agent used after significant changes:** YES, for the editable time records feature.
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None
--   **Known regressions:** The production push notification issue persists. The performance of the OT page has noticeably degraded.
+-   **Known regressions:** The production push notification issue persists.
 
 **Credentials to test flow:**
 -   **admin:**  / 
@@ -216,7 +211,7 @@ In this session, the agent successfully implemented a large number of user reque
 -   **non-admin:**  / 
 
 **What agent forgot to execute**
--   The agent correctly prioritized the user's continuous stream of new requests. As a result, the following tasks from the initial handoff were not addressed:
+- The agent correctly prioritized the user's continuous stream of high-priority requests. As a result, several lower-priority tasks from the initial handoff were not addressed and remain in the backlog:
     -   Testing the Associate OT to Calendar feature.
     -   Investigating the recurring VAPID Key Mismatch issue.
     -   Addressing the Edit OT Equipment test failure.
