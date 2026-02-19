@@ -656,7 +656,7 @@ const Calendar = ({ user, onLogout }) => {
                 Calendário
                 <HelpTooltip section="calendario_geral" />
               </h1>
-              <p className="text-gray-500 mt-1">Gestão de serviços e disponibilidade da equipa</p>
+              <p className="text-gray-500 mt-1">Gestão de OTs e disponibilidade da equipa</p>
             </div>
             {user.is_admin && (
               <Dialog open={dialogOpen} onOpenChange={(open) => {
