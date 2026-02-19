@@ -6241,19 +6241,28 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </section>
 
                 {/* Equipamentos */}
-                {(htmlPreviewData.equipamentos?.length > 0 || htmlPreviewData.relatorio.equipamento_marca) && (
+                {(htmlPreviewData.equipamentos?.length > 0 || 
+                  htmlPreviewData.relatorio?.equipamento_marca || 
+                  htmlPreviewData.relatorio?.equipamento_tipologia ||
+                  htmlPreviewData.relatorio?.equipamento_modelo) && (
                   <section className="border border-gray-300 rounded-lg p-4">
                     <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">EQUIPAMENTOS</h2>
                     <div className="space-y-2 text-sm">
-                      {htmlPreviewData.relatorio.equipamento_marca && (
+                      {(htmlPreviewData.relatorio?.equipamento_marca || 
+                        htmlPreviewData.relatorio?.equipamento_tipologia || 
+                        htmlPreviewData.relatorio?.equipamento_modelo) && (
                         <div className="bg-gray-50 p-3 rounded">
-                          <span className="font-semibold">{htmlPreviewData.relatorio.equipamento_tipologia}</span> - {htmlPreviewData.relatorio.equipamento_marca} {htmlPreviewData.relatorio.equipamento_modelo}
+                          <span className="font-semibold">{htmlPreviewData.relatorio.equipamento_tipologia || 'Equipamento'}</span>
+                          {htmlPreviewData.relatorio.equipamento_marca && <> - {htmlPreviewData.relatorio.equipamento_marca}</>}
+                          {htmlPreviewData.relatorio.equipamento_modelo && <> {htmlPreviewData.relatorio.equipamento_modelo}</>}
                           {htmlPreviewData.relatorio.equipamento_numero_serie && <span className="text-gray-500 ml-2">(S/N: {htmlPreviewData.relatorio.equipamento_numero_serie})</span>}
                         </div>
                       )}
                       {htmlPreviewData.equipamentos?.map((eq, idx) => (
                         <div key={idx} className="bg-gray-50 p-3 rounded">
-                          <span className="font-semibold">{eq.tipologia}</span> - {eq.marca} {eq.modelo}
+                          <span className="font-semibold">{eq.tipologia || 'Equipamento'}</span>
+                          {eq.marca && <> - {eq.marca}</>}
+                          {eq.modelo && <> {eq.modelo}</>}
                           {eq.numero_serie && <span className="text-gray-500 ml-2">(S/N: {eq.numero_serie})</span>}
                         </div>
                       ))}
