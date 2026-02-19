@@ -4696,7 +4696,116 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
     }
 
 
-@api_router.get("/time-entries/my-realtime-status")
+@api_router.get("/admin/user-locations/{user_id}")
+async def get_user_location_history(
+    user_id: str,
+    start_date: str = None,
+    end_date: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get location history for a specific user (admin only)"""
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    # Definir datas
+    if not start_date:
+        start_date = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+    if not end_date:
+        end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Buscar entradas com geolocalização
+    entries = await db.time_entries.find({
+        "user_id": user_id,
+        "date": {"$gte": start_date, "$lte": end_date},
+        "geo_location": {"$exists": True, "$ne": None}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Obter dados do utilizador
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "full_name": 1, "username": 1})
+    
+    locations = []
+    for entry in entries:
+        geo = entry.get("geo_location")
+        if geo and geo.get("latitude") and geo.get("longitude"):
+            locations.append({
+                "id": entry["id"],
+                "date": entry["date"],
+                "latitude": geo.get("latitude"),
+                "longitude": geo.get("longitude"),
+                "accuracy": geo.get("accuracy"),
+                "timestamp": geo.get("timestamp") or entry.get("start_time"),
+                "address": geo.get("address", {}),
+                "type": "Entrada" if entry.get("status") == "active" else "Registo",
+                "outside_residence_zone": entry.get("outside_residence_zone", False),
+                "location_description": entry.get("location_description")
+            })
+    
+    # Ordenar por data/timestamp
+    locations.sort(key=lambda x: (x["date"], x.get("timestamp", "")), reverse=True)
+    
+    return {
+        "user_id": user_id,
+        "user_name": user.get("full_name") if user else user_id,
+        "username": user.get("username") if user else "",
+        "start_date": start_date,
+        "end_date": end_date,
+        "locations": locations,
+        "total_count": len(locations)
+    }
+
+
+@api_router.get("/admin/all-current-locations")
+async def get_all_current_locations(current_user: dict = Depends(get_current_user)):
+    """Get current/last known locations of all users (admin only)"""
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Apenas administradores")
+    
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Buscar todas as entradas de hoje com geolocalização
+    entries = await db.time_entries.find({
+        "date": today,
+        "geo_location": {"$exists": True, "$ne": None}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Obter todos os utilizadores
+    users = await db.users.find({}, {"_id": 0, "id": 1, "username": 1, "full_name": 1}).to_list(1000)
+    users_map = {u["id"]: u for u in users}
+    
+    # Agrupar por utilizador (pegar a última entrada de cada)
+    user_locations = {}
+    for entry in entries:
+        user_id = entry["user_id"]
+        geo = entry.get("geo_location")
+        
+        if geo and geo.get("latitude") and geo.get("longitude"):
+            entry_time = entry.get("start_time", "")
+            
+            # Guardar apenas a entrada mais recente de cada utilizador
+            if user_id not in user_locations or entry_time > user_locations[user_id].get("timestamp", ""):
+                user = users_map.get(user_id, {})
+                is_active = entry.get("status") == "active"
+                
+                user_locations[user_id] = {
+                    "user_id": user_id,
+                    "userName": user.get("full_name") or user.get("username") or user_id,
+                    "username": user.get("username", ""),
+                    "latitude": geo.get("latitude"),
+                    "longitude": geo.get("longitude"),
+                    "accuracy": geo.get("accuracy"),
+                    "timestamp": entry.get("start_time"),
+                    "address": geo.get("address", {}).get("formatted") or geo.get("address", {}).get("city"),
+                    "type": "A trabalhar" if is_active else "Último registo",
+                    "color": "green" if is_active else "blue",
+                    "is_active": is_active,
+                    "outside_residence_zone": entry.get("outside_residence_zone", False)
+                }
+    
+    return {
+        "date": today,
+        "locations": list(user_locations.values()),
+        "total_users": len(user_locations)
+    }
 async def get_my_realtime_status(current_user: dict = Depends(get_current_user)):
     """Get user's own real-time status for today with entry details"""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
