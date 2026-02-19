@@ -2757,7 +2757,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const openSignatureFromPreview = () => {
     // Fechar preview e abrir modal de assinaturas
     setShowHTMLPreviewModal(false);
-    setShowAssinaturasModal(true);
+    setShowAssinaturaModal(true);
   };
 
 
