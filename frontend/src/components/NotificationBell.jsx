@@ -29,7 +29,19 @@ const NotificationBell = ({ user }) => {
   };
 
   const subscribeToPush = useCallback(async (registration) => {
+    setIsSubscribing(true);
     try {
+      // Primeiro, buscar a chave VAPID pública do servidor
+      try {
+        const keyResponse = await axios.get(`${API}/notifications/vapid-public-key`);
+        if (keyResponse.data.publicKey) {
+          VAPID_PUBLIC_KEY = keyResponse.data.publicKey;
+          console.log('VAPID key obtida do servidor');
+        }
+      } catch (keyError) {
+        console.log('Usando VAPID key local (servidor não retornou chave)');
+      }
+      
       // IMPORTANTE: Sempre cancelar subscription existente e criar uma nova
       // Isso garante que usamos as chaves VAPID corretas
       let existingSubscription = await registration.pushManager.getSubscription();
@@ -48,7 +60,7 @@ const NotificationBell = ({ user }) => {
 
       // Converter para JSON e enviar para o backend
       const subscriptionJson = subscription.toJSON();
-      console.log('Enviando subscription para backend:', subscriptionJson);
+      console.log('Enviando subscription para backend...');
       
       const response = await axios.post(`${API}/notifications/subscribe`, {
         endpoint: subscriptionJson.endpoint,
@@ -57,13 +69,19 @@ const NotificationBell = ({ user }) => {
       
       console.log('Push subscription registada com sucesso:', response.data);
       setPushSubscribed(true);
+      setNeedsResubscribe(false);
+      toast.success('Notificações push ativadas!');
       
     } catch (error) {
       console.error('Erro ao registar push subscription:', error);
       if (error.response) {
         console.error('Response error:', error.response.data);
+        toast.error(error.response.data.detail || 'Erro ao ativar notificações push');
+      } else {
+        toast.error('Erro ao ativar notificações push');
       }
-      toast.error('Erro ao ativar notificações push');
+    } finally {
+      setIsSubscribing(false);
     }
   }, []);
 
