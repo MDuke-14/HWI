@@ -11,6 +11,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### P0 (Crítico)
 - ✅ ~~Edição de hora início/fim em registos de tempo~~ (24 Janeiro 2026)
+- ✅ ~~Funcionalidade "Justificar Dia" na Gestão de Entradas~~ (19 Fevereiro 2026)
 
 ### P1 (Alta Prioridade)
 - Testar funcionalidade "Associar OT ao Calendário" (implementado mas não testado formalmente)
@@ -19,7 +20,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - Integração OneDrive para armazenamento de ficheiros
 
 ### P2 (Média Prioridade)
-- Resolver problema de VAPID Key para notificações push em produção
+- Resolver problema de VAPID Key para notificações push em produção (pendente validação em produção)
 - Corrigir falha no teste "Editar Equipamento OT"
 - Refactoring de `server.py` e `TechnicalReports.jsx` (ficheiros críticos >7000 linhas)
 - Relatório de horas extra para admins
