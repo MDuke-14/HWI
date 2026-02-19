@@ -40,6 +40,52 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ## Funcionalidades Implementadas
 
+### Fevereiro 2026 - Sessão Atual (19 Fevereiro 2026)
+
+#### ✅ Funcionalidade "Justificar Dia" na Gestão de Entradas (19 Fevereiro 2026) - NOVA FUNCIONALIDADE
+**Página "Gestão de Entradas" (/admin/time-entries) completamente melhorada:**
+
+**Nova visualização de todos os dias do período de faturação:**
+- Agora mostra TODOS os dias do período (26 do mês anterior até 25 do mês atual)
+- Dias sem registo aparecem com badge "Sem registo" e estilo visual diferenciado
+- Fins de semana (Sábado/Domingo) aparecem com badge "Fim de semana" e fundo roxo/índigo
+- Dias com entradas mantêm o estilo normal com fundo escuro
+
+**Modal "Justificar Dia" com 5 opções:**
+1. **Férias** (azul) - Cria registo na coleção `vacation_requests` tipo "vacation"
+2. **Dar Dia (8h automáticas)** (verde) - Remove entradas existentes e cria 2 entradas:
+   - 09:00-13:00 (4h) + 14:00-18:00 (4h) = 8h totais
+   - Observação: "[Dia oferecido pelo admin {nome}]"
+3. **Folga** (amarelo) - Cria registo na coleção `vacation_requests` tipo "folga"
+4. **Falta** (vermelho) - Cria registo na coleção `absences`
+5. **Cancelamento de Férias** (cinza) - Remove férias marcadas para esse dia
+
+**Logging automático:**
+- Todas as justificações são registadas como observação no relatório mensal do utilizador
+- Formato: "[data/hora] TIPO: dd/mm/yyyy - Justificado pelo admin {nome}"
+
+**Backend (`server.py`):**
+- Novo endpoint `POST /api/admin/time-entries/justify-day`
+- Nova função `register_admin_observation()` para registar observações nos relatórios mensais
+- Validação de tipo de justificação
+
+**Frontend (`AdminTimeEntries.jsx`):**
+- Nova função `generateAllDaysInPeriod()` para gerar lista de todos os dias
+- Função `groupEntriesByDate()` reformulada para mostrar todos os dias
+- Modal "Justificar Dia" com UI colorida e botões para cada tipo
+- Estilos diferenciados para dias úteis, fins de semana e dias sem registo
+
+**Ficheiros modificados:**
+- `/app/backend/server.py` - Novo endpoint e função de logging
+- `/app/frontend/src/components/AdminTimeEntries.jsx` - UI reformulada
+
+**Testado:** ✅ Backend testado via curl + Frontend testado via screenshots
+- Todos os 5 tipos de justificação funcionam corretamente
+- Observações registadas no relatório mensal
+- UI mostra todos os dias do período com estilos adequados
+
+---
+
 ### Janeiro 2026 - Sessão Atual (24 Janeiro 2026)
 
 #### ✅ Novo Serviço no Calendário com Criação de OT (24 Janeiro 2026) - NOVA FUNCIONALIDADE
