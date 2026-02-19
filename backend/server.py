@@ -335,7 +335,7 @@ class RelatorioTecnico(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     numero_assistencia: Optional[int] = None  # Auto-incrementado pelo backend
     referencia_assistencia: Optional[str] = None
-    status: str = "em_execucao"  # orcamento, em_execucao, concluido, facturado
+    status: str = "em_execucao"  # agendado, orcamento, em_execucao, concluido, facturado
     
     # Datas
     data_criacao: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
