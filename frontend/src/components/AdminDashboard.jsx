@@ -2037,6 +2037,121 @@ const AdminDashboard = ({ user, onLogout }) => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* All Current Locations Dialog */}
+        <Dialog open={showAllLocationsDialog} onOpenChange={setShowAllLocationsDialog}>
+          <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Map className="w-5 h-5 text-emerald-400" />
+                Mapa de Localizações em Tempo Real
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="mt-4 space-y-4">
+              {/* Refresh Button */}
+              <div className="flex justify-between items-center">
+                <p className="text-gray-400 text-sm">
+                  Última atualização: {new Date().toLocaleTimeString('pt-PT')}
+                </p>
+                <Button
+                  onClick={fetchAllCurrentLocations}
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-600 text-gray-300"
+                  disabled={locationLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${locationLoading ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+              </div>
+
+              {/* Legend */}
+              <div className="flex gap-4 text-sm bg-[#0f0f0f] p-3 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  <span className="text-gray-400">A trabalhar</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <span className="text-gray-400">Último registo</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="text-gray-400">Fora de zona</span>
+                </div>
+              </div>
+
+              {/* Map */}
+              {locationLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
+                  <span className="ml-3 text-gray-400">A carregar localizações...</span>
+                </div>
+              ) : allCurrentLocations.length > 0 ? (
+                <div className="space-y-4">
+                  <LocationMap
+                    locations={allCurrentLocations.map(loc => ({
+                      id: loc.user_id,
+                      latitude: loc.latitude,
+                      longitude: loc.longitude,
+                      userName: loc.userName,
+                      address: loc.address || 'Localização sem endereço',
+                      timestamp: loc.timestamp,
+                      type: loc.type,
+                      color: loc.outside_residence_zone ? 'orange' : (loc.is_active ? 'green' : 'blue')
+                    }))}
+                    height="400px"
+                    zoom={10}
+                  />
+                  
+                  {/* User List */}
+                  <div className="bg-[#0f0f0f] rounded-lg p-4 max-h-48 overflow-y-auto">
+                    <h4 className="text-sm font-semibold text-gray-400 mb-3">
+                      Colaboradores com localização hoje ({allCurrentLocations.length})
+                    </h4>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      {allCurrentLocations.map((loc, idx) => (
+                        <div key={loc.user_id || idx} className="flex items-center justify-between bg-[#1a1a1a] p-3 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              loc.outside_residence_zone ? 'bg-orange-500' : 
+                              (loc.is_active ? 'bg-emerald-500' : 'bg-blue-500')
+                            }`} />
+                            <div>
+                              <p className="text-white text-sm font-medium">{loc.userName}</p>
+                              <p className="text-gray-400 text-xs">
+                                {loc.address || 'Sem endereço'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              loc.is_active ? 'bg-emerald-600/20 text-emerald-400' : 'bg-blue-600/20 text-blue-400'
+                            }`}>
+                              {loc.type}
+                            </span>
+                            {loc.timestamp && (
+                              <p className="text-gray-500 text-xs mt-1">
+                                {new Date(loc.timestamp).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <Map className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Sem localizações registadas hoje</p>
+                  <p className="text-sm mt-2">Os colaboradores ainda não iniciaram ponto com geolocalização ativa</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
