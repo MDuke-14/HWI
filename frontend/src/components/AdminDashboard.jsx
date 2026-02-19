@@ -199,7 +199,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     try {
       const start = startDate || locationHistoryDate;
       const end = endDate || locationHistoryDate;
-      const response = await axios.get(`${API}/admin/user/${userId}/location-history?start_date=${start}&end_date=${end}`);
+      const response = await axios.get(`${API}/admin/user-locations/${userId}?start_date=${start}&end_date=${end}`);
       setUserLocationHistory(response.data.locations || []);
       return response.data;
     } catch (error) {
