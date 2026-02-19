@@ -6214,6 +6214,264 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
+      {/* HTML Preview Modal - Visualização estilo PDF para Cliente */}
+      <Dialog open={showHTMLPreviewModal} onOpenChange={setShowHTMLPreviewModal}>
+        <DialogContent className="bg-white text-black max-w-4xl max-h-[95vh] overflow-y-auto p-0">
+          {htmlPreviewData && (
+            <div className="pdf-preview-container">
+              {/* Header */}
+              <div className="bg-gray-800 text-white p-6 print:bg-gray-800">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h1 className="text-2xl font-bold">RELATÓRIO TÉCNICO</h1>
+                    <p className="text-gray-300 mt-1">Ordem de Trabalho #{htmlPreviewData.relatorio.numero_assistencia}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-300">Data: {new Date(htmlPreviewData.relatorio.data_servico).toLocaleDateString('pt-PT')}</p>
+                    <p className="text-sm text-gray-300">Estado: {getStatusLabel(htmlPreviewData.relatorio.status)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Informações do Cliente */}
+                <section className="border border-gray-300 rounded-lg p-4">
+                  <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">INFORMAÇÕES DO CLIENTE</h2>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-600">Cliente:</span>
+                      <p className="text-gray-800">{htmlPreviewData.relatorio.cliente_nome}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">Pedido por:</span>
+                      <p className="text-gray-800">{htmlPreviewData.relatorio.pedido_por || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">Local:</span>
+                      <p className="text-gray-800">{htmlPreviewData.relatorio.local_intervencao || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-600">Motivo:</span>
+                      <p className="text-gray-800">{htmlPreviewData.relatorio.motivo_assistencia || '-'}</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Equipamentos */}
+                {(htmlPreviewData.equipamentos?.length > 0 || htmlPreviewData.relatorio.equipamento_marca) && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">EQUIPAMENTOS</h2>
+                    <div className="space-y-2 text-sm">
+                      {htmlPreviewData.relatorio.equipamento_marca && (
+                        <div className="bg-gray-50 p-3 rounded">
+                          <span className="font-semibold">{htmlPreviewData.relatorio.equipamento_tipologia}</span> - {htmlPreviewData.relatorio.equipamento_marca} {htmlPreviewData.relatorio.equipamento_modelo}
+                          {htmlPreviewData.relatorio.equipamento_numero_serie && <span className="text-gray-500 ml-2">(S/N: {htmlPreviewData.relatorio.equipamento_numero_serie})</span>}
+                        </div>
+                      )}
+                      {htmlPreviewData.equipamentos?.map((eq, idx) => (
+                        <div key={idx} className="bg-gray-50 p-3 rounded">
+                          <span className="font-semibold">{eq.tipologia}</span> - {eq.marca} {eq.modelo}
+                          {eq.numero_serie && <span className="text-gray-500 ml-2">(S/N: {eq.numero_serie})</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Intervenções */}
+                {htmlPreviewData.intervencoes?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">INTERVENÇÕES REALIZADAS</h2>
+                    <div className="space-y-3">
+                      {htmlPreviewData.intervencoes.map((int, idx) => (
+                        <div key={idx} className="bg-gray-50 p-3 rounded text-sm">
+                          <div className="flex justify-between mb-2">
+                            <span className="font-semibold">{int.tecnico_nome}</span>
+                            <span className="text-gray-500">{new Date(int.data).toLocaleDateString('pt-PT')}</span>
+                          </div>
+                          <p className="text-gray-700 whitespace-pre-wrap">{int.descricao}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Mão de Obra */}
+                {htmlPreviewData.registos?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MÃO DE OBRA / DESLOCAÇÃO</h2>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="p-2 text-left">Técnico</th>
+                          <th className="p-2 text-left">Data</th>
+                          <th className="p-2 text-left">Início</th>
+                          <th className="p-2 text-left">Fim</th>
+                          <th className="p-2 text-left">Horas</th>
+                          <th className="p-2 text-left">KM</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {htmlPreviewData.registos.map((reg, idx) => (
+                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className="p-2">{reg.tecnico_nome}</td>
+                            <td className="p-2">{reg.data ? new Date(reg.data).toLocaleDateString('pt-PT') : '-'}</td>
+                            <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                            <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                            <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
+                            <td className="p-2">{reg.km || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+
+                {/* Materiais */}
+                {htmlPreviewData.materiais?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MATERIAIS UTILIZADOS</h2>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="p-2 text-left">Descrição</th>
+                          <th className="p-2 text-left">Quantidade</th>
+                          <th className="p-2 text-left">Fornecido por</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {htmlPreviewData.materiais.map((mat, idx) => (
+                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className="p-2">{mat.descricao}</td>
+                            <td className="p-2">{mat.quantidade}</td>
+                            <td className="p-2">{mat.fornecido_por}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+
+                {/* Fotografias */}
+                {htmlPreviewData.fotografias?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">FOTOGRAFIAS</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      {htmlPreviewData.fotografias.map((foto, idx) => (
+                        <div key={idx} className="border border-gray-200 rounded overflow-hidden">
+                          <img 
+                            src={`${API}${foto.foto_url}`} 
+                            alt={foto.descricao || 'Fotografia'} 
+                            className="w-full h-48 object-cover"
+                          />
+                          {foto.descricao && (
+                            <p className="p-2 text-sm text-gray-600 bg-gray-50">{foto.descricao}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Assinatura Existente */}
+                {htmlPreviewData.relatorio.assinatura_cliente && (
+                  <section className="border border-green-300 bg-green-50 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-green-800 border-b border-green-300 pb-2 mb-3">ASSINATURA DO CLIENTE</h2>
+                    <img 
+                      src={htmlPreviewData.relatorio.assinatura_cliente} 
+                      alt="Assinatura do Cliente" 
+                      className="max-h-24 mx-auto"
+                    />
+                    <p className="text-center text-sm text-green-700 mt-2">Relatório assinado</p>
+                  </section>
+                )}
+
+                {/* Área de Assinatura */}
+                {!htmlPreviewData.relatorio.assinatura_cliente && (
+                  <section className="border border-orange-300 bg-orange-50 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-orange-800 border-b border-orange-300 pb-2 mb-3">ASSINATURA DO CLIENTE</h2>
+                    
+                    {!showSignatureInPreview ? (
+                      <div className="text-center py-4">
+                        <p className="text-gray-600 mb-4">Este relatório ainda não foi assinado</p>
+                        <Button
+                          onClick={() => setShowSignatureInPreview(true)}
+                          className="bg-orange-500 hover:bg-orange-600 text-white"
+                        >
+                          <PenTool className="w-4 h-4 mr-2" />
+                          Adicionar Assinatura
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <p className="text-sm text-gray-600 text-center">Assine dentro da área abaixo</p>
+                        <div className="border-2 border-dashed border-orange-400 rounded-lg bg-white mx-auto" style={{width: '400px', height: '150px'}}>
+                          <SignatureCanvas
+                            ref={signatureCanvasPreviewRef}
+                            canvasProps={{
+                              width: 400,
+                              height: 150,
+                              className: 'signature-canvas'
+                            }}
+                            backgroundColor="white"
+                          />
+                        </div>
+                        <div className="flex justify-center gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => signatureCanvasPreviewRef.current?.clear()}
+                            className="border-gray-400"
+                          >
+                            Limpar
+                          </Button>
+                          <Button
+                            onClick={() => setShowSignatureInPreview(false)}
+                            variant="outline"
+                            className="border-gray-400"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={handleSaveSignatureFromPreview}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Guardar Assinatura
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* Rodapé */}
+                <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
+                  <p>Documento gerado em {new Date().toLocaleString('pt-PT')}</p>
+                </div>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="sticky bottom-0 bg-gray-100 border-t border-gray-300 p-4 flex justify-end gap-3 print:hidden">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowHTMLPreviewModal(false)}
+                  className="border-gray-400"
+                >
+                  Fechar
+                </Button>
+                <Button
+                  onClick={() => window.print()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Imprimir / Guardar PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Add Equipamento Modal - Componente Extraído */}
       <EquipamentoModal
         open={showAddEquipamentoModal}
