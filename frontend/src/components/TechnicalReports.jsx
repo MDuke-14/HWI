@@ -1391,17 +1391,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     const descricaoElement = document.getElementById('foto_descricao');
     const descricao = descricaoElement ? descricaoElement.value.trim() : fotoDescricao.trim();
     
-    if (!descricao) {
-      toast.error('Adicione uma descrição para a fotografia');
-      return;
-    }
+    // Descrição é opcional
     
     setUploadingFoto(true);
     
     try {
       const formData = new FormData();
       formData.append('file', fotoFile);
-      formData.append('descricao', descricao);
+      formData.append('descricao', descricao || ''); // Enviar string vazia se não houver descrição
       
       await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
