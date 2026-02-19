@@ -1003,6 +1003,38 @@ const Dashboard = ({ user, onLogout }) => {
             <div className="text-center py-12 text-gray-400">A carregar...</div>
           ) : realtimeData ? (
             <div className="space-y-4 mt-4">
+              {/* Map Toggle Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setShowRealtimeMap(!showRealtimeMap)}
+                  size="sm"
+                  variant={showRealtimeMap ? "default" : "outline"}
+                  className={showRealtimeMap ? "bg-green-600 hover:bg-green-700" : "border-green-600 text-green-400 hover:bg-green-600/10"}
+                >
+                  <Map className="w-4 h-4 mr-2" />
+                  {showRealtimeMap ? 'Esconder Mapa' : 'Ver no Mapa'} ({realtimeLocations.length})
+                </Button>
+              </div>
+              
+              {/* Map View */}
+              {showRealtimeMap && realtimeLocations.length > 0 && (
+                <div className="rounded-lg overflow-hidden border border-gray-700">
+                  <LocationMap
+                    locations={realtimeLocations}
+                    height="350px"
+                    zoom={10}
+                  />
+                </div>
+              )}
+              
+              {showRealtimeMap && realtimeLocations.length === 0 && (
+                <div className="bg-gray-800/50 rounded-lg p-6 text-center text-gray-400 border border-gray-700">
+                  <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma localização disponível</p>
+                  <p className="text-sm">Os utilizadores precisam de partilhar a localização ao iniciar o trabalho</p>
+                </div>
+              )}
+              
               {/* Day Info */}
               {(realtimeData.is_weekend || realtimeData.is_holiday) && (
                 <div className={`p-4 rounded-lg border ${
