@@ -199,6 +199,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [loadingPDFPreview, setLoadingPDFPreview] = useState(false);
   const [downloadingAllPDFs, setDownloadingAllPDFs] = useState(false);
   const [downloadingClientesPDF, setDownloadingClientesPDF] = useState(false);
+  const [downloadingEmailsPDF, setDownloadingEmailsPDF] = useState(false);
   
   // Visualização HTML estilo PDF para cliente
   const [showHTMLPreviewModal, setShowHTMLPreviewModal] = useState(false);
