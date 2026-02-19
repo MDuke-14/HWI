@@ -2929,25 +2929,46 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="pl-10 bg-[#1a1a1a] border-gray-700 text-white"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {user?.is_admin && (
-                <Button
-                  onClick={handleDownloadClientesPDF}
-                  disabled={downloadingClientesPDF || clientes.length === 0}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  {downloadingClientesPDF ? (
-                    <>
-                      <span className="animate-spin mr-2">⏳</span>
-                      A exportar...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5 mr-2" />
-                      Exportar PDF
-                    </>
-                  )}
-                </Button>
+                <>
+                  <Button
+                    onClick={handleDownloadClientesPDF}
+                    disabled={downloadingClientesPDF || clientes.length === 0}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    data-testid="export-clientes-pdf-btn"
+                  >
+                    {downloadingClientesPDF ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        A exportar...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5 mr-2" />
+                        Exportar PDF
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleDownloadEmailsPDF}
+                    disabled={downloadingEmailsPDF || clientes.length === 0}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    data-testid="download-emails-pdf-btn"
+                  >
+                    {downloadingEmailsPDF ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        A exportar...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-5 h-5 mr-2" />
+                        Download Emails
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
               <Button
                 onClick={() => setShowAddModal(true)}
