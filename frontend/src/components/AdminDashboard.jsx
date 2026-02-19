@@ -54,6 +54,15 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [runningCheck, setRunningCheck] = useState(null);
 
+  // Estados para Geolocalização
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [locationUser, setLocationUser] = useState(null);
+  const [userLocationHistory, setUserLocationHistory] = useState([]);
+  const [allCurrentLocations, setAllCurrentLocations] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationHistoryDate, setLocationHistoryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showAllLocationsDialog, setShowAllLocationsDialog] = useState(false);
+
   const [createForm, setCreateForm] = useState({
     username: '',
     email: '',
