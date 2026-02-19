@@ -6356,76 +6356,45 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
-                {/* Assinatura Existente */}
-                {htmlPreviewData.relatorio.assinatura_cliente && (
-                  <section className="border border-green-300 bg-green-50 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-green-800 border-b border-green-300 pb-2 mb-3">ASSINATURA DO CLIENTE</h2>
-                    <img 
-                      src={htmlPreviewData.relatorio.assinatura_cliente} 
-                      alt="Assinatura do Cliente" 
-                      className="max-h-24 mx-auto"
-                    />
-                    <p className="text-center text-sm text-green-700 mt-2">Relatório assinado</p>
-                  </section>
-                )}
-
-                {/* Área de Assinatura */}
-                {!htmlPreviewData.relatorio.assinatura_cliente && (
-                  <section className="border border-orange-300 bg-orange-50 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-orange-800 border-b border-orange-300 pb-2 mb-3">ASSINATURA DO CLIENTE</h2>
-                    
-                    {!showSignatureInPreview ? (
-                      <div className="text-center py-4">
-                        <p className="text-gray-600 mb-4">Este relatório ainda não foi assinado</p>
-                        <Button
-                          onClick={() => setShowSignatureInPreview(true)}
-                          className="bg-orange-500 hover:bg-orange-600 text-white"
-                        >
-                          <PenTool className="w-4 h-4 mr-2" />
-                          Adicionar Assinatura
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <p className="text-sm text-gray-600 text-center">Assine dentro da área abaixo</p>
-                        <div className="border-2 border-dashed border-orange-400 rounded-lg bg-white mx-auto" style={{width: '400px', height: '150px'}}>
-                          <SignatureCanvas
-                            ref={signatureCanvasPreviewRef}
-                            canvasProps={{
-                              width: 400,
-                              height: 150,
-                              className: 'signature-canvas'
-                            }}
-                            backgroundColor="white"
+                {/* Assinaturas */}
+                <section className="border border-gray-300 rounded-lg p-4">
+                  <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">ASSINATURAS</h2>
+                  
+                  {/* Mostrar assinaturas existentes */}
+                  {htmlPreviewData.assinaturas && htmlPreviewData.assinaturas.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {htmlPreviewData.assinaturas.map((ass, idx) => (
+                        <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                          <p className="text-sm font-semibold text-green-800 mb-2">
+                            {ass.tipo === 'cliente' ? 'Cliente' : ass.tipo === 'tecnico' ? 'Técnico' : ass.tipo}
+                          </p>
+                          <img 
+                            src={ass.assinatura_base64} 
+                            alt={`Assinatura ${ass.nome}`} 
+                            className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
                           />
+                          <p className="text-xs text-green-700 mt-2">{ass.nome}</p>
+                          <p className="text-xs text-gray-500">{new Date(ass.created_at).toLocaleString('pt-PT')}</p>
                         </div>
-                        <div className="flex justify-center gap-3">
-                          <Button
-                            variant="outline"
-                            onClick={() => signatureCanvasPreviewRef.current?.clear()}
-                            className="border-gray-400"
-                          >
-                            Limpar
-                          </Button>
-                          <Button
-                            onClick={() => setShowSignatureInPreview(false)}
-                            variant="outline"
-                            className="border-gray-400"
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            onClick={handleSaveSignatureFromPreview}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Guardar Assinatura
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </section>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-orange-50 rounded-lg">
+                      <p className="text-gray-600 mb-3">Nenhuma assinatura registada</p>
+                    </div>
+                  )}
+                  
+                  {/* Botão para adicionar assinatura */}
+                  <div className="text-center mt-4 pt-4 border-t border-gray-200">
+                    <Button
+                      onClick={openSignatureFromPreview}
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      <PenTool className="w-4 h-4 mr-2" />
+                      {htmlPreviewData.assinaturas?.length > 0 ? 'Adicionar Outra Assinatura' : 'Adicionar Assinatura'}
+                    </Button>
+                  </div>
+                </section>
 
                 {/* Rodapé */}
                 <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
