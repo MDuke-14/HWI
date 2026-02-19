@@ -329,6 +329,22 @@ const Dashboard = ({ user, onLogout }) => {
     try {
       const response = await axios.get(`${API}/admin/realtime-status`);
       setRealtimeData(response.data);
+      
+      // Extrair localizações dos utilizadores
+      const locations = (response.data.users || [])
+        .filter(u => u.geo_location?.latitude && u.geo_location?.longitude)
+        .map(u => ({
+          id: u.user_id,
+          userName: u.full_name || u.username,
+          latitude: u.geo_location.latitude,
+          longitude: u.geo_location.longitude,
+          accuracy: u.geo_location.accuracy,
+          timestamp: u.geo_location.timestamp || u.clock_in_time,
+          address: u.geo_location.address?.formatted || u.geo_location.address?.city || u.location,
+          type: u.status === 'TRABALHANDO' ? 'A trabalhar' : u.status,
+          color: u.status === 'TRABALHANDO' ? 'green' : (u.status === 'TRABALHOU' ? 'blue' : 'gray'),
+        }));
+      setRealtimeLocations(locations);
     } catch (error) {
       toast.error('Erro ao carregar status em tempo real');
       console.error(error);
