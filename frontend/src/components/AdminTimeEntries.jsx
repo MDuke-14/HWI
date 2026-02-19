@@ -867,6 +867,106 @@ const AdminTimeEntries = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Justificar Dia */}
+      <Dialog open={showJustifyModal} onOpenChange={setShowJustifyModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-400" />
+              Justificar Dia
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {justifyingDay && (
+              <div className="bg-[#0f0f0f] p-3 rounded-lg">
+                <p className="text-gray-400 text-sm">Utilizador</p>
+                <p className="text-white font-semibold">{selectedUser?.full_name || selectedUser?.username}</p>
+                <p className="text-gray-400 text-sm mt-2">Data</p>
+                <p className="text-white font-semibold">
+                  {new Date(justifyingDay.date + 'T00:00:00').toLocaleDateString('pt-PT', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            )}
+
+            <p className="text-gray-400 text-sm">Selecione o tipo de justificação:</p>
+
+            <div className="grid gap-3">
+              <Button
+                onClick={() => handleJustifyDay('ferias')}
+                disabled={justifyLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start"
+              >
+                <Calendar className="w-5 h-5 mr-3" />
+                Férias
+              </Button>
+
+              <Button
+                onClick={() => handleJustifyDay('dar_dia')}
+                disabled={justifyLoading}
+                className="w-full bg-green-600 hover:bg-green-700 text-white justify-start"
+              >
+                <Plus className="w-5 h-5 mr-3" />
+                Dar Dia (8h automáticas)
+              </Button>
+
+              <Button
+                onClick={() => handleJustifyDay('folga')}
+                disabled={justifyLoading}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white justify-start"
+              >
+                <Clock className="w-5 h-5 mr-3" />
+                Folga
+              </Button>
+
+              <Button
+                onClick={() => handleJustifyDay('falta')}
+                disabled={justifyLoading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white justify-start"
+              >
+                <AlertTriangle className="w-5 h-5 mr-3" />
+                Falta
+              </Button>
+
+              <Button
+                onClick={() => handleJustifyDay('cancelamento_ferias')}
+                disabled={justifyLoading}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white justify-start"
+              >
+                <X className="w-5 h-5 mr-3" />
+                Cancelamento de Férias
+              </Button>
+            </div>
+
+            {justifyLoading && (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div>
+                <span className="ml-2 text-gray-400">A processar...</span>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4 border-t border-gray-700">
+              <Button
+                onClick={() => {
+                  setShowJustifyModal(false);
+                  setJustifyingDay(null);
+                }}
+                variant="outline"
+                className="border-gray-600 text-gray-300"
+                disabled={justifyLoading}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
