@@ -18,6 +18,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [entries, setEntries] = useState([]);
+  const [justifications, setJustifications] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(true);
   
