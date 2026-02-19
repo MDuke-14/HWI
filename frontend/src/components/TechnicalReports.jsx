@@ -4914,13 +4914,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                   Download PDF
                 </Button>
                 <Button
-                  onClick={handlePreviewPDF}
-                  disabled={loadingPDFPreview}
+                  onClick={handleHTMLPreview}
+                  disabled={loadingHTMLPreview}
                   size="lg"
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4"
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-8 py-4"
+                  data-testid="visualizar-relatorio-btn"
                 >
                   <Eye className="w-5 h-5 mr-2" />
-                  {loadingPDFPreview ? 'A gerar...' : 'Visualizar PDF'}
+                  {loadingHTMLPreview ? 'A carregar...' : 'Visualizar Relatório'}
                 </Button>
                 <Button
                   onClick={handleOpenFolhaHoras}
