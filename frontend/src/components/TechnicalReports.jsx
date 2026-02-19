@@ -4,7 +4,6 @@ import axios from 'axios';
 import { API } from '@/App';
 import Navigation from './Navigation';
 import { toast } from 'sonner';
-import SignatureCanvas from 'react-signature-canvas';
 import OfflineStatusBar from './OfflineStatusBar';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import HelpTooltip from './HelpTooltip';
