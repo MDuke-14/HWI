@@ -4656,6 +4656,17 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             status_info["clock_out_time"] = datetime.fromisoformat(last_entry["end_time"]).strftime("%H:%M")
             status_info["total_hours"] = round(truncar_horas_para_minutos(total_hours), 2)
             status_info["outside_residence_zone"] = any(e.get("outside_residence_zone", False) for e in completed_entries)
+            
+            # Adicionar geolocalização da última entrada
+            geo = last_entry.get("geo_location")
+            if geo:
+                status_info["geo_location"] = {
+                    "latitude": geo.get("latitude"),
+                    "longitude": geo.get("longitude"),
+                    "accuracy": geo.get("accuracy"),
+                    "timestamp": geo.get("timestamp"),
+                    "address": geo.get("address", {})
+                }
         elif user_id in vacation_users:
             # On vacation
             status_info["status"] = "FÉRIAS"
