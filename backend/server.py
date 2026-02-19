@@ -7945,7 +7945,62 @@ async def get_user_time_entries_by_month(
         "date": {"$gte": start_date, "$lte": end_date}
     }, {"_id": 0}).sort("date", -1).to_list(1000)
     
-    return {"entries": entries, "month": month, "year": year, "date_from": start_date, "date_to": end_date}
+    # Buscar férias e folgas (vacation_requests) para o período
+    vacation_requests = await db.vacation_requests.find({
+        "user_id": user_id,
+        "$or": [
+            {"start_date": {"$gte": start_date, "$lte": end_date}},
+            {"end_date": {"$gte": start_date, "$lte": end_date}},
+            {"start_date": {"$lte": start_date}, "end_date": {"$gte": end_date}}
+        ]
+    }, {"_id": 0}).to_list(500)
+    
+    # Buscar faltas (absences) para o período
+    absences = await db.absences.find({
+        "user_id": user_id,
+        "date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(500)
+    
+    # Criar mapa de justificações por data
+    justifications = {}
+    
+    # Processar férias e folgas
+    for vac in vacation_requests:
+        vac_type = vac.get("type", "vacation")
+        vac_start = vac.get("start_date")
+        vac_end = vac.get("end_date", vac_start)
+        
+        if vac_start:
+            # Gerar todas as datas no intervalo
+            try:
+                start_dt = datetime.strptime(vac_start, "%Y-%m-%d")
+                end_dt = datetime.strptime(vac_end, "%Y-%m-%d") if vac_end else start_dt
+                current_dt = start_dt
+                while current_dt <= end_dt:
+                    date_str = current_dt.strftime("%Y-%m-%d")
+                    if date_str >= start_date and date_str <= end_date:
+                        if vac_type == "folga":
+                            justifications[date_str] = {"type": "folga", "label": "Dia de Folga"}
+                        else:
+                            justifications[date_str] = {"type": "ferias", "label": "Dia de Férias"}
+                    current_dt += timedelta(days=1)
+            except:
+                pass
+    
+    # Processar faltas
+    for absence in absences:
+        absence_date = absence.get("date")
+        if absence_date:
+            justifications[absence_date] = {"type": "falta", "label": "Falta"}
+    
+    return {
+        "entries": entries, 
+        "month": month, 
+        "year": year, 
+        "date_from": start_date, 
+        "date_to": end_date,
+        "justifications": justifications
+    }
 
 @api_router.put("/admin/time-entries/{entry_id}")
 async def admin_update_time_entry(
