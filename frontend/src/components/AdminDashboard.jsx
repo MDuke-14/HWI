@@ -981,14 +981,6 @@ const AdminDashboard = ({ user, onLogout }) => {
                       >
                         <RefreshCw className="w-3 h-3 mr-1" />Verificar Horas
                       </Button>
-                      <Button 
-                        onClick={() => handleOpenLocationHistory(u)}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-sm" 
-                        size="sm"
-                        data-testid={`view-location-btn-${u.id}`}
-                      >
-                        <MapPin className="w-3 h-3 mr-1" />Localização
-                      </Button>
                     </div>
                     <div className="flex gap-2 mt-2">
                       <Button onClick={() => handleEditUser(u)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" size="sm">
