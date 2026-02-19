@@ -12,7 +12,7 @@ import requests
 import os
 from datetime import datetime, timedelta
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://admin-geo-view.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ot-management-hub.preview.emergentagent.com').rstrip('/')
 OT_ID = "8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85"  # 560Lab OT for testing
 
 class TestMaoObraRegistos:
