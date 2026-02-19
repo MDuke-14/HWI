@@ -473,22 +473,7 @@ const Calendar = ({ user, onLogout }) => {
   };
 
   const ListView = () => {
-    // Combinar serviços e OTs numa lista unificada
-    const serviceItems = services.map(s => ({
-      type: 'service',
-      id: s.id,
-      client_name: s.client_name,
-      location: s.location,
-      date: s.date,
-      ot_numero: s.ot_numero,
-      ot_id: s.ot_id,
-      service_reason: s.service_reason,
-      technician_names: s.technician_names,
-      status: s.status,
-      observations: s.observations,
-      time_slot: s.time_slot
-    }));
-
+    // Mostrar apenas OTs (já incluem as criadas via calendário)
     const otItems = ots.map(ot => ({
       type: 'ot',
       id: ot.id,
@@ -505,12 +490,8 @@ const Calendar = ({ user, onLogout }) => {
       data_inicio: ot.data_inicio,
       data_fim: ot.data_fim
     }));
-
-    // Combinar e remover duplicados (serviços que já têm OT associada)
-    const serviceOtIds = new Set(services.filter(s => s.ot_id).map(s => s.ot_id));
-    const uniqueOtItems = otItems.filter(ot => !serviceOtIds.has(ot.id));
     
-    const allItems = [...serviceItems, ...uniqueOtItems].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const allItems = otItems.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     return (
       <div className="space-y-4">
