@@ -903,7 +903,7 @@ const Calendar = ({ user, onLogout }) => {
                       className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3"
                       data-testid="submit-service-btn"
                     >
-                      {editingService ? 'Atualizar Serviço' : 'Criar Serviço'}
+                      {editingService ? 'Atualizar OT' : 'Criar OT'}
                     </Button>
                   </div>
                 </DialogContent>
