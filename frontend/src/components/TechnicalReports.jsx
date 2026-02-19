@@ -2735,6 +2735,18 @@ const TechnicalReports = ({ user, onLogout }) => {
         materiais: materiaisRes.data,
         registos: registosRes.data
       });
+      
+      // Buscar assinaturas existentes
+      try {
+        const assRes = await axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas`);
+        setHtmlPreviewData(prev => ({
+          ...prev,
+          assinaturas: assRes.data
+        }));
+      } catch (err) {
+        console.log('Sem assinaturas ou erro ao buscar');
+      }
+      
       setShowHTMLPreviewModal(true);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -2744,37 +2756,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleSaveSignatureFromPreview = async () => {
-    if (!signatureCanvasPreviewRef.current || signatureCanvasPreviewRef.current.isEmpty()) {
-      toast.error('Por favor, adicione uma assinatura');
-      return;
-    }
-    
-    try {
-      const signatureData = signatureCanvasPreviewRef.current.toDataURL();
-      
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas`, {
-        tipo: 'cliente',
-        assinatura_base64: signatureData,
-        nome: selectedRelatorio.cliente_nome || 'Cliente'
-      });
-      
-      toast.success('Assinatura guardada com sucesso!');
-      setShowSignatureInPreview(false);
-      
-      // Atualizar dados locais
-      if (htmlPreviewData) {
-        setHtmlPreviewData({
-          ...htmlPreviewData,
-          relatorio: {
-            ...htmlPreviewData.relatorio,
-            assinatura_cliente: signatureData
-          }
-        });
-      }
-    } catch (error) {
-      toast.error('Erro ao guardar assinatura');
-    }
+  const openSignatureFromPreview = () => {
+    // Fechar preview e abrir modal de assinaturas
+    setShowHTMLPreviewModal(false);
+    setShowAssinaturasModal(true);
   };
 
 
