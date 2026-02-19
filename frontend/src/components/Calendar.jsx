@@ -933,48 +933,7 @@ const Calendar = ({ user, onLogout }) => {
                   </div>
                 )}
                 
-                {/* Services - mesma cor das OTs */}
-                {selectedDay?.services.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
-                      <Wrench className="w-3 h-3" />
-                      Serviços ({selectedDay.services.length})
-                    </h4>
-                    {selectedDay.services.map(service => (
-                      <div 
-                        key={service.id} 
-                        className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 cursor-pointer hover:bg-orange-500/20 transition"
-                        onClick={() => {
-                          setDayDetailOpen(false);
-                          if (service.ot_id) {
-                            window.location.href = `/technical-reports?ot=${service.ot_id}`;
-                          } else if (user.is_admin) {
-                            handleEditService(service);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-white">{service.client_name}</span>
-                          {service.ot_numero && (
-                            <span className="font-bold text-orange-400">OT#{service.ot_numero}</span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3" />
-                          {service.location}
-                        </div>
-                        {service.time_slot && (
-                          <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
-                            <Clock className="w-3 h-3" />
-                            {service.time_slot}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* OTs */}
+                {/* OTs - Mostra todas as OTs incluindo as criadas via serviços */}
                 {selectedDay?.ots?.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
