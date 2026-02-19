@@ -6278,12 +6278,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {htmlPreviewData.intervencoes.map((int, idx) => (
                         <div key={idx} className="bg-gray-50 p-3 rounded text-sm">
                           <div className="flex justify-between mb-2">
-                            <span className="font-semibold">{int.tecnico_nome}</span>
+                            <span className="font-semibold">{int.tecnico_nome || 'Técnico'}</span>
                             <span className="text-gray-500">
                               {int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'}
                             </span>
                           </div>
-                          <p className="text-gray-700 whitespace-pre-wrap">{int.descricao}</p>
+                          {int.motivo_assistencia && (
+                            <div className="mb-2">
+                              <span className="font-medium text-gray-600">Motivo: </span>
+                              <span className="text-gray-700">{int.motivo_assistencia}</span>
+                            </div>
+                          )}
+                          {int.relatorio_assistencia && (
+                            <div>
+                              <span className="font-medium text-gray-600">Relatório: </span>
+                              <p className="text-gray-700 whitespace-pre-wrap">{int.relatorio_assistencia}</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
