@@ -79,11 +79,30 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     return `${hours}h${String(minutes).padStart(2, '0')}m`;
   };
 
-  // Group entries by date
-  const groupEntriesByDate = (entries) => {
-    if (!entries || entries.length === 0) return [];
+  // Gerar todos os dias do período de faturação
+  const generateAllDaysInPeriod = (fromDate, toDate) => {
+    const days = [];
+    const start = new Date(fromDate + 'T00:00:00');
+    const end = new Date(toDate + 'T00:00:00');
+    
+    const current = new Date(start);
+    while (current <= end) {
+      const dateStr = current.toISOString().split('T')[0];
+      days.push(dateStr);
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  };
 
-    const grouped = entries.reduce((acc, entry) => {
+  // Group entries by date - mostrando TODOS os dias do período
+  const groupEntriesByDate = (entries, period) => {
+    // Gerar todos os dias do período de faturação
+    const allDays = period.from && period.to 
+      ? generateAllDaysInPeriod(period.from, period.to) 
+      : [];
+
+    // Agrupar entradas existentes por data
+    const grouped = (entries || []).reduce((acc, entry) => {
       const date = entry.date;
       if (!acc[date]) {
         acc[date] = [];
@@ -92,10 +111,11 @@ const AdminTimeEntries = ({ user, onLogout }) => {
       return acc;
     }, {});
 
-    const sortedDays = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+    // Ordenar todos os dias (mais recente primeiro)
+    const sortedDays = allDays.sort((a, b) => new Date(b) - new Date(a));
 
     return sortedDays.map(date => {
-      const dayEntries = grouped[date];
+      const dayEntries = grouped[date] || [];
       const totalHours = dayEntries.reduce((sum, entry) => sum + (entry.total_hours || 0), 0);
       
       // Extrair localizações GPS dos registos do dia
@@ -116,6 +136,10 @@ const AdminTimeEntries = ({ user, onLogout }) => {
           outside_residence_zone: entry.outside_residence_zone
         }));
       
+      // Verificar se é fim de semana
+      const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      
       return {
         date,
         entries: dayEntries.sort((a, b) => {
@@ -125,7 +149,9 @@ const AdminTimeEntries = ({ user, onLogout }) => {
         }),
         totalHours,
         locations,
-        hasGeoData: locations.length > 0
+        hasGeoData: locations.length > 0,
+        hasEntries: dayEntries.length > 0,
+        isWeekend
       };
     });
   };
