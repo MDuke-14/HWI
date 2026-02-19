@@ -192,11 +192,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Assinaturas (múltiplas)
   const [assinaturas, setAssinaturas] = useState([]);
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
-  const [assinaturaCanvas, setAssinaturaCanvas] = useState(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
-  const [assinaturaDataIntervencao, setAssinaturaDataIntervencao] = useState('');
-  const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
 
   // Visualizar PDF
   const [showPDFPreviewModal, setShowPDFPreviewModal] = useState(false);
