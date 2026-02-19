@@ -96,7 +96,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
   };
 
   // Group entries by date - mostrando TODOS os dias do período
-  const groupEntriesByDate = (entries, period) => {
+  const groupEntriesByDate = (entries, period, dayJustifications) => {
     // Gerar todos os dias do período de faturação
     const allDays = period.from && period.to 
       ? generateAllDaysInPeriod(period.from, period.to) 
@@ -141,6 +141,9 @@ const AdminTimeEntries = ({ user, onLogout }) => {
       const dayOfWeek = new Date(date + 'T00:00:00').getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       
+      // Obter justificação do dia (se existir)
+      const justification = dayJustifications?.[date] || null;
+      
       return {
         date,
         entries: dayEntries.sort((a, b) => {
@@ -152,7 +155,8 @@ const AdminTimeEntries = ({ user, onLogout }) => {
         locations,
         hasGeoData: locations.length > 0,
         hasEntries: dayEntries.length > 0,
-        isWeekend
+        isWeekend,
+        justification
       };
     });
   };
