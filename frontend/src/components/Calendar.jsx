@@ -517,7 +517,7 @@ const Calendar = ({ user, onLogout }) => {
         {allItems.length === 0 ? (
           <div className="bg-[#121212] border border-white/10 rounded-xl p-12 text-center">
             <CalendarDays className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">Nenhum serviço ou OT agendada este mês</p>
+            <p className="text-gray-400 text-lg">Nenhuma OT agendada este mês</p>
           </div>
         ) : (
           allItems.map(item => (
