@@ -466,6 +466,7 @@ const AssinaturaModal = ({
   const fullscreenCanvasRef = useRef(null);
 
   const saveFromFullscreen = (canvas, paths) => {
+    console.log('saveFromFullscreen:', { pathsCount: paths.length });
     // Guardar referência ao canvas do fullscreen para usar ao guardar
     fullscreenCanvasRef.current = canvas;
     setSavedPaths(paths);
