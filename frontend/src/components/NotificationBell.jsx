@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
-import { Bell, X, BellRing } from 'lucide-react';
+import { Bell, X, BellRing, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-const VAPID_PUBLIC_KEY = 'BJCgtNpncNcP5DTu_5qf3pltLEte5V8X9ZcYqn67_XTXsl-zaWJdFCbG2N4MXweZFyFCTl8W-U0CIeABuwLWCuQ';
+// Fallback VAPID key (será substituída pela do servidor)
+let VAPID_PUBLIC_KEY = 'BJCgtNpncNcP5DTu_5qf3pltLEte5V8X9ZcYqn67_XTXsl-zaWJdFCbG2N4MXweZFyFCTl8W-U0CIeABuwLWCuQ';
 
 const NotificationBell = ({ user }) => {
   const [notifications, setNotifications] = useState([]);
@@ -13,6 +14,8 @@ const NotificationBell = ({ user }) => {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState('default');
   const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [needsResubscribe, setNeedsResubscribe] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const urlBase64ToUint8Array = (base64String) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
