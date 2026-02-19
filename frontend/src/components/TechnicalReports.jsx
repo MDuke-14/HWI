@@ -183,6 +183,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEditFotoModal, setShowEditFotoModal] = useState(false);
   const [editFotoDescricao, setEditFotoDescricao] = useState('');
 
+  // Email OT
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailsCliente, setEmailsCliente] = useState([]);
+  const [emailsAdicionais, setEmailsAdicionais] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
   // Assinaturas (múltiplas)
   const [assinaturas, setAssinaturas] = useState([]);
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
