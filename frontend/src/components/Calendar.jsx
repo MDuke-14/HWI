@@ -526,8 +526,10 @@ const Calendar = ({ user, onLogout }) => {
               className="bg-[#121212] border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition-all group cursor-pointer"
               data-testid={`${item.type}-card-${item.id}`}
               onClick={() => {
-                if (item.ot_id) {
-                  window.location.href = `/technical-reports?ot=${item.ot_id}`;
+                // Abrir OT ao clicar - usar ot_id para serviços ou id para OTs
+                const otIdToOpen = item.ot_id || (item.type === 'ot' ? item.id : null);
+                if (otIdToOpen) {
+                  window.location.href = `/technical-reports?ot=${otIdToOpen}`;
                 }
               }}
             >
