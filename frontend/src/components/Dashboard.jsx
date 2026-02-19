@@ -107,9 +107,9 @@ const Dashboard = ({ user, onLogout }) => {
           reject(new Error(errorMsg));
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          enableHighAccuracy: true,  // Usar GPS de alta precisão
+          timeout: 15000,            // 15 segundos de timeout
+          maximumAge: 0              // Não usar cache - obter localização fresca
         }
       );
     });
