@@ -4877,6 +4877,95 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Modal Enviar Email OT */}
+      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Mail className="w-5 h-5 text-purple-400" />
+              Enviar OT Por Email
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {/* Emails do Cliente */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">Emails do Cliente</Label>
+              {emailsCliente.length === 0 ? (
+                <p className="text-gray-500 text-sm italic">Nenhum email registado para este cliente</p>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {emailsCliente.map((item, index) => (
+                    <label
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-[#0f0f0f] border border-gray-700 rounded-lg cursor-pointer hover:border-purple-500/50 transition"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.selected}
+                        onChange={() => toggleEmailSelection(index)}
+                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
+                      />
+                      <span className="text-white">{item.email}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Emails Adicionais */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">
+                Emails Adicionais <span className="text-gray-500 text-xs">(separados por vírgula)</span>
+              </Label>
+              <Input
+                value={emailsAdicionais}
+                onChange={(e) => setEmailsAdicionais(e.target.value)}
+                placeholder="email1@exemplo.com, email2@exemplo.com"
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+              />
+            </div>
+
+            {/* Resumo */}
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+              <p className="text-sm text-purple-300">
+                <strong>OT #{selectedRelatorio?.numero_assistencia}</strong> será enviada para {emailsCliente.filter(e => e.selected).length + (emailsAdicionais.trim() ? emailsAdicionais.split(/[;,]/).filter(e => e.trim()).length : 0)} email(s)
+              </p>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => setShowEmailModal(false)}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={sendingEmail}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                disabled={sendingEmail || (emailsCliente.filter(e => e.selected).length === 0 && !emailsAdicionais.trim())}
+                data-testid="confirmar-enviar-email"
+              >
+                {sendingEmail ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    A enviar...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Intervenção Modal */}
       <Dialog open={showAddIntervencaoModal} onOpenChange={setShowAddIntervencaoModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
