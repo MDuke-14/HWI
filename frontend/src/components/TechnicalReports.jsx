@@ -3188,6 +3188,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">-- Selecione um estado --</option>
+                <option value="agendado">📅 Agendado</option>
                 <option value="orcamento">🟡 Orçamento</option>
                 <option value="em_execucao">🔵 Em Execução</option>
                 <option value="concluido">🟢 Concluído</option>
