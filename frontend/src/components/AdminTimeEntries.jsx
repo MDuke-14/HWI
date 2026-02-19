@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { 
   Users, Calendar, Clock, Edit, Trash2, Plus, Save, X, 
-  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap 
+  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap, MapPin, Map, ExternalLink 
 } from 'lucide-react';
+import LocationMap from '@/components/ui/location-map';
 
 const AdminTimeEntries = ({ user, onLogout }) => {
   const [allUsers, setAllUsers] = useState([]);
