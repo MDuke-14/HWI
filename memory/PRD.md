@@ -821,3 +821,18 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - pdfminer.six
 - APScheduler (agendamento de tarefas)
 - aiosmtplib (envio de emails SMTP)
+
+---
+
+## Sessão 19 Fevereiro 2026
+
+### ✅ Correção Bug "Invalid Date" no Preview HTML (19 Fevereiro 2026)
+**Problema:** Na seção "INTERVENÇÕES REALIZADAS" do modal de preview HTML, as datas apareciam como "Invalid Date".
+
+**Causa:** No código `TechnicalReports.jsx`, a linha que renderizava a data usava `int.data` (campo inexistente) em vez de `int.data_intervencao` (campo correto).
+
+**Correção aplicada em `/app/frontend/src/components/TechnicalReports.jsx`:**
+- **Antes:** `new Date(int.data).toLocaleDateString('pt-PT')`
+- **Depois:** `int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'`
+
+**Testado:** ✅ Verificado via screenshot - datas agora mostram corretamente (ex: 19/11/2025)
