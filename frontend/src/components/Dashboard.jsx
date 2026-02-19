@@ -394,30 +394,75 @@ const Dashboard = ({ user, onLogout }) => {
         if (location && location.latitude && location.longitude) {
           try {
             const geoResponse = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&addressdetails=1&accept-language=pt`,
+              `https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json&addressdetails=1&accept-language=pt&zoom=18`,
               { headers: { 'User-Agent': 'HWI-Ponto/1.0' } }
             );
             
             if (geoResponse.ok) {
               const geoData = await geoResponse.json();
-              const countryCode = geoData.address?.country_code?.toUpperCase();
-              const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.municipality;
-              const county = geoData.address?.county || geoData.address?.state;
-              const country = geoData.address?.country;
+              const addr = geoData.address || {};
+              const countryCode = addr.country_code?.toUpperCase();
+              
+              // Priorizar localidade específica sobre município
+              const locality = (
+                addr.village ||
+                addr.town ||
+                addr.suburb ||
+                addr.neighbourhood ||
+                addr.city_district ||
+                addr.hamlet
+              );
+              
+              const municipality = (
+                addr.city ||
+                addr.municipality ||
+                addr.county
+              );
+              
+              const zone = (
+                addr.industrial ||
+                addr.commercial ||
+                addr.retail ||
+                addr.aeroway ||
+                addr.amenity
+              );
+              
+              const city = locality || municipality;
+              const county = locality ? municipality : (addr.county || addr.state);
+              const country = addr.country;
               
               const addressInfo = {
+                locality: locality,
+                zone: zone,
+                municipality: municipality,
                 city: city,
                 region: county,
                 country: country,
                 country_code: countryCode,
-                county: geoData.address?.county,
-                formatted: geoData.display_name
+                county: addr.county,
+                formatted: geoData.display_name,
+                raw_address: addr
               };
               
               // Verificar se está fora da zona de residência
               if (isForaZonaResidencia(addressInfo)) {
                 autoOutsideZone = true;
-                autoLocationDesc = city ? `${city}${county ? `, ${county}` : ''}${country && countryCode !== 'PT' ? `, ${country}` : ''}` : country || 'Local desconhecido';
+                
+                // Construir descrição da localização
+                let locationStr = '';
+                if (zone) {
+                  locationStr = zone;
+                  if (city) locationStr += `, ${city}`;
+                } else if (city) {
+                  locationStr = city;
+                }
+                if (county && county !== city) {
+                  locationStr += `, ${county}`;
+                }
+                if (country && countryCode !== 'PT') {
+                  locationStr += `, ${country}`;
+                }
+                autoLocationDesc = locationStr || country || 'Local desconhecido';
                 
                 // Atualizar estado para feedback visual
                 setOutsideResidenceZone(true);
