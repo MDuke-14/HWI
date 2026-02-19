@@ -2774,6 +2774,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const getStatusLabel = (status) => {
     const labels = {
+      'agendado': 'Agendado',
       'orcamento': 'Orçamento',
       'em_execucao': 'Em Execução',
       'em_andamento': 'Em Execução', // Backward compatibility
