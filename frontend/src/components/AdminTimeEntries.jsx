@@ -197,9 +197,11 @@ const AdminTimeEntries = ({ user, onLogout }) => {
         }
       });
       setEntries(response.data.entries || []);
+      setJustifications(response.data.justifications || {});
     } catch (error) {
       toast.error('Erro ao carregar entradas do utilizador');
       setEntries([]);
+      setJustifications({});
     } finally {
       setLoading(false);
     }
