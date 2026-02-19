@@ -424,6 +424,14 @@ class RelatorioTecnico(BaseModel):
     data_fim: Optional[date] = None  # Data "Até" - opcional, para OTs de múltiplos dias
     data_conclusao: Optional[datetime] = None
     
+    @field_validator('data_fim', mode='before')
+    @classmethod
+    def validate_data_fim(cls, v):
+        """Converter string vazia para None"""
+        if v == '' or v is None:
+            return None
+        return v
+    
     # Relações
     cliente_id: str
     created_by_id: str
