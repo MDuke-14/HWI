@@ -223,6 +223,19 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Calendário - Unificação para "Ordens de Trabalho" (25 Janeiro 2026)
+**Removida secção "Serviços" - apenas mostra OTs:**
+- Modal de detalhes do dia mostra apenas "Ordens de Trabalho"
+- Ao clicar numa OT, abre em `/technical-reports?ot={id}`
+- Todos os textos atualizados: "+ Nova OT", "Total OTs", "Gestão de OTs"
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/Calendar.jsx`
+
+**Testado:** ✅ Screenshot confirmou alterações visuais
+
+---
+
 #### ✅ Novo Estado "Agendado" para OTs (25 Janeiro 2026) - NOVA FUNCIONALIDADE
 **Estado especial para OTs criadas via Calendário:**
 - Estado `agendado` (cor cyan) definido automaticamente quando OT é criada pelo Admin via Calendário
