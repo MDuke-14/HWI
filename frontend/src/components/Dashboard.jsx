@@ -1120,6 +1120,12 @@ const Dashboard = ({ user, onLogout }) => {
                               {userStatus.location && <span className="text-gray-400">- {userStatus.location}</span>}
                             </div>
                           )}
+                          {userStatus.geo_location && (
+                            <div className="flex items-center gap-2 text-sm mt-1">
+                              <Map className="w-4 h-4 text-green-400" />
+                              <span className="text-green-400 text-xs">Localização GPS disponível</span>
+                            </div>
+                          )}
                         </>
                       )}
 
