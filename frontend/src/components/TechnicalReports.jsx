@@ -768,6 +768,41 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Download PDF com lista de emails dos clientes (para copiar/colar no campo PARA)
+  const handleDownloadEmailsPDF = async () => {
+    setDownloadingEmailsPDF(true);
+    try {
+      const response = await axios.get(`${API}/clientes/export/emails-pdf`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Formato: Emails_Clientes_DD-MM-AAAA.pdf
+      const today = new Date();
+      const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+      link.setAttribute('download', `Emails_Clientes_${dateStr}.pdf`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Lista de emails exportada com sucesso!');
+    } catch (error) {
+      if (error.response?.status === 403) {
+        toast.error('Apenas administradores podem exportar emails');
+      } else {
+        toast.error('Erro ao exportar lista de emails');
+      }
+    } finally {
+      setDownloadingEmailsPDF(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nome: '',
