@@ -2870,10 +2870,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Navigation user={user} onLogout={onLogout} />
+    <div className={`min-h-screen ${bgMain}`}>
+      {/* Navigation - escondida em mobile (usa bottom nav) */}
+      {!isMobile && <Navigation user={user} onLogout={onLogout} />}
       
-      <div className="container mx-auto p-6 max-w-7xl">
+      <div className={`container mx-auto ${isMobile ? 'px-4 py-4 pb-24' : 'p-6'} max-w-7xl`}>
         {/* Offline Status Bar */}
         <OfflineStatusBar 
           isOnline={isOnline}
@@ -2883,26 +2884,30 @@ const TechnicalReports = ({ user, onLogout }) => {
           onSync={forceSync}
         />
         
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl">
-              <FileText className="w-8 h-8 text-white" />
+        {/* Header - Responsivo */}
+        <div className={`${isMobile ? 'mb-4' : 'mb-8'}`}>
+          <div className={`flex items-center gap-3 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+            <div className={`bg-gradient-to-br from-blue-500 to-blue-600 ${isMobile ? 'p-2' : 'p-3'} rounded-xl`}>
+              <FileText className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-white`} />
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white">OTs - Ordens de Trabalho</h1>
-              <p className="text-gray-400">Gestão de Assistências Técnicas</p>
+            <div className="flex-1 min-w-0">
+              <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold ${textPrimary} truncate`}>
+                {isMobile ? 'OTs' : 'OTs - Ordens de Trabalho'}
+              </h1>
+              {!isMobile && <p className={textSecondary}>Gestão de Assistências Técnicas</p>}
             </div>
             {/* Indicador de estado compacto */}
-            <div className="flex items-center gap-2 bg-[#1a1a1a] px-3 py-2 rounded-lg">
+            <div className={`flex items-center gap-2 ${bgCard} ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} rounded-lg border ${borderColor}`}>
               {isOnline ? (
                 <Wifi className="w-4 h-4 text-green-400" />
               ) : (
                 <WifiOff className="w-4 h-4 text-amber-400 animate-pulse" />
               )}
-              <span className={`text-sm ${isOnline ? 'text-green-400' : 'text-amber-400'}`}>
-                {isOnline ? 'Online' : 'Offline'}
-              </span>
+              {!isMobile && (
+                <span className={`text-sm ${isOnline ? 'text-green-400' : 'text-amber-400'}`}>
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              )}
               {pendingCount > 0 && (
                 <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
                   {pendingCount}
@@ -2912,64 +2917,68 @@ const TechnicalReports = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Tabs/Sections */}
-        <div className="mb-6">
-          <div className="flex gap-4 border-b border-gray-700">
+        {/* Tabs/Sections - Mobile: Horizontal Scroll */}
+        <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
+          <div className={`flex ${isMobile ? 'gap-1 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide' : 'gap-4'} border-b ${borderColor}`}>
             <button
               onClick={() => setActiveTab('clientes')}
-              className={`px-4 py-3 font-semibold transition ${
+              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
                 activeTab === 'clientes'
                   ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
+                  : `${textSecondary} hover:${textPrimary}`
               }`}
+              data-testid="tab-clientes"
             >
-              <Building2 className="w-4 h-4 inline mr-2" />
+              <Building2 className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
               Clientes
             </button>
             <button
               onClick={() => setActiveTab('relatorios')}
-              className={`px-4 py-3 font-semibold transition ${
+              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
                 activeTab === 'relatorios'
                   ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
+                  : `${textSecondary} hover:${textPrimary}`
               }`}
+              data-testid="tab-ots"
             >
-              <FileText className="w-4 h-4 inline mr-2" />
-              Ordens de Trabalho
+              <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
+              {isMobile ? 'OTs' : 'Ordens de Trabalho'}
             </button>
             <button
               onClick={() => setActiveTab('pesquisa')}
-              className={`px-4 py-3 font-semibold transition ${
+              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
                 activeTab === 'pesquisa'
                   ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
+                  : `${textSecondary} hover:${textPrimary}`
               }`}
+              data-testid="tab-pesquisa"
             >
-              <Search className="w-4 h-4 inline mr-2" />
-              Pesquisa por Estado
+              <Search className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
+              {isMobile ? 'Estados' : 'Pesquisa por Estado'}
             </button>
             <button
               onClick={() => {
                 setActiveTab('pedidos-cotacao');
                 fetchAllPCs();
               }}
-              className={`px-4 py-3 font-semibold transition ${
+              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
                 activeTab === 'pedidos-cotacao'
                   ? 'text-yellow-400 border-b-2 border-yellow-400'
-                  : 'text-gray-400 hover:text-white'
+                  : `${textSecondary} hover:${textPrimary}`
               }`}
+              data-testid="tab-pcs"
             >
-              <FileText className="w-4 h-4 inline mr-2" />
-              Pedidos de Cotação
+              <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
+              {isMobile ? 'PCs' : 'Pedidos de Cotação'}
             </button>
           </div>
         </div>
 
         {/* Clientes Section */}
         {activeTab === 'clientes' && (
-        <div className="glass-effect p-6 rounded-xl">
+        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
           {/* Search and Add */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex flex-col gap-3 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
