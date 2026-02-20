@@ -12,6 +12,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 ### P0 (Crítico)
 - ✅ ~~Edição de hora início/fim em registos de tempo~~ (24 Janeiro 2026)
 - ✅ ~~Funcionalidade "Justificar Dia" na Gestão de Entradas~~ (19 Fevereiro 2026)
+- ✅ ~~Campos de email dinâmicos para clientes~~ (20 Fevereiro 2026)
 
 ### P1 (Alta Prioridade)
 - Testar funcionalidade "Associar OT ao Calendário" (implementado mas não testado formalmente)
