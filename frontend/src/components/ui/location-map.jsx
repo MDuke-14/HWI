@@ -11,7 +11,36 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Ícones personalizados
+// Criar ícone com inicial do utilizador
+const createInitialIcon = (initial, color, isEnd = false) => {
+  const bgColor = isEnd ? '#ef4444' : '#3b82f6'; // Vermelho para fim, azul para início
+  const borderColor = isEnd ? '#dc2626' : '#2563eb';
+  
+  return L.divIcon({
+    className: 'custom-marker-initial',
+    html: `<div style="
+      background-color: ${color || bgColor};
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 3px solid ${borderColor};
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    ">${initial || '?'}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  });
+};
+
+// Ícones personalizados (mantidos para compatibilidade)
 const createIcon = (color) => {
   return L.divIcon({
     className: 'custom-marker',
@@ -36,6 +65,12 @@ const icons = {
   orange: createIcon('#f97316'),
   purple: createIcon('#a855f7'),
   default: createIcon('#6b7280'),
+};
+
+// Extrair inicial do nome
+const getInitial = (name) => {
+  if (!name) return '?';
+  return name.charAt(0).toUpperCase();
 };
 
 // Componente para ajustar o centro do mapa APENAS na primeira renderização
