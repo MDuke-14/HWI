@@ -129,21 +129,21 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
               {group.title}
             </h3>
-            <div className="bg-gray-900 dark:bg-gray-900 light:bg-white rounded-xl overflow-hidden divide-y divide-gray-800 dark:divide-gray-800 light:divide-gray-100">
+            <div className={`${bgCard} rounded-xl overflow-hidden ${borderColor}`}>
               {group.items.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className="flex items-center gap-4 p-4 hover:bg-gray-800 dark:hover:bg-gray-800 light:hover:bg-gray-50 transition-colors"
+                    className={`flex items-center gap-4 p-4 ${bgCardHover} transition-colors border-b last:border-b-0 ${isDark ? 'border-gray-800' : 'border-gray-100'}`}
                   >
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
                       <Icon className="w-5 h-5 text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white dark:text-white light:text-gray-900 font-medium">{item.name}</p>
-                      <p className="text-gray-400 dark:text-gray-400 light:text-gray-500 text-sm truncate">{item.description}</p>
+                      <p className={`${textPrimary} font-medium`}>{item.name}</p>
+                      <p className={`${textSecondary} text-sm truncate`}>{item.description}</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-600" />
                   </Link>
@@ -158,16 +158,16 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
             Configurações
           </h3>
-          <div className="bg-gray-900 dark:bg-gray-900 light:bg-white rounded-xl overflow-hidden divide-y divide-gray-800 dark:divide-gray-800 light:divide-gray-100">
+          <div className={`${bgCard} rounded-xl overflow-hidden ${borderColor}`}>
             {/* Toggle de Tema */}
-            <div className="flex items-center justify-between p-4">
+            <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  {isDark ? <Moon className="w-5 h-5 text-purple-400" /> : <Sun className="w-5 h-5 text-yellow-400" />}
+                  {isDark ? <Moon className="w-5 h-5 text-purple-400" /> : <Sun className="w-5 h-5 text-yellow-500" />}
                 </div>
                 <div>
-                  <p className="text-white dark:text-white light:text-gray-900 font-medium">Tema Escuro</p>
-                  <p className="text-gray-400 dark:text-gray-400 light:text-gray-500 text-sm">
+                  <p className={`${textPrimary} font-medium`}>Tema Escuro</p>
+                  <p className={`${textSecondary} text-sm`}>
                     {isDark ? 'Ativo' : 'Desativo'}
                   </p>
                 </div>
@@ -181,14 +181,14 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
             {/* Notificações */}
             <Link
               to="/settings/notifications"
-              className="flex items-center gap-4 p-4 hover:bg-gray-800 dark:hover:bg-gray-800 light:hover:bg-gray-50 transition-colors"
+              className={`flex items-center gap-4 p-4 ${bgCardHover} transition-colors border-b ${isDark ? 'border-gray-800' : 'border-gray-100'}`}
             >
               <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
                 <Bell className="w-5 h-5 text-orange-400" />
               </div>
               <div className="flex-1">
-                <p className="text-white dark:text-white light:text-gray-900 font-medium">Notificações</p>
-                <p className="text-gray-400 dark:text-gray-400 light:text-gray-500 text-sm">Gerir alertas</p>
+                <p className={`${textPrimary} font-medium`}>Notificações</p>
+                <p className={`${textSecondary} text-sm`}>Gerir alertas</p>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </Link>
@@ -196,14 +196,14 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
             {/* Alterar Password */}
             <Link
               to="/change-password"
-              className="flex items-center gap-4 p-4 hover:bg-gray-800 dark:hover:bg-gray-800 light:hover:bg-gray-50 transition-colors"
+              className={`flex items-center gap-4 p-4 ${bgCardHover} transition-colors`}
             >
               <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
                 <Settings className="w-5 h-5 text-green-400" />
               </div>
               <div className="flex-1">
-                <p className="text-white dark:text-white light:text-gray-900 font-medium">Alterar Password</p>
-                <p className="text-gray-400 dark:text-gray-400 light:text-gray-500 text-sm">Segurança da conta</p>
+                <p className={`${textPrimary} font-medium`}>Alterar Password</p>
+                <p className={`${textSecondary} text-sm`}>Segurança da conta</p>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </Link>
@@ -215,14 +215,14 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
             Informações
           </h3>
-          <div className="bg-gray-900 dark:bg-gray-900 light:bg-white rounded-xl overflow-hidden divide-y divide-gray-800 dark:divide-gray-800 light:divide-gray-100">
+          <div className={`${bgCard} rounded-xl overflow-hidden`}>
             <div className="flex items-center gap-4 p-4">
               <div className="w-10 h-10 rounded-lg bg-gray-500/10 flex items-center justify-center">
                 <Info className="w-5 h-5 text-gray-400" />
               </div>
               <div className="flex-1">
-                <p className="text-white dark:text-white light:text-gray-900 font-medium">Versão</p>
-                <p className="text-gray-400 dark:text-gray-400 light:text-gray-500 text-sm">
+                <p className={`${textPrimary} font-medium`}>Versão</p>
+                <p className={`${textSecondary} text-sm`}>
                   HWI Ponto v2.0 {isStandalone && '(PWA)'}
                 </p>
               </div>
