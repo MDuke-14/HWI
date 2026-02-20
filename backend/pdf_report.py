@@ -249,10 +249,6 @@ def generate_monthly_pdf_report(report_data):
     daily_table.setStyle(TableStyle(table_style))
     elements.append(daily_table)
     
-    # Adicionar secção de Observações (justificações de admin, etc.)
-    if report_data.get('observations'):
-        elements.append(Spacer(1, 20))
-    
     # Build PDF
     doc.build(elements)
     buffer.seek(0)
