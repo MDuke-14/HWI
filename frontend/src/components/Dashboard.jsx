@@ -830,29 +830,43 @@ const Dashboard = ({ user, onLogout }) => {
                   )}
                 </div>
 
-                <Button
-                  data-testid="start-button"
-                  onClick={handleStart}
-                  disabled={loading || (outsideResidenceZone && !locationDescription.trim())}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-6 h-6 mr-2 animate-spin" />
-                      {geoLoading ? 'A obter localização...' : 'A iniciar...'}
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-6 h-6 mr-2" />
-                      Iniciar Relógio
-                    </>
-                  )}
-                </Button>
+                {/* Botão Iniciar - Escondido em mobile (usa bottom nav) */}
+                {!isMobile && (
+                  <Button
+                    data-testid="start-button"
+                    onClick={handleStart}
+                    disabled={loading || (outsideResidenceZone && !locationDescription.trim())}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-4 rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="w-6 h-6 mr-2 animate-spin" />
+                        {geoLoading ? 'A obter localização...' : 'A iniciar...'}
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-6 h-6 mr-2" />
+                        Iniciar Relógio
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Mensagem mobile - usar bottom nav */}
+                {isMobile && (
+                  <div className={`text-center py-3 ${textSecondary} text-sm`}>
+                    <span>Use o botão</span>
+                    <span className="mx-1 inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white">
+                      <Play className="w-4 h-4" />
+                    </span>
+                    <span>abaixo para iniciar</span>
+                  </div>
+                )}
               </div>
             ) : entry.status === 'active' ? (
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="end-observations" className="text-gray-300 mb-1.5 block text-sm">
+                  <Label htmlFor="end-observations" className={`${textSecondary} mb-1.5 block text-sm`}>
                     Observações ao Finalizar (opcional)
                   </Label>
                   <Textarea
@@ -861,18 +875,32 @@ const Dashboard = ({ user, onLogout }) => {
                     value={endObservations}
                     onChange={(e) => setEndObservations(e.target.value)}
                     placeholder="Ex: Trabalho concluído, reunião realizada..."
-                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[70px] text-sm"
+                    className={`${bgCard} ${borderColor} ${textPrimary} focus:ring-blue-500 min-h-[70px] text-sm`}
                   />
                 </div>
-                <Button
-                  data-testid="end-button"
-                  onClick={handleEnd}
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
-                >
-                  <Square className="w-6 h-6 mr-2" />
-                  Finalizar Relógio
-                </Button>
+                {/* Botão Finalizar - Escondido em mobile (usa bottom nav) */}
+                {!isMobile && (
+                  <Button
+                    data-testid="end-button"
+                    onClick={handleEnd}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-semibold py-4 rounded-full text-lg"
+                  >
+                    <Square className="w-6 h-6 mr-2" />
+                    Finalizar Relógio
+                  </Button>
+                )}
+                
+                {/* Mensagem mobile - usar bottom nav */}
+                {isMobile && (
+                  <div className={`text-center py-3 ${textSecondary} text-sm`}>
+                    <span>Use o botão</span>
+                    <span className="mx-1 inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white">
+                      <Square className="w-4 h-4" />
+                    </span>
+                    <span>abaixo para finalizar</span>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
