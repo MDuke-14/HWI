@@ -1479,7 +1479,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                           {auth.status === 'pending' && (
                             <div className="flex gap-2">
                               <Button
-                                onClick={() => handleDecideAuthorization(auth.id, 'approve')}
+                                onClick={() => handleDecideAuthorization(auth.id, 'approve', auth.authType)}
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700"
                               >
@@ -1487,7 +1487,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                                 Autorizar
                               </Button>
                               <Button
-                                onClick={() => handleDecideAuthorization(auth.id, 'reject')}
+                                onClick={() => handleDecideAuthorization(auth.id, 'reject', auth.authType)}
                                 size="sm"
                                 variant="outline"
                                 className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
