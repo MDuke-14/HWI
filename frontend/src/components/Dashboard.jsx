@@ -19,6 +19,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import LocationMap from '@/components/ui/location-map';
+import { useMobile } from '@/contexts/MobileContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Dashboard = ({ user, onLogout }) => {
   const [entry, setEntry] = useState(null);
