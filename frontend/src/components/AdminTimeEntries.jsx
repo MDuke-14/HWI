@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { 
   Users, Calendar, Clock, Edit, Trash2, Plus, Save, X, 
-  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap, MapPin, Map, ExternalLink 
+  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap, MapPin, Map, ExternalLink, Download 
 } from 'lucide-react';
 import LocationMap from '@/components/ui/location-map';
 
