@@ -355,21 +355,76 @@ const Dashboard = ({ user, onLogout }) => {
       const response = await axios.get(`${API}/admin/realtime-status`);
       setRealtimeData(response.data);
       
-      // Extrair localizações dos utilizadores
-      const locations = (response.data.users || [])
-        .filter(u => u.geo_location?.latitude && u.geo_location?.longitude)
-        .map(u => ({
-          id: u.user_id,
-          userName: u.full_name || u.username,
-          latitude: u.geo_location.latitude,
-          longitude: u.geo_location.longitude,
-          accuracy: u.geo_location.accuracy,
-          timestamp: u.geo_location.timestamp || u.clock_in_time,
-          address: u.geo_location.address?.formatted || u.geo_location.address?.city || u.location,
-          type: u.status === 'TRABALHANDO' ? 'A trabalhar' : u.status,
-          color: u.status === 'TRABALHANDO' ? 'green' : (u.status === 'TRABALHOU' ? 'blue' : 'gray'),
-        }));
-      setRealtimeLocations(locations);
+      // Extrair TODAS as localizações (entradas e saídas) de todos os utilizadores
+      const allLocations = [];
+      
+      (response.data.users || []).forEach(u => {
+        const userName = u.full_name || u.username;
+        const userInitial = userName ? userName.charAt(0).toUpperCase() : '?';
+        
+        // Verificar se tem entradas com geo_location (entradas múltiplas)
+        if (u.entradas && Array.isArray(u.entradas)) {
+          u.entradas.forEach((entrada, idx) => {
+            // Localização de ENTRADA
+            if (entrada.geo_location?.latitude && entrada.geo_location?.longitude) {
+              allLocations.push({
+                id: `${u.user_id}-entry-${idx}-start`,
+                entryId: entrada.id,
+                userName: userName,
+                latitude: entrada.geo_location.latitude,
+                longitude: entrada.geo_location.longitude,
+                accuracy: entrada.geo_location.accuracy,
+                timestamp: entrada.start_time,
+                address: entrada.geo_location.address?.formatted || entrada.geo_location.address?.city,
+                type: 'Entrada',
+                isEnd: false,
+              });
+            }
+            
+            // Localização de SAÍDA
+            if (entrada.end_geo_location?.latitude && entrada.end_geo_location?.longitude) {
+              allLocations.push({
+                id: `${u.user_id}-entry-${idx}-end`,
+                entryId: entrada.id,
+                userName: userName,
+                latitude: entrada.end_geo_location.latitude,
+                longitude: entrada.end_geo_location.longitude,
+                accuracy: entrada.end_geo_location.accuracy,
+                timestamp: entrada.end_time || entrada.end_geo_location.timestamp,
+                address: entrada.end_geo_location.address?.formatted || entrada.end_geo_location.address?.city,
+                type: 'Saída',
+                isEnd: true,
+              });
+            }
+          });
+        }
+        
+        // Fallback para geo_location única (utilizador actual)
+        if (u.geo_location?.latitude && u.geo_location?.longitude) {
+          // Verificar se já não foi adicionado através das entradas
+          const alreadyAdded = allLocations.some(loc => 
+            loc.latitude === u.geo_location.latitude && 
+            loc.longitude === u.geo_location.longitude &&
+            loc.userName === userName
+          );
+          
+          if (!alreadyAdded) {
+            allLocations.push({
+              id: `${u.user_id}-current`,
+              userName: userName,
+              latitude: u.geo_location.latitude,
+              longitude: u.geo_location.longitude,
+              accuracy: u.geo_location.accuracy,
+              timestamp: u.geo_location.timestamp || u.clock_in_time,
+              address: u.geo_location.address?.formatted || u.geo_location.address?.city || u.location,
+              type: u.status === 'TRABALHANDO' ? 'Entrada' : 'Saída',
+              isEnd: u.status !== 'TRABALHANDO',
+            });
+          }
+        }
+      });
+      
+      setRealtimeLocations(allLocations);
     } catch (error) {
       toast.error('Erro ao carregar status em tempo real');
       console.error(error);
