@@ -7131,16 +7131,46 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
 
             <div>
-              <Label htmlFor="edit-emails-adicionais" className="text-gray-300">
-                Emails Adicionais
-              </Label>
-              <Input
-                id="edit-emails-adicionais"
-                value={formData.emails_adicionais}
-                onChange={(e) => setFormData({ ...formData, emails_adicionais: e.target.value })}
-                placeholder="Separar com vírgulas"
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-gray-300">
+                  Emails Adicionais
+                </Label>
+                <Button
+                  type="button"
+                  onClick={addEmailField}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Adicionar Email
+                </Button>
+              </div>
+              {formData.emails_adicionais.length === 0 ? (
+                <p className="text-xs text-gray-500">Nenhum email adicional. Clique em "Adicionar Email" para incluir.</p>
+              ) : (
+                <div className="space-y-2">
+                  {formData.emails_adicionais.map((email, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => updateEmailField(index, e.target.value)}
+                        placeholder={`Email ${index + 1}`}
+                        className="bg-[#0f0f0f] border-gray-700 text-white flex-1"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => removeEmailField(index)}
+                        size="sm"
+                        variant="outline"
+                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
