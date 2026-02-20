@@ -13,8 +13,10 @@ import { toast } from 'sonner';
 import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map } from 'lucide-react';
 import HelpTooltip from '@/components/HelpTooltip';
 import LocationMap from '@/components/ui/location-map';
+import { useMobile } from '@/contexts/MobileContext';
 
 const AdminDashboard = ({ user, onLogout }) => {
+  const { isMobile } = useMobile();
   const [users, setUsers] = useState([]);
   const [pendingVacations, setPendingVacations] = useState([]);
   const [allAbsences, setAllAbsences] = useState([]);
