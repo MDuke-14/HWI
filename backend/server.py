@@ -5917,6 +5917,7 @@ async def download_monthly_pdf_report(
             "is_weekend": is_weekend,
             "is_holiday": is_holiday,
             "holiday_name": ot_reason if is_holiday else None
+            "justification": justifications_map.get(date_str),
         }
         
         # Check if worked this day
