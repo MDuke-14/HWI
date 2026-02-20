@@ -1247,7 +1247,18 @@ const Dashboard = ({ user, onLogout }) => {
                     locations={realtimeLocations}
                     height="350px"
                     zoom={10}
+                    useInitials={true}
                   />
+                  <div className="bg-gray-800 px-4 py-2 flex items-center justify-center gap-6 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[8px] font-bold">P</div>
+                      <span className="text-gray-400">Entrada</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px] font-bold">P</div>
+                      <span className="text-gray-400">Saída</span>
+                    </div>
+                  </div>
                 </div>
               )}
               
