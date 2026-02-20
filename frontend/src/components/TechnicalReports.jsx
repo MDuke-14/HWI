@@ -348,7 +348,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     telefone: '',
     morada: '',
     nif: '',
-    emails_adicionais: ''
+    emails_adicionais: []  // Array de emails adicionais
   });
   
   const [relatorioFormData, setRelatorioFormData] = useState({
