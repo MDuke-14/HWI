@@ -494,24 +494,24 @@ const AdminTimeEntries = ({ user, onLogout }) => {
           {selectedUser && (
             <>
               {/* Month/Year Navigation and Add Button */}
-              <div className="glass-effect p-4 rounded-xl mb-6">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className={`glass-effect ${isMobile ? 'p-3' : 'p-4'} rounded-xl mb-4`}>
+                <div className={`flex flex-col ${isMobile ? 'gap-3' : 'md:flex-row justify-between items-center gap-4'}`}>
                   {/* Month Navigation */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center gap-2 w-full md:w-auto">
                     <Button
                       onClick={() => changeMonth(-1)}
                       variant="outline"
                       size="icon"
-                      className="border-gray-600"
+                      className={`border-gray-600 ${isMobile ? 'h-8 w-8' : ''}`}
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      <ChevronLeft className={isMobile ? 'w-4 h-4' : 'w-5 h-5'} />
                     </Button>
                     
-                    <div className="text-center min-w-[280px]">
-                      <div className="text-2xl font-bold text-white">
-                        {monthNames[selectedMonth - 1]} {selectedYear}
+                    <div className={`text-center ${isMobile ? 'min-w-[180px]' : 'min-w-[280px]'}`}>
+                      <div className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-white`}>
+                        {isMobile ? monthNames[selectedMonth - 1].slice(0, 3) : monthNames[selectedMonth - 1]} {selectedYear}
                       </div>
-                      <div className="text-sm text-blue-400 mt-1">
+                      <div className={`${isMobile ? 'text-[10px]' : 'text-sm'} text-blue-400 mt-0.5`}>
                         {billingPeriod.from && billingPeriod.to && (
                           <>
                             {new Date(billingPeriod.from + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
@@ -520,67 +520,73 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                           </>
                         )}
                       </div>
-                      <div className="text-xs text-gray-400">
-                        {selectedUser.full_name || selectedUser.username}
-                      </div>
+                      {!isMobile && (
+                        <div className="text-xs text-gray-400">
+                          {selectedUser.full_name || selectedUser.username}
+                        </div>
+                      )}
                     </div>
                     
                     <Button
                       onClick={() => changeMonth(1)}
                       variant="outline"
                       size="icon"
-                      className="border-gray-600"
+                      className={`border-gray-600 ${isMobile ? 'h-8 w-8' : ''}`}
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <ChevronRight className={isMobile ? 'w-4 h-4' : 'w-5 h-5'} />
                     </Button>
                   </div>
                   
-                  {/* Add Entry Button */}
-                  <Button
-                    onClick={() => {
-                      setAddForm({
-                        ...addForm,
-                        date: new Date().toISOString().split('T')[0]
-                      });
-                      setShowAddModal(true);
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Adicionar Entrada
-                  </Button>
-                  <Button
-                    onClick={handleDownloadPDF}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    data-testid="download-pdf-btn"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Download PDF
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className={`flex ${isMobile ? 'w-full' : ''} gap-2`}>
+                    <Button
+                      onClick={() => {
+                        setAddForm({
+                          ...addForm,
+                          date: new Date().toISOString().split('T')[0]
+                        });
+                        setShowAddModal(true);
+                      }}
+                      className={`bg-green-600 hover:bg-green-700 text-white ${isMobile ? 'flex-1 text-xs py-2' : ''}`}
+                      size={isMobile ? 'sm' : 'default'}
+                    >
+                      <Plus className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-5 h-5 mr-2'}`} />
+                      {isMobile ? 'Adicionar' : 'Adicionar Entrada'}
+                    </Button>
+                    <Button
+                      onClick={handleDownloadPDF}
+                      className={`bg-blue-600 hover:bg-blue-700 text-white ${isMobile ? 'flex-1 text-xs py-2' : ''}`}
+                      size={isMobile ? 'sm' : 'default'}
+                      data-testid="download-pdf-btn"
+                    >
+                      <Download className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-5 h-5 mr-2'}`} />
+                      {isMobile ? 'PDF' : 'Download PDF'}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="glass-effect p-4 rounded-xl">
-                  <div className="text-gray-400 text-sm mb-1">Total de Horas</div>
-                  <div className="text-2xl font-bold text-green-400">{formatHours(totalHours)}</div>
+              <div className={`grid ${isMobile ? 'grid-cols-3 gap-2' : 'grid-cols-1 md:grid-cols-3 gap-4'} mb-4`}>
+                <div className={`glass-effect ${isMobile ? 'p-2.5' : 'p-4'} rounded-xl`}>
+                  <div className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'} mb-0.5`}>Total Horas</div>
+                  <div className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-green-400`}>{formatHours(totalHours)}</div>
                 </div>
-                <div className="glass-effect p-4 rounded-xl">
-                  <div className="text-gray-400 text-sm mb-1">Dias com Registo</div>
-                  <div className="text-2xl font-bold text-blue-400">{totalDays}</div>
+                <div className={`glass-effect ${isMobile ? 'p-2.5' : 'p-4'} rounded-xl`}>
+                  <div className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'} mb-0.5`}>Dias</div>
+                  <div className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-blue-400`}>{totalDays}</div>
                 </div>
-                <div className="glass-effect p-4 rounded-xl">
-                  <div className="text-gray-400 text-sm mb-1">Total de Entradas</div>
-                  <div className="text-2xl font-bold text-purple-400">{entries.length}</div>
+                <div className={`glass-effect ${isMobile ? 'p-2.5' : 'p-4'} rounded-xl`}>
+                  <div className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'} mb-0.5`}>Entradas</div>
+                  <div className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-purple-400`}>{entries.length}</div>
                 </div>
               </div>
 
               {/* Entries List */}
-              <div className="glass-effect p-6 rounded-xl">
-                <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Registos do Período de Faturação
+              <div className={`glass-effect ${isMobile ? 'p-3' : 'p-6'} rounded-xl`}>
+                <h3 className={`${isMobile ? 'text-base' : 'text-xl'} font-semibold text-white ${isMobile ? 'mb-3' : 'mb-4'} flex items-center gap-2`}>
+                  <Calendar className={isMobile ? 'w-4 h-4' : 'w-5 h-5'} />
+                  {isMobile ? 'Registos' : 'Registos do Período de Faturação'}
                 </h3>
 
                 {loading ? (
