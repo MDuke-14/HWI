@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMobile } from '@/contexts/MobileContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { API } from '@/App';
 import MobileBottomNav from './MobileBottomNav';
@@ -13,10 +14,13 @@ import MobileMenu from './MobileMenu';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
   const location = useLocation();
   const { isMobile, isStandalone } = useMobile();
+  const { isDark } = useTheme();
   const { isOnline, pendingCount, forceSync } = useOfflineData(API);
   const [activeTimer, setActiveTimer] = useState(null);
 
@@ -72,17 +76,29 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
         setActiveTimer(response.data);
         toast.success('Entrada registada!');
       } else {
-        const response = await axios.post(`${API}/time-entries/end`, {
+        // Usar o ID do timer ativo
+        if (!activeTimer?.id) {
+          toast.error('Nenhum registo ativo para finalizar');
+          return;
+        }
+        
+        const response = await axios.post(`${API}/time-entries/end/${activeTimer.id}`, {
           observations: 'Saída via mobile'
         });
         
         setActiveTimer(null);
-        toast.success('Saída registada!');
+        toast.success(`Saída registada! Total: ${response.data.total_hours || '0'}h`);
       }
     } catch (error) {
       console.error('Erro na ação rápida:', error);
       toast.error(error.response?.data?.detail || 'Erro ao registar ponto');
     }
+  };
+
+  // Handler para abrir modal de status em tempo real (redireciona para dashboard com modal)
+  const handleOpenRealtimeStatus = () => {
+    // Navegar para dashboard e abrir modal via URL param ou state
+    window.location.href = '/?showRealtime=true';
   };
 
   // Se é a rota /menu em mobile, renderizar MobileMenu
@@ -116,6 +132,23 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
       isMobile && showBottomNav && "has-bottom-nav"
     )}>
       {children}
+      
+      {/* Floating Admin Button - Status em Tempo Real (apenas mobile + admin) */}
+      {isMobile && user?.is_admin && location.pathname === '/' && (
+        <Button
+          onClick={handleOpenRealtimeStatus}
+          className={cn(
+            "fixed bottom-24 right-4 z-40",
+            "bg-gradient-to-r from-purple-500 to-purple-600",
+            "hover:from-purple-600 hover:to-purple-700",
+            "text-white rounded-full p-3 shadow-xl",
+            "transition-all duration-300 hover:scale-110"
+          )}
+          data-testid="mobile-realtime-btn"
+        >
+          <Users className="w-5 h-5" />
+        </Button>
+      )}
       
       {/* Bottom Navigation - apenas em mobile */}
       {showBottomNav && isMobile && (
