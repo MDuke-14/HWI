@@ -13,6 +13,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ✅ ~~Edição de hora início/fim em registos de tempo~~ (24 Janeiro 2026)
 - ✅ ~~Funcionalidade "Justificar Dia" na Gestão de Entradas~~ (19 Fevereiro 2026)
 - ✅ ~~Campos de email dinâmicos para clientes~~ (20 Fevereiro 2026)
+- 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
+  - ✅ Bottom Navigation para mobile
+  - ✅ Sistema de temas (claro/escuro)
+  - ✅ Menu mobile dedicado
+  - ✅ Contextos de Mobile e Tema
+  - ⏳ Adaptar restantes páginas para mobile
+  - ⏳ Testes completos de offline
 
 ### P1 (Alta Prioridade)
 - Testar funcionalidade "Associar OT ao Calendário" (implementado mas não testado formalmente)
