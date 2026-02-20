@@ -81,13 +81,19 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
         setActiveTimer(response.data);
         toast.success('Entrada registada!');
       } else {
-        // Usar o ID do timer ativo
-        if (!activeTimer?.id) {
-          toast.error('Nenhum registo ativo para finalizar');
-          return;
+        // Verificar novamente se há timer ativo
+        let timerToEnd = activeTimer;
+        if (!timerToEnd?.id) {
+          // Buscar timer activo do servidor
+          const active = await checkActiveTimer();
+          if (!active?.id) {
+            toast.error('Nenhum registo ativo para finalizar');
+            return;
+          }
+          timerToEnd = active;
         }
         
-        const response = await axios.post(`${API}/time-entries/end/${activeTimer.id}`, {
+        const response = await axios.post(`${API}/time-entries/end/${timerToEnd.id}`, {
           observations: 'Saída via mobile'
         });
         
@@ -97,6 +103,8 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
     } catch (error) {
       console.error('Erro na ação rápida:', error);
       toast.error(error.response?.data?.detail || 'Erro ao registar ponto');
+      // Recarregar estado do timer em caso de erro
+      checkActiveTimer();
     }
   };
 
