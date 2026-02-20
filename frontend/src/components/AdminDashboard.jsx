@@ -796,17 +796,17 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <div className="mt-2">
                               <Button 
                                 onClick={() => downloadJustificationFile(absence.justification_file)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs"
+                                className={`bg-blue-600 hover:bg-blue-700 text-white rounded-full ${isMobile ? 'text-[10px]' : 'text-xs'}`}
                                 size="sm"
                               >
                                 <Download className="w-3 h-3 mr-1" />
-                                Ver Justificação
+                                {isMobile ? 'Ver' : 'Ver Justificação'}
                               </Button>
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        <div className={`flex ${isMobile ? 'flex-row items-center justify-between w-full' : 'flex-col'} gap-2`}>
+                          <span className={`${isMobile ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} rounded-full font-semibold ${
                             absence.status === 'approved' ? 'bg-green-700 text-green-200' :
                             absence.status === 'rejected' ? 'bg-red-700 text-red-200' :
                             'bg-amber-700 text-amber-200'
@@ -815,58 +815,69 @@ const AdminDashboard = ({ user, onLogout }) => {
                           </span>
                           {absence.status === 'pending' && (
                             <div className="flex gap-2">
-                              <Button onClick={() => handleAbsenceReview(absence.id, true)} className="bg-green-600 hover:bg-green-700 text-white rounded-full text-xs" size="sm">
-                                <CheckCircle className="w-3 h-3 mr-1" />Aprovar
+                              <Button 
+                                onClick={() => handleAbsenceReview(absence.id, true)} 
+                                className={`bg-green-600 hover:bg-green-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                                size="sm"
+                              >
+                                <CheckCircle className="w-3 h-3 mr-1" />{isMobile ? 'OK' : 'Aprovar'}
                               </Button>
-                              <Button onClick={() => handleAbsenceReview(absence.id, false)} className="bg-red-600 hover:bg-red-700 text-white rounded-full text-xs" size="sm">
-                                <XCircle className="w-3 h-3 mr-1" />Rejeitar
+                              <Button 
+                                onClick={() => handleAbsenceReview(absence.id, false)} 
+                                className={`bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                                size="sm"
+                              >
+                                <XCircle className="w-3 h-3 mr-1" />{isMobile ? 'Não' : 'Rejeitar'}
                               </Button>
                             </div>
                           )}
                         </div>
                       </div>
-                      {absence.reviewed_by && <div className="text-gray-500 text-xs mt-2 pt-2 border-t border-gray-700">Revisto por: {absence.reviewed_by}</div>}
+                      {absence.reviewed_by && !isMobile && <div className="text-gray-500 text-xs mt-2 pt-2 border-t border-gray-700">Revisto por: {absence.reviewed_by}</div>}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-400 py-12">Não há faltas registadas</div>
+                <div className={`text-center text-gray-400 ${isMobile ? 'py-8 text-sm' : 'py-12'}`}>Não há faltas registadas</div>
               )}
             </div>
           </TabsContent>
 
           <TabsContent value="users">
-            <div className="glass-effect p-6 rounded-xl">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+            <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+              <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                <h2 className={`${isMobile ? 'text-base' : 'text-2xl'} font-semibold text-white flex items-center gap-2`}>
                   Utilizadores ({users.length})
-                  <HelpTooltip section="admin_utilizadores" />
+                  {!isMobile && <HelpTooltip section="admin_utilizadores" />}
                 </h2>
-                <div className="flex gap-3 flex-wrap">
+                <div className={`flex ${isMobile ? 'flex-col w-full' : 'flex-wrap'} gap-2`}>
                   {/* Mapa de Localizações Atuais */}
                   <Button 
                     onClick={handleOpenAllLocations}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                    className={`bg-emerald-600 hover:bg-emerald-700 text-white rounded-full ${isMobile ? 'w-full text-sm py-2' : ''}`}
                     data-testid="view-all-locations-btn"
+                    size={isMobile ? 'sm' : 'default'}
                   >
-                    <Map className="w-4 h-4 mr-2" />Mapa em Tempo Real
+                    <Map className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-4 h-4 mr-2'}`} />
+                    {isMobile ? 'Mapa' : 'Mapa em Tempo Real'}
                   </Button>
                   
                   <Dialog open={showManualEntryDialog} onOpenChange={setShowManualEntryDialog}>
                     <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">
-                        <Clock className="w-4 h-4 mr-2" />Adicionar Entrada
+                      <Button className={`bg-blue-600 hover:bg-blue-700 text-white rounded-full ${isMobile ? 'w-full text-sm py-2' : ''}`} size={isMobile ? 'sm' : 'default'}>
+                        <Clock className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-4 h-4 mr-2'}`} />
+                        {isMobile ? 'Add Entrada' : 'Adicionar Entrada'}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-                      <DialogHeader><DialogTitle>Adicionar Entrada Manual</DialogTitle></DialogHeader>
-                      <div className="space-y-3 mt-4">
+                    <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'max-w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl' : 'max-w-md'}`}>
+                      <DialogHeader><DialogTitle className={isMobile ? 'text-base' : ''}>Adicionar Entrada Manual</DialogTitle></DialogHeader>
+                      <div className={`space-y-3 ${isMobile ? 'mt-2' : 'mt-4'}`}>
                         <div>
-                          <Label>Utilizador</Label>
+                          <Label className={isMobile ? 'text-xs' : ''}>Utilizador</Label>
                           <select
                             value={manualEntryForm.user_id}
                             onChange={(e) => setManualEntryForm({...manualEntryForm, user_id: e.target.value})}
-                            className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
+                            className={`w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2 ${isMobile ? 'text-sm' : ''}`}
                           >
                             <option value="">Selecione um utilizador</option>
                             {users.map(u => (
