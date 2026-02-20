@@ -3286,17 +3286,17 @@ const TechnicalReports = ({ user, onLogout }) => {
 
         {/* Pesquisa por Estado Section */}
         {activeTab === 'pesquisa' && (
-        <div className="glass-effect p-6 rounded-xl">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Pesquisa por Estado</h2>
+        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+          <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
+            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold ${textPrimary} ${isMobile ? 'mb-3' : 'mb-4'}`}>Pesquisa por Estado</h2>
             
             {/* Status Dropdown */}
-            <div className="max-w-md">
-              <Label className="text-gray-300 mb-2 block">Selecione o Estado</Label>
+            <div className={`${isMobile ? 'w-full' : 'max-w-md'}`}>
+              <Label className={`${textSecondary} mb-2 block ${isMobile ? 'text-sm' : ''}`}>Selecione o Estado</Label>
               <select
                 value={statusFilter}
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full ${bgCardAlt} border ${borderColor} ${textPrimary} rounded-md ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-3'} focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
               >
                 <option value="">-- Selecione um estado --</option>
                 <option value="agendado">📅 Agendado</option>
@@ -3310,52 +3310,52 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           {/* Results */}
           {statusFilter && (
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-semibold">
-                  Resultados: {filteredByStatus.length} OT(s) com status "{getStatusLabel(statusFilter)}"
+            <div className={`${isMobile ? 'mt-4' : 'mt-6'}`}>
+              <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'}`}>
+                <h3 className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''}`}>
+                  {isMobile ? `${filteredByStatus.length} OT(s)` : `Resultados: ${filteredByStatus.length} OT(s) com status "${getStatusLabel(statusFilter)}"`}
                 </h3>
               </div>
 
               {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="text-gray-400 mt-4">A carregar...</p>
+                <div className="text-center py-8">
+                  <div className={`animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-b-2 border-blue-500 mx-auto`}></div>
+                  <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar...</p>
                 </div>
               ) : filteredByStatus.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400 text-lg">Nenhuma OT encontrada com este estado</p>
+                <div className="text-center py-8">
+                  <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
+                  <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma OT encontrada com este estado</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
                   {filteredByStatus.map((relatorio) => (
                     <div
                       key={relatorio.id}
-                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition cursor-pointer"
+                      className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-4'} hover:border-blue-500 transition cursor-pointer`}
                       onClick={() => openViewRelatorioModal(relatorio)}
                     >
                       {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="cursor-pointer flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-blue-400 font-bold text-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="cursor-pointer flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className={`text-blue-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
                               #{relatorio.numero_assistencia}
                             </span>
                             <span 
-                              className={`text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
+                              className={`text-xs px-2 py-0.5 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
                               onClick={(e) => openStatusModal(relatorio, e)}
                               title="Clique para alterar status"
                             >
                               {getStatusLabel(relatorio.status)}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-400">
+                          <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`}>
                             {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
                           </p>
                         </div>
                         
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-shrink-0">
                           <Button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -3363,9 +3363,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }}
                             variant="outline"
                             size="sm"
-                            className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                            className={`${isDark ? 'border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'} ${isMobile ? 'p-1.5' : 'p-2'}`}
                           >
-                            <Edit className="w-3.5 h-3.5" />
+                            <Edit className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
                           </Button>
                           
                           {user?.is_admin && (
@@ -3377,51 +3377,51 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }}
                               variant="outline"
                               size="sm"
-                              className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2"
+                              className={`${isDark ? 'border-gray-600' : 'border-gray-300'} hover:border-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1.5' : 'p-2'}`}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
                             </Button>
                           )}
                         </div>
                       </div>
 
                       {/* Cliente */}
-                      <div className="mb-3 pb-3 border-b border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">Cliente</p>
-                        <p className="text-white font-medium">{relatorio.cliente_nome}</p>
-                        <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
+                      <div className={`${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b ${borderColor}`}>
+                        <p className={`text-xs ${textSecondary} mb-1`}>Cliente</p>
+                        <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''} truncate`}>{relatorio.cliente_nome}</p>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
                       </div>
 
-                      {/* Equipamento */}
-                      <div className="mb-3 pb-3 border-b border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">Equipamento</p>
-                        <p className="text-sm text-gray-300">
-                          {relatorio.equipamento_display ? (
-                            relatorio.equipamento_display === 'Não especificado' ? (
-                              <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
-                            ) : relatorio.equipamento_display === 'Vários' ? (
-                              <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
+                      {/* Equipamento - simplificado para mobile */}
+                      {!isMobile && (
+                        <div className="mb-3 pb-3 border-b border-gray-700">
+                          <p className="text-xs text-gray-500 mb-1">Equipamento</p>
+                          <p className="text-sm text-gray-300">
+                            {relatorio.equipamento_display ? (
+                              relatorio.equipamento_display === 'Não especificado' ? (
+                                <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
+                              ) : relatorio.equipamento_display === 'Vários' ? (
+                                <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
+                              ) : (
+                                <span>{relatorio.equipamento_display}</span>
+                              )
+                            ) : relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
+                              <>
+                                {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
+                                {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
+                                {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
+                              </>
                             ) : (
-                              <span>{relatorio.equipamento_display}</span>
-                            )
-                          ) : relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
-                            <>
-                              {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
-                              {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
-                              {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
-                              {(relatorio.equipamento_tipologia || relatorio.equipamento_marca) && relatorio.equipamento_modelo && <span className="text-gray-500"> • </span>}
-                              {relatorio.equipamento_modelo && <span className="text-gray-400">{relatorio.equipamento_modelo}</span>}
-                            </>
-                          ) : (
-                            <span className="text-gray-500 italic">Não especificado</span>
-                          )}
-                        </p>
-                      </div>
+                              <span className="text-gray-500 italic">Não especificado</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
 
-                      {/* Técnico */}
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <User className="w-4 h-4" />
-                        <span>{relatorio.cliente_nome}</span>
+                      {/* Footer */}
+                      <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`}>
+                        <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        <span className="truncate">{relatorio.cliente_nome}</span>
                       </div>
                     </div>
                   ))}
@@ -3431,9 +3431,9 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
 
           {!statusFilter && (
-            <div className="text-center py-12">
-              <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">Selecione um estado para pesquisar</p>
+            <div className="text-center py-8">
+              <Search className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
+              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Selecione um estado para pesquisar</p>
             </div>
           )}
         </div>
