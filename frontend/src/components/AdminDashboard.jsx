@@ -1002,29 +1002,29 @@ const AdminDashboard = ({ user, onLogout }) => {
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-                    <DialogHeader><DialogTitle>Criar Novo Utilizador</DialogTitle></DialogHeader>
-                    <div className="space-y-3 mt-4">
+                    <DialogHeader><DialogTitle className={isMobile ? 'text-base' : ''}>Criar Novo Utilizador</DialogTitle></DialogHeader>
+                    <div className={`space-y-3 ${isMobile ? 'mt-2' : 'mt-4'}`}>
                       <div>
-                        <Label>Username</Label>
-                        <Input value={createForm.username} onChange={(e) => setCreateForm({...createForm, username: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                        <Label className={isMobile ? 'text-xs' : ''}>Username</Label>
+                        <Input value={createForm.username} onChange={(e) => setCreateForm({...createForm, username: e.target.value})} className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`} />
                       </div>
                       <div>
-                        <Label>Email</Label>
-                        <Input type="email" value={createForm.email} onChange={(e) => setCreateForm({...createForm, email: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                        <Label className={isMobile ? 'text-xs' : ''}>Email</Label>
+                        <Input type="email" value={createForm.email} onChange={(e) => setCreateForm({...createForm, email: e.target.value})} className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`} />
                       </div>
                       <div>
-                        <Label>Contacto Telefónico</Label>
-                        <Input type="tel" placeholder="+351 912 345 678" value={createForm.phone} onChange={(e) => setCreateForm({...createForm, phone: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                        <Label className={isMobile ? 'text-xs' : ''}>Telefone</Label>
+                        <Input type="tel" placeholder="+351 912 345 678" value={createForm.phone} onChange={(e) => setCreateForm({...createForm, phone: e.target.value})} className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`} />
                       </div>
                       <div>
-                        <Label>Nome Completo</Label>
-                        <Input value={createForm.full_name} onChange={(e) => setCreateForm({...createForm, full_name: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                        <Label className={isMobile ? 'text-xs' : ''}>Nome Completo</Label>
+                        <Input value={createForm.full_name} onChange={(e) => setCreateForm({...createForm, full_name: e.target.value})} className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`} />
                       </div>
                       <div>
-                        <Label>Password</Label>
-                        <Input type="password" value={createForm.password} onChange={(e) => setCreateForm({...createForm, password: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
+                        <Label className={isMobile ? 'text-xs' : ''}>Password</Label>
+                        <Input type="password" value={createForm.password} onChange={(e) => setCreateForm({...createForm, password: e.target.value})} className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`} />
                       </div>
-                      <Button onClick={handleCreateUser} disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white rounded-full">
+                      <Button onClick={handleCreateUser} disabled={loading} className={`w-full bg-green-600 hover:bg-green-700 text-white rounded-full ${isMobile ? 'text-sm py-2' : ''}`}>
                         {loading ? 'A criar...' : 'Criar Utilizador'}
                       </Button>
                     </div>
@@ -1033,35 +1033,38 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-4'}`}>
                 {users.map((u) => (
-                  <div key={u.id} className="bg-[#1a1a1a] p-4 rounded-lg">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${u.is_admin ? 'bg-gradient-to-br from-red-500 to-pink-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
-                        <span className="text-white font-bold text-lg">{u.username.charAt(0).toUpperCase()}</span>
+                  <div key={u.id} className={`bg-[#1a1a1a] ${isMobile ? 'p-3' : 'p-4'} rounded-lg`}>
+                    <div className={`flex items-start ${isMobile ? 'gap-2.5' : 'gap-3'} mb-2`}>
+                      <div className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full flex items-center justify-center flex-shrink-0 ${u.is_admin ? 'bg-gradient-to-br from-red-500 to-pink-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
+                        <span className={`text-white font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>{u.username.charAt(0).toUpperCase()}</span>
                       </div>
-                      <div className="flex-1">
-                        <div className="text-white font-semibold">{u.username}{u.is_admin && <span className="ml-2 text-xs bg-red-600 px-2 py-1 rounded">ADMIN</span>}</div>
-                        <div className="text-gray-400 text-sm">{u.email}</div>
-                        {u.phone && <div className="text-gray-500 text-xs">📞 {u.phone}</div>}
-                        {u.full_name && <div className="text-gray-500 text-xs">{u.full_name}</div>}
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-white font-semibold ${isMobile ? 'text-sm' : ''} truncate`}>
+                          {u.username}
+                          {u.is_admin && <span className={`ml-1.5 ${isMobile ? 'text-[10px]' : 'text-xs'} bg-red-600 px-1.5 py-0.5 rounded`}>ADMIN</span>}
+                        </div>
+                        <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>{u.email}</div>
+                        {!isMobile && u.phone && <div className="text-gray-500 text-xs">📞 {u.phone}</div>}
+                        {!isMobile && u.full_name && <div className="text-gray-500 text-xs">{u.full_name}</div>}
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-2">
+                    <div className={`flex gap-2 ${isMobile ? 'mt-2' : 'mt-2'}`}>
                       <Button 
                         onClick={() => handleVerifyHours(u)}
-                        className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full text-sm" 
+                        className={`flex-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full ${isMobile ? 'text-xs py-1.5' : 'text-sm'}`}
                         size="sm"
                       >
-                        <RefreshCw className="w-3 h-3 mr-1" />Verificar Horas
+                        <RefreshCw className="w-3 h-3 mr-1" />{isMobile ? 'Verificar' : 'Verificar Horas'}
                       </Button>
                     </div>
                     <div className="flex gap-2 mt-2">
-                      <Button onClick={() => handleEditUser(u)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" size="sm">
+                      <Button onClick={() => handleEditUser(u)} className={`flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full ${isMobile ? 'text-xs py-1.5' : 'text-sm'}`} size="sm">
                         <Edit className="w-3 h-3 mr-1" />Editar
                       </Button>
-                      <Button onClick={() => handleDeleteUser(u.id, u.username)} className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm" size="sm">
-                        <Trash2 className="w-3 h-3 mr-1" />Eliminar
+                      <Button onClick={() => handleDeleteUser(u.id, u.username)} className={`flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'text-xs py-1.5' : 'text-sm'}`} size="sm">
+                        <Trash2 className="w-3 h-3 mr-1" />{isMobile ? 'Elim.' : 'Eliminar'}
                       </Button>
                     </div>
                   </div>
@@ -1071,7 +1074,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
             {/* Verify Hours Dialog */}
             <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-              <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+              <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'max-w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl' : 'max-w-2xl'}`}>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <RefreshCw className="w-5 h-5 text-yellow-400" />
