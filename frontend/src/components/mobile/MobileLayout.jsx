@@ -25,20 +25,22 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
   const [activeTimer, setActiveTimer] = useState(null);
 
   // Verificar se há timer ativo
-  useEffect(() => {
-    const checkActiveTimer = async () => {
-      try {
-        const response = await axios.get(`${API}/time-entries/today`);
-        const data = response.data;
-        // Garantir que é um array
-        const entries = Array.isArray(data) ? data : [];
-        const active = entries.find(e => e.start_time && !e.end_time);
-        setActiveTimer(active || null);
-      } catch (error) {
-        console.error('Erro ao verificar timer:', error);
-      }
-    };
+  const checkActiveTimer = async () => {
+    try {
+      const response = await axios.get(`${API}/time-entries/today`);
+      const data = response.data;
+      // Garantir que é um array
+      const entries = Array.isArray(data) ? data : [];
+      const active = entries.find(e => e.start_time && !e.end_time);
+      setActiveTimer(active || null);
+      return active;
+    } catch (error) {
+      console.error('Erro ao verificar timer:', error);
+      return null;
+    }
+  };
 
+  useEffect(() => {
     if (isOnline) {
       checkActiveTimer();
     }
@@ -47,7 +49,10 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
   // Handler para ação rápida de ponto (iniciar/parar)
   const handleQuickAction = async (action) => {
     try {
-      if (action === 'start') {
+      // Se action não foi passado, determinar baseado no estado actual
+      const currentAction = action || (activeTimer ? 'stop' : 'start');
+      
+      if (currentAction === 'start') {
         // Obter localização
         let locationData = null;
         if (navigator.geolocation) {
