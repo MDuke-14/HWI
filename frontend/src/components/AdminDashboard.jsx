@@ -631,64 +631,70 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
 
           <TabsContent value="vacations">
-            <div className="space-y-6">
+            <div className={isMobile ? 'space-y-4' : 'space-y-6'}>
               {/* Header com ajuda */}
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-2xl font-semibold text-white">Gestão de Férias</h2>
-                <HelpTooltip section="admin_ferias" />
+                <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-semibold text-white`}>Gestão de Férias</h2>
+                {!isMobile && <HelpTooltip section="admin_ferias" />}
               </div>
               
               {/* Secção: Trabalho em Férias (pedidos prioritários) */}
               {vacationWorkRequests.filter(r => r.status === 'pending').length > 0 && (
-                <div className="glass-effect p-6 rounded-xl border-2 border-orange-500/50">
-                  <div className="flex items-center gap-2 mb-6">
-                    <AlertTriangle className="w-6 h-6 text-orange-400" />
-                    <h2 className="text-2xl font-semibold text-orange-400">
-                      Trabalho Durante Férias ({vacationWorkRequests.filter(r => r.status === 'pending').length})
+                <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl border-2 border-orange-500/50`}>
+                  <div className={`flex items-center gap-2 ${isMobile ? 'mb-3' : 'mb-6'}`}>
+                    <AlertTriangle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-orange-400`} />
+                    <h2 className={`${isMobile ? 'text-base' : 'text-2xl'} font-semibold text-orange-400`}>
+                      Trabalho em Férias ({vacationWorkRequests.filter(r => r.status === 'pending').length})
                     </h2>
                   </div>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Utilizadores que iniciaram ponto durante período de férias aprovadas. Se autorizado, 1 dia de férias será devolvido ao saldo.
-                  </p>
-                  <div className="space-y-4">
+                  {!isMobile && (
+                    <p className="text-gray-400 text-sm mb-4">
+                      Utilizadores que iniciaram ponto durante período de férias aprovadas. Se autorizado, 1 dia de férias será devolvido ao saldo.
+                    </p>
+                  )}
+                  <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
                     {vacationWorkRequests.filter(r => r.status === 'pending').map((req) => (
-                      <div key={req.id} className="bg-orange-900/20 border border-orange-600/50 p-5 rounded-lg">
-                        <div className="flex justify-between items-start">
+                      <div key={req.id} className={`bg-orange-900/20 border border-orange-600/50 ${isMobile ? 'p-3' : 'p-5'} rounded-lg`}>
+                        <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start'}`}>
                           <div>
-                            <div className="text-white font-semibold text-lg">{req.user_name}</div>
-                            <div className="text-gray-400 text-sm">
+                            <div className={`text-white font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{req.user_name}</div>
+                            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                               Data: {new Date(req.date).toLocaleDateString('pt-PT')}
                             </div>
-                            <div className="text-gray-400 text-sm">
-                              Hora de entrada: {req.start_time || req.clock_in_time || 'N/A'}
+                            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                              Entrada: {req.start_time || req.clock_in_time || 'N/A'}
                             </div>
                             {req.day_type && (
-                              <div className="text-orange-400 font-semibold mt-1">{req.day_type}</div>
+                              <div className={`text-orange-400 font-semibold mt-1 ${isMobile ? 'text-sm' : ''}`}>{req.day_type}</div>
                             )}
                           </div>
-                          <div className="flex gap-2">
+                          <div className={`flex gap-2 ${isMobile ? 'w-full' : ''}`}>
                             <Button 
                               onClick={() => handleDecideAuthorization(req.id, 'approve', req.authType)} 
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              className={`bg-green-600 hover:bg-green-700 text-white ${isMobile ? 'flex-1 text-xs py-2' : ''}`}
+                              size={isMobile ? 'sm' : 'default'}
                             >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Autorizar
+                              <CheckCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
+                              {isMobile ? 'OK' : 'Autorizar'}
                             </Button>
                             <Button 
                               onClick={() => handleDecideAuthorization(req.id, 'reject', req.authType)} 
                               variant="outline"
-                              className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                              className={`border-red-600 text-red-400 hover:bg-red-600 hover:text-white ${isMobile ? 'flex-1 text-xs py-2' : ''}`}
+                              size={isMobile ? 'sm' : 'default'}
                             >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Rejeitar
+                              <XCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
+                              {isMobile ? 'Não' : 'Rejeitar'}
                             </Button>
                           </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-orange-600/30 text-sm">
-                          <span className="text-green-400">✓ Autorizar:</span> <span className="text-gray-400">Devolve 1 dia de férias</span>
-                          <span className="mx-2 text-gray-600">|</span>
-                          <span className="text-red-400">✗ Rejeitar:</span> <span className="text-gray-400">Elimina entrada de ponto</span>
-                        </div>
+                        {!isMobile && (
+                          <div className="mt-3 pt-3 border-t border-orange-600/30 text-sm">
+                            <span className="text-green-400">✓ Autorizar:</span> <span className="text-gray-400">Devolve 1 dia de férias</span>
+                            <span className="mx-2 text-gray-600">|</span>
+                            <span className="text-red-400">✗ Rejeitar:</span> <span className="text-gray-400">Elimina entrada de ponto</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -696,17 +702,21 @@ const AdminDashboard = ({ user, onLogout }) => {
               )}
 
               {/* Secção: Pedidos de Férias Pendentes */}
-              <div className="glass-effect p-6 rounded-xl">
-                <h2 className="text-2xl font-semibold text-white mb-6">Pedidos de Férias Pendentes ({pendingVacations.length})</h2>
+              <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+                <h2 className={`${isMobile ? 'text-base' : 'text-2xl'} font-semibold text-white ${isMobile ? 'mb-3' : 'mb-6'}`}>
+                  Pedidos Pendentes ({pendingVacations.length})
+                </h2>
                 {pendingVacations.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
                     {pendingVacations.map((req) => (
-                      <div key={req.id} className="bg-[#1a1a1a] p-5 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
+                      <div key={req.id} className={`bg-[#1a1a1a] ${isMobile ? 'p-3' : 'p-5'} rounded-lg`}>
+                        <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'} mb-3`}>
                           <div>
-                            <div className="text-white font-semibold text-lg">{req.username}</div>
-                            <div className="text-gray-400 text-sm">{new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
-                            <div className="text-amber-400 font-semibold mt-1">{req.days_requested} dias</div>
+                            <div className={`text-white font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{req.username}</div>
+                            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                              {new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}
+                            </div>
+                            <div className={`text-amber-400 font-semibold mt-1 ${isMobile ? 'text-sm' : ''}`}>{req.days_requested} dias</div>
                           </div>
                           <div className="flex gap-2">
                             <Button onClick={() => handleVacationApproval(req.id, true)} className="bg-green-600 hover:bg-green-700 text-white rounded-full"><CheckCircle className="w-4 h-4 mr-1" />Aprovar</Button>
