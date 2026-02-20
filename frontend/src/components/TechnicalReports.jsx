@@ -563,7 +563,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleAddCliente = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/clientes`, formData);
+      // Converter array de emails em string separada por ponto e vírgula
+      const dataToSend = {
+        ...formData,
+        emails_adicionais: formData.emails_adicionais.filter(e => e.trim()).join('; ')
+      };
+      await axios.post(`${API}/clientes`, dataToSend);
       toast.success('Cliente adicionado com sucesso!');
       setShowAddModal(false);
       resetForm();
@@ -576,7 +581,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleEditCliente = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API}/clientes/${selectedCliente.id}`, formData);
+      // Converter array de emails em string separada por ponto e vírgula
+      const dataToSend = {
+        ...formData,
+        emails_adicionais: formData.emails_adicionais.filter(e => e.trim()).join('; ')
+      };
+      await axios.put(`${API}/clientes/${selectedCliente.id}`, dataToSend);
       toast.success('Cliente atualizado com sucesso!');
       setShowEditModal(false);
       resetForm();
