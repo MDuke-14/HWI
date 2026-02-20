@@ -191,9 +191,9 @@ def generate_monthly_pdf_report(report_data):
         # Overtime hours (dias úteis) + Saturday hours
         overtime_text = format_hours(day.get('overtime_hours', 0) + day.get('saturday_hours', 0)) if (day.get('overtime_hours', 0) + day.get('saturday_hours', 0)) > 0 else '0h00m'
         
-        # Payment
+        # Payment (sem valores, apenas texto)
         if day.get('payment_type'):
-            payment_text = f"{day['payment_type']}\n{day['payment_value']:.0f}€"
+            payment_text = day['payment_type']
             if day.get('location'):
                 payment_text += f"\n({day['location']})"
         else:
