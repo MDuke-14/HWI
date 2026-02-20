@@ -913,13 +913,13 @@ const Calendar = ({ user, onLogout }) => {
                   })}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
+              <div className={`space-y-3 ${isMobile ? 'mt-2' : 'mt-4'}`}>
                 {/* Holiday */}
                 {selectedDay?.holiday && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                  <div className={`bg-amber-500/10 border border-amber-500/30 rounded-lg ${isMobile ? 'p-2.5' : 'p-3'}`}>
                     <div className="flex items-center gap-2 text-amber-300">
-                      <Sun className="w-4 h-4" />
-                      <span className="font-medium">{selectedDay.holiday.name}</span>
+                      <Sun className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                      <span className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{selectedDay.holiday.name}</span>
                     </div>
                   </div>
                 )}
@@ -927,28 +927,28 @@ const Calendar = ({ user, onLogout }) => {
                 {/* OTs - Mostra todas as OTs incluindo as criadas via serviços */}
                 {selectedDay?.ots?.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
-                      <Wrench className="w-3 h-3" />
+                    <h4 className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-500 flex items-center gap-2`}>
+                      <Wrench className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
                       Ordens de Trabalho ({selectedDay.ots.length})
                     </h4>
                     {selectedDay.ots.map(ot => (
                       <div 
                         key={`ot-detail-${ot.id}-${selectedDay.dateStr}`} 
-                        className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 cursor-pointer hover:bg-orange-500/20 transition-colors"
+                        className={`bg-orange-500/10 border border-orange-500/30 rounded-lg ${isMobile ? 'p-2.5' : 'p-3'} cursor-pointer hover:bg-orange-500/20 transition-colors`}
                         onClick={() => {
                           setDayDetailOpen(false);
                           window.location.href = `/technical-reports?ot=${ot.id}`;
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-white">{ot.cliente_nome}</span>
-                          <span className="font-bold text-orange-400">OT#{ot.numero_ot}</span>
+                          <span className={`font-semibold text-white ${isMobile ? 'text-sm' : ''}`}>{ot.cliente_nome}</span>
+                          <span className={`font-bold text-orange-400 ${isMobile ? 'text-sm' : ''}`}>OT#{ot.numero_ot}</span>
                         </div>
-                        <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3" />
+                        <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400 flex items-center gap-1 mt-1`}>
+                          <MapPin className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
                           {ot.local}
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded mt-1 inline-block ${
+                        <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded mt-1 inline-block ${
                           ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
                           ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
                           ot.status === 'agendado' ? 'bg-cyan-500/20 text-cyan-400' :
@@ -962,7 +962,7 @@ const Calendar = ({ user, onLogout }) => {
                            ot.status === 'facturado' ? 'Facturado' : ot.status}
                         </span>
                         {ot.data_fim && (
-                          <div className="text-xs text-orange-400/70 mt-1">
+                          <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-orange-400/70 mt-1`}>
                             {new Date(ot.data_inicio).toLocaleDateString('pt-PT')} → {new Date(ot.data_fim).toLocaleDateString('pt-PT')}
                           </div>
                         )}
@@ -974,14 +974,14 @@ const Calendar = ({ user, onLogout }) => {
                 {/* Vacations */}
                 {selectedDay?.vacations.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs uppercase tracking-widest text-gray-500 flex items-center gap-2">
-                      <Umbrella className="w-3 h-3" />
+                    <h4 className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-500 flex items-center gap-2`}>
+                      <Umbrella className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
                       Férias ({selectedDay.vacations.length})
                     </h4>
                     {selectedDay.vacations.map(vacation => (
-                      <div key={vacation.id} className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
-                        <div className="font-semibold text-white flex items-center gap-2">
-                          <Users className="w-4 h-4 text-purple-400" />
+                      <div key={vacation.id} className={`bg-purple-500/10 border border-purple-500/30 rounded-lg ${isMobile ? 'p-2.5' : 'p-3'}`}>
+                        <div className={`font-semibold text-white flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
+                          <Users className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-purple-400`} />
                           {vacation.username}
                         </div>
                       </div>
@@ -991,9 +991,9 @@ const Calendar = ({ user, onLogout }) => {
                 
                 {/* Empty State */}
                 {!selectedDay?.holiday && selectedDay?.services.length === 0 && selectedDay?.vacations.length === 0 && (!selectedDay?.ots || selectedDay?.ots.length === 0) && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>Nenhum evento neste dia</p>
+                  <div className={`text-center ${isMobile ? 'py-6' : 'py-8'} text-gray-500`}>
+                    <Sparkles className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} mx-auto mb-2 opacity-50`} />
+                    <p className={isMobile ? 'text-sm' : ''}>Nenhum evento neste dia</p>
                   </div>
                 )}
               </div>
@@ -1001,12 +1001,12 @@ const Calendar = ({ user, onLogout }) => {
           </Dialog>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
+            <div className={`flex items-center justify-center ${isMobile ? 'py-12' : 'py-20'}`}>
+              <div className={`animate-spin rounded-full ${isMobile ? 'h-6 w-6' : 'h-8 w-8'} border-b-2 border-sky-400`}></div>
             </div>
           ) : (
             <Tabs defaultValue="month" className="w-full">
-              <TabsList className="grid w-full max-w-sm mx-auto grid-cols-2 bg-[#121212] border border-white/10 mb-8 p-1 rounded-lg">
+              <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-sm mx-auto'} grid-cols-2 bg-[#121212] border border-white/10 ${isMobile ? 'mb-4' : 'mb-8'} p-1 rounded-lg`}>
                 <TabsTrigger
                   value="month"
                   className="data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all"
