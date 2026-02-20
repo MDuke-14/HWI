@@ -14,6 +14,9 @@ import Calendar from '@/components/Calendar';
 import TechnicalReports from '@/components/TechnicalReports';
 import OvertimeAuthorization from '@/components/OvertimeAuthorization';
 import { Toaster } from '@/components/ui/sonner';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { MobileProvider } from '@/contexts/MobileContext';
+import MobileLayout from '@/components/mobile/MobileLayout';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
