@@ -589,30 +589,44 @@ const AdminDashboard = ({ user, onLogout }) => {
         </div>
 
         <Tabs defaultValue="vacations" className="w-full">
-          <div className="overflow-x-auto pb-2 mb-6 -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className="inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg md:grid md:grid-cols-6 md:w-full md:max-w-5xl md:mx-auto">
-              <TabsTrigger value="vacations" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative">
-                <Calendar className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Férias</span>
+          <div className={`overflow-x-auto ${isMobile ? 'pb-2 mb-4 -mx-3 px-3' : 'pb-2 mb-6 -mx-4 px-4 md:mx-0 md:px-0'}`}>
+            <TabsList className={`inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg ${isMobile ? '' : 'md:grid md:grid-cols-6 md:w-full md:max-w-5xl md:mx-auto'}`}>
+              <TabsTrigger value="vacations" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative`}>
+                <Calendar className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>{isMobile ? 'Férias' : 'Férias'}</span>
                 {(pendingVacations.length + vacationWorkRequests.filter(r => r.status === 'pending').length) > 0 && (
-                  <span className={`absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ${
+                  <span className={`absolute -top-1 -right-1 text-white text-xs rounded-full ${isMobile ? 'w-4 h-4 text-[10px]' : 'w-5 h-5'} flex items-center justify-center ${
                     vacationWorkRequests.filter(r => r.status === 'pending').length > 0 ? 'bg-orange-500' : 'bg-blue-500'
                   }`}>
                     {pendingVacations.length + vacationWorkRequests.filter(r => r.status === 'pending').length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="absences" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Faltas</span></TabsTrigger>
-              <TabsTrigger value="users" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><Users className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Utilizadores</span></TabsTrigger>
-              <TabsTrigger value="notifications" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative">
-                <Bell className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Notificações</span>
+              <TabsTrigger value="absences" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
+                <Users className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>Faltas</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
+                <Users className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>{isMobile ? 'Users' : 'Utilizadores'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative`}>
+                <Bell className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>{isMobile ? 'Notif.' : 'Notificações'}</span>
                 {overtimeAuthorizations.filter(a => a.status === 'pending').length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className={`absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full ${isMobile ? 'w-4 h-4 text-[10px]' : 'w-5 h-5'} flex items-center justify-center`}>
                     {overtimeAuthorizations.filter(a => a.status === 'pending').length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="tarifas" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><DollarSign className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Tarifas</span></TabsTrigger>
-              <TabsTrigger value="reports" className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"><TrendingUp className="w-4 h-4 mr-1.5 flex-shrink-0" /><span>Relatórios</span></TabsTrigger>
+              <TabsTrigger value="tarifas" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
+                <DollarSign className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>Tarifas</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
+                <TrendingUp className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>{isMobile ? 'Relat.' : 'Relatórios'}</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
