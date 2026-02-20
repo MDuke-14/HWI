@@ -485,17 +485,17 @@ const Calendar = ({ user, onLogout }) => {
     const allItems = otItems.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     return (
-      <div className="space-y-4">
+      <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
         {allItems.length === 0 ? (
-          <div className="bg-[#121212] border border-white/10 rounded-xl p-12 text-center">
-            <CalendarDays className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">Nenhuma OT agendada este mês</p>
+          <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-8' : 'p-12'} text-center`}>
+            <CalendarDays className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} text-gray-600 mx-auto mb-3`} />
+            <p className={`text-gray-400 ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma OT agendada este mês</p>
           </div>
         ) : (
           allItems.map(item => (
             <div 
               key={`${item.type}-${item.id}-${item.date}`} 
-              className="bg-[#121212] border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/50 transition-all group cursor-pointer"
+              className={`bg-[#121212] border border-orange-500/30 rounded-xl ${isMobile ? 'p-4' : 'p-6'} hover:border-orange-500/50 transition-all group cursor-pointer`}
               data-testid={`${item.type}-card-${item.id}`}
               onClick={() => {
                 // Abrir OT ao clicar - usar ot_id para serviços ou id para OTs
@@ -505,34 +505,35 @@ const Calendar = ({ user, onLogout }) => {
                 }
               }}
             >
-              <div className="flex justify-between items-start mb-4">
+              {/* Header */}
+              <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'} mb-3`}>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-white tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                  <div className={`flex ${isMobile ? 'flex-wrap' : ''} items-center gap-2 mb-1`}>
+                    <h3 className={`${isMobile ? 'text-base' : 'text-xl'} font-bold text-white tracking-tight`} style={{ fontFamily: "'Chivo', sans-serif" }}>
                       {item.client_name}
                     </h3>
                     {item.ot_numero && (
-                      <span className="px-2.5 py-1 rounded-md text-sm font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                      <span className={`${isMobile ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'} rounded-md font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30`}>
                         OT#{item.ot_numero}
                       </span>
                     )}
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
-                      item.status === 'completed' || item.status === 'concluido' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      item.status === 'in_progress' || item.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                      item.status === 'agendado' || item.status === 'scheduled' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
-                      item.status === 'orcamento' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                      item.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                      'bg-gray-500/20 text-gray-300 border border-gray-500/30'
-                    }`}>
-                      {item.status === 'agendado' || item.status === 'scheduled' ? 'Agendado' :
-                       item.status === 'in_progress' || item.status === 'em_execucao' ? 'Em Execução' :
-                       item.status === 'completed' || item.status === 'concluido' ? 'Concluído' : 
-                       item.status === 'orcamento' ? 'Orçamento' :
-                       item.status === 'cancelled' ? 'Cancelado' : item.status}
-                    </span>
                   </div>
+                  <span className={`${isMobile ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'} rounded-md font-semibold inline-block ${
+                    item.status === 'completed' || item.status === 'concluido' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                    item.status === 'in_progress' || item.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                    item.status === 'agendado' || item.status === 'scheduled' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                    item.status === 'orcamento' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                    item.status === 'cancelled' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                    'bg-gray-500/20 text-gray-300 border border-gray-500/30'
+                  }`}>
+                    {item.status === 'agendado' || item.status === 'scheduled' ? 'Agendado' :
+                     item.status === 'in_progress' || item.status === 'em_execucao' ? 'Em Execução' :
+                     item.status === 'completed' || item.status === 'concluido' ? 'Concluído' : 
+                     item.status === 'orcamento' ? 'Orçamento' :
+                     item.status === 'cancelled' ? 'Cancelado' : item.status}
+                  </span>
                 </div>
-                {user.is_admin && item.type === 'service' && (
+                {user.is_admin && item.type === 'service' && !isMobile && (
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       onClick={(e) => { e.stopPropagation(); handleEditService(item); }}
@@ -556,24 +557,25 @@ const Calendar = ({ user, onLogout }) => {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3" />
-                    Localização
+              {/* Content Grid */}
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'md:grid-cols-4 gap-4'}`}>
+                <div className={`${isMobile ? 'flex items-center gap-2' : 'space-y-1'}`}>
+                  <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1`}>
+                    <MapPin className={`${isMobile ? 'w-3 h-3' : 'w-3 h-3'}`} />
+                    {!isMobile && 'Localização'}
                   </div>
-                  <div className="text-white font-medium">{item.location}</div>
+                  <div className={`text-white ${isMobile ? 'text-sm' : 'font-medium'}`}>{item.location}</div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <CalendarIcon className="w-3 h-3" />
-                    Data
+                <div className={`${isMobile ? 'flex items-center gap-2' : 'space-y-1'}`}>
+                  <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1`}>
+                    <CalendarIcon className={`${isMobile ? 'w-3 h-3' : 'w-3 h-3'}`} />
+                    {!isMobile && 'Data'}
                   </div>
-                  <div className="text-orange-300 font-mono">
+                  <div className={`text-orange-300 font-mono ${isMobile ? 'text-sm' : ''}`}>
                     {new Date(item.date + 'T00:00:00').toLocaleDateString('pt-PT', {
                       day: '2-digit',
                       month: 'short',
-                      year: 'numeric'
+                      year: isMobile ? '2-digit' : 'numeric'
                     })}
                     {item.data_fim && (
                       <span className="text-gray-500"> → {new Date(item.data_fim).toLocaleDateString('pt-PT', {
@@ -583,25 +585,29 @@ const Calendar = ({ user, onLogout }) => {
                     )}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <Wrench className="w-3 h-3" />
-                    Motivo
-                  </div>
-                  <div className="text-white">{item.service_reason || '-'}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <Users className="w-3 h-3" />
-                    Técnicos
-                  </div>
-                  <div className="text-white">
-                    {item.technician_names?.join(', ') || '-'}
-                  </div>
-                </div>
+                {!isMobile && (
+                  <>
+                    <div className="space-y-1">
+                      <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                        <Wrench className="w-3 h-3" />
+                        Motivo
+                      </div>
+                      <div className="text-white">{item.service_reason || '-'}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs font-medium uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                        <Users className="w-3 h-3" />
+                        Técnicos
+                      </div>
+                      <div className="text-white">
+                        {item.technician_names?.join(', ') || '-'}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {item.observations && (
+              {item.observations && !isMobile && (
                 <div className="mt-4 pt-4 border-t border-orange-500/10">
                   <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Observações</div>
                   <div className="text-gray-300 italic text-sm">{item.observations}</div>
