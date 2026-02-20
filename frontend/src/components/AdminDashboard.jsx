@@ -648,7 +648,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                           </div>
                           <div className="flex gap-2">
                             <Button 
-                              onClick={() => handleDecideAuthorization(req.id, 'approve')} 
+                              onClick={() => handleDecideAuthorization(req.id, 'approve', req.authType)} 
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
