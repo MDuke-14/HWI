@@ -84,6 +84,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 4. **Dashboard Mobile Optimizado:**
    - Relógio e data em formato compacto
+   - **Widget "Horas Hoje"** com resumo rápido:
+     - Total de horas trabalhadas no dia
+     - Contador de registos
+     - Badges com hora de início e duração de cada registo
+     - Indicador "A trabalhar" quando timer ativo
    - Formulários adaptados para touch
    - Navegação desktop escondida em mobile
    - Floating buttons removidos (usa bottom nav)
