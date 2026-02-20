@@ -5831,6 +5831,54 @@ async def download_monthly_pdf_report(
                 vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
             current_vac_date += timedelta(days=1)
     
+    # Buscar TODAS as justificações para incluir nas observações do dia
+    # Inclui férias, folgas, cancelamentos (vacation_requests) e faltas (absences)
+    justifications_map = {}
+    
+    # Buscar vacation_requests (férias, folgas, cancelamentos)
+    all_vacation_requests = await db.vacation_requests.find({
+        "user_id": target_user_id,
+        "$or": [
+            {"start_date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")}},
+            {"end_date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")}},
+            {"start_date": {"$lte": start_date.strftime("%Y-%m-%d")}, "end_date": {"$gte": end_date.strftime("%Y-%m-%d")}}
+        ]
+    }, {"_id": 0}).to_list(500)
+    
+    for vac in all_vacation_requests:
+        vac_type = vac.get("type", "vacation")
+        vac_start = vac.get("start_date")
+        vac_end = vac.get("end_date", vac_start)
+        
+        if vac_start:
+            try:
+                start_dt = datetime.strptime(vac_start, "%Y-%m-%d")
+                end_dt = datetime.strptime(vac_end, "%Y-%m-%d") if vac_end else start_dt
+                current_dt = start_dt
+                while current_dt <= end_dt:
+                    date_str = current_dt.strftime("%Y-%m-%d")
+                    if date_str >= start_date.strftime("%Y-%m-%d") and date_str <= end_date.strftime("%Y-%m-%d"):
+                        if vac_type == "folga":
+                            justifications_map[date_str] = "Folga justificada pelo admin"
+                        elif vac_type == "cancelamento_ferias":
+                            justifications_map[date_str] = "Férias canceladas pelo admin"
+                        else:
+                            justifications_map[date_str] = "Férias"
+                    current_dt += timedelta(days=1)
+            except:
+                pass
+    
+    # Buscar faltas (absences)
+    absences = await db.absences.find({
+        "user_id": target_user_id,
+        "date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")}
+    }, {"_id": 0}).to_list(500)
+    
+    for absence in absences:
+        absence_date = absence.get("date")
+        if absence_date:
+            justifications_map[absence_date] = "Falta registada pelo admin"
+    
     # Get manual day status overrides (admin-set statuses)
     manual_statuses = {}
     status_overrides = await db.day_status_overrides.find({
