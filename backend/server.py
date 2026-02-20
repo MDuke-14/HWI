@@ -5983,6 +5983,17 @@ async def download_monthly_pdf_report(
         vacation_days_available = 22
         vacation_entitlement = 22
     
+    # Buscar observações do relatório mensal (justificações de dias, etc.)
+    monthly_report = await db.monthly_reports.find_one({
+        "user_id": target_user_id,
+        "month": month,
+        "year": year
+    }, {"_id": 0})
+    
+    observations_text = ""
+    if monthly_report and monthly_report.get("observations"):
+        observations_text = monthly_report.get("observations", "")
+    
     report_data = {
         "username": username,
         "full_name": full_name,
@@ -5991,6 +6002,7 @@ async def download_monthly_pdf_report(
         "month": month,
         "year": year,
         "daily_records": daily_records,
+        "observations": observations_text,
         "summary": {
             "total_worked_hours": round(truncar_horas_para_minutos(total_worked_hours), 2),
             "total_overtime_hours": round(truncar_horas_para_minutos(total_overtime_hours), 2),
