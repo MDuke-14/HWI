@@ -41,7 +41,39 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ## Funcionalidades Implementadas
 
-### Fevereiro 2026 - Sessão Atual (19 Fevereiro 2026)
+### Fevereiro 2026 - Sessão Atual (20 Fevereiro 2026)
+
+#### ✅ Campos de Email Dinâmicos para Clientes (20 Fevereiro 2026) - NOVA FUNCIONALIDADE
+**Gestão de Clientes (/technical-reports, tab Clientes) - Interface de emails secundários reformulada:**
+
+**Antes:** Campo de texto único para emails secundários (difícil de gerir múltiplos emails)
+
+**Agora:** Interface dinâmica com botões para adicionar/remover emails:
+- Botão azul "Adicionar Email" cria campos de input individuais
+- Cada campo tem botão vermelho com ícone de lixeira para remover
+- Mensagem inicial: "Nenhum email adicional. Clique em 'Adicionar Email' para incluir."
+- Validação de email em cada campo
+
+**Conversão de dados:**
+- Frontend mantém emails como array para facilitar manipulação
+- Ao guardar: array é convertido para string separada por '; '
+- Ao editar: string é convertida de volta para array
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/TechnicalReports.jsx`:
+  - Estado `formData.emails_adicionais` agora é array (linha 351)
+  - Funções `addEmailField()`, `removeEmailField()`, `updateEmailField()` (linhas 834-853)
+  - `handleAddCliente()` e `handleEditCliente()` convertem array para string (linhas 563-597)
+  - `openEditModal()` converte string para array (linhas 618-634)
+  - UI dinâmica nos modais de adicionar e editar cliente (linhas 7000-7043 e 7143-7184)
+
+**Testado:** ✅ Frontend testado via testing agent - 100% (7/7 testes passaram)
+- Adicionar múltiplos campos de email ✓
+- Preencher e remover campos ✓  
+- Guardar cliente com emails múltiplos ✓
+- Editar cliente carrega emails correctamente ✓
+
+---
 
 #### ✅ Funcionalidade "Justificar Dia" na Gestão de Entradas (19 Fevereiro 2026) - NOVA FUNCIONALIDADE
 **Página "Gestão de Entradas" (/admin/time-entries) completamente melhorada:**
