@@ -815,7 +815,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       telefone: '',
       morada: '',
       nif: '',
-      emails_adicionais: ''
+      emails_adicionais: []
     });
     setSelectedCliente(null);
   };
