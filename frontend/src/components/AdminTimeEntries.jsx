@@ -590,16 +590,16 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                 </h3>
 
                 {loading ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-                    <p className="text-gray-400 mt-4">A carregar entradas...</p>
+                  <div className={`text-center ${isMobile ? 'py-8' : 'py-12'}`}>
+                    <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-4 border-blue-500 border-t-transparent`}></div>
+                    <p className={`text-gray-400 ${isMobile ? 'mt-2 text-sm' : 'mt-4'}`}>A carregar...</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
                     {groupEntriesByDate(entries, billingPeriod, justifications).map((day) => (
                       <div
                         key={day.date}
-                        className={`rounded-lg p-4 border ${
+                        className={`rounded-lg ${isMobile ? 'p-3' : 'p-4'} border ${
                           day.justification?.type === 'ferias' 
                             ? 'bg-blue-950/40 border-blue-700/50'
                             : day.justification?.type === 'folga'
@@ -616,9 +616,9 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                         }`}
                       >
                         {/* Day Header */}
-                        <div className={`flex justify-between items-center ${day.hasEntries || day.justification ? 'mb-3 pb-3 border-b border-gray-700' : ''}`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`font-bold text-lg ${
+                        <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} ${day.hasEntries || day.justification ? `${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b border-gray-700` : ''}`}>
+                          <div className={`flex ${isMobile ? 'flex-wrap' : ''} items-center gap-2`}>
+                            <div className={`font-bold ${isMobile ? 'text-sm' : 'text-lg'} ${
                               day.justification?.type === 'ferias' 
                                 ? 'text-blue-300'
                                 : day.justification?.type === 'folga'
@@ -634,72 +634,74 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                           : 'text-gray-400'
                             }`}>
                               {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-PT', {
-                                weekday: 'long',
+                                weekday: isMobile ? 'short' : 'long',
                                 day: 'numeric',
-                                month: 'long',
-                                year: 'numeric'
+                                month: isMobile ? 'short' : 'long',
+                                year: isMobile ? '2-digit' : 'numeric'
                               })}
                             </div>
-                            {/* Badge de justificação */}
+                            {/* Badges */}
                             {day.justification?.type === 'ferias' && (
-                              <span className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full font-medium">
-                                {day.justification.label}
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-blue-600/30 text-blue-300 rounded-full font-medium`}>
+                                {isMobile ? 'Férias' : day.justification.label}
                               </span>
                             )}
                             {day.justification?.type === 'folga' && (
-                              <span className="text-xs bg-amber-600/30 text-amber-300 px-2 py-1 rounded-full font-medium">
-                                {day.justification.label}
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-amber-600/30 text-amber-300 rounded-full font-medium`}>
+                                {isMobile ? 'Folga' : day.justification.label}
                               </span>
                             )}
                             {day.justification?.type === 'falta' && (
-                              <span className="text-xs bg-red-600/30 text-red-300 px-2 py-1 rounded-full font-medium">
-                                {day.justification.label}
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-red-600/30 text-red-300 rounded-full font-medium`}>
+                                Falta
                               </span>
                             )}
                             {day.justification?.type === 'cancelamento_ferias' && (
-                              <span className="text-xs bg-cyan-600/30 text-cyan-300 px-2 py-1 rounded-full font-medium">
-                                {day.justification.label}
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-cyan-600/30 text-cyan-300 rounded-full font-medium`}>
+                                {isMobile ? 'Canc.' : day.justification.label}
                               </span>
                             )}
-                            {/* Badges de fim de semana e sem registo (só se não tiver justificação) */}
                             {!day.justification && day.isWeekend && (
-                              <span className="text-xs bg-indigo-600/20 text-indigo-400 px-2 py-1 rounded-full">
-                                Fim de semana
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-indigo-600/20 text-indigo-400 rounded-full`}>
+                                {isMobile ? 'F.S.' : 'Fim de semana'}
                               </span>
                             )}
                             {!day.justification && !day.hasEntries && !day.isWeekend && (
-                              <span className="text-xs bg-gray-700/50 text-gray-400 px-2 py-1 rounded-full">
-                                Sem registo
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-gray-700/50 text-gray-400 rounded-full`}>
+                                {isMobile ? 'S/reg' : 'Sem registo'}
                               </span>
                             )}
                             {day.hasGeoData && (
-                              <span className="text-xs bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded-full flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
+                              <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-emerald-600/20 text-emerald-400 rounded-full flex items-center gap-1`}>
+                                <MapPin className={isMobile ? 'w-2 h-2' : 'w-3 h-3'} />
                                 GPS
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-3">
-                            {day.entries.length > 0 && (
+                          <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-3'}`}>
+                            <div className="flex gap-1.5">
+                              {day.entries.length > 0 && (
+                                <Button
+                                  onClick={() => handleAdjustTo8Hours(day.entries[0].id, day.date)}
+                                  className={`bg-yellow-600 hover:bg-yellow-700 text-white ${isMobile ? 'text-[10px] px-2 py-1 h-7' : 'text-sm'}`}
+                                  size={isMobile ? 'sm' : 'default'}
+                                  title="Ajustar para 8h"
+                                >
+                                  <Zap className={isMobile ? 'w-3 h-3' : 'w-4 h-4 mr-1'} />
+                                  {!isMobile && '8h'}
+                                </Button>
+                              )}
                               <Button
-                                onClick={() => handleAdjustTo8Hours(day.entries[0].id, day.date)}
-                                className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm"
-                                title="Ajustar automaticamente para 8h totais no dia"
+                                onClick={() => openJustifyModal(day)}
+                                className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'text-[10px] px-2 py-1 h-7' : 'text-sm'}`}
+                                size={isMobile ? 'sm' : 'default'}
+                                data-testid={`justify-day-btn-${day.date}`}
                               >
-                                <Zap className="w-4 h-4 mr-1" />
-                                Ajustar para 8h
+                                <FileText className={isMobile ? 'w-3 h-3' : 'w-4 h-4 mr-1'} />
+                                {!isMobile && 'Justificar'}
                               </Button>
-                            )}
-                            <Button
-                              onClick={() => openJustifyModal(day)}
-                              className="bg-purple-600 hover:bg-purple-700 text-white text-sm"
-                              title="Justificar este dia"
-                              data-testid={`justify-day-btn-${day.date}`}
-                            >
-                              <FileText className="w-4 h-4 mr-1" />
-                              Justificar Dia
-                            </Button>
-                            <div className={`font-bold text-xl ${day.totalHours > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                            </div>
+                            <div className={`font-bold ${isMobile ? 'text-base' : 'text-xl'} ${day.totalHours > 0 ? 'text-green-400' : 'text-gray-500'}`}>
                               {formatHours(day.totalHours)}
                             </div>
                           </div>
