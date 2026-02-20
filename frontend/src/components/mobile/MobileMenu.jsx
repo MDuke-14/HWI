@@ -70,8 +70,16 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
     }
   };
 
+  // Classes dinâmicas baseadas no tema
+  const bgMain = isDark ? 'bg-gray-950' : 'bg-gray-100';
+  const bgCard = isDark ? 'bg-gray-900' : 'bg-white';
+  const bgCardHover = isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50';
+  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+  const borderColor = isDark ? 'divide-gray-800' : 'divide-gray-200';
+
   return (
-    <div className="min-h-screen bg-gray-950 dark:bg-gray-950 light:bg-gray-50 pb-20">
+    <div className={`min-h-screen ${bgMain} pb-20`}>
       {/* Header com perfil */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-800 px-4 pt-8 pb-6">
         <div className="flex items-center gap-4">
