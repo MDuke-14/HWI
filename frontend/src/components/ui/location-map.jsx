@@ -120,6 +120,7 @@ const LocationMap = ({
   height = '400px',
   className = '',
   showAllMarkers = true,
+  useInitials = false, // Nova prop para usar iniciais
 }) => {
   // Centro padrão em Portugal se não houver localizações
   const defaultCenter = [38.7223, -9.1393]; // Lisboa
@@ -139,6 +140,16 @@ const LocationMap = ({
   };
 
   const initialCenter = calculateInitialCenter();
+
+  // Função para obter o ícone apropriado
+  const getMarkerIcon = (location) => {
+    if (useInitials && location.userName) {
+      const initial = getInitial(location.userName);
+      const isEnd = location.type === 'Saída' || location.type === 'end' || location.isEnd;
+      return createInitialIcon(initial, location.customColor, isEnd);
+    }
+    return icons[location.color] || icons.default;
+  };
 
   return (
     <div className={`rounded-lg overflow-hidden ${className}`} style={{ height }}>
@@ -160,30 +171,44 @@ const LocationMap = ({
         {showAllMarkers && locations.map((location, index) => {
           if (!location.latitude || !location.longitude) return null;
           
-          const icon = icons[location.color] || icons.default;
+          const icon = getMarkerIcon(location);
+          const isEnd = location.type === 'Saída' || location.type === 'end' || location.isEnd;
           
           return (
             <Marker
-              key={location.id || index}
+              key={location.id || `${location.latitude}-${location.longitude}-${index}`}
               position={[location.latitude, location.longitude]}
               icon={icon}
             >
               <Popup>
-                <div className="text-sm">
+                <div className="text-sm min-w-[150px]">
                   {location.userName && (
-                    <p className="font-bold text-gray-900">{location.userName}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div 
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                        style={{ backgroundColor: isEnd ? '#ef4444' : '#3b82f6' }}
+                      >
+                        {getInitial(location.userName)}
+                      </div>
+                      <span className="font-bold text-gray-900">{location.userName}</span>
+                    </div>
+                  )}
+                  {location.type && (
+                    <p className="text-xs font-semibold mb-1" style={{ color: isEnd ? '#ef4444' : '#3b82f6' }}>
+                      {isEnd ? '🔴 Saída' : '🔵 Entrada'}
+                    </p>
                   )}
                   {location.address && (
-                    <p className="text-gray-600">{location.address}</p>
+                    <p className="text-gray-600 text-xs">{location.address}</p>
                   )}
                   {location.timestamp && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(location.timestamp).toLocaleString('pt-PT')}
+                      🕐 {new Date(location.timestamp).toLocaleString('pt-PT')}
                     </p>
                   )}
-                  {location.type && (
-                    <p className="text-xs font-medium mt-1" style={{ color: location.color || '#6b7280' }}>
-                      {location.type}
+                  {location.entryId && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Registo: {location.entryId.substring(0, 8)}...
                     </p>
                   )}
                 </div>
