@@ -4321,37 +4321,40 @@ const TechnicalReports = ({ user, onLogout }) => {
                           ))}
                         </tbody>
                       </table>
+                      )}
                     </div>
                   ) : (
-                    <div className="text-center py-4">
-                      <Users className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">Nenhum registo de mão de obra</p>
+                    <div className={`text-center ${isMobile ? 'py-2' : 'py-4'}`}>
+                      <Users className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-gray-600 mx-auto mb-2`} />
+                      <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Nenhum registo de mão de obra</p>
                     </div>
                   )}
                 </div>
 
-                {/* Legenda Tipos de Trabalho */}
+                {/* Legenda Tipos de Trabalho - escondida em mobile */}
+                {!isMobile && (
                 <div className="mt-4 bg-gray-800/50 border border-gray-700 rounded-lg p-3">
                   <p className="text-xs text-gray-400 mb-3 font-semibold">Tipos de Trabalho:</p>
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">1</span>
-                      <span className="text-white">Dias úteis (07h-19h)</span>
+                      <span className={textPrimary}>Dias úteis (07h-19h)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">2</span>
-                      <span className="text-white">Dias úteis (19h-07h)</span>
+                      <span className={textPrimary}>Dias úteis (19h-07h)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">S</span>
-                      <span className="text-white">Sábado</span>
+                      <span className={textPrimary}>Sábado</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="bg-blue-600 text-white px-2 py-1 rounded font-mono font-bold text-xs">D</span>
-                      <span className="text-white">Domingos/Feriados</span>
+                      <span className={textPrimary}>Domingos/Feriados</span>
                     </div>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Equipamentos */}
