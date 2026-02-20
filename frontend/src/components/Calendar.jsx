@@ -367,7 +367,7 @@ const Calendar = ({ user, onLogout }) => {
             {weekDays.map((day, i) => (
               <div 
                 key={day} 
-                className={`text-center font-medium text-xs uppercase tracking-widest py-4 border-b border-white/10 ${
+                className={`text-center font-medium ${isMobile ? 'text-[10px] py-2' : 'text-xs py-4'} uppercase tracking-widest border-b border-white/10 ${
                   i === 0 || i === 6 ? 'text-gray-500' : 'text-gray-400'
                 }`}
               >
@@ -393,7 +393,7 @@ const Calendar = ({ user, onLogout }) => {
                   key={index}
                   onClick={() => day && openDayDetail(day)}
                   className={`
-                    min-h-[120px] p-2 border-b border-r border-white/5 relative group
+                    ${isMobile ? 'min-h-[70px] p-1' : 'min-h-[120px] p-2'} border-b border-r border-white/5 relative group
                     ${day ? 'cursor-pointer hover:bg-white/[0.03] transition-colors' : ''}
                     ${holiday ? 'bg-amber-500/5' : ''}
                     ${isWeekend && day && !holiday ? 'bg-white/[0.01]' : ''}
@@ -404,39 +404,39 @@ const Calendar = ({ user, onLogout }) => {
                     <>
                       {/* Day Number */}
                       <div className={`
-                        text-sm font-mono mb-2 flex items-center justify-between
+                        ${isMobile ? 'text-xs' : 'text-sm'} font-mono mb-1 flex items-center justify-between
                         ${holiday ? 'text-amber-400' : isToday ? 'text-white' : isWeekend ? 'text-gray-600' : 'text-gray-400'}
                       `}>
                         <span className={`
-                          ${isToday ? 'bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center font-bold' : ''}
+                          ${isToday ? `bg-emerald-500 text-white ${isMobile ? 'w-5 h-5 text-[10px]' : 'w-7 h-7'} rounded-full flex items-center justify-center font-bold` : ''}
                         `}>
                           {day}
                         </span>
                         {hasEvents && !isToday && (
-                          <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                          <span className={`${isMobile ? 'w-1.5 h-1.5' : 'w-2 h-2'} rounded-full bg-sky-500 animate-pulse`}></span>
                         )}
                       </div>
                       
-                      {/* Holiday Badge */}
+                      {/* Holiday Badge - Mobile: simplified */}
                       {holiday && (
-                        <div className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border-l-2 border-amber-500 truncate mb-1">
-                          {holiday.name}
+                        <div className={`${isMobile ? 'text-[8px] px-1 py-0.5' : 'text-[10px] px-1.5 py-0.5'} rounded bg-amber-500/20 text-amber-300 border-l-2 border-amber-500 truncate mb-1`}>
+                          {isMobile ? holiday.name.split(' ')[0] : holiday.name}
                         </div>
                       )}
                       
-                      {/* OTs */}
-                      {dayOts.slice(0, 3).map(ot => (
+                      {/* OTs - Mobile: show fewer, smaller */}
+                      {dayOts.slice(0, isMobile ? 2 : 3).map(ot => (
                         <div
                           key={`ot-${ot.id}-${dateStr}`}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-1 hover:bg-orange-500/20 transition-colors"
+                          className={`${isMobile ? 'text-[8px] px-1 py-0.5' : 'text-[10px] px-1.5 py-0.5'} rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-0.5 hover:bg-orange-500/20 transition-colors`}
                           title={`${ot.cliente_nome} - OT#${ot.numero_ot} - ${ot.local}`}
                         >
-                          {ot.cliente_nome} OT#{ot.numero_ot}
+                          {isMobile ? `#${ot.numero_ot}` : `${ot.cliente_nome} OT#${ot.numero_ot}`}
                         </div>
                       ))}
                       
-                      {/* Vacations */}
-                      {dayVacations.slice(0, 1).map(vacation => (
+                      {/* Vacations - Mobile: show fewer */}
+                      {dayVacations.slice(0, isMobile ? 0 : 1).map(vacation => (
                         <div
                           key={vacation.id}
                           className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border-l-2 border-purple-500 truncate mb-1"
@@ -447,9 +447,9 @@ const Calendar = ({ user, onLogout }) => {
                       ))}
                       
                       {/* More Indicator */}
-                      {(dayOts.length > 3 || dayVacations.length > 1) && (
-                        <div className="text-[10px] text-gray-500 font-medium">
-                          +{Math.max(0, dayOts.length - 3) + Math.max(0, dayVacations.length - 1)} mais
+                      {(dayOts.length > (isMobile ? 2 : 3) || dayVacations.length > (isMobile ? 0 : 1)) && (
+                        <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-gray-500 font-medium`}>
+                          +{Math.max(0, dayOts.length - (isMobile ? 2 : 3)) + Math.max(0, dayVacations.length - (isMobile ? 0 : 1))} mais
                         </div>
                       )}
                     </>
