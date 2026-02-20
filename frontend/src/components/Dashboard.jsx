@@ -662,7 +662,7 @@ const Dashboard = ({ user, onLogout }) => {
             {!entry ? (
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="observations" className="text-gray-300 mb-1.5 block text-sm">
+                  <Label htmlFor="observations" className={`${textSecondary} mb-1.5 block text-sm`}>
                     Observações (opcional)
                   </Label>
                   <Textarea
@@ -671,12 +671,12 @@ const Dashboard = ({ user, onLogout }) => {
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     placeholder="Ex: Entrada atrasada devido a reunião externa..."
-                    className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500 min-h-[50px] text-sm"
+                    className={`${bgCard} ${borderColor} ${textPrimary} focus:ring-blue-500 min-h-[50px] text-sm md:text-base`}
                   />
                 </div>
 
                 {/* Outside Residence Zone Checkbox */}
-                <div className="flex items-start space-x-3 p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
+                <div className={`flex items-start space-x-3 p-3 ${bgCard} rounded-lg border ${borderColor}`}>
                   <Checkbox
                     data-testid="outside-zone-checkbox"
                     id="outside-zone"
@@ -687,12 +687,12 @@ const Dashboard = ({ user, onLogout }) => {
                   <div className="flex-1">
                     <Label
                       htmlFor="outside-zone"
-                      className="text-gray-300 font-medium cursor-pointer flex items-center gap-2 text-sm"
+                      className={`${textSecondary} font-medium cursor-pointer flex items-center gap-2 text-sm`}
                     >
                       <MapPin className="w-4 h-4" />
                       Fora de Zona de Residência
                     </Label>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className={`text-xs ${textSecondary} mt-1`}>
                       Ativa Ajuda de Custas (em vez de Subsídio de Alimentação)
                     </p>
                   </div>
@@ -701,7 +701,7 @@ const Dashboard = ({ user, onLogout }) => {
                 {/* Location Input - Only shown when checkbox is checked */}
                 {outsideResidenceZone && (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label htmlFor="location" className="text-gray-300 mb-2 block">
+                    <Label htmlFor="location" className={`${textSecondary} mb-2 block`}>
                       Local da Deslocação *
                     </Label>
                     <Input
@@ -710,7 +710,7 @@ const Dashboard = ({ user, onLogout }) => {
                       value={locationDescription}
                       onChange={(e) => setLocationDescription(e.target.value)}
                       placeholder="Ex: Lisboa, Madrid, Porto..."
-                      className="bg-[#1a1a1a] border-gray-700 text-white focus:ring-blue-500"
+                      className={`${bgCard} ${borderColor} ${textPrimary} focus:ring-blue-500`}
                       required={outsideResidenceZone}
                     />
                   </div>
@@ -718,10 +718,10 @@ const Dashboard = ({ user, onLogout }) => {
 
                 {/* Geolocation Status Indicator */}
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center justify-between'} text-sm`}>
                     <div className="flex items-center gap-2">
-                      <MapPin className={`w-4 h-4 ${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400 animate-pulse' : 'text-gray-500'}`} />
-                      <span className={geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400' : 'text-gray-500'}>
+                      <MapPin className={`w-4 h-4 flex-shrink-0 ${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400 animate-pulse' : 'text-gray-500'}`} />
+                      <span className={`${geoLocation ? 'text-green-400' : geoLoading ? 'text-blue-400' : textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>
                         {geoLoading ? 'A obter localização...' : 
                          geoLocation ? (
                            geoLocation.address?.city 
