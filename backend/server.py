@@ -681,6 +681,7 @@ class TimeEntryStart(BaseModel):
 
 class TimeEntryEnd(BaseModel):
     observations: Optional[str] = None
+    end_geo_location: Optional[dict] = None  # {latitude, longitude, accuracy, timestamp}
 
 class TimeEntryUpdate(BaseModel):
     start_time: Optional[datetime] = None
