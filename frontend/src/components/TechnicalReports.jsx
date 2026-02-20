@@ -3875,7 +3875,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       const hasAnyActiveTrabalho = selectedUsers.some(u => getCronometroStatus(u, 'trabalho'));
                       
                       return (
-                        <Button
+                        <button
                           onClick={async () => {
                             if (selectedUsers.length === 0) {
                               toast.error('Selecione pelo menos um técnico');
@@ -3904,21 +3904,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`${isMobile ? 'w-full' : 'flex-1'} ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white ${isMobile ? 'text-sm py-2.5' : ''}`}
+                          className={`w-full flex items-center justify-center gap-2 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveTrabalho ? (
                             <>
                               <StopCircle className="w-4 h-4" />
-                              Parar Trabalho
+                              <span>Parar Trabalho</span>
                             </>
                           ) : (
                             <>
                               <PlayCircle className="w-4 h-4" />
-                              Iniciar Trabalho
+                              <span>Iniciar Trabalho</span>
                             </>
                           )}
-                        </Button>
+                        </button>
                       );
                     })()}
 
@@ -3928,7 +3928,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       const hasAnyActiveViagem = selectedUsers.some(u => getCronometroStatus(u, 'viagem'));
                       
                       return (
-                        <Button
+                        <button
                           onClick={async () => {
                             if (selectedUsers.length === 0) {
                               toast.error('Selecione pelo menos um técnico');
@@ -3957,21 +3957,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`${isMobile ? 'w-full' : 'flex-1'} ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white ${isMobile ? 'text-sm py-2.5' : ''}`}
+                          className={`w-full flex items-center justify-center gap-2 ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveViagem ? (
                             <>
                               <StopCircle className="w-4 h-4" />
-                              Parar Viagem
+                              <span>Parar Viagem</span>
                             </>
                           ) : (
                             <>
                               <Car className="w-4 h-4" />
-                              Iniciar Viagem
+                              <span>Iniciar Viagem</span>
                             </>
                           )}
-                        </Button>
+                        </button>
                       );
                     })()}
                   </div>
