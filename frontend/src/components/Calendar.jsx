@@ -657,22 +657,22 @@ const Calendar = ({ user, onLogout }) => {
                     {isMobile ? 'Nova OT' : 'Nova OT'}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className={`bg-[#0a0a0a] border border-white/10 text-white ${isMobile ? 'max-w-[95vw] max-h-[85vh] rounded-xl' : 'max-w-2xl max-h-[90vh]'} overflow-y-auto`}>
                   <DialogHeader>
-                    <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ fontFamily: "'Chivo', sans-serif" }}>
+                    <DialogTitle className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold tracking-tight flex items-center gap-2`} style={{ fontFamily: "'Chivo', sans-serif" }}>
                       {editingService ? 'Editar OT' : 'Nova OT'}
-                      <HelpTooltip section="calendario_servicos" />
+                      {!isMobile && <HelpTooltip section="calendario_servicos" />}
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4 mt-4">
-                    <div className="grid md:grid-cols-2 gap-4">
+                  <div className={`space-y-4 ${isMobile ? 'mt-2' : 'mt-4'}`}>
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-4'}`}>
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Nome do Cliente *</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Nome do Cliente *</Label>
                         <div className="flex gap-2 mt-1">
                           <Input
                             value={serviceForm.client_name}
                             onChange={(e) => setServiceForm({...serviceForm, client_name: e.target.value, client_id: ''})}
-                            className="bg-[#121212] border-white/10 text-white flex-1"
+                            className={`bg-[#121212] border-white/10 text-white flex-1 ${isMobile ? 'text-sm' : ''}`}
                             placeholder="Ex: João Silva"
                             data-testid="service-client-name"
                           />
@@ -687,7 +687,7 @@ const Calendar = ({ user, onLogout }) => {
                                 <Building2 className="w-4 h-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-lg max-h-[80vh]">
+                            <DialogContent className={`bg-[#0a0a0a] border border-white/10 text-white ${isMobile ? 'max-w-[95vw] max-h-[80vh] rounded-xl' : 'max-w-lg max-h-[80vh]'}`}>
                               <DialogHeader>
                                 <DialogTitle className="flex items-center gap-2">
                                   <Building2 className="w-5 h-5 text-sky-400" />
@@ -700,12 +700,12 @@ const Calendar = ({ user, onLogout }) => {
                                   <Input
                                     value={clientSearch}
                                     onChange={(e) => setClientSearch(e.target.value)}
-                                    className="bg-[#121212] border-white/10 text-white pl-10"
+                                    className={`bg-[#121212] border-white/10 text-white pl-10 ${isMobile ? 'text-sm' : ''}`}
                                     placeholder="Pesquisar cliente..."
                                   />
                                 </div>
                                 
-                                <div className="max-h-[400px] overflow-y-auto space-y-2">
+                                <div className={`${isMobile ? 'max-h-[50vh]' : 'max-h-[400px]'} overflow-y-auto space-y-2`}>
                                   {filteredClients.length === 0 ? (
                                     <div className="text-center text-gray-500 py-8">
                                       {clientSearch ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
@@ -715,9 +715,9 @@ const Calendar = ({ user, onLogout }) => {
                                       <div
                                         key={client.id}
                                         onClick={() => handleSelectClient(client)}
-                                        className="p-3 bg-[#121212] border border-white/10 rounded-lg cursor-pointer hover:border-sky-500/50 hover:bg-sky-500/5 transition"
+                                        className={`${isMobile ? 'p-2.5' : 'p-3'} bg-[#121212] border border-white/10 rounded-lg cursor-pointer hover:border-sky-500/50 hover:bg-sky-500/5 transition`}
                                       >
-                                        <div className="font-semibold text-white">{client.nome}</div>
+                                        <div className={`font-semibold text-white ${isMobile ? 'text-sm' : ''}`}>{client.nome}</div>
                                         {client.morada && (
                                           <div className="text-sm text-gray-400 flex items-center gap-1 mt-1">
                                             <MapPin className="w-3 h-3" />
