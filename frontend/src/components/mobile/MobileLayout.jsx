@@ -25,7 +25,9 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
     const checkActiveTimer = async () => {
       try {
         const response = await axios.get(`${API}/time-entries/today`);
-        const entries = response.data;
+        const data = response.data;
+        // Garantir que é um array
+        const entries = Array.isArray(data) ? data : [];
         const active = entries.find(e => e.start_time && !e.end_time);
         setActiveTimer(active || null);
       } catch (error) {
