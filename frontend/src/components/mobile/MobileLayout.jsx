@@ -82,7 +82,7 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
 
         const response = await axios.post(`${API}/time-entries/start`, {
           observations: 'Entrada via mobile',
-          location: locationData
+          geo_location: locationData
         });
         
         setActiveTimer(response.data);
@@ -100,8 +100,31 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
           timerToEnd = active;
         }
         
+        // Capturar geolocalização ao terminar
+        let endLocationData = null;
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+              });
+            });
+            endLocationData = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              timestamp: new Date().toISOString()
+            };
+          } catch (geoError) {
+            console.warn('Geolocalização ao terminar não disponível:', geoError);
+          }
+        }
+        
         const response = await axios.post(`${API}/time-entries/end/${timerToEnd.id}`, {
-          observations: 'Saída via mobile'
+          observations: 'Saída via mobile',
+          end_geo_location: endLocationData
         });
         
         setActiveTimer(null);
