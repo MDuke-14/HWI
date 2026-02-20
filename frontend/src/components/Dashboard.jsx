@@ -566,8 +566,48 @@ const Dashboard = ({ user, onLogout }) => {
   const handleEnd = async () => {
     setLoading(true);
     try {
+      // Capturar geolocalização ao terminar
+      let endLocation = null;
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            });
+          });
+          
+          endLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date().toISOString()
+          };
+          
+          // Tentar obter endereço via geocoding reverso
+          try {
+            const geoResponse = await axios.get(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
+            );
+            if (geoResponse.data?.address) {
+              endLocation.address = {
+                city: geoResponse.data.address.city || geoResponse.data.address.town || geoResponse.data.address.village,
+                region: geoResponse.data.address.state,
+                country: geoResponse.data.address.country
+              };
+            }
+          } catch (geoErr) {
+            console.log('Reverse geocoding ao terminar falhou:', geoErr.message);
+          }
+        } catch (geoErr) {
+          console.log('Geolocalização ao terminar não disponível:', geoErr.message);
+        }
+      }
+      
       const response = await axios.post(`${API}/time-entries/end/${entry.id}`, {
-        observations: endObservations
+        observations: endObservations,
+        end_geo_location: endLocation
       });
       toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
       setEndObservations('');
