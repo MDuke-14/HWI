@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import OfflineStatusBar from './OfflineStatusBar';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import HelpTooltip from './HelpTooltip';
+import { useMobile } from '@/contexts/MobileContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Building2,
   Plus,
