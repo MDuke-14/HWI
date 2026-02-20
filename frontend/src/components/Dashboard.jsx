@@ -23,6 +23,10 @@ import { useMobile } from '@/contexts/MobileContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Dashboard = ({ user, onLogout }) => {
+  // Mobile e Theme hooks
+  const { isMobile, isTablet } = useMobile();
+  const { isDark } = useTheme();
+  
   const [entry, setEntry] = useState(null);
   const [todayEntries, setTodayEntries] = useState([]);
   const [observations, setObservations] = useState('');
@@ -46,6 +50,14 @@ const Dashboard = ({ user, onLogout }) => {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Classes dinâmicas baseadas no tema
+  const bgMain = isDark ? 'bg-[#0a0a0a]' : 'bg-gray-100';
+  const bgCard = isDark ? 'bg-[#1a1a1a]' : 'bg-white';
+  const bgCardAlt = isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50';
+  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+  const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
   // Detectar estado online/offline
   useEffect(() => {
