@@ -59,6 +59,17 @@ const Dashboard = ({ user, onLogout }) => {
   const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
   const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
 
+  // Detectar parâmetro URL para abrir modal de status (mobile admin)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showRealtime') === 'true' && user?.is_admin) {
+      setShowRealtimeModal(true);
+      fetchRealtimeStatus();
+      // Limpar parâmetro da URL
+      window.history.replaceState({}, '', '/');
+    }
+  }, [user]);
+
   // Detectar estado online/offline
   useEffect(() => {
     const handleOnline = () => {
