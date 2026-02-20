@@ -4596,17 +4596,22 @@ async def end_time_entry(
             # Create entry for this day
             if current_start == start_time:
                 # Update the original entry
+                update_data = {
+                    "status": "completed",
+                    "end_time": midnight.isoformat(),
+                    "total_hours": day_hours,
+                    "regular_hours": hours_breakdown["regular_hours"],
+                    "overtime_hours": hours_breakdown["overtime_hours"],
+                    "special_hours": hours_breakdown["special_hours"],
+                    "observations": final_observations
+                }
+                # Adicionar geolocalização de fim se fornecida
+                if end_data.end_geo_location:
+                    update_data["end_geo_location"] = end_data.end_geo_location
+                    
                 await db.time_entries.update_one(
                     {"id": entry_id},
-                    {"$set": {
-                        "status": "completed",
-                        "end_time": midnight.isoformat(),
-                        "total_hours": day_hours,
-                        "regular_hours": hours_breakdown["regular_hours"],
-                        "overtime_hours": hours_breakdown["overtime_hours"],
-                        "special_hours": hours_breakdown["special_hours"],
-                        "observations": final_observations
-                    }}
+                    {"$set": update_data}
                 )
                 entries_created.append({"date": current_start.strftime("%Y-%m-%d"), "hours": day_hours})
             else:
