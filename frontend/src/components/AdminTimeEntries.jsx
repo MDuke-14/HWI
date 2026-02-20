@@ -13,8 +13,10 @@ import {
   ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap, MapPin, Map, ExternalLink, Download 
 } from 'lucide-react';
 import LocationMap from '@/components/ui/location-map';
+import { useMobile } from '@/contexts/MobileContext';
 
 const AdminTimeEntries = ({ user, onLogout }) => {
+  const { isMobile } = useMobile();
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [entries, setEntries] = useState([]);
