@@ -734,25 +734,25 @@ const Calendar = ({ user, onLogout }) => {
                         </div>
                       </div>
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Localidade *</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Localidade *</Label>
                         <Input
                           value={serviceForm.location}
                           onChange={(e) => setServiceForm({...serviceForm, location: e.target.value})}
-                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`}
                           placeholder="Ex: Lisboa"
                           data-testid="service-location"
                         />
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'md:grid-cols-2 gap-4'}`}>
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Tipo de Serviço *</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Tipo de Serviço *</Label>
                         <Select
                           value={serviceForm.service_type}
                           onValueChange={(value) => setServiceForm({...serviceForm, service_type: value})}
                         >
-                          <SelectTrigger className="bg-[#121212] border-white/10 text-white mt-1" data-testid="service-type-select">
+                          <SelectTrigger className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`} data-testid="service-type-select">
                             <SelectValue placeholder="Selecionar tipo" />
                           </SelectTrigger>
                           <SelectContent className="bg-[#121212] border-white/10 text-white">
@@ -762,52 +762,54 @@ const Calendar = ({ user, onLogout }) => {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Motivo de Assistência</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Motivo de Assistência</Label>
                         <Input
                           value={serviceForm.service_reason}
                           onChange={(e) => setServiceForm({...serviceForm, service_reason: e.target.value})}
-                          className="bg-[#121212] border-white/10 text-white mt-1"
-                          placeholder="Ex: Instalação de equipamento (opcional)"
+                          className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`}
+                          placeholder={isMobile ? 'Opcional' : 'Ex: Instalação de equipamento (opcional)'}
                           data-testid="service-reason"
                         />
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'md:grid-cols-3 gap-4'}`}>
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Data *</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Data *</Label>
                         <Input
                           type="date"
                           value={serviceForm.date}
                           onChange={(e) => setServiceForm({...serviceForm, date: e.target.value})}
-                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`}
                           data-testid="service-date"
                         />
                       </div>
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Até (opcional)</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Até</Label>
                         <Input
                           type="date"
                           value={serviceForm.date_end}
                           onChange={(e) => setServiceForm({...serviceForm, date_end: e.target.value})}
-                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`}
                           data-testid="service-date-end"
                           min={serviceForm.date || undefined}
                         />
                       </div>
-                      <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Horário (opcional)</Label>
-                        <Input
-                          value={serviceForm.time_slot}
-                          onChange={(e) => setServiceForm({...serviceForm, time_slot: e.target.value})}
-                          className="bg-[#121212] border-white/10 text-white mt-1"
-                          placeholder="Ex: 09:00-12:00"
-                        />
-                      </div>
+                      {!isMobile && (
+                        <div>
+                          <Label className="text-xs uppercase tracking-widest text-gray-400">Horário (opcional)</Label>
+                          <Input
+                            value={serviceForm.time_slot}
+                            onChange={(e) => setServiceForm({...serviceForm, time_slot: e.target.value})}
+                            className="bg-[#121212] border-white/10 text-white mt-1"
+                            placeholder="Ex: 09:00-12:00"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div>
-                      <Label className="text-xs uppercase tracking-widest text-gray-400">Técnicos *</Label>
+                      <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Técnicos *</Label>
                       <Select
                         value={serviceForm.technician_ids[0] || ''}
                         onValueChange={(value) => {
@@ -817,7 +819,7 @@ const Calendar = ({ user, onLogout }) => {
                           }
                         }}
                       >
-                        <SelectTrigger className="bg-[#121212] border-white/10 text-white mt-1">
+                        <SelectTrigger className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`}>
                           <SelectValue placeholder="Selecionar técnico" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#121212] border-white/10 text-white">
