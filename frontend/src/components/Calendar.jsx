@@ -622,19 +622,26 @@ const Calendar = ({ user, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Navigation user={user} onLogout={onLogout} activePage="calendar" />
+      {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="calendar" />}
       
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className={`container mx-auto ${isMobile ? 'px-3 py-4 pb-24' : 'px-4 py-8'} max-w-7xl`}>
         <div className="fade-in">
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <div>
-              <h1 className="text-4xl font-black text-white tracking-tight flex items-center gap-3" style={{ fontFamily: "'Chivo', sans-serif" }}>
-                <CalendarDays className="w-10 h-10 text-sky-400" />
-                Calendário
-                <HelpTooltip section="calendario_geral" />
-              </h1>
-              <p className="text-gray-500 mt-1">Gestão de OTs e disponibilidade da equipa</p>
+          <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-row justify-between items-center gap-4'} mb-6`}>
+            <div className={isMobile ? 'flex items-center gap-3' : ''}>
+              {isMobile && (
+                <div className="bg-gradient-to-br from-sky-500 to-sky-600 p-2 rounded-xl">
+                  <CalendarDays className="w-6 h-6 text-white" />
+                </div>
+              )}
+              <div>
+                <h1 className={`${isMobile ? 'text-xl' : 'text-4xl'} font-black text-white tracking-tight flex items-center gap-3`} style={{ fontFamily: "'Chivo', sans-serif" }}>
+                  {!isMobile && <CalendarDays className="w-10 h-10 text-sky-400" />}
+                  Calendário
+                  {!isMobile && <HelpTooltip section="calendario_geral" />}
+                </h1>
+                {!isMobile && <p className="text-gray-500 mt-1">Gestão de OTs e disponibilidade da equipa</p>}
+              </div>
             </div>
             {user.is_admin && (
               <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -643,11 +650,11 @@ const Calendar = ({ user, onLogout }) => {
               }}>
                 <DialogTrigger asChild>
                   <Button 
-                    className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6"
+                    className={`bg-sky-500 hover:bg-sky-600 text-white font-semibold ${isMobile ? 'w-full py-2.5' : 'px-6'}`}
                     data-testid="new-service-btn"
                   >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Nova OT
+                    <Plus className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5 mr-2'}`} />
+                    {isMobile ? 'Nova OT' : 'Nova OT'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
