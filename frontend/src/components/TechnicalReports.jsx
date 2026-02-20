@@ -2983,14 +2983,14 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder="Buscar cliente por nome, email ou NIF..."
+                placeholder={isMobile ? "Buscar cliente..." : "Buscar cliente por nome, email ou NIF..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#1a1a1a] border-gray-700 text-white"
+                className={`pl-10 ${bgCard} ${borderColor} ${textPrimary} ${isMobile ? 'text-sm' : ''}`}
               />
             </div>
-            <div className="flex gap-2 flex-wrap">
-              {user?.is_admin && (
+            <div className={`flex gap-2 ${isMobile ? 'flex-wrap' : ''}`}>
+              {user?.is_admin && !isMobile && (
                 <>
                   <Button
                     onClick={handleDownloadClientesPDF}
@@ -3032,24 +3032,25 @@ const TechnicalReports = ({ user, onLogout }) => {
               )}
               <Button
                 onClick={() => setShowAddModal(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                className={`bg-blue-500 hover:bg-blue-600 text-white ${isMobile ? 'flex-1' : ''}`}
+                data-testid="add-cliente-btn"
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Adicionar Cliente
+                <Plus className={`${isMobile ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'}`} />
+                {isMobile ? 'Novo Cliente' : 'Adicionar Cliente'}
               </Button>
             </div>
           </div>
 
           {/* Clientes List */}
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-              <p className="text-gray-400 mt-4">A carregar clientes...</p>
+            <div className="text-center py-8">
+              <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-4 border-blue-500 border-t-transparent`}></div>
+              <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar clientes...</p>
             </div>
           ) : filteredClientes.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">
+            <div className="text-center py-8">
+              <Building2 className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
+              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>
                 {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
               </p>
               {!searchTerm && (
