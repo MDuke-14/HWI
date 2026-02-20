@@ -4874,8 +4874,30 @@ const TechnicalReports = ({ user, onLogout }) => {
                   {loadingFolhaHoras ? 'A carregar...' : 'Folha de Horas'}
                 </Button>
                 
-                {/* Botões de Mudança de Estado - Todos os utilizadores */}
-                {selectedRelatorio?.status !== 'concluido' && (
+                {/* Botões de Mudança de Estado - Fluxo: Pendente → Em Execução → Concluído */}
+                {(selectedRelatorio?.status === 'pendente' || selectedRelatorio?.status === 'agendado') && (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/status`, {
+                          status: 'em_execucao'
+                        });
+                        toast.success('OT marcada como Em Execução!');
+                        setSelectedRelatorio({ ...selectedRelatorio, status: 'em_execucao' });
+                        fetchRelatorios();
+                      } catch (error) {
+                        toast.error('Erro ao atualizar estado');
+                      }
+                    }}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4"
+                    data-testid="marcar-execucao-btn"
+                  >
+                    <Play className="w-5 h-5 mr-2" />
+                    Marcar em Execução
+                  </Button>
+                )}
+                {selectedRelatorio?.status === 'em_execucao' && (
                   <Button
                     onClick={async () => {
                       try {
