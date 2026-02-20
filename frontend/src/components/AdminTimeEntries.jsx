@@ -312,6 +312,53 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
   };
 
+  // Download PDF do relatório mensal
+  const handleDownloadPDF = async () => {
+    if (!selectedUser) {
+      toast.error('Selecione um utilizador');
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        month: selectedMonth,
+        year: selectedYear,
+        user_id: selectedUser.id
+      });
+      
+      const token = localStorage.getItem('token');
+      const url = `${API}/time-entries/reports/monthly-pdf?${params.toString()}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Download
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const userName = (selectedUser.full_name || selectedUser.username).replace(/\s+/g, '_');
+      link.download = `Relatorio_${userName}_${selectedMonth}_${selectedYear}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro download PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    }
+  };
+
   const handleAddEntry = async () => {
     if (!selectedUser || !addForm.date || !addForm.start_time || !addForm.end_time) {
       toast.error('Preencha todos os campos obrigatórios');
