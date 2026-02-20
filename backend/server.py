@@ -8438,12 +8438,27 @@ async def get_all_reports(
     
     # Group by user
     user_stats = {}
+    
+    # Pre-fetch user info for entries without username
+    users_cache = {}
+    
     for entry in entries:
-        user_id = entry["user_id"]
+        user_id = entry.get("user_id")
+        if not user_id:
+            continue
+            
         if user_id not in user_stats:
+            # Get username from entry or fetch from users collection
+            username = entry.get("username")
+            if not username:
+                if user_id not in users_cache:
+                    user_doc = await db.users.find_one({"id": user_id})
+                    users_cache[user_id] = user_doc.get("username", "Unknown") if user_doc else "Unknown"
+                username = users_cache[user_id]
+                
             user_stats[user_id] = {
-                "user_id": user_id,  # Adicionar user_id para o frontend
-                "username": entry["username"],
+                "user_id": user_id,
+                "username": username,
                 "total_hours": 0,
                 "regular_hours": 0,
                 "overtime_hours": 0,
