@@ -435,36 +435,43 @@ const AdminTimeEntries = ({ user, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Navigation user={user} onLogout={onLogout} activePage="admin" />
+      {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="admin" />}
       
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className={`container mx-auto ${isMobile ? 'px-3 py-4 pb-24' : 'px-4 py-8'} max-w-7xl`}>
         <div className="fade-in">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <FileText className="w-8 h-8" />
-              Gestão de Entradas
-            </h1>
+          <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} mb-6`}>
+            <div className="flex items-center gap-3">
+              <div className={`bg-gradient-to-br from-purple-500 to-purple-600 ${isMobile ? 'p-2' : 'p-2.5'} rounded-xl`}>
+                <FileText className={`${isMobile ? 'w-5 h-5' : 'w-7 h-7'} text-white`} />
+              </div>
+              <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-white`}>
+                {isMobile ? 'Entradas' : 'Gestão de Entradas'}
+              </h1>
+            </div>
             <Button
               onClick={() => window.location.href = '/admin'}
               variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              className={`border-gray-600 text-gray-300 hover:bg-gray-800 ${isMobile ? 'w-full' : ''}`}
+              size={isMobile ? 'sm' : 'default'}
             >
-              ← Voltar ao Admin
+              ← {isMobile ? 'Admin' : 'Voltar ao Admin'}
             </Button>
           </div>
 
           {/* User Selection Bar */}
-          <div className="glass-effect p-4 rounded-xl mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="w-5 h-5 text-blue-400" />
-              <span className="text-white font-semibold">Selecionar Utilizador:</span>
+          <div className={`glass-effect ${isMobile ? 'p-3' : 'p-4'} rounded-xl mb-4`}>
+            <div className={`flex items-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+              <Users className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
+              <span className={`text-white font-semibold ${isMobile ? 'text-sm' : ''}`}>
+                {isMobile ? 'Utilizador:' : 'Selecionar Utilizador:'}
+              </span>
             </div>
             
             {loadingUsers ? (
-              <div className="text-gray-400">A carregar utilizadores...</div>
+              <div className={`text-gray-400 ${isMobile ? 'text-sm' : ''}`}>A carregar...</div>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className={`flex ${isMobile ? 'overflow-x-auto pb-2 gap-2 -mx-3 px-3' : 'flex-wrap gap-2'}`}>
                 {allUsers.map((u) => (
                   <Button
                     key={u.id}
@@ -473,10 +480,11 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                       selectedUser?.id === u.id
                         ? 'bg-blue-600 hover:bg-blue-700 text-white'
                         : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                    }`}
+                    } ${isMobile ? 'flex-shrink-0 text-xs px-3 py-1.5' : ''}`}
+                    size={isMobile ? 'sm' : 'default'}
                   >
-                    <User className="w-4 h-4 mr-2" />
-                    {u.full_name || u.username}
+                    <User className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+                    {isMobile ? (u.full_name?.split(' ')[0] || u.username) : (u.full_name || u.username)}
                   </Button>
                 ))}
               </div>
