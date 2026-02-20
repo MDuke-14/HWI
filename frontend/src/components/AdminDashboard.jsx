@@ -718,39 +718,53 @@ const AdminDashboard = ({ user, onLogout }) => {
                             </div>
                             <div className={`text-amber-400 font-semibold mt-1 ${isMobile ? 'text-sm' : ''}`}>{req.days_requested} dias</div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button onClick={() => handleVacationApproval(req.id, true)} className="bg-green-600 hover:bg-green-700 text-white rounded-full"><CheckCircle className="w-4 h-4 mr-1" />Aprovar</Button>
-                            <Button onClick={() => handleVacationApproval(req.id, false)} className="bg-red-600 hover:bg-red-700 text-white rounded-full"><XCircle className="w-4 h-4 mr-1" />Rejeitar</Button>
+                          <div className={`flex gap-2 ${isMobile ? 'w-full mt-2' : ''}`}>
+                            <Button 
+                              onClick={() => handleVacationApproval(req.id, true)} 
+                              className={`bg-green-600 hover:bg-green-700 text-white rounded-full ${isMobile ? 'flex-1 text-xs' : ''}`}
+                              size={isMobile ? 'sm' : 'default'}
+                            >
+                              <CheckCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
+                              {isMobile ? 'OK' : 'Aprovar'}
+                            </Button>
+                            <Button 
+                              onClick={() => handleVacationApproval(req.id, false)} 
+                              className={`bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'flex-1 text-xs' : ''}`}
+                              size={isMobile ? 'sm' : 'default'}
+                            >
+                              <XCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
+                              {isMobile ? 'Não' : 'Rejeitar'}
+                            </Button>
                           </div>
                         </div>
-                        {req.reason && <div className="text-gray-300 text-sm mt-2 pt-2 border-t border-gray-700">Motivo: {req.reason}</div>}
+                        {req.reason && <div className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} mt-2 pt-2 border-t border-gray-700`}>Motivo: {req.reason}</div>}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center text-gray-400 py-12">Não há pedidos de férias pendentes</div>
+                  <div className={`text-center text-gray-400 ${isMobile ? 'py-8 text-sm' : 'py-12'}`}>Não há pedidos de férias pendentes</div>
                 )}
               </div>
 
               {/* Histórico de Trabalho em Férias (decididos) */}
               {vacationWorkRequests.filter(r => r.status !== 'pending').length > 0 && (
-                <div className="glass-effect p-6 rounded-xl">
-                  <h2 className="text-xl font-semibold text-gray-400 mb-4">Histórico - Trabalho em Férias</h2>
+                <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+                  <h2 className={`${isMobile ? 'text-base' : 'text-xl'} font-semibold text-gray-400 ${isMobile ? 'mb-3' : 'mb-4'}`}>Histórico - Trabalho em Férias</h2>
                   <div className="space-y-2">
-                    {vacationWorkRequests.filter(r => r.status !== 'pending').slice(0, 10).map((req) => (
-                      <div key={req.id} className="bg-[#1a1a1a] p-3 rounded-lg flex justify-between items-center">
-                        <div>
-                          <span className="text-white">{req.user_name}</span>
+                    {vacationWorkRequests.filter(r => r.status !== 'pending').slice(0, isMobile ? 5 : 10).map((req) => (
+                      <div key={req.id} className={`bg-[#1a1a1a] ${isMobile ? 'p-2.5' : 'p-3'} rounded-lg flex ${isMobile ? 'flex-col gap-1' : 'justify-between items-center'}`}>
+                        <div className={isMobile ? 'flex items-center gap-2 flex-wrap' : ''}>
+                          <span className={`text-white ${isMobile ? 'text-sm' : ''}`}>{req.user_name}</span>
                           <span className="text-gray-500 mx-2">•</span>
-                          <span className="text-gray-400 text-sm">{new Date(req.date).toLocaleDateString('pt-PT')}</span>
+                          <span className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>{new Date(req.date).toLocaleDateString('pt-PT')}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-1 rounded ${
+                          <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} px-2 py-1 rounded ${
                             req.status === 'approved' ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'
                           }`}>
                             {req.status === 'approved' ? 'Autorizado' : 'Rejeitado'}
                           </span>
-                          {req.decided_by && (
+                          {req.decided_by && !isMobile && (
                             <span className="text-gray-500 text-xs">por {req.decided_by}</span>
                           )}
                         </div>
@@ -763,21 +777,21 @@ const AdminDashboard = ({ user, onLogout }) => {
           </TabsContent>
 
           <TabsContent value="absences">
-            <div className="glass-effect p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-                Todas as Faltas ({allAbsences.length})
-                <HelpTooltip section="admin_faltas" />
+            <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+              <h2 className={`${isMobile ? 'text-base' : 'text-2xl'} font-semibold text-white ${isMobile ? 'mb-3' : 'mb-6'} flex items-center gap-2`}>
+                Faltas ({allAbsences.length})
+                {!isMobile && <HelpTooltip section="admin_faltas" />}
               </h2>
               {allAbsences.length > 0 ? (
-                <div className="space-y-4">
+                <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
                   {allAbsences.map((absence) => (
-                    <div key={absence.id} className="bg-[#1a1a1a] p-5 rounded-lg">
-                      <div className="flex justify-between items-start mb-3">
+                    <div key={absence.id} className={`bg-[#1a1a1a] ${isMobile ? 'p-3' : 'p-5'} rounded-lg`}>
+                      <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'} mb-3`}>
                         <div className="flex-1">
-                          <div className="text-white font-semibold text-lg">{absence.username}</div>
-                          <div className="text-gray-400 text-sm">{new Date(absence.date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
-                          <div className="text-amber-400 font-semibold mt-1">{absence.hours}h - {absence.is_justified ? 'Justificada' : 'Injustificada'}</div>
-                          {absence.reason && <div className="text-gray-300 text-sm mt-1">Motivo: {absence.reason}</div>}
+                          <div className={`text-white font-semibold ${isMobile ? 'text-base' : 'text-lg'}`}>{absence.username}</div>
+                          <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>{new Date(absence.date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
+                          <div className={`text-amber-400 font-semibold mt-1 ${isMobile ? 'text-sm' : ''}`}>{absence.hours}h - {absence.is_justified ? 'Justificada' : 'Injustificada'}</div>
+                          {absence.reason && <div className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} mt-1`}>Motivo: {absence.reason}</div>}
                           {absence.justification_file && (
                             <div className="mt-2">
                               <Button 
