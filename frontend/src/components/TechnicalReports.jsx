@@ -3764,7 +3764,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* View Relatório Modal */}
       <Dialog open={showViewRelatorioModal} onOpenChange={setShowViewRelatorioModal}>
-        <DialogContent className={`${isDark ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200'} ${textPrimary} ${isMobile ? 'max-w-[100vw] w-full mx-0 p-3 rounded-none h-[100vh]' : 'max-w-5xl'} max-h-[90vh] overflow-y-auto overflow-x-hidden`}>
+        <DialogContent className={`${isDark ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200'} ${textPrimary} ${isMobile ? 'max-w-[100vw] w-full mx-0 p-3 rounded-none max-h-[100vh]' : 'max-w-5xl max-h-[90vh]'} overflow-y-auto overflow-x-hidden`}>
           <DialogHeader>
             <div className={`flex items-center justify-between w-full ${isMobile ? 'pr-6' : 'pr-8'}`}>
               <DialogTitle className={`flex items-center gap-2 ${textPrimary} ${isMobile ? 'text-base' : ''}`}>
