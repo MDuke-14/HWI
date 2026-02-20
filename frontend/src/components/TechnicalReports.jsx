@@ -3541,9 +3541,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                         e.stopPropagation();
                         handleDeletePC(pc.id, pc.numero_pc);
                       }}
-                      className="flex items-center justify-center gap-1 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition text-sm"
+                      className={`flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition ${isMobile ? 'text-xs' : 'text-sm'}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                     </button>
                   </div>
                 </div>
@@ -3556,19 +3556,19 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* Add Relatório Modal */}
       <Dialog open={showAddRelatorioModal} onOpenChange={setShowAddRelatorioModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`${isDark ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200'} ${textPrimary} ${isMobile ? 'max-w-[95vw] mx-2' : 'max-w-3xl'} max-h-[90vh] overflow-y-auto`}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
+            <DialogTitle className={`flex items-center gap-2 ${textPrimary}`}>
               <Plus className="w-5 h-5 text-blue-400" />
-              Nova Ordem de Trabalho
+              Nova OT
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleAddRelatorio} className="space-y-6 mt-4">
+          <form onSubmit={handleAddRelatorio} className={`${isMobile ? 'space-y-4' : 'space-y-6'} mt-4`}>
             {/* Cliente e Data */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 ${isMobile ? 'gap-3' : 'md:grid-cols-2 gap-4'}`}>
               <div>
-                <Label htmlFor="cliente_id" className="text-gray-300">
+                <Label htmlFor="cliente_id" className={`${textSecondary} ${isMobile ? 'text-sm' : ''}`}>
                   Cliente *
                 </Label>
                 <select
