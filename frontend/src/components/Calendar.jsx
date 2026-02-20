@@ -836,7 +836,7 @@ const Calendar = ({ user, onLogout }) => {
                           {serviceForm.technician_ids.map(techId => {
                             const tech = users.find(u => u.id === techId);
                             return tech ? (
-                              <div key={techId} className="bg-sky-500/10 border border-sky-500/30 rounded-md px-3 py-1 text-sm flex items-center gap-2 text-sky-300">
+                              <div key={techId} className={`bg-sky-500/10 border border-sky-500/30 rounded-md ${isMobile ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'} flex items-center gap-2 text-sky-300`}>
                                 {tech.full_name || tech.username}
                                 <button
                                   onClick={() => setServiceForm({
@@ -856,12 +856,12 @@ const Calendar = ({ user, onLogout }) => {
 
                     {editingService && (
                       <div>
-                        <Label className="text-xs uppercase tracking-widest text-gray-400">Estado</Label>
+                        <Label className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-400`}>Estado</Label>
                         <Select
                           value={serviceForm.status}
                           onValueChange={(value) => setServiceForm({...serviceForm, status: value})}
                         >
-                          <SelectTrigger className="bg-[#121212] border-white/10 text-white mt-1">
+                          <SelectTrigger className={`bg-[#121212] border-white/10 text-white mt-1 ${isMobile ? 'text-sm' : ''}`}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-[#121212] border-white/10 text-white">
@@ -874,20 +874,22 @@ const Calendar = ({ user, onLogout }) => {
                       </div>
                     )}
 
-                    <div>
-                      <Label className="text-xs uppercase tracking-widest text-gray-400">Observações</Label>
-                      <Textarea
-                        value={serviceForm.observations}
-                        onChange={(e) => setServiceForm({...serviceForm, observations: e.target.value})}
-                        className="bg-[#121212] border-white/10 text-white mt-1"
-                        placeholder="Notas adicionais..."
-                        rows={3}
-                      />
-                    </div>
+                    {!isMobile && (
+                      <div>
+                        <Label className="text-xs uppercase tracking-widest text-gray-400">Observações</Label>
+                        <Textarea
+                          value={serviceForm.observations}
+                          onChange={(e) => setServiceForm({...serviceForm, observations: e.target.value})}
+                          className="bg-[#121212] border-white/10 text-white mt-1"
+                          placeholder="Notas adicionais..."
+                          rows={3}
+                        />
+                      </div>
+                    )}
 
                     <Button
                       onClick={handleCreateService}
-                      className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3"
+                      className={`w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold ${isMobile ? 'py-2.5 text-sm' : 'py-3'}`}
                       data-testid="submit-service-btn"
                     >
                       {editingService ? 'Atualizar OT' : 'Criar OT'}
@@ -900,14 +902,14 @@ const Calendar = ({ user, onLogout }) => {
 
           {/* Day Detail Modal */}
           <Dialog open={dayDetailOpen} onOpenChange={setDayDetailOpen}>
-            <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-lg">
+            <DialogContent className={`bg-[#0a0a0a] border border-white/10 text-white ${isMobile ? 'max-w-[95vw] rounded-xl' : 'max-w-lg'}`}>
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2" style={{ fontFamily: "'Chivo', sans-serif" }}>
-                  <CalendarIcon className="w-5 h-5 text-orange-400" />
+                <DialogTitle className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold tracking-tight flex items-center gap-2`} style={{ fontFamily: "'Chivo', sans-serif" }}>
+                  <CalendarIcon className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-orange-400`} />
                   {selectedDay && new Date(selectedDay.dateStr + 'T00:00:00').toLocaleDateString('pt-PT', {
-                    weekday: 'long',
+                    weekday: isMobile ? 'short' : 'long',
                     day: 'numeric',
-                    month: 'long'
+                    month: isMobile ? 'short' : 'long'
                   })}
                 </DialogTitle>
               </DialogHeader>
