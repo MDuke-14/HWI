@@ -29,9 +29,16 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
     try {
       const response = await axios.get(`${API}/time-entries/today`);
       const data = response.data;
-      // Garantir que é um array
-      const entries = Array.isArray(data) ? data : [];
-      const active = entries.find(e => e.start_time && !e.end_time);
+      
+      // O endpoint pode retornar um objecto (timer único activo) ou array
+      let active = null;
+      if (Array.isArray(data)) {
+        active = data.find(e => e.start_time && !e.end_time);
+      } else if (data && data.start_time && !data.end_time) {
+        // É um objecto único - timer activo
+        active = data;
+      }
+      
       setActiveTimer(active || null);
       return active;
     } catch (error) {
