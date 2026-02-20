@@ -95,108 +95,140 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              isAuthenticated ? (
-                <Navigate to="/" replace />
-              ) : (
-                <Login onLogin={handleLogin} />
-              )
-            }
-          />
-          <Route
-            path="/"
-            element={
-              isAuthenticated ? (
-                <Dashboard user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              isAuthenticated ? (
-                <Reports user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/vacations"
-            element={
-              isAuthenticated ? (
-                <Vacations user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/absences"
-            element={
-              isAuthenticated ? (
-                <Absences user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/calendar"
-            element={
-              isAuthenticated ? (
-                <Calendar user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/technical-reports"
-            element={
-              isAuthenticated ? (
-                <TechnicalReports user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              isAuthenticated && user?.is_admin ? (
-                <AdminDashboard user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/admin/time-entries"
-            element={
-              isAuthenticated && user?.is_admin ? (
-                <AdminTimeEntries user={user} onLogout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          {/* Rota pública para autorização de horas extra (requer login admin) */}
-          <Route
-            path="/authorize/:token"
-            element={<OvertimeAuthorization />}
-          />
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" richColors />
-    </div>
+    <ThemeProvider>
+      <MobileProvider>
+        <div className="App">
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/login"
+                element={
+                  isAuthenticated ? (
+                    <Navigate to="/" replace />
+                  ) : (
+                    <Login onLogin={handleLogin} />
+                  )
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <Dashboard user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <Reports user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/vacations"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <Vacations user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/absences"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <Absences user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/calendar"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <Calendar user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/technical-reports"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <TechnicalReports user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/menu"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout} showBottomNav={true}>
+                      {/* MobileMenu is rendered inside MobileLayout for /menu route */}
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  isAuthenticated && user?.is_admin ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <AdminDashboard user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route
+                path="/admin/time-entries"
+                element={
+                  isAuthenticated && user?.is_admin ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <AdminTimeEntries user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              {/* Rota pública para autorização de horas extra (requer login admin) */}
+              <Route
+                path="/authorize/:token"
+                element={<OvertimeAuthorization />}
+              />
+            </Routes>
+          </BrowserRouter>
+          <Toaster position="top-right" richColors />
+        </div>
+      </MobileProvider>
+    </ThemeProvider>
   );
 }
 
