@@ -254,9 +254,17 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
-  const handleDecideAuthorization = async (token, action) => {
+  const handleDecideAuthorization = async (authId, action, authType = 'overtime') => {
     try {
-      const response = await axios.post(`${API}/overtime/authorization/${token}/decide`, { action });
+      // Usar endpoint correto baseado no tipo de autorização
+      let endpoint;
+      if (authType === 'day') {
+        endpoint = `${API}/admin/day-authorizations/${authId}/decide`;
+      } else {
+        endpoint = `${API}/overtime/authorization/${authId}/decide`;
+      }
+      
+      const response = await axios.post(endpoint, { action });
       if (response.data.status === 'success') {
         toast.success(response.data.message);
         fetchOvertimeAuthorizations(authStatusFilter);
