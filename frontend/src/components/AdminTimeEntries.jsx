@@ -774,15 +774,15 @@ const AdminTimeEntries = ({ user, onLogout }) => {
 
                         {/* Entries for this day */}
                         {day.hasEntries && (
-                          <div className="space-y-2 mt-3">
+                          <div className={`space-y-2 ${isMobile ? 'mt-2' : 'mt-3'}`}>
                             {day.entries.map((entry, index) => (
                               <div
                                 key={entry.id || index}
-                                className="flex justify-between items-center bg-[#0f0f0f] p-3 rounded"
+                                className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} bg-[#0f0f0f] ${isMobile ? 'p-2.5' : 'p-3'} rounded`}
                               >
                                 <div className="flex-1">
-                                  <div className="text-sm text-gray-400">
-                                    <span className="text-blue-400 font-semibold">Entrada #{index + 1}</span>
+                                  <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400`}>
+                                    <span className="text-blue-400 font-semibold">#{index + 1}</span>
                                     {' • '}
                                     {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', {
                                       hour: '2-digit',
@@ -794,23 +794,23 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                       minute: '2-digit'
                                     }) : '-'}
                                     {entry.geo_location?.latitude && (
-                                      <span className="ml-2 text-emerald-400 text-xs">
-                                        <MapPin className="w-3 h-3 inline mr-1" />
+                                      <span className={`ml-2 text-emerald-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                                        <MapPin className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} inline mr-0.5`} />
                                         GPS
                                       </span>
                                     )}
                                   </div>
-                                  {entry.observations && (
+                                  {entry.observations && !isMobile && (
                                     <div className="text-xs text-gray-500 mt-1">
                                       💬 {entry.observations}
                                     </div>
                                   )}
                                   {entry.outside_residence_zone && (
-                                    <div className="text-xs text-orange-400 mt-1">
-                                      📍 Fora da zona de residência: {entry.location_description}
+                                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-orange-400 mt-0.5`}>
+                                      📍 {isMobile ? 'Fora zona' : `Fora da zona: ${entry.location_description}`}
                                     </div>
                                   )}
-                                  {entry.geo_location?.address && (
+                                  {entry.geo_location?.address && !isMobile && (
                                     <div className="text-xs text-gray-500 mt-1">
                                       📍 {entry.geo_location.address.locality || entry.geo_location.address.city || entry.geo_location.address.formatted}
                                       {entry.geo_location.accuracy && (
@@ -819,26 +819,28 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 ml-4">
-                                  <div className="text-green-400 font-semibold mr-2">
+                                <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-2 ml-4'}`}>
+                                  <div className={`text-green-400 font-semibold ${isMobile ? 'text-sm' : 'mr-2'}`}>
                                     {formatHours(entry.total_hours)}
                                   </div>
-                                  <Button
-                                    onClick={() => handleEditEntry(entry)}
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleDeleteEntry(entry.id)}
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-red-500 text-red-500 hover:bg-red-500/10"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
+                                  <div className="flex gap-1.5">
+                                    <Button
+                                      onClick={() => handleEditEntry(entry)}
+                                      size="sm"
+                                      variant="outline"
+                                      className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'h-7 w-7 p-0' : ''}`}
+                                    >
+                                      <Edit className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleDeleteEntry(entry.id)}
+                                      size="sm"
+                                      variant="outline"
+                                      className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'h-7 w-7 p-0' : ''}`}
+                                    >
+                                      <Trash2 className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
