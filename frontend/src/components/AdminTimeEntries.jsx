@@ -708,7 +708,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                         </div>
 
                         {/* Map with locations for this day */}
-                        {day.hasGeoData && (
+                        {day.hasGeoData && !isMobile && (
                           <div className="mb-4 space-y-2">
                             <div className="flex items-center gap-2 text-sm text-gray-400">
                               <Map className="w-4 h-4 text-emerald-400" />
@@ -747,6 +747,28 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 </div>
                               ))}
                             </div>
+                          </div>
+                        )}
+                        
+                        {/* Mobile: GPS summary */}
+                        {day.hasGeoData && isMobile && (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {day.locations.slice(0, 2).map((loc, idx) => (
+                              <a
+                                key={loc.id || idx}
+                                href={`https://www.openstreetmap.org/?mlat=${loc.latitude}&mlon=${loc.longitude}&zoom=17`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 bg-[#0f0f0f] px-2 py-1 rounded text-[10px] text-emerald-400"
+                              >
+                                <MapPin className="w-2.5 h-2.5" />
+                                {loc.timestamp ? new Date(loc.timestamp).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : 'GPS'}
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            ))}
+                            {day.locations.length > 2 && (
+                              <span className="text-[10px] text-gray-500 px-2 py-1">+{day.locations.length - 2}</span>
+                            )}
                           </div>
                         )}
 
