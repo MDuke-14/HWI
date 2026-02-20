@@ -655,7 +655,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                               Autorizar
                             </Button>
                             <Button 
-                              onClick={() => handleDecideAuthorization(req.id, 'reject')} 
+                              onClick={() => handleDecideAuthorization(req.id, 'reject', req.authType)} 
                               variant="outline"
                               className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
                             >
