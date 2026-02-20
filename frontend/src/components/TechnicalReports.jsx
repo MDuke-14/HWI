@@ -3764,82 +3764,96 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* View Relatório Modal */}
       <Dialog open={showViewRelatorioModal} onOpenChange={setShowViewRelatorioModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`${isDark ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200'} ${textPrimary} ${isMobile ? 'max-w-[95vw] mx-2 p-3' : 'max-w-5xl'} max-h-[90vh] overflow-y-auto`}>
           <DialogHeader>
-            <div className="flex items-center justify-between w-full pr-8">
-              <DialogTitle className="flex items-center gap-2 text-white">
-                <FileText className="w-5 h-5 text-blue-400" />
+            <div className={`flex items-center justify-between w-full ${isMobile ? 'pr-6' : 'pr-8'}`}>
+              <DialogTitle className={`flex items-center gap-2 ${textPrimary} ${isMobile ? 'text-base' : ''}`}>
+                <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
                 OT #{selectedRelatorio?.numero_assistencia}
-                <HelpTooltip section="ot_geral" />
+                {!isMobile && <HelpTooltip section="ot_geral" />}
               </DialogTitle>
-              <Button
-                onClick={() => {
-                  setShowViewRelatorioModal(false);
-                  openEditRelatorioModal(selectedRelatorio);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                size="sm"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Editar OT
-              </Button>
+              {!isMobile && (
+                <Button
+                  onClick={() => {
+                    setShowViewRelatorioModal(false);
+                    openEditRelatorioModal(selectedRelatorio);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                  size="sm"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar OT
+                </Button>
+              )}
             </div>
           </DialogHeader>
 
           {selectedRelatorio && (
-            <div className="space-y-6 mt-4">
-              {/* Status e Data */}
-              <div className="flex items-center justify-between">
-                <span className={`px-3 py-1 rounded text-sm ${getStatusColor(selectedRelatorio.status)}`}>
+            <div className={`${isMobile ? 'space-y-3 mt-2' : 'space-y-6 mt-4'}`}>
+              {/* Status e Data + Botão Editar mobile */}
+              <div className={`flex items-center justify-between ${isMobile ? 'flex-wrap gap-2' : ''}`}>
+                <span className={`${isMobile ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'} rounded ${getStatusColor(selectedRelatorio.status)}`}>
                   {getStatusLabel(selectedRelatorio.status)}
                 </span>
-                <div className="text-right">
-                  <span className="text-gray-400 text-sm">
+                <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''}`}>
+                  <span className={textSecondary}>
                     {new Date(selectedRelatorio.data_servico).toLocaleDateString('pt-PT')}
                     {selectedRelatorio.data_fim && (
                       <span className="text-blue-400"> → {new Date(selectedRelatorio.data_fim).toLocaleDateString('pt-PT')}</span>
                     )}
                   </span>
+                  {isMobile && (
+                    <Button
+                      onClick={() => {
+                        setShowViewRelatorioModal(false);
+                        openEditRelatorioModal(selectedRelatorio);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      size="sm"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
 
               {/* Cliente */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <h4 className="text-blue-400 font-semibold mb-2 flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
+              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
+                <h4 className={`text-blue-400 font-semibold ${isMobile ? 'mb-1 text-sm' : 'mb-2'} flex items-center gap-2`}>
+                  <Building2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                   Dados do Cliente
                 </h4>
-                <p className="text-white font-medium">{selectedRelatorio.cliente_nome}</p>
-                <p className="text-gray-400 text-sm">Local: {selectedRelatorio.local_intervencao}</p>
-                <p className="text-gray-400 text-sm">Pedido por: {selectedRelatorio.pedido_por}</p>
+                <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''}`}>{selectedRelatorio.cliente_nome}</p>
+                <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Local: {selectedRelatorio.local_intervencao}</p>
+                <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Pedido por: {selectedRelatorio.pedido_por}</p>
               </div>
 
               {/* Mão de Obra / Cronómetros - Card Unificado */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-green-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-green-400 font-semibold flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Mão de Obra / Deslocação
-                    <HelpTooltip section="cronometros" />
+              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border border-green-700`}>
+                <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+                  <h4 className={`text-green-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
+                    <Clock className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                    {isMobile ? 'Mão de Obra' : 'Mão de Obra / Deslocação'}
+                    {!isMobile && <HelpTooltip section="cronometros" />}
                   </h4>
                 </div>
 
                 {/* Cronómetros */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h5 className="text-white font-medium flex items-center gap-2">
-                      <PlayCircle className="w-4 h-4 text-green-400" />
+                <div className={`${isMobile ? 'mb-3' : 'mb-6'}`}>
+                  <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                    <h5 className={`${textPrimary} font-medium flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
+                      <PlayCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-green-400`} />
                       Cronómetros
                     </h5>
-                    <div className="text-gray-400 text-xs">
-                      Selecionados: {Object.values(selectedCronoUsers).filter(Boolean).length}/{allSystemUsers.length}{' '}
+                    <div className={`${textSecondary} ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                      {Object.values(selectedCronoUsers).filter(Boolean).length}/{allSystemUsers.length}{' '}
                       <button 
                         onClick={() => {
                           const all = {};
                           allSystemUsers.forEach(u => { all[u.id] = true; });
                           setSelectedCronoUsers(all);
                         }}
-                        className="text-blue-400 hover:text-blue-300 ml-2"
+                        className="text-blue-400 hover:text-blue-300 ml-1"
                       >
                         Todos
                       </button>
@@ -3854,7 +3868,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
 
                   {/* Botões de Trabalho e Viagem (Iniciar/Parar automático) */}
-                  <div className="flex gap-3 mb-4">
+                  <div className={`flex gap-2 ${isMobile ? 'mb-2' : 'mb-4'}`}>
                     {/* Botão Trabalho - alterna entre iniciar e parar */}
                     {(() => {
                       const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
@@ -3890,18 +3904,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`flex-1 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                          className={`flex-1 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white ${isMobile ? 'text-xs py-2' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveTrabalho ? (
                             <>
-                              <StopCircle className="w-4 h-4 mr-2" />
-                              Parar Trabalho
+                              <StopCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+                              {isMobile ? 'Parar' : 'Parar Trabalho'}
                             </>
                           ) : (
                             <>
-                              <PlayCircle className="w-4 h-4 mr-2" />
-                              Iniciar Trabalho
+                              <PlayCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+                              {isMobile ? 'Trabalho' : 'Iniciar Trabalho'}
                             </>
                           )}
                         </Button>
@@ -3943,18 +3957,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`flex-1 ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                          className={`flex-1 ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white ${isMobile ? 'text-xs py-2' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveViagem ? (
                             <>
-                              <StopCircle className="w-4 h-4 mr-2" />
-                              Parar Viagem
+                              <StopCircle className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+                              {isMobile ? 'Parar' : 'Parar Viagem'}
                             </>
                           ) : (
                             <>
-                              <Car className="w-4 h-4 mr-2" />
-                              Iniciar Viagem
+                              <Car className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+                              {isMobile ? 'Viagem' : 'Iniciar Viagem'}
                             </>
                           )}
                         </Button>
@@ -3964,7 +3978,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                   {/* Lista de Técnicos */}
                   {allSystemUsers.length > 0 ? (
-                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                    <div className={`space-y-1 ${isMobile ? 'max-h-32' : 'max-h-48'} overflow-y-auto`}>
                       {allSystemUsers.map((userItem) => {
                         const cronoTrabalho = getCronometroStatus(userItem, 'trabalho');
                         const cronoViagem = getCronometroStatus(userItem, 'viagem');
@@ -3972,8 +3986,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                         const timerKeyViagem = `${userItem.id}_viagem`;
 
                         return (
-                          <div key={userItem.id} className="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700">
-                            <div className="flex items-center gap-2">
+                          <div key={userItem.id} className={`flex items-center justify-between ${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} ${isMobile ? 'p-1.5' : 'p-2'} rounded-lg border ${borderColor}`}>
+                            <div className="flex items-center gap-1.5 min-w-0">
                               <input 
                                 type="checkbox" 
                                 checked={selectedCronoUsers[userItem.id] || false}
@@ -3983,26 +3997,26 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     [userItem.id]: e.target.checked
                                   }));
                                 }}
-                                className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-500"
+                                className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} rounded border-gray-600 bg-gray-700 text-blue-500`}
                               />
-                              <User className="w-4 h-4 text-gray-400" />
-                              <span className="text-white text-sm">{userItem.full_name || userItem.username}</span>
+                              <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-400 flex-shrink-0`} />
+                              <span className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>{userItem.full_name || userItem.username}</span>
                               {userItem.is_admin && (
-                                <span className="text-orange-400 text-xs">(Admin)</span>
+                                <span className={`text-orange-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>(Admin)</span>
                               )}
                             </div>
 
                             {/* Indicadores de cronómetros ativos */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               {cronoTrabalho && (
-                                <span className="flex items-center gap-1 text-green-400 font-mono text-xs bg-green-900/30 px-2 py-1 rounded">
-                                  <PlayCircle className="w-3 h-3" />
+                                <span className={`flex items-center gap-0.5 text-green-400 font-mono ${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} bg-green-900/30 rounded`}>
+                                  <PlayCircle className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                                   {formatTimer(timers[timerKeyTrabalho] || 0)}
                                 </span>
                               )}
                               {cronoViagem && (
-                                <span className="flex items-center gap-1 text-blue-400 font-mono text-xs bg-blue-900/30 px-2 py-1 rounded">
-                                  <Car className="w-3 h-3" />
+                                <span className={`flex items-center gap-0.5 text-blue-400 font-mono ${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} bg-blue-900/30 rounded`}>
+                                  <Car className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                                   {formatTimer(timers[timerKeyViagem] || 0)}
                                 </span>
                               )}
@@ -4012,44 +4026,146 @@ const TechnicalReports = ({ user, onLogout }) => {
                       })}
                     </div>
                   ) : (
-                    <p className="text-gray-400 text-sm text-center py-2">Nenhum utilizador registado</p>
+                    <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'} text-center py-2`}>Nenhum utilizador registado</p>
                   )}
                 </div>
 
                 {/* Separador */}
-                <div className="border-t border-gray-700 my-4"></div>
+                <div className={`border-t ${borderColor} ${isMobile ? 'my-2' : 'my-4'}`}></div>
 
                 {/* Tabela de Registos (Manuais + Automáticos do Cronómetro) */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h5 className="text-white font-medium flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-blue-400" />
-                      Registos de Mão de Obra
+                  <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                    <h5 className={`${textPrimary} font-medium flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
+                      <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400`} />
+                      {isMobile ? 'Registos' : 'Registos de Mão de Obra'}
                     </h5>
                     <Button
                       onClick={() => setShowAddRegistoManualModal(true)}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                      className={`bg-blue-600 hover:bg-blue-700 text-white ${isMobile ? 'text-[10px] px-2 py-1' : 'text-xs'}`}
                     >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Novo Registo
+                      <Plus className={`${isMobile ? 'w-2.5 h-2.5 mr-0.5' : 'w-3 h-3 mr-1'}`} />
+                      {isMobile ? 'Novo' : 'Novo Registo'}
                     </Button>
                   </div>
 
                   {(tecnicos.length > 0 || registosTecnicos.length > 0) ? (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                      {isMobile ? (
+                        /* Mobile: Card-based layout */
+                        <div className="space-y-2">
+                          {[
+                            ...tecnicos.map(tec => ({
+                              ...tec,
+                              _tipo_registo: tec.tipo_registo || 'manual',
+                              _source: 'tecnico',
+                              _data_sort: tec.data_trabalho || tec.created_at || '',
+                              _key: `manual-${tec.id}`
+                            })),
+                            ...registosTecnicos.map(reg => ({
+                              ...reg,
+                              _tipo_registo: reg.tipo,
+                              _source: 'cronometro',
+                              _data_sort: reg.data || reg.created_at || '',
+                              _hora_inicio_sort: reg.hora_inicio_segmento || '',
+                              _key: `crono-${reg.id}`
+                            }))
+                          ]
+                          .sort((a, b) => {
+                            const dataAStr = a._data_sort || '1970-01-01';
+                            const dataBStr = b._data_sort || '1970-01-01';
+                            const dataA = new Date(dataAStr);
+                            const dataB = new Date(dataBStr);
+                            const dataAValid = !isNaN(dataA.getTime());
+                            const dataBValid = !isNaN(dataB.getTime());
+                            if (!dataAValid && !dataBValid) return 0;
+                            if (!dataAValid) return 1;
+                            if (!dataBValid) return -1;
+                            if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
+                            const horaAStr = a._hora_inicio_sort || '';
+                            const horaBStr = b._hora_inicio_sort || '';
+                            if (!horaAStr && !horaBStr) return 0;
+                            if (!horaAStr) return 1;
+                            if (!horaBStr) return -1;
+                            const horaA = new Date(horaAStr);
+                            const horaB = new Date(horaBStr);
+                            if (isNaN(horaA.getTime()) || isNaN(horaB.getTime())) return 0;
+                            return horaA - horaB;
+                          })
+                          .map((item) => (
+                            <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`${textPrimary} text-xs font-medium truncate flex-1`}>{item.tecnico_nome}</span>
+                                <span 
+                                  className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                    item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
+                                    item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
+                                    'bg-blue-600/20 text-blue-400'
+                                  }`}
+                                >
+                                  {item._tipo_registo === 'manual' ? 'M' : item._tipo_registo === 'trabalho' ? 'T' : 'V'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className={textSecondary}>
+                                  {item._source === 'tecnico' 
+                                    ? (item.data_trabalho ? new Date(item.data_trabalho).toLocaleDateString('pt-PT') : '-')
+                                    : new Date(item.data).toLocaleDateString('pt-PT')
+                                  }
+                                  {' '}
+                                  {item.hora_inicio_segmento
+                                    ? item.hora_inicio_segmento.substring(11, 16)
+                                    : (item.hora_inicio || '-')
+                                  }
+                                  -
+                                  {item.hora_fim_segmento
+                                    ? item.hora_fim_segmento.substring(11, 16)
+                                    : (item.hora_fim || '-')
+                                  }
+                                </span>
+                                <span className={`${textPrimary} font-medium`}>
+                                  {(() => {
+                                    const mins = item.minutos_trabalhados || item.minutos_cliente || Math.round((item.horas_arredondadas || 0) * 60);
+                                    return `${Math.floor(mins / 60)}h${mins % 60}m`;
+                                  })()}
+                                </span>
+                                <div className="flex gap-1">
+                                  <Button
+                                    onClick={() => item._source === 'tecnico' ? openEditTecnicoModal(item) : openEditRegistoModal(item)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-blue-400 hover:bg-blue-900/20 p-0.5 h-5 w-5"
+                                  >
+                                    <Edit className="w-2.5 h-2.5" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => item._source === 'tecnico' ? handleDeleteTecnico(item.id) : handleDeleteRegisto(item.id)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-400 hover:bg-red-900/20 p-0.5 h-5 w-5"
+                                  >
+                                    <Trash2 className="w-2.5 h-2.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        /* Desktop: Table layout */
+                        <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-gray-700">
-                            <th className="text-left py-2 px-2 text-gray-400">Técnico</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Tipo</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Data</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Início</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Fim</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Horas</th>
-                            <th className="text-center py-2 px-2 text-gray-400">KM</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Código</th>
-                            <th className="text-center py-2 px-2 text-gray-400">Ações</th>
+                          <tr className={`border-b ${borderColor}`}>
+                            <th className={`text-left py-2 px-2 ${textSecondary}`}>Técnico</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Tipo</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Data</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Início</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Fim</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Horas</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>KM</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Código</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Ações</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -4103,8 +4219,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                             return horaA - horaB;
                           })
                           .map((item) => (
-                            <tr key={item._key} className="border-b border-gray-800 hover:bg-gray-800/50">
-                              <td className="py-2 px-2 text-white">{item.tecnico_nome}</td>
+                            <tr key={item._key} className={`border-b ${isDark ? 'border-gray-800 hover:bg-gray-800/50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                              <td className={`py-2 px-2 ${textPrimary}`}>{item.tecnico_nome}</td>
                               <td className="py-2 px-2 text-center">
                                 <span 
                                   className={`px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity ${
@@ -4118,13 +4234,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                                    item._tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
                                 </span>
                               </td>
-                              <td className="py-2 px-2 text-center text-gray-300">
+                              <td className={`py-2 px-2 text-center ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                 {item._source === 'tecnico' 
                                   ? (item.data_trabalho ? new Date(item.data_trabalho).toLocaleDateString('pt-PT') : '-')
                                   : new Date(item.data).toLocaleDateString('pt-PT')
                                 }
                               </td>
-                              <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
+                              <td className={`py-2 px-2 text-center ${isDark ? 'text-gray-300' : 'text-gray-600'} font-mono text-xs`}>
                                 {item.hora_inicio_segmento
                                   ? item.hora_inicio_segmento.substring(11, 16)
                                   : (item.hora_inicio 
@@ -4132,7 +4248,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     : '-')
                                 }
                               </td>
-                              <td className="py-2 px-2 text-center text-gray-300 font-mono text-xs">
+                              <td className={`py-2 px-2 text-center ${isDark ? 'text-gray-300' : 'text-gray-600'} font-mono text-xs`}>
                                 {item.hora_fim_segmento
                                   ? item.hora_fim_segmento.substring(11, 16)
                                   : (item.hora_fim 
@@ -4140,7 +4256,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     : '-')
                                 }
                               </td>
-                              <td className="py-2 px-2 text-center text-white font-medium">
+                              <td className={`py-2 px-2 text-center ${textPrimary} font-medium`}>
                                 {(() => {
                                   // Tentar obter minutos de várias fontes
                                   const mins = item.minutos_trabalhados || 
@@ -4149,7 +4265,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   return `${Math.floor(mins / 60)}h ${mins % 60}min`;
                                 })()}
                               </td>
-                              <td className="py-2 px-2 text-center text-gray-300">
+                              <td className={`py-2 px-2 text-center ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                 {item._source === 'tecnico' 
                                   ? (() => {
                                       const kmsIda = Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0));
