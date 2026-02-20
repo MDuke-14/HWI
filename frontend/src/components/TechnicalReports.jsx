@@ -4355,19 +4355,19 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
               {/* Equipamentos */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
+              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
+                <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                  <h4 className={`text-blue-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
                     Equipamentos
-                    <HelpTooltip section="equipamentos" />
+                    {!isMobile && <HelpTooltip section="equipamentos" />}
                   </h4>
                   <Button
                     onClick={openAddEquipamentoModal}
                     size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className={`bg-blue-500 hover:bg-blue-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
                   >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Equipamento
+                    <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
+                    {isMobile ? 'Adicionar' : 'Adicionar Equipamento'}
                   </Button>
                 </div>
                 
@@ -4375,30 +4375,30 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <div className="space-y-2">
                   {/* Equipamento principal (da OT) - só mostra se tiver dados */}
                   {(selectedRelatorio.equipamento_marca || selectedRelatorio.equipamento_tipologia || selectedRelatorio.equipamento_modelo) && (
-                    <div className="bg-black/30 p-3 rounded border border-gray-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-white font-medium">
+                    <div className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} ${isMobile ? 'p-2' : 'p-3'} rounded border ${borderColor}`}>
+                      <div className={`flex items-center justify-between ${isMobile ? 'flex-wrap gap-2' : ''}`}>
+                        <div className="min-w-0 flex-1">
+                          <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''} truncate`}>
                             {selectedRelatorio.equipamento_tipologia && <span>{selectedRelatorio.equipamento_tipologia}</span>}
                             {selectedRelatorio.equipamento_tipologia && selectedRelatorio.equipamento_marca && <span> • </span>}
                             {selectedRelatorio.equipamento_marca && <span>{selectedRelatorio.equipamento_marca}</span>}
                           </p>
                           {selectedRelatorio.equipamento_modelo && (
-                            <p className="text-gray-400 text-sm">Modelo: {selectedRelatorio.equipamento_modelo}</p>
+                            <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Modelo: {selectedRelatorio.equipamento_modelo}</p>
                           )}
-                          {selectedRelatorio.equipamento_numero_serie && (
+                          {selectedRelatorio.equipamento_numero_serie && !isMobile && (
                             <p className="text-gray-400 text-xs">Série: {selectedRelatorio.equipamento_numero_serie}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 bg-gray-700 px-2 py-1 rounded">Principal</span>
+                        <div className={`flex items-center gap-1 ${isMobile ? 'flex-shrink-0' : 'gap-2'}`}>
+                          <span className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} text-gray-500 bg-gray-700 rounded`}>Principal</span>
                           <Button
                             onClick={openEditEquipamentoPrincipalModal}
                             size="sm"
                             variant="outline"
-                            className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                            className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
                           >
-                            <Edit className="w-3 h-3" />
+                            <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                           </Button>
                           <Button
                             onClick={async () => {
@@ -4427,9 +4427,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }}
                             size="sm"
                             variant="outline"
-                            className="border-red-500 text-red-500 hover:bg-red-500/10"
+                            className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                           </Button>
                         </div>
                       </div>
@@ -4438,34 +4438,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                   
                   {/* Equipamentos adicionais */}
                   {equipamentosOT.map((equip) => (
-                    <div key={equip.id} className="bg-black/30 p-3 rounded border border-blue-500/30">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-white font-medium">{equip.marca} - {equip.tipologia}</p>
-                          <p className="text-gray-400 text-sm">Modelo: {equip.modelo}</p>
-                          {equip.numero_serie && (
+                    <div key={equip.id} className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} ${isMobile ? 'p-2' : 'p-3'} rounded border border-blue-500/30`}>
+                      <div className={`flex items-center justify-between ${isMobile ? 'flex-wrap gap-2' : ''}`}>
+                        <div className="min-w-0 flex-1">
+                          <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''} truncate`}>{equip.marca} - {equip.tipologia}</p>
+                          <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Modelo: {equip.modelo}</p>
+                          {equip.numero_serie && !isMobile && (
                             <p className="text-gray-400 text-xs">Série: {equip.numero_serie}</p>
                           )}
-                          {equip.ano_fabrico && (
-                            <p className="text-gray-400 text-xs">Ano: {equip.ano_fabrico}</p>
-                          )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-1 flex-shrink-0`}>
                           <Button
                             onClick={() => openEditEquipamentoModal(equip)}
                             size="sm"
                             variant="outline"
-                            className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                            className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
                           >
-                            <Edit className="w-3 h-3" />
+                            <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                           </Button>
                           <Button
                             onClick={() => handleDeleteEquipamento(equip.id)}
                             size="sm"
                             variant="outline"
-                            className="border-red-500 text-red-500 hover:bg-red-500/10"
+                            className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
                           </Button>
                         </div>
                       </div>
@@ -4475,31 +4472,31 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
 
               {/* Intervenções */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Intervenções / Assistências
-                    <HelpTooltip section="intervencoes" />
+              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
+                <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+                  <h4 className={`text-blue-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
+                    <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                    {isMobile ? 'Intervenções' : 'Intervenções / Assistências'}
+                    {!isMobile && <HelpTooltip section="intervencoes" />}
                   </h4>
                   <Button
                     onClick={() => setShowAddIntervencaoModal(true)}
                     size="sm"
-                    className="bg-green-500 hover:bg-green-600"
+                    className={`bg-green-500 hover:bg-green-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
                   >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Intervenção
+                    <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
+                    {isMobile ? 'Adicionar' : 'Adicionar Intervenção'}
                   </Button>
                 </div>
 
                 {intervencoes.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className={`space-y-2 ${isMobile ? '' : 'space-y-3'}`}>
                     {intervencoes.map((intervencao) => (
-                      <div key={intervencao.id} className="bg-[#1a1a1a] p-4 rounded border border-gray-700">
-                        <div className="flex items-start justify-between mb-2">
+                      <div key={intervencao.id} className={`${bgCard} ${isMobile ? 'p-2' : 'p-4'} rounded border ${borderColor}`}>
+                        <div className={`flex items-start justify-between ${isMobile ? 'mb-1' : 'mb-2'}`}>
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-blue-400" />
-                            <span className="text-white font-semibold">
+                            <Clock className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400`} />
+                            <span className={`${textPrimary} font-semibold ${isMobile ? 'text-xs' : ''}`}>
                               {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
                             </span>
                           </div>
@@ -4508,9 +4505,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                               onClick={() => openEditIntervencaoModal(intervencao)}
                               variant="outline"
                               size="sm"
-                              className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                              className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300 hover:border-blue-500'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}
                             >
-                              <Edit className="w-3.5 h-3.5" />
+                              <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
                             </Button>
                             <Button
                               onClick={() => handleDeleteIntervencao(intervencao.id)}
