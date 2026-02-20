@@ -3441,44 +3441,45 @@ const TechnicalReports = ({ user, onLogout }) => {
 
         {/* Pedidos de Cotação Section */}
         {activeTab === 'pedidos-cotacao' && (
-        <div className="glass-effect p-6 rounded-xl">
-          <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <FileText className="w-6 h-6 text-yellow-400" />
-            Pedidos de Cotação
+        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+          <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold ${textPrimary} ${isMobile ? 'mb-4' : 'mb-6'} flex items-center gap-2`}>
+            <FileText className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-yellow-400`} />
+            {isMobile ? 'PCs' : 'Pedidos de Cotação'}
           </h2>
 
           {loadingPCs ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
-              <p className="text-gray-400 mt-4">Carregando...</p>
+            <div className="text-center py-8">
+              <div className={`animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-b-2 border-yellow-400 mx-auto`}></div>
+              <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>Carregando...</p>
             </div>
           ) : allPCs.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">Nenhum Pedido de Cotação encontrado</p>
-              <p className="text-gray-500 text-sm mt-2">
-                PCs são criados automaticamente quando adiciona material com "Fornecido Por: Cotação" a uma OT
+            <div className="text-center py-8">
+              <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
+              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhum PC encontrado</p>
+              <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'} mt-2`}>
+                PCs são criados quando adiciona material com "Cotação" a uma OT
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
               {allPCs.map((pc) => (
                 <div
                   key={pc.id}
-                  className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-5 hover:border-yellow-500 transition cursor-pointer"
+                  className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-5'} hover:border-yellow-500 transition cursor-pointer`}
                   onClick={() => openPCFromList(pc)}
+                  data-testid={`pc-card-${pc.id}`}
                 >
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="w-5 h-5 text-yellow-400" />
-                        <span className="text-yellow-400 font-bold text-lg">
+                  <div className={`flex items-start justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+                        <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-yellow-400 flex-shrink-0`} />
+                        <span className={`text-yellow-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
                           {pc.numero_pc}
                         </span>
                       </div>
                       <span 
-                        className={`text-xs px-2 py-1 rounded inline-block ${
+                        className={`text-xs px-2 py-0.5 rounded inline-block ${
                           pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
                           pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
                           pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
@@ -3489,48 +3490,39 @@ const TechnicalReports = ({ user, onLogout }) => {
                         {pc.status}
                       </span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${textSecondary} flex-shrink-0`} />
                   </div>
 
                   {/* Info */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-300">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-400">OT:</span>
-                      <span className="text-white font-medium">{pc.ot_numero}</span>
+                  <div className={`space-y-1.5 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
+                      <span className={textSecondary}>OT:</span>
+                      <span className={`${textPrimary} font-medium`}>{pc.ot_numero}</span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-gray-300">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-400">Cliente:</span>
-                      <span className="text-white">{pc.cliente_nome}</span>
+                    <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
+                      <span className={`${textPrimary} truncate`}>{pc.cliente_nome}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-gray-300">
-                      <Package className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-400">Materiais:</span>
-                      <span className="text-white font-medium">{pc.materiais_count || 0}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-gray-300">
-                      <Clock className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-400">Criado:</span>
-                      <span className="text-white text-xs">
-                        {new Date(pc.created_at).toLocaleDateString('pt-PT')}
-                      </span>
+                    <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <Package className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
+                      <span className={textSecondary}>Materiais:</span>
+                      <span className={`${textPrimary} font-medium`}>{pc.materiais_count || 0}</span>
                     </div>
                   </div>
 
                   {/* Actions Preview */}
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-gray-700">
+                  <div className={`flex gap-2 ${isMobile ? 'mt-2 pt-2' : 'mt-4 pt-3'} border-t ${borderColor}`}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownloadPDFPC(pc.id);
                       }}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition text-sm"
+                      className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition`}
                     >
-                      <Download className="w-4 h-4" />
+                      <Download className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                       PDF
                     </button>
                     <button
@@ -3539,9 +3531,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                         fetchPCDetalhes(pc.id);
                         setShowEmailPCModal(true);
                       }}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition text-sm"
+                      className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition`}
                     >
-                      <Send className="w-4 h-4" />
+                      <Send className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                       Email
                     </button>
                     <button
