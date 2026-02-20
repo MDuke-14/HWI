@@ -5951,7 +5951,19 @@ async def download_monthly_pdf_report(
             
             # Check payment type
             outside_zone = any(e.get("outside_residence_zone", False) for e in day_entries)
-            location = next((e.get("location_description") for e in day_entries if e.get("location_description")), None)            
+            
+            # Buscar localização - primeiro location_description, depois geo_location.address
+            location = next((e.get("location_description") for e in day_entries if e.get("location_description")), None)
+            if not location:
+                # Tentar buscar do geo_location.address
+                for e in day_entries:
+                    geo = e.get("geo_location")
+                    if geo and geo.get("address"):
+                        addr = geo["address"]
+                        location = addr.get("locality") or addr.get("city") or addr.get("formatted")
+                        if location:
+                            break
+            
             day_data["status"] = "TRABALHADO"
             day_data["entries"] = [{
                 "id": e.get("id"),  # IMPORTANTE: incluir o ID para edição
