@@ -82,7 +82,15 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
    - Toggle de tema integrado
    - Informações de versão
 
-4. **Optimizações CSS:**
+4. **Dashboard Mobile Optimizado:**
+   - Relógio e data em formato compacto
+   - Formulários adaptados para touch
+   - Navegação desktop escondida em mobile
+   - Floating buttons removidos (usa bottom nav)
+   - Espaçamento adaptado para toque
+   - Suporte completo a tema claro/escuro
+
+5. **Optimizações CSS:**
    - Safe area padding para iOS
    - Prevenção de pull-to-refresh em PWA
    - Min-height de 44px para touch targets
