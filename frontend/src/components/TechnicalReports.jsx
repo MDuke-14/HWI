@@ -820,6 +820,28 @@ const TechnicalReports = ({ user, onLogout }) => {
     setSelectedCliente(null);
   };
   
+  // Funções para gerir emails adicionais
+  const addEmailField = () => {
+    setFormData(prev => ({
+      ...prev,
+      emails_adicionais: [...prev.emails_adicionais, '']
+    }));
+  };
+
+  const removeEmailField = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      emails_adicionais: prev.emails_adicionais.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateEmailField = (index, value) => {
+    setFormData(prev => ({
+      ...prev,
+      emails_adicionais: prev.emails_adicionais.map((email, i) => i === index ? value : email)
+    }));
+  };
+  
   const resetRelatorioForm = () => {
     setRelatorioFormData({
       cliente_id: '',
