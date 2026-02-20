@@ -109,10 +109,78 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - `/app/frontend/src/components/Dashboard.jsx` - Layout responsivo com tema claro/escuro
 
 **Próximos passos:**
-- Adaptar página de OTs para mobile
 - Adaptar Calendário para mobile
+- Adaptar página Admin para mobile
+- Adaptar Gestão de Entradas para mobile
 - Testar funcionalidades offline
 - Optimizar performance em dispositivos lentos
+
+#### ✅ Página de OTs Mobile (20 Fevereiro 2026) - COMPLETADO
+**Adaptação completa da página TechnicalReports.jsx para mobile:**
+
+**Alterações estruturais:**
+- Integração dos hooks `useMobile()` e `useTheme()` para detecção de dispositivo e tema
+- Classes CSS dinâmicas baseadas no tema (claro/escuro)
+- Navigation desktop escondido em mobile (usa bottom nav)
+- Padding inferior adicional para acomodar bottom navigation (`pb-24`)
+
+**Header responsivo:**
+- Título compacto: "OTs" em mobile vs "OTs - Ordens de Trabalho" em desktop
+- Ícone menor em mobile (6x6 vs 8x8)
+- Indicador de estado compacto (apenas ícone em mobile)
+
+**Tabs horizontais com scroll:**
+- Tabs deslizam horizontalmente em mobile
+- Nomes abreviados: "Estados" em vez de "Pesquisa por Estado", "PCs" em vez de "Pedidos de Cotação"
+- Scroll suave com `-mx-4 px-4 scrollbar-hide`
+- Tabs: Clientes, OTs, Estados, PCs
+
+**Tab Clientes (adaptado):**
+- Grid de coluna única em mobile (`grid-cols-1 gap-3`)
+- Cards compactos com info truncada
+- Botões de exportar PDF escondidos em mobile (funcionalidade admin)
+- Botão "Novo Cliente" ocupa largura completa
+- Cards mostram: nome, NIF, email, telefone, botões Ver/Editar/Eliminar
+
+**Tab OTs (adaptado):**
+- Grid de coluna única em mobile
+- Cards com número OT (#xxx), status badge, data, cliente, local
+- Botões de ação menores (p-1.5)
+- Informação de equipamento simplificada
+- Botão "Nova OT" em largura completa
+
+**Tab Estados (adaptado):**
+- Dropdown de pesquisa em largura completa
+- Resultados em layout mobile (coluna única)
+- Info de equipamento escondida em mobile para compactar
+
+**Tab PCs (adaptado):**
+- Cards de Pedidos de Cotação compactos
+- Status colorido preservado
+- Botões PDF/Email/Eliminar responsivos
+
+**Modais mobile-friendly:**
+- Largura máxima `max-w-[95vw] mx-2` em mobile
+- Campos de formulário empilhados (não em grid de 2 colunas)
+- Labels e inputs com tamanho de texto reduzido
+- Scroll interno para conteúdo longo (`max-h-[90vh] overflow-y-auto`)
+
+**Testado:** ✅ 100% (12/12 testes passaram via testing agent)
+- Header responsivo ✓
+- Tabs horizontais com scroll ✓
+- Cards de clientes adaptados ✓
+- Cards de OTs adaptados ✓
+- Dropdown Estados full-width ✓
+- Cards de PCs adaptados ✓
+- Modal Nova OT mobile-friendly ✓
+- Modal Novo Cliente mobile-friendly ✓
+- Modal visualização OT funcional ✓
+- Botões em largura completa ✓
+- Bottom navigation presente ✓
+- Modal cliente funcional ✓
+
+**Ficheiros modificados:**
+- `/app/frontend/src/components/TechnicalReports.jsx` - Adaptação completa para mobile
 
 **Testado:** ✅ Screenshots manuais - Bottom nav, Menu, Toggle tema funcionais
 
