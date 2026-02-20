@@ -4893,7 +4893,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4"
                     data-testid="marcar-execucao-btn"
                   >
-                    <Play className="w-5 h-5 mr-2" />
+                    <PlayCircle className="w-5 h-5 mr-2" />
                     Marcar em Execução
                   </Button>
                 )}
