@@ -3764,13 +3764,12 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* View Relatório Modal */}
       <Dialog open={showViewRelatorioModal} onOpenChange={setShowViewRelatorioModal}>
-        <DialogContent className={`${isDark ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200'} ${textPrimary} ${isMobile ? 'max-w-[95vw] mx-2 p-3' : 'max-w-5xl'} max-h-[90vh] overflow-y-auto`}>
+        <DialogContent className={`${isDark ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200'} ${textPrimary} ${isMobile ? 'max-w-[100vw] w-full mx-0 p-3 rounded-none h-[100vh]' : 'max-w-5xl'} max-h-[90vh] overflow-y-auto overflow-x-hidden`}>
           <DialogHeader>
             <div className={`flex items-center justify-between w-full ${isMobile ? 'pr-6' : 'pr-8'}`}>
               <DialogTitle className={`flex items-center gap-2 ${textPrimary} ${isMobile ? 'text-base' : ''}`}>
-                <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
-                OT #{selectedRelatorio?.numero_assistencia}
-                {!isMobile && <HelpTooltip section="ot_geral" />}
+                <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400 flex-shrink-0`} />
+                <span className="truncate">OT #{selectedRelatorio?.numero_assistencia}</span>
               </DialogTitle>
               {!isMobile && (
                 <Button
@@ -3789,14 +3788,14 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
 
           {selectedRelatorio && (
-            <div className={`${isMobile ? 'space-y-3 mt-2' : 'space-y-6 mt-4'}`}>
+            <div className={`${isMobile ? 'space-y-3 mt-2' : 'space-y-6 mt-4'} overflow-x-hidden`}>
               {/* Status e Data + Botão Editar mobile */}
-              <div className={`flex items-center justify-between ${isMobile ? 'flex-wrap gap-2' : ''}`}>
-                <span className={`${isMobile ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'} rounded ${getStatusColor(selectedRelatorio.status)}`}>
+              <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center justify-between'}`}>
+                <span className={`${isMobile ? 'px-2 py-0.5 text-xs self-start' : 'px-3 py-1 text-sm'} rounded ${getStatusColor(selectedRelatorio.status)}`}>
                   {getStatusLabel(selectedRelatorio.status)}
                 </span>
-                <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : ''}`}>
-                  <span className={textSecondary}>
+                <div className={`flex items-center ${isMobile ? 'justify-between' : 'gap-2'}`}>
+                  <span className={`${textSecondary} ${isMobile ? 'text-xs' : ''}`}>
                     {new Date(selectedRelatorio.data_servico).toLocaleDateString('pt-PT')}
                     {selectedRelatorio.data_fim && (
                       <span className="text-blue-400"> → {new Date(selectedRelatorio.data_fim).toLocaleDateString('pt-PT')}</span>
@@ -3811,7 +3810,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                       size="sm"
                     >
-                      <Edit className="w-3 h-3" />
+                      <Edit className="w-3 h-3 mr-1" />
+                      Editar
                     </Button>
                   )}
                 </div>
@@ -3820,29 +3820,28 @@ const TechnicalReports = ({ user, onLogout }) => {
               {/* Cliente */}
               <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
                 <h4 className={`text-blue-400 font-semibold ${isMobile ? 'mb-1 text-sm' : 'mb-2'} flex items-center gap-2`}>
-                  <Building2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                  <Building2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   Dados do Cliente
                 </h4>
-                <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''}`}>{selectedRelatorio.cliente_nome}</p>
-                <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Local: {selectedRelatorio.local_intervencao}</p>
-                <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Pedido por: {selectedRelatorio.pedido_por}</p>
+                <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm truncate' : ''}`}>{selectedRelatorio.cliente_nome}</p>
+                <p className={`${textSecondary} ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>Local: {selectedRelatorio.local_intervencao}</p>
+                <p className={`${textSecondary} ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>Pedido por: {selectedRelatorio.pedido_por}</p>
               </div>
 
               {/* Mão de Obra / Cronómetros - Card Unificado */}
-              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border border-green-700`}>
+              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border border-green-700 overflow-hidden`}>
                 <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
                   <h4 className={`text-green-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
-                    <Clock className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                    <Clock className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                     {isMobile ? 'Mão de Obra' : 'Mão de Obra / Deslocação'}
-                    {!isMobile && <HelpTooltip section="cronometros" />}
                   </h4>
                 </div>
 
                 {/* Cronómetros */}
                 <div className={`${isMobile ? 'mb-3' : 'mb-6'}`}>
-                  <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                  <div className={`flex items-center justify-between ${isMobile ? 'mb-2 flex-wrap gap-1' : 'mb-3'}`}>
                     <h5 className={`${textPrimary} font-medium flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
-                      <PlayCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-green-400`} />
+                      <PlayCircle className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-green-400 flex-shrink-0`} />
                       Cronómetros
                     </h5>
                     <div className={`${textSecondary} ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
@@ -3867,9 +3866,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </div>
                   </div>
 
-                  {/* Botões de Trabalho e Viagem (Iniciar/Parar automático) */}
-                  <div className={`flex ${isMobile ? 'flex-col gap-2 mb-2' : 'gap-2 mb-4'}`}>
-                    {/* Botão Trabalho - alterna entre iniciar e parar */}
+                  {/* Botões de Trabalho e Viagem */}
+                  <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 ${isMobile ? 'mb-2' : 'mb-4'}`}>
                     {(() => {
                       const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
                       const hasAnyActiveTrabalho = selectedUsers.some(u => getCronometroStatus(u, 'trabalho'));
@@ -3884,7 +3882,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                             for (const user of selectedUsers) {
                               const hasActive = getCronometroStatus(user, 'trabalho');
                               if (hasAnyActiveTrabalho) {
-                                // Parar todos os ativos
                                 if (hasActive) {
                                   await handlePararCronometro({
                                     id: user.id,
@@ -3893,7 +3890,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   }, 'trabalho');
                                 }
                               } else {
-                                // Iniciar para todos
                                 if (!hasActive) {
                                   await handleIniciarCronometro({
                                     id: user.id,
@@ -3904,25 +3900,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`w-full flex items-center justify-center gap-2 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50`}
+                          className={`${isMobile ? 'w-full' : 'flex-1'} flex items-center justify-center gap-2 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50 ${isMobile ? 'text-sm' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
-                          {hasAnyActiveTrabalho ? (
-                            <>
-                              <StopCircle className="w-4 h-4" />
-                              <span>Parar Trabalho</span>
-                            </>
-                          ) : (
-                            <>
-                              <PlayCircle className="w-4 h-4" />
-                              <span>Iniciar Trabalho</span>
-                            </>
-                          )}
+                          {hasAnyActiveTrabalho ? <StopCircle className="w-4 h-4 flex-shrink-0" /> : <PlayCircle className="w-4 h-4 flex-shrink-0" />}
+                          <span>{hasAnyActiveTrabalho ? 'Parar Trabalho' : 'Iniciar Trabalho'}</span>
                         </button>
                       );
                     })()}
 
-                    {/* Botão Viagem - alterna entre iniciar e parar */}
                     {(() => {
                       const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
                       const hasAnyActiveViagem = selectedUsers.some(u => getCronometroStatus(u, 'viagem'));
@@ -3937,7 +3923,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                             for (const user of selectedUsers) {
                               const hasActive = getCronometroStatus(user, 'viagem');
                               if (hasAnyActiveViagem) {
-                                // Parar todos os ativos
                                 if (hasActive) {
                                   await handlePararCronometro({
                                     id: user.id,
@@ -3946,7 +3931,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   }, 'viagem');
                                 }
                               } else {
-                                // Iniciar para todos
                                 if (!hasActive) {
                                   await handleIniciarCronometro({
                                     id: user.id,
@@ -3957,20 +3941,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`w-full flex items-center justify-center gap-2 ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50`}
+                          className={`${isMobile ? 'w-full' : 'flex-1'} flex items-center justify-center gap-2 ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50 ${isMobile ? 'text-sm' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
-                          {hasAnyActiveViagem ? (
-                            <>
-                              <StopCircle className="w-4 h-4" />
-                              <span>Parar Viagem</span>
-                            </>
-                          ) : (
-                            <>
-                              <Car className="w-4 h-4" />
-                              <span>Iniciar Viagem</span>
-                            </>
-                          )}
+                          {hasAnyActiveViagem ? <StopCircle className="w-4 h-4 flex-shrink-0" /> : <Car className="w-4 h-4 flex-shrink-0" />}
+                          <span>{hasAnyActiveViagem ? 'Parar Viagem' : 'Iniciar Viagem'}</span>
                         </button>
                       );
                     })()}
@@ -3978,7 +3953,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                   {/* Lista de Técnicos */}
                   {allSystemUsers.length > 0 ? (
-                    <div className={`space-y-1 ${isMobile ? 'max-h-32' : 'max-h-48'} overflow-y-auto`}>
+                    <div className={`space-y-1 ${isMobile ? 'max-h-32' : 'max-h-48'} overflow-y-auto overflow-x-hidden`}>
                       {allSystemUsers.map((userItem) => {
                         const cronoTrabalho = getCronometroStatus(userItem, 'trabalho');
                         const cronoViagem = getCronometroStatus(userItem, 'viagem');
@@ -3986,8 +3961,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                         const timerKeyViagem = `${userItem.id}_viagem`;
 
                         return (
-                          <div key={userItem.id} className={`flex items-center justify-between ${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} ${isMobile ? 'p-1.5' : 'p-2'} rounded-lg border ${borderColor}`}>
-                            <div className="flex items-center gap-1.5 min-w-0">
+                          <div key={userItem.id} className={`flex items-center justify-between ${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} ${isMobile ? 'p-1.5' : 'p-2'} rounded-lg border ${borderColor} overflow-hidden`}>
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
                               <input 
                                 type="checkbox" 
                                 checked={selectedCronoUsers[userItem.id] || false}
@@ -3997,12 +3972,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     [userItem.id]: e.target.checked
                                   }));
                                 }}
-                                className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} rounded border-gray-600 bg-gray-700 text-blue-500`}
+                                className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} rounded border-gray-600 bg-gray-700 text-blue-500 flex-shrink-0`}
                               />
                               <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-400 flex-shrink-0`} />
                               <span className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>{userItem.full_name || userItem.username}</span>
                               {userItem.is_admin && (
-                                <span className={`text-orange-400 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>(Admin)</span>
+                                <span className={`text-orange-400 ${isMobile ? 'text-[10px]' : 'text-xs'} flex-shrink-0`}>(A)</span>
                               )}
                             </div>
 
@@ -4010,13 +3985,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <div className="flex items-center gap-1 flex-shrink-0">
                               {cronoTrabalho && (
                                 <span className={`flex items-center gap-0.5 text-green-400 font-mono ${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} bg-green-900/30 rounded`}>
-                                  <PlayCircle className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                                  <PlayCircle className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} flex-shrink-0`} />
                                   {formatTimer(timers[timerKeyTrabalho] || 0)}
                                 </span>
                               )}
                               {cronoViagem && (
                                 <span className={`flex items-center gap-0.5 text-blue-400 font-mono ${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} bg-blue-900/30 rounded`}>
-                                  <Car className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                                  <Car className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} flex-shrink-0`} />
                                   {formatTimer(timers[timerKeyViagem] || 0)}
                                 </span>
                               )}
@@ -4033,27 +4008,27 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {/* Separador */}
                 <div className={`border-t ${borderColor} ${isMobile ? 'my-2' : 'my-4'}`}></div>
 
-                {/* Tabela de Registos (Manuais + Automáticos do Cronómetro) */}
-                <div>
+                {/* Registos de Mão de Obra */}
+                <div className="overflow-hidden">
                   <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-3'}`}>
                     <h5 className={`${textPrimary} font-medium flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
-                      <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400`} />
-                      {isMobile ? 'Registos' : 'Registos de Mão de Obra'}
+                      <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400 flex-shrink-0`} />
+                      Registos
                     </h5>
                     <Button
                       onClick={() => setShowAddRegistoManualModal(true)}
                       size="sm"
                       className={`bg-blue-600 hover:bg-blue-700 text-white ${isMobile ? 'text-[10px] px-2 py-1' : 'text-xs'}`}
                     >
-                      <Plus className={`${isMobile ? 'w-2.5 h-2.5 mr-0.5' : 'w-3 h-3 mr-1'}`} />
+                      <Plus className={`${isMobile ? 'w-2.5 h-2.5 mr-0.5' : 'w-3 h-3 mr-1'} flex-shrink-0`} />
                       {isMobile ? 'Novo' : 'Novo Registo'}
                     </Button>
                   </div>
 
                   {(tecnicos.length > 0 || registosTecnicos.length > 0) ? (
-                    <div className={isMobile ? '' : 'overflow-x-auto'}>
+                    <div className="overflow-x-hidden">
+                      {/* Mobile: Card-based layout */}
                       {isMobile ? (
-                        /* Mobile: Card-based layout */
                         <div className="space-y-2">
                           {[
                             ...tecnicos.map(tec => ({
@@ -4083,22 +4058,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                             if (!dataAValid) return 1;
                             if (!dataBValid) return -1;
                             if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
-                            const horaAStr = a._hora_inicio_sort || '';
-                            const horaBStr = b._hora_inicio_sort || '';
-                            if (!horaAStr && !horaBStr) return 0;
-                            if (!horaAStr) return 1;
-                            if (!horaBStr) return -1;
-                            const horaA = new Date(horaAStr);
-                            const horaB = new Date(horaBStr);
-                            if (isNaN(horaA.getTime()) || isNaN(horaB.getTime())) return 0;
-                            return horaA - horaB;
+                            return 0;
                           })
                           .map((item) => (
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
                               <div className="flex items-center justify-between mb-1">
-                                <span className={`${textPrimary} text-xs font-medium truncate flex-1`}>{item.tecnico_nome}</span>
+                                <span className={`${textPrimary} text-xs font-medium truncate flex-1 mr-2`}>{item.tecnico_nome}</span>
                                 <span 
-                                  className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                  className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
                                     item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
                                     item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
                                     'bg-blue-600/20 text-blue-400'
@@ -4131,22 +4098,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   })()}
                                 </span>
                                 <div className="flex gap-1">
-                                  <Button
+                                  <button
                                     onClick={() => item._source === 'tecnico' ? openEditTecnicoModal(item) : openEditRegistoModal(item)}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-blue-400 hover:bg-blue-900/20 p-0.5 h-5 w-5"
+                                    className="text-blue-400 hover:bg-blue-900/20 p-0.5 rounded"
                                   >
-                                    <Edit className="w-2.5 h-2.5" />
-                                  </Button>
-                                  <Button
+                                    <Edit className="w-3 h-3" />
+                                  </button>
+                                  <button
                                     onClick={() => item._source === 'tecnico' ? handleDeleteTecnico(item.id) : handleDeleteRegisto(item.id)}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-red-400 hover:bg-red-900/20 p-0.5 h-5 w-5"
+                                    className="text-red-400 hover:bg-red-900/20 p-0.5 rounded"
                                   >
-                                    <Trash2 className="w-2.5 h-2.5" />
-                                  </Button>
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
                                 </div>
                               </div>
                             </div>
