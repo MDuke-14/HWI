@@ -102,6 +102,10 @@ const formatErrorMessage = (error) => {
 };
 
 const TechnicalReports = ({ user, onLogout }) => {
+  // Mobile e Theme hooks
+  const { isMobile, isTablet } = useMobile();
+  const { isDark } = useTheme();
+  
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('clientes'); // 'relatorios', 'clientes', ou 'pesquisa'
   const [clientes, setClientes] = useState([]);
@@ -110,6 +114,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [filteredByStatus, setFilteredByStatus] = useState([]);
+  
+  // Classes dinâmicas baseadas no tema
+  const bgMain = isDark ? 'bg-[#0a0a0a]' : 'bg-gray-100';
+  const bgCard = isDark ? 'bg-[#1a1a1a]' : 'bg-white';
+  const bgCardAlt = isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50';
+  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
+  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
+  const borderColor = isDark ? 'border-gray-700' : 'border-gray-200';
   
   // Flag para controlar se já processamos o parâmetro ot da URL
   const [urlOtProcessed, setUrlOtProcessed] = useState(false);
