@@ -3957,19 +3957,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`${isMobile ? 'w-full' : 'flex-1'} ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white ${isMobile ? 'text-xs py-2.5' : ''}`}
+                          className={`${isMobile ? 'w-full' : 'flex-1'} ${hasAnyActiveViagem ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white ${isMobile ? 'text-sm py-2.5' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveViagem ? (
-                            <span className="flex items-center justify-center">
-                              <StopCircle className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-4 h-4 mr-2'}`} />
-                              {isMobile ? 'Parar Viagem' : 'Parar Viagem'}
-                            </span>
+                            <>
+                              <StopCircle className="w-4 h-4" />
+                              Parar Viagem
+                            </>
                           ) : (
-                            <span className="flex items-center justify-center">
-                              <Car className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-4 h-4 mr-2'}`} />
-                              {isMobile ? 'Iniciar Viagem' : 'Iniciar Viagem'}
-                            </span>
+                            <>
+                              <Car className="w-4 h-4" />
+                              Iniciar Viagem
+                            </>
                           )}
                         </Button>
                       );
