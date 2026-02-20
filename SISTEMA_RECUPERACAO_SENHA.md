@@ -14,14 +14,14 @@ Implementei um sistema completo e automático de recuperação de senha com os s
 
 **Exemplo de uso:**
 ```bash
-curl -X POST "https://work-tracking-mobile.preview.emergentagent.com/api/auth/forgot-password" \
+curl -X POST "https://ot-management-hub-1.preview.emergentagent.com/api/auth/forgot-password" \
   -H "Content-Type: application/json" \
   -d '{"email":"miguel.moreira@hwi.pt"}'
 ```
 
 Ou com username:
 ```bash
-curl -X POST "https://work-tracking-mobile.preview.emergentagent.com/api/auth/forgot-password" \
+curl -X POST "https://ot-management-hub-1.preview.emergentagent.com/api/auth/forgot-password" \
   -H "Content-Type: application/json" \
   -d '{"email":"miguel"}'
 ```
@@ -259,7 +259,7 @@ curl -X POST "http://localhost:8001/api/auth/forgot-password" \
 
 **Depois do deploy:**
 
-1. Acesse: https://work-tracking-mobile.preview.emergentagent.com
+1. Acesse: https://ot-management-hub-1.preview.emergentagent.com
 2. Clique em "Esqueci a senha"
 3. Digite: `miguel`
 4. Clique "Enviar Email"
