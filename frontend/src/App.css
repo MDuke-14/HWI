@@ -1,5 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* Hide Emergent badge for PRO subscribers */
+[class*="emergent-badge"],
+[id*="emergent-badge"],
+div[style*="Made with Emergent"],
+iframe[src*="emergent"],
+.emergent-watermark,
+#emergent-watermark {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 * {
   margin: 0;
   padding: 0;
