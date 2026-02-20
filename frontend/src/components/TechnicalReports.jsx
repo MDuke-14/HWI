@@ -3149,82 +3149,84 @@ const TechnicalReports = ({ user, onLogout }) => {
 
         {/* Relatórios Section */}
         {activeTab === 'relatorios' && (
-        <div className="glass-effect p-6 rounded-xl">
+        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
           {/* Search and Add */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex flex-col gap-3 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder="Buscar relatório por número, cliente..."
+                placeholder={isMobile ? "Buscar OT..." : "Buscar relatório por número, cliente..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#1a1a1a] border-gray-700 text-white"
+                className={`pl-10 ${bgCard} ${borderColor} ${textPrimary} ${isMobile ? 'text-sm' : ''}`}
               />
             </div>
             <Button
               onClick={() => setShowAddRelatorioModal(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className={`bg-blue-500 hover:bg-blue-600 text-white ${isMobile ? 'w-full' : ''}`}
+              data-testid="add-ot-btn"
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className={`${isMobile ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'}`} />
               Nova OT
             </Button>
           </div>
 
           {/* Relatórios List */}
           {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-              <p className="text-gray-400 mt-4">A carregar relatórios...</p>
+            <div className="text-center py-8">
+              <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-4 border-blue-500 border-t-transparent`}></div>
+              <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar OTs...</p>
             </div>
           ) : relatorios.length === 0 ? (
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">Nenhum relatório criado</p>
+            <div className="text-center py-8">
+              <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
+              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma OT criada</p>
               <Button
                 onClick={() => setShowAddRelatorioModal(true)}
                 className="mt-4 bg-blue-500 hover:bg-blue-600"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Criar Primeiro Relatório
+                Criar Primeira OT
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
               {relatorios.map((relatorio) => (
                 <div
                   key={relatorio.id}
-                  className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition"
+                  className={`${bgCard} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-4'} hover:border-blue-500 transition`}
+                  data-testid={`ot-card-${relatorio.id}`}
                 >
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="cursor-pointer flex-1" onClick={() => openViewRelatorioModal(relatorio)}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-blue-400 font-bold text-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="cursor-pointer flex-1 min-w-0" onClick={() => openViewRelatorioModal(relatorio)}>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`text-blue-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
                           #{relatorio.numero_assistencia}
                         </span>
                         <span 
-                          className={`text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
+                          className={`text-xs px-2 py-0.5 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
                           onClick={(e) => openStatusModal(relatorio, e)}
                           title="Clique para alterar status"
                         >
                           {getStatusLabel(relatorio.status)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-400">
+                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`}>
                         {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
                       </p>
                     </div>
                     
                     {/* Action buttons */}
-                    <div className="flex gap-1 ml-2">
+                    <div className="flex gap-1 ml-2 flex-shrink-0">
                       <Button
                         onClick={(e) => openEditRelatorioModal(relatorio, e)}
                         variant="outline"
                         size="sm"
-                        className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10 p-2"
+                        className={`${isDark ? 'border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'} ${isMobile ? 'p-1.5' : 'p-2'}`}
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
                       </Button>
                       
                       {user?.is_admin && (
@@ -3232,24 +3234,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                           onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
                           variant="outline"
                           size="sm"
-                          className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 p-2"
+                          className={`${isDark ? 'border-gray-600' : 'border-gray-300'} hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 ${isMobile ? 'p-1.5' : 'p-2'}`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
                         </Button>
                       )}
                     </div>
                   </div>
 
                   {/* Cliente */}
-                  <div className="mb-3 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
-                    <p className="text-white font-semibold">{relatorio.cliente_nome}</p>
-                    <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
+                  <div className={`${isMobile ? 'mb-2' : 'mb-3'} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
+                    <p className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''} truncate`}>{relatorio.cliente_nome}</p>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
                   </div>
 
                   {/* Equipamento */}
-                  <div className="mb-3 pb-3 border-b border-gray-700 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
-                    <p className="text-xs text-gray-500 mb-1">Equipamento</p>
-                    <p className="text-sm text-gray-300">
+                  <div className={`${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b ${borderColor} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
+                    <p className={`text-xs ${textSecondary} mb-1`}>Equipamento</p>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} truncate`}>
                       {relatorio.equipamento_display ? (
                         relatorio.equipamento_display === 'Não especificado' ? (
                           <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
@@ -3263,8 +3265,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                           {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
                           {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
                           {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
-                          {(relatorio.equipamento_tipologia || relatorio.equipamento_marca) && relatorio.equipamento_modelo && <span className="text-gray-500"> • </span>}
-                          {relatorio.equipamento_modelo && <span className="text-gray-400">{relatorio.equipamento_modelo}</span>}
                         </>
                       ) : (
                         <span className="text-gray-500 italic">Não especificado</span>
@@ -3272,10 +3272,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </p>
                   </div>
 
-                  {/* Técnico */}
-                  <div className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer" onClick={() => openViewRelatorioModal(relatorio)}>
-                    <User className="w-4 h-4" />
-                    <span>{relatorio.cliente_nome}</span>
+                  {/* Footer - Cliente icon */}
+                  <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
+                    <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                    <span className="truncate">{relatorio.cliente_nome}</span>
                   </div>
                 </div>
               ))}
