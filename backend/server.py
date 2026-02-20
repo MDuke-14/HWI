@@ -4812,7 +4812,11 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
                         "id": f"{entry_db['id']}_{idx}",
                         "inicio": datetime.fromisoformat(e["start_time"]).strftime("%H:%M") if e.get("start_time") else None,
                         "fim": datetime.fromisoformat(e["end_time"]).strftime("%H:%M") if e.get("end_time") else None,
-                        "estado": "terminada" if e.get("end_time") else "ativa"
+                        "start_time": e.get("start_time"),
+                        "end_time": e.get("end_time"),
+                        "estado": "terminada" if e.get("end_time") else "ativa",
+                        "geo_location": e.get("geo_location"),
+                        "end_geo_location": e.get("end_geo_location")
                     })
             else:
                 # Formato antigo - entrada única
@@ -4820,7 +4824,11 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
                     "id": entry_db["id"],
                     "inicio": datetime.fromisoformat(entry_db["start_time"]).strftime("%H:%M") if entry_db.get("start_time") else None,
                     "fim": datetime.fromisoformat(entry_db["end_time"]).strftime("%H:%M") if entry_db.get("end_time") else None,
-                    "estado": "ativa" if entry_db["status"] == "active" else "terminada"
+                    "start_time": entry_db.get("start_time"),
+                    "end_time": entry_db.get("end_time"),
+                    "estado": "ativa" if entry_db["status"] == "active" else "terminada",
+                    "geo_location": entry_db.get("geo_location"),
+                    "end_geo_location": entry_db.get("end_geo_location")
                 })
         
         # Find active entry
