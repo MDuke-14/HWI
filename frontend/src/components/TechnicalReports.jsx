@@ -607,13 +607,18 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const openEditModal = (cliente) => {
     setSelectedCliente(cliente);
+    // Converter emails_adicionais de string para array
+    let emailsArray = [];
+    if (cliente.emails_adicionais) {
+      emailsArray = cliente.emails_adicionais.split(/[;,]/).map(e => e.trim()).filter(e => e);
+    }
     setFormData({
       nome: cliente.nome,
       email: cliente.email || '',
       telefone: cliente.telefone || '',
       morada: cliente.morada || '',
       nif: cliente.nif || '',
-      emails_adicionais: cliente.emails_adicionais || ''
+      emails_adicionais: emailsArray
     });
     setShowEditModal(true);
   };
