@@ -18,7 +18,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - ✅ Sistema de temas (claro/escuro)
   - ✅ Menu mobile dedicado
   - ✅ Contextos de Mobile e Tema
-  - ⏳ Adaptar restantes páginas para mobile
+  - ✅ Dashboard responsivo
+  - ✅ Página de OTs responsiva (20 Fevereiro 2026)
+  - ⏳ Adaptar restantes páginas para mobile (Admin, Time Entries, Reports)
   - ⏳ Testes completos de offline
 
 ### P1 (Alta Prioridade)
