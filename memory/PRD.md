@@ -50,6 +50,59 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Fevereiro 2026 - Sessão Atual (20 Fevereiro 2026)
 
+#### 🔄 Modo Mobile PWA (20 Fevereiro 2026) - EM PROGRESSO
+**Implementação de experiência mobile dedicada com PWA completa:**
+
+**Estrutura criada:**
+- `/app/frontend/src/contexts/ThemeContext.jsx` - Gestão de temas claro/escuro com persistência
+- `/app/frontend/src/contexts/MobileContext.jsx` - Detecção de dispositivo e estado mobile
+- `/app/frontend/src/components/mobile/MobileBottomNav.jsx` - Navegação inferior para mobile
+- `/app/frontend/src/components/mobile/MobileMenu.jsx` - Página de menu mobile completa
+- `/app/frontend/src/components/mobile/MobileLayout.jsx` - Layout wrapper com bottom nav
+- `/app/frontend/src/components/mobile/ThemeToggle.jsx` - Componente de toggle de tema
+
+**Funcionalidades implementadas:**
+1. **Bottom Navigation Mobile:**
+   - 5 itens: Início, OTs, Ponto (botão central), Calendário, Menu
+   - Botão central de ação rápida para iniciar/parar relógio
+   - Animação de pulsação quando timer ativo
+   - Auto-hide ao scrollar para baixo
+
+2. **Sistema de Temas:**
+   - Tema escuro (padrão)
+   - Tema claro (melhor visibilidade ao sol)
+   - Persistência via localStorage
+   - Opção de seguir preferência do sistema
+
+3. **Menu Mobile:**
+   - Perfil do utilizador com badge admin
+   - Status de conexão (online/offline)
+   - Contador de ações pendentes de sync
+   - Acesso a todas as secções da app
+   - Toggle de tema integrado
+   - Informações de versão
+
+4. **Optimizações CSS:**
+   - Safe area padding para iOS
+   - Prevenção de pull-to-refresh em PWA
+   - Min-height de 44px para touch targets
+   - Font-size 16px em inputs (previne zoom iOS)
+
+**Ficheiros modificados:**
+- `/app/frontend/src/App.js` - Integração dos Providers
+- `/app/frontend/src/index.css` - Estilos mobile e temas
+
+**Próximos passos:**
+- Adaptar Dashboard para layout mobile
+- Adaptar página de OTs para mobile
+- Adaptar Calendário para mobile
+- Testar funcionalidades offline
+- Optimizar performance em dispositivos lentos
+
+**Testado:** ✅ Screenshots manuais - Bottom nav, Menu, Toggle tema funcionais
+
+---
+
 #### ✅ Campos de Email Dinâmicos para Clientes (20 Fevereiro 2026) - NOVA FUNCIONALIDADE
 **Gestão de Clientes (/technical-reports, tab Clientes) - Interface de emails secundários reformulada:**
 
