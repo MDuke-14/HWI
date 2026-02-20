@@ -4956,7 +4956,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
 
               {/* Botões de Ação */}
-              <div className="flex gap-4 justify-center pt-6">
+              <div className={`${isMobile ? 'flex flex-col gap-2 pt-4' : 'grid grid-cols-2 lg:grid-cols-3 gap-3 pt-6'}`}>
+                {/* Download PDF - Vermelho */}
                 <Button
                   onClick={async () => {
                     try {
@@ -4980,30 +4981,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                       toast.error('Erro ao baixar PDF');
                     }
                   }}
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-4"
+                  className={`bg-red-600 hover:bg-red-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                 >
-                  <Download className="w-5 h-5 mr-2" />
+                  <Download className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
                   Download PDF
                 </Button>
+
+                {/* Visualizar Relatório - Verde */}
                 <Button
                   onClick={handleHTMLPreview}
                   disabled={loadingHTMLPreview}
-                  size="lg"
-                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-8 py-4"
+                  className={`bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                   data-testid="visualizar-relatorio-btn"
                 >
-                  <Eye className="w-5 h-5 mr-2" />
-                  {loadingHTMLPreview ? 'A carregar...' : 'Visualizar Relatório'}
+                  <Eye className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                  {loadingHTMLPreview ? 'A carregar...' : (isMobile ? 'Visualizar' : 'Visualizar Relatório')}
                 </Button>
+
+                {/* Folha de Horas - Laranja */}
                 <Button
                   onClick={handleOpenFolhaHoras}
                   disabled={loadingFolhaHoras}
-                  size="lg"
-                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-4"
+                  className={`bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                   data-testid="folha-horas-btn"
                 >
-                  <FileSpreadsheet className="w-5 h-5 mr-2" />
+                  <FileSpreadsheet className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
                   {loadingFolhaHoras ? 'A carregar...' : 'Folha de Horas'}
                 </Button>
                 
@@ -5022,12 +5024,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                         toast.error('Erro ao atualizar estado');
                       }
                     }}
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4"
+                    className={`bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                     data-testid="marcar-execucao-btn"
                   >
-                    <PlayCircle className="w-5 h-5 mr-2" />
-                    Marcar em Execução
+                    <PlayCircle className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                    {isMobile ? 'Em Execução' : 'Marcar em Execução'}
                   </Button>
                 )}
                 {selectedRelatorio?.status === 'em_execucao' && (
@@ -5044,12 +5045,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                         toast.error('Erro ao atualizar estado');
                       }
                     }}
-                    size="lg"
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4"
+                    className={`bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                     data-testid="marcar-concluido-btn"
                   >
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Marcar como Concluída
+                    <CheckCircle className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                    {isMobile ? 'Concluída' : 'Marcar como Concluída'}
                   </Button>
                 )}
                 {selectedRelatorio?.status === 'concluido' && (
@@ -5066,24 +5066,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                         toast.error('Erro ao atualizar estado');
                       }
                     }}
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4"
+                    className={`bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                     data-testid="reabrir-ot-btn"
                   >
-                    <RefreshCw className="w-5 h-5 mr-2" />
-                    Reabrir OT (Em Execução)
+                    <RefreshCw className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                    {isMobile ? 'Reabrir OT' : 'Reabrir OT (Em Execução)'}
                   </Button>
                 )}
                 
+                {/* Enviar Por Email - Roxo (apenas admin) */}
                 {user.is_admin && (
                   <Button
                     onClick={openEmailModal}
-                    size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4"
+                    className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                     data-testid="enviar-email-btn"
                   >
-                    <Mail className="w-5 h-5 mr-2" />
-                    Enviar Por Email
+                    <Mail className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                    {isMobile ? 'Enviar Email' : 'Enviar Por Email'}
                   </Button>
                 )}
               </div>
