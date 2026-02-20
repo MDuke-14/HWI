@@ -99,9 +99,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 **Ficheiros modificados:**
 - `/app/frontend/src/App.js` - Integração dos Providers
 - `/app/frontend/src/index.css` - Estilos mobile e temas
+- `/app/frontend/src/components/Dashboard.jsx` - Layout responsivo com tema claro/escuro
 
 **Próximos passos:**
-- Adaptar Dashboard para layout mobile
 - Adaptar página de OTs para mobile
 - Adaptar Calendário para mobile
 - Testar funcionalidades offline
