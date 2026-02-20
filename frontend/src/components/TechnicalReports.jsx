@@ -3904,19 +3904,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`${isMobile ? 'w-full' : 'flex-1'} ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white ${isMobile ? 'text-xs py-2.5' : ''}`}
+                          className={`${isMobile ? 'w-full' : 'flex-1'} ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white ${isMobile ? 'text-sm py-2.5' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveTrabalho ? (
-                            <span className="flex items-center justify-center">
-                              <StopCircle className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-4 h-4 mr-2'}`} />
-                              {isMobile ? 'Parar Trabalho' : 'Parar Trabalho'}
-                            </span>
+                            <>
+                              <StopCircle className="w-4 h-4" />
+                              Parar Trabalho
+                            </>
                           ) : (
-                            <span className="flex items-center justify-center">
-                              <PlayCircle className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-4 h-4 mr-2'}`} />
-                              {isMobile ? 'Iniciar Trabalho' : 'Iniciar Trabalho'}
-                            </span>
+                            <>
+                              <PlayCircle className="w-4 h-4" />
+                              Iniciar Trabalho
+                            </>
                           )}
                         </Button>
                       );
