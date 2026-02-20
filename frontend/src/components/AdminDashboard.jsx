@@ -161,20 +161,27 @@ const AdminDashboard = ({ user, onLogout }) => {
   const fetchOvertimeAuthorizations = async (status = null) => {
     try {
       setLoadingNotifications(true);
-      const url = status && status !== 'all' 
-        ? `${API}/overtime/authorizations?status=${status}`
-        : `${API}/overtime/authorizations`;
-      const response = await axios.get(url);
+      
+      // Buscar de ambas as coleções: overtime_authorizations e day_authorizations
+      const [overtimeRes, dayAuthRes] = await Promise.all([
+        axios.get(status && status !== 'all' 
+          ? `${API}/overtime/authorizations?status=${status}`
+          : `${API}/overtime/authorizations`
+        ),
+        axios.get(`${API}/admin/day-authorizations${status && status !== 'all' ? `?status=${status}` : ''}`)
+      ]);
+      
+      // Combinar e processar autorizações
+      const allAuths = [...(overtimeRes.data || []), ...(dayAuthRes.data || [])];
       
       // Separar pedidos de trabalho em férias dos outros
-      const allAuths = response.data;
-      const vacationWork = allAuths.filter(a => a.request_type === 'vacation_work');
-      const overtimeOnly = allAuths.filter(a => a.request_type !== 'vacation_work');
+      const vacationWork = allAuths.filter(a => a.request_type === 'vacation_work' || a.day_type === 'ferias');
+      const overtimeOnly = allAuths.filter(a => a.request_type !== 'vacation_work' && a.day_type !== 'ferias');
       
       setVacationWorkRequests(vacationWork);
       setOvertimeAuthorizations(overtimeOnly);
     } catch (error) {
-      console.error('Erro ao carregar autorizações');
+      console.error('Erro ao carregar autorizações:', error);
     } finally {
       setLoadingNotifications(false);
     }
