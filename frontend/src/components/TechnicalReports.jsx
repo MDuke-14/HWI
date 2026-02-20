@@ -3868,7 +3868,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
 
                   {/* Botões de Trabalho e Viagem (Iniciar/Parar automático) */}
-                  <div className={`flex gap-2 ${isMobile ? 'mb-2' : 'mb-4'}`}>
+                  <div className={`flex ${isMobile ? 'flex-col gap-2 mb-2' : 'gap-2 mb-4'}`}>
                     {/* Botão Trabalho - alterna entre iniciar e parar */}
                     {(() => {
                       const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
