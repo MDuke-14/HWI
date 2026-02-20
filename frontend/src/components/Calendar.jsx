@@ -20,6 +20,7 @@ import { useMobile } from '@/contexts/MobileContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Calendar = ({ user, onLogout }) => {
+  const { isMobile } = useMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [services, setServices] = useState([]);
   const [vacations, setVacations] = useState([]);
@@ -287,28 +288,28 @@ const Calendar = ({ user, onLogout }) => {
 
   const MonthView = () => {
     const days = getDaysInMonth();
-    const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const weekDays = isMobile ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] : ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const today = new Date();
 
     return (
-      <div className="space-y-6">
+      <div className={isMobile ? 'space-y-3' : 'space-y-6'}>
         {/* Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Total OTs</div>
-            <div className="text-3xl font-bold text-white font-mono">{totalServicesThisMonth}</div>
+        <div className={`grid grid-cols-2 ${isMobile ? 'gap-2' : 'md:grid-cols-4 gap-4'}`}>
+          <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
+            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 mb-1`}>Total OTs</div>
+            <div className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-white font-mono`}>{totalServicesThisMonth}</div>
           </div>
-          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Agendados</div>
-            <div className="text-3xl font-bold text-sky-400 font-mono">{scheduledServices}</div>
+          <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
+            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 mb-1`}>Agendados</div>
+            <div className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-sky-400 font-mono`}>{scheduledServices}</div>
           </div>
-          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Concluídos</div>
-            <div className="text-3xl font-bold text-emerald-400 font-mono">{completedServices}</div>
+          <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
+            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 mb-1`}>Concluídos</div>
+            <div className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-emerald-400 font-mono`}>{completedServices}</div>
           </div>
-          <div className="bg-[#121212] border border-white/10 rounded-xl p-4">
-            <div className="text-xs font-medium uppercase tracking-widest text-gray-500 mb-1">Férias Ativas</div>
-            <div className="text-3xl font-bold text-purple-400 font-mono">{vacations.length}</div>
+          <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
+            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 mb-1`}>Férias</div>
+            <div className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-purple-400 font-mono`}>{vacations.length}</div>
           </div>
         </div>
 
