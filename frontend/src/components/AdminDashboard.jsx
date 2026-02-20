@@ -1959,18 +1959,31 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <div className="space-y-4">
                   <LocationMap
                     locations={allCurrentLocations.map(loc => ({
-                      id: loc.user_id,
+                      id: loc.user_id || loc.id,
                       latitude: loc.latitude,
                       longitude: loc.longitude,
                       userName: loc.userName,
                       address: loc.address || 'Localização sem endereço',
                       timestamp: loc.timestamp,
-                      type: loc.type,
-                      color: loc.outside_residence_zone ? 'orange' : (loc.is_active ? 'green' : 'blue')
+                      type: loc.type || (loc.is_active ? 'Entrada' : 'Saída'),
+                      isEnd: !loc.is_active,
                     }))}
                     height="400px"
                     zoom={10}
+                    useInitials={true}
                   />
+                  
+                  {/* Legenda */}
+                  <div className="bg-gray-800 px-4 py-2 flex items-center justify-center gap-6 text-xs rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px] font-bold">P</div>
+                      <span className="text-gray-400">Entrada</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-white text-[10px] font-bold">P</div>
+                      <span className="text-gray-400">Saída</span>
+                    </div>
+                  </div>
                   
                   {/* User List */}
                   <div className="bg-[#0f0f0f] rounded-lg p-4 max-h-48 overflow-y-auto">
