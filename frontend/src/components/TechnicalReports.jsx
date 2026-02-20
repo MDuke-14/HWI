@@ -4051,7 +4051,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
 
                   {(tecnicos.length > 0 || registosTecnicos.length > 0) ? (
-                    <div className="overflow-x-auto">
+                    <div className={isMobile ? '' : 'overflow-x-auto'}>
                       {isMobile ? (
                         /* Mobile: Card-based layout */
                         <div className="space-y-2">
