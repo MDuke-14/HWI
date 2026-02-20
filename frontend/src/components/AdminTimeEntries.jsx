@@ -539,6 +539,14 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                     <Plus className="w-5 h-5 mr-2" />
                     Adicionar Entrada
                   </Button>
+                  <Button
+                    onClick={handleDownloadPDF}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    data-testid="download-pdf-btn"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Download PDF
+                  </Button>
                 </div>
               </div>
 
