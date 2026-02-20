@@ -242,6 +242,42 @@ def generate_monthly_pdf_report(report_data):
     daily_table.setStyle(TableStyle(table_style))
     elements.append(daily_table)
     
+    # Adicionar secção de Observações (justificações de admin, etc.)
+    if report_data.get('observations'):
+        elements.append(Spacer(1, 20))
+        
+        # Estilo para título de observações
+        obs_title_style = ParagraphStyle(
+            'ObsTitle',
+            parent=styles['Heading2'],
+            fontSize=12,
+            textColor=colors.HexColor('#1a1a1a'),
+            spaceAfter=10,
+            spaceBefore=10
+        )
+        
+        # Estilo para texto de observações
+        obs_text_style = ParagraphStyle(
+            'ObsText',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#374151'),
+            spaceAfter=5,
+            leading=12
+        )
+        
+        elements.append(Paragraph("Observações", obs_title_style))
+        
+        # Criar tabela para observações
+        observations_text = report_data.get('observations', '')
+        # Processar cada linha de observação
+        obs_lines = observations_text.split('\n')
+        for line in obs_lines:
+            if line.strip():
+                # Escapar caracteres especiais do HTML
+                safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                elements.append(Paragraph(f"• {safe_line}", obs_text_style))
+    
     # Build PDF
     doc.build(elements)
     buffer.seek(0)
