@@ -3064,20 +3064,21 @@ const TechnicalReports = ({ user, onLogout }) => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
               {filteredClientes.map((cliente) => (
                 <div
                   key={cliente.id}
-                  className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-4 hover:border-blue-500 transition"
+                  className={`${bgCard} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-4'} hover:border-blue-500 transition`}
+                  data-testid={`cliente-card-${cliente.id}`}
                 >
                   {/* Cliente Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-500/10 p-2 rounded-lg">
-                        <Building2 className="w-5 h-5 text-blue-400" />
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`bg-blue-500/10 ${isMobile ? 'p-1.5' : 'p-2'} rounded-lg flex-shrink-0`}>
+                        <Building2 className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
                       </div>
-                      <div>
-                        <h3 className="text-white font-semibold">{cliente.nome}</h3>
+                      <div className="min-w-0 flex-1">
+                        <h3 className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''} truncate`}>{cliente.nome}</h3>
                         {cliente.nif && (
                           <p className="text-xs text-gray-400">NIF: {cliente.nif}</p>
                         )}
@@ -3086,36 +3087,36 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
 
                   {/* Cliente Info */}
-                  <div className="space-y-2 mb-4">
+                  <div className={`space-y-1.5 ${isMobile ? 'mb-2' : 'mb-4'}`}>
                     {cliente.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <Mail className="w-4 h-4 text-gray-400" />
+                      <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <Mail className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-400 flex-shrink-0`} />
                         <span className="truncate">{cliente.email}</span>
                       </div>
                     )}
                     {cliente.telefone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <Phone className="w-4 h-4 text-gray-400" />
+                      <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <Phone className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-400 flex-shrink-0`} />
                         <span>{cliente.telefone}</span>
                       </div>
                     )}
-                    {cliente.morada && (
-                      <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <MapPin className="w-4 h-4 text-gray-400" />
+                    {cliente.morada && !isMobile && (
+                      <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="truncate">{cliente.morada}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-3 border-t border-gray-700">
+                  <div className={`flex gap-2 pt-2 border-t ${borderColor}`}>
                     <Button
                       onClick={() => openViewModal(cliente)}
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-gray-600 hover:border-blue-500 hover:bg-blue-500/10"
+                      className={`flex-1 ${isDark ? 'border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'} ${isMobile ? 'text-xs py-1.5' : ''}`}
                     >
-                      <User className="w-4 h-4 mr-1" />
+                      <User className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
                       Ver
                     </Button>
                     
@@ -3123,9 +3124,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                       onClick={() => openEditModal(cliente)}
                       variant="outline"
                       size="sm"
-                      className="border-gray-600 hover:border-blue-500 hover:bg-blue-500/10"
+                      className={`${isDark ? 'border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'} ${isMobile ? 'p-1.5' : ''}`}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                     </Button>
                     
                     {user?.is_admin && (
@@ -3133,9 +3134,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                         onClick={() => openDeleteModal(cliente)}
                         variant="outline"
                         size="sm"
-                        className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
+                        className={`${isDark ? 'border-gray-600' : 'border-gray-300'} hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 ${isMobile ? 'p-1.5' : ''}`}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                       </Button>
                     )}
                   </div>
