@@ -126,25 +126,32 @@ def generate_monthly_pdf_report(report_data):
         date_str = date_obj.strftime('%d/%m')
         day_of_week = day['day_of_week']
         
+        # Obter justificação do dia (se existir)
+        justification = day.get('justification')
+        
         # Status/Entries column
         if day['status'] == 'FOLGA':
             entries_text = '🏖️ FOLGA'
-            observations_text = '-'
+            observations_text = justification if justification else '-'
         elif day['status'] == 'FERIADO':
             entries_text = '🎉 FERIADO'  # Sem nome do feriado
-            observations_text = '-'
+            observations_text = justification if justification else '-'
         elif day['status'] == 'FÉRIAS':
             entries_text = '✈️ FÉRIAS'
-            observations_text = '-'
+            observations_text = justification if justification else '-'
         elif day['status'] == 'FALTA':
             entries_text = '⚠️ FALTA'
-            observations_text = '-'
+            observations_text = justification if justification else '-'
         elif day['status'] == 'NÃO TRABALHADO':
             entries_text = '❌ Não Trabalhado'
-            observations_text = '-'
+            observations_text = justification if justification else '-'
         elif day['status'] == 'TRABALHADO' and day.get('entries'):
             entries_list = []
             obs_list = []
+            
+            # Adicionar justificação primeiro (se existir)
+            if justification:
+                obs_list.append(justification)
             
             for idx, entry in enumerate(day['entries']):
                 if entry.get('start_time') and entry.get('end_time'):
@@ -176,7 +183,7 @@ def generate_monthly_pdf_report(report_data):
             observations_text = '\n'.join(obs_list) if obs_list else '-'
         else:
             entries_text = '-'
-            observations_text = '-'
+            observations_text = justification if justification else '-'
         
         # Total hours
         total_text = format_hours(day['total_hours']) if day['total_hours'] > 0 else '-'
