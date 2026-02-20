@@ -4691,17 +4691,24 @@ async def end_time_entry(
         total_minutes = math.floor(total_seconds / 60)
         total_hours = round(total_minutes / 60, 2)
         
+        # Preparar dados de actualização
+        update_data = {
+            "status": "completed",
+            "end_time": end_time.isoformat(),
+            "total_hours": total_hours,
+            "regular_hours": hours_breakdown["regular_hours"],
+            "overtime_hours": hours_breakdown["overtime_hours"],
+            "special_hours": hours_breakdown["special_hours"],
+            "observations": final_observations
+        }
+        
+        # Adicionar geolocalização de fim se fornecida
+        if end_data.end_geo_location:
+            update_data["end_geo_location"] = end_data.end_geo_location
+        
         await db.time_entries.update_one(
             {"id": entry_id},
-            {"$set": {
-                "status": "completed",
-                "end_time": end_time.isoformat(),
-                "total_hours": total_hours,
-                "regular_hours": hours_breakdown["regular_hours"],
-                "overtime_hours": hours_breakdown["overtime_hours"],
-                "special_hours": hours_breakdown["special_hours"],
-                "observations": final_observations
-            }}
+            {"$set": update_data}
         )
         
         return {
