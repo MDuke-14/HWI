@@ -20,7 +20,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - ✅ Contextos de Mobile e Tema
   - ✅ Dashboard responsivo
   - ✅ Página de OTs responsiva (20 Fevereiro 2026)
-  - ⏳ Adaptar restantes páginas para mobile (Admin, Time Entries, Reports)
+  - ✅ Página de Calendário responsiva (20 Fevereiro 2026)
+  - ✅ Página de Admin responsiva (20 Fevereiro 2026)
+  - ⏳ Adaptar restantes páginas para mobile (Time Entries, Reports)
   - ⏳ Testes completos de offline
 
 ### P1 (Alta Prioridade)
