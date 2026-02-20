@@ -657,6 +657,72 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
           )}
 
+          {/* Mobile Quick Stats Widget */}
+          {isMobile && (todayEntries.length > 0 || entry) && (
+            <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} p-4 mb-4 rounded-xl`} data-testid="mobile-quick-stats">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                    <Clock className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <div className={`text-xs ${textSecondary}`}>Horas Hoje</div>
+                    <div className={`text-xl font-bold ${textPrimary}`}>
+                      {formatHours(
+                        todayEntries.reduce((acc, e) => acc + (e.total_hours || 0), 0) +
+                        (entry && entry.status === 'active' ? elapsedTime / 3600 : 0)
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {todayEntries.length > 0 && (
+                  <div className="text-right">
+                    <div className={`text-xs ${textSecondary}`}>Registos</div>
+                    <div className={`text-lg font-semibold ${textPrimary}`}>
+                      {todayEntries.length + (entry ? 1 : 0)}
+                    </div>
+                  </div>
+                )}
+                
+                {entry && entry.status === 'active' && (
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                    </div>
+                    <span className="text-xs text-green-500 font-medium">A trabalhar</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Quick entry summary for completed entries */}
+              {todayEntries.length > 0 && (
+                <div className={`mt-3 pt-3 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className="flex flex-wrap gap-2">
+                    {todayEntries.slice(0, 3).map((e, idx) => (
+                      <div 
+                        key={e.id || idx}
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          e.is_overtime_day 
+                            ? 'bg-amber-500/20 text-amber-400' 
+                            : isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {new Date(e.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })} - {formatHours(e.total_hours)}
+                      </div>
+                    ))}
+                    {todayEntries.length > 3 && (
+                      <div className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'}`}>
+                        +{todayEntries.length - 3} mais
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Control Buttons */}
           <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} p-3 md:p-4 mb-6 rounded-xl`}>
             {!entry ? (
