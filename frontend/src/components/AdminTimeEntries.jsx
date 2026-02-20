@@ -858,55 +858,57 @@ const AdminTimeEntries = ({ user, onLogout }) => {
 
       {/* Edit Entry Modal */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+        <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'max-w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl' : 'max-w-md'}`}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Edit className="w-5 h-5 text-blue-400" />
+            <DialogTitle className={`flex items-center gap-2 text-white ${isMobile ? 'text-base' : ''}`}>
+              <Edit className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
               Editar Entrada
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
+          <div className={`space-y-3 ${isMobile ? 'mt-2' : 'mt-4'}`}>
             <div>
-              <Label className="text-gray-300">Data</Label>
+              <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Data</Label>
               <Input
                 type="date"
                 value={editForm.date}
                 onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
+                className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-gray-300">Hora Início</Label>
+                <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Início</Label>
                 <Input
                   type="time"
                   value={editForm.start_time}
                   onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                 />
               </div>
               <div>
-                <Label className="text-gray-300">Hora Fim</Label>
+                <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Fim</Label>
                 <Input
                   type="time"
                   value={editForm.end_time}
                   onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                 />
               </div>
             </div>
             
-            <div>
-              <Label className="text-gray-300">Observações</Label>
-              <Textarea
-                value={editForm.observations}
-                onChange={(e) => setEditForm({ ...editForm, observations: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                rows={2}
-              />
-            </div>
+            {!isMobile && (
+              <div>
+                <Label className="text-gray-300">Observações</Label>
+                <Textarea
+                  value={editForm.observations}
+                  onChange={(e) => setEditForm({ ...editForm, observations: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  rows={2}
+                />
+              </div>
+            )}
             
             <div className="flex items-center gap-2">
               <input
@@ -916,37 +918,39 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                 onChange={(e) => setEditForm({ ...editForm, outside_residence_zone: e.target.checked })}
                 className="w-4 h-4"
               />
-              <Label htmlFor="edit_outside_zone" className="text-gray-300">
-                Fora da zona de residência
+              <Label htmlFor="edit_outside_zone" className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>
+                Fora da zona
               </Label>
             </div>
             
             {editForm.outside_residence_zone && (
               <div>
-                <Label className="text-gray-300">Local</Label>
+                <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Local</Label>
                 <Input
                   value={editForm.location_description}
                   onChange={(e) => setEditForm({ ...editForm, location_description: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                   placeholder="Descreva o local"
                 />
               </div>
             )}
             
-            <div className="flex gap-3 pt-4">
+            <div className={`flex gap-2 ${isMobile ? 'pt-2' : 'pt-4'}`}>
               <Button
                 onClick={() => setShowEditModal(false)}
                 variant="outline"
-                className="flex-1 border-gray-600"
+                className={`flex-1 border-gray-600 ${isMobile ? 'text-sm' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <X className="w-4 h-4 mr-2" />
+                <X className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-2'}`} />
                 Cancelar
               </Button>
               <Button
                 onClick={handleSaveEdit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className={`flex-1 bg-blue-600 hover:bg-blue-700 ${isMobile ? 'text-sm' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <Save className="w-4 h-4 mr-2" />
+                <Save className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-2'}`} />
                 Guardar
               </Button>
             </div>
@@ -956,58 +960,60 @@ const AdminTimeEntries = ({ user, onLogout }) => {
 
       {/* Add Entry Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+        <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'max-w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl' : 'max-w-md'}`}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Plus className="w-5 h-5 text-green-400" />
-              Adicionar Entrada para {selectedUser?.full_name || selectedUser?.username}
+            <DialogTitle className={`flex items-center gap-2 text-white ${isMobile ? 'text-base' : ''}`}>
+              <Plus className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-green-400`} />
+              {isMobile ? 'Adicionar' : `Adicionar Entrada para ${selectedUser?.full_name || selectedUser?.username}`}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
+          <div className={`space-y-3 ${isMobile ? 'mt-2' : 'mt-4'}`}>
             <div>
-              <Label className="text-gray-300">Data *</Label>
+              <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Data *</Label>
               <Input
                 type="date"
                 value={addForm.date}
                 onChange={(e) => setAddForm({ ...addForm, date: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
+                className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                 required
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-gray-300">Hora Início *</Label>
+                <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Início *</Label>
                 <Input
                   type="time"
                   value={addForm.start_time}
                   onChange={(e) => setAddForm({ ...addForm, start_time: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                   required
                 />
               </div>
               <div>
-                <Label className="text-gray-300">Hora Fim *</Label>
+                <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Fim *</Label>
                 <Input
                   type="time"
                   value={addForm.end_time}
                   onChange={(e) => setAddForm({ ...addForm, end_time: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                   required
                 />
               </div>
             </div>
             
-            <div>
-              <Label className="text-gray-300">Observações</Label>
-              <Textarea
-                value={addForm.observations}
-                onChange={(e) => setAddForm({ ...addForm, observations: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                rows={2}
-              />
-            </div>
+            {!isMobile && (
+              <div>
+                <Label className="text-gray-300">Observações</Label>
+                <Textarea
+                  value={addForm.observations}
+                  onChange={(e) => setAddForm({ ...addForm, observations: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  rows={2}
+                />
+              </div>
+            )}
             
             <div className="flex items-center gap-2">
               <input
@@ -1017,37 +1023,39 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                 onChange={(e) => setAddForm({ ...addForm, outside_residence_zone: e.target.checked })}
                 className="w-4 h-4"
               />
-              <Label htmlFor="add_outside_zone" className="text-gray-300">
-                Fora da zona de residência
+              <Label htmlFor="add_outside_zone" className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>
+                Fora da zona
               </Label>
             </div>
             
             {addForm.outside_residence_zone && (
               <div>
-                <Label className="text-gray-300">Local</Label>
+                <Label className={`text-gray-300 ${isMobile ? 'text-xs' : ''}`}>Local</Label>
                 <Input
                   value={addForm.location_description}
                   onChange={(e) => setAddForm({ ...addForm, location_description: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
                   placeholder="Descreva o local"
                 />
               </div>
             )}
             
-            <div className="flex gap-3 pt-4">
+            <div className={`flex gap-2 ${isMobile ? 'pt-2' : 'pt-4'}`}>
               <Button
                 onClick={() => setShowAddModal(false)}
                 variant="outline"
-                className="flex-1 border-gray-600"
+                className={`flex-1 border-gray-600 ${isMobile ? 'text-sm' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <X className="w-4 h-4 mr-2" />
+                <X className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-2'}`} />
                 Cancelar
               </Button>
               <Button
                 onClick={handleAddEntry}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className={`flex-1 bg-green-600 hover:bg-green-700 ${isMobile ? 'text-sm' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-2'}`} />
                 Adicionar
               </Button>
             </div>
@@ -1057,96 +1065,102 @@ const AdminTimeEntries = ({ user, onLogout }) => {
 
       {/* Modal Justificar Dia */}
       <Dialog open={showJustifyModal} onOpenChange={setShowJustifyModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+        <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'max-w-[95vw] rounded-xl' : 'max-w-md'}`}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-purple-400" />
+            <DialogTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+              <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-purple-400`} />
               Justificar Dia
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
+          <div className={`space-y-3 ${isMobile ? 'mt-2' : 'mt-4'}`}>
             {justifyingDay && (
-              <div className="bg-[#0f0f0f] p-3 rounded-lg">
-                <p className="text-gray-400 text-sm">Utilizador</p>
-                <p className="text-white font-semibold">{selectedUser?.full_name || selectedUser?.username}</p>
-                <p className="text-gray-400 text-sm mt-2">Data</p>
-                <p className="text-white font-semibold">
+              <div className={`bg-[#0f0f0f] ${isMobile ? 'p-2.5' : 'p-3'} rounded-lg`}>
+                <p className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Utilizador</p>
+                <p className={`text-white font-semibold ${isMobile ? 'text-sm' : ''}`}>{selectedUser?.full_name || selectedUser?.username}</p>
+                <p className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'} mt-1`}>Data</p>
+                <p className={`text-white font-semibold ${isMobile ? 'text-sm' : ''}`}>
                   {new Date(justifyingDay.date + 'T00:00:00').toLocaleDateString('pt-PT', {
-                    weekday: 'long',
+                    weekday: isMobile ? 'short' : 'long',
                     day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
+                    month: isMobile ? 'short' : 'long',
+                    year: isMobile ? '2-digit' : 'numeric'
                   })}
                 </p>
               </div>
             )}
 
-            <p className="text-gray-400 text-sm">Selecione o tipo de justificação:</p>
+            <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>Selecione o tipo:</p>
 
-            <div className="grid gap-3">
+            <div className={`grid ${isMobile ? 'grid-cols-2' : ''} gap-2`}>
               <Button
                 onClick={() => handleJustifyDay('ferias')}
                 disabled={justifyLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start"
+                className={`${isMobile ? '' : 'w-full'} bg-blue-600 hover:bg-blue-700 text-white justify-start ${isMobile ? 'text-xs py-2' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <Calendar className="w-5 h-5 mr-3" />
+                <Calendar className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-5 h-5 mr-3'}`} />
                 Férias
               </Button>
 
               <Button
                 onClick={() => handleJustifyDay('dar_dia')}
                 disabled={justifyLoading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white justify-start"
+                className={`${isMobile ? '' : 'w-full'} bg-green-600 hover:bg-green-700 text-white justify-start ${isMobile ? 'text-xs py-2' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <Plus className="w-5 h-5 mr-3" />
-                Dar Dia (8h automáticas)
+                <Plus className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-5 h-5 mr-3'}`} />
+                {isMobile ? 'Dar 8h' : 'Dar Dia (8h automáticas)'}
               </Button>
 
               <Button
                 onClick={() => handleJustifyDay('folga')}
                 disabled={justifyLoading}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white justify-start"
+                className={`${isMobile ? '' : 'w-full'} bg-amber-600 hover:bg-amber-700 text-white justify-start ${isMobile ? 'text-xs py-2' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <Clock className="w-5 h-5 mr-3" />
+                <Clock className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-5 h-5 mr-3'}`} />
                 Folga
               </Button>
 
               <Button
                 onClick={() => handleJustifyDay('falta')}
                 disabled={justifyLoading}
-                className="w-full bg-red-600 hover:bg-red-700 text-white justify-start"
+                className={`${isMobile ? '' : 'w-full'} bg-red-600 hover:bg-red-700 text-white justify-start ${isMobile ? 'text-xs py-2' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <AlertTriangle className="w-5 h-5 mr-3" />
+                <AlertTriangle className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-5 h-5 mr-3'}`} />
                 Falta
               </Button>
 
               <Button
                 onClick={() => handleJustifyDay('cancelamento_ferias')}
                 disabled={justifyLoading}
-                className="w-full bg-gray-600 hover:bg-gray-700 text-white justify-start"
+                className={`${isMobile ? 'col-span-2' : 'w-full'} bg-gray-600 hover:bg-gray-700 text-white justify-start ${isMobile ? 'text-xs py-2' : ''}`}
+                size={isMobile ? 'sm' : 'default'}
               >
-                <X className="w-5 h-5 mr-3" />
-                Cancelamento de Férias
+                <X className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-5 h-5 mr-3'}`} />
+                {isMobile ? 'Cancelar Férias' : 'Cancelamento de Férias'}
               </Button>
             </div>
 
             {justifyLoading && (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-400"></div>
-                <span className="ml-2 text-gray-400">A processar...</span>
+              <div className="flex items-center justify-center py-3">
+                <div className={`animate-spin rounded-full ${isMobile ? 'h-5 w-5' : 'h-6 w-6'} border-b-2 border-purple-400`}></div>
+                <span className={`ml-2 text-gray-400 ${isMobile ? 'text-xs' : ''}`}>A processar...</span>
               </div>
             )}
 
-            <div className="flex justify-end pt-4 border-t border-gray-700">
+            <div className={`flex justify-end ${isMobile ? 'pt-2' : 'pt-4'} border-t border-gray-700`}>
               <Button
                 onClick={() => {
                   setShowJustifyModal(false);
                   setJustifyingDay(null);
                 }}
                 variant="outline"
-                className="border-gray-600 text-gray-300"
+                className={`border-gray-600 text-gray-300 ${isMobile ? 'text-sm' : ''}`}
                 disabled={justifyLoading}
+                size={isMobile ? 'sm' : 'default'}
               >
                 Cancelar
               </Button>
