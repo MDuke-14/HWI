@@ -58,7 +58,13 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
    - Observação: "[Dia oferecido pelo admin {nome}]"
 3. **Folga** (amarelo) - Cria registo na coleção `vacation_requests` tipo "folga"
 4. **Falta** (vermelho) - Cria registo na coleção `absences`
-5. **Cancelamento de Férias** (cinza) - Remove férias marcadas para esse dia
+5. **Cancelamento de Férias** (ciano) - Remove férias marcadas e cria registo de cancelamento
+
+**Cores visuais por tipo de justificação:**
+- **Férias**: Fundo azul escuro, badge "Dia de Férias" em azul
+- **Folga**: Fundo amarelo escuro, badge "Dia de Folga" em amarelo
+- **Falta**: Fundo vermelho escuro, badge "Falta" em vermelho
+- **Cancelamento de Férias**: Fundo ciano escuro, badge "Férias Canceladas" em ciano
 
 **Logging automático:**
 - Todas as justificações são registadas como observação no relatório mensal do utilizador
@@ -67,22 +73,23 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 **Backend (`server.py`):**
 - Novo endpoint `POST /api/admin/time-entries/justify-day`
 - Nova função `register_admin_observation()` para registar observações nos relatórios mensais
+- Endpoint `GET /api/admin/time-entries/user/{user_id}` agora retorna justificações (férias, folgas, faltas, cancelamentos)
 - Validação de tipo de justificação
 
 **Frontend (`AdminTimeEntries.jsx`):**
 - Nova função `generateAllDaysInPeriod()` para gerar lista de todos os dias
-- Função `groupEntriesByDate()` reformulada para mostrar todos os dias
+- Função `groupEntriesByDate()` reformulada para mostrar todos os dias e incluir justificações
 - Modal "Justificar Dia" com UI colorida e botões para cada tipo
-- Estilos diferenciados para dias úteis, fins de semana e dias sem registo
+- Estilos diferenciados para cada tipo de justificação com cores específicas
 
 **Ficheiros modificados:**
-- `/app/backend/server.py` - Novo endpoint e função de logging
-- `/app/frontend/src/components/AdminTimeEntries.jsx` - UI reformulada
+- `/app/backend/server.py` - Novos endpoints, função de logging, e retorno de justificações
+- `/app/frontend/src/components/AdminTimeEntries.jsx` - UI reformulada com cores
 
-**Testado:** ✅ Backend testado via curl + Frontend testado via screenshots
+**Testado:** ✅ Backend + Frontend testados via screenshots
 - Todos os 5 tipos de justificação funcionam corretamente
+- Cores e badges aparecem corretamente para cada tipo
 - Observações registadas no relatório mensal
-- UI mostra todos os dias do período com estilos adequados
 
 ---
 
