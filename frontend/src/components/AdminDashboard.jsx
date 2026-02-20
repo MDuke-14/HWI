@@ -171,8 +171,12 @@ const AdminDashboard = ({ user, onLogout }) => {
         axios.get(`${API}/admin/day-authorizations${status && status !== 'all' ? `?status=${status}` : ''}`)
       ]);
       
+      // Adicionar tipo de autorização para saber qual endpoint usar
+      const overtimeAuths = (overtimeRes.data || []).map(a => ({ ...a, authType: 'overtime' }));
+      const dayAuths = (dayAuthRes.data || []).map(a => ({ ...a, authType: 'day' }));
+      
       // Combinar e processar autorizações
-      const allAuths = [...(overtimeRes.data || []), ...(dayAuthRes.data || [])];
+      const allAuths = [...overtimeAuths, ...dayAuths];
       
       // Separar pedidos de trabalho em férias dos outros
       const vacationWork = allAuths.filter(a => a.request_type === 'vacation_work' || a.day_type === 'ferias');
