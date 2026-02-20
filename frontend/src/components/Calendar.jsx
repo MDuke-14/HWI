@@ -316,48 +316,48 @@ const Calendar = ({ user, onLogout }) => {
         {/* Calendar Container */}
         <div className="bg-[#121212] border border-white/10 rounded-xl overflow-hidden">
           {/* Month Navigation */}
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
+          <div className={`flex items-center justify-between ${isMobile ? 'p-3' : 'p-6'} border-b border-white/10`}>
             <Button 
               onClick={handlePreviousMonth} 
               variant="ghost" 
-              className="text-gray-400 hover:text-white hover:bg-white/10"
+              className={`text-gray-400 hover:text-white hover:bg-white/10 ${isMobile ? 'p-2' : ''}`}
               data-testid="prev-month-btn"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className={isMobile ? 'w-4 h-4' : 'w-5 h-5'} />
             </Button>
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-white tracking-tight" style={{ fontFamily: "'Chivo', sans-serif" }}>
+              <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-white tracking-tight capitalize`} style={{ fontFamily: "'Chivo', sans-serif" }}>
                 {currentDate.toLocaleDateString('pt-PT', { month: 'long' })}
               </h2>
-              <div className="text-sm font-mono text-gray-500">{currentDate.getFullYear()}</div>
+              <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-mono text-gray-500`}>{currentDate.getFullYear()}</div>
             </div>
             <Button 
               onClick={handleNextMonth} 
               variant="ghost" 
-              className="text-gray-400 hover:text-white hover:bg-white/10"
+              className={`text-gray-400 hover:text-white hover:bg-white/10 ${isMobile ? 'p-2' : ''}`}
               data-testid="next-month-btn"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className={isMobile ? 'w-4 h-4' : 'w-5 h-5'} />
             </Button>
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-6 px-6 py-3 border-b border-white/5 bg-white/[0.02]">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
-              <span className="text-xs text-gray-400">Ordens de Trabalho</span>
+          <div className={`flex ${isMobile ? 'overflow-x-auto gap-3 px-3 py-2 scrollbar-hide' : 'flex-wrap gap-6 px-6 py-3'} border-b border-white/5 bg-white/[0.02]`}>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-orange-500`}></div>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>OTs</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-purple-500"></div>
-              <span className="text-xs text-gray-400">Férias</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-purple-500`}></div>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>Férias</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-sm bg-amber-500"></div>
-              <span className="text-xs text-gray-400">Feriados</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-amber-500`}></div>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>Feriados</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-              <span className="text-xs text-gray-400">Hoje</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-full bg-emerald-500`}></div>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>Hoje</span>
             </div>
           </div>
 
