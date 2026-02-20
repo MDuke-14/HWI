@@ -1009,18 +1009,18 @@ const Calendar = ({ user, onLogout }) => {
               <TabsList className={`grid w-full ${isMobile ? 'max-w-full' : 'max-w-sm mx-auto'} grid-cols-2 bg-[#121212] border border-white/10 ${isMobile ? 'mb-4' : 'mb-8'} p-1 rounded-lg`}>
                 <TabsTrigger
                   value="month"
-                  className="data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all"
+                  className={`data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all ${isMobile ? 'text-sm py-2' : ''}`}
                   data-testid="month-view-tab"
                 >
-                  <CalendarDays className="w-4 h-4 mr-2" />
+                  <CalendarDays className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-4 h-4 mr-2'}`} />
                   Mensal
                 </TabsTrigger>
                 <TabsTrigger
                   value="list"
-                  className="data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all"
+                  className={`data-[state=active]:bg-sky-500 data-[state=active]:text-white text-gray-400 rounded-md transition-all ${isMobile ? 'text-sm py-2' : ''}`}
                   data-testid="list-view-tab"
                 >
-                  <List className="w-4 h-4 mr-2" />
+                  <List className={`${isMobile ? 'w-3.5 h-3.5 mr-1.5' : 'w-4 h-4 mr-2'}`} />
                   Lista
                 </TabsTrigger>
               </TabsList>
