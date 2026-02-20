@@ -10,7 +10,7 @@ Implementei ferramentas de depuração para identificar o problema de login em p
 
 **URL para testar em produção:**
 ```
-https://ot-management-hub.preview.emergentagent.com/api/debug/db-info
+https://overtime-mgmt.preview.emergentagent.com/api/debug/db-info
 ```
 
 Este endpoint retorna informações detalhadas sobre:
@@ -80,7 +80,7 @@ Criados 3 scripts úteis em `/app/backend/`:
 
 Abrir no navegador:
 ```
-https://ot-management-hub.preview.emergentagent.com/api/debug/db-info
+https://overtime-mgmt.preview.emergentagent.com/api/debug/db-info
 ```
 
 **O que verificar:**
@@ -92,7 +92,7 @@ https://ot-management-hub.preview.emergentagent.com/api/debug/db-info
 
 ### Passo 2: Testar Login com DevTools
 
-1. Abrir a aplicação em produção: https://ot-management-hub.preview.emergentagent.com
+1. Abrir a aplicação em produção: https://overtime-mgmt.preview.emergentagent.com
 2. Abrir DevTools (F12)
 3. Ir para aba **Network**
 4. Tentar fazer login
@@ -156,7 +156,7 @@ https://ot-management-hub.preview.emergentagent.com/api/debug/db-info
 
 1. **Acesse este URL e copie a resposta completa:**
    ```
-   https://ot-management-hub.preview.emergentagent.com/api/debug/db-info
+   https://overtime-mgmt.preview.emergentagent.com/api/debug/db-info
    ```
 
 2. **Tente fazer login em produção com DevTools aberto** e copie:

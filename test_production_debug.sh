@@ -2,7 +2,7 @@
 # Script to test production debug endpoint
 # Usage: bash test_production_debug.sh
 
-PROD_URL="https://ot-management-hub.preview.emergentagent.com"
+PROD_URL="https://overtime-mgmt.preview.emergentagent.com"
 
 echo "======================================"
 echo "  TESTE DE DEBUG EM PRODUÇÃO"
