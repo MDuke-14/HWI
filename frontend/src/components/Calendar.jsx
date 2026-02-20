@@ -16,6 +16,8 @@ import {
   Sparkles, Sun, Umbrella
 } from 'lucide-react';
 import HelpTooltip from '@/components/HelpTooltip';
+import { useMobile } from '@/contexts/MobileContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Calendar = ({ user, onLogout }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
