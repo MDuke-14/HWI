@@ -600,29 +600,34 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Navigation user={user} onLogout={onLogout} activePage="dashboard" />
+    <div className={`min-h-screen ${bgMain}`}>
+      {/* Navigation - escondida em mobile (usa bottom nav) */}
+      {!isMobile && (
+        <Navigation user={user} onLogout={onLogout} activePage="dashboard" />
+      )}
       
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className={`container mx-auto px-4 ${isMobile ? 'py-4 pb-24' : 'py-8'} max-w-4xl`}>
         <div className="fade-in">
           {/* Online/Offline Indicator */}
           {!isOnline && (
-            <div className="mb-4 bg-amber-500/20 border border-amber-500 rounded-lg px-4 py-3 flex items-center gap-3">
-              <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse"></div>
-              <span className="text-amber-400 font-medium">Modo Offline - As ações serão sincronizadas quando houver conexão</span>
+            <div className={`mb-4 bg-amber-500/20 border border-amber-500 rounded-lg px-4 py-3 flex items-center gap-3 ${isMobile ? 'text-sm' : ''}`}>
+              <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse flex-shrink-0"></div>
+              <span className="text-amber-400 font-medium">
+                {isMobile ? 'Modo Offline' : 'Modo Offline - As ações serão sincronizadas quando houver conexão'}
+              </span>
             </div>
           )}
           
           {/* Current Time Display */}
-          <div className="text-center mb-8">
-            <div className="text-6xl font-bold text-white mb-2" data-testid="current-time">
+          <div className="text-center mb-6 md:mb-8">
+            <div className={`${isMobile ? 'text-5xl' : 'text-6xl'} font-bold ${textPrimary} mb-2`} data-testid="current-time">
               {currentTime.toLocaleTimeString('pt-PT')}
             </div>
-            <div className="text-gray-400 text-lg" data-testid="current-date">
+            <div className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`} data-testid="current-date">
               {currentTime.toLocaleDateString('pt-PT', { 
-                weekday: 'long', 
+                weekday: isMobile ? 'short' : 'long', 
                 year: 'numeric', 
-                month: 'long', 
+                month: isMobile ? 'short' : 'long', 
                 day: 'numeric' 
               })}
             </div>
@@ -636,16 +641,16 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
 
           {/* Status Badge */}
-          <div className="flex justify-center mb-8" data-testid="status-badge">
+          <div className="flex justify-center mb-6 md:mb-8" data-testid="status-badge">
             {getStatusBadge()}
           </div>
 
           {/* Elapsed Time */}
           {entry && entry.status !== 'completed' && entry.status !== 'not_started' && (
-            <div className="text-center mb-8">
-              <div className="glass-effect inline-block px-8 py-4 rounded-2xl">
-                <div className="text-gray-400 text-sm mb-1">Tempo Trabalhado</div>
-                <div className="text-4xl font-bold text-white" data-testid="elapsed-time">
+            <div className="text-center mb-6 md:mb-8">
+              <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg'} inline-block px-6 md:px-8 py-3 md:py-4 rounded-2xl`}>
+                <div className={`${textSecondary} text-sm mb-1`}>Tempo Trabalhado</div>
+                <div className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold ${textPrimary}`} data-testid="elapsed-time">
                   {formatTime(elapsedTime)}
                 </div>
               </div>
@@ -653,7 +658,7 @@ const Dashboard = ({ user, onLogout }) => {
           )}
 
           {/* Control Buttons */}
-          <div className="glass-effect p-3 mb-6">
+          <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} p-3 md:p-4 mb-6 rounded-xl`}>
             {!entry ? (
               <div className="space-y-3">
                 <div>
