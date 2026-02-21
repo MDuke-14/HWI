@@ -300,7 +300,6 @@ const SignaturePopup = ({
   const [isCanvasReady, setIsCanvasReady] = useState(false);
   const contextRef = useRef(null);
   const currentPathRef = useRef([]);
-  const lastPointRef = useRef(null);
   
   // Criar e gerenciar portal DOM direto
   useEffect(() => {
