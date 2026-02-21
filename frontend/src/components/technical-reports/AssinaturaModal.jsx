@@ -529,19 +529,22 @@ const SignaturePopup = ({
         overflow: 'hidden',
         touchAction: 'none',
         WebkitOverflowScrolling: 'touch',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
-      {/* Header com botões - design limpo */}
+      {/* Header com botões - com espaço extra para safe area */}
       <div 
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 16px',
+          padding: '16px 16px 12px 16px',
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
           backgroundColor: '#f3f4f6',
           borderBottom: '1px solid #d1d5db',
           flexShrink: 0,
           gap: '8px',
+          minHeight: '70px',
         }}
       >
         <button
