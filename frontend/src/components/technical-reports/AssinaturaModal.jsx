@@ -526,23 +526,6 @@ const SignaturePopup = ({
     };
   }, [isOpen, isCanvasReady]);
   
-  const handlePointerUp = useCallback((e) => {
-    if (!isDrawingRef.current) return;
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    isDrawingRef.current = false;
-    
-    if (currentPathRef.current.length > 1) {
-      setPaths(prev => [...prev, [...currentPathRef.current]]);
-    }
-    
-    currentPathRef.current = [];
-    lastPointRef.current = null;
-  }, []);
-  
   // Limpar canvas
   const handleClear = useCallback((e) => {
     if (e) {
