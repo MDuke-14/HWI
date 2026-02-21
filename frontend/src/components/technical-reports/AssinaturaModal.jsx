@@ -952,33 +952,19 @@ const AssinaturaModal = ({
                 </TabsList>
 
                 <TabsContent value="digital" className={isMobile ? 'mt-3' : 'mt-4'}>
-                  {/* Botão Fullscreen - Mais proeminente em mobile */}
-                  {isMobile ? (
-                    <Button
-                      onClick={openFullscreen}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white mb-3"
-                    >
-                      <Maximize2 className="w-4 h-4 mr-2" />
-                      Abrir Ecrã Completo para Assinar
-                    </Button>
-                  ) : (
-                    <div className="flex justify-end mb-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={openFullscreen}
-                        className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
-                      >
-                        <Maximize2 className="w-4 h-4 mr-1" />
-                        Ecrã Completo
-                      </Button>
-                    </div>
-                  )}
+                  {/* Botão para abrir popup */}
+                  <Button
+                    onClick={openFullscreen}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white mb-3"
+                  >
+                    <Maximize2 className="w-4 h-4 mr-2" />
+                    {isMobile ? 'Abrir para Assinar' : 'Abrir Área de Assinatura'}
+                  </Button>
                   
-                  {/* Área de Assinatura - Escondida em mobile quando não há paths */}
-                  {(!isMobile || savedPaths.length > 0) && (
+                  {/* Área de Assinatura pequena - só desktop */}
+                  {!isMobile && (
                     <>
-                      <div className={`bg-white rounded-lg ${isMobile ? 'p-1' : 'p-2'} mb-3`} style={{ height: isMobile ? '100px' : '150px' }}>
+                      <div className="bg-white rounded-lg p-2 mb-3" style={{ height: '150px' }}>
                         <SignatureCanvasOptimized
                           ref={sigCanvasRef}
                           initialData={savedPaths}
@@ -990,28 +976,39 @@ const AssinaturaModal = ({
                         <Button
                           variant="outline"
                           onClick={clearCanvas}
-                          className={`border-gray-600 ${isMobile ? 'text-xs' : ''}`}
-                          size={isMobile ? 'sm' : 'default'}
+                          className="border-gray-600"
                         >
-                          <RotateCcw className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
+                          <RotateCcw className="w-4 h-4 mr-1" />
                           Limpar
                         </Button>
                         <Button
                           onClick={handleSaveAssinaturaDigital}
                           disabled={uploadingAssinatura}
-                          className={`flex-1 bg-blue-600 hover:bg-blue-700 ${isMobile ? 'text-xs' : ''}`}
-                          size={isMobile ? 'sm' : 'default'}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
                         >
-                          {uploadingAssinatura ? 'A guardar...' : (isMobile ? 'Guardar' : 'Guardar Assinatura Digital')}
+                          {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Digital'}
                         </Button>
                       </div>
                     </>
                   )}
                   
-                  {/* Mensagem para mobile quando não tem assinatura */}
+                  {/* Mensagem para mobile */}
+                  {isMobile && savedPaths.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-green-400 text-xs mb-2">✓ Assinatura capturada</p>
+                      <Button
+                        onClick={handleSaveAssinaturaDigital}
+                        disabled={uploadingAssinatura}
+                        className="w-full bg-green-600 hover:bg-green-700 text-sm"
+                      >
+                        {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura'}
+                      </Button>
+                    </div>
+                  )}
+                  
                   {isMobile && savedPaths.length === 0 && (
                     <p className="text-center text-gray-500 text-xs mt-2">
-                      Clique no botão acima para assinar em ecrã completo
+                      Clique no botão acima para desenhar a assinatura
                     </p>
                   )}
                 </TabsContent>
