@@ -442,7 +442,6 @@ const SignaturePopup = ({
     
     const onPointerUp = (e) => {
       if (!isDrawingRef.current) return;
-      console.log('pointerup');
       e.preventDefault();
       e.stopPropagation();
       
@@ -462,8 +461,6 @@ const SignaturePopup = ({
     canvas.addEventListener('pointerup', onPointerUp, { passive: false });
     canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
     canvas.addEventListener('pointerleave', onPointerUp, { passive: false });
-    
-    console.log('Pointer event listeners added to canvas');
     
     return () => {
       canvas.removeEventListener('pointerdown', onPointerDown);
