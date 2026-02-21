@@ -678,6 +678,9 @@ const SignaturePopup = ({
             WebkitUserSelect: 'none',
             userSelect: 'none',
             display: 'block',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 10,
           }}
         />
       </div>
