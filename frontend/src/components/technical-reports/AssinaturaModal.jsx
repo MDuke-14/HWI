@@ -284,7 +284,7 @@ const SignatureCanvasOptimized = React.forwardRef(({
 
 SignatureCanvasOptimized.displayName = 'SignatureCanvasOptimized';
 
-// Popup de Assinatura - Simples e Funcional
+// Popup de Assinatura - Versão com Portal DOM direto para garantir eventos touch
 const SignaturePopup = ({ 
   isOpen, 
   onClose, 
@@ -294,57 +294,81 @@ const SignaturePopup = ({
 }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const portalRef = useRef(null);
+  const isDrawingRef = useRef(false);
   const [paths, setPaths] = useState(initialPaths);
   const contextRef = useRef(null);
   const currentPathRef = useRef([]);
   const lastPointRef = useRef(null);
   
+  // Criar e gerenciar portal DOM direto
+  useEffect(() => {
+    if (isOpen) {
+      // Bloquear scroll do body
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+      };
+    }
+  }, [isOpen]);
+  
   // Inicializar canvas
   useEffect(() => {
-    if (!isOpen || !canvasRef.current) return;
+    if (!isOpen || !canvasRef.current || !containerRef.current) return;
     
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!container) return;
+    const initCanvas = () => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
+      
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      
+      // Tamanho fixo para evitar problemas
+      const width = rect.width || window.innerWidth - 32;
+      const height = rect.height || window.innerHeight - 150;
+      
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      contextRef.current = ctx;
+      
+      // Redesenhar paths existentes
+      if (initialPaths.length > 0) {
+        initialPaths.forEach(path => {
+          if (path.length < 2) return;
+          ctx.beginPath();
+          ctx.moveTo(path[0].x, path[0].y);
+          for (let i = 1; i < path.length; i++) {
+            ctx.lineTo(path[i].x, path[i].y);
+          }
+          ctx.stroke();
+        });
+        setPaths(initialPaths);
+      }
+    };
     
-    // Definir tamanho do canvas baseado no container
-    const rect = container.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, rect.width, rect.height);
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    
-    contextRef.current = ctx;
-    
-    // Redesenhar paths existentes
-    if (initialPaths.length > 0) {
-      initialPaths.forEach(path => {
-        if (path.length < 2) return;
-        ctx.beginPath();
-        ctx.moveTo(path[0].x, path[0].y);
-        for (let i = 1; i < path.length; i++) {
-          ctx.lineTo(path[i].x, path[i].y);
-        }
-        ctx.stroke();
-      });
-      setPaths(initialPaths);
-    }
+    // Aguardar layout estabilizar
+    const timer = setTimeout(initCanvas, 50);
+    return () => clearTimeout(timer);
   }, [isOpen, initialPaths]);
   
-  // Obter coordenadas
-  const getCoords = (e) => {
+  // Obter coordenadas - função pura sem dependências de state
+  const getCoords = useCallback((e) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     
@@ -366,26 +390,28 @@ const SignaturePopup = ({
       x: clientX - rect.left,
       y: clientY - rect.top
     };
-  };
+  }, []);
   
-  // Iniciar desenho
-  const handleStart = (e) => {
+  // Handlers usando refs para evitar problemas de closure
+  const handlePointerDown = useCallback((e) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     const coords = getCoords(e);
     if (!coords || !contextRef.current) return;
     
-    setIsDrawing(true);
+    isDrawingRef.current = true;
     lastPointRef.current = coords;
     currentPathRef.current = [coords];
     
     contextRef.current.beginPath();
     contextRef.current.moveTo(coords.x, coords.y);
-  };
+  }, [getCoords]);
   
-  // Desenhar
-  const handleMove = (e) => {
-    if (!isDrawing) return;
+  const handlePointerMove = useCallback((e) => {
+    if (!isDrawingRef.current) return;
     e.preventDefault();
+    e.stopPropagation();
     
     const coords = getCoords(e);
     if (!coords || !contextRef.current) return;
@@ -397,26 +423,32 @@ const SignaturePopup = ({
     
     currentPathRef.current.push(coords);
     lastPointRef.current = coords;
-  };
+  }, [getCoords]);
   
-  // Parar desenho
-  const handleEnd = (e) => {
-    if (!isDrawing) return;
-    if (e) e.preventDefault();
+  const handlePointerUp = useCallback((e) => {
+    if (!isDrawingRef.current) return;
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
-    setIsDrawing(false);
+    isDrawingRef.current = false;
     
     if (currentPathRef.current.length > 1) {
-      const newPaths = [...paths, [...currentPathRef.current]];
-      setPaths(newPaths);
+      setPaths(prev => [...prev, [...currentPathRef.current]]);
     }
     
     currentPathRef.current = [];
     lastPointRef.current = null;
-  };
+  }, []);
   
-  // Limpar
-  const handleClear = () => {
+  // Limpar canvas
+  const handleClear = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     const ctx = contextRef.current;
     const canvas = canvasRef.current;
     if (!ctx || !canvas) return;
@@ -426,99 +458,203 @@ const SignaturePopup = ({
     ctx.fillRect(0, 0, rect.width, rect.height);
     setPaths([]);
     currentPathRef.current = [];
-  };
+  }, []);
   
   // Guardar
-  const handleSave = () => {
+  const handleSave = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     
     canvas.toBlob((blob) => {
       onSave(canvas, paths, blob);
     }, 'image/png', 0.95);
-  };
+  }, [onSave, paths]);
   
   // Fechar
-  const handleClose = () => {
+  const handleClose = useCallback((e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     onClose(paths);
-  };
+  }, [onClose, paths]);
   
   if (!isOpen) return null;
   
+  // Renderizar diretamente sem overlay bloqueante
   return (
     <div 
-      className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-2"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
+      ref={portalRef}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        touchAction: 'none',
+        WebkitOverflowScrolling: 'touch',
       }}
     >
-      <div className="bg-white rounded-xl w-full h-full max-w-[100vw] max-h-[100vh] flex flex-col overflow-hidden">
-        {/* Header com botões */}
-        <div className="flex items-center justify-between px-3 py-2 bg-gray-100 border-b border-gray-300 flex-shrink-0">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleClear}
-              className="flex items-center gap-1 px-3 py-2 bg-white border border-red-300 text-red-600 rounded-lg text-sm font-medium active:bg-red-50"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Limpar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium active:bg-green-700"
-            >
-              <Save className="w-4 h-4" />
-              Guardar
-            </button>
-          </div>
-          
-          <span className="text-gray-600 text-sm font-medium truncate mx-2 flex-1 text-center">
-            {nome || 'Assinatura'}
-          </span>
+      {/* Header com botões - design limpo */}
+      <div 
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          backgroundColor: '#f3f4f6',
+          borderBottom: '1px solid #d1d5db',
+          flexShrink: 0,
+          gap: '8px',
+        }}
+      >
+        <button
+          type="button"
+          onTouchEnd={handleClear}
+          onClick={handleClear}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 16px',
+            backgroundColor: '#ffffff',
+            border: '2px solid #ef4444',
+            color: '#ef4444',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <RotateCcw style={{ width: '18px', height: '18px' }} />
+          Limpar
+        </button>
+        
+        <span style={{
+          color: '#4b5563',
+          fontSize: '14px',
+          fontWeight: '500',
+          flex: 1,
+          textAlign: 'center',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {nome || 'Assinatura'}
+        </span>
+        
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            onTouchEnd={handleSave}
+            onClick={handleSave}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              backgroundColor: '#16a34a',
+              border: 'none',
+              color: '#ffffff',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <Save style={{ width: '18px', height: '18px' }} />
+            Guardar
+          </button>
           
           <button
             type="button"
+            onTouchEnd={handleClose}
             onClick={handleClose}
-            className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium active:bg-gray-100"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              backgroundColor: '#ffffff',
+              border: '2px solid #6b7280',
+              color: '#374151',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+            }}
           >
-            <X className="w-4 h-4" />
-            Fechar
+            <X style={{ width: '18px', height: '18px' }} />
           </button>
         </div>
-        
-        {/* Área de assinatura */}
-        <div 
-          ref={containerRef}
-          className="flex-1 bg-gray-50 p-2 overflow-hidden"
-        >
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-400 cursor-crosshair"
-            style={{ 
-              touchAction: 'none',
-              WebkitTouchCallout: 'none',
-              WebkitUserSelect: 'none',
-              userSelect: 'none'
-            }}
-            onMouseDown={handleStart}
-            onMouseMove={handleMove}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchStart={handleStart}
-            onTouchMove={handleMove}
-            onTouchEnd={handleEnd}
-            onTouchCancel={handleEnd}
-          />
-        </div>
-        
-        {/* Instrução */}
-        <div className="px-3 py-2 bg-gray-100 border-t border-gray-200 text-center flex-shrink-0">
-          <p className="text-gray-500 text-xs">
-            Desenhe a assinatura com o dedo ou rato
-          </p>
-        </div>
+      </div>
+      
+      {/* Área de assinatura - ocupa todo espaço restante */}
+      <div 
+        ref={containerRef}
+        style={{
+          flex: 1,
+          backgroundColor: '#f9fafb',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          minHeight: 0,
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          style={{ 
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            border: '3px dashed #9ca3af',
+            cursor: 'crosshair',
+            touchAction: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none',
+            display: 'block',
+          }}
+          onMouseDown={handlePointerDown}
+          onMouseMove={handlePointerMove}
+          onMouseUp={handlePointerUp}
+          onMouseLeave={handlePointerUp}
+          onTouchStart={handlePointerDown}
+          onTouchMove={handlePointerMove}
+          onTouchEnd={handlePointerUp}
+          onTouchCancel={handlePointerUp}
+        />
+      </div>
+      
+      {/* Instrução no rodapé */}
+      <div style={{
+        padding: '8px 16px',
+        backgroundColor: '#f3f4f6',
+        borderTop: '1px solid #e5e7eb',
+        textAlign: 'center',
+        flexShrink: 0,
+      }}>
+        <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>
+          Desenhe a assinatura com o dedo ou rato
+        </p>
       </div>
     </div>
   );
