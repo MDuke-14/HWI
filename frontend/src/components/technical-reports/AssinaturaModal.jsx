@@ -421,50 +421,110 @@ const SignaturePopup = ({
     };
   }, []);
   
-  // Handlers usando refs para evitar problemas de closure
-  const handlePointerDown = useCallback((e) => {
-    console.log('handlePointerDown called', { type: e.type, isCanvasReady });
-    e.preventDefault();
-    e.stopPropagation();
+  // Adicionar event listeners diretamente ao canvas (mais confiável para touch)
+  useEffect(() => {
+    if (!isOpen || !isCanvasReady) return;
     
-    if (!isCanvasReady || !contextRef.current) {
-      console.log('Canvas not ready or context missing');
-      return;
-    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    const coords = getCoords(e);
-    if (!coords) {
-      console.log('No coords');
-      return;
-    }
+    // Event handlers
+    const onStart = (e) => {
+      console.log('Canvas event start:', e.type);
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!contextRef.current) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      
+      console.log('Draw start at:', x, y);
+      isDrawingRef.current = true;
+      currentPathRef.current = [{x, y}];
+      
+      contextRef.current.beginPath();
+      contextRef.current.moveTo(x, y);
+    };
     
-    console.log('Starting draw at:', coords);
-    isDrawingRef.current = true;
-    lastPointRef.current = coords;
-    currentPathRef.current = [coords];
+    const onMove = (e) => {
+      if (!isDrawingRef.current || !contextRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      
+      contextRef.current.lineTo(x, y);
+      contextRef.current.stroke();
+      contextRef.current.beginPath();
+      contextRef.current.moveTo(x, y);
+      
+      currentPathRef.current.push({x, y});
+    };
     
-    contextRef.current.beginPath();
-    contextRef.current.moveTo(coords.x, coords.y);
-  }, [getCoords, isCanvasReady]);
-  
-  const handlePointerMove = useCallback((e) => {
-    if (!isDrawingRef.current) return;
-    e.preventDefault();
-    e.stopPropagation();
+    const onEnd = (e) => {
+      if (!isDrawingRef.current) return;
+      console.log('Draw end');
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      isDrawingRef.current = false;
+      
+      if (currentPathRef.current.length > 1) {
+        setPaths(prev => [...prev, [...currentPathRef.current]]);
+      }
+      
+      currentPathRef.current = [];
+    };
     
-    if (!contextRef.current) return;
+    // Add listeners with passive: false for touch events
+    canvas.addEventListener('mousedown', onStart, { passive: false });
+    canvas.addEventListener('mousemove', onMove, { passive: false });
+    canvas.addEventListener('mouseup', onEnd, { passive: false });
+    canvas.addEventListener('mouseleave', onEnd, { passive: false });
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchend', onEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onEnd, { passive: false });
     
-    const coords = getCoords(e);
-    if (!coords) return;
+    console.log('Event listeners added to canvas');
     
-    contextRef.current.lineTo(coords.x, coords.y);
-    contextRef.current.stroke();
-    contextRef.current.beginPath();
-    contextRef.current.moveTo(coords.x, coords.y);
-    
-    currentPathRef.current.push(coords);
-    lastPointRef.current = coords;
-  }, [getCoords]);
+    return () => {
+      canvas.removeEventListener('mousedown', onStart);
+      canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseup', onEnd);
+      canvas.removeEventListener('mouseleave', onEnd);
+      canvas.removeEventListener('touchstart', onStart);
+      canvas.removeEventListener('touchmove', onMove);
+      canvas.removeEventListener('touchend', onEnd);
+      canvas.removeEventListener('touchcancel', onEnd);
+    };
+  }, [isOpen, isCanvasReady]);
   
   const handlePointerUp = useCallback((e) => {
     if (!isDrawingRef.current) return;
