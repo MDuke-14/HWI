@@ -706,7 +706,7 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   return (
-    <div className={`min-h-screen ${bgMain}`}>
+    <div className={`min-h-screen ${bgMain} ${isMobile ? 'mobile-safe-top' : ''}`}>
       {/* Navigation - escondida em mobile (usa bottom nav) */}
       {!isMobile && (
         <Navigation user={user} onLogout={onLogout} activePage="dashboard" />
