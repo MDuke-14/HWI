@@ -636,6 +636,7 @@ const SignaturePopup = ({
           
           <button
             type="button"
+            data-testid="signature-close-btn"
             onTouchEnd={handleClose}
             onClick={handleClose}
             style={{
@@ -652,6 +653,9 @@ const SignaturePopup = ({
               cursor: 'pointer',
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
+              pointerEvents: 'auto',
+              position: 'relative',
+              zIndex: 10,
             }}
           >
             <X style={{ width: '18px', height: '18px' }} />
