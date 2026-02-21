@@ -1034,8 +1034,8 @@ const AssinaturaModal = ({
         </DialogContent>
       </Dialog>
 
-      {/* Fullscreen Signature Modal */}
-      <FullscreenSignature
+      {/* Popup de Assinatura */}
+      <SignaturePopup
         isOpen={isFullscreen}
         onClose={closeFullscreen}
         onSave={saveFromFullscreen}
