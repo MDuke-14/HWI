@@ -54,7 +54,24 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ## Funcionalidades Implementadas
 
-### Fevereiro 2026 - Sessão Atual (20 Fevereiro 2026)
+### Fevereiro 2026 - Sessão Atual
+
+#### ✅ Bug Crítico Assinatura Mobile (21 Fevereiro 2026) - CORRIGIDO
+**Problema:** O canvas de assinatura e os botões (Limpar, Guardar, Fechar) não respondiam a eventos de toque em dispositivos móveis.
+
+**Causa Raiz:**
+- O canvas tinha `pointer-events: none` herdado do CSS
+- Elemento `<P>` estava sobreposto ao canvas interceptando eventos
+
+**Solução Implementada:**
+1. Adicionado `pointerEvents: 'auto'` ao canvas e container
+2. Adicionado `position: 'relative'` e `zIndex: 10` para garantir sobreposição correta
+3. Mudança de mouse/touch events para Pointer Events (unificados)
+4. Adicionados `data-testid` aos botões para facilitar testes
+
+**Ficheiro modificado:** `/app/frontend/src/components/technical-reports/AssinaturaModal.jsx`
+
+---
 
 #### 🔄 Modo Mobile PWA (20 Fevereiro 2026) - EM PROGRESSO
 **Implementação de experiência mobile dedicada com PWA completa:**
