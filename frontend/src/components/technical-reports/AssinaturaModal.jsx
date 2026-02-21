@@ -403,21 +403,12 @@ const SignaturePopup = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    console.log('Setting up canvas event listeners...');
-    console.log('Canvas element:', canvas);
-    console.log('Canvas dimensions:', canvas.width, canvas.height);
-    console.log('Canvas client rect:', canvas.getBoundingClientRect());
-    
     // Event handlers usando Pointer Events (unificam mouse e touch)
     const onPointerDown = (e) => {
-      console.log('pointerdown event:', e.type, e.pointerId);
       e.preventDefault();
       e.stopPropagation();
       
-      if (!contextRef.current) {
-        console.log('No context available');
-        return;
-      }
+      if (!contextRef.current) return;
       
       canvas.setPointerCapture(e.pointerId);
       
@@ -425,16 +416,11 @@ const SignaturePopup = ({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       
-      console.log('Draw start at:', x, y, 'rect:', rect);
       isDrawingRef.current = true;
       currentPathRef.current = [{x, y}];
       
       contextRef.current.beginPath();
       contextRef.current.moveTo(x, y);
-      
-      // Draw a dot at the start point to confirm it works
-      contextRef.current.arc(x, y, 2, 0, Math.PI * 2);
-      contextRef.current.fill();
     };
     
     const onPointerMove = (e) => {
