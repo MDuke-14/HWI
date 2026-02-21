@@ -692,14 +692,6 @@ const SignaturePopup = ({
             userSelect: 'none',
             display: 'block',
           }}
-          onMouseDown={handlePointerDown}
-          onMouseMove={handlePointerMove}
-          onMouseUp={handlePointerUp}
-          onMouseLeave={handlePointerUp}
-          onTouchStart={handlePointerDown}
-          onTouchMove={handlePointerMove}
-          onTouchEnd={handlePointerUp}
-          onTouchCancel={handlePointerUp}
         />
       </div>
       
