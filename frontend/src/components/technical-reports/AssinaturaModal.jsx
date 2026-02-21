@@ -537,6 +537,9 @@ const AssinaturaModal = ({
   const [editingAssinatura, setEditingAssinatura] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [savedPaths, setSavedPaths] = useState([]);
+  
+  // Detectar mobile
+  const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
 
   const clearCanvas = () => {
     if (sigCanvasRef.current) {
