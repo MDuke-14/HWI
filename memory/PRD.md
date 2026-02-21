@@ -13,6 +13,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ✅ ~~Edição de hora início/fim em registos de tempo~~ (24 Janeiro 2026)
 - ✅ ~~Funcionalidade "Justificar Dia" na Gestão de Entradas~~ (19 Fevereiro 2026)
 - ✅ ~~Campos de email dinâmicos para clientes~~ (20 Fevereiro 2026)
+- ✅ **Bug Assinatura Mobile Corrigido** (21 Fevereiro 2026) - Canvas e botões não respondiam a touch
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
@@ -22,6 +23,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - ✅ Página de OTs responsiva (20 Fevereiro 2026)
   - ✅ Página de Calendário responsiva (20 Fevereiro 2026)
   - ✅ Página de Admin responsiva (20 Fevereiro 2026)
+  - ✅ Assinatura Digital Mobile (21 Fevereiro 2026)
   - ⏳ Adaptar restantes páginas para mobile (Time Entries, Reports)
   - ⏳ Testes completos de offline
 
