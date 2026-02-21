@@ -662,6 +662,8 @@ const SignaturePopup = ({
           flexDirection: 'column',
           overflow: 'hidden',
           minHeight: 0,
+          pointerEvents: 'auto',
+          position: 'relative',
         }}
       >
         <canvas
