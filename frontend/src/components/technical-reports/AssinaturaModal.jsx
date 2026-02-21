@@ -403,54 +403,48 @@ const SignaturePopup = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Event handlers
-    const onStart = (e) => {
-      console.log('Canvas event start:', e.type);
+    console.log('Setting up canvas event listeners...');
+    console.log('Canvas element:', canvas);
+    console.log('Canvas dimensions:', canvas.width, canvas.height);
+    console.log('Canvas client rect:', canvas.getBoundingClientRect());
+    
+    // Event handlers usando Pointer Events (unificam mouse e touch)
+    const onPointerDown = (e) => {
+      console.log('pointerdown event:', e.type, e.pointerId);
       e.preventDefault();
       e.stopPropagation();
       
-      if (!contextRef.current) return;
-      
-      const rect = canvas.getBoundingClientRect();
-      let clientX, clientY;
-      
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
+      if (!contextRef.current) {
+        console.log('No context available');
+        return;
       }
       
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      canvas.setPointerCapture(e.pointerId);
       
-      console.log('Draw start at:', x, y);
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      console.log('Draw start at:', x, y, 'rect:', rect);
       isDrawingRef.current = true;
       currentPathRef.current = [{x, y}];
       
       contextRef.current.beginPath();
       contextRef.current.moveTo(x, y);
+      
+      // Draw a dot at the start point to confirm it works
+      contextRef.current.arc(x, y, 2, 0, Math.PI * 2);
+      contextRef.current.fill();
     };
     
-    const onMove = (e) => {
+    const onPointerMove = (e) => {
       if (!isDrawingRef.current || !contextRef.current) return;
       e.preventDefault();
       e.stopPropagation();
       
       const rect = canvas.getBoundingClientRect();
-      let clientX, clientY;
-      
-      if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
-      
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       
       contextRef.current.lineTo(x, y);
       contextRef.current.stroke();
@@ -460,14 +454,13 @@ const SignaturePopup = ({
       currentPathRef.current.push({x, y});
     };
     
-    const onEnd = (e) => {
+    const onPointerUp = (e) => {
       if (!isDrawingRef.current) return;
-      console.log('Draw end');
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      console.log('pointerup');
+      e.preventDefault();
+      e.stopPropagation();
       
+      canvas.releasePointerCapture(e.pointerId);
       isDrawingRef.current = false;
       
       if (currentPathRef.current.length > 1) {
@@ -477,27 +470,21 @@ const SignaturePopup = ({
       currentPathRef.current = [];
     };
     
-    // Add listeners with passive: false for touch events
-    canvas.addEventListener('mousedown', onStart, { passive: false });
-    canvas.addEventListener('mousemove', onMove, { passive: false });
-    canvas.addEventListener('mouseup', onEnd, { passive: false });
-    canvas.addEventListener('mouseleave', onEnd, { passive: false });
-    canvas.addEventListener('touchstart', onStart, { passive: false });
-    canvas.addEventListener('touchmove', onMove, { passive: false });
-    canvas.addEventListener('touchend', onEnd, { passive: false });
-    canvas.addEventListener('touchcancel', onEnd, { passive: false });
+    // Add pointer event listeners
+    canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+    canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+    canvas.addEventListener('pointerup', onPointerUp, { passive: false });
+    canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
+    canvas.addEventListener('pointerleave', onPointerUp, { passive: false });
     
-    console.log('Event listeners added to canvas');
+    console.log('Pointer event listeners added to canvas');
     
     return () => {
-      canvas.removeEventListener('mousedown', onStart);
-      canvas.removeEventListener('mousemove', onMove);
-      canvas.removeEventListener('mouseup', onEnd);
-      canvas.removeEventListener('mouseleave', onEnd);
-      canvas.removeEventListener('touchstart', onStart);
-      canvas.removeEventListener('touchmove', onMove);
-      canvas.removeEventListener('touchend', onEnd);
-      canvas.removeEventListener('touchcancel', onEnd);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointercancel', onPointerUp);
+      canvas.removeEventListener('pointerleave', onPointerUp);
     };
   }, [isOpen, isCanvasReady]);
   
