@@ -297,6 +297,7 @@ const SignaturePopup = ({
   const portalRef = useRef(null);
   const isDrawingRef = useRef(false);
   const [paths, setPaths] = useState(initialPaths);
+  const [isCanvasReady, setIsCanvasReady] = useState(false);
   const contextRef = useRef(null);
   const currentPathRef = useRef([]);
   const lastPointRef = useRef(null);
@@ -307,6 +308,7 @@ const SignaturePopup = ({
       // Bloquear scroll do body
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
+      setIsCanvasReady(false);
       
       return () => {
         document.body.style.overflow = '';
@@ -315,26 +317,44 @@ const SignaturePopup = ({
     }
   }, [isOpen]);
   
-  // Inicializar canvas
+  // Inicializar canvas - usando requestAnimationFrame para garantir que o layout está pronto
   useEffect(() => {
-    if (!isOpen || !canvasRef.current || !containerRef.current) return;
+    if (!isOpen) return;
+    
+    let frameId;
+    let attempts = 0;
+    const maxAttempts = 10;
     
     const initCanvas = () => {
       const canvas = canvasRef.current;
       const container = containerRef.current;
-      if (!canvas || !container) return;
+      
+      if (!canvas || !container) {
+        if (attempts < maxAttempts) {
+          attempts++;
+          frameId = requestAnimationFrame(initCanvas);
+        }
+        return;
+      }
       
       const rect = container.getBoundingClientRect();
+      
+      // Verificar se as dimensões são válidas
+      if (rect.width < 50 || rect.height < 50) {
+        if (attempts < maxAttempts) {
+          attempts++;
+          frameId = requestAnimationFrame(initCanvas);
+        }
+        return;
+      }
+      
       const dpr = window.devicePixelRatio || 1;
+      const width = rect.width;
+      const height = rect.height;
       
-      // Tamanho fixo para evitar problemas
-      const width = rect.width || window.innerWidth - 32;
-      const height = rect.height || window.innerHeight - 150;
-      
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
+      // Configurar canvas com dimensões reais
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       
       const ctx = canvas.getContext('2d');
       ctx.scale(dpr, dpr);
@@ -346,6 +366,9 @@ const SignaturePopup = ({
       ctx.lineJoin = 'round';
       
       contextRef.current = ctx;
+      setIsCanvasReady(true);
+      
+      console.log('Canvas initialized:', { width, height, dpr });
       
       // Redesenhar paths existentes
       if (initialPaths.length > 0) {
@@ -362,9 +385,15 @@ const SignaturePopup = ({
       }
     };
     
-    // Aguardar layout estabilizar
-    const timer = setTimeout(initCanvas, 50);
-    return () => clearTimeout(timer);
+    // Iniciar após um pequeno delay para garantir que o DOM está renderizado
+    const timer = setTimeout(() => {
+      frameId = requestAnimationFrame(initCanvas);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      if (frameId) cancelAnimationFrame(frameId);
+    };
   }, [isOpen, initialPaths]);
   
   // Obter coordenadas - função pura sem dependências de state
