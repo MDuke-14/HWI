@@ -250,20 +250,34 @@ const SignatureCanvasOptimized = React.forwardRef(({
       style={{ 
         width: '100%', 
         height: '100%',
-        touchAction: 'none', // Prevenir scroll/zoom
+        touchAction: 'none', // Prevenir scroll/zoom - CRÍTICO para assinatura
         cursor: disabled ? 'not-allowed' : 'crosshair',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        WebkitTouchCallout: 'none'
+        WebkitTouchCallout: 'none',
+        msTouchAction: 'none', // Para IE/Edge
+        display: 'block' // Evitar espaços inline
       }}
       onMouseDown={startDrawing}
       onMouseMove={draw}
       onMouseUp={stopDrawing}
       onMouseLeave={stopDrawing}
-      onTouchStart={startDrawing}
-      onTouchMove={draw}
-      onTouchEnd={stopDrawing}
-      onTouchCancel={stopDrawing}
+      onTouchStart={(e) => {
+        e.stopPropagation();
+        startDrawing(e);
+      }}
+      onTouchMove={(e) => {
+        e.stopPropagation();
+        draw(e);
+      }}
+      onTouchEnd={(e) => {
+        e.stopPropagation();
+        stopDrawing(e);
+      }}
+      onTouchCancel={(e) => {
+        e.stopPropagation();
+        stopDrawing(e);
+      }}
     />
   );
 });
