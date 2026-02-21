@@ -608,6 +608,7 @@ const SignaturePopup = ({
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             type="button"
+            data-testid="signature-save-btn"
             onTouchEnd={handleSave}
             onClick={handleSave}
             style={{
@@ -624,6 +625,9 @@ const SignaturePopup = ({
               cursor: 'pointer',
               touchAction: 'manipulation',
               WebkitTapHighlightColor: 'transparent',
+              pointerEvents: 'auto',
+              position: 'relative',
+              zIndex: 10,
             }}
           >
             <Save style={{ width: '18px', height: '18px' }} />
