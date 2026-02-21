@@ -565,7 +565,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className={`min-h-screen bg-[#0a0a0a] ${isMobile ? 'mobile-safe-top' : ''}`}>
       {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="admin" />}
       <div className={`container mx-auto ${isMobile ? 'px-3 py-4 pb-24' : 'px-4 py-8'} max-w-7xl fade-in`}>
         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'flex-col md:flex-row justify-between items-start md:items-center gap-4'} mb-6`}>
