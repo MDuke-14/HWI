@@ -396,31 +396,6 @@ const SignaturePopup = ({
     };
   }, [isOpen, initialPaths]);
   
-  // Obter coordenadas - função pura sem dependências de state
-  const getCoords = useCallback((e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    
-    const rect = canvas.getBoundingClientRect();
-    let clientX, clientY;
-    
-    if (e.touches && e.touches.length > 0) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else if (e.changedTouches && e.changedTouches.length > 0) {
-      clientX = e.changedTouches[0].clientX;
-      clientY = e.changedTouches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    
-    return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
-    };
-  }, []);
-  
   // Adicionar event listeners diretamente ao canvas (mais confiável para touch)
   useEffect(() => {
     if (!isOpen || !isCanvasReady) return;
