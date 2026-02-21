@@ -566,6 +566,7 @@ const SignaturePopup = ({
       >
         <button
           type="button"
+          data-testid="signature-clear-btn"
           onTouchEnd={handleClear}
           onClick={handleClear}
           style={{
@@ -582,6 +583,9 @@ const SignaturePopup = ({
             cursor: 'pointer',
             touchAction: 'manipulation',
             WebkitTapHighlightColor: 'transparent',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 10,
           }}
         >
           <RotateCcw style={{ width: '18px', height: '18px' }} />
