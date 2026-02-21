@@ -825,39 +825,41 @@ const AssinaturaModal = ({
   return (
     <>
       <Dialog open={open && !isFullscreen} onOpenChange={onOpenChange}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto z-[100]">
+        <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white z-[100] ${isMobile ? 'max-w-[95vw] max-h-[85vh] rounded-xl' : 'max-w-2xl max-h-[90vh]'} overflow-y-auto`}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <PenTool className="w-5 h-5 text-blue-400" />
-              Assinaturas - OT #{selectedRelatorio?.numero_assistencia}
+            <DialogTitle className={`flex items-center gap-2 text-white ${isMobile ? 'text-base' : ''}`}>
+              <PenTool className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
+              {isMobile ? `Assinaturas OT#${selectedRelatorio?.numero_assistencia}` : `Assinaturas - OT #${selectedRelatorio?.numero_assistencia}`}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 mt-4">
+          <div className={`space-y-4 ${isMobile ? 'mt-2' : 'mt-4'}`}>
             {/* Lista de Assinaturas Existentes */}
             {assinaturas && assinaturas.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-gray-400">Assinaturas Existentes ({assinaturas.length})</h4>
+              <div className="space-y-2">
+                <h4 className={`font-semibold text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  Assinaturas ({assinaturas.length})
+                </h4>
                 {assinaturas.map((ass, index) => (
-                  <div key={ass.id || index} className="bg-[#0f0f0f] p-3 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div key={ass.id || index} className={`bg-[#0f0f0f] rounded-lg flex items-center justify-between ${isMobile ? 'p-2' : 'p-3'}`}>
+                    <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-3'}`}>
                       {ass.assinatura_base64 && (
                         <img
                           src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`}
                           alt="Assinatura"
-                          className="h-10 bg-white rounded"
+                          className={`bg-white rounded ${isMobile ? 'h-8' : 'h-10'}`}
                         />
                       )}
                       <div>
-                        <p className="text-white font-medium">
+                        <p className={`text-white font-medium ${isMobile ? 'text-sm' : ''}`}>
                           {ass.primeiro_nome} {ass.ultimo_nome}
                         </p>
                         {editingAssinatura === ass.id ? (
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className={`flex items-center gap-2 mt-1 ${isMobile ? 'flex-col items-start' : ''}`}>
                             <Input
                               type="date"
                               defaultValue={ass.data_intervencao?.split('T')[0]}
-                              className="bg-[#1a1a1a] border-gray-700 text-white h-8 w-40"
+                              className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'h-7 w-32 text-xs' : 'h-8 w-40'}`}
                               onChange={(e) => {
                                 if (e.target.value) {
                                   handleUpdateAssinaturaData(ass.id, e.target.value);
@@ -868,20 +870,20 @@ const AssinaturaModal = ({
                               size="sm"
                               variant="ghost"
                               onClick={() => setEditingAssinatura(null)}
-                              className="h-8 text-gray-400"
+                              className={`text-gray-400 ${isMobile ? 'h-6 text-xs px-2' : 'h-8'}`}
                             >
                               Cancelar
                             </Button>
                           </div>
                         ) : (
-                          <p className="text-gray-400 text-sm flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
+                          <p className={`text-gray-400 flex items-center gap-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                            <Calendar className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
                             {ass.data_intervencao ? new Date(ass.data_intervencao).toLocaleDateString('pt-PT') : 'Sem data'}
                             <button
                               onClick={() => setEditingAssinatura(ass.id)}
-                              className="ml-2 text-blue-400 hover:text-blue-300"
+                              className="ml-1 text-blue-400 hover:text-blue-300"
                             >
-                              <Edit className="w-3 h-3" />
+                              <Edit className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
                             </button>
                           </p>
                         )}
@@ -891,9 +893,9 @@ const AssinaturaModal = ({
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDeleteAssinatura(ass.id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      className={`text-red-400 hover:text-red-300 hover:bg-red-500/10 ${isMobile ? 'h-7 w-7 p-0' : ''}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
                     </Button>
                   </div>
                 ))}
@@ -901,105 +903,128 @@ const AssinaturaModal = ({
             )}
 
             {/* Adicionar Nova Assinatura */}
-            <div className="border-t border-gray-700 pt-4">
-              <h4 className="text-sm font-semibold text-gray-400 mb-4 flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Adicionar Nova Assinatura
+            <div className={`border-t border-gray-700 ${isMobile ? 'pt-3' : 'pt-4'}`}>
+              <h4 className={`font-semibold text-gray-400 flex items-center gap-2 ${isMobile ? 'text-xs mb-3' : 'text-sm mb-4'}`}>
+                <Plus className={isMobile ? 'w-3 h-3' : 'w-4 h-4'} />
+                Nova Assinatura
               </h4>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className={`grid grid-cols-2 ${isMobile ? 'gap-2 mb-3' : 'gap-4 mb-4'}`}>
                 <div>
-                  <Label className="text-gray-400 text-sm">Primeiro Nome *</Label>
+                  <Label className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Primeiro Nome *</Label>
                   <Input
                     value={assinaturaNome.primeiro}
                     onChange={(e) => setAssinaturaNome({ ...assinaturaNome, primeiro: e.target.value })}
-                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm h-9' : ''}`}
                     placeholder="Ex: João"
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-400 text-sm">Último Nome *</Label>
+                  <Label className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Último Nome *</Label>
                   <Input
                     value={assinaturaNome.ultimo}
                     onChange={(e) => setAssinaturaNome({ ...assinaturaNome, ultimo: e.target.value })}
-                    className="bg-[#0f0f0f] border-gray-700 text-white"
+                    className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm h-9' : ''}`}
                     placeholder="Ex: Silva"
                   />
                 </div>
               </div>
 
-              <div className="mb-4">
-                <Label className="text-gray-400 text-sm">Data da Intervenção *</Label>
+              <div className={isMobile ? 'mb-3' : 'mb-4'}>
+                <Label className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Data *</Label>
                 <Input
                   type="date"
                   value={assinaturaDataIntervencao}
                   onChange={(e) => setAssinaturaDataIntervencao(e.target.value)}
-                  className="bg-[#0f0f0f] border-gray-700 text-white w-48"
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'w-36 text-sm h-9' : 'w-48'}`}
                 />
               </div>
 
               <Tabs defaultValue="digital" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-[#0f0f0f]">
-                  <TabsTrigger value="digital" className="data-[state=active]:bg-blue-600">
-                    Assinatura Digital
+                <TabsList className={`grid w-full grid-cols-2 bg-[#0f0f0f] ${isMobile ? 'h-9' : ''}`}>
+                  <TabsTrigger value="digital" className={`data-[state=active]:bg-blue-600 ${isMobile ? 'text-xs' : ''}`}>
+                    {isMobile ? 'Digital' : 'Assinatura Digital'}
                   </TabsTrigger>
-                  <TabsTrigger value="manual" className="data-[state=active]:bg-blue-600">
-                    Apenas Nome
+                  <TabsTrigger value="manual" className={`data-[state=active]:bg-blue-600 ${isMobile ? 'text-xs' : ''}`}>
+                    {isMobile ? 'Só Nome' : 'Apenas Nome'}
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="digital" className="mt-4">
-                  {/* Botão Fullscreen */}
-                  <div className="flex justify-end mb-2">
+                <TabsContent value="digital" className={isMobile ? 'mt-3' : 'mt-4'}>
+                  {/* Botão Fullscreen - Mais proeminente em mobile */}
+                  {isMobile ? (
                     <Button
-                      variant="outline"
-                      size="sm"
                       onClick={openFullscreen}
-                      className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white mb-3"
                     >
-                      <Maximize2 className="w-4 h-4 mr-1" />
-                      Ecrã Completo
+                      <Maximize2 className="w-4 h-4 mr-2" />
+                      Abrir Ecrã Completo para Assinar
                     </Button>
-                  </div>
+                  ) : (
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={openFullscreen}
+                        className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                      >
+                        <Maximize2 className="w-4 h-4 mr-1" />
+                        Ecrã Completo
+                      </Button>
+                    </div>
+                  )}
                   
-                  {/* Área de Assinatura */}
-                  <div className="bg-white rounded-lg p-2 mb-3" style={{ height: '150px' }}>
-                    <SignatureCanvasOptimized
-                      ref={sigCanvasRef}
-                      initialData={savedPaths}
-                      onSignatureChange={setSavedPaths}
-                    />
-                  </div>
+                  {/* Área de Assinatura - Escondida em mobile quando não há paths */}
+                  {(!isMobile || savedPaths.length > 0) && (
+                    <>
+                      <div className={`bg-white rounded-lg ${isMobile ? 'p-1' : 'p-2'} mb-3`} style={{ height: isMobile ? '100px' : '150px' }}>
+                        <SignatureCanvasOptimized
+                          ref={sigCanvasRef}
+                          initialData={savedPaths}
+                          onSignatureChange={setSavedPaths}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={clearCanvas}
+                          className={`border-gray-600 ${isMobile ? 'text-xs' : ''}`}
+                          size={isMobile ? 'sm' : 'default'}
+                        >
+                          <RotateCcw className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
+                          Limpar
+                        </Button>
+                        <Button
+                          onClick={handleSaveAssinaturaDigital}
+                          disabled={uploadingAssinatura}
+                          className={`flex-1 bg-blue-600 hover:bg-blue-700 ${isMobile ? 'text-xs' : ''}`}
+                          size={isMobile ? 'sm' : 'default'}
+                        >
+                          {uploadingAssinatura ? 'A guardar...' : (isMobile ? 'Guardar' : 'Guardar Assinatura Digital')}
+                        </Button>
+                      </div>
+                    </>
+                  )}
                   
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={clearCanvas}
-                      className="border-gray-600"
-                    >
-                      <RotateCcw className="w-4 h-4 mr-1" />
-                      Limpar
-                    </Button>
-                    <Button
-                      onClick={handleSaveAssinaturaDigital}
-                      disabled={uploadingAssinatura}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Digital'}
-                    </Button>
-                  </div>
+                  {/* Mensagem para mobile quando não tem assinatura */}
+                  {isMobile && savedPaths.length === 0 && (
+                    <p className="text-center text-gray-500 text-xs mt-2">
+                      Clique no botão acima para assinar em ecrã completo
+                    </p>
+                  )}
                 </TabsContent>
 
-                <TabsContent value="manual" className="mt-4">
-                  <p className="text-gray-400 text-sm mb-3">
-                    A assinatura será registada apenas com o nome fornecido, sem imagem.
+                <TabsContent value="manual" className={isMobile ? 'mt-3' : 'mt-4'}>
+                  <p className={`text-gray-400 ${isMobile ? 'text-xs mb-2' : 'text-sm mb-3'}`}>
+                    {isMobile ? 'Assinatura registada só com nome, sem imagem.' : 'A assinatura será registada apenas com o nome fornecido, sem imagem.'}
                   </p>
                   <Button
                     onClick={handleSaveAssinaturaManual}
                     disabled={uploadingAssinatura}
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className={`w-full bg-green-600 hover:bg-green-700 ${isMobile ? 'text-sm' : ''}`}
                   >
-                    {uploadingAssinatura ? 'A guardar...' : 'Guardar Assinatura Manual'}
+                    {uploadingAssinatura ? 'A guardar...' : (isMobile ? 'Guardar' : 'Guardar Assinatura Manual')}
                   </Button>
                 </TabsContent>
               </Tabs>
