@@ -368,8 +368,6 @@ const SignaturePopup = ({
       contextRef.current = ctx;
       setIsCanvasReady(true);
       
-      console.log('Canvas initialized:', { width, height, dpr });
-      
       // Redesenhar paths existentes
       if (initialPaths.length > 0) {
         initialPaths.forEach(path => {
