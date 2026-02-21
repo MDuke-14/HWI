@@ -423,27 +423,39 @@ const SignaturePopup = ({
   
   // Handlers usando refs para evitar problemas de closure
   const handlePointerDown = useCallback((e) => {
+    console.log('handlePointerDown called', { type: e.type, isCanvasReady });
     e.preventDefault();
     e.stopPropagation();
     
-    const coords = getCoords(e);
-    if (!coords || !contextRef.current) return;
+    if (!isCanvasReady || !contextRef.current) {
+      console.log('Canvas not ready or context missing');
+      return;
+    }
     
+    const coords = getCoords(e);
+    if (!coords) {
+      console.log('No coords');
+      return;
+    }
+    
+    console.log('Starting draw at:', coords);
     isDrawingRef.current = true;
     lastPointRef.current = coords;
     currentPathRef.current = [coords];
     
     contextRef.current.beginPath();
     contextRef.current.moveTo(coords.x, coords.y);
-  }, [getCoords]);
+  }, [getCoords, isCanvasReady]);
   
   const handlePointerMove = useCallback((e) => {
     if (!isDrawingRef.current) return;
     e.preventDefault();
     e.stopPropagation();
     
+    if (!contextRef.current) return;
+    
     const coords = getCoords(e);
-    if (!coords || !contextRef.current) return;
+    if (!coords) return;
     
     contextRef.current.lineTo(coords.x, coords.y);
     contextRef.current.stroke();
