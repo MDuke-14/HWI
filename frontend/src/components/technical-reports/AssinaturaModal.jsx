@@ -364,22 +364,12 @@ const FullscreenSignature = ({
       const scrollY = window.scrollY;
       
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.left = '0';
       document.body.style.right = '0';
       document.body.style.width = '100%';
       document.documentElement.style.overflow = 'hidden';
-      
-      // Prevenir pull-to-refresh e zoom
-      const preventPullRefresh = (e) => {
-        if (e.touches.length > 1) {
-          e.preventDefault();
-        }
-      };
-      
-      document.addEventListener('touchmove', preventPullRefresh, { passive: false });
       
       // Forçar orientação horizontal em dispositivos móveis (se suportado)
       if (screen.orientation && screen.orientation.lock) {
@@ -389,13 +379,12 @@ const FullscreenSignature = ({
       }
       
       return () => {
-        document.removeEventListener('touchmove', preventPullRefresh);
+        // Cleanup será feito no else block
       };
     } else {
       // Restaurar scroll position
       const scrollY = document.body.style.top;
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.left = '';
@@ -414,7 +403,6 @@ const FullscreenSignature = ({
     
     return () => {
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.left = '';
@@ -439,30 +427,32 @@ const FullscreenSignature = ({
       ref={containerRef}
       className="fixed inset-0 z-[9999] bg-white flex flex-col"
       style={{ 
-        touchAction: 'none',
-        WebkitOverflowScrolling: 'touch',
         overscrollBehavior: 'none'
       }}
     >
       {/* Header com botões - Compacto em mobile */}
       <div 
         className={`flex justify-between items-center bg-gray-100 border-b border-gray-300 ${isMobileDevice ? 'px-2 py-1.5' : 'px-4 py-3'}`}
-        style={{ height: headerHeight, minHeight: headerHeight, flexShrink: 0 }}
+        style={{ height: headerHeight, minHeight: headerHeight, flexShrink: 0, touchAction: 'manipulation' }}
       >
         <div className="flex gap-1.5">
           <Button
             onClick={handleClear}
+            onTouchEnd={(e) => { e.preventDefault(); handleClear(); }}
             variant="outline"
             size="sm"
-            className={`bg-white border-red-300 text-red-600 hover:bg-red-50 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
+            className={`bg-white border-red-300 text-red-600 hover:bg-red-50 active:bg-red-100 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
+            style={{ touchAction: 'manipulation' }}
           >
             <RotateCcw className={`${isMobileDevice ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isMobileDevice ? '' : 'mr-1'}`} />
             {!isMobileDevice && 'Limpar'}
           </Button>
           <Button
             onClick={handleSave}
+            onTouchEnd={(e) => { e.preventDefault(); handleSave(); }}
             size="sm"
-            className={`bg-green-600 hover:bg-green-700 text-white ${isMobileDevice ? 'h-8 px-3 text-xs' : ''}`}
+            className={`bg-green-600 hover:bg-green-700 active:bg-green-800 text-white ${isMobileDevice ? 'h-8 px-3 text-xs' : ''}`}
+            style={{ touchAction: 'manipulation' }}
           >
             <Save className={`${isMobileDevice ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-1'}`} />
             Guardar
@@ -477,9 +467,11 @@ const FullscreenSignature = ({
         
         <Button
           onClick={handleExit}
+          onTouchEnd={(e) => { e.preventDefault(); handleExit(); }}
           variant="outline"
           size="sm"
-          className={`bg-white border-gray-300 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
+          className={`bg-white border-gray-300 active:bg-gray-100 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
+          style={{ touchAction: 'manipulation' }}
         >
           <X className={`${isMobileDevice ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isMobileDevice ? '' : 'mr-1'}`} />
           {!isMobileDevice && 'Sair'}
@@ -491,13 +483,11 @@ const FullscreenSignature = ({
         className={`flex-1 bg-gray-50 ${isMobileDevice ? 'p-1' : 'p-2'}`}
         style={{ 
           height: canvasAreaHeight,
-          touchAction: 'none',
           overflow: 'hidden'
         }}
       >
         <div 
           className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-400 shadow-inner overflow-hidden"
-          style={{ touchAction: 'none' }}
         >
           <SignatureCanvasOptimized
             ref={canvasRef}
