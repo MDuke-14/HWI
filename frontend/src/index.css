@@ -46,6 +46,23 @@ body {
   padding-top: var(--safe-area-inset-top);
 }
 
+/* Classe para adicionar padding-top safe area em mobile */
+.mobile-safe-top {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
+/* Aplicar safe area ao container principal da app em mobile */
+@media (max-width: 767px) {
+  .App {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  /* Headers fixos em mobile */
+  .mobile-header {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+}
+
 /* Mobile touch improvements */
 @media (hover: none) and (pointer: coarse) {
   button, a, [role="button"] {
