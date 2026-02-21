@@ -538,13 +538,13 @@ const SignaturePopup = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 16px 12px 16px',
-          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
+          padding: '16px',
+          paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))',
           backgroundColor: '#f3f4f6',
           borderBottom: '1px solid #d1d5db',
           flexShrink: 0,
           gap: '8px',
-          minHeight: '70px',
+          minHeight: '76px',
         }}
       >
         <button
