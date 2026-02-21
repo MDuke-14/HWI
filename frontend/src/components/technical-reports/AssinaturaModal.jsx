@@ -270,7 +270,7 @@ const SignatureCanvasOptimized = React.forwardRef(({
 
 SignatureCanvasOptimized.displayName = 'SignatureCanvasOptimized';
 
-// Modal de Fullscreen para Assinatura
+// Modal de Fullscreen para Assinatura - Otimizado para Mobile
 const FullscreenSignature = ({ 
   isOpen, 
   onClose, 
@@ -279,13 +279,40 @@ const FullscreenSignature = ({
   nome = ''
 }) => {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const [currentPaths, setCurrentPaths] = useState(initialPaths);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  
+  // Calcular dimensões do canvas
+  useEffect(() => {
+    if (isOpen) {
+      const updateDimensions = () => {
+        // Usar toda a área disponível
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        setDimensions({ width, height });
+      };
+      
+      updateDimensions();
+      window.addEventListener('resize', updateDimensions);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(updateDimensions, 100);
+      });
+      
+      return () => {
+        window.removeEventListener('resize', updateDimensions);
+        window.removeEventListener('orientationchange', updateDimensions);
+      };
+    }
+  }, [isOpen]);
   
   useEffect(() => {
     if (isOpen && canvasRef.current && initialPaths.length > 0) {
-      canvasRef.current.setPaths(initialPaths);
+      setTimeout(() => {
+        canvasRef.current?.setPaths(initialPaths);
+      }, 150);
     }
-  }, [isOpen, initialPaths]);
+  }, [isOpen, initialPaths, dimensions]);
   
   const handleClear = () => {
     if (canvasRef.current) {
@@ -333,11 +360,26 @@ const FullscreenSignature = ({
   // Prevenir scroll e zoom no body quando fullscreen está aberto
   useEffect(() => {
     if (isOpen) {
+      // Guardar scroll position
+      const scrollY = window.scrollY;
+      
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
       document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.width = '100%';
-      document.body.style.height = '100%';
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Prevenir pull-to-refresh e zoom
+      const preventPullRefresh = (e) => {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      };
+      
+      document.addEventListener('touchmove', preventPullRefresh, { passive: false });
       
       // Forçar orientação horizontal em dispositivos móveis (se suportado)
       if (screen.orientation && screen.orientation.lock) {
@@ -345,12 +387,25 @@ const FullscreenSignature = ({
           // Ignorar erro - nem todos os browsers suportam
         });
       }
+      
+      return () => {
+        document.removeEventListener('touchmove', preventPullRefresh);
+      };
     } else {
+      // Restaurar scroll position
+      const scrollY = document.body.style.top;
       document.body.style.overflow = '';
       document.body.style.touchAction = '';
       document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
       document.body.style.width = '';
-      document.body.style.height = '';
+      document.documentElement.style.overflow = '';
+      
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
       
       if (screen.orientation && screen.orientation.unlock) {
         screen.orientation.unlock();
@@ -361,43 +416,62 @@ const FullscreenSignature = ({
       document.body.style.overflow = '';
       document.body.style.touchAction = '';
       document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
       document.body.style.width = '';
-      document.body.style.height = '';
+      document.documentElement.style.overflow = '';
     };
   }, [isOpen]);
   
   if (!isOpen) return null;
   
+  // Detectar se é mobile
+  const isMobileDevice = window.innerWidth < 768 || 'ontouchstart' in window;
+  
+  // Calcular altura do canvas (subtrair header e footer)
+  const headerHeight = isMobileDevice ? 50 : 56;
+  const footerHeight = isMobileDevice ? 36 : 40;
+  const canvasAreaHeight = dimensions.height - headerHeight - footerHeight;
+  
   return (
     <div 
+      ref={containerRef}
       className="fixed inset-0 z-[9999] bg-white flex flex-col"
-      style={{ touchAction: 'none' }}
+      style={{ 
+        touchAction: 'none',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'none'
+      }}
     >
-      {/* Header com botões */}
-      <div className="flex justify-between items-center p-3 bg-gray-100 border-b border-gray-300">
-        <div className="flex gap-2">
+      {/* Header com botões - Compacto em mobile */}
+      <div 
+        className={`flex justify-between items-center bg-gray-100 border-b border-gray-300 ${isMobileDevice ? 'px-2 py-1.5' : 'px-4 py-3'}`}
+        style={{ height: headerHeight, minHeight: headerHeight, flexShrink: 0 }}
+      >
+        <div className="flex gap-1.5">
           <Button
             onClick={handleClear}
             variant="outline"
             size="sm"
-            className="bg-white border-red-300 text-red-600 hover:bg-red-50"
+            className={`bg-white border-red-300 text-red-600 hover:bg-red-50 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
           >
-            <RotateCcw className="w-4 h-4 mr-1" />
-            Limpar
+            <RotateCcw className={`${isMobileDevice ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isMobileDevice ? '' : 'mr-1'}`} />
+            {!isMobileDevice && 'Limpar'}
           </Button>
           <Button
             onClick={handleSave}
             size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className={`bg-green-600 hover:bg-green-700 text-white ${isMobileDevice ? 'h-8 px-3 text-xs' : ''}`}
           >
-            <Save className="w-4 h-4 mr-1" />
+            <Save className={`${isMobileDevice ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-1'}`} />
             Guardar
           </Button>
         </div>
         
-        <div className="text-center flex-1">
-          <p className="text-sm text-gray-600 font-medium">
-            {nome ? `Assinatura de ${nome}` : 'Assine no espaço abaixo'}
+        <div className={`text-center flex-1 ${isMobileDevice ? 'mx-2' : 'mx-4'}`}>
+          <p className={`text-gray-600 font-medium truncate ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+            {nome ? `Assinatura: ${nome}` : 'Assine abaixo'}
           </p>
         </div>
         
@@ -405,16 +479,26 @@ const FullscreenSignature = ({
           onClick={handleExit}
           variant="outline"
           size="sm"
-          className="bg-white border-gray-300"
+          className={`bg-white border-gray-300 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
         >
-          <X className="w-4 h-4 mr-1" />
-          Sair
+          <X className={`${isMobileDevice ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isMobileDevice ? '' : 'mr-1'}`} />
+          {!isMobileDevice && 'Sair'}
         </Button>
       </div>
       
-      {/* Área de Assinatura */}
-      <div className="flex-1 p-4 bg-gray-50">
-        <div className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-300 shadow-inner overflow-hidden">
+      {/* Área de Assinatura - Ocupa todo o espaço restante */}
+      <div 
+        className={`flex-1 bg-gray-50 ${isMobileDevice ? 'p-1' : 'p-2'}`}
+        style={{ 
+          height: canvasAreaHeight,
+          touchAction: 'none',
+          overflow: 'hidden'
+        }}
+      >
+        <div 
+          className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-400 shadow-inner overflow-hidden"
+          style={{ touchAction: 'none' }}
+        >
           <SignatureCanvasOptimized
             ref={canvasRef}
             initialData={initialPaths}
@@ -423,10 +507,16 @@ const FullscreenSignature = ({
         </div>
       </div>
       
-      {/* Instrução */}
-      <div className="p-2 bg-gray-100 text-center">
-        <p className="text-xs text-gray-500">
-          Use o dedo ou caneta stylus para assinar. A assinatura será guardada ao clicar em "Guardar".
+      {/* Instrução - Compacta em mobile */}
+      <div 
+        className={`bg-gray-100 text-center border-t border-gray-200 ${isMobileDevice ? 'py-1.5 px-2' : 'py-2 px-4'}`}
+        style={{ height: footerHeight, minHeight: footerHeight, flexShrink: 0 }}
+      >
+        <p className={`text-gray-500 ${isMobileDevice ? 'text-[10px]' : 'text-xs'}`}>
+          {isMobileDevice 
+            ? 'Use o dedo para assinar • Clique Guardar quando terminar'
+            : 'Use o dedo ou caneta stylus para assinar. A assinatura será guardada ao clicar em "Guardar".'
+          }
         </p>
       </div>
     </div>
