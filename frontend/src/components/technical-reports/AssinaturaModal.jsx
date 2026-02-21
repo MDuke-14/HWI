@@ -284,8 +284,8 @@ const SignatureCanvasOptimized = React.forwardRef(({
 
 SignatureCanvasOptimized.displayName = 'SignatureCanvasOptimized';
 
-// Modal de Fullscreen para Assinatura - Otimizado para Mobile
-const FullscreenSignature = ({ 
+// Popup de Assinatura - Simples e Funcional
+const SignaturePopup = ({ 
   isOpen, 
   onClose, 
   onSave, 
@@ -294,234 +294,231 @@ const FullscreenSignature = ({
 }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const [currentPaths, setCurrentPaths] = useState(initialPaths);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [paths, setPaths] = useState(initialPaths);
+  const contextRef = useRef(null);
+  const currentPathRef = useRef([]);
+  const lastPointRef = useRef(null);
   
-  // Calcular dimensões do canvas
+  // Inicializar canvas
   useEffect(() => {
-    if (isOpen) {
-      const updateDimensions = () => {
-        // Usar toda a área disponível
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        setDimensions({ width, height });
-      };
-      
-      updateDimensions();
-      window.addEventListener('resize', updateDimensions);
-      window.addEventListener('orientationchange', () => {
-        setTimeout(updateDimensions, 100);
+    if (!isOpen || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!container) return;
+    
+    // Definir tamanho do canvas baseado no container
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    contextRef.current = ctx;
+    
+    // Redesenhar paths existentes
+    if (initialPaths.length > 0) {
+      initialPaths.forEach(path => {
+        if (path.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length; i++) {
+          ctx.lineTo(path[i].x, path[i].y);
+        }
+        ctx.stroke();
       });
-      
-      return () => {
-        window.removeEventListener('resize', updateDimensions);
-        window.removeEventListener('orientationchange', updateDimensions);
-      };
+      setPaths(initialPaths);
     }
-  }, [isOpen]);
+  }, [isOpen, initialPaths]);
   
-  useEffect(() => {
-    if (isOpen && canvasRef.current && initialPaths.length > 0) {
-      setTimeout(() => {
-        canvasRef.current?.setPaths(initialPaths);
-      }, 150);
-    }
-  }, [isOpen, initialPaths, dimensions]);
-  
-  const handleClear = () => {
-    if (canvasRef.current) {
-      canvasRef.current.clear();
-      setCurrentPaths([]);
-    }
-  };
-  
-  const handleSave = () => {
-    if (canvasRef.current) {
-      const canvas = canvasRef.current.getCanvas();
-      const paths = canvasRef.current.getPaths();
-      console.log('FullscreenSignature handleSave:', { pathsCount: paths.length, currentPathsCount: currentPaths.length });
-      
-      // Converter canvas para imagem e guardar directamente
-      if (canvas) {
-        canvas.toBlob((blob) => {
-          if (blob && blob.size > 5000) { // Se o blob tem conteúdo significativo
-            onSave(canvas, paths.length > 0 ? paths : currentPaths, blob);
-          } else {
-            onSave(canvas, paths.length > 0 ? paths : currentPaths, null);
-          }
-        }, 'image/png', 0.95);
-      } else {
-        onSave(canvas, paths.length > 0 ? paths : currentPaths, null);
-      }
-    }
-  };
-  
-  const handleExit = () => {
-    // Guardar estado atual antes de sair
-    if (canvasRef.current) {
-      const paths = canvasRef.current.getPaths();
-      onClose(paths);
+  // Obter coordenadas
+  const getCoords = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
     } else {
-      onClose(currentPaths);
-    }
-  };
-  
-  const handlePathChange = (paths) => {
-    console.log('handlePathChange:', { pathsCount: paths.length });
-    setCurrentPaths(paths);
-  };
-  
-  // Prevenir scroll e zoom no body quando fullscreen está aberto
-  useEffect(() => {
-    if (isOpen) {
-      // Guardar scroll position
-      const scrollY = window.scrollY;
-      
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.width = '100%';
-      document.documentElement.style.overflow = 'hidden';
-      
-      // Forçar orientação horizontal em dispositivos móveis (se suportado)
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {
-          // Ignorar erro - nem todos os browsers suportam
-        });
-      }
-      
-      return () => {
-        // Cleanup será feito no else block
-      };
-    } else {
-      // Restaurar scroll position
-      const scrollY = document.body.style.top;
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.width = '';
-      document.documentElement.style.overflow = '';
-      
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
-      
-      if (screen.orientation && screen.orientation.unlock) {
-        screen.orientation.unlock();
-      }
+      clientX = e.clientX;
+      clientY = e.clientY;
     }
     
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.width = '';
-      document.documentElement.style.overflow = '';
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
     };
-  }, [isOpen]);
+  };
+  
+  // Iniciar desenho
+  const handleStart = (e) => {
+    e.preventDefault();
+    const coords = getCoords(e);
+    if (!coords || !contextRef.current) return;
+    
+    setIsDrawing(true);
+    lastPointRef.current = coords;
+    currentPathRef.current = [coords];
+    
+    contextRef.current.beginPath();
+    contextRef.current.moveTo(coords.x, coords.y);
+  };
+  
+  // Desenhar
+  const handleMove = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    
+    const coords = getCoords(e);
+    if (!coords || !contextRef.current) return;
+    
+    contextRef.current.lineTo(coords.x, coords.y);
+    contextRef.current.stroke();
+    contextRef.current.beginPath();
+    contextRef.current.moveTo(coords.x, coords.y);
+    
+    currentPathRef.current.push(coords);
+    lastPointRef.current = coords;
+  };
+  
+  // Parar desenho
+  const handleEnd = (e) => {
+    if (!isDrawing) return;
+    if (e) e.preventDefault();
+    
+    setIsDrawing(false);
+    
+    if (currentPathRef.current.length > 1) {
+      const newPaths = [...paths, [...currentPathRef.current]];
+      setPaths(newPaths);
+    }
+    
+    currentPathRef.current = [];
+    lastPointRef.current = null;
+  };
+  
+  // Limpar
+  const handleClear = () => {
+    const ctx = contextRef.current;
+    const canvas = canvasRef.current;
+    if (!ctx || !canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+    setPaths([]);
+    currentPathRef.current = [];
+  };
+  
+  // Guardar
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    canvas.toBlob((blob) => {
+      onSave(canvas, paths, blob);
+    }, 'image/png', 0.95);
+  };
+  
+  // Fechar
+  const handleClose = () => {
+    onClose(paths);
+  };
   
   if (!isOpen) return null;
   
-  // Detectar se é mobile
-  const isMobileDevice = window.innerWidth < 768 || 'ontouchstart' in window;
-  
-  // Calcular altura do canvas (subtrair header e footer)
-  const headerHeight = isMobileDevice ? 50 : 56;
-  const footerHeight = isMobileDevice ? 36 : 40;
-  const canvasAreaHeight = dimensions.height - headerHeight - footerHeight;
-  
   return (
     <div 
-      ref={containerRef}
-      className="fixed inset-0 z-[9999] bg-white flex flex-col"
-      style={{ 
-        overscrollBehavior: 'none'
+      className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-2"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
       }}
     >
-      {/* Header com botões - Compacto em mobile */}
-      <div 
-        className={`flex justify-between items-center bg-gray-100 border-b border-gray-300 ${isMobileDevice ? 'px-2 py-1.5' : 'px-4 py-3'}`}
-        style={{ height: headerHeight, minHeight: headerHeight, flexShrink: 0, touchAction: 'manipulation' }}
-      >
-        <div className="flex gap-1.5">
-          <Button
-            onClick={handleClear}
-            onTouchEnd={(e) => { e.preventDefault(); handleClear(); }}
-            variant="outline"
-            size="sm"
-            className={`bg-white border-red-300 text-red-600 hover:bg-red-50 active:bg-red-100 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
-            style={{ touchAction: 'manipulation' }}
+      <div className="bg-white rounded-xl w-full h-full max-w-[100vw] max-h-[100vh] flex flex-col overflow-hidden">
+        {/* Header com botões */}
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-100 border-b border-gray-300 flex-shrink-0">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="flex items-center gap-1 px-3 py-2 bg-white border border-red-300 text-red-600 rounded-lg text-sm font-medium active:bg-red-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Limpar
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="flex items-center gap-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium active:bg-green-700"
+            >
+              <Save className="w-4 h-4" />
+              Guardar
+            </button>
+          </div>
+          
+          <span className="text-gray-600 text-sm font-medium truncate mx-2 flex-1 text-center">
+            {nome || 'Assinatura'}
+          </span>
+          
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium active:bg-gray-100"
           >
-            <RotateCcw className={`${isMobileDevice ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isMobileDevice ? '' : 'mr-1'}`} />
-            {!isMobileDevice && 'Limpar'}
-          </Button>
-          <Button
-            onClick={handleSave}
-            onTouchEnd={(e) => { e.preventDefault(); handleSave(); }}
-            size="sm"
-            className={`bg-green-600 hover:bg-green-700 active:bg-green-800 text-white ${isMobileDevice ? 'h-8 px-3 text-xs' : ''}`}
-            style={{ touchAction: 'manipulation' }}
-          >
-            <Save className={`${isMobileDevice ? 'w-3.5 h-3.5 mr-1' : 'w-4 h-4 mr-1'}`} />
-            Guardar
-          </Button>
+            <X className="w-4 h-4" />
+            Fechar
+          </button>
         </div>
         
-        <div className={`text-center flex-1 ${isMobileDevice ? 'mx-2' : 'mx-4'}`}>
-          <p className={`text-gray-600 font-medium truncate ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-            {nome ? `Assinatura: ${nome}` : 'Assine abaixo'}
-          </p>
-        </div>
-        
-        <Button
-          onClick={handleExit}
-          onTouchEnd={(e) => { e.preventDefault(); handleExit(); }}
-          variant="outline"
-          size="sm"
-          className={`bg-white border-gray-300 active:bg-gray-100 ${isMobileDevice ? 'h-8 px-2 text-xs' : ''}`}
-          style={{ touchAction: 'manipulation' }}
-        >
-          <X className={`${isMobileDevice ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isMobileDevice ? '' : 'mr-1'}`} />
-          {!isMobileDevice && 'Sair'}
-        </Button>
-      </div>
-      
-      {/* Área de Assinatura - Ocupa todo o espaço restante */}
-      <div 
-        className={`flex-1 bg-gray-50 ${isMobileDevice ? 'p-1' : 'p-2'}`}
-        style={{ 
-          height: canvasAreaHeight,
-          overflow: 'hidden'
-        }}
-      >
+        {/* Área de assinatura */}
         <div 
-          className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-400 shadow-inner overflow-hidden"
+          ref={containerRef}
+          className="flex-1 bg-gray-50 p-2 overflow-hidden"
         >
-          <SignatureCanvasOptimized
+          <canvas
             ref={canvasRef}
-            initialData={initialPaths}
-            onSignatureChange={handlePathChange}
+            className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-400 cursor-crosshair"
+            style={{ 
+              touchAction: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
+            }}
+            onMouseDown={handleStart}
+            onMouseMove={handleMove}
+            onMouseUp={handleEnd}
+            onMouseLeave={handleEnd}
+            onTouchStart={handleStart}
+            onTouchMove={handleMove}
+            onTouchEnd={handleEnd}
+            onTouchCancel={handleEnd}
           />
         </div>
-      </div>
-      
-      {/* Instrução - Compacta em mobile */}
-      <div 
-        className={`bg-gray-100 text-center border-t border-gray-200 ${isMobileDevice ? 'py-1.5 px-2' : 'py-2 px-4'}`}
-        style={{ height: footerHeight, minHeight: footerHeight, flexShrink: 0 }}
-      >
-        <p className={`text-gray-500 ${isMobileDevice ? 'text-[10px]' : 'text-xs'}`}>
-          {isMobileDevice 
-            ? 'Use o dedo para assinar • Clique Guardar quando terminar'
-            : 'Use o dedo ou caneta stylus para assinar. A assinatura será guardada ao clicar em "Guardar".'
-          }
-        </p>
+        
+        {/* Instrução */}
+        <div className="px-3 py-2 bg-gray-100 border-t border-gray-200 text-center flex-shrink-0">
+          <p className="text-gray-500 text-xs">
+            Desenhe a assinatura com o dedo ou rato
+          </p>
+        </div>
       </div>
     </div>
   );
