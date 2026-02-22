@@ -79,7 +79,7 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
   const borderColor = isDark ? 'divide-gray-800' : 'divide-gray-200';
 
   return (
-    <div className={`min-h-screen ${bgMain} pb-20`}>
+    <div className={`min-h-screen ${bgMain} pb-20 mobile-safe-top`}>
       {/* Header com perfil */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-800 px-4 pt-8 pb-6">
         <div className="flex items-center gap-4">
