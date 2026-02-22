@@ -83,7 +83,7 @@ const Vacations = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
       <Navigation user={user} onLogout={onLogout} activePage="vacations" />
       <div className="container mx-auto px-4 py-8 max-w-6xl fade-in">
         <div className="flex justify-between items-center mb-8">
