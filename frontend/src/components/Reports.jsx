@@ -712,7 +712,7 @@ const Reports = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
       <Navigation user={user} onLogout={onLogout} activePage="reports" />
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
