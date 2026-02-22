@@ -47,8 +47,10 @@ body {
 }
 
 /* Classe para adicionar padding-top safe area em mobile */
-.mobile-safe-top {
-  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+@media (max-width: 767px) {
+  .mobile-safe-top {
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  }
 }
 
 /* Aplicar safe area ao container principal da app em mobile */
