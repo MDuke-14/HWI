@@ -222,6 +222,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showHTMLPreviewModal, setShowHTMLPreviewModal] = useState(false);
   const [htmlPreviewData, setHtmlPreviewData] = useState(null);
   const [loadingHTMLPreview, setLoadingHTMLPreview] = useState(false);
+  
+  // Visualização PDF real (para o cliente ver antes de assinar)
+  const [showPDFViewerModal, setShowPDFViewerModal] = useState(false);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState(null);
+  const [loadingPDFViewer, setLoadingPDFViewer] = useState(false);
 
   // Folha de Horas
   const [showFolhaHorasModal, setShowFolhaHorasModal] = useState(false);
