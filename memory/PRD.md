@@ -90,6 +90,34 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Editar Data de Fotografias (23 Fevereiro 2026) - NOVA FUNCIONALIDADE
+**Adicionada funcionalidade para editar a data de inserção de fotografias em OTs:**
+
+**Backend (`server.py`):**
+- Endpoint PUT `/api/relatorios-tecnicos/{id}/fotografias/{foto_id}` atualizado para aceitar `uploaded_at`
+- Validação para garantir que pelo menos um campo é enviado
+
+**Frontend (`TechnicalReports.jsx`):**
+- Novo estado `editFotoData` para armazenar a data editável
+- `openEditFotoModal` agora carrega a data existente e converte para formato datetime-local
+- `handleUpdateFotoDescricao` envia também a nova data (se alterada)
+- Modal de edição agora mostra campo de data com ícone de calendário
+- Título do modal alterado para "Editar Fotografia" (era "Editar Descrição da Fotografia")
+
+**Funcionalidades:**
+- ✅ Editar data de fotografias existentes (desktop + mobile)
+- ✅ Input datetime-local para selecção precisa de data e hora
+- ✅ Conversão automática de timezone
+- ✅ Reset do campo ao fechar modal
+
+**Ficheiros modificados:**
+- `/app/backend/server.py` - Endpoint de atualização de fotografia
+- `/app/frontend/src/components/TechnicalReports.jsx` - Modal e funções de edição
+
+**Testado:** ✅ API via curl + Screenshots desktop + Screenshots mobile
+
+---
+
 #### ✅ Bug Crítico Assinatura Mobile (21 Fevereiro 2026) - CORRIGIDO
 **Problema:** O canvas de assinatura e os botões (Limpar, Guardar, Fechar) não respondiam a eventos de toque em dispositivos móveis.
 
