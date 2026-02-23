@@ -108,7 +108,8 @@ def generate_folha_horas_pdf(
     tecnicos_manuais,
     tarifas_por_tecnico,  # dict: {tecnico_id: tarifa_valor} ou {tecnico_id_data_codigo: valor}
     dados_extras,  # dict: {tecnico_id_data: {dieta, portagens, despesas}}
-    tarifas_por_codigo=None  # dict: {"1": valor, "2": valor, "S": valor, "D": valor}
+    tarifas_por_codigo=None,  # dict: {"1": valor, "2": valor, "S": valor, "D": valor}
+    valor_km=0.65  # Valor por km da tabela de preço selecionada
 ):
     """
     Gera PDF da Folha de Horas em formato horizontal (landscape)
@@ -121,6 +122,7 @@ def generate_folha_horas_pdf(
         tarifas_por_tecnico: {tecnico_id: valor_hora} ou com chave composta
         dados_extras: {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
         tarifas_por_codigo: {codigo: valor_hora} para aplicação automática
+        valor_km: valor por quilómetro da tabela de preço selecionada
     """
     # Inicializar tarifas por código se não fornecido
     if tarifas_por_codigo is None:
