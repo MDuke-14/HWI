@@ -3285,18 +3285,27 @@ async def delete_fotografia(
     return {"message": "Fotografia removida com sucesso"}
 
 @api_router.put("/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}")
-async def update_fotografia_descricao(
+async def update_fotografia(
     relatorio_id: str,
     foto_id: str,
     data: dict,
     current_user: dict = Depends(get_current_user)
 ):
-    """Atualizar descrição de uma fotografia"""
-    descricao = data.get("descricao", "")
+    """Atualizar descrição e/ou data de uma fotografia"""
+    update_data = {}
+    
+    if "descricao" in data:
+        update_data["descricao"] = data["descricao"]
+    
+    if "uploaded_at" in data and data["uploaded_at"]:
+        update_data["uploaded_at"] = data["uploaded_at"]
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
     
     result = await db.fotos_relatorio.update_one(
         {"id": foto_id, "relatorio_id": relatorio_id},
-        {"$set": {"descricao": descricao}}
+        {"$set": update_data}
     )
     
     if result.matched_count == 0:
@@ -3304,7 +3313,7 @@ async def update_fotografia_descricao(
     
     updated = await db.fotos_relatorio.find_one({"id": foto_id}, {"_id": 0})
     
-    logging.info(f"Descrição da fotografia {foto_id} atualizada")
+    logging.info(f"Fotografia {foto_id} atualizada")
     
     return updated
 
