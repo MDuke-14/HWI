@@ -6624,13 +6624,25 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
             
             {/* PDF Embed */}
-            <div className="flex-1 bg-gray-700">
+            <div className="flex-1 bg-gray-700 p-2">
               {pdfViewerUrl ? (
-                <iframe
-                  src={pdfViewerUrl}
-                  className="w-full h-full border-0"
-                  title="Visualização do PDF"
-                />
+                <object
+                  data={pdfViewerUrl}
+                  type="application/pdf"
+                  className="w-full h-full rounded"
+                  style={{ minHeight: 'calc(95vh - 80px)' }}
+                >
+                  <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-4">
+                    <p>O seu navegador não suporta visualização de PDF embutida.</p>
+                    <Button
+                      onClick={() => window.open(pdfViewerUrl, '_blank')}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Abrir PDF em Nova Aba
+                    </Button>
+                  </div>
+                </object>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
