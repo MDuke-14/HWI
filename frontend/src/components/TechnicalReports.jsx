@@ -4877,15 +4877,83 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
                             Assinatura #{index + 1}
                           </span>
-                          <Button
-                            onClick={() => handleDeleteAssinatura(assinatura.id)}
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-500 hover:bg-red-500/10 h-6 w-6 p-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              onClick={() => {
+                                setEditingAssinaturaDesktop(assinatura.id);
+                                setEditingAssinaturaData({
+                                  date: assinatura.data_intervencao?.split('T')[0] || '',
+                                  time: assinatura.data_intervencao?.includes('T') ? assinatura.data_intervencao.split('T')[1]?.substring(0,5) : '00:00'
+                                });
+                              }}
+                              size="sm"
+                              variant="ghost"
+                              className="text-blue-500 hover:bg-blue-500/10 h-6 w-6 p-0"
+                              title="Editar data/hora"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteAssinatura(assinatura.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-500 hover:bg-red-500/10 h-6 w-6 p-0"
+                              title="Eliminar assinatura"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
+                        
+                        {/* Formulário de edição inline */}
+                        {editingAssinaturaDesktop === assinatura.id && (
+                          <div className="bg-gray-800/50 rounded-lg p-3 mb-3 border border-gray-600">
+                            <p className="text-xs text-gray-400 mb-2">Editar Data/Hora da Intervenção:</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Input
+                                type="date"
+                                value={editingAssinaturaData.date}
+                                onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, date: e.target.value }))}
+                                className="bg-[#1a1a1a] border-gray-700 text-white h-8 w-36"
+                              />
+                              <Input
+                                type="time"
+                                value={editingAssinaturaData.time}
+                                onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, time: e.target.value }))}
+                                className="bg-[#1a1a1a] border-gray-700 text-white h-8 w-28"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    const newDateTime = `${editingAssinaturaData.date}T${editingAssinaturaData.time}`;
+                                    await axios.patch(
+                                      `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinatura.id}`,
+                                      { data_intervencao: newDateTime }
+                                    );
+                                    toast.success('Data/hora atualizada!');
+                                    setEditingAssinaturaDesktop(null);
+                                    fetchAssinaturas();
+                                  } catch (error) {
+                                    toast.error('Erro ao atualizar');
+                                  }
+                                }}
+                                className="bg-green-600 hover:bg-green-700 h-8"
+                              >
+                                Guardar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingAssinaturaDesktop(null)}
+                                className="text-gray-400 h-8"
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="flex items-start gap-4">
                           {/* Assinatura Digital - Sempre mostrar se tiver URL ou base64 */}
                           {(assinatura.assinatura_url || assinatura.assinatura_base64) && (
