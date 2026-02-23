@@ -3424,7 +3424,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder={isMobile ? "Buscar OT..." : "Buscar relatório por número, cliente..."}
+                placeholder={isMobile ? "Buscar OT..." : "Buscar por número, cliente ou local de intervenção..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={`pl-10 ${bgCard} ${borderColor} ${textPrimary} ${isMobile ? 'text-sm' : ''}`}
