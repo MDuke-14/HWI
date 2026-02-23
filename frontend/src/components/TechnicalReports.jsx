@@ -2609,7 +2609,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleGenerateFolhaHoras = async () => {
+  const handleGenerateFolhaHoras = async (tableId = 1) => {
     if (!selectedRelatorio || !folhaHorasData) return;
     
     // Preparar dados
@@ -2635,7 +2635,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/folha-horas-pdf`,
         {
           tarifas_por_tecnico: tarifasPorTecnico,
-          dados_extras: dadosExtras
+          dados_extras: dadosExtras,
+          table_id: tableId  // Incluir o ID da tabela de preço selecionada
         },
         { responseType: 'blob' }
       );
