@@ -1,0 +1,80 @@
+{
+  "summary": "Complete testing of Tabela de Preço (Price Table) system. All features implemented successfully.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_tabela_preco.py",
+    "/app/test_reports/pytest/pytest_tabela_preco.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": "username: pedro, password: password (admin)",
+  "seed_data_creation": "Created test tarifa in Table 2 during backend tests (cleaned up)",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Tabela de Preço system fully functional. 3 price tables working with different Km values. Folha de Horas modal allows table selection and shows correct Km price. Test using OT #356 (client: 560Lab).",
+  "features_tested": {
+    "Admin Dashboard - Tabela de Preço tab": {
+      "status": "PASS",
+      "details": "Tab accessible, shows 3 sub-tabs (Tabela 1 with 4 tarifas, Tabela Premium with 1 tarifa, Tabela 3 with 0 tarifas)"
+    },
+    "Configuração de valor por Km": {
+      "status": "PASS",
+      "details": "Edit Configuration dialog opens with Nome and Valor por Km fields. API PUT /api/tabelas-preco/{id} working correctly"
+    },
+    "Criar nova tarifa": {
+      "status": "PASS",
+      "details": "Nova Tarifa dialog opens with Nome, Valor por hora, and Código Horário fields. API POST /api/tarifas working correctly with table_id association"
+    },
+    "Editar e eliminar tarifas": {
+      "status": "PASS",
+      "details": "Edit/Delete buttons visible on tarifa cards. APIs PUT/DELETE /api/tarifas/{id} working correctly"
+    },
+    "Folha de Horas - Seleção de tabela": {
+      "status": "PASS",
+      "details": "Modal shows 'Tabela de Preço' section with 3 table buttons showing €/km values. Clicking updates 'Informação' section with selected table's Km price"
+    },
+    "Geração de PDF com valor Km": {
+      "status": "PASS",
+      "details": "Gerar PDF button visible. When table is selected, info shows correct Km price (e.g., 0.65€ for Tabela 1, 0.75€ for Tabela Premium)"
+    }
+  },
+  "api_tests_summary": {
+    "GET /api/tabelas-preco": "PASS - Returns 3 price tables with correct structure",
+    "PUT /api/tabelas-preco/{id}": "PASS - Updates valor_km and nome",
+    "PUT /api/tabelas-preco/999 (invalid)": "PASS - Returns 400 as expected",
+    "GET /api/tarifas": "PASS - Returns active tarifas only",
+    "GET /api/tarifas?table_id=X": "PASS - Filters by table correctly",
+    "GET /api/tarifas/all": "PASS - Returns all tarifas including inactive",
+    "POST /api/tarifas": "PASS - Creates tarifa with table_id association",
+    "POST /api/tarifas (invalid table)": "PASS - Returns 400 for invalid table_id",
+    "PUT /api/tarifas/{id}": "PASS - Updates tarifa",
+    "DELETE /api/tarifas/{id}": "PASS - Soft deletes (deactivates) tarifa"
+  },
+  "ui_test_flow": [
+    "1. Login as pedro/password",
+    "2. Navigate to Admin Dashboard via menu",
+    "3. Click 'Tabela de Preço' tab",
+    "4. Verify 3 table sub-tabs visible",
+    "5. Test Edit Configuration dialog",
+    "6. Test Nova Tarifa dialog",
+    "7. Navigate to Technical Reports > Ordens de Trabalho",
+    "8. Click on OT #356 to open details",
+    "9. Click 'Folha de Horas' button",
+    "10. Verify Tabela de Preço section in modal",
+    "11. Test table switching (Tabela 1 -> Tabela Premium)",
+    "12. Verify Km price updates in Informação section"
+  ]
+}
