@@ -1758,7 +1758,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.success('Material adicionado!');
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
-      setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente' });
+      setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente', data_utilizacao: '' });
       
       // Se foi marcado como "Cotação", atualizar lista de PCs
       if (materialFormData.fornecido_por === 'Cotação') {
