@@ -100,6 +100,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     fetchPendingVacations();
     fetchAllAbsences();
     fetchReports();
+    fetchTabelasPreco();
     fetchTarifas();
     fetchOvertimeAuthorizations();
     fetchNotificationLogs();
