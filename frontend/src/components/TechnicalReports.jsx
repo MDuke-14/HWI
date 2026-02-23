@@ -5642,7 +5642,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         onSubmit={handleAddMaterial}
         onCancel={() => {
           setShowAddMaterialModal(false);
-          setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente' });
+          setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente', data_utilizacao: '' });
         }}
       />
 
