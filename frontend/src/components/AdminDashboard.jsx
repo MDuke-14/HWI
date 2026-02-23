@@ -1670,103 +1670,230 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
           </TabsContent>
 
-          {/* Tarifas Tab Content */}
+          {/* Tabela de Preço Tab Content */}
           <TabsContent value="tarifas">
             <div className="glass-effect p-6 rounded-xl">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-                  Tarifas ({tarifas.filter(t => t.ativo).length})
+                  Tabela de Preço
                   <HelpTooltip section="admin_tarifas" />
                 </h2>
-                <Button 
-                  onClick={() => handleOpenTarifaDialog()}
-                  className="bg-green-600 hover:bg-green-700 text-white rounded-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova Tarifa
-                </Button>
               </div>
               
               <p className="text-gray-400 text-sm mb-6">
-                Configure as tarifas que serão utilizadas na Folha de Horas. Cada tarifa representa um valor por hora de trabalho. Associe a um código para aplicação automática.
+                Configure diferentes tabelas de preço com tarifas e valores de Km específicos. Selecione a tabela adequada ao gerar a Folha de Horas de cada OT.
               </p>
               
-              {tarifas.filter(t => t.ativo).length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {tarifas.filter(t => t.ativo).map((tarifa) => (
-                    <div key={tarifa.id} className="bg-[#1a1a1a] p-5 rounded-lg border border-gray-700">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2 rounded-lg">
-                            <DollarSign className="w-5 h-5 text-white" />
+              {/* Sub-tabs para as 3 tabelas de preço */}
+              <div className="flex gap-2 mb-6 flex-wrap">
+                {[1, 2, 3].map((tableId) => {
+                  const tabela = tabelasPreco.find(t => t.table_id === tableId);
+                  const tarifasCount = tarifas.filter(t => (t.table_id || 1) === tableId && t.ativo).length;
+                  return (
+                    <button
+                      key={tableId}
+                      onClick={() => setSelectedTableId(tableId)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                        selectedTableId === tableId
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#252525] border border-gray-700'
+                      }`}
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      {tabela?.nome || `Tabela ${tableId}`}
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        selectedTableId === tableId ? 'bg-amber-700' : 'bg-gray-700'
+                      }`}>
+                        {tarifasCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Configuração da tabela selecionada */}
+              {(() => {
+                const tabelaAtual = tabelasPreco.find(t => t.table_id === selectedTableId);
+                const tarifasDaTabela = tarifas.filter(t => (t.table_id || 1) === selectedTableId);
+                const tarifasAtivas = tarifasDaTabela.filter(t => t.ativo);
+                const tarifasInativas = tarifasDaTabela.filter(t => !t.ativo);
+                
+                return (
+                  <>
+                    {/* Card de configuração da tabela */}
+                    <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 p-4 rounded-lg border border-amber-500/30 mb-6">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-amber-500/20 p-3 rounded-lg">
+                            <DollarSign className="w-6 h-6 text-amber-400" />
                           </div>
                           <div>
-                            <div className="text-white font-semibold">{tarifa.nome}</div>
-                            {tarifa.codigo && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mt-1 ${
-                                tarifa.codigo === '1' ? 'bg-green-500/20 text-green-400' :
-                                tarifa.codigo === '2' ? 'bg-blue-500/20 text-blue-400' :
-                                tarifa.codigo === 'S' ? 'bg-orange-500/20 text-orange-400' :
-                                'bg-red-500/20 text-red-400'
-                              }`}>
-                                Código {tarifa.codigo}
-                              </span>
-                            )}
+                            <h3 className="text-lg font-semibold text-amber-400">
+                              {tabelaAtual?.nome || `Tabela ${selectedTableId}`}
+                            </h3>
+                            <p className="text-gray-400 text-sm">
+                              Valor por Km: <span className="text-amber-400 font-bold">{(tabelaAtual?.valor_km || 0.65).toFixed(2)}€</span>
+                            </p>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-3xl font-bold text-amber-400 mb-2">
-                        {tarifa.valor_por_hora.toFixed(2)}€<span className="text-lg text-gray-500">/hora</span>
-                      </div>
-                      {tarifa.codigo && (
-                        <p className="text-xs text-gray-500 mb-3">
-                          Aplica-se a: {tarifa.codigo === '1' ? 'Dias úteis (07h-19h)' :
-                                        tarifa.codigo === '2' ? 'Dias úteis (19h-07h)' :
-                                        tarifa.codigo === 'S' ? 'Sábados' : 'Domingos/Feriados'}
-                        </p>
-                      )}
-                      <div className="flex gap-2">
                         <Button 
-                          onClick={() => handleOpenTarifaDialog(tarifa)} 
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" 
+                          onClick={() => tabelaAtual && handleOpenTabelaDialog(tabelaAtual)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white rounded-full"
                           size="sm"
                         >
-                          <Edit className="w-3 h-3 mr-1" />Editar
-                        </Button>
-                        <Button 
-                          onClick={() => handleDeleteTarifa(tarifa.id, tarifa.nome)} 
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm" 
-                          size="sm"
-                        >
-                          <Trash2 className="w-3 h-3 mr-1" />Eliminar
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar Configuração
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-400 py-12">
-                  <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma tarifa configurada</p>
-                  <p className="text-sm mt-2">Crie tarifas para utilizar na Folha de Horas</p>
-                </div>
-              )}
-              
-              {/* Tarifas inativas */}
-              {tarifas.filter(t => !t.ativo).length > 0 && (
-                <div className="mt-8 pt-6 border-t border-gray-700">
-                  <h3 className="text-lg font-semibold text-gray-500 mb-4">Tarifas Inativas ({tarifas.filter(t => !t.ativo).length})</h3>
-                  <div className="grid md:grid-cols-3 gap-3">
-                    {tarifas.filter(t => !t.ativo).map((tarifa) => (
-                      <div key={tarifa.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 opacity-60">
-                        <div className="text-gray-500 text-sm">{tarifa.nome}</div>
-                        <div className="text-gray-600">{tarifa.valor_por_hora.toFixed(2)}€/hora</div>
+                    
+                    {/* Header das tarifas */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-white">
+                        Tarifas ({tarifasAtivas.length})
+                      </h3>
+                      <Button 
+                        onClick={() => handleOpenTarifaDialog()}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-full"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nova Tarifa
+                      </Button>
+                    </div>
+                    
+                    {/* Grid de tarifas */}
+                    {tarifasAtivas.length > 0 ? (
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {tarifasAtivas.map((tarifa) => (
+                          <div key={tarifa.id} className="bg-[#1a1a1a] p-5 rounded-lg border border-gray-700">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2 rounded-lg">
+                                  <DollarSign className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                  <div className="text-white font-semibold">{tarifa.nome}</div>
+                                  {tarifa.codigo && (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mt-1 ${
+                                      tarifa.codigo === '1' ? 'bg-green-500/20 text-green-400' :
+                                      tarifa.codigo === '2' ? 'bg-blue-500/20 text-blue-400' :
+                                      tarifa.codigo === 'S' ? 'bg-orange-500/20 text-orange-400' :
+                                      tarifa.codigo === 'D' ? 'bg-red-500/20 text-red-400' :
+                                      'bg-gray-500/20 text-gray-400'
+                                    }`}>
+                                      {tarifa.codigo === 'manual' ? 'Manual' : `Código ${tarifa.codigo}`}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-3xl font-bold text-amber-400 mb-2">
+                              {tarifa.valor_por_hora.toFixed(2)}€<span className="text-lg text-gray-500">/hora</span>
+                            </div>
+                            {tarifa.codigo && tarifa.codigo !== 'manual' && (
+                              <p className="text-xs text-gray-500 mb-3">
+                                Aplica-se a: {tarifa.codigo === '1' ? 'Dias úteis (07h-19h)' :
+                                              tarifa.codigo === '2' ? 'Dias úteis (19h-07h)' :
+                                              tarifa.codigo === 'S' ? 'Sábados' : 'Domingos/Feriados'}
+                              </p>
+                            )}
+                            {tarifa.codigo === 'manual' && (
+                              <p className="text-xs text-gray-500 mb-3">
+                                Aplicação manual na Folha de Horas
+                              </p>
+                            )}
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={() => handleOpenTarifaDialog(tarifa)} 
+                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm" 
+                                size="sm"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />Editar
+                              </Button>
+                              <Button 
+                                onClick={() => handleDeleteTarifa(tarifa.id, tarifa.nome)} 
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm" 
+                                size="sm"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />Eliminar
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    ) : (
+                      <div className="text-center text-gray-400 py-12 bg-[#1a1a1a] rounded-lg border border-gray-700">
+                        <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhuma tarifa configurada nesta tabela</p>
+                        <p className="text-sm mt-2">Crie tarifas para utilizar na Folha de Horas</p>
+                      </div>
+                    )}
+                    
+                    {/* Tarifas inativas */}
+                    {tarifasInativas.length > 0 && (
+                      <div className="mt-8 pt-6 border-t border-gray-700">
+                        <h3 className="text-lg font-semibold text-gray-500 mb-4">Tarifas Inativas ({tarifasInativas.length})</h3>
+                        <div className="grid md:grid-cols-3 gap-3">
+                          {tarifasInativas.map((tarifa) => (
+                            <div key={tarifa.id} className="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 opacity-60">
+                              <div className="text-gray-500 text-sm">{tarifa.nome}</div>
+                              <div className="text-gray-600">{tarifa.valor_por_hora.toFixed(2)}€/hora</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
+            
+            {/* Dialog para editar configuração da tabela */}
+            <Dialog open={!!showTabelaDialog} onOpenChange={(open) => {
+              if (!open) setShowTabelaDialog(false);
+            }}>
+              <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-amber-400" />
+                    Configuração da Tabela {showTabelaDialog}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <Label>Nome da Tabela</Label>
+                    <Input
+                      value={tabelaForm.nome}
+                      onChange={(e) => setTabelaForm({...tabelaForm, nome: e.target.value})}
+                      className="bg-[#0a0a0a] border-gray-700 text-white"
+                      placeholder="Ex: Tabela Standard, Premium..."
+                    />
+                  </div>
+                  <div>
+                    <Label>Valor por Km (€) *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tabelaForm.valor_km}
+                      onChange={(e) => setTabelaForm({...tabelaForm, valor_km: e.target.value})}
+                      className="bg-[#0a0a0a] border-gray-700 text-white"
+                      placeholder="Ex: 0.65"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Este valor será usado para calcular o custo dos quilómetros na Folha de Horas
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleSaveTabela} 
+                    disabled={loading}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-full"
+                  >
+                    {loading ? 'A guardar...' : 'Guardar Configuração'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             
             {/* Dialog para criar/editar tarifa */}
             <Dialog open={showTarifaDialog} onOpenChange={(open) => {
@@ -1780,7 +1907,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-amber-400" />
-                    {editingTarifa ? 'Editar Tarifa' : 'Nova Tarifa'}
+                    {editingTarifa ? 'Editar Tarifa' : `Nova Tarifa (${tabelasPreco.find(t => t.table_id === selectedTableId)?.nome || `Tabela ${selectedTableId}`})`}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
