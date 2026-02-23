@@ -2847,6 +2847,130 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowHTMLPreviewModal(false);
     setShowAssinaturaModal(true);
   };
+  
+  // ========== Canvas de Assinatura no HTML Preview ==========
+  
+  const initSignatureCanvas = () => {
+    const canvas = htmlSignatureCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  };
+  
+  const startDrawing = (e) => {
+    const canvas = htmlSignatureCanvasRef.current;
+    if (!canvas) return;
+    
+    setIsDrawingSignature(true);
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+  
+  const draw = (e) => {
+    if (!isDrawingSignature) return;
+    const canvas = htmlSignatureCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+  
+  const stopDrawing = () => {
+    setIsDrawingSignature(false);
+  };
+  
+  const clearSignatureCanvas = () => {
+    const canvas = htmlSignatureCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+  
+  const saveHtmlSignature = async () => {
+    const canvas = htmlSignatureCanvasRef.current;
+    if (!canvas) return;
+    
+    if (!htmlSignatureName.trim()) {
+      toast.error('Por favor, insira o nome do signatário');
+      return;
+    }
+    
+    // Verificar se há alguma assinatura desenhada
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    let hasDrawing = false;
+    
+    for (let i = 0; i < pixels.length; i += 4) {
+      // Verificar se pixel não é branco
+      if (pixels[i] < 250 || pixels[i + 1] < 250 || pixels[i + 2] < 250) {
+        hasDrawing = true;
+        break;
+      }
+    }
+    
+    if (!hasDrawing) {
+      toast.error('Por favor, desenhe a sua assinatura');
+      return;
+    }
+    
+    setSavingHtmlSignature(true);
+    try {
+      const assinaturaBase64 = canvas.toDataURL('image/png');
+      const nameParts = htmlSignatureName.trim().split(' ');
+      const primeiroNome = nameParts[0] || '';
+      const ultimoNome = nameParts.slice(1).join(' ') || '';
+      
+      // Enviar assinatura para o servidor
+      const formData = new FormData();
+      
+      // Converter base64 para blob
+      const response = await fetch(assinaturaBase64);
+      const blob = await response.blob();
+      formData.append('assinatura', blob, 'assinatura.png');
+      formData.append('primeiro_nome', primeiroNome);
+      formData.append('ultimo_nome', ultimoNome);
+      formData.append('tipo', 'digital');
+      formData.append('data_intervencao', new Date().toISOString().split('T')[0]);
+      
+      await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      
+      toast.success('Assinatura guardada com sucesso!');
+      
+      // Limpar canvas e nome
+      clearSignatureCanvas();
+      setHtmlSignatureName('');
+      
+      // Recarregar dados do preview
+      handleHTMLPreview();
+      
+    } catch (error) {
+      console.error('Erro ao guardar assinatura:', error);
+      toast.error('Erro ao guardar assinatura');
+    } finally {
+      setSavingHtmlSignature(false);
+    }
+  };
 
 
   // ========== Email PDF Functions ==========
