@@ -1559,14 +1559,22 @@ const TechnicalReports = ({ user, onLogout }) => {
     if (!selectedFoto || !selectedRelatorio) return;
     
     try {
+      const updateData = { descricao: editFotoDescricao };
+      
+      // Adicionar data se foi alterada
+      if (editFotoData) {
+        updateData.uploaded_at = new Date(editFotoData).toISOString();
+      }
+      
       await axios.put(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${selectedFoto.id}`,
-        { descricao: editFotoDescricao }
+        updateData
       );
-      toast.success('Descrição atualizada!');
+      toast.success('Fotografia atualizada!');
       setShowEditFotoModal(false);
       setSelectedFoto(null);
       setEditFotoDescricao('');
+      setEditFotoData('');
       fetchFotografiasRelatorio(selectedRelatorio.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
