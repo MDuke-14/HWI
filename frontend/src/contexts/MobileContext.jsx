@@ -112,7 +112,7 @@ export const MobileProvider = ({ children }) => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
     };
-  }, [updateDeviceType]);
+  }, [updateDeviceType, forcedMode]);
 
   // Esconder bottom nav ao scrollar para baixo (mobile UX)
   useEffect(() => {
