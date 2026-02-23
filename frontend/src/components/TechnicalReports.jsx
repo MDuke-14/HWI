@@ -3566,6 +3566,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 const search = searchTerm.toLowerCase().trim();
                 return r.numero_assistencia?.toString().includes(search) ||
                   r.cliente_nome?.toLowerCase().includes(search) ||
+                  r.local_intervencao?.toLowerCase().includes(search) ||
                   r.cliente_local?.toLowerCase().includes(search);
               }).length === 0 && (
                 <div className="col-span-full text-center py-8">
@@ -3574,7 +3575,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     Nenhuma OT encontrada para "{searchTerm}"
                   </p>
                   <p className={`${textSecondary} text-sm mt-2`}>
-                    Tente pesquisar por número da OT, nome do cliente ou local
+                    Tente pesquisar por número da OT, nome do cliente ou local de intervenção
                   </p>
                 </div>
               )}
