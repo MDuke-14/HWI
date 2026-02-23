@@ -35,6 +35,12 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
     - Exemplo: "Código 1 – Trabalho: 15:00 total"
     - Descrições: (07h-19h), (19h-07h), Sábado, Domingo/Feriado
   - Facilita validação, faturação e controlo interno
+- ✅ **Exclusão de Combustível da Folha de Horas** (23 Fevereiro 2026) - NOVA FUNCIONALIDADE
+  - Despesas marcadas como "Combustível" são excluídas automaticamente dos cálculos
+  - Despesas continuam registadas na OT para controlo interno
+  - Não influenciam valores finais apresentados na Folha de Horas
+  - Nota informativa adicionada ao modal da Folha de Horas
+  - Separa despesas operacionais internas dos valores para validação externa
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
