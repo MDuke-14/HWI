@@ -860,11 +860,16 @@ class TabelaPrecoConfig(BaseModel):
     """Configuração da Tabela de Preço (valor por Km)"""
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    table_id: int  # ID da tabela de preço (1, 2, ou 3)
+    table_id: int  # ID da tabela de preço (auto-incrementado)
     valor_km: float = 0.65  # Valor por quilómetro em euros
-    nome: str = ""  # Nome customizado da tabela (opcional)
+    nome: str = ""  # Nome customizado da tabela
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
+
+
+class TabelaPrecoCreate(BaseModel):
+    nome: str  # Nome da tabela (obrigatório)
+    valor_km: float = 0.65  # Valor por Km (default 0.65)
 
 
 class TabelaPrecoConfigUpdate(BaseModel):
@@ -876,7 +881,7 @@ class FolhaHorasRequest(BaseModel):
     """Request para gerar PDF da Folha de Horas"""
     tarifas_por_tecnico: dict  # {tecnico_id: tarifa_valor}
     dados_extras: dict  # {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
-    table_id: int = 1  # ID da tabela de preço a usar (1, 2, ou 3)
+    table_id: int = 1  # ID da tabela de preço a usar
 
 
 class OvertimeAuthorization(BaseModel):
