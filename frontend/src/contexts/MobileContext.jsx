@@ -154,7 +154,10 @@ export const MobileProvider = ({ children }) => {
       bottomNavVisible,
       setBottomNavVisible,
       mobileClass,
-      BREAKPOINTS
+      BREAKPOINTS,
+      forcedMode,
+      toggleViewMode,
+      setViewMode
     }}>
       {children}
     </MobileContext.Provider>
