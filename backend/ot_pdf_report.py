@@ -219,45 +219,99 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     
     # ========== EQUIPAMENTOS ==========
     
+    def format_ano_fabrico(ano_str):
+        """Formata o ano de fabrico para exibição"""
+        if not ano_str:
+            return None
+        # Pode vir como AAAA, MM-AAAA, MM/AAAA, DD-MM-AAAA, etc.
+        return ano_str
+    
+    def create_equipment_card(tipologia, marca, modelo, numero_serie, ano_fabrico, is_principal=False):
+        """Cria um card de equipamento com campos separados"""
+        # Dados do equipamento em campos separados
+        equip_data = []
+        
+        if tipologia:
+            equip_data.append([
+                Paragraph("<b>TIPOLOGIA:</b>", label_style),
+                Paragraph(tipologia, value_style)
+            ])
+        
+        if numero_serie:
+            equip_data.append([
+                Paragraph("<b>Nº SÉRIE:</b>", label_style),
+                Paragraph(numero_serie, value_style)
+            ])
+        
+        if marca:
+            equip_data.append([
+                Paragraph("<b>MARCA:</b>", label_style),
+                Paragraph(marca, value_style)
+            ])
+        
+        if modelo:
+            equip_data.append([
+                Paragraph("<b>MODELO:</b>", label_style),
+                Paragraph(modelo, value_style)
+            ])
+        
+        if ano_fabrico:
+            equip_data.append([
+                Paragraph("<b>ANO DE FABRICO:</b>", label_style),
+                Paragraph(format_ano_fabrico(ano_fabrico), value_style)
+            ])
+        
+        if not equip_data:
+            return None
+        
+        # Criar tabela com campos organizados
+        eq_table = Table(equip_data, colWidths=[4*cm, 13.5*cm])
+        eq_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),  # gray-50
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+        ]))
+        
+        return eq_table
+    
     todos_equipamentos = []
     
     # Equipamento principal
     if relatorio.get('equipamento_tipologia') or relatorio.get('equipamento_marca') or relatorio.get('equipamento_modelo'):
-        equip_text = relatorio.get('equipamento_tipologia', '') or 'Equipamento'
-        if relatorio.get('equipamento_marca'):
-            equip_text += f" - {relatorio.get('equipamento_marca')}"
-        if relatorio.get('equipamento_modelo'):
-            equip_text += f" {relatorio.get('equipamento_modelo')}"
-        if relatorio.get('equipamento_numero_serie'):
-            equip_text += f" (S/N: {relatorio.get('equipamento_numero_serie')})"
-        todos_equipamentos.append(equip_text)
+        equip_card = create_equipment_card(
+            tipologia=relatorio.get('equipamento_tipologia'),
+            marca=relatorio.get('equipamento_marca'),
+            modelo=relatorio.get('equipamento_modelo'),
+            numero_serie=relatorio.get('equipamento_numero_serie'),
+            ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
+            is_principal=True
+        )
+        if equip_card:
+            todos_equipamentos.append(equip_card)
     
     # Equipamentos adicionais
     if equipamentos_adicionais:
         for equip in equipamentos_adicionais:
-            equip_text = equip.get('tipologia', '') or 'Equipamento'
-            if equip.get('marca'):
-                equip_text += f" - {equip.get('marca')}"
-            if equip.get('modelo'):
-                equip_text += f" {equip.get('modelo')}"
-            if equip.get('numero_serie'):
-                equip_text += f" (S/N: {equip.get('numero_serie')})"
-            todos_equipamentos.append(equip_text)
+            equip_card = create_equipment_card(
+                tipologia=equip.get('tipologia'),
+                marca=equip.get('marca'),
+                modelo=equip.get('modelo'),
+                numero_serie=equip.get('numero_serie'),
+                ano_fabrico=equip.get('ano_fabrico'),
+                is_principal=False
+            )
+            if equip_card:
+                todos_equipamentos.append(equip_card)
     
     if todos_equipamentos:
         equip_content = []
-        for eq in todos_equipamentos:
-            eq_table = Table([[Paragraph(eq, value_style)]], colWidths=[17.5*cm])
-            eq_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),  # gray-50
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
-            ]))
+        for eq_table in todos_equipamentos:
             equip_content.append(eq_table)
-            equip_content.append(Spacer(1, 0.1*cm))
+            equip_content.append(Spacer(1, 0.2*cm))
         
         equip_section = create_section_box(equip_content, "EQUIPAMENTOS")
         elements.append(equip_section)
