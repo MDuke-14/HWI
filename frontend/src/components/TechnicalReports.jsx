@@ -196,6 +196,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [showEditFotoModal, setShowEditFotoModal] = useState(false);
   const [editFotoDescricao, setEditFotoDescricao] = useState('');
+  const [editFotoData, setEditFotoData] = useState('');
 
   // Email OT
   const [showEmailModal, setShowEmailModal] = useState(false);
