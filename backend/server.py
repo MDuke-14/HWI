@@ -3885,8 +3885,11 @@ async def preview_pdf_ot(
         {"_id": 0}
     ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
     
+    # Buscar informações da empresa (para logo e dados no cabeçalho)
+    company_info = await db.company_info.find_one({"id": "company_info_default"}, {"_id": 0})
+    
     # Gerar PDF
-    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra)
+    pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info)
     
     # Retornar como download
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
