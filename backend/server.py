@@ -3518,7 +3518,7 @@ async def update_assinatura(
     data: dict,
     current_user: dict = Depends(get_current_user)
 ):
-    """Atualizar dados de uma assinatura (data_intervencao)"""
+    """Atualizar dados de uma assinatura (data_intervencao ou data_assinatura)"""
     # Verificar se a assinatura existe
     assinatura = await db.assinaturas_relatorio.find_one({
         "id": assinatura_id,
@@ -3532,6 +3532,8 @@ async def update_assinatura(
     update_fields = {}
     if "data_intervencao" in data:
         update_fields["data_intervencao"] = data["data_intervencao"]
+    if "data_assinatura" in data:
+        update_fields["data_assinatura"] = data["data_assinatura"]
     
     if not update_fields:
         raise HTTPException(status_code=400, detail="Nenhum campo válido para atualizar")
