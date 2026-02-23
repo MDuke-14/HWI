@@ -4651,7 +4651,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       >
                         <div className="flex-1">
                           <p className="text-white font-medium">{material.descricao}</p>
-                          <div className="flex gap-4 mt-1 text-sm text-gray-400">
+                          <div className="flex flex-wrap gap-4 mt-1 text-sm text-gray-400">
                             <span>Qtd: {material.quantidade}</span>
                             <span className={`px-2 py-0.5 rounded ${
                               material.fornecido_por === 'Cliente' ? 'bg-green-600/20 text-green-400' :
@@ -4660,6 +4660,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }`}>
                               {material.fornecido_por}
                             </span>
+                            {material.data_utilizacao && (
+                              <span className="flex items-center gap-1 text-purple-400">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(material.data_utilizacao).toLocaleDateString('pt-PT')}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">
