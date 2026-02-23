@@ -9446,11 +9446,11 @@ async def get_registos_tecnicos(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar todos os registos de técnicos de uma OT"""
+    """Listar todos os registos de técnicos de uma OT - ordenados cronologicamente"""
     registos = await db.registos_tecnico_ot.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("created_at", -1).to_list(length=None)
+    ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
     
     return registos
 
