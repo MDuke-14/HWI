@@ -167,6 +167,46 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ PDF da OT Organizado por Data de Intervenção (23 Fevereiro 2026) - MELHORIA
+**Reestruturação completa do PDF para organizar informação por data de intervenção:**
+
+**Antes:** Todas as informações apareciam misturadas num único bloco
+**Depois:** Cada data de intervenção aparece como bloco independente com:
+- Cabeçalho destacado com data e número da intervenção
+- Registos de horas/mão de obra apenas dessa data
+- Materiais utilizados nessa data
+- Componentes/Fotografias dessa data
+- Assinaturas correspondentes a essa data
+
+**Backend (`ot_pdf_report.py`):**
+- Função `normalize_date()` para padronizar formatos de data
+- Recolha de todas as datas únicas de todas as fontes de dados
+- Agrupamento de dados por data de intervenção
+- Cabeçalhos azuis para separar intervenções visualmente
+- Manutenção da secção inicial com dados do cliente e equipamentos
+
+**Estrutura do novo PDF:**
+1. Cabeçalho (Logo, Nº OT, Status)
+2. Dados do Cliente
+3. Motivo da Assistência
+4. Lista de Equipamentos
+5. **Para cada data de intervenção:**
+   - Cabeçalho "INTERVENÇÃO #X - DD/MM/YYYY"
+   - Detalhes da intervenção
+   - Mão de Obra / Deslocação
+   - Materiais Utilizados
+   - Componentes/Fotografias
+   - Assinatura do Cliente
+6. Diagnóstico e Resolução
+7. Legenda de códigos
+
+**Ficheiros modificados:**
+- `/app/backend/ot_pdf_report.py` - Reescrito completamente
+
+**Testado:** ✅ API curl + PDF gerado com sucesso (580KB)
+
+---
+
 #### ✅ Bug Crítico Assinatura Mobile (21 Fevereiro 2026) - CORRIGIDO
 **Problema:** O canvas de assinatura e os botões (Limpar, Guardar, Fechar) não respondiam a eventos de toque em dispositivos móveis.
 
