@@ -971,8 +971,8 @@ const AssinaturaModal = ({
 
   const handleUpdateAssinaturaData = async (assinaturaId, novaData) => {
     try {
-      await axios.put(
-        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinaturaId}/data`,
+      await axios.patch(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinaturaId}`,
         { data_intervencao: novaData }
       );
       toast.success('Data da assinatura atualizada!');
