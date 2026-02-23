@@ -830,6 +830,7 @@ class Tarifa(BaseModel):
     nome: str  # Ex: "Viagem Tarifa 1", "Mão de Obra"
     valor_por_hora: float  # Valor em euros por hora
     codigo: Optional[str] = None  # "1" (diurno), "2" (noturno), "S" (sábado), "D" (domingo/feriado), None (todos)
+    tipo_registo: Optional[str] = None  # "trabalho", "viagem", ou None (ambos)
     table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -841,6 +842,7 @@ class TarifaCreate(BaseModel):
     valor_por_hora: float
     numero: Optional[int] = None  # Opcional
     codigo: Optional[str] = None  # "1", "2", "S", "D" ou None
+    tipo_registo: Optional[str] = None  # "trabalho", "viagem", ou None (ambos)
     table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
 
 
@@ -849,6 +851,7 @@ class TarifaUpdate(BaseModel):
     nome: Optional[str] = None
     valor_por_hora: Optional[float] = None
     codigo: Optional[str] = None
+    tipo_registo: Optional[str] = None
     table_id: Optional[int] = None
     ativo: Optional[bool] = None
 
