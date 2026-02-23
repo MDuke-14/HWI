@@ -2718,6 +2718,38 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // ========== Visualização PDF Real (para cliente ver antes de assinar) ==========
+  
+  const handlePDFViewer = async () => {
+    if (!selectedRelatorio) return;
+    
+    setLoadingPDFViewer(true);
+    try {
+      const response = await axios.get(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
+        { responseType: 'blob' }
+      );
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      setPdfViewerUrl(url);
+      setShowPDFViewerModal(true);
+    } catch (error) {
+      console.error('Erro ao carregar PDF:', error);
+      toast.error('Erro ao carregar PDF para visualização');
+    } finally {
+      setLoadingPDFViewer(false);
+    }
+  };
+  
+  const closePDFViewer = () => {
+    setShowPDFViewerModal(false);
+    if (pdfViewerUrl) {
+      window.URL.revokeObjectURL(pdfViewerUrl);
+      setPdfViewerUrl(null);
+    }
+  };
+
   // ========== Visualização HTML estilo PDF ==========
   
   const handleHTMLPreview = async () => {
