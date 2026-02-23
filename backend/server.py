@@ -10886,11 +10886,11 @@ async def generate_folha_horas(
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    # Buscar técnicos manuais
+    # Buscar técnicos manuais - ordenados cronologicamente
     tecnicos_manuais = await db.tecnicos_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).to_list(length=None)
+    ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
     
     # Buscar registos de cronómetros - ordenados cronologicamente
     registos_mao_obra = await db.registos_tecnico_ot.find(
