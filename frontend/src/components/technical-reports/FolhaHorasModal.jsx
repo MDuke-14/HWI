@@ -24,6 +24,7 @@ const FolhaHorasModal = ({
   const [dietaValor, setDietaValor] = useState('');
   const [tabelasPreco, setTabelasPreco] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(1);
+  const [tarifasDaTabela, setTarifasDaTabela] = useState([]);
   
   const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
@@ -34,6 +35,13 @@ const FolhaHorasModal = ({
     }
   }, [open]);
 
+  // Buscar tarifas da tabela selecionada e preencher automaticamente
+  useEffect(() => {
+    if (open && selectedTableId) {
+      fetchTarifasDaTabela(selectedTableId);
+    }
+  }, [open, selectedTableId]);
+
   const fetchTabelasPreco = async () => {
     try {
       const response = await axios.get(`${API}/tabelas-preco`);
@@ -41,6 +49,48 @@ const FolhaHorasModal = ({
     } catch (error) {
       console.error('Erro ao carregar tabelas de preço');
     }
+  };
+
+  const fetchTarifasDaTabela = async (tableId) => {
+    try {
+      const response = await axios.get(`${API}/tarifas?table_id=${tableId}`);
+      const tarifas = response.data;
+      setTarifasDaTabela(tarifas);
+      
+      // Preencher automaticamente os campos de tarifa por técnico/data/código
+      autoFillTarifas(tarifas);
+    } catch (error) {
+      console.error('Erro ao carregar tarifas da tabela');
+    }
+  };
+
+  // Preencher automaticamente as tarifas baseado no código horário
+  const autoFillTarifas = (tarifas) => {
+    const registos = getRegistosOrdenados();
+    
+    // Criar mapa de código -> valor da tarifa
+    const tarifasPorCodigo = {};
+    tarifas.forEach(t => {
+      if (t.codigo && t.codigo !== 'manual') {
+        tarifasPorCodigo[t.codigo] = t.valor_por_hora;
+      }
+    });
+    
+    // Preencher cada registo com a tarifa correspondente ao seu código
+    registos.forEach(registo => {
+      const chave = `${registo.tecnico_id}_${registo.data}_${registo.codigo}`;
+      const codigo = registo.codigo;
+      
+      // Se existe uma tarifa para este código, preencher automaticamente
+      if (codigo && tarifasPorCodigo[codigo] !== undefined) {
+        updateFolhaHorasTarifa(chave, tarifasPorCodigo[codigo].toString());
+      }
+    });
+  };
+
+  const handleTableChange = (tableId) => {
+    setSelectedTableId(tableId);
+    // As tarifas serão buscadas automaticamente pelo useEffect
   };
 
   const handleGeneratePDF = () => {
