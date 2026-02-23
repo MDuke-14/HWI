@@ -6545,23 +6545,81 @@ const TechnicalReports = ({ user, onLogout }) => {
                   htmlPreviewData.relatorio?.equipamento_modelo) && (
                   <section className="border border-gray-300 rounded-lg p-4">
                     <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">EQUIPAMENTOS</h2>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-3">
+                      {/* Equipamento principal */}
                       {(htmlPreviewData.relatorio?.equipamento_marca || 
                         htmlPreviewData.relatorio?.equipamento_tipologia || 
                         htmlPreviewData.relatorio?.equipamento_modelo) && (
                         <div className="bg-gray-50 p-3 rounded">
-                          <span className="font-semibold">{htmlPreviewData.relatorio.equipamento_tipologia || 'Equipamento'}</span>
-                          {htmlPreviewData.relatorio.equipamento_marca && <> - {htmlPreviewData.relatorio.equipamento_marca}</>}
-                          {htmlPreviewData.relatorio.equipamento_modelo && <> {htmlPreviewData.relatorio.equipamento_modelo}</>}
-                          {htmlPreviewData.relatorio.equipamento_numero_serie && <span className="text-gray-500 ml-2">(S/N: {htmlPreviewData.relatorio.equipamento_numero_serie})</span>}
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            {htmlPreviewData.relatorio.equipamento_tipologia && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">TIPOLOGIA:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_tipologia}</span>
+                              </div>
+                            )}
+                            {htmlPreviewData.relatorio.equipamento_numero_serie && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">Nº SÉRIE:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_numero_serie}</span>
+                              </div>
+                            )}
+                            {htmlPreviewData.relatorio.equipamento_marca && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">MARCA:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_marca}</span>
+                              </div>
+                            )}
+                            {htmlPreviewData.relatorio.equipamento_modelo && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">MODELO:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_modelo}</span>
+                              </div>
+                            )}
+                            {htmlPreviewData.relatorio.equipamento_ano_fabrico && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">ANO FABRICO:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_ano_fabrico}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
+                      {/* Equipamentos adicionais */}
                       {htmlPreviewData.equipamentos?.map((eq, idx) => (
                         <div key={idx} className="bg-gray-50 p-3 rounded">
-                          <span className="font-semibold">{eq.tipologia || 'Equipamento'}</span>
-                          {eq.marca && <> - {eq.marca}</>}
-                          {eq.modelo && <> {eq.modelo}</>}
-                          {eq.numero_serie && <span className="text-gray-500 ml-2">(S/N: {eq.numero_serie})</span>}
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            {eq.tipologia && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">TIPOLOGIA:</span>
+                                <span className="text-gray-800">{eq.tipologia}</span>
+                              </div>
+                            )}
+                            {eq.numero_serie && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">Nº SÉRIE:</span>
+                                <span className="text-gray-800">{eq.numero_serie}</span>
+                              </div>
+                            )}
+                            {eq.marca && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">MARCA:</span>
+                                <span className="text-gray-800">{eq.marca}</span>
+                              </div>
+                            )}
+                            {eq.modelo && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">MODELO:</span>
+                                <span className="text-gray-800">{eq.modelo}</span>
+                              </div>
+                            )}
+                            {eq.ano_fabrico && (
+                              <div className="flex">
+                                <span className="font-semibold text-gray-600 min-w-[120px]">ANO FABRICO:</span>
+                                <span className="text-gray-800">{eq.ano_fabrico}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
