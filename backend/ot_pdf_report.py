@@ -674,11 +674,51 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     legenda_style = ParagraphStyle(
         'LegendaStyle',
         parent=normal_style,
-        fontSize=7,
-        textColor=colors.HexColor('#6b7280')
+        fontSize=8,
+        textColor=colors.HexColor('#374151')
     )
-    legenda_section.append(Paragraph("<b>Legenda Códigos:</b> 1 = Dias úteis (07h-19h) | 2 = Dias úteis (19h-07h) | S = Sábado | D = Domingos/Feriados", legenda_style))
-    legenda_section.append(Paragraph("<i>Aos kms de ida já adicionados iremos adicionar os kms de volta após assinatura deste relatório.</i>", legenda_style))
+    
+    # Criar tabela de legenda mais clara e profissional
+    legenda_section.append(Paragraph("<b>LEGENDA</b>", subheading_style))
+    
+    legenda_data = [
+        ['<b>Tipo de Registo</b>', '<b>Código Horário</b>'],
+        ['T = Trabalho', '1 = Dias úteis (07h-19h)'],
+        ['V = Viagem/Deslocação', '2 = Dias úteis (19h-07h)'],
+        ['', 'S = Sábado'],
+        ['', 'D = Domingos/Feriados'],
+    ]
+    
+    # Converter para Paragraphs
+    legenda_data_formatted = []
+    for row in legenda_data:
+        legenda_data_formatted.append([
+            Paragraph(row[0], legenda_style),
+            Paragraph(row[1], legenda_style)
+        ])
+    
+    legenda_table = Table(legenda_data_formatted, colWidths=[6*cm, 8*cm])
+    legenda_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f3f4f6')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    legenda_section.append(legenda_table)
+    legenda_section.append(Spacer(1, 0.15*cm))
+    
+    nota_style = ParagraphStyle(
+        'NotaStyle',
+        parent=normal_style,
+        fontSize=7,
+        textColor=colors.HexColor('#6b7280'),
+        fontName='Helvetica-Oblique'
+    )
+    legenda_section.append(Paragraph("Nota: Aos quilómetros de ida já contabilizados, serão adicionados os quilómetros de volta após assinatura deste relatório.", nota_style))
     elements.append(KeepTogether(legenda_section))
     
     # Construir PDF
