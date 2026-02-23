@@ -22,14 +22,66 @@ export const MobileProvider = ({ children }) => {
   const [isStandalone, setIsStandalone] = useState(false);
   const [bottomNavVisible, setBottomNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [forcedMode, setForcedMode] = useState(() => {
+    // Carregar preferência guardada
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('forcedViewMode') || null;
+    }
+    return null;
+  });
 
   // Detectar tipo de dispositivo
   const updateDeviceType = useCallback(() => {
     const width = window.innerWidth;
     setScreenWidth(width);
-    setIsMobile(width < BREAKPOINTS.tablet);
-    setIsTablet(width >= BREAKPOINTS.tablet && width < BREAKPOINTS.desktop);
+    
+    // Se modo forçado está ativo, usar esse
+    if (forcedMode === 'mobile') {
+      setIsMobile(true);
+      setIsTablet(false);
+    } else if (forcedMode === 'desktop') {
+      setIsMobile(false);
+      setIsTablet(false);
+    } else {
+      // Detecção automática
+      setIsMobile(width < BREAKPOINTS.tablet);
+      setIsTablet(width >= BREAKPOINTS.tablet && width < BREAKPOINTS.desktop);
+    }
+    
     setOrientation(window.innerHeight > window.innerWidth ? 'portrait' : 'landscape');
+  }, [forcedMode]);
+
+  // Função para alternar modo
+  const toggleViewMode = useCallback(() => {
+    setForcedMode(prev => {
+      let newMode;
+      if (prev === 'mobile') {
+        newMode = 'desktop';
+      } else if (prev === 'desktop') {
+        newMode = null; // auto
+      } else {
+        newMode = 'mobile';
+      }
+      
+      // Guardar preferência
+      if (newMode) {
+        localStorage.setItem('forcedViewMode', newMode);
+      } else {
+        localStorage.removeItem('forcedViewMode');
+      }
+      
+      return newMode;
+    });
+  }, []);
+
+  // Função para definir modo específico
+  const setViewMode = useCallback((mode) => {
+    setForcedMode(mode);
+    if (mode) {
+      localStorage.setItem('forcedViewMode', mode);
+    } else {
+      localStorage.removeItem('forcedViewMode');
+    }
   }, []);
 
   // Detectar se é PWA standalone
