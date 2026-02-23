@@ -157,6 +157,46 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // ============ Tabelas de Preço Functions ============
+  const fetchTabelasPreco = async () => {
+    try {
+      const response = await axios.get(`${API}/tabelas-preco`);
+      setTabelasPreco(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar tabelas de preço');
+    }
+  };
+
+  const handleOpenTabelaDialog = (tabela) => {
+    setTabelaForm({
+      nome: tabela.nome || `Tabela ${tabela.table_id}`,
+      valor_km: tabela.valor_km?.toString() || '0.65'
+    });
+    setShowTabelaDialog(tabela.table_id);
+  };
+
+  const handleSaveTabela = async () => {
+    if (!tabelaForm.valor_km) {
+      toast.error('Preencha o valor por Km');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.put(`${API}/tabelas-preco/${showTabelaDialog}`, {
+        nome: tabelaForm.nome,
+        valor_km: parseFloat(tabelaForm.valor_km)
+      });
+      toast.success('Tabela de Preço atualizada!');
+      setShowTabelaDialog(false);
+      fetchTabelasPreco();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar tabela');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ============ Tarifas Functions ============
   const fetchTarifas = async () => {
     try {
