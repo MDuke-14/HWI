@@ -737,12 +737,50 @@ const Dashboard = ({ user, onLogout }) => {
                 day: 'numeric' 
               })}
             </div>
-            {/* Connection Status */}
-            <div className="mt-2 flex items-center justify-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
-              <span className={`text-xs ${isOnline ? 'text-green-400' : 'text-amber-400'}`}>
-                {isOnline ? 'Online' : 'Offline'}
-              </span>
+            {/* Connection Status & View Mode Toggle */}
+            <div className="mt-2 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></div>
+                <span className={`text-xs ${isOnline ? 'text-green-400' : 'text-amber-400'}`}>
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
+              
+              {/* View Mode Toggle Button */}
+              <button
+                onClick={() => {
+                  if (forcedMode === 'mobile') {
+                    setViewMode('desktop');
+                  } else if (forcedMode === 'desktop') {
+                    setViewMode(null);
+                  } else {
+                    setViewMode('mobile');
+                  }
+                }}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-all ${
+                  forcedMode 
+                    ? 'bg-blue-600/20 border border-blue-500 text-blue-400' 
+                    : 'bg-gray-700/50 border border-gray-600 text-gray-400 hover:border-gray-500'
+                }`}
+                title={`Modo atual: ${forcedMode || 'Auto'}`}
+              >
+                {forcedMode === 'mobile' ? (
+                  <>
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Mobile</span>
+                  </>
+                ) : forcedMode === 'desktop' ? (
+                  <>
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>Desktop</span>
+                  </>
+                ) : (
+                  <>
+                    {isMobile ? <Smartphone className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
+                    <span>Auto</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
