@@ -9769,7 +9769,8 @@ async def add_material_ot(
         relatorio_id=relatorio_id,
         descricao=material_data["descricao"],
         quantidade=quantidade,
-        fornecido_por=material_data["fornecido_por"]
+        fornecido_por=material_data["fornecido_por"],
+        data_utilizacao=material_data.get("data_utilizacao")
     )
     
     material_dict = material.dict()
