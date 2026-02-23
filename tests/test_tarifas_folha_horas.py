@@ -10,7 +10,7 @@ import requests
 import os
 import json
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://work-order-touch.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ot-mobile-app.preview.emergentagent.com')
 
 # Test credentials
 ADMIN_USER = {"username": "pedro", "password": "password"}
