@@ -468,8 +468,12 @@ const FolhaHorasModal = ({
                 <FileText className="w-5 h-5 text-green-400" />
                 Dietas, Portagens e Despesas
               </h3>
-              <p className="text-gray-400 text-sm mb-4">
+              <p className="text-gray-400 text-sm mb-2">
                 Preencha os valores extras por técnico e data. Campos vazios serão considerados 0,00€.
+              </p>
+              <p className="text-amber-400/80 text-xs mb-4 flex items-center gap-1">
+                <span className="text-amber-500">⚠️</span>
+                Nota: Despesas de <span className="font-semibold">Combustível</span> são excluídas automaticamente dos cálculos da Folha de Horas.
               </p>
               
               {/* Opção de Dieta Automática */}
