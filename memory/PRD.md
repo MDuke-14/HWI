@@ -46,14 +46,12 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - Usa o mesmo endpoint do botão "Download PDF" da OT (/api/relatorios-tecnicos/{id}/preview-pdf)
   - Garante que o documento visualizado é igual ao entregue ao cliente
   - Botão vermelho consistente com o design do sistema
-- ✅ **Visualizar Relatório Abre PDF Real** (23 Fevereiro 2026) - MELHORIA
-  - Botão "Visualizar Relatório" agora abre modal HTML (popup) com layout igual ao PDF
-  - Intervenções separadas por data (1ª Intervenção, 2ª Intervenção, etc.) com cabeçalho azul
-  - Assinaturas existentes aparecem dentro da intervenção correspondente (mesma data)
-  - Canvas de assinatura no fim do documento para o cliente assinar após ler
-  - Campo de nome + área de desenho + botões Limpar/Confirmar
-  - Nova assinatura guardada sem afetar as assinaturas existentes nas intervenções
-  - Botão "Download PDF" disponível para guardar o documento final
+- ✅ **Visualização do Relatório Organizada por Data** (23 Fevereiro 2026) - MELHORIA
+  - Todos os registos agrupados por data (Intervenções, Mão de Obra, Materiais, Assinaturas)
+  - Cada dia aparece com cabeçalho azul mostrando data completa (ex: "quinta-feira, 22 de janeiro de 2026")
+  - Dentro de cada dia: Intervenção (azul), Mão de Obra (verde), Materiais (roxo), Assinaturas (laranja)
+  - Canvas de assinatura no fim do documento para cliente assinar após leitura
+  - Canvas melhorado com suporte a toque fluido e alta resolução (devicePixelRatio)
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
