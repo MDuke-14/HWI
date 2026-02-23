@@ -1805,7 +1805,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     setMaterialFormData({
       descricao: material.descricao,
       quantidade: material.quantidade,
-      fornecido_por: material.fornecido_por
+      fornecido_por: material.fornecido_por,
+      data_utilizacao: material.data_utilizacao || ''
     });
     setShowEditMaterialModal(true);
   };
