@@ -1788,6 +1788,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                                       {tarifa.codigo === 'manual' ? 'Manual' : `Código ${tarifa.codigo}`}
                                     </span>
                                   )}
+                                  {tarifa.tipo_registo && (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mt-1 ml-1 ${
+                                      tarifa.tipo_registo === 'trabalho' ? 'bg-cyan-500/20 text-cyan-400' :
+                                      'bg-purple-500/20 text-purple-400'
+                                    }`}>
+                                      {tarifa.tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1799,6 +1807,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                                 Aplica-se a: {tarifa.codigo === '1' ? 'Dias úteis (07h-19h)' :
                                               tarifa.codigo === '2' ? 'Dias úteis (19h-07h)' :
                                               tarifa.codigo === 'S' ? 'Sábados' : 'Domingos/Feriados'}
+                                {tarifa.tipo_registo && ` (${tarifa.tipo_registo === 'trabalho' ? 'apenas trabalho' : 'apenas viagem'})`}
                               </p>
                             )}
                             {tarifa.codigo === 'manual' && (
