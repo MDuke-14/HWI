@@ -6756,67 +6756,51 @@ const TechnicalReports = ({ user, onLogout }) => {
             // Agrupar dados por data de intervenção
             const intervencoesPorData = {};
             
-            // Primeiro, criar blocos para cada intervenção (pela data_intervencao)
-            htmlPreviewData.intervencoes?.forEach((int, idx) => {
-              const dataKey = int.data_intervencao ? int.data_intervencao.split('T')[0] : 'sem_data';
+            // Helper para criar estrutura de dados por data
+            const criarGrupoPorData = (dataKey) => {
               if (!intervencoesPorData[dataKey]) {
                 intervencoesPorData[dataKey] = {
                   intervencoes: [],
                   registos: [],
                   materiais: [],
-                  equipamentos: [],
+                  fotografias: [],
                   assinaturas: []
                 };
               }
+            };
+            
+            // Primeiro, criar blocos para cada intervenção (pela data_intervencao)
+            htmlPreviewData.intervencoes?.forEach((int, idx) => {
+              const dataKey = int.data_intervencao ? int.data_intervencao.split('T')[0] : 'sem_data';
+              criarGrupoPorData(dataKey);
               intervencoesPorData[dataKey].intervencoes.push({ ...int, numero: idx + 1 });
             });
             
             // Adicionar registos de mão de obra pela data
             htmlPreviewData.registos?.forEach(reg => {
               const dataKey = reg.data ? reg.data.split('T')[0] : 'sem_data';
-              if (!intervencoesPorData[dataKey]) {
-                intervencoesPorData[dataKey] = {
-                  intervencoes: [],
-                  registos: [],
-                  materiais: [],
-                  equipamentos: [],
-                  assinaturas: []
-                };
-              }
+              criarGrupoPorData(dataKey);
               intervencoesPorData[dataKey].registos.push(reg);
             });
             
             // Adicionar materiais pela data_utilizacao
             htmlPreviewData.materiais?.forEach(mat => {
               const dataKey = mat.data_utilizacao ? mat.data_utilizacao.split('T')[0] : 'sem_data';
-              if (!intervencoesPorData[dataKey]) {
-                intervencoesPorData[dataKey] = {
-                  intervencoes: [],
-                  registos: [],
-                  materiais: [],
-                  equipamentos: [],
-                  assinaturas: []
-                };
-              }
+              criarGrupoPorData(dataKey);
               intervencoesPorData[dataKey].materiais.push(mat);
             });
             
-            // Adicionar equipamentos (associar à primeira intervenção se tiver, ou ao primeiro grupo)
-            // Equipamentos geralmente são associados ao relatório, não a uma data específica
-            // Vamos mostrar no primeiro bloco de data
+            // Adicionar fotografias pela data de upload (uploaded_at)
+            htmlPreviewData.fotografias?.forEach(foto => {
+              const dataKey = foto.uploaded_at ? foto.uploaded_at.split('T')[0] : 'sem_data';
+              criarGrupoPorData(dataKey);
+              intervencoesPorData[dataKey].fotografias.push(foto);
+            });
             
-            // Adicionar assinaturas pela data_intervencao
+            // Adicionar assinaturas pela DATA DE ASSINATURA (data_assinatura)
             htmlPreviewData.assinaturas?.forEach(ass => {
-              const dataKey = ass.data_intervencao ? ass.data_intervencao.split('T')[0] : 'sem_data';
-              if (!intervencoesPorData[dataKey]) {
-                intervencoesPorData[dataKey] = {
-                  intervencoes: [],
-                  registos: [],
-                  materiais: [],
-                  equipamentos: [],
-                  assinaturas: []
-                };
-              }
+              const dataKey = ass.data_assinatura ? ass.data_assinatura.split('T')[0] : 'sem_data';
+              criarGrupoPorData(dataKey);
               intervencoesPorData[dataKey].assinaturas.push(ass);
             });
             
@@ -6825,11 +6809,12 @@ const TechnicalReports = ({ user, onLogout }) => {
               .filter(d => d !== 'sem_data')
               .sort((a, b) => new Date(a) - new Date(b));
             
-            // Adicionar 'sem_data' no final se existir
+            // Adicionar 'sem_data' no final se existir com conteúdo
             if (intervencoesPorData['sem_data'] && (
               intervencoesPorData['sem_data'].intervencoes.length > 0 ||
               intervencoesPorData['sem_data'].registos.length > 0 ||
               intervencoesPorData['sem_data'].materiais.length > 0 ||
+              intervencoesPorData['sem_data'].fotografias.length > 0 ||
               intervencoesPorData['sem_data'].assinaturas.length > 0
             )) {
               datasOrdenadas.push('sem_data');
