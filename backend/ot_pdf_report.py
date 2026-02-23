@@ -490,6 +490,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     })
         
         if date_mao_obra:
+            # Ordenar registos por hora de início (cronologicamente)
+            date_mao_obra.sort(key=lambda x: (x.get('hora_inicio', '') or '99:99', x.get('tecnico_nome', '')))
+            
             # Cabeçalho da tabela
             mao_obra_header = [['Técnico', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
             
