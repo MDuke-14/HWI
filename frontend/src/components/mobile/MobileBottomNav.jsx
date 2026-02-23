@@ -67,7 +67,9 @@ const MobileBottomNav = ({ user, activeTimer, onQuickAction }) => {
   return (
     <nav 
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 md:hidden",
+        "fixed bottom-0 left-0 right-0 z-50",
+        // Esconder em desktop apenas se não houver modo forçado para mobile
+        !forcedMode && "md:hidden",
         "transition-transform duration-300 ease-in-out",
         !bottomNavVisible && "translate-y-full",
         // Padding extra para safe area em iPhones
