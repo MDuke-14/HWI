@@ -7489,7 +7489,26 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <Mail className="w-4 h-4 text-blue-400" />
                     <span className="text-sm text-gray-400">Emails Adicionais</span>
                   </div>
-                  <p className="text-white break-words">{selectedCliente.emails_adicionais}</p>
+                  <div className="space-y-2">
+                    {selectedCliente.emails_adicionais.split(/[;,]/).map((email, index) => {
+                      const trimmedEmail = email.trim();
+                      if (!trimmedEmail) return null;
+                      return (
+                        <div 
+                          key={index} 
+                          className="flex items-center gap-2 bg-[#1a1a1a] px-3 py-2 rounded-lg"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-gray-500" />
+                          <a 
+                            href={`mailto:${trimmedEmail}`}
+                            className="text-white hover:text-blue-400 transition break-all"
+                          >
+                            {trimmedEmail}
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
