@@ -6958,6 +6958,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   const temConteudo = dados.intervencoes.length > 0 || 
                                       dados.registos.length > 0 || 
                                       dados.materiais.length > 0 || 
+                                      dados.fotografias.length > 0 ||
                                       dados.assinaturas.length > 0;
                   
                   if (!temConteudo) return null;
@@ -7065,7 +7066,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         )}
                         
-                        {/* Assinaturas desta data */}
+                        {/* Fotografias desta data */}
+                        {dados.fotografias.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4 text-cyan-500" />
+                              Fotografias
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3">
+                              {dados.fotografias.map((foto, idx) => (
+                                <div key={idx} className="border border-gray-200 rounded overflow-hidden">
+                                  <img 
+                                    src={`${API}${foto.foto_url}`} 
+                                    alt={foto.descricao || 'Fotografia'} 
+                                    className="w-full h-32 object-cover"
+                                  />
+                                  {foto.descricao && (
+                                    <p className="p-2 text-xs text-gray-600 bg-gray-50">{foto.descricao}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Assinaturas desta data (pela data_assinatura) */}
                         {dados.assinaturas.length > 0 && (
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
                             <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
@@ -7097,53 +7122,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </section>
                   );
                 })}
-
-                {/* Fotografias - Secção global */}
-                {htmlPreviewData.fotografias?.length > 0 && (
-                  <section className="border border-gray-300 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">FOTOGRAFIAS</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      {htmlPreviewData.fotografias.map((foto, idx) => (
-                        <div key={idx} className="border border-gray-200 rounded overflow-hidden">
-                          <img 
-                            src={`${API}${foto.foto_url}`} 
-                            alt={foto.descricao || 'Fotografia'} 
-                            className="w-full h-48 object-cover"
-                          />
-                          {foto.descricao && (
-                            <p className="p-2 text-sm text-gray-600 bg-gray-50">{foto.descricao}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* Assinaturas sem data específica (globais) */}
-                {htmlPreviewData.assinaturas?.filter(a => !a.data_intervencao).length > 0 && (
-                  <section className="border border-gray-300 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">ASSINATURAS</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      {htmlPreviewData.assinaturas.filter(a => !a.data_intervencao).map((ass, idx) => (
-                        <div key={idx} className="border border-gray-200 rounded p-3 bg-gray-50">
-                          <p className="font-medium text-gray-700">
-                            {ass.assinado_por || `${ass.primeiro_nome || ''} ${ass.ultimo_nome || ''}`.trim() || 'Assinatura'}
-                          </p>
-                          {ass.assinatura_url && (
-                            <img 
-                              src={`${API}${ass.assinatura_url}`} 
-                              alt="Assinatura" 
-                              className="max-h-20 mt-2"
-                            />
-                          )}
-                          <p className="text-sm text-gray-500 mt-2">
-                            {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
 
                 {/* Rodapé */}
                 <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
