@@ -983,7 +983,6 @@ const AssinaturaModal = ({
   const resetForm = () => {
     setAssinaturaNome({ primeiro: '', ultimo: '' });
     setAssinaturaDataIntervencao(new Date().toISOString().split('T')[0]);
-    setAssinaturaHoraIntervencao(new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }));
     setSavedPaths([]);
     if (sigCanvasRef.current) {
       sigCanvasRef.current.clear();
