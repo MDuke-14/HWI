@@ -66,13 +66,17 @@ const FolhaHorasModal = ({
     }
   };
 
-  // Preencher automaticamente as tarifas baseado no código horário
+  // Preencher automaticamente as tarifas baseado no código horário e tipo de registo
   const autoFillTarifas = (tarifas) => {
     // Obter registos do folhaHorasData
     let registos = [];
     
     if (folhaHorasData?.registos_individuais) {
-      registos = folhaHorasData.registos_individuais;
+      // Adicionar tipo de registo aos registos individuais
+      registos = folhaHorasData.registos_individuais.map(reg => ({
+        ...reg,
+        tipo_registo: reg.tipo?.toLowerCase() || 'trabalho'
+      }));
     } else if (folhaHorasData?.tecnicos) {
       const registosBase = folhaHorasData.registos || [];
       const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
@@ -82,10 +86,13 @@ const FolhaHorasModal = ({
         if (typeof data === 'string' && data.includes('T')) {
           data = data.split('T')[0];
         }
+        // Determinar tipo de registo
+        const tipoRegisto = reg.tipo?.toLowerCase() === 'viagem' ? 'viagem' : 'trabalho';
         registos.push({
           tecnico_id: reg.tecnico_id,
           data: data,
-          codigo: reg.codigo || '-'
+          codigo: reg.codigo || '-',
+          tipo_registo: tipoRegisto
         });
       });
       
@@ -95,30 +102,53 @@ const FolhaHorasModal = ({
         if (typeof data === 'string' && data.includes('T')) {
           data = data.split('T')[0];
         }
+        // Determinar tipo de registo para manuais
+        const tipoRegisto = tec.tipo?.toLowerCase() === 'viagem' ? 'viagem' : 'trabalho';
         registos.push({
           tecnico_id: tec.id,
           data: data,
-          codigo: codigosMap[tec.tipo_horario] || '-'
+          codigo: codigosMap[tec.tipo_horario] || '-',
+          tipo_registo: tipoRegisto
         });
       });
     }
     
-    // Criar mapa de código -> valor da tarifa
+    // Criar mapa de (codigo, tipo_registo) -> valor da tarifa
+    // Prioridade: tarifa específica para tipo > tarifa genérica
+    const tarifasPorCodigoTipo = {};
     const tarifasPorCodigo = {};
+    
     tarifas.forEach(t => {
       if (t.codigo && t.codigo !== 'manual') {
-        tarifasPorCodigo[t.codigo] = t.valor_por_hora;
+        if (t.tipo_registo) {
+          // Tarifa específica para tipo de registo
+          const chave = `${t.codigo}_${t.tipo_registo}`;
+          tarifasPorCodigoTipo[chave] = t.valor_por_hora;
+        } else {
+          // Tarifa genérica (aplica a ambos)
+          tarifasPorCodigo[t.codigo] = t.valor_por_hora;
+        }
       }
     });
     
-    // Preencher cada registo com a tarifa correspondente ao seu código
+    // Preencher cada registo com a tarifa correspondente
     registos.forEach(registo => {
       const chave = `${registo.tecnico_id}_${registo.data}_${registo.codigo}`;
       const codigo = registo.codigo;
+      const tipoRegisto = registo.tipo_registo || 'trabalho';
       
-      // Se existe uma tarifa para este código, preencher automaticamente
-      if (codigo && codigo !== '-' && tarifasPorCodigo[codigo] !== undefined) {
-        updateFolhaHorasTarifa(chave, tarifasPorCodigo[codigo].toString());
+      // Primeiro, tentar encontrar tarifa específica para este tipo de registo
+      const chaveEspecifica = `${codigo}_${tipoRegisto}`;
+      let valorTarifa = tarifasPorCodigoTipo[chaveEspecifica];
+      
+      // Se não houver tarifa específica, usar a genérica
+      if (valorTarifa === undefined) {
+        valorTarifa = tarifasPorCodigo[codigo];
+      }
+      
+      // Se existe uma tarifa, preencher automaticamente
+      if (codigo && codigo !== '-' && valorTarifa !== undefined) {
+        updateFolhaHorasTarifa(chave, valorTarifa.toString());
       }
     });
   };
