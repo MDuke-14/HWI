@@ -720,17 +720,38 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         if date_assinaturas:
             assin_content = []
             
+            # Estilo centrado para nome e data
+            assin_name_style = ParagraphStyle(
+                'AssinNameStyle',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.HexColor('#1f2937'),
+                alignment=TA_CENTER,
+                fontName='Helvetica-Bold',
+                spaceAfter=2
+            )
+            
+            assin_data_style = ParagraphStyle(
+                'AssinDataStyle',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.HexColor('#6b7280'),
+                alignment=TA_CENTER,
+                spaceAfter=0
+            )
+            
             for assinatura in date_assinaturas:
-                assin_row = []
+                assin_elements = []
                 
-                # Imagem da assinatura
+                # Imagem da assinatura - AUMENTADA e CENTRADA
                 img_added = False
                 if assinatura.get('assinatura_path'):
                     img_path = Path(assinatura['assinatura_path'])
                     if img_path.exists():
                         try:
-                            img = RLImage(str(img_path), width=5*cm, height=2.5*cm, kind='proportional')
-                            assin_row.append(img)
+                            # Imagem maior: 8cm x 4cm
+                            img = RLImage(str(img_path), width=8*cm, height=4*cm, kind='proportional')
+                            assin_elements.append(img)
                             img_added = True
                         except:
                             pass
@@ -739,15 +760,21 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     try:
                         img_data = base64.b64decode(assinatura['assinatura_base64'])
                         img_buffer = BytesIO(img_data)
-                        img = RLImage(img_buffer, width=5*cm, height=2.5*cm, kind='proportional')
-                        assin_row.append(img)
+                        # Imagem maior: 8cm x 4cm
+                        img = RLImage(img_buffer, width=8*cm, height=4*cm, kind='proportional')
+                        assin_elements.append(img)
+                        img_added = True
                     except:
-                        assin_row.append(Paragraph("<i>Assinatura não disponível</i>", foto_desc_style))
+                        assin_elements.append(Paragraph("<i>Assinatura não disponível</i>", assin_data_style))
                 elif not img_added:
-                    assin_row.append(Paragraph("<i>Assinatura não disponível</i>", foto_desc_style))
+                    assin_elements.append(Paragraph("<i>Assinatura não disponível</i>", assin_data_style))
                 
-                # Dados da assinatura
-                nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
+                # Linha separadora fina
+                assin_elements.append(Spacer(1, 0.15*cm))
+                assin_elements.append(HRFlowable(width="60%", thickness=0.5, color=colors.HexColor('#d1d5db'), spaceBefore=0, spaceAfter=0.1*cm))
+                
+                # Dados da assinatura - POR BAIXO e CENTRADOS
+                nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}".strip()
                 
                 data_assinatura_display = ''
                 if assinatura.get('data_assinatura'):
@@ -757,26 +784,25 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     except:
                         data_assinatura_display = str(assinatura['data_assinatura'])
                 
-                tipo_assin = assinatura.get('tipo', 'digital')
-                tipo_label = 'Assinatura Digital' if tipo_assin == 'digital' else tipo_assin.capitalize()
+                if nome_completo:
+                    assin_elements.append(Paragraph(nome_completo, assin_name_style))
+                if data_assinatura_display:
+                    assin_elements.append(Paragraph(data_assinatura_display, assin_data_style))
                 
-                assin_info = [
-                    Paragraph(f"<b>{tipo_label}</b>", normal_style),
-                    Paragraph(f"Nome: {nome_completo}", normal_style),
-                    Paragraph(f"Data: {data_assinatura_display}", normal_style),
-                ]
-                
-                assin_table = Table([[assin_row, assin_info]], colWidths=[6*cm, 11*cm])
+                # Tabela com layout centrado - SEM FUNDO VERDE
+                assin_table = Table([[assin_elements]], colWidths=[17*cm])
                 assin_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#ecfdf5')),  # green-50
-                    ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#86efac')),  # green-300
+                    ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+                    ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),  # gray-200 border
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('TOPPADDING', (0, 0), (-1, -1), 8),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('TOPPADDING', (0, 0), (-1, -1), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
                     ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 10),
                 ]))
                 assin_content.append(assin_table)
-                assin_content.append(Spacer(1, 0.1*cm))
+                assin_content.append(Spacer(1, 0.15*cm))
             
             assin_section = create_section_box(assin_content, "ASSINATURAS")
             elements.append(assin_section)
