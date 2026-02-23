@@ -1103,14 +1103,26 @@ const AssinaturaModal = ({
                         )}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDeleteAssinatura(ass.id)}
-                      className={`text-red-400 hover:text-red-300 hover:bg-red-500/10 ${isMobile ? 'h-7 w-7 p-0' : ''}`}
-                    >
-                      <Trash2 className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingAssinatura(ass.id)}
+                        className={`text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 ${isMobile ? 'h-7 w-7 p-0' : ''}`}
+                        title="Editar data/hora"
+                      >
+                        <Edit className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteAssinatura(ass.id)}
+                        className={`text-red-400 hover:text-red-300 hover:bg-red-500/10 ${isMobile ? 'h-7 w-7 p-0' : ''}`}
+                        title="Eliminar assinatura"
+                      >
+                        <Trash2 className={isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
