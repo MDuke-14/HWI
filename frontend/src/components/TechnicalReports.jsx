@@ -6849,11 +6849,32 @@ const TechnicalReports = ({ user, onLogout }) => {
                   Fechar
                 </Button>
                 <Button
-                  onClick={() => window.print()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={async () => {
+                    try {
+                      const response = await axios.get(
+                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
+                        { responseType: 'blob' }
+                      );
+                      
+                      const blob = new Blob([response.data], { type: 'application/pdf' });
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `OT_${selectedRelatorio.numero_assistencia}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      
+                      toast.success('PDF baixado com sucesso!');
+                    } catch (error) {
+                      toast.error('Erro ao baixar PDF');
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Imprimir / Guardar PDF
+                  Download PDF
                 </Button>
               </div>
             </div>
