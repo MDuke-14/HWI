@@ -823,13 +823,14 @@ class CompanyInfo(BaseModel):
 
 
 class Tarifa(BaseModel):
-    """Tarifas para cálculo de valores na Folha de Horas"""
+    """Tarifas para cálculo de valores na Folha de Horas - associadas a uma Tabela de Preço"""
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     numero: Optional[int] = None  # Opcional - mantido para compatibilidade
     nome: str  # Ex: "Viagem Tarifa 1", "Mão de Obra"
     valor_por_hora: float  # Valor em euros por hora
     codigo: Optional[str] = None  # "1" (diurno), "2" (noturno), "S" (sábado), "D" (domingo/feriado), None (todos)
+    table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
@@ -840,6 +841,7 @@ class TarifaCreate(BaseModel):
     valor_por_hora: float
     numero: Optional[int] = None  # Opcional
     codigo: Optional[str] = None  # "1", "2", "S", "D" ou None
+    table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
 
 
 class TarifaUpdate(BaseModel):
@@ -847,13 +849,31 @@ class TarifaUpdate(BaseModel):
     nome: Optional[str] = None
     valor_por_hora: Optional[float] = None
     codigo: Optional[str] = None
+    table_id: Optional[int] = None
     ativo: Optional[bool] = None
+
+
+class TabelaPrecoConfig(BaseModel):
+    """Configuração da Tabela de Preço (valor por Km)"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    table_id: int  # ID da tabela de preço (1, 2, ou 3)
+    valor_km: float = 0.65  # Valor por quilómetro em euros
+    nome: str = ""  # Nome customizado da tabela (opcional)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+
+class TabelaPrecoConfigUpdate(BaseModel):
+    valor_km: Optional[float] = None
+    nome: Optional[str] = None
 
 
 class FolhaHorasRequest(BaseModel):
     """Request para gerar PDF da Folha de Horas"""
     tarifas_por_tecnico: dict  # {tecnico_id: tarifa_valor}
     dados_extras: dict  # {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
+    table_id: int = 1  # ID da tabela de preço a usar (1, 2, ou 3)
 
 
 class OvertimeAuthorization(BaseModel):
