@@ -1966,9 +1966,9 @@ const AdminDashboard = ({ user, onLogout }) => {
                   <Button 
                     onClick={handleSaveTabela} 
                     disabled={loading}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-full"
+                    className={`w-full text-white rounded-full ${showTabelaDialog === 'new' ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700'}`}
                   >
-                    {loading ? 'A guardar...' : 'Guardar Configuração'}
+                    {loading ? 'A guardar...' : (showTabelaDialog === 'new' ? 'Criar Tabela' : 'Guardar Configuração')}
                   </Button>
                 </div>
               </DialogContent>
@@ -1978,7 +1978,7 @@ const AdminDashboard = ({ user, onLogout }) => {
             <Dialog open={showTarifaDialog} onOpenChange={(open) => {
               setShowTarifaDialog(open);
               if (!open) {
-                setTarifaForm({ nome: '', valor_por_hora: '', codigo: '' });
+                setTarifaForm({ nome: '', valor_por_hora: '', codigo: '', tipo_registo: '' });
                 setEditingTarifa(null);
               }
             }}>
