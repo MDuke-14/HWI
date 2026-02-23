@@ -18,6 +18,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ✅ **Mobile/Desktop View Persistence** (23 Fevereiro 2026) - Verificado que o modo forçado persiste correctamente via localStorage
 - ✅ **Equipamentos com Campos Estruturados** (23 Fevereiro 2026) - Informação de equipamentos agora apresentada com campos separados e identificados (TIPOLOGIA, Nº SÉRIE, MARCA, MODELO, ANO FABRICO) na OT, HTML Preview e PDF
 - ✅ **Registos de Mão de Obra Ordenados Cronologicamente** (23 Fevereiro 2026) - Todos os registos (Manuais, Trabalho, Viagem) ordenados por data e hora de início. Registos sem hora ficam no final da respectiva data. Implementado em: Backend (6 endpoints), PDF, Frontend (UI e HTML Preview)
+- ✅ **Logo da Empresa no PDF** (23 Fevereiro 2026) - PDF agora inclui logo da empresa no cabeçalho. Adicionado endpoint POST `/api/company-info/logo` para upload de logo personalizado
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
