@@ -58,7 +58,9 @@ const FolhaHorasModal = ({
       setTarifasDaTabela(tarifas);
       
       // Preencher automaticamente os campos de tarifa por técnico/data/código
-      autoFillTarifas(tarifas);
+      if (folhaHorasData) {
+        autoFillTarifas(tarifas);
+      }
     } catch (error) {
       console.error('Erro ao carregar tarifas da tabela');
     }
@@ -66,7 +68,40 @@ const FolhaHorasModal = ({
 
   // Preencher automaticamente as tarifas baseado no código horário
   const autoFillTarifas = (tarifas) => {
-    const registos = getRegistosOrdenados();
+    // Obter registos do folhaHorasData
+    let registos = [];
+    
+    if (folhaHorasData?.registos_individuais) {
+      registos = folhaHorasData.registos_individuais;
+    } else if (folhaHorasData?.tecnicos) {
+      const registosBase = folhaHorasData.registos || [];
+      const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
+      
+      registosBase.forEach(reg => {
+        let data = reg.data || '';
+        if (typeof data === 'string' && data.includes('T')) {
+          data = data.split('T')[0];
+        }
+        registos.push({
+          tecnico_id: reg.tecnico_id,
+          data: data,
+          codigo: reg.codigo || '-'
+        });
+      });
+      
+      const codigosMap = { 'diurno': '1', 'noturno': '2', 'sabado': 'S', 'domingo_feriado': 'D' };
+      tecnicosManuais.forEach(tec => {
+        let data = tec.data_trabalho || '';
+        if (typeof data === 'string' && data.includes('T')) {
+          data = data.split('T')[0];
+        }
+        registos.push({
+          tecnico_id: tec.id,
+          data: data,
+          codigo: codigosMap[tec.tipo_horario] || '-'
+        });
+      });
+    }
     
     // Criar mapa de código -> valor da tarifa
     const tarifasPorCodigo = {};
@@ -82,7 +117,7 @@ const FolhaHorasModal = ({
       const codigo = registo.codigo;
       
       // Se existe uma tarifa para este código, preencher automaticamente
-      if (codigo && tarifasPorCodigo[codigo] !== undefined) {
+      if (codigo && codigo !== '-' && tarifasPorCodigo[codigo] !== undefined) {
         updateFolhaHorasTarifa(chave, tarifasPorCodigo[codigo].toString());
       }
     });
