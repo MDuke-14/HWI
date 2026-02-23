@@ -2834,6 +2834,12 @@ const TechnicalReports = ({ user, onLogout }) => {
       }
       
       setShowHTMLPreviewModal(true);
+      
+      // Inicializar canvas de assinatura após modal abrir
+      setTimeout(() => {
+        initSignatureCanvas();
+      }, 100);
+      
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast.error('Erro ao carregar dados para visualização');
