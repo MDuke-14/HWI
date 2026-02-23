@@ -2653,11 +2653,11 @@ async def get_tecnicos_relatorio(
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     
-    # Buscar técnicos ordenados
+    # Buscar técnicos manuais - ordenados cronologicamente
     tecnicos = await db.tecnicos_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("ordem", 1).to_list(100)
+    ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(100)
     
     return tecnicos
 
