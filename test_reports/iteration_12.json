@@ -1,0 +1,98 @@
+{
+  "summary": "Complete testing of Folha de Horas PDF generation feature. All requirements verified: PDF sections per technician, technician name in header, no Técnico column, legend with totals by code/type, price table selection, and tariff auto-fill based on código horário.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "FolhaHorasModal",
+        "issues": ["Console warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent} - accessibility improvement suggested"],
+        "priority": "LOW"
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_folha_horas_pdf.py",
+    "/app/test_reports/pytest/pytest_folha_horas.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_folha_horas_pdf.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "username": "teste@email.com",
+    "password": "teste"
+  },
+  "seed_data_creation": "Used existing OT #356 with 4 technicians (Miguel Moreira, Pedro Duarte, Gichelson Leite, Nuno Santos)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Folha de Horas PDF generation fully functional. OT #356 (ID: 8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85) used for testing with 4 technicians. 5 price tables available (2024, 2025, Kannegiesser, Tabela Urgente, Com Contrato). Navigate to /technical-reports, click Ordens de Trabalho tab, click on OT card to open details, then click 'Folha de Horas' button (data-testid='folha-horas-btn').",
+  "features_tested": {
+    "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf": {
+      "status": "PASS",
+      "details": "Returns valid PDF (200, application/pdf), PDF starts with %PDF magic bytes, Content-Disposition contains 'FolhaHoras'"
+    },
+    "PDF sections separated by technician": {
+      "status": "PASS",
+      "details": "Code verified: PageBreak added between technicians (line 301), each technician gets own section"
+    },
+    "Technician name in header": {
+      "status": "PASS",
+      "details": "Code verified: '<b>Técnico:</b> {tecnico_nome}' in tecnico_heading_style (line 318)"
+    },
+    "No Técnico column in table": {
+      "status": "PASS",
+      "details": "Code verified: Table headers do not include 'Técnico' column (lines 338-355)"
+    },
+    "Legend with totals by code and type": {
+      "status": "PASS",
+      "details": "Code verified: 'RESUMO DE HORAS POR CÓDIGO E TIPO' section with format 'Código X – Tipo: HH:MM total' (lines 561-590)"
+    },
+    "FolhaHorasModal - Price table selection": {
+      "status": "PASS",
+      "details": "Modal shows 5 price tables (2024, 2025, Kannegiesser, Tabela Urgente, Com Contrato) with €/km values"
+    },
+    "Tariff auto-fill based on código horário": {
+      "status": "PASS",
+      "details": "Tarifas por Técnico section shows auto-filled dropdowns like 'Tarifa Diurna (30.00€/h)', 'Viagem Diurna (25.00€/h)'"
+    }
+  },
+  "api_tests_summary": {
+    "GET /api/tabelas-preco": "PASS - Returns 5 price tables with valor_km",
+    "GET /api/tarifas?table_id=X": "PASS - Filters by table correctly",
+    "GET /api/relatorios-tecnicos/{id}/folha-horas-data": "PASS - Returns technicians, registos, cliente data",
+    "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf (basic)": "PASS - Returns valid PDF",
+    "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf (with tarifas)": "PASS - Accepts custom tarifas",
+    "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf (with extras)": "PASS - Accepts dieta/portagens/despesas",
+    "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf (different tables)": "PASS - Works with different table_id values",
+    "POST /api/relatorios-tecnicos/invalid-id/folha-horas-pdf": "PASS - Returns 404 for non-existent"
+  },
+  "ui_test_flow": [
+    "1. Login with teste@email.com/teste",
+    "2. Click OTs floating button (a[href='/technical-reports'])",
+    "3. Click 'Ordens de Trabalho' tab",
+    "4. Click on OT #356 card (client name area)",
+    "5. OT details modal opens showing Mão de Obra/Deslocação section",
+    "6. Click 'Folha de Horas' button (data-testid='folha-horas-btn')",
+    "7. Folha de Horas modal opens with Tabela de Preço section",
+    "8. Verify 5 price tables displayed with €/km values",
+    "9. Verify Tarifas por Técnico section shows auto-filled values",
+    "10. Verify Gerar PDF button is available"
+  ],
+  "pdf_structure_verification": {
+    "per_technician_sections": true,
+    "technician_name_in_header": true,
+    "no_tecnico_column": true,
+    "legend_with_totals": true,
+    "codigo_descriptions": ["1 = Diurno (07h-19h)", "2 = Noturno (19h-07h)", "S = Sábado", "D = Domingo/Feriado"]
+  }
+}
