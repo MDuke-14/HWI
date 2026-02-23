@@ -1,7 +1,7 @@
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage, PageBreak, KeepTogether, KeepInFrame
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage, PageBreak, KeepTogether, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from io import BytesIO
@@ -12,78 +12,107 @@ from collections import defaultdict
 
 def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None):
     """
-    Gera PDF completo de uma Ordem de Trabalho ORGANIZADO POR DATA DE INTERVENÇÃO
-    Cada intervenção aparece como bloco independente com os dados correspondentes a essa data.
+    Gera PDF completo de uma Ordem de Trabalho
+    Layout baseado na visualização HTML, organizado por data de intervenção
     """
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.8*cm, bottomMargin=0.8*cm, leftMargin=1*cm, rightMargin=1*cm)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
     elements = []
     styles = getSampleStyleSheet()
     
-    # Estilos customizados
-    title_style = ParagraphStyle(
-        'CustomTitle',
+    # ========== ESTILOS ==========
+    
+    # Cabeçalho principal (fundo cinza escuro)
+    header_title_style = ParagraphStyle(
+        'HeaderTitle',
         parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#1e40af'),
-        spaceAfter=4,
+        fontSize=18,
+        textColor=colors.white,
+        spaceAfter=2,
         spaceBefore=0,
-        alignment=TA_CENTER,
+        alignment=TA_LEFT,
         fontName='Helvetica-Bold'
     )
     
-    heading_style = ParagraphStyle(
-        'CustomHeading',
+    header_subtitle_style = ParagraphStyle(
+        'HeaderSubtitle',
+        parent=styles['Normal'],
+        fontSize=11,
+        textColor=colors.HexColor('#d1d5db'),  # gray-300
+        spaceAfter=0,
+        spaceBefore=0
+    )
+    
+    # Títulos de secção
+    section_title_style = ParagraphStyle(
+        'SectionTitle',
         parent=styles['Heading2'],
         fontSize=12,
-        textColor=colors.HexColor('#3b82f6'),
-        spaceAfter=4,
-        spaceBefore=6,
+        textColor=colors.HexColor('#1f2937'),  # gray-800
+        spaceAfter=6,
+        spaceBefore=0,
         fontName='Helvetica-Bold'
     )
     
-    subheading_style = ParagraphStyle(
-        'CustomSubHeading',
-        parent=styles['Heading3'],
-        fontSize=10,
-        textColor=colors.HexColor('#1e40af'),
-        spaceAfter=3,
-        spaceBefore=4,
+    # Título de intervenção (fundo azul)
+    intervention_title_style = ParagraphStyle(
+        'InterventionTitle',
+        parent=styles['Heading2'],
+        fontSize=11,
+        textColor=colors.white,
+        spaceAfter=0,
+        spaceBefore=0,
         fontName='Helvetica-Bold'
     )
     
+    # Texto normal
     normal_style = ParagraphStyle(
         'CustomNormal',
         parent=styles['Normal'],
         fontSize=9,
         spaceAfter=2,
-        spaceBefore=0
+        spaceBefore=0,
+        textColor=colors.HexColor('#374151')  # gray-700
     )
     
-    date_header_style = ParagraphStyle(
-        'DateHeader',
-        parent=styles['Heading2'],
-        fontSize=11,
-        textColor=colors.white,
-        spaceAfter=4,
-        spaceBefore=8,
-        fontName='Helvetica-Bold',
-        backColor=colors.HexColor('#3b82f6')
+    # Labels
+    label_style = ParagraphStyle(
+        'LabelStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#6b7280'),  # gray-500
+        fontName='Helvetica-Bold'
     )
     
-    # Helper para normalizar datas
+    # Valores
+    value_style = ParagraphStyle(
+        'ValueStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#1f2937'),  # gray-800
+    )
+    
+    # Descrição de foto
+    foto_desc_style = ParagraphStyle(
+        'FotoDescStyle',
+        parent=styles['Normal'],
+        fontSize=7,
+        textColor=colors.HexColor('#4b5563'),
+        spaceAfter=1
+    )
+    
+    # ========== HELPERS ==========
+    
     def normalize_date(date_str):
         """Converte diferentes formatos de data para YYYY-MM-DD"""
         if not date_str:
             return None
         if isinstance(date_str, str):
             try:
-                # Tenta formato ISO
                 dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
                 return dt.strftime('%Y-%m-%d')
             except:
                 try:
-                    # Tenta formato DD/MM/YYYY
                     dt = datetime.strptime(date_str, '%d/%m/%Y')
                     return dt.strftime('%Y-%m-%d')
                 except:
@@ -100,181 +129,176 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         except:
             return date_str
     
-    # ========== CABEÇALHO DO DOCUMENTO ==========
+    def create_section_box(content_elements, title=None):
+        """Cria uma caixa de secção com borda"""
+        section_content = []
+        if title:
+            section_content.append(Paragraph(title, section_title_style))
+            section_content.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#e5e7eb'), spaceAfter=6))
+        section_content.extend(content_elements)
+        
+        # Criar tabela para simular borda
+        inner_table = Table([[section_content]], colWidths=[18.4*cm])
+        inner_table.setStyle(TableStyle([
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#d1d5db')),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        return inner_table
     
-    # Logo da empresa
-    logo_path = Path(__file__).parent / "assets" / "hwi_logo.png"
-    if logo_path.exists():
-        logo = RLImage(str(logo_path), width=6*cm, height=2*cm)
-        elements.append(logo)
-        elements.append(Spacer(1, 0.2*cm))
+    # ========== CABEÇALHO (fundo cinza escuro) ==========
     
-    # Título
-    elements.append(Paragraph("ORDEM DE TRABALHO", title_style))
-    elements.append(Paragraph(f"OT #{relatorio.get('numero_assistencia', 'N/A')}", title_style))
-    elements.append(Spacer(1, 0.2*cm))
+    # Formatar data de serviço
+    data_servico = relatorio.get('data_servico', '')
+    if isinstance(data_servico, str) and data_servico:
+        try:
+            data_servico = datetime.fromisoformat(data_servico).strftime('%d/%m/%Y')
+        except:
+            pass
     
-    # Status
     status_labels = {
+        'pendente': 'Pendente',
+        'agendado': 'Agendado',
         'orcamento': 'Orçamento',
         'em_execucao': 'Em Execução',
         'concluido': 'Concluído',
         'facturado': 'Facturado'
     }
     status_text = status_labels.get(relatorio.get('status', ''), relatorio.get('status', ''))
-    elements.append(Paragraph(f"<b>Status:</b> {status_text}", normal_style))
     
-    data_servico = relatorio.get('data_servico')
-    if isinstance(data_servico, str):
-        try:
-            data_servico = datetime.fromisoformat(data_servico).strftime('%d/%m/%Y')
-        except:
-            pass
-    elements.append(Paragraph(f"<b>Data de Serviço:</b> {data_servico}", normal_style))
-    elements.append(Spacer(1, 0.2*cm))
-    
-    # ========== DADOS DO CLIENTE ==========
-    client_section = []
-    client_section.append(Paragraph("DADOS DO CLIENTE", heading_style))
-    client_data = [
-        ['Nome:', cliente.get('nome', 'N/A')],
-        ['Email:', cliente.get('email', 'N/A')],
-        ['Telefone:', cliente.get('telefone', 'N/A')],
-        ['Morada:', cliente.get('morada', 'N/A')],
-        ['NIF:', cliente.get('nif', 'N/A')],
-        ['Local de Intervenção:', relatorio.get('local_intervencao', 'N/A')],
-        ['Pedido por:', relatorio.get('pedido_por', 'N/A')],
-        ['Contacto:', relatorio.get('contacto_pedido', 'N/A') or 'N/A'],
+    header_left = [
+        [Paragraph("RELATÓRIO TÉCNICO", header_title_style)],
+        [Paragraph(f"Ordem de Trabalho #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
     ]
     
-    client_table = Table(client_data, colWidths=[4.5*cm, 13.5*cm])
-    client_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e5e7eb')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+    header_right = [
+        [Paragraph(f"Data: {data_servico}", header_subtitle_style)],
+        [Paragraph(f"Estado: {status_text}", header_subtitle_style)]
+    ]
+    
+    header_table = Table([
+        [Table(header_left), Table(header_right)]
+    ], colWidths=[12*cm, 6*cm])
+    
+    header_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#1f2937')),  # gray-800
+        ('TOPPADDING', (0, 0), (-1, -1), 15),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
+        ('LEFTPADDING', (0, 0), (-1, -1), 15),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
     ]))
-    client_section.append(client_table)
-    client_section.append(Spacer(1, 0.2*cm))
-    elements.append(KeepTogether(client_section))
     
-    # ========== MOTIVO DA ASSISTÊNCIA ==========
-    motivo_section = []
-    motivo_section.append(Paragraph("MOTIVO DA ASSISTÊNCIA", heading_style))
-    motivo_text = relatorio.get('motivo_assistencia', 'N/A')
-    motivo_section.append(Paragraph(motivo_text, normal_style))
-    motivo_section.append(Spacer(1, 0.2*cm))
-    elements.append(KeepTogether(motivo_section))
+    elements.append(header_table)
+    elements.append(Spacer(1, 0.4*cm))
     
-    # ========== EQUIPAMENTOS (TODOS) ==========
-    equip_section = []
-    equip_section.append(Paragraph("EQUIPAMENTOS", heading_style))
+    # ========== INFORMAÇÕES DO CLIENTE ==========
+    
+    client_grid = [
+        [Paragraph("Cliente:", label_style), Paragraph(cliente.get('nome', 'N/A'), value_style),
+         Paragraph("Pedido por:", label_style), Paragraph(relatorio.get('pedido_por', '-') or '-', value_style)],
+        [Paragraph("Local:", label_style), Paragraph(relatorio.get('local_intervencao', '-') or '-', value_style),
+         Paragraph("Motivo:", label_style), Paragraph(relatorio.get('motivo_assistencia', '-') or '-', value_style)],
+    ]
+    
+    client_table = Table(client_grid, colWidths=[2*cm, 7*cm, 2.5*cm, 6.5*cm])
+    client_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    
+    client_section = create_section_box([client_table], "INFORMAÇÕES DO CLIENTE")
+    elements.append(client_section)
+    elements.append(Spacer(1, 0.3*cm))
+    
+    # ========== EQUIPAMENTOS ==========
     
     todos_equipamentos = []
     
     # Equipamento principal
     if relatorio.get('equipamento_tipologia') or relatorio.get('equipamento_marca') or relatorio.get('equipamento_modelo'):
-        todos_equipamentos.append({
-            'id': 'principal',
-            'tipologia': relatorio.get('equipamento_tipologia', ''),
-            'marca': relatorio.get('equipamento_marca', ''),
-            'modelo': relatorio.get('equipamento_modelo', ''),
-            'numero_serie': relatorio.get('equipamento_numero_serie', ''),
-            'ano_fabrico': relatorio.get('equipamento_ano_fabrico', '')
-        })
+        equip_text = relatorio.get('equipamento_tipologia', '') or 'Equipamento'
+        if relatorio.get('equipamento_marca'):
+            equip_text += f" - {relatorio.get('equipamento_marca')}"
+        if relatorio.get('equipamento_modelo'):
+            equip_text += f" {relatorio.get('equipamento_modelo')}"
+        if relatorio.get('equipamento_numero_serie'):
+            equip_text += f" (S/N: {relatorio.get('equipamento_numero_serie')})"
+        todos_equipamentos.append(equip_text)
     
     # Equipamentos adicionais
     if equipamentos_adicionais:
         for equip in equipamentos_adicionais:
-            todos_equipamentos.append({
-                'id': equip.get('id', ''),
-                'tipologia': equip.get('tipologia', ''),
-                'marca': equip.get('marca', ''),
-                'modelo': equip.get('modelo', ''),
-                'numero_serie': equip.get('numero_serie', ''),
-                'ano_fabrico': equip.get('ano_fabrico', '')
-            })
+            equip_text = equip.get('tipologia', '') or 'Equipamento'
+            if equip.get('marca'):
+                equip_text += f" - {equip.get('marca')}"
+            if equip.get('modelo'):
+                equip_text += f" {equip.get('modelo')}"
+            if equip.get('numero_serie'):
+                equip_text += f" (S/N: {equip.get('numero_serie')})"
+            todos_equipamentos.append(equip_text)
     
     if todos_equipamentos:
-        equip_header = [['#', 'Tipologia', 'Marca', 'Modelo', 'Nº Série', 'Ano']]
+        equip_content = []
+        for eq in todos_equipamentos:
+            eq_table = Table([[Paragraph(eq, value_style)]], colWidths=[17.5*cm])
+            eq_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),  # gray-50
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+            ]))
+            equip_content.append(eq_table)
+            equip_content.append(Spacer(1, 0.1*cm))
         
-        for idx, equip in enumerate(todos_equipamentos, 1):
-            equip_header.append([
-                str(idx),
-                equip.get('tipologia', 'N/A') or 'N/A',
-                equip.get('marca', 'N/A') or 'N/A',
-                equip.get('modelo', 'N/A') or 'N/A',
-                equip.get('numero_serie', 'N/A') or 'N/A',
-                equip.get('ano_fabrico', '-') or '-'
-            ])
-        
-        equip_table = Table(equip_header, colWidths=[1*cm, 3.5*cm, 3.5*cm, 4*cm, 4*cm, 2*cm])
-        equip_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ]))
-        equip_section.append(equip_table)
-    else:
-        equip_section.append(Paragraph("Nenhum equipamento registado", normal_style))
-    
-    equip_section.append(Spacer(1, 0.3*cm))
-    elements.append(KeepTogether(equip_section))
+        equip_section = create_section_box(equip_content, "EQUIPAMENTOS")
+        elements.append(equip_section)
+        elements.append(Spacer(1, 0.3*cm))
     
     # ========== ORGANIZAR DADOS POR DATA DE INTERVENÇÃO ==========
     
-    # Recolher todas as datas únicas
     all_dates = set()
     
-    # Datas das intervenções
+    # Recolher todas as datas
     if intervencoes:
         for interv in intervencoes:
             date = normalize_date(interv.get('data_intervencao'))
             if date:
                 all_dates.add(date)
     
-    # Datas dos registos de mão de obra
     if registos_mao_obra:
         for reg in registos_mao_obra:
             date = normalize_date(reg.get('data'))
             if date:
                 all_dates.add(date)
     
-    # Datas dos técnicos (registos manuais)
     if tecnicos:
         for tec in tecnicos:
             date = normalize_date(tec.get('data_trabalho'))
             if date:
                 all_dates.add(date)
     
-    # Datas dos componentes/fotografias
     if fotografias:
         for foto in fotografias:
             date = normalize_date(foto.get('uploaded_at'))
             if date:
                 all_dates.add(date)
     
-    # Datas dos materiais
     if materiais:
         for mat in materiais:
             date = normalize_date(mat.get('data_utilizacao'))
             if date:
                 all_dates.add(date)
     
-    # Datas das assinaturas
+    # Assinaturas por data de assinatura
     assinaturas_list = []
     if assinaturas:
         if isinstance(assinaturas, dict):
@@ -283,68 +307,40 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             assinaturas_list = assinaturas if assinaturas else []
     
     for assin in assinaturas_list:
-        # Usar data_assinatura para agrupar assinaturas (não data_intervencao)
         date = normalize_date(assin.get('data_assinatura'))
         if date:
             all_dates.add(date)
     
-    # Ordenar datas cronologicamente
-    sorted_dates = sorted(all_dates) if all_dates else []
+    sorted_dates = sorted(all_dates) if all_dates else [None]
     
-    # Se não há datas, criar um bloco único "Sem Data"
-    if not sorted_dates:
-        sorted_dates = [None]
-    
-    # Mapas de códigos e tipos
-    codigos = {
+    # Códigos
+    codigos_map = {
         'diurno': '1',
         'noturno': '2',
         'sabado': 'S',
         'domingo_feriado': 'D'
     }
     
-    tipos_label = {
-        'trabalho': 'Trab.',
-        'viagem': 'Viag.',
-        'manual': 'Manual'
-    }
-    
-    desc_style = ParagraphStyle(
-        'DescStyle',
-        parent=normal_style,
-        fontSize=7,
-        spaceAfter=1,
-        spaceBefore=1
-    )
-    
     # ========== GERAR BLOCOS POR DATA ==========
     
-    elements.append(Paragraph("INTERVENÇÕES POR DATA", heading_style))
-    elements.append(Spacer(1, 0.2*cm))
-    
     for intervention_num, date in enumerate(sorted_dates, 1):
-        date_section = []
-        
-        # Cabeçalho da data
+        # Cabeçalho da intervenção (fundo azul)
         if date:
             date_display = format_date_display(date)
             date_header_text = f"INTERVENÇÃO #{intervention_num} - {date_display}"
         else:
             date_header_text = f"INTERVENÇÃO #{intervention_num} - Sem Data Específica"
         
-        # Criar tabela para o cabeçalho da data (para ter fundo colorido)
-        date_header_table = Table([[date_header_text]], colWidths=[18*cm])
-        date_header_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#3b82f6')),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
+        date_header = Table([[Paragraph(date_header_text, intervention_title_style)]], colWidths=[18.4*cm])
+        date_header.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#2563eb')),  # blue-600
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
-        date_section.append(date_header_table)
-        date_section.append(Spacer(1, 0.2*cm))
+        elements.append(date_header)
+        elements.append(Spacer(1, 0.2*cm))
         
         # ---- Intervenções desta data ----
         date_intervencoes = []
@@ -355,26 +351,43 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     date_intervencoes.append(interv)
         
         if date_intervencoes:
-            date_section.append(Paragraph("<b>Detalhes da Intervenção:</b>", normal_style))
+            interv_content = []
             for interv in date_intervencoes:
+                interv_data = []
+                
                 # Equipamento relacionado
                 if interv.get('equipamento_id') and equipamentos_adicionais:
                     equip_rel = next((e for e in equipamentos_adicionais if e.get('id') == interv.get('equipamento_id')), None)
                     if equip_rel:
                         equip_desc = f"{equip_rel.get('tipologia', '')} - {equip_rel.get('marca', '')} {equip_rel.get('modelo', '')}"
-                        date_section.append(Paragraph(f"<b>Equipamento:</b> {equip_desc}", normal_style))
+                        interv_data.append([Paragraph("Equipamento:", label_style), Paragraph(equip_desc, value_style)])
                 
-                date_section.append(Paragraph(f"<b>Motivo:</b> {interv.get('motivo_assistencia', 'N/A')}", normal_style))
+                if interv.get('motivo_assistencia'):
+                    interv_data.append([Paragraph("Motivo:", label_style), Paragraph(interv.get('motivo_assistencia'), value_style)])
                 
                 if interv.get('relatorio_assistencia'):
-                    date_section.append(Paragraph(f"<b>Relatório:</b> {interv.get('relatorio_assistencia')}", normal_style))
+                    interv_data.append([Paragraph("Relatório:", label_style), Paragraph(interv.get('relatorio_assistencia'), value_style)])
+                
+                if interv_data:
+                    interv_table = Table(interv_data, colWidths=[2.5*cm, 15*cm])
+                    interv_table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('TOPPADDING', (0, 0), (-1, -1), 4),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                    ]))
+                    interv_content.append(interv_table)
+                    interv_content.append(Spacer(1, 0.1*cm))
             
-            date_section.append(Spacer(1, 0.15*cm))
+            if interv_content:
+                interv_section = create_section_box(interv_content, "DETALHES DA INTERVENÇÃO")
+                elements.append(interv_section)
+                elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Horas / Mão de Obra desta data ----
+        # ---- Mão de Obra / Registos desta data ----
         date_mao_obra = []
         
-        # Registos manuais de técnicos
         if tecnicos:
             for tec in tecnicos:
                 tec_date = normalize_date(tec.get('data_trabalho'))
@@ -385,11 +398,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         'hora_fim': tec.get('hora_fim', ''),
                         'minutos': tec.get('minutos_cliente', 0),
                         'km': tec.get('kms_deslocacao', 0) or (max(0, (tec.get('kms_final', 0) or 0) - (tec.get('kms_inicial', 0) or 0))),
-                        'tipo': tec.get('tipo_registo', 'manual'),
-                        'codigo': codigos.get(tec.get('tipo_horario', ''), '-'),
+                        'tipo': tec.get('tipo_registo', 'trabalho'),
+                        'codigo': codigos_map.get(tec.get('tipo_horario', ''), '-'),
                     })
         
-        # Registos de cronómetros
         if registos_mao_obra:
             for reg in registos_mao_obra:
                 reg_date = normalize_date(reg.get('data'))
@@ -399,25 +411,16 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     hora_inicio_str = ''
                     hora_fim_str = ''
                     
-                    hora_inicio_seg = reg.get('hora_inicio_segmento', '')
-                    hora_fim_seg = reg.get('hora_fim_segmento', '')
-                    
-                    if hora_inicio_seg:
+                    if reg.get('hora_inicio_segmento'):
                         try:
-                            if isinstance(hora_inicio_seg, str):
-                                dt = datetime.fromisoformat(hora_inicio_seg.replace('Z', '+00:00'))
-                            else:
-                                dt = hora_inicio_seg
+                            dt = datetime.fromisoformat(str(reg['hora_inicio_segmento']).replace('Z', '+00:00'))
                             hora_inicio_str = dt.strftime('%H:%M')
                         except:
                             pass
                     
-                    if hora_fim_seg:
+                    if reg.get('hora_fim_segmento'):
                         try:
-                            if isinstance(hora_fim_seg, str):
-                                dt = datetime.fromisoformat(hora_fim_seg.replace('Z', '+00:00'))
-                            else:
-                                dt = hora_fim_seg
+                            dt = datetime.fromisoformat(str(reg['hora_fim_segmento']).replace('Z', '+00:00'))
                             hora_fim_str = dt.strftime('%H:%M')
                         except:
                             pass
@@ -428,15 +431,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         'hora_fim': hora_fim_str,
                         'minutos': minutos_total,
                         'km': reg.get('km', 0) or 0,
-                        'tipo': reg.get('tipo', '-'),
+                        'tipo': reg.get('tipo', 'trabalho'),
                         'codigo': reg.get('codigo', '-'),
                     })
         
         if date_mao_obra:
-            date_section.append(Paragraph("<b>Registo de Trabalho:</b>", normal_style))
-            
-            # Cabeçalho da tabela com identificação clara de Tipo e Código
-            mao_obra_data = [['Técnico', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
+            # Cabeçalho da tabela
+            mao_obra_header = [['Técnico', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
             
             for reg in date_mao_obra:
                 minutos_total = reg.get('minutos', 0)
@@ -447,7 +448,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 km_value = reg.get('km', 0)
                 km_formatado = f"{km_value} km" if km_value else "-"
                 
-                # Tipo de registo: T (Trabalho) ou V (Viagem)
+                # Tipo: T (Trabalho) ou V (Viagem)
                 tipo_raw = reg.get('tipo', '-')
                 if tipo_raw == 'trabalho':
                     tipo_display = 'T'
@@ -456,41 +457,35 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 else:
                     tipo_display = tipo_raw[:1].upper() if tipo_raw else '-'
                 
-                # Código: 1, 2, S ou D
-                codigo_display = reg.get('codigo', '-')
-                
-                mao_obra_data.append([
+                mao_obra_header.append([
                     reg.get('tecnico_nome', 'N/A'),
                     tipo_display,
-                    codigo_display,
+                    reg.get('codigo', '-'),
                     reg.get('hora_inicio', '') or '-',
                     reg.get('hora_fim', '') or '-',
                     tempo_formatado,
                     km_formatado
                 ])
             
-            mao_obra_table = Table(mao_obra_data, colWidths=[4*cm, 1.2*cm, 1.2*cm, 1.5*cm, 1.5*cm, 1.8*cm, 2*cm])
+            mao_obra_table = Table(mao_obra_header, colWidths=[4*cm, 1.5*cm, 1.5*cm, 2*cm, 2*cm, 2*cm, 2.5*cm])
             mao_obra_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e5e7eb')),  # gray-200
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Técnico alinhado à esquerda
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 4),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-                ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-                # Destacar colunas Tipo e Código
-                ('FONTNAME', (1, 1), (1, -1), 'Helvetica-Bold'),
-                ('FONTNAME', (2, 1), (2, -1), 'Helvetica-Bold'),
-                ('BACKGROUND', (1, 1), (1, -1), colors.HexColor('#e0f2fe')),  # Fundo azul claro para Tipo
-                ('BACKGROUND', (2, 1), (2, -1), colors.HexColor('#fef3c7')),  # Fundo amarelo claro para Código
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                # Linhas alternadas
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f9fafb'), colors.white]),
             ]))
-            date_section.append(mao_obra_table)
-            date_section.append(Spacer(1, 0.15*cm))
+            
+            mao_obra_section = create_section_box([mao_obra_table], "MÃO DE OBRA / DESLOCAÇÃO")
+            elements.append(mao_obra_section)
+            elements.append(Spacer(1, 0.2*cm))
         
         # ---- Materiais desta data ----
         date_materiais = []
@@ -501,35 +496,35 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     date_materiais.append(mat)
         
         if date_materiais:
-            date_section.append(Paragraph("<b>Materiais Utilizados:</b>", normal_style))
+            mat_header = [['Descrição', 'Quantidade', 'Fornecido por']]
             
-            mat_data = [['#', 'Descrição', 'Qtd', 'Fornecido Por']]
-            
-            for idx, mat in enumerate(date_materiais, 1):
-                mat_data.append([
-                    str(idx),
+            for mat in date_materiais:
+                mat_header.append([
                     mat.get('descricao', 'N/A'),
                     str(mat.get('quantidade', 0)),
                     mat.get('fornecido_por', '-') or '-'
                 ])
             
-            mat_table = Table(mat_data, colWidths=[1*cm, 8*cm, 1.5*cm, 3*cm])
+            mat_table = Table(mat_header, colWidths=[10*cm, 3*cm, 4.5*cm])
             mat_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9ca3af')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('ALIGN', (1, 1), (1, -1), 'LEFT'),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e5e7eb')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 3),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f9fafb'), colors.white]),
             ]))
-            date_section.append(mat_table)
-            date_section.append(Spacer(1, 0.15*cm))
+            
+            mat_section = create_section_box([mat_table], "MATERIAIS UTILIZADOS")
+            elements.append(mat_section)
+            elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Componentes/Fotografias desta data ----
+        # ---- Fotografias desta data ----
         date_fotografias = []
         if fotografias:
             for foto in fotografias:
@@ -538,7 +533,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     date_fotografias.append(foto)
         
         if date_fotografias:
-            date_section.append(Paragraph("<b>Componentes Adicionais:</b>", normal_style))
+            foto_content = []
             
             for i in range(0, len(date_fotografias), 2):
                 foto1 = date_fotografias[i]
@@ -546,170 +541,159 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 row_content = []
                 
-                # Célula da foto 1
+                # Foto 1
                 cell1 = []
                 if foto1.get('foto_base64'):
                     try:
                         foto_bytes = base64.b64decode(foto1['foto_base64'])
                         foto_buffer = BytesIO(foto_bytes)
-                        img = RLImage(foto_buffer, width=6*cm, height=4.5*cm, kind='proportional')
+                        img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
                         cell1.append(img)
-                    except Exception as e:
-                        cell1.append(Paragraph(f"<i>(Erro ao carregar imagem)</i>", desc_style))
+                    except:
+                        cell1.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
                 else:
-                    cell1.append(Paragraph("<i>(Sem imagem)</i>", desc_style))
-                cell1.append(Paragraph(f"<b>#{i+1}:</b> {foto1.get('descricao', '')[:80]}", desc_style))
+                    cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
+                
+                if foto1.get('descricao'):
+                    cell1.append(Paragraph(foto1.get('descricao', '')[:100], foto_desc_style))
+                
                 row_content.append(cell1)
                 
-                # Célula da foto 2
+                # Foto 2
                 if foto2:
                     cell2 = []
                     if foto2.get('foto_base64'):
                         try:
                             foto_bytes = base64.b64decode(foto2['foto_base64'])
                             foto_buffer = BytesIO(foto_bytes)
-                            img = RLImage(foto_buffer, width=6*cm, height=4.5*cm, kind='proportional')
+                            img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
                             cell2.append(img)
-                        except Exception as e:
-                            cell2.append(Paragraph(f"<i>(Erro ao carregar imagem)</i>", desc_style))
+                        except:
+                            cell2.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
                     else:
-                        cell2.append(Paragraph("<i>(Sem imagem)</i>", desc_style))
-                    cell2.append(Paragraph(f"<b>#{i+2}:</b> {foto2.get('descricao', '')[:80]}", desc_style))
+                        cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
+                    
+                    if foto2.get('descricao'):
+                        cell2.append(Paragraph(foto2.get('descricao', '')[:100], foto_desc_style))
+                    
                     row_content.append(cell2)
                 else:
                     row_content.append('')
                 
-                foto_table = Table([row_content], colWidths=[9*cm, 9*cm])
-                foto_table.setStyle(TableStyle([
+                foto_row_table = Table([row_content], colWidths=[8.7*cm, 8.7*cm])
+                foto_row_table.setStyle(TableStyle([
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 2),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-                    ('TOPPADDING', (0, 0), (-1, -1), 2),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                    ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#e5e7eb')),
+                    ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#e5e7eb')),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
                 ]))
-                date_section.append(foto_table)
+                foto_content.append(foto_row_table)
+                foto_content.append(Spacer(1, 0.1*cm))
             
-            date_section.append(Spacer(1, 0.15*cm))
+            foto_section = create_section_box(foto_content, "FOTOGRAFIAS")
+            elements.append(foto_section)
+            elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Assinaturas desta data (agrupadas por data_assinatura) ----
+        # ---- Assinaturas desta data (por data_assinatura) ----
         date_assinaturas = []
         for assin in assinaturas_list:
-            # Usar data_assinatura para agrupar assinaturas (não data_intervencao)
             assin_date = normalize_date(assin.get('data_assinatura'))
             if assin_date == date or (date is None and not assin_date):
                 date_assinaturas.append(assin)
         
         if date_assinaturas:
-            date_section.append(Paragraph("<b>Assinatura do Cliente:</b>", normal_style))
-            date_section.append(Paragraph("<i>Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.</i>", desc_style))
+            assin_content = []
             
             for assinatura in date_assinaturas:
-                if assinatura.get('tipo') == 'digital':
-                    img_added = False
-                    
-                    if assinatura.get('assinatura_path'):
-                        img_path = Path(assinatura['assinatura_path'])
-                        if img_path.exists():
-                            try:
-                                img = RLImage(str(img_path), width=5*cm, height=2.5*cm, kind='proportional')
-                                date_section.append(img)
-                                img_added = True
-                            except:
-                                pass
-                    
-                    if not img_added and assinatura.get('assinatura_base64'):
+                assin_row = []
+                
+                # Imagem da assinatura
+                img_added = False
+                if assinatura.get('assinatura_path'):
+                    img_path = Path(assinatura['assinatura_path'])
+                    if img_path.exists():
                         try:
-                            img_data = base64.b64decode(assinatura['assinatura_base64'])
-                            img_buffer = BytesIO(img_data)
-                            img = RLImage(img_buffer, width=5*cm, height=2.5*cm, kind='proportional')
-                            date_section.append(img)
+                            img = RLImage(str(img_path), width=5*cm, height=2.5*cm, kind='proportional')
+                            assin_row.append(img)
+                            img_added = True
                         except:
                             pass
                 
-                nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
-                date_section.append(Paragraph(f"<b>Nome:</b> {nome_completo}", normal_style))
-                
-                data_assinatura = assinatura.get('data_assinatura')
-                if isinstance(data_assinatura, str):
+                if not img_added and assinatura.get('assinatura_base64'):
                     try:
-                        data_assinatura = datetime.fromisoformat(data_assinatura).strftime('%d/%m/%Y %H:%M')
+                        img_data = base64.b64decode(assinatura['assinatura_base64'])
+                        img_buffer = BytesIO(img_data)
+                        img = RLImage(img_buffer, width=5*cm, height=2.5*cm, kind='proportional')
+                        assin_row.append(img)
                     except:
-                        pass
-                date_section.append(Paragraph(f"<b>Data de Assinatura:</b> {data_assinatura}", normal_style))
+                        assin_row.append(Paragraph("<i>Assinatura não disponível</i>", foto_desc_style))
+                elif not img_added:
+                    assin_row.append(Paragraph("<i>Assinatura não disponível</i>", foto_desc_style))
+                
+                # Dados da assinatura
+                nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}"
+                
+                data_assinatura_display = ''
+                if assinatura.get('data_assinatura'):
+                    try:
+                        dt = datetime.fromisoformat(str(assinatura['data_assinatura']).replace('Z', '+00:00'))
+                        data_assinatura_display = dt.strftime('%d/%m/%Y %H:%M')
+                    except:
+                        data_assinatura_display = str(assinatura['data_assinatura'])
+                
+                tipo_assin = assinatura.get('tipo', 'digital')
+                tipo_label = 'Assinatura Digital' if tipo_assin == 'digital' else tipo_assin.capitalize()
+                
+                assin_info = [
+                    Paragraph(f"<b>{tipo_label}</b>", normal_style),
+                    Paragraph(f"Nome: {nome_completo}", normal_style),
+                    Paragraph(f"Data: {data_assinatura_display}", normal_style),
+                ]
+                
+                assin_table = Table([[assin_row, assin_info]], colWidths=[6*cm, 11*cm])
+                assin_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#ecfdf5')),  # green-50
+                    ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#86efac')),  # green-300
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ]))
+                assin_content.append(assin_table)
+                assin_content.append(Spacer(1, 0.1*cm))
+            
+            assin_section = create_section_box(assin_content, "ASSINATURAS")
+            elements.append(assin_section)
+            elements.append(Spacer(1, 0.2*cm))
         
-        # Separador entre intervenções
-        date_section.append(Spacer(1, 0.4*cm))
-        
-        # Adicionar secção da data como bloco
-        elements.extend(date_section)
-    
-    # ========== RESUMO FINAL / DIAGNÓSTICO ==========
-    has_diagnostico = relatorio.get('diagnostico') or relatorio.get('acoes_realizadas') or relatorio.get('resolucao') or relatorio.get('relatorio_assistencia')
-    if has_diagnostico:
-        diag_section = []
-        diag_section.append(Paragraph("DIAGNÓSTICO E RESOLUÇÃO", heading_style))
-        
-        if relatorio.get('diagnostico'):
-            diag_section.append(Paragraph(f"<b>Diagnóstico:</b> {relatorio.get('diagnostico')}", normal_style))
-        
-        if relatorio.get('acoes_realizadas'):
-            diag_section.append(Paragraph(f"<b>Ações Realizadas:</b> {relatorio.get('acoes_realizadas')}", normal_style))
-        
-        if relatorio.get('resolucao'):
-            diag_section.append(Paragraph(f"<b>Resolução:</b> {relatorio.get('resolucao')}", normal_style))
-        
-        if relatorio.get('relatorio_assistencia'):
-            diag_section.append(Paragraph(f"<b>Relatório de Assistência:</b> {relatorio.get('relatorio_assistencia')}", normal_style))
-        
-        problema_resolvido = relatorio.get('problema_resolvido', False)
-        status_prob = "✓ Sim" if problema_resolvido else "✗ Não"
-        diag_section.append(Paragraph(f"<b>Problema Resolvido:</b> {status_prob}", normal_style))
-        
-        diag_section.append(Spacer(1, 0.2*cm))
-        elements.append(KeepTogether(diag_section))
+        elements.append(Spacer(1, 0.3*cm))
     
     # ========== LEGENDA ==========
-    legenda_section = []
-    legenda_style = ParagraphStyle(
-        'LegendaStyle',
-        parent=normal_style,
-        fontSize=8,
-        textColor=colors.HexColor('#374151')
-    )
     
-    # Criar tabela de legenda mais clara e profissional
-    legenda_section.append(Paragraph("<b>LEGENDA</b>", subheading_style))
+    legenda_content = []
     
     legenda_data = [
-        ['<b>Tipo de Registo</b>', '<b>Código Horário</b>'],
+        ['Tipo de Registo', 'Código Horário'],
         ['T = Trabalho', '1 = Dias úteis (07h-19h)'],
         ['V = Viagem/Deslocação', '2 = Dias úteis (19h-07h)'],
         ['', 'S = Sábado'],
         ['', 'D = Domingos/Feriados'],
     ]
     
-    # Converter para Paragraphs
-    legenda_data_formatted = []
-    for row in legenda_data:
-        legenda_data_formatted.append([
-            Paragraph(row[0], legenda_style),
-            Paragraph(row[1], legenda_style)
-        ])
-    
-    legenda_table = Table(legenda_data_formatted, colWidths=[6*cm, 8*cm])
+    legenda_table = Table(legenda_data, colWidths=[6*cm, 8*cm])
     legenda_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f3f4f6')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('LEFTPADDING', (0, 0), (-1, -1), 6),
     ]))
-    legenda_section.append(legenda_table)
-    legenda_section.append(Spacer(1, 0.15*cm))
+    legenda_content.append(legenda_table)
     
     nota_style = ParagraphStyle(
         'NotaStyle',
@@ -718,8 +702,23 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         textColor=colors.HexColor('#6b7280'),
         fontName='Helvetica-Oblique'
     )
-    legenda_section.append(Paragraph("Nota: Aos quilómetros de ida já contabilizados, serão adicionados os quilómetros de volta após assinatura deste relatório.", nota_style))
-    elements.append(KeepTogether(legenda_section))
+    legenda_content.append(Spacer(1, 0.1*cm))
+    legenda_content.append(Paragraph("Nota: Aos quilómetros de ida já contabilizados, serão adicionados os quilómetros de volta após assinatura deste relatório.", nota_style))
+    
+    legenda_section = create_section_box(legenda_content, "LEGENDA")
+    elements.append(legenda_section)
+    
+    # ========== RODAPÉ ==========
+    
+    elements.append(Spacer(1, 0.3*cm))
+    footer_style = ParagraphStyle(
+        'FooterStyle',
+        parent=normal_style,
+        fontSize=8,
+        textColor=colors.HexColor('#9ca3af'),
+        alignment=TA_CENTER
+    )
+    elements.append(Paragraph(f"Documento gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}", footer_style))
     
     # Construir PDF
     doc.build(elements)
