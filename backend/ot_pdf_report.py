@@ -283,7 +283,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             assinaturas_list = assinaturas if assinaturas else []
     
     for assin in assinaturas_list:
-        date = normalize_date(assin.get('data_intervencao'))
+        # Usar data_assinatura para agrupar assinaturas (não data_intervencao)
+        date = normalize_date(assin.get('data_assinatura'))
         if date:
             all_dates.add(date)
     
