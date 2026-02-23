@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 const MobileBottomNav = ({ user, activeTimer, onQuickAction }) => {
   const location = useLocation();
-  const { bottomNavVisible, isStandalone } = useMobile();
+  const { bottomNavVisible, isStandalone, forcedMode } = useMobile();
 
   // Items de navegação base
   const navItems = [
