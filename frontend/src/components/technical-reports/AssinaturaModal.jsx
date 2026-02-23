@@ -1093,12 +1093,6 @@ const AssinaturaModal = ({
                                 )}
                               </>
                             ) : 'Sem data'}
-                            <button
-                              onClick={() => setEditingAssinatura(ass.id)}
-                              className="ml-1 text-blue-400 hover:text-blue-300"
-                            >
-                              <Edit className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
-                            </button>
                           </p>
                         )}
                       </div>
