@@ -80,6 +80,20 @@ const MaterialModal = ({
             </div>
           )}
 
+          <div>
+            <Label htmlFor="data_utilizacao" className="text-gray-300 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Data de Utilização
+            </Label>
+            <Input
+              id="data_utilizacao"
+              type="date"
+              value={materialFormData.data_utilizacao || ''}
+              onChange={(e) => setMaterialFormData({ ...materialFormData, data_utilizacao: e.target.value })}
+              className="bg-[#0f0f0f] border-gray-700 text-white"
+            />
+          </div>
+
           {/* Botões */}
           <div className="flex gap-3 pt-4">
             <Button
