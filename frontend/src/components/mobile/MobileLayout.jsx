@@ -24,9 +24,6 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
   const { isOnline, pendingCount, forceSync } = useOfflineData(API);
   const [activeTimer, setActiveTimer] = useState(null);
 
-  // Log para debug
-  console.log('MobileLayout render:', { isMobile, forcedMode, showBottomNav });
-
   // Verificar se há timer ativo
   const checkActiveTimer = async () => {
     try {
