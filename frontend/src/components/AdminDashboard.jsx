@@ -176,6 +176,14 @@ const AdminDashboard = ({ user, onLogout }) => {
     setShowTabelaDialog(tabela.table_id);
   };
 
+  const handleOpenCreateTabelaDialog = () => {
+    setTabelaForm({
+      nome: '',
+      valor_km: '0.65'
+    });
+    setShowTabelaDialog('new');
+  };
+
   const handleSaveTabela = async () => {
     if (!tabelaForm.valor_km) {
       toast.error('Preencha o valor por Km');
@@ -184,15 +192,54 @@ const AdminDashboard = ({ user, onLogout }) => {
 
     setLoading(true);
     try {
-      await axios.put(`${API}/tabelas-preco/${showTabelaDialog}`, {
-        nome: tabelaForm.nome,
-        valor_km: parseFloat(tabelaForm.valor_km)
-      });
-      toast.success('Tabela de Preço atualizada!');
+      if (showTabelaDialog === 'new') {
+        // Criar nova tabela
+        if (!tabelaForm.nome) {
+          toast.error('Preencha o nome da tabela');
+          setLoading(false);
+          return;
+        }
+        await axios.post(`${API}/tabelas-preco`, {
+          nome: tabelaForm.nome,
+          valor_km: parseFloat(tabelaForm.valor_km)
+        });
+        toast.success('Nova Tabela de Preço criada!');
+      } else {
+        // Atualizar tabela existente
+        await axios.put(`${API}/tabelas-preco/${showTabelaDialog}`, {
+          nome: tabelaForm.nome,
+          valor_km: parseFloat(tabelaForm.valor_km)
+        });
+        toast.success('Tabela de Preço atualizada!');
+      }
       setShowTabelaDialog(false);
       fetchTabelasPreco();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao atualizar tabela');
+      toast.error(error.response?.data?.detail || 'Erro ao guardar tabela');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTabela = async (tableId, tableName) => {
+    if (!confirm(`Tem certeza que deseja eliminar a tabela "${tableName}"?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.delete(`${API}/tabelas-preco/${tableId}`);
+      toast.success('Tabela eliminada!');
+      // Se a tabela eliminada era a selecionada, selecionar a primeira disponível
+      if (selectedTableId === tableId) {
+        const remaining = tabelasPreco.filter(t => t.table_id !== tableId);
+        if (remaining.length > 0) {
+          setSelectedTableId(remaining[0].table_id);
+        }
+      }
+      fetchTabelasPreco();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar tabela');
     } finally {
       setLoading(false);
     }
