@@ -3213,7 +3213,19 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
           ) : (
             <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
-              {relatorios.map((relatorio) => (
+              {relatorios
+                .filter((relatorio) => {
+                  if (!searchTerm.trim()) return true;
+                  const search = searchTerm.toLowerCase().trim();
+                  // Pesquisar por número da OT
+                  const matchNumero = relatorio.numero_assistencia?.toString().includes(search);
+                  // Pesquisar por nome do cliente
+                  const matchCliente = relatorio.cliente_nome?.toLowerCase().includes(search);
+                  // Pesquisar por local/morada
+                  const matchLocal = relatorio.cliente_local?.toLowerCase().includes(search);
+                  return matchNumero || matchCliente || matchLocal;
+                })
+                .map((relatorio) => (
                 <div
                   key={relatorio.id}
                   className={`${bgCard} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-4'} hover:border-blue-500 transition`}
