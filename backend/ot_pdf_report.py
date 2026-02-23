@@ -433,9 +433,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     })
         
         if date_mao_obra:
-            date_section.append(Paragraph("<b>Mão de Obra / Deslocação:</b>", normal_style))
+            date_section.append(Paragraph("<b>Registo de Trabalho:</b>", normal_style))
             
-            mao_obra_data = [['Técnico', 'Tipo', 'Início', 'Fim', 'Horas', 'KM', 'Cód']]
+            # Cabeçalho da tabela com identificação clara de Tipo e Código
+            mao_obra_data = [['Técnico', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
             
             for reg in date_mao_obra:
                 minutos_total = reg.get('minutos', 0)
@@ -444,29 +445,49 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 tempo_formatado = f"{horas}h{mins:02d}"
                 
                 km_value = reg.get('km', 0)
-                km_formatado = f"{km_value}" if km_value else "-"
+                km_formatado = f"{km_value} km" if km_value else "-"
+                
+                # Tipo de registo: T (Trabalho) ou V (Viagem)
+                tipo_raw = reg.get('tipo', '-')
+                if tipo_raw == 'trabalho':
+                    tipo_display = 'T'
+                elif tipo_raw == 'viagem':
+                    tipo_display = 'V'
+                else:
+                    tipo_display = tipo_raw[:1].upper() if tipo_raw else '-'
+                
+                # Código: 1, 2, S ou D
+                codigo_display = reg.get('codigo', '-')
                 
                 mao_obra_data.append([
                     reg.get('tecnico_nome', 'N/A'),
-                    tipos_label.get(reg.get('tipo', ''), reg.get('tipo', '-')),
+                    tipo_display,
+                    codigo_display,
                     reg.get('hora_inicio', '') or '-',
                     reg.get('hora_fim', '') or '-',
                     tempo_formatado,
-                    km_formatado,
-                    reg.get('codigo', '-')
+                    km_formatado
                 ])
             
-            mao_obra_table = Table(mao_obra_data, colWidths=[3.5*cm, 1.6*cm, 1.6*cm, 1.6*cm, 1.8*cm, 1.6*cm, 1.2*cm])
+            mao_obra_table = Table(mao_obra_data, colWidths=[4*cm, 1.2*cm, 1.2*cm, 1.5*cm, 1.5*cm, 1.8*cm, 2*cm])
             mao_obra_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9ca3af')),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Técnico alinhado à esquerda
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 3),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                # Destacar colunas Tipo e Código
+                ('FONTNAME', (1, 1), (1, -1), 'Helvetica-Bold'),
+                ('FONTNAME', (2, 1), (2, -1), 'Helvetica-Bold'),
+                ('BACKGROUND', (1, 1), (1, -1), colors.HexColor('#e0f2fe')),  # Fundo azul claro para Tipo
+                ('BACKGROUND', (2, 1), (2, -1), colors.HexColor('#fef3c7')),  # Fundo amarelo claro para Código
             ]))
             date_section.append(mao_obra_table)
             date_section.append(Spacer(1, 0.15*cm))
