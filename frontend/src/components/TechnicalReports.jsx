@@ -4204,6 +4204,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               _tipo_registo: tec.tipo_registo || 'manual',
                               _source: 'tecnico',
                               _data_sort: tec.data_trabalho || tec.created_at || '',
+                              _hora_inicio_sort: tec.hora_inicio || '',
                               _key: `manual-${tec.id}`
                             })),
                             // Registos do Cronómetro
