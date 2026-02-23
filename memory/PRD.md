@@ -19,6 +19,12 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ✅ **Equipamentos com Campos Estruturados** (23 Fevereiro 2026) - Informação de equipamentos agora apresentada com campos separados e identificados (TIPOLOGIA, Nº SÉRIE, MARCA, MODELO, ANO FABRICO) na OT, HTML Preview e PDF
 - ✅ **Registos de Mão de Obra Ordenados Cronologicamente** (23 Fevereiro 2026) - Todos os registos (Manuais, Trabalho, Viagem) ordenados por data e hora de início. Registos sem hora ficam no final da respectiva data. Implementado em: Backend (6 endpoints), PDF, Frontend (UI e HTML Preview)
 - ✅ **Logo da Empresa no PDF** (23 Fevereiro 2026) - PDF agora inclui logo da empresa no cabeçalho. Adicionado endpoint POST `/api/company-info/logo` para upload de logo personalizado
+- ✅ **Sistema Tabela de Preço** (23 Fevereiro 2026) - NOVA FUNCIONALIDADE
+  - 3 tabelas de preço independentes (Tabela 1, Tabela 2, Tabela 3)
+  - Cada tabela com valor por Km configurável
+  - Tarifas associadas por tabela
+  - Seleção de tabela no modal da Folha de Horas
+  - PDF gerado com valor de Km da tabela selecionada
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
