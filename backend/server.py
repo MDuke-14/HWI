@@ -10788,11 +10788,16 @@ async def create_tarifa(
     if tarifa_data.table_id not in [1, 2, 3]:
         raise HTTPException(status_code=400, detail="ID de tabela inválido. Use 1, 2 ou 3.")
     
+    # Validar tipo_registo
+    if tarifa_data.tipo_registo and tarifa_data.tipo_registo not in ["trabalho", "viagem"]:
+        raise HTTPException(status_code=400, detail="Tipo de registo inválido. Use 'trabalho', 'viagem' ou deixe vazio.")
+    
     tarifa = Tarifa(
         numero=tarifa_data.numero,
         nome=tarifa_data.nome,
         valor_por_hora=tarifa_data.valor_por_hora,
         codigo=tarifa_data.codigo,
+        tipo_registo=tarifa_data.tipo_registo,
         table_id=tarifa_data.table_id
     )
     
@@ -10802,7 +10807,7 @@ async def create_tarifa(
     await db.tarifas.insert_one(tarifa_dict)
     tarifa_dict.pop("_id", None)
     
-    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} - Tabela: {tarifa.table_id} por {current_user['sub']}")
+    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} - Tipo: {tarifa.tipo_registo} - Tabela: {tarifa.table_id} por {current_user['sub']}")
     
     return tarifa_dict
 
