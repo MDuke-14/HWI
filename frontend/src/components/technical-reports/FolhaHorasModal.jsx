@@ -487,7 +487,7 @@ const FolhaHorasModal = ({
                 Cancelar
               </Button>
               <Button
-                onClick={onGeneratePDF}
+                onClick={handleGeneratePDF}
                 disabled={generatingFolhaHoras}
                 className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
               >
