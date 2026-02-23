@@ -337,14 +337,16 @@ const AdminDashboard = ({ user, onLogout }) => {
       setTarifaForm({
         nome: tarifa.nome,
         valor_por_hora: tarifa.valor_por_hora.toString(),
-        codigo: tarifa.codigo || ''
+        codigo: tarifa.codigo || '',
+        tipo_registo: tarifa.tipo_registo || ''
       });
     } else {
       setEditingTarifa(null);
       setTarifaForm({
         nome: '',
         valor_por_hora: '',
-        codigo: ''
+        codigo: '',
+        tipo_registo: ''
       });
     }
     setShowTarifaDialog(true);
@@ -362,6 +364,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         nome: tarifaForm.nome,
         valor_por_hora: parseFloat(tarifaForm.valor_por_hora),
         codigo: tarifaForm.codigo || null,  // null se vazio
+        tipo_registo: tarifaForm.tipo_registo || null,  // null se vazio (aplica a ambos)
         table_id: selectedTableId  // Associar à tabela de preço selecionada
       };
 
@@ -374,7 +377,7 @@ const AdminDashboard = ({ user, onLogout }) => {
       }
       
       setShowTarifaDialog(false);
-      setTarifaForm({ nome: '', valor_por_hora: '', codigo: '' });
+      setTarifaForm({ nome: '', valor_por_hora: '', codigo: '', tipo_registo: '' });
       setEditingTarifa(null);
       fetchTarifas();
     } catch (error) {
