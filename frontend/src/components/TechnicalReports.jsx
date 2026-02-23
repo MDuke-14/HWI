@@ -223,6 +223,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [htmlPreviewData, setHtmlPreviewData] = useState(null);
   const [loadingHTMLPreview, setLoadingHTMLPreview] = useState(false);
   
+  // Canvas de assinatura integrado no HTML Preview
+  const htmlSignatureCanvasRef = useRef(null);
+  const [isDrawingSignature, setIsDrawingSignature] = useState(false);
+  const [htmlSignatureName, setHtmlSignatureName] = useState('');
+  const [savingHtmlSignature, setSavingHtmlSignature] = useState(false);
+  
   // Visualização PDF real (para o cliente ver antes de assinar)
   const [showPDFViewerModal, setShowPDFViewerModal] = useState(false);
   const [pdfViewerUrl, setPdfViewerUrl] = useState(null);
