@@ -10730,7 +10730,14 @@ async def get_tarifas(
     """Listar todas as tarifas ativas - filtradas opcionalmente por tabela de preço"""
     query = {"ativo": True}
     if table_id is not None:
-        query["table_id"] = table_id
+        # Para table_id=1, incluir tarifas sem table_id (migração) ou com table_id=1
+        if table_id == 1:
+            query["$or"] = [
+                {"table_id": 1},
+                {"table_id": {"$exists": False}}
+            ]
+        else:
+            query["table_id"] = table_id
     
     tarifas = await db.tarifas.find(
         query,
