@@ -1737,29 +1737,36 @@ const AdminDashboard = ({ user, onLogout }) => {
               
               {/* Sub-tabs para as 3 tabelas de preço */}
               <div className="flex gap-2 mb-6 flex-wrap">
-                {[1, 2, 3].map((tableId) => {
-                  const tabela = tabelasPreco.find(t => t.table_id === tableId);
-                  const tarifasCount = tarifas.filter(t => (t.table_id || 1) === tableId && t.ativo).length;
+                {tabelasPreco.map((tabela) => {
+                  const tarifasCount = tarifas.filter(t => (t.table_id || 1) === tabela.table_id && t.ativo).length;
                   return (
                     <button
-                      key={tableId}
-                      onClick={() => setSelectedTableId(tableId)}
+                      key={tabela.table_id}
+                      onClick={() => setSelectedTableId(tabela.table_id)}
                       className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                        selectedTableId === tableId
+                        selectedTableId === tabela.table_id
                           ? 'bg-amber-600 text-white'
                           : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#252525] border border-gray-700'
                       }`}
                     >
                       <DollarSign className="w-4 h-4" />
-                      {tabela?.nome || `Tabela ${tableId}`}
+                      {tabela.nome || `Tabela ${tabela.table_id}`}
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
-                        selectedTableId === tableId ? 'bg-amber-700' : 'bg-gray-700'
+                        selectedTableId === tabela.table_id ? 'bg-amber-700' : 'bg-gray-700'
                       }`}>
                         {tarifasCount}
                       </span>
                     </button>
                   );
                 })}
+                {/* Botão para criar nova tabela */}
+                <button
+                  onClick={handleOpenCreateTabelaDialog}
+                  className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-600/50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nova Tabela
+                </button>
               </div>
               
               {/* Configuração da tabela selecionada */}
@@ -1787,14 +1794,26 @@ const AdminDashboard = ({ user, onLogout }) => {
                             </p>
                           </div>
                         </div>
-                        <Button 
-                          onClick={() => tabelaAtual && handleOpenTabelaDialog(tabelaAtual)}
-                          className="bg-amber-600 hover:bg-amber-700 text-white rounded-full"
-                          size="sm"
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar Configuração
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => tabelaAtual && handleOpenTabelaDialog(tabelaAtual)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white rounded-full"
+                            size="sm"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Editar
+                          </Button>
+                          {tabelasPreco.length > 1 && (
+                            <Button 
+                              onClick={() => tabelaAtual && handleDeleteTabela(tabelaAtual.table_id, tabelaAtual.nome)}
+                              className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                              size="sm"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Eliminar
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
