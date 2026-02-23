@@ -2860,42 +2860,74 @@ const TechnicalReports = ({ user, onLogout }) => {
     const canvas = htmlSignatureCanvasRef.current;
     if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
+    // Ajustar resolução do canvas para alta qualidade
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.scale(dpr, dpr);
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, rect.width, rect.height);
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   };
   
+  const getCanvasCoordinates = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+  
   const startDrawing = (e) => {
+    e.preventDefault();
     const canvas = htmlSignatureCanvasRef.current;
     if (!canvas) return;
     
     setIsDrawingSignature(true);
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const coords = getCanvasCoordinates(e, canvas);
+    
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(coords.x, coords.y);
   };
   
   const draw = (e) => {
+    e.preventDefault();
     if (!isDrawingSignature) return;
+    
     const canvas = htmlSignatureCanvasRef.current;
     if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
-    ctx.lineTo(x, y);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const coords = getCanvasCoordinates(e, canvas);
+    
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
   };
   
-  const stopDrawing = () => {
+  const stopDrawing = (e) => {
+    if (e) e.preventDefault();
     setIsDrawingSignature(false);
   };
   
@@ -2903,9 +2935,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     const canvas = htmlSignatureCanvasRef.current;
     if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, rect.width, rect.height);
   };
   
   const saveHtmlSignature = async () => {
