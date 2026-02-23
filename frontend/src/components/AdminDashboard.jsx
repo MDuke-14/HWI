@@ -38,14 +38,21 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
 
-  // Estados para Tarifas
+  // Estados para Tabelas de Preço e Tarifas
+  const [tabelasPreco, setTabelasPreco] = useState([]);
   const [tarifas, setTarifas] = useState([]);
+  const [selectedTableId, setSelectedTableId] = useState(1);  // Tabela de preço ativa
   const [showTarifaDialog, setShowTarifaDialog] = useState(false);
+  const [showTabelaDialog, setShowTabelaDialog] = useState(false);  // Dialog para editar config da tabela
   const [editingTarifa, setEditingTarifa] = useState(null);
   const [tarifaForm, setTarifaForm] = useState({
     nome: '',
     valor_por_hora: '',
     codigo: ''  // "1", "2", "S", "D" ou vazio para todos
+  });
+  const [tabelaForm, setTabelaForm] = useState({
+    nome: '',
+    valor_km: ''
   });
 
   // Estados para Notificações e Autorizações
