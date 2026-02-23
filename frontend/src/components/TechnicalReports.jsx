@@ -4988,7 +4988,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                               {assinatura.data_intervencao && (
                                 <div>
                                   <p className="text-xs text-gray-500">Data da Intervenção:</p>
-                                  <p className="text-orange-400 font-semibold">{assinatura.data_intervencao}</p>
+                                  <p className="text-orange-400 font-semibold">
+                                    {assinatura.data_intervencao.includes('T') 
+                                      ? new Date(assinatura.data_intervencao).toLocaleDateString('pt-PT')
+                                      : assinatura.data_intervencao}
+                                  </p>
                                 </div>
                               )}
                               <div>
@@ -4998,10 +5002,74 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500">Data de Assinatura:</p>
-                                <p className="text-gray-300 text-sm">
-                                  {new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}
+                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                  Data de Assinatura:
+                                  {editingAssinaturaDesktop !== assinatura.id && (
+                                    <button
+                                      onClick={() => {
+                                        const dateObj = new Date(assinatura.data_assinatura);
+                                        setEditingAssinaturaDesktop(assinatura.id);
+                                        setEditingAssinaturaData({
+                                          date: dateObj.toISOString().split('T')[0],
+                                          time: dateObj.toTimeString().substring(0,5)
+                                        });
+                                      }}
+                                      className="text-blue-400 hover:text-blue-300"
+                                      title="Editar data de assinatura"
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </p>
+                                {editingAssinaturaDesktop === assinatura.id ? (
+                                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                                    <Input
+                                      type="date"
+                                      value={editingAssinaturaData.date}
+                                      onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, date: e.target.value }))}
+                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-32 text-sm"
+                                    />
+                                    <Input
+                                      type="time"
+                                      step="1"
+                                      value={editingAssinaturaData.time}
+                                      onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, time: e.target.value }))}
+                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-24 text-sm"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={async () => {
+                                        try {
+                                          const newDateTime = `${editingAssinaturaData.date}T${editingAssinaturaData.time}`;
+                                          await axios.patch(
+                                            `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinatura.id}`,
+                                            { data_assinatura: newDateTime }
+                                          );
+                                          toast.success('Data de assinatura atualizada!');
+                                          setEditingAssinaturaDesktop(null);
+                                          fetchAssinaturas(selectedRelatorio.id);
+                                        } catch (error) {
+                                          toast.error('Erro ao atualizar');
+                                        }
+                                      }}
+                                      className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                                    >
+                                      Guardar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setEditingAssinaturaDesktop(null)}
+                                      className="text-gray-400 h-7 text-xs"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p className="text-gray-300 text-sm">
+                                    {new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}
+                                  </p>
+                                )}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500">Tipo:</p>
