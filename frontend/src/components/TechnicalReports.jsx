@@ -2949,10 +2949,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       // Converter base64 para blob
       const response = await fetch(assinaturaBase64);
       const blob = await response.blob();
-      formData.append('assinatura', blob, 'assinatura.png');
+      formData.append('file', blob, 'assinatura.png');
       formData.append('primeiro_nome', primeiroNome);
       formData.append('ultimo_nome', ultimoNome);
-      formData.append('tipo', 'digital');
       formData.append('data_intervencao', new Date().toISOString().split('T')[0]);
       
       await axios.post(
