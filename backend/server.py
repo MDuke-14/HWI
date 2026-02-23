@@ -11040,7 +11040,7 @@ async def generate_folha_horas(
     request: FolhaHorasRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Gerar PDF da Folha de Horas"""
+    """Gerar PDF da Folha de Horas usando a tabela de preço selecionada"""
     # Buscar dados do relatório
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
@@ -11063,18 +11063,27 @@ async def generate_folha_horas(
         {"_id": 0}
     ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
     
-    # Buscar tarifas por código (configuradas no Admin Dashboard)
+    # Obter o table_id do request (default: 1)
+    table_id = request.table_id if hasattr(request, 'table_id') else 1
+    
+    # Buscar configuração da tabela de preço selecionada (valor por Km)
+    tabela_config = await db.tabelas_preco.find_one({"table_id": table_id}, {"_id": 0})
+    valor_km = tabela_config.get("valor_km", 0.65) if tabela_config else 0.65
+    
+    # Buscar tarifas por código DA TABELA SELECIONADA
     # Excluir tarifas com código "manual" pois são apenas para seleção manual
     tarifas_db = await db.tarifas.find({
         "ativo": True, 
+        "table_id": table_id,
         "codigo": {"$ne": None, "$ne": "", "$nin": ["manual"]}
     }, {"_id": 0}).to_list(length=None)
+    
     tarifas_por_codigo = {}
     for tarifa in tarifas_db:
         if tarifa.get('codigo') and tarifa.get('codigo') != 'manual':
             tarifas_por_codigo[tarifa['codigo']] = tarifa.get('valor_por_hora', 0)
     
-    # Gerar PDF
+    # Gerar PDF com valor_km da tabela selecionada
     pdf_buffer = generate_folha_horas_pdf(
         relatorio=relatorio,
         cliente=cliente,
@@ -11082,7 +11091,8 @@ async def generate_folha_horas(
         tecnicos_manuais=tecnicos_manuais,
         tarifas_por_tecnico=request.tarifas_por_tecnico,
         dados_extras=request.dados_extras,
-        tarifas_por_codigo=tarifas_por_codigo
+        tarifas_por_codigo=tarifas_por_codigo,
+        valor_km=valor_km
     )
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
