@@ -10654,26 +10654,116 @@ async def upload_company_logo(
     return {"message": "Logo actualizado com sucesso", "logo_url": logo_url}
 
 
+# ============ Tabelas de Preço Routes ============
+
+@api_router.get("/tabelas-preco")
+async def get_tabelas_preco(current_user: dict = Depends(get_current_user)):
+    """Obter configurações das 3 tabelas de preço"""
+    configs = await db.tabelas_preco.find({}, {"_id": 0}).to_list(length=None)
+    
+    # Garantir que existem as 3 tabelas com valores default
+    existing_ids = {c.get("table_id") for c in configs}
+    default_configs = []
+    
+    for table_id in [1, 2, 3]:
+        if table_id not in existing_ids:
+            default_config = TabelaPrecoConfig(
+                table_id=table_id,
+                valor_km=0.65,
+                nome=f"Tabela {table_id}"
+            )
+            config_dict = default_config.model_dump()
+            config_dict["created_at"] = config_dict["created_at"].isoformat()
+            await db.tabelas_preco.insert_one(config_dict)
+            config_dict.pop("_id", None)
+            default_configs.append(config_dict)
+    
+    # Re-fetch todas as configs
+    configs = await db.tabelas_preco.find({}, {"_id": 0}).sort("table_id", 1).to_list(length=None)
+    return configs
+
+
+@api_router.put("/tabelas-preco/{table_id}")
+async def update_tabela_preco(
+    table_id: int,
+    config_data: TabelaPrecoConfigUpdate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Atualizar configuração de uma tabela de preço (admin only)"""
+    if table_id not in [1, 2, 3]:
+        raise HTTPException(status_code=400, detail="ID de tabela inválido. Use 1, 2 ou 3.")
+    
+    existing = await db.tabelas_preco.find_one({"table_id": table_id})
+    
+    update_data = {k: v for k, v in config_data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if existing:
+        await db.tabelas_preco.update_one(
+            {"table_id": table_id},
+            {"$set": update_data}
+        )
+    else:
+        # Criar nova config se não existir
+        new_config = TabelaPrecoConfig(
+            table_id=table_id,
+            valor_km=config_data.valor_km or 0.65,
+            nome=config_data.nome or f"Tabela {table_id}"
+        )
+        config_dict = new_config.model_dump()
+        config_dict["created_at"] = config_dict["created_at"].isoformat()
+        config_dict.update(update_data)
+        await db.tabelas_preco.insert_one(config_dict)
+    
+    updated = await db.tabelas_preco.find_one({"table_id": table_id}, {"_id": 0})
+    logging.info(f"Tabela de Preço {table_id} atualizada por {current_user['sub']}")
+    return updated
+
+
 # ============ Tarifas Routes ============
 
 @api_router.get("/tarifas")
-async def get_tarifas(current_user: dict = Depends(get_current_user)):
-    """Listar todas as tarifas ativas - ordenadas por nome alfabeticamente"""
+async def get_tarifas(
+    table_id: Optional[int] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar todas as tarifas ativas - filtradas opcionalmente por tabela de preço"""
+    query = {"ativo": True}
+    if table_id is not None:
+        query["table_id"] = table_id
+    
     tarifas = await db.tarifas.find(
-        {"ativo": True},
+        query,
         {"_id": 0}
     ).sort("nome", 1).to_list(length=None)
+    
+    # Adicionar table_id default se não existir (migração)
+    for t in tarifas:
+        if "table_id" not in t:
+            t["table_id"] = 1
     
     return tarifas
 
 
 @api_router.get("/tarifas/all")
-async def get_all_tarifas(current_user: dict = Depends(get_current_admin)):
-    """Listar todas as tarifas (admin only) - ordenadas por nome alfabeticamente"""
+async def get_all_tarifas(
+    table_id: Optional[int] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Listar todas as tarifas (admin only) - filtradas opcionalmente por tabela de preço"""
+    query = {}
+    if table_id is not None:
+        query["table_id"] = table_id
+    
     tarifas = await db.tarifas.find(
-        {},
+        query,
         {"_id": 0}
     ).sort("nome", 1).to_list(length=None)
+    
+    # Adicionar table_id default se não existir (migração)
+    for t in tarifas:
+        if "table_id" not in t:
+            t["table_id"] = 1
     
     return tarifas
 
@@ -10684,11 +10774,16 @@ async def create_tarifa(
     current_user: dict = Depends(get_current_admin)
 ):
     """Criar nova tarifa (admin only) - permite nomes duplicados"""
+    # Validar table_id
+    if tarifa_data.table_id not in [1, 2, 3]:
+        raise HTTPException(status_code=400, detail="ID de tabela inválido. Use 1, 2 ou 3.")
+    
     tarifa = Tarifa(
         numero=tarifa_data.numero,
         nome=tarifa_data.nome,
         valor_por_hora=tarifa_data.valor_por_hora,
-        codigo=tarifa_data.codigo  # Código associado (1, 2, S, D)
+        codigo=tarifa_data.codigo,
+        table_id=tarifa_data.table_id
     )
     
     tarifa_dict = tarifa.model_dump()
@@ -10697,7 +10792,7 @@ async def create_tarifa(
     await db.tarifas.insert_one(tarifa_dict)
     tarifa_dict.pop("_id", None)
     
-    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} por {current_user['sub']}")
+    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} - Tabela: {tarifa.table_id} por {current_user['sub']}")
     
     return tarifa_dict
 
