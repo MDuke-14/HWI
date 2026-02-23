@@ -468,7 +468,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         interv_data.append([Paragraph("Equipamento:", label_style), Paragraph(equip_desc, value_style)])
                 
                 if interv.get('motivo_assistencia'):
-                    interv_data.append([Paragraph("Motivo:", label_style), Paragraph(interv.get('motivo_assistencia'), value_style)])
+                    # Preservar formatação original
+                    motivo_text = interv.get('motivo_assistencia', '').replace('\n', '<br/>')
+                    interv_data.append([Paragraph("Motivo:", label_style), Paragraph(motivo_text, value_style)])
                 
                 if interv.get('relatorio_assistencia'):
                     # Preservar formatação original: converter quebras de linha em <br/>
