@@ -6574,6 +6574,73 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
+      {/* PDF Viewer Modal - Visualização do PDF Real para Cliente */}
+      <Dialog open={showPDFViewerModal} onOpenChange={closePDFViewer}>
+        <DialogContent className="bg-gray-900 max-w-6xl w-[95vw] h-[95vh] p-0 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="bg-gray-800 p-4 flex justify-between items-center border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <Eye className="w-5 h-5 text-green-400" />
+                <h2 className="text-lg font-semibold text-white">
+                  Visualização do Relatório - OT #{selectedRelatorio?.numero_assistencia}
+                </h2>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await axios.get(
+                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
+                        { responseType: 'blob' }
+                      );
+                      const blob = new Blob([response.data], { type: 'application/pdf' });
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `OT_${selectedRelatorio.numero_assistencia}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      toast.success('PDF baixado com sucesso!');
+                    } catch (error) {
+                      toast.error('Erro ao baixar PDF');
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={closePDFViewer}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+            
+            {/* PDF Embed */}
+            <div className="flex-1 bg-gray-700">
+              {pdfViewerUrl ? (
+                <iframe
+                  src={pdfViewerUrl}
+                  className="w-full h-full border-0"
+                  title="Visualização do PDF"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* HTML Preview Modal - Visualização estilo PDF para Cliente */}
       <Dialog open={showHTMLPreviewModal} onOpenChange={setShowHTMLPreviewModal}>
         <DialogContent className="bg-white text-black max-w-4xl max-h-[95vh] overflow-y-auto p-0">
