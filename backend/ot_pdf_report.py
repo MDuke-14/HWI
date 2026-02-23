@@ -571,10 +571,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             
             date_section.append(Spacer(1, 0.15*cm))
         
-        # ---- Assinaturas desta data ----
+        # ---- Assinaturas desta data (agrupadas por data_assinatura) ----
         date_assinaturas = []
         for assin in assinaturas_list:
-            assin_date = normalize_date(assin.get('data_intervencao'))
+            # Usar data_assinatura para agrupar assinaturas (não data_intervencao)
+            assin_date = normalize_date(assin.get('data_assinatura'))
             if assin_date == date or (date is None and not assin_date):
                 date_assinaturas.append(assin)
         
