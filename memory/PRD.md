@@ -56,6 +56,40 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### Fevereiro 2026 - Sessão Atual
 
+#### ✅ Campo Data de Utilização em Materiais (23 Fevereiro 2026) - NOVA FUNCIONALIDADE
+**Adicionado campo de data de utilização/aplicação para materiais em OTs:**
+
+**Backend (`server.py`):**
+- Adicionado campo `data_utilizacao: Optional[str]` ao modelo `MaterialOT`
+- Endpoint POST `/api/relatorios-tecnicos/{id}/materiais` atualizado para guardar a data
+- Endpoint PUT suporta edição da data via `$set`
+
+**Frontend (`MaterialModal.jsx`):**
+- Adicionado campo de input `type="date"` para "Data de Utilização"
+- Ícone de calendário junto ao label
+- Campo opcional, sem valor pré-definido
+
+**Frontend (`TechnicalReports.jsx`):**
+- `materialFormData` atualizado para incluir `data_utilizacao`
+- `openEditMaterialModal` carrega a data existente
+- Lista de materiais exibe a data com ícone de calendário roxo
+- Botões "Cancelar" e reset de formulário limpam o campo
+
+**Funcionalidades:**
+- ✅ Adicionar material com data de utilização (desktop + mobile)
+- ✅ Editar data de utilização existente (desktop + mobile)
+- ✅ Exibir data na lista de materiais com formatação pt-PT
+- ✅ Campo opcional - não obrigatório
+
+**Ficheiros modificados:**
+- `/app/backend/server.py` - Modelo MaterialOT
+- `/app/frontend/src/components/technical-reports/MaterialModal.jsx`
+- `/app/frontend/src/components/TechnicalReports.jsx`
+
+**Testado:** ✅ API via curl + Screenshots desktop + Screenshots mobile
+
+---
+
 #### ✅ Bug Crítico Assinatura Mobile (21 Fevereiro 2026) - CORRIGIDO
 **Problema:** O canvas de assinatura e os botões (Limpar, Guardar, Fechar) não respondiam a eventos de toque em dispositivos móveis.
 
