@@ -7093,26 +7093,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         )}
                         
-                        {/* Assinaturas desta data (pela data_assinatura) */}
+                        {/* Assinaturas desta data (pela data_assinatura) - Layout melhorado */}
                         {dados.assinaturas.length > 0 && (
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
                               <PenTool className="w-4 h-4 text-purple-500" />
                               Assinaturas
                             </h3>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-4">
                               {dados.assinaturas.map((ass, idx) => (
-                                <div key={idx} className="border border-gray-200 rounded p-2 bg-gray-50">
-                                  <p className="text-sm font-medium text-gray-700">
-                                    {ass.assinado_por || `${ass.primeiro_nome || ''} ${ass.ultimo_nome || ''}`.trim() || 'Assinatura'}
-                                  </p>
+                                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white text-center">
+                                  {/* Imagem da assinatura - maior e centrada */}
                                   {ass.assinatura_url && (
                                     <img 
                                       src={`${API}${ass.assinatura_url}`} 
                                       alt="Assinatura" 
-                                      className="max-h-16 mt-1"
+                                      className="max-h-24 mx-auto mb-3"
                                     />
                                   )}
+                                  {/* Linha separadora */}
+                                  <div className="border-t border-gray-300 w-2/3 mx-auto mb-2"></div>
+                                  {/* Nome - abaixo e centrado */}
+                                  <p className="text-sm font-semibold text-gray-800">
+                                    {ass.assinado_por || `${ass.primeiro_nome || ''} ${ass.ultimo_nome || ''}`.trim() || 'Assinatura'}
+                                  </p>
+                                  {/* Data - abaixo do nome */}
                                   <p className="text-xs text-gray-500 mt-1">
                                     {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
                                   </p>
