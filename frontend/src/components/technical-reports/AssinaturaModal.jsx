@@ -708,9 +708,6 @@ const AssinaturaModal = ({
   const sigCanvasRef = useRef(null);
   const [assinaturaNome, setAssinaturaNome] = useState({ primeiro: '', ultimo: '' });
   const [assinaturaDataIntervencao, setAssinaturaDataIntervencao] = useState(new Date().toISOString().split('T')[0]);
-  const [assinaturaHoraIntervencao, setAssinaturaHoraIntervencao] = useState(
-    new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
-  );
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
   const [editingAssinatura, setEditingAssinatura] = useState(null);
   const [editingHora, setEditingHora] = useState({});
