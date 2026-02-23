@@ -3312,6 +3312,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 </div>
               ))}
+              {/* Mensagem quando não há resultados da pesquisa */}
+              {searchTerm.trim() && relatorios.filter((r) => {
+                const search = searchTerm.toLowerCase().trim();
+                return r.numero_assistencia?.toString().includes(search) ||
+                  r.cliente_nome?.toLowerCase().includes(search) ||
+                  r.cliente_local?.toLowerCase().includes(search);
+              }).length === 0 && (
+                <div className="col-span-full text-center py-8">
+                  <Search className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
+                  <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>
+                    Nenhuma OT encontrada para "{searchTerm}"
+                  </p>
+                  <p className={`${textSecondary} text-sm mt-2`}>
+                    Tente pesquisar por número da OT, nome do cliente ou local
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
