@@ -168,7 +168,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     logo_path = logo_url
                 
                 if os.path.exists(logo_path):
-                    logo_element = RLImage(logo_path, width=2.5*cm, height=2.5*cm)
+                    # Usar imagem sem modificação de tamanho
+                    logo_element = RLImage(logo_path)
             except Exception as e:
                 print(f"Erro ao carregar logo: {e}")
     
@@ -182,7 +183,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         for logo_path in default_logo_paths:
             if os.path.exists(logo_path):
                 try:
-                    logo_element = RLImage(logo_path, width=2.5*cm, height=2.5*cm)
+                    # Usar imagem sem modificação de tamanho
+                    logo_element = RLImage(logo_path)
                     break
                 except:
                     continue
@@ -205,46 +207,33 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     }
     status_text = status_labels.get(relatorio.get('status', ''), relatorio.get('status', ''))
     
-    # Nome da empresa
-    nome_empresa = "HWI UNIPESSOAL LDA"
-    if company_info:
-        nome_empresa = company_info.get('nome_empresa', nome_empresa)
-    
-    # Construir cabeçalho com logo
+    # Construir cabeçalho com logo centrado
     if logo_element:
-        # Cabeçalho com logo à esquerda
-        header_title_content = [
-            [Paragraph(f"<b>{nome_empresa}</b>", header_title_style)],
-            [Spacer(1, 0.2*cm)],
-            [Paragraph("RELATÓRIO TÉCNICO", header_title_style)],
-            [Paragraph(f"Ordem de Trabalho #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
-        ]
-        
-        header_right = [
-            [Paragraph(f"Data: {data_servico}", header_subtitle_style)],
-            [Paragraph(f"Estado: {status_text}", header_subtitle_style)]
-        ]
-        
-        header_table = Table([
-            [logo_element, Table(header_title_content), Table(header_right)]
-        ], colWidths=[3*cm, 10*cm, 5*cm])
-    else:
-        # Cabeçalho sem logo (fallback)
-        header_left = [
-            [Paragraph(f"<b>{nome_empresa}</b>", header_title_style)],
-            [Spacer(1, 0.1*cm)],
-            [Paragraph("RELATÓRIO TÉCNICO", header_title_style)],
-            [Paragraph(f"Ordem de Trabalho #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
-        ]
-        
-        header_right = [
-            [Paragraph(f"Data: {data_servico}", header_subtitle_style)],
-            [Paragraph(f"Estado: {status_text}", header_subtitle_style)]
-        ]
-        
-        header_table = Table([
-            [Table(header_left), Table(header_right)]
-        ], colWidths=[12*cm, 6*cm])
+        # Cabeçalho com logo centrado no topo
+        logo_row = Table([[logo_element]], colWidths=[18*cm])
+        logo_row.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (0, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (0, 0), 10),
+        ]))
+        elements.append(logo_row)
+        elements.append(Spacer(1, 0.3*cm))
+    
+    # Cabeçalho do relatório técnico (sem nome da empresa)
+    header_left = [
+        [Paragraph("RELATÓRIO TÉCNICO", header_title_style)],
+        [Paragraph(f"Ordem de Trabalho #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
+    ]
+    
+    header_right = [
+        [Paragraph(f"Data: {data_servico}", header_subtitle_style)],
+        [Paragraph(f"Estado: {status_text}", header_subtitle_style)]
+    ]
+    
+    header_table = Table([
+        [Table(header_left), Table(header_right)]
+    ], colWidths=[12*cm, 6*cm])
     
     header_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#1f2937')),  # gray-800
