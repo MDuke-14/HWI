@@ -238,7 +238,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [materialFormData, setMaterialFormData] = useState({
     descricao: '',
     quantidade: 1,
-    fornecido_por: 'Cliente'
+    fornecido_por: 'Cliente',
+    data_utilizacao: ''
   });
 
   // Despesas OT
