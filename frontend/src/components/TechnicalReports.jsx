@@ -6743,6 +6743,65 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
+                {/* ASSINATURA DO CLIENTE - Logo após intervenções */}
+                <section className="border-2 border-orange-400 rounded-lg p-4 bg-orange-50">
+                  <h2 className="text-lg font-bold text-orange-700 border-b border-orange-300 pb-2 mb-3 flex items-center gap-2">
+                    <PenTool className="w-5 h-5" />
+                    ASSINATURA DO CLIENTE
+                  </h2>
+                  
+                  {/* Mostrar assinaturas existentes */}
+                  {htmlPreviewData.assinaturas && htmlPreviewData.assinaturas.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-600 mb-2">Assinaturas já registadas:</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {htmlPreviewData.assinaturas.map((ass, idx) => (
+                          <div key={idx} className="bg-white border border-green-200 rounded-lg p-3 text-center">
+                            <p className="text-xs font-semibold text-green-700 mb-1">
+                              {ass.tipo === 'cliente' ? 'Cliente' : ass.tipo === 'tecnico' ? 'Técnico' : 'Digital'}
+                            </p>
+                            {ass.assinatura_base64 ? (
+                              <img 
+                                src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
+                                alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
+                                className="max-h-16 mx-auto border border-gray-200 rounded bg-white"
+                              />
+                            ) : ass.assinatura_url ? (
+                              <img 
+                                src={`${API}${ass.assinatura_url}`} 
+                                alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
+                                className="max-h-16 mx-auto border border-gray-200 rounded bg-white"
+                              />
+                            ) : null}
+                            <p className="text-xs text-gray-600 mt-1">
+                              {ass.primeiro_nome || ass.nome || ''} {ass.ultimo_nome || ''}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Botão para adicionar assinatura */}
+                  <div className="text-center py-4 bg-white rounded-lg border-2 border-dashed border-orange-300">
+                    <p className="text-gray-600 mb-3 text-sm">
+                      {htmlPreviewData.assinaturas?.length > 0 
+                        ? 'Adicionar outra assinatura ao documento' 
+                        : 'Clique abaixo para assinar o documento'}
+                    </p>
+                    <Button
+                      onClick={openSignatureFromPreview}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2"
+                    >
+                      <PenTool className="w-4 h-4 mr-2" />
+                      Assinar Documento
+                    </Button>
+                  </div>
+                </section>
+
                 {/* Mão de Obra */}
                 {htmlPreviewData.registos?.length > 0 && (
                   <section className="border border-gray-300 rounded-lg p-4">
@@ -6819,63 +6878,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </div>
                   </section>
                 )}
-
-                {/* Assinaturas */}
-                <section className="border border-gray-300 rounded-lg p-4">
-                  <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">ASSINATURAS</h2>
-                  
-                  {/* Mostrar assinaturas existentes */}
-                  {htmlPreviewData.assinaturas && htmlPreviewData.assinaturas.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      {htmlPreviewData.assinaturas.map((ass, idx) => (
-                        <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                          <p className="text-sm font-semibold text-green-800 mb-2">
-                            {ass.tipo === 'cliente' ? 'Cliente' : ass.tipo === 'tecnico' ? 'Técnico' : ass.tipo === 'digital' ? 'Assinatura Digital' : ass.tipo}
-                          </p>
-                          {ass.assinatura_base64 ? (
-                            <img 
-                              src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
-                              alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
-                              className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
-                            />
-                          ) : ass.assinatura_url ? (
-                            <img 
-                              src={`${API}${ass.assinatura_url}`} 
-                              alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
-                              className="max-h-20 mx-auto border border-green-300 rounded bg-white p-1"
-                            />
-                          ) : (
-                            <div className="h-20 flex items-center justify-center text-gray-400">
-                              <PenTool className="w-8 h-8" />
-                            </div>
-                          )}
-                          <p className="text-xs text-green-700 mt-2">
-                            {ass.primeiro_nome || ass.nome || ''} {ass.ultimo_nome || ''}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : 
-                             ass.created_at ? new Date(ass.created_at).toLocaleString('pt-PT') : ''}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 bg-orange-50 rounded-lg">
-                      <p className="text-gray-600 mb-3">Nenhuma assinatura registada</p>
-                    </div>
-                  )}
-                  
-                  {/* Botão para adicionar assinatura */}
-                  <div className="text-center mt-4 pt-4 border-t border-gray-200">
-                    <Button
-                      onClick={openSignatureFromPreview}
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                      <PenTool className="w-4 h-4 mr-2" />
-                      {htmlPreviewData.assinaturas?.length > 0 ? 'Adicionar Outra Assinatura' : 'Adicionar Assinatura'}
-                    </Button>
-                  </div>
-                </section>
 
                 {/* Rodapé */}
                 <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
