@@ -25,6 +25,16 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - Tarifas associadas por tabela
   - Seleção de tabela no modal da Folha de Horas
   - PDF gerado com valor de Km da tabela selecionada
+- ✅ **Folha de Horas Individual por Técnico** (23 Fevereiro 2026) - NOVA FUNCIONALIDADE
+  - PDF concatenado com secções separadas por técnico
+  - Cada técnico tem sua própria folha no documento
+  - Nome do técnico no topo (abaixo das informações do cliente)
+  - Coluna "Técnico" removida da tabela (informação no cabeçalho)
+  - Legenda com totais por código e tipo no final de cada secção:
+    - Formato: "Código X – Tipo: HH:MM total"
+    - Exemplo: "Código 1 – Trabalho: 15:00 total"
+    - Descrições: (07h-19h), (19h-07h), Sábado, Domingo/Feriado
+  - Facilita validação, faturação e controlo interno
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
