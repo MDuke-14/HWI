@@ -108,6 +108,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         """Converte diferentes formatos de data para YYYY-MM-DD"""
         if not date_str:
             return None
+        # Se for um objeto datetime, converter diretamente
+        if isinstance(date_str, datetime):
+            return date_str.strftime('%Y-%m-%d')
         if isinstance(date_str, str):
             try:
                 dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
