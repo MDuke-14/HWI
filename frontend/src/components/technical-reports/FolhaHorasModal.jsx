@@ -37,10 +37,10 @@ const FolhaHorasModal = ({
 
   // Buscar tarifas da tabela selecionada e preencher automaticamente
   useEffect(() => {
-    if (open && selectedTableId) {
+    if (open && selectedTableId && folhaHorasData) {
       fetchTarifasDaTabela(selectedTableId);
     }
-  }, [open, selectedTableId]);
+  }, [open, selectedTableId, folhaHorasData]);
 
   const fetchTabelasPreco = async () => {
     try {
