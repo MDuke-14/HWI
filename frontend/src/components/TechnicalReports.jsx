@@ -6880,239 +6880,98 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
-                {/* REGISTOS ORGANIZADOS POR DATA */}
-                {(() => {
-                  // Recolher todas as datas únicas
-                  const todasDatas = new Set();
-                  
-                  // Datas das intervenções
-                  htmlPreviewData.intervencoes?.forEach(int => {
-                    if (int.data_intervencao) todasDatas.add(int.data_intervencao.split('T')[0]);
-                  });
-                  
-                  // Datas dos registos de mão de obra
-                  htmlPreviewData.registos?.forEach(reg => {
-                    if (reg.data) todasDatas.add(reg.data.split('T')[0]);
-                  });
-                  
-                  // Datas dos materiais
-                  htmlPreviewData.materiais?.forEach(mat => {
-                    if (mat.data_utilizacao) todasDatas.add(mat.data_utilizacao.split('T')[0]);
-                  });
-                  
-                  // Datas das assinaturas
-                  htmlPreviewData.assinaturas?.forEach(ass => {
-                    if (ass.data_intervencao) todasDatas.add(ass.data_intervencao.split('T')[0]);
-                  });
-                  
-                  // Ordenar datas
-                  const datasOrdenadas = Array.from(todasDatas).sort();
-                  
-                  if (datasOrdenadas.length === 0) return null;
-                  
-                  return (
-                    <section className="border border-gray-300 rounded-lg p-4">
-                      <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-4">REGISTOS POR DATA</h2>
-                      
-                      <div className="space-y-6">
-                        {datasOrdenadas.map((data, dataIdx) => {
-                          // Filtrar dados por esta data
-                          const intervencoesDia = htmlPreviewData.intervencoes?.filter(int => 
-                            int.data_intervencao?.split('T')[0] === data
-                          ) || [];
-                          
-                          const registosDia = htmlPreviewData.registos?.filter(reg => 
-                            reg.data?.split('T')[0] === data
-                          ) || [];
-                          
-                          const materiaisDia = htmlPreviewData.materiais?.filter(mat => 
-                            mat.data_utilizacao?.split('T')[0] === data
-                          ) || [];
-                          
-                          const assinaturasDia = htmlPreviewData.assinaturas?.filter(ass => 
-                            ass.data_intervencao?.split('T')[0] === data
-                          ) || [];
-                          
-                          return (
-                            <div key={data} className="border border-gray-200 rounded-lg overflow-hidden">
-                              {/* Cabeçalho da Data */}
-                              <div className="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
-                                <span className="font-bold text-lg">
-                                  {new Date(data).toLocaleDateString('pt-PT', { 
-                                    weekday: 'long', 
-                                    day: '2-digit', 
-                                    month: 'long', 
-                                    year: 'numeric' 
-                                  })}
-                                </span>
-                                <span className="text-sm bg-blue-700 px-2 py-1 rounded">
-                                  {dataIdx + 1}º Dia
-                                </span>
-                              </div>
-                              
-                              <div className="p-4 space-y-4">
-                                {/* Intervenções do dia */}
-                                {intervencoesDia.length > 0 && (
-                                  <div>
-                                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      <FileText className="w-4 h-4 text-blue-500" />
-                                      Intervenção
-                                    </h3>
-                                    {intervencoesDia.map((int, idx) => (
-                                      <div key={idx} className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
-                                        {int.tecnico_nome && (
-                                          <p className="text-sm"><span className="font-medium">Técnico:</span> {int.tecnico_nome}</p>
-                                        )}
-                                        {int.motivo_assistencia && (
-                                          <p className="text-sm"><span className="font-medium">Motivo:</span> {int.motivo_assistencia}</p>
-                                        )}
-                                        {int.relatorio_assistencia && (
-                                          <div className="mt-2">
-                                            <p className="text-sm font-medium">Relatório:</p>
-                                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{int.relatorio_assistencia}</p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                
-                                {/* Mão de Obra do dia */}
-                                {registosDia.length > 0 && (
-                                  <div>
-                                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      <Clock className="w-4 h-4 text-green-500" />
-                                      Mão de Obra
-                                    </h3>
-                                    <div className="bg-green-50 rounded-lg border border-green-100 overflow-hidden">
-                                      <table className="w-full text-sm">
-                                        <thead className="bg-green-100">
-                                          <tr>
-                                            <th className="p-2 text-left">Técnico</th>
-                                            <th className="p-2 text-left">Início</th>
-                                            <th className="p-2 text-left">Fim</th>
-                                            <th className="p-2 text-left">Horas</th>
-                                            <th className="p-2 text-left">KM</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {registosDia.map((reg, idx) => (
-                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
-                                              <td className="p-2">{reg.tecnico_nome}</td>
-                                              <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
-                                              <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
-                                              <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
-                                              <td className="p-2">{reg.km || '-'}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Materiais do dia */}
-                                {materiaisDia.length > 0 && (
-                                  <div>
-                                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      <Package className="w-4 h-4 text-purple-500" />
-                                      Materiais
-                                    </h3>
-                                    <div className="bg-purple-50 rounded-lg border border-purple-100 overflow-hidden">
-                                      <table className="w-full text-sm">
-                                        <thead className="bg-purple-100">
-                                          <tr>
-                                            <th className="p-2 text-left">Descrição</th>
-                                            <th className="p-2 text-left">Qtd</th>
-                                            <th className="p-2 text-left">Fornecido por</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {materiaisDia.map((mat, idx) => (
-                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-purple-50'}>
-                                              <td className="p-2">{mat.descricao}</td>
-                                              <td className="p-2">{mat.quantidade}</td>
-                                              <td className="p-2">{mat.fornecido_por}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                )}
-                                
-                                {/* Assinaturas do dia */}
-                                {assinaturasDia.length > 0 && (
-                                  <div>
-                                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                      <PenTool className="w-4 h-4 text-orange-500" />
-                                      Assinaturas
-                                    </h3>
-                                    <div className="flex flex-wrap gap-3">
-                                      {assinaturasDia.map((ass, idx) => (
-                                        <div key={idx} className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center min-w-[140px]">
-                                          {ass.assinatura_base64 ? (
-                                            <img 
-                                              src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
-                                              alt={`Assinatura ${ass.primeiro_nome || ''}`} 
-                                              className="max-h-16 mx-auto"
-                                            />
-                                          ) : ass.assinatura_url ? (
-                                            <img 
-                                              src={`${API}${ass.assinatura_url}`} 
-                                              alt={`Assinatura ${ass.primeiro_nome || ''}`} 
-                                              className="max-h-16 mx-auto"
-                                            />
-                                          ) : null}
-                                          <p className="text-xs text-gray-700 mt-1 font-medium">
-                                            {ass.primeiro_nome || ''} {ass.ultimo_nome || ''}
-                                          </p>
-                                          <p className="text-xs text-gray-500">
-                                            {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : ''}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                {/* Intervenções */}
+                {htmlPreviewData.intervencoes?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">INTERVENÇÕES REALIZADAS</h2>
+                    <div className="space-y-3">
+                      {htmlPreviewData.intervencoes.map((int, idx) => (
+                        <div key={idx} className="bg-gray-50 p-3 rounded border border-gray-200">
+                          <div className="flex justify-between mb-2">
+                            <span className="font-semibold text-blue-600">{idx + 1}ª Intervenção</span>
+                            <span className="text-gray-500">
+                              {int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'}
+                            </span>
+                          </div>
+                          {int.tecnico_nome && (
+                            <div className="mb-2">
+                              <span className="font-medium text-gray-600">Técnico: </span>
+                              <span className="text-gray-800">{int.tecnico_nome}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  );
-                })()}
+                          )}
+                          {int.motivo_assistencia && (
+                            <div className="mb-2">
+                              <span className="font-medium text-gray-600">Motivo: </span>
+                              <span className="text-gray-700">{int.motivo_assistencia}</span>
+                            </div>
+                          )}
+                          {int.relatorio_assistencia && (
+                            <div>
+                              <span className="font-medium text-gray-600">Relatório: </span>
+                              <p className="text-gray-700 whitespace-pre-wrap">{int.relatorio_assistencia}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
 
-                {/* Materiais sem data */}
-                {(() => {
-                  const materiaisSemData = htmlPreviewData.materiais?.filter(mat => !mat.data_utilizacao) || [];
-                  if (materiaisSemData.length === 0) return null;
-                  
-                  return (
-                    <section className="border border-gray-300 rounded-lg p-4">
-                      <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MATERIAIS UTILIZADOS</h2>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-gray-200">
-                            <th className="p-2 text-left">Descrição</th>
-                            <th className="p-2 text-left">Quantidade</th>
-                            <th className="p-2 text-left">Fornecido por</th>
+                {/* Mão de Obra / Deslocação */}
+                {htmlPreviewData.registos?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MÃO DE OBRA / DESLOCAÇÃO</h2>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="p-2 text-left">Técnico</th>
+                          <th className="p-2 text-left">Data</th>
+                          <th className="p-2 text-left">Início</th>
+                          <th className="p-2 text-left">Fim</th>
+                          <th className="p-2 text-left">Horas</th>
+                          <th className="p-2 text-left">KM</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {htmlPreviewData.registos.map((reg, idx) => (
+                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className="p-2">{reg.tecnico_nome}</td>
+                            <td className="p-2">{reg.data ? new Date(reg.data).toLocaleDateString('pt-PT') : '-'}</td>
+                            <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                            <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                            <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
+                            <td className="p-2">{reg.km || '-'}</td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {materiaisSemData.map((mat, idx) => (
-                            <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                              <td className="p-2">{mat.descricao}</td>
-                              <td className="p-2">{mat.quantidade}</td>
-                              <td className="p-2">{mat.fornecido_por}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </section>
-                  );
-                })()}
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+
+                {/* Materiais Utilizados */}
+                {htmlPreviewData.materiais?.length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MATERIAIS UTILIZADOS</h2>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="p-2 text-left">Descrição</th>
+                          <th className="p-2 text-left">Quantidade</th>
+                          <th className="p-2 text-left">Fornecido por</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {htmlPreviewData.materiais.map((mat, idx) => (
+                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className="p-2">{mat.descricao}</td>
+                            <td className="p-2">{mat.quantidade}</td>
+                            <td className="p-2">{mat.fornecido_por}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
 
                 {/* Fotografias */}
                 {htmlPreviewData.fotografias?.length > 0 && (
