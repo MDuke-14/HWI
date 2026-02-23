@@ -2734,7 +2734,15 @@ const TechnicalReports = ({ user, onLogout }) => {
         fotografias: fotosRes.data,
         equipamentos: equipRes.data,
         materiais: materiaisRes.data,
-        registos: registosRes.data
+        // Ordenar registos por data e hora de início
+        registos: [...registosRes.data].sort((a, b) => {
+          const dataA = new Date(a.data || '1970-01-01');
+          const dataB = new Date(b.data || '1970-01-01');
+          if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
+          const horaA = a.hora_inicio_segmento || '';
+          const horaB = b.hora_inicio_segmento || '';
+          return horaA.localeCompare(horaB);
+        })
       });
       
       // Buscar assinaturas existentes
