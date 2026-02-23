@@ -670,7 +670,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               </TabsTrigger>
               <TabsTrigger value="tarifas" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
                 <DollarSign className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
-                <span>Tarifas</span>
+                <span>{isMobile ? 'Preços' : 'Tabela de Preço'}</span>
               </TabsTrigger>
               <TabsTrigger value="reports" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
                 <TrendingUp className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
