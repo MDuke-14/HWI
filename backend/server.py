@@ -10666,29 +10666,49 @@ async def upload_company_logo(
 
 @api_router.get("/tabelas-preco")
 async def get_tabelas_preco(current_user: dict = Depends(get_current_user)):
-    """Obter configurações das 3 tabelas de preço"""
-    configs = await db.tabelas_preco.find({}, {"_id": 0}).to_list(length=None)
-    
-    # Garantir que existem as 3 tabelas com valores default
-    existing_ids = {c.get("table_id") for c in configs}
-    default_configs = []
-    
-    for table_id in [1, 2, 3]:
-        if table_id not in existing_ids:
-            default_config = TabelaPrecoConfig(
-                table_id=table_id,
-                valor_km=0.65,
-                nome=f"Tabela {table_id}"
-            )
-            config_dict = default_config.model_dump()
-            config_dict["created_at"] = config_dict["created_at"].isoformat()
-            await db.tabelas_preco.insert_one(config_dict)
-            config_dict.pop("_id", None)
-            default_configs.append(config_dict)
-    
-    # Re-fetch todas as configs
+    """Obter todas as tabelas de preço"""
     configs = await db.tabelas_preco.find({}, {"_id": 0}).sort("table_id", 1).to_list(length=None)
+    
+    # Se não existir nenhuma tabela, criar a Tabela 1 por defeito
+    if not configs:
+        default_config = TabelaPrecoConfig(
+            table_id=1,
+            valor_km=0.65,
+            nome="Tabela 1"
+        )
+        config_dict = default_config.model_dump()
+        config_dict["created_at"] = config_dict["created_at"].isoformat()
+        await db.tabelas_preco.insert_one(config_dict)
+        config_dict.pop("_id", None)
+        configs = [config_dict]
+    
     return configs
+
+
+@api_router.post("/tabelas-preco")
+async def create_tabela_preco(
+    config_data: TabelaPrecoCreate,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Criar nova tabela de preço (admin only)"""
+    # Obter o próximo table_id
+    existing = await db.tabelas_preco.find({}, {"table_id": 1}).sort("table_id", -1).limit(1).to_list(length=1)
+    next_table_id = (existing[0]["table_id"] + 1) if existing else 1
+    
+    new_config = TabelaPrecoConfig(
+        table_id=next_table_id,
+        valor_km=config_data.valor_km,
+        nome=config_data.nome
+    )
+    
+    config_dict = new_config.model_dump()
+    config_dict["created_at"] = config_dict["created_at"].isoformat()
+    
+    await db.tabelas_preco.insert_one(config_dict)
+    config_dict.pop("_id", None)
+    
+    logging.info(f"Nova Tabela de Preço criada: {config_data.nome} (ID: {next_table_id}) por {current_user['sub']}")
+    return config_dict
 
 
 @api_router.put("/tabelas-preco/{table_id}")
@@ -10698,34 +10718,46 @@ async def update_tabela_preco(
     current_user: dict = Depends(get_current_admin)
 ):
     """Atualizar configuração de uma tabela de preço (admin only)"""
-    if table_id not in [1, 2, 3]:
-        raise HTTPException(status_code=400, detail="ID de tabela inválido. Use 1, 2 ou 3.")
-    
     existing = await db.tabelas_preco.find_one({"table_id": table_id})
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tabela de preço não encontrada")
     
     update_data = {k: v for k, v in config_data.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
-    if existing:
-        await db.tabelas_preco.update_one(
-            {"table_id": table_id},
-            {"$set": update_data}
-        )
-    else:
-        # Criar nova config se não existir
-        new_config = TabelaPrecoConfig(
-            table_id=table_id,
-            valor_km=config_data.valor_km or 0.65,
-            nome=config_data.nome or f"Tabela {table_id}"
-        )
-        config_dict = new_config.model_dump()
-        config_dict["created_at"] = config_dict["created_at"].isoformat()
-        config_dict.update(update_data)
-        await db.tabelas_preco.insert_one(config_dict)
+    await db.tabelas_preco.update_one(
+        {"table_id": table_id},
+        {"$set": update_data}
+    )
     
     updated = await db.tabelas_preco.find_one({"table_id": table_id}, {"_id": 0})
     logging.info(f"Tabela de Preço {table_id} atualizada por {current_user['sub']}")
     return updated
+
+
+@api_router.delete("/tabelas-preco/{table_id}")
+async def delete_tabela_preco(
+    table_id: int,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Eliminar uma tabela de preço (admin only)"""
+    existing = await db.tabelas_preco.find_one({"table_id": table_id})
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tabela de preço não encontrada")
+    
+    # Verificar se existem tarifas associadas a esta tabela
+    tarifas_count = await db.tarifas.count_documents({"table_id": table_id, "ativo": True})
+    if tarifas_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Não é possível eliminar esta tabela. Existem {tarifas_count} tarifas activas associadas. Elimine ou mova as tarifas primeiro."
+        )
+    
+    await db.tabelas_preco.delete_one({"table_id": table_id})
+    logging.info(f"Tabela de Preço {table_id} eliminada por {current_user['sub']}")
+    return {"message": f"Tabela {table_id} eliminada com sucesso"}
 
 
 # ============ Tarifas Routes ============
