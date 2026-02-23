@@ -48,9 +48,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - Botão vermelho consistente com o design do sistema
 - ✅ **Visualizar Relatório Abre PDF Real** (23 Fevereiro 2026) - MELHORIA
   - Botão "Visualizar Relatório" agora abre modal HTML (popup) com layout igual ao PDF
-  - Secção "ASSINATURA DO CLIENTE" destacada em laranja logo após as intervenções
-  - Cliente pode assinar directamente no documento antes de ver os detalhes técnicos
-  - Ordem das secções: Cliente > Equipamentos > Intervenções > **ASSINATURA** > Mão de Obra > Materiais > Fotografias
+  - Intervenções separadas por data (1ª Intervenção, 2ª Intervenção, etc.) com cabeçalho azul
+  - Assinaturas existentes aparecem dentro da intervenção correspondente (mesma data)
+  - Canvas de assinatura no fim do documento para o cliente assinar após ler
+  - Campo de nome + área de desenho + botões Limpar/Confirmar
+  - Nova assinatura guardada sem afetar as assinaturas existentes nas intervenções
   - Botão "Download PDF" disponível para guardar o documento final
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
