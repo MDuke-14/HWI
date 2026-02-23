@@ -11027,7 +11027,9 @@ async def get_folha_horas_data(
     ).to_list(length=None)
     
     # Agrupar despesas por técnico e data, separando portagens das outras
-    despesas_por_tecnico_data = {}  # Para despesas (outras, combustivel, ferramentas)
+    # NOTA: Despesas de tipo "combustivel" são EXCLUÍDAS da Folha de Horas
+    # (mantidas na OT para controlo interno, mas não entram nos cálculos)
+    despesas_por_tecnico_data = {}  # Para despesas (outras, ferramentas) - SEM combustivel
     portagens_por_tecnico_data = {}  # Para portagens
     
     for desp in despesas:
@@ -11062,8 +11064,12 @@ async def get_folha_horas_data(
             if key not in portagens_por_tecnico_data:
                 portagens_por_tecnico_data[key] = 0
             portagens_por_tecnico_data[key] += desp.get('valor', 0)
+        elif tipo == 'combustivel':
+            # EXCLUIR combustível da Folha de Horas
+            # Despesa mantida na OT para controlo interno, mas não entra nos cálculos
+            pass
         else:
-            # outras, combustivel, ferramentas vão para despesas
+            # outras, ferramentas vão para despesas (SEM combustivel)
             if key not in despesas_por_tecnico_data:
                 despesas_por_tecnico_data[key] = 0
             despesas_por_tecnico_data[key] += desp.get('valor', 0)
