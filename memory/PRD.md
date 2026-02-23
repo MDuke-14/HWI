@@ -16,6 +16,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ✅ **Bug Assinatura Mobile Corrigido** (21 Fevereiro 2026) - Canvas e botões não respondiam a touch
 - ✅ **PDF Layout Alinhado com HTML Preview** (23 Fevereiro 2026) - Visual do PDF replica o preview HTML, mantendo organização por data de intervenção
 - ✅ **Mobile/Desktop View Persistence** (23 Fevereiro 2026) - Verificado que o modo forçado persiste correctamente via localStorage
+- ✅ **Equipamentos com Campos Estruturados** (23 Fevereiro 2026) - Informação de equipamentos agora apresentada com campos separados e identificados (TIPOLOGIA, Nº SÉRIE, MARCA, MODELO, ANO FABRICO) na OT, HTML Preview e PDF
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
