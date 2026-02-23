@@ -940,7 +940,7 @@ const AssinaturaModal = ({
       const formData = new FormData();
       formData.append('primeiro_nome', assinaturaNome.primeiro);
       formData.append('ultimo_nome', assinaturaNome.ultimo);
-      formData.append('data_intervencao', assinaturaDataIntervencao);
+      formData.append('data_intervencao', `${assinaturaDataIntervencao}T${assinaturaHoraIntervencao}`);
 
       await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-manual`,
