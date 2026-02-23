@@ -4387,27 +4387,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </Button>
                 </div>
                 
-                {/* Lista de Equipamentos */}
-                <div className="space-y-2">
+                {/* Lista de Equipamentos - Campos Estruturados */}
+                <div className="space-y-3">
                   {/* Equipamento principal (da OT) - só mostra se tiver dados */}
                   {(selectedRelatorio.equipamento_marca || selectedRelatorio.equipamento_tipologia || selectedRelatorio.equipamento_modelo) && (
                     <div className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} ${isMobile ? 'p-2' : 'p-3'} rounded border ${borderColor}`}>
-                      <div className={`flex items-center justify-between ${isMobile ? 'flex-wrap gap-2' : ''}`}>
-                        <div className="min-w-0 flex-1">
-                          <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''} truncate`}>
-                            {selectedRelatorio.equipamento_tipologia && <span>{selectedRelatorio.equipamento_tipologia}</span>}
-                            {selectedRelatorio.equipamento_tipologia && selectedRelatorio.equipamento_marca && <span> • </span>}
-                            {selectedRelatorio.equipamento_marca && <span>{selectedRelatorio.equipamento_marca}</span>}
-                          </p>
-                          {selectedRelatorio.equipamento_modelo && (
-                            <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Modelo: {selectedRelatorio.equipamento_modelo}</p>
-                          )}
-                          {selectedRelatorio.equipamento_numero_serie && !isMobile && (
-                            <p className="text-gray-400 text-xs">Série: {selectedRelatorio.equipamento_numero_serie}</p>
-                          )}
-                        </div>
-                        <div className={`flex items-center gap-1 ${isMobile ? 'flex-shrink-0' : 'gap-2'}`}>
-                          <span className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} text-gray-500 bg-gray-700 rounded`}>Principal</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} text-gray-500 bg-gray-700 rounded`}>Principal</span>
+                        <div className={`flex items-center gap-1`}>
                           <Button
                             onClick={openEditEquipamentoPrincipalModal}
                             size="sm"
@@ -4449,38 +4436,95 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </Button>
                         </div>
                       </div>
+                      {/* Campos estruturados */}
+                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        {selectedRelatorio.equipamento_tipologia && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>TIPOLOGIA:</span>
+                            <span className={textPrimary}>{selectedRelatorio.equipamento_tipologia}</span>
+                          </div>
+                        )}
+                        {selectedRelatorio.equipamento_numero_serie && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>Nº SÉRIE:</span>
+                            <span className={textPrimary}>{selectedRelatorio.equipamento_numero_serie}</span>
+                          </div>
+                        )}
+                        {selectedRelatorio.equipamento_marca && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MARCA:</span>
+                            <span className={textPrimary}>{selectedRelatorio.equipamento_marca}</span>
+                          </div>
+                        )}
+                        {selectedRelatorio.equipamento_modelo && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MODELO:</span>
+                            <span className={textPrimary}>{selectedRelatorio.equipamento_modelo}</span>
+                          </div>
+                        )}
+                        {selectedRelatorio.equipamento_ano_fabrico && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>ANO FABRICO:</span>
+                            <span className={textPrimary}>{selectedRelatorio.equipamento_ano_fabrico}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   
                   {/* Equipamentos adicionais */}
                   {equipamentosOT.map((equip) => (
                     <div key={equip.id} className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} ${isMobile ? 'p-2' : 'p-3'} rounded border border-blue-500/30`}>
-                      <div className={`flex items-center justify-between ${isMobile ? 'flex-wrap gap-2' : ''}`}>
-                        <div className="min-w-0 flex-1">
-                          <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm' : ''} truncate`}>{equip.marca} - {equip.tipologia}</p>
-                          <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'}`}>Modelo: {equip.modelo}</p>
-                          {equip.numero_serie && !isMobile && (
-                            <p className="text-gray-400 text-xs">Série: {equip.numero_serie}</p>
-                          )}
-                        </div>
-                        <div className={`flex items-center gap-1 flex-shrink-0`}>
-                          <Button
-                            onClick={() => openEditEquipamentoModal(equip)}
-                            size="sm"
-                            variant="outline"
-                            className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
-                          >
-                            <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteEquipamento(equip.id)}
-                            size="sm"
-                            variant="outline"
-                            className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
-                          >
-                            <Trash2 className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-                          </Button>
-                        </div>
+                      <div className="flex items-center justify-end mb-2 gap-1">
+                        <Button
+                          onClick={() => openEditEquipamentoModal(equip)}
+                          size="sm"
+                          variant="outline"
+                          className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
+                        >
+                          <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteEquipamento(equip.id)}
+                          size="sm"
+                          variant="outline"
+                          className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
+                        >
+                          <Trash2 className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                        </Button>
+                      </div>
+                      {/* Campos estruturados */}
+                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        {equip.tipologia && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>TIPOLOGIA:</span>
+                            <span className={textPrimary}>{equip.tipologia}</span>
+                          </div>
+                        )}
+                        {equip.numero_serie && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>Nº SÉRIE:</span>
+                            <span className={textPrimary}>{equip.numero_serie}</span>
+                          </div>
+                        )}
+                        {equip.marca && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MARCA:</span>
+                            <span className={textPrimary}>{equip.marca}</span>
+                          </div>
+                        )}
+                        {equip.modelo && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MODELO:</span>
+                            <span className={textPrimary}>{equip.modelo}</span>
+                          </div>
+                        )}
+                        {equip.ano_fabrico && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>ANO FABRICO:</span>
+                            <span className={textPrimary}>{equip.ano_fabrico}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
