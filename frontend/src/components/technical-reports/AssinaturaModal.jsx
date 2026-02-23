@@ -1146,25 +1146,14 @@ const AssinaturaModal = ({
                 </div>
               </div>
 
-              <div className={`grid ${isMobile ? 'grid-cols-2 gap-2 mb-3' : 'grid-cols-3 gap-3 mb-4'}`}>
-                <div>
-                  <Label className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Data *</Label>
-                  <Input
-                    type="date"
-                    value={assinaturaDataIntervencao}
-                    onChange={(e) => setAssinaturaDataIntervencao(e.target.value)}
-                    className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm h-9' : ''}`}
-                  />
-                </div>
-                <div>
-                  <Label className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Hora *</Label>
-                  <Input
-                    type="time"
-                    value={assinaturaHoraIntervencao}
-                    onChange={(e) => setAssinaturaHoraIntervencao(e.target.value)}
-                    className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm h-9' : ''}`}
-                  />
-                </div>
+              <div className={isMobile ? 'mb-3' : 'mb-4'}>
+                <Label className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Data da Intervenção *</Label>
+                <Input
+                  type="date"
+                  value={assinaturaDataIntervencao}
+                  onChange={(e) => setAssinaturaDataIntervencao(e.target.value)}
+                  className={`bg-[#0f0f0f] border-gray-700 text-white ${isMobile ? 'text-sm h-9 w-36' : 'w-48'}`}
+                />
               </div>
 
               <Tabs defaultValue="digital" className="w-full">
