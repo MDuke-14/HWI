@@ -360,7 +360,8 @@ const AdminDashboard = ({ user, onLogout }) => {
       const data = {
         nome: tarifaForm.nome,
         valor_por_hora: parseFloat(tarifaForm.valor_por_hora),
-        codigo: tarifaForm.codigo || null  // null se vazio
+        codigo: tarifaForm.codigo || null,  // null se vazio
+        table_id: selectedTableId  // Associar à tabela de preço selecionada
       };
 
       if (editingTarifa) {
