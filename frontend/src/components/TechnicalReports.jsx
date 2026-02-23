@@ -5236,15 +5236,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                   Download PDF
                 </Button>
 
-                {/* Visualizar Relatório - Verde */}
+                {/* Visualizar Relatório (PDF Real) - Verde */}
                 <Button
-                  onClick={handleHTMLPreview}
-                  disabled={loadingHTMLPreview}
+                  onClick={handlePDFViewer}
+                  disabled={loadingPDFViewer}
                   className={`bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
                   data-testid="visualizar-relatorio-btn"
                 >
                   <Eye className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
-                  {loadingHTMLPreview ? 'A carregar...' : (isMobile ? 'Visualizar' : 'Visualizar Relatório')}
+                  {loadingPDFViewer ? 'A carregar...' : (isMobile ? 'Visualizar' : 'Visualizar Relatório')}
                 </Button>
 
                 {/* Folha de Horas - Laranja */}
