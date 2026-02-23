@@ -1927,7 +1927,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               })()}
             </div>
             
-            {/* Dialog para editar configuração da tabela */}
+            {/* Dialog para editar/criar configuração da tabela */}
             <Dialog open={!!showTabelaDialog} onOpenChange={(open) => {
               if (!open) setShowTabelaDialog(false);
             }}>
@@ -1935,12 +1935,12 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-amber-400" />
-                    Configuração da Tabela {showTabelaDialog}
+                    {showTabelaDialog === 'new' ? 'Nova Tabela de Preço' : `Configuração da Tabela`}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div>
-                    <Label>Nome da Tabela</Label>
+                    <Label>Nome da Tabela {showTabelaDialog === 'new' && '*'}</Label>
                     <Input
                       value={tabelaForm.nome}
                       onChange={(e) => setTabelaForm({...tabelaForm, nome: e.target.value})}
