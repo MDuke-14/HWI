@@ -6712,95 +6712,133 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
-                {/* Intervenções */}
+                {/* Intervenções com Assinaturas Associadas */}
                 {htmlPreviewData.intervencoes?.length > 0 && (
                   <section className="border border-gray-300 rounded-lg p-4">
                     <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">INTERVENÇÕES REALIZADAS</h2>
-                    <div className="space-y-3">
-                      {htmlPreviewData.intervencoes.map((int, idx) => (
-                        <div key={idx} className="bg-gray-50 p-3 rounded text-sm">
-                          <div className="flex justify-between mb-2">
-                            {int.tecnico_nome && <span className="font-semibold">{int.tecnico_nome}</span>}
-                            <span className="text-gray-500">
-                              {int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'}
-                            </span>
+                    <div className="space-y-4">
+                      {htmlPreviewData.intervencoes.map((int, idx) => {
+                        // Encontrar assinaturas correspondentes a esta intervenção (mesma data)
+                        const dataIntervencao = int.data_intervencao ? int.data_intervencao.split('T')[0] : null;
+                        const assinaturasIntervencao = htmlPreviewData.assinaturas?.filter(ass => {
+                          const dataAss = ass.data_intervencao ? ass.data_intervencao.split('T')[0] : null;
+                          return dataAss === dataIntervencao;
+                        }) || [];
+                        
+                        return (
+                          <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden">
+                            {/* Cabeçalho da Intervenção */}
+                            <div className="bg-blue-600 text-white px-4 py-2 flex justify-between items-center">
+                              <span className="font-semibold">{idx + 1}ª Intervenção</span>
+                              <span className="text-sm">
+                                {int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'}
+                              </span>
+                            </div>
+                            
+                            {/* Conteúdo da Intervenção */}
+                            <div className="bg-gray-50 p-4">
+                              {int.tecnico_nome && (
+                                <div className="mb-2">
+                                  <span className="font-medium text-gray-600">Técnico: </span>
+                                  <span className="text-gray-800">{int.tecnico_nome}</span>
+                                </div>
+                              )}
+                              {int.motivo_assistencia && (
+                                <div className="mb-2">
+                                  <span className="font-medium text-gray-600">Motivo: </span>
+                                  <span className="text-gray-700">{int.motivo_assistencia}</span>
+                                </div>
+                              )}
+                              {int.relatorio_assistencia && (
+                                <div className="mb-3">
+                                  <span className="font-medium text-gray-600">Relatório: </span>
+                                  <p className="text-gray-700 whitespace-pre-wrap mt-1">{int.relatorio_assistencia}</p>
+                                </div>
+                              )}
+                              
+                              {/* Assinaturas desta Intervenção */}
+                              {assinaturasIntervencao.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1">
+                                    <PenTool className="w-3 h-3" />
+                                    Assinaturas desta intervenção:
+                                  </p>
+                                  <div className="flex flex-wrap gap-3">
+                                    {assinaturasIntervencao.map((ass, assIdx) => (
+                                      <div key={assIdx} className="bg-white border border-green-200 rounded p-2 text-center min-w-[120px]">
+                                        {ass.assinatura_base64 ? (
+                                          <img 
+                                            src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
+                                            alt={`Assinatura ${ass.primeiro_nome || ''}`} 
+                                            className="max-h-12 mx-auto"
+                                          />
+                                        ) : ass.assinatura_url ? (
+                                          <img 
+                                            src={`${API}${ass.assinatura_url}`} 
+                                            alt={`Assinatura ${ass.primeiro_nome || ''}`} 
+                                            className="max-h-12 mx-auto"
+                                          />
+                                        ) : null}
+                                        <p className="text-xs text-gray-600 mt-1">
+                                          {ass.primeiro_nome || ''} {ass.ultimo_nome || ''}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          {int.motivo_assistencia && (
-                            <div className="mb-2">
-                              <span className="font-medium text-gray-600">Motivo: </span>
-                              <span className="text-gray-700">{int.motivo_assistencia}</span>
-                            </div>
-                          )}
-                          {int.relatorio_assistencia && (
-                            <div>
-                              <span className="font-medium text-gray-600">Relatório: </span>
-                              <p className="text-gray-700 whitespace-pre-wrap">{int.relatorio_assistencia}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </section>
                 )}
 
-                {/* ASSINATURA DO CLIENTE - Logo após intervenções */}
-                <section className="border-2 border-orange-400 rounded-lg p-4 bg-orange-50">
-                  <h2 className="text-lg font-bold text-orange-700 border-b border-orange-300 pb-2 mb-3 flex items-center gap-2">
-                    <PenTool className="w-5 h-5" />
-                    ASSINATURA DO CLIENTE
-                  </h2>
+                {/* Assinaturas sem data correspondente a intervenções */}
+                {(() => {
+                  const datasIntervencoes = new Set(
+                    htmlPreviewData.intervencoes?.map(int => int.data_intervencao?.split('T')[0]) || []
+                  );
+                  const assinaturasSemIntervencao = htmlPreviewData.assinaturas?.filter(ass => {
+                    const dataAss = ass.data_intervencao?.split('T')[0];
+                    return !datasIntervencoes.has(dataAss);
+                  }) || [];
                   
-                  {/* Mostrar assinaturas existentes */}
-                  {htmlPreviewData.assinaturas && htmlPreviewData.assinaturas.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-600 mb-2">Assinaturas já registadas:</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        {htmlPreviewData.assinaturas.map((ass, idx) => (
-                          <div key={idx} className="bg-white border border-green-200 rounded-lg p-3 text-center">
-                            <p className="text-xs font-semibold text-green-700 mb-1">
-                              {ass.tipo === 'cliente' ? 'Cliente' : ass.tipo === 'tecnico' ? 'Técnico' : 'Digital'}
-                            </p>
-                            {ass.assinatura_base64 ? (
-                              <img 
-                                src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
-                                alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
-                                className="max-h-16 mx-auto border border-gray-200 rounded bg-white"
-                              />
-                            ) : ass.assinatura_url ? (
-                              <img 
-                                src={`${API}${ass.assinatura_url}`} 
-                                alt={`Assinatura ${ass.primeiro_nome || ass.nome || ''}`} 
-                                className="max-h-16 mx-auto border border-gray-200 rounded bg-white"
-                              />
-                            ) : null}
-                            <p className="text-xs text-gray-600 mt-1">
-                              {ass.primeiro_nome || ass.nome || ''} {ass.ultimo_nome || ''}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Botão para adicionar assinatura */}
-                  <div className="text-center py-4 bg-white rounded-lg border-2 border-dashed border-orange-300">
-                    <p className="text-gray-600 mb-3 text-sm">
-                      {htmlPreviewData.assinaturas?.length > 0 
-                        ? 'Adicionar outra assinatura ao documento' 
-                        : 'Clique abaixo para assinar o documento'}
-                    </p>
-                    <Button
-                      onClick={openSignatureFromPreview}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2"
-                    >
-                      <PenTool className="w-4 h-4 mr-2" />
-                      Assinar Documento
-                    </Button>
-                  </div>
-                </section>
+                  if (assinaturasSemIntervencao.length > 0) {
+                    return (
+                      <section className="border border-gray-300 rounded-lg p-4">
+                        <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">OUTRAS ASSINATURAS</h2>
+                        <div className="grid grid-cols-2 gap-3">
+                          {assinaturasSemIntervencao.map((ass, idx) => (
+                            <div key={idx} className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-500 mb-1">
+                                {ass.data_intervencao ? new Date(ass.data_intervencao).toLocaleDateString('pt-PT') : '-'}
+                              </p>
+                              {ass.assinatura_base64 ? (
+                                <img 
+                                  src={ass.assinatura_base64.startsWith('data:') ? ass.assinatura_base64 : `data:image/png;base64,${ass.assinatura_base64}`} 
+                                  alt={`Assinatura ${ass.primeiro_nome || ''}`} 
+                                  className="max-h-16 mx-auto"
+                                />
+                              ) : ass.assinatura_url ? (
+                                <img 
+                                  src={`${API}${ass.assinatura_url}`} 
+                                  alt={`Assinatura ${ass.primeiro_nome || ''}`} 
+                                  className="max-h-16 mx-auto"
+                                />
+                              ) : null}
+                              <p className="text-xs text-gray-600 mt-1">
+                                {ass.primeiro_nome || ''} {ass.ultimo_nome || ''}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  }
+                  return null;
+                })()}
 
                 {/* Mão de Obra */}
                 {htmlPreviewData.registos?.length > 0 && (
