@@ -141,6 +141,32 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Pesquisa de OTs por Número e Cliente (23 Fevereiro 2026) - BUG FIX
+**Corrigido bug onde a pesquisa na aba "Ordens de Trabalho" não funcionava:**
+
+**Problema:** O campo de pesquisa estava presente mas não filtrava os resultados
+**Solução:** Adicionada lógica de filtro para pesquisar por:
+- Número da OT
+- Nome do cliente
+- Local/Morada do cliente
+
+**Frontend (`TechnicalReports.jsx`):**
+- Adicionado `.filter()` antes do `.map()` na renderização de OTs
+- Pesquisa case-insensitive em múltiplos campos
+- Mensagem de "Nenhuma OT encontrada" quando não há resultados
+- Dica para utilizador sobre campos pesquisáveis
+
+**Funcionalidades:**
+- ✅ Pesquisa por número de OT (ex: "356")
+- ✅ Pesquisa por nome do cliente (ex: "560Lab")
+- ✅ Pesquisa por local (ex: "Porto")
+- ✅ Feedback visual quando não há resultados
+- ✅ Funciona em desktop e mobile
+
+**Testado:** ✅ Screenshots desktop + Screenshots mobile
+
+---
+
 #### ✅ Bug Crítico Assinatura Mobile (21 Fevereiro 2026) - CORRIGIDO
 **Problema:** O canvas de assinatura e os botões (Limpar, Guardar, Fechar) não respondiam a eventos de toque em dispositivos móveis.
 
