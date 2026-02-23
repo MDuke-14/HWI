@@ -817,6 +817,7 @@ class CompanyInfo(BaseModel):
     morada_linha1: str = "Rua Mário Pereira 7 RC ESQ"
     morada_linha2: str = "2830-493 Barreiro, PT"
     iban: str = "PT50 0007 0000 0074 9942 1152 3"
+    logo_url: Optional[str] = None  # URL ou caminho do logo da empresa
     updated_at: Optional[datetime] = None
     updated_by: Optional[str] = None
 
