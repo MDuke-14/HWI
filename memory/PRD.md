@@ -41,6 +41,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
   - Não influenciam valores finais apresentados na Folha de Horas
   - Nota informativa adicionada ao modal da Folha de Horas
   - Separa despesas operacionais internas dos valores para validação externa
+- ✅ **Botão Download PDF no Modal de Visualização** (23 Fevereiro 2026) - MELHORIA
+  - Substituído botão "Imprimir / Guardar PDF" por "Download PDF"
+  - Usa o mesmo endpoint do botão "Download PDF" da OT (/api/relatorios-tecnicos/{id}/preview-pdf)
+  - Garante que o documento visualizado é igual ao entregue ao cliente
+  - Botão vermelho consistente com o design do sistema
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
