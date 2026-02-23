@@ -2956,7 +2956,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       formData.append('data_intervencao', new Date().toISOString().split('T')[0]);
       
       await axios.post(
-        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas`,
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-digital`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
