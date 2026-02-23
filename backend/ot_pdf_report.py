@@ -8,9 +8,10 @@ from io import BytesIO
 from datetime import datetime
 from pathlib import Path
 import base64
+import os
 from collections import defaultdict
 
-def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None):
+def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None):
     """
     Gera PDF completo de uma Ordem de Trabalho
     Layout baseado na visualização HTML, organizado por data de intervenção
