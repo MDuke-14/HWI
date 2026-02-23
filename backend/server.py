@@ -3848,11 +3848,11 @@ async def preview_pdf_ot(
         {"_id": 0}
     ).sort("ordem", 1).to_list(length=None)
     
-    # Buscar técnicos
+    # Buscar técnicos (registos manuais) - ordenados cronologicamente
     tecnicos = await db.tecnicos_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("ordem", 1).to_list(length=None)
+    ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
     
     # Buscar fotografias
     fotografias = await db.fotos_relatorio.find(
