@@ -1030,11 +1030,18 @@ const AssinaturaModal = ({
                         <p className={`text-white font-medium ${isMobile ? 'text-sm' : ''}`}>
                           {ass.primeiro_nome} {ass.ultimo_nome}
                         </p>
+                        {/* Data da Intervenção - só visualização */}
+                        {ass.data_intervencao && (
+                          <p className={`text-orange-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                            Interv.: {new Date(ass.data_intervencao).toLocaleDateString('pt-PT')}
+                          </p>
+                        )}
+                        {/* Data de Assinatura - editável */}
                         {editingAssinatura === ass.id ? (
                           <div className={`flex items-center gap-2 mt-1 ${isMobile ? 'flex-col items-start' : ''}`}>
                             <Input
                               type="date"
-                              defaultValue={ass.data_intervencao?.split('T')[0]}
+                              defaultValue={ass.data_assinatura ? new Date(ass.data_assinatura).toISOString().split('T')[0] : ''}
                               className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'h-7 w-28 text-xs' : 'h-8 w-36'}`}
                               onChange={(e) => {
                                 setEditingHora(prev => ({ ...prev, [ass.id]: { ...prev[ass.id], date: e.target.value }}));
@@ -1042,7 +1049,8 @@ const AssinaturaModal = ({
                             />
                             <Input
                               type="time"
-                              defaultValue={ass.data_intervencao?.includes('T') ? ass.data_intervencao.split('T')[1]?.substring(0,5) : '00:00'}
+                              step="1"
+                              defaultValue={ass.data_assinatura ? new Date(ass.data_assinatura).toTimeString().substring(0,8) : '00:00:00'}
                               className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'h-7 w-24 text-xs' : 'h-8 w-28'}`}
                               onChange={(e) => {
                                 setEditingHora(prev => ({ ...prev, [ass.id]: { ...prev[ass.id], time: e.target.value }}));
@@ -1052,12 +1060,22 @@ const AssinaturaModal = ({
                               <Button
                                 size="sm"
                                 variant="default"
-                                onClick={() => {
-                                  const data = editingHora[ass.id]?.date || ass.data_intervencao?.split('T')[0];
-                                  const hora = editingHora[ass.id]?.time || ass.data_intervencao?.split('T')[1]?.substring(0,5) || '00:00';
-                                  handleUpdateAssinaturaData(ass.id, `${data}T${hora}`);
-                                  setEditingAssinatura(null);
-                                  setEditingHora(prev => { const n = {...prev}; delete n[ass.id]; return n; });
+                                onClick={async () => {
+                                  const dateObj = new Date(ass.data_assinatura);
+                                  const data = editingHora[ass.id]?.date || dateObj.toISOString().split('T')[0];
+                                  const hora = editingHora[ass.id]?.time || dateObj.toTimeString().substring(0,8);
+                                  try {
+                                    await axios.patch(
+                                      `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${ass.id}`,
+                                      { data_assinatura: `${data}T${hora}` }
+                                    );
+                                    toast.success('Data de assinatura atualizada!');
+                                    setEditingAssinatura(null);
+                                    setEditingHora(prev => { const n = {...prev}; delete n[ass.id]; return n; });
+                                    onAssinaturaSaved();
+                                  } catch (error) {
+                                    toast.error('Erro ao atualizar');
+                                  }
                                 }}
                                 className={`bg-green-600 hover:bg-green-700 ${isMobile ? 'h-6 text-xs px-2' : 'h-8'}`}
                               >
@@ -1079,16 +1097,7 @@ const AssinaturaModal = ({
                         ) : (
                           <p className={`text-gray-400 flex items-center gap-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                             <Calendar className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
-                            {ass.data_intervencao ? (
-                              <>
-                                {new Date(ass.data_intervencao).toLocaleDateString('pt-PT')}
-                                {ass.data_intervencao.includes('T') && (
-                                  <span className="ml-1">
-                                    {ass.data_intervencao.split('T')[1]?.substring(0,5)}
-                                  </span>
-                                )}
-                              </>
-                            ) : 'Sem data'}
+                            Assin.: {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : 'Sem data'}
                           </p>
                         )}
                       </div>
