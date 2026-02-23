@@ -196,8 +196,8 @@ def generate_folha_horas_pdf(
     elements.append(Paragraph(f"<b>Localização:</b> {relatorio.get('local_intervencao', 'N/A')}", normal_style))
     elements.append(Spacer(1, 0.3*cm))
     
-    # Preço por km fixo
-    PRECO_KM = 0.65
+    # Usar valor_km do parâmetro (da tabela de preço selecionada)
+    PRECO_KM = valor_km
     
     # Organizar dados por técnico, data E código
     # Estrutura: {tecnico_id: {data: {codigo: [registos]}}}
