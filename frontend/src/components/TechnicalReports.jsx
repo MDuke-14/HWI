@@ -4935,7 +4935,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     );
                                     toast.success('Data/hora atualizada!');
                                     setEditingAssinaturaDesktop(null);
-                                    fetchAssinaturas();
+                                    fetchAssinaturas(selectedRelatorio.id);
                                   } catch (error) {
                                     toast.error('Erro ao atualizar');
                                   }
