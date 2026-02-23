@@ -10591,6 +10591,49 @@ async def update_company_info(
     return {"message": "Informações da empresa atualizadas com sucesso"}
 
 
+@api_router.post("/company-info/logo")
+async def upload_company_logo(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_admin)
+):
+    """Upload logo da empresa (admin only)"""
+    # Validar tipo de ficheiro
+    allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Tipo de ficheiro não permitido. Use PNG, JPEG ou WebP.")
+    
+    # Gerar nome único para o ficheiro
+    file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'png'
+    unique_filename = f"company_logo_{uuid.uuid4()}.{file_extension}"
+    file_path = f"/app/uploads/{unique_filename}"
+    
+    # Guardar ficheiro
+    try:
+        contents = await file.read()
+        with open(file_path, 'wb') as f:
+            f.write(contents)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao guardar ficheiro: {str(e)}")
+    
+    # Actualizar company_info com o novo logo
+    logo_url = f"/uploads/{unique_filename}"
+    await db.company_info.update_one(
+        {"id": "company_info_default"},
+        {
+            "$set": {
+                "logo_url": logo_url,
+                "updated_at": datetime.now(timezone.utc),
+                "updated_by": current_user["sub"]
+            }
+        },
+        upsert=True
+    )
+    
+    logging.info(f"Logo da empresa actualizado por {current_user['sub']}: {logo_url}")
+    
+    return {"message": "Logo actualizado com sucesso", "logo_url": logo_url}
+
+
 # ============ Tarifas Routes ============
 
 @api_router.get("/tarifas")
