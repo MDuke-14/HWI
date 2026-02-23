@@ -2719,14 +2719,48 @@ const TechnicalReports = ({ user, onLogout }) => {
     
     setLoadingHTMLPreview(true);
     try {
-      // Buscar todos os dados necessários
-      const [intervRes, fotosRes, equipRes, materiaisRes, registosRes] = await Promise.all([
+      // Buscar todos os dados necessários (incluindo registos manuais)
+      const [intervRes, fotosRes, equipRes, materiaisRes, registosRes, tecnicosRes] = await Promise.all([
         axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes`),
         axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`),
         axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`),
         axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`),
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`)
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`),
+        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos`)
       ]);
+      
+      // Combinar registos de cronómetro e manuais
+      const allRegistos = [
+        // Registos de cronómetro
+        ...registosRes.data.map(reg => ({
+          ...reg,
+          _tipo: reg.tipo,
+          _hora_sort: reg.hora_inicio_segmento || ''
+        })),
+        // Registos manuais
+        ...tecnicosRes.data.map(tec => ({
+          id: tec.id,
+          tecnico_nome: tec.tecnico_nome,
+          tipo: tec.tipo_registo || 'manual',
+          data: tec.data_trabalho,
+          hora_inicio_segmento: tec.hora_inicio,
+          hora_fim_segmento: tec.hora_fim,
+          minutos_trabalhados: tec.minutos_cliente,
+          km: tec.kms_deslocacao || (Math.max(0, (tec.kms_final || 0) - (tec.kms_inicial || 0))),
+          codigo: tec.tipo_horario,
+          _tipo: tec.tipo_registo || 'manual',
+          _hora_sort: tec.hora_inicio || ''
+        }))
+      ].sort((a, b) => {
+        // Ordenar por data primeiro
+        const dataA = new Date(a.data || '1970-01-01');
+        const dataB = new Date(b.data || '1970-01-01');
+        if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
+        // Depois por hora (registos sem hora ficam no final)
+        const horaA = a._hora_sort || a.hora_inicio_segmento || '99:99';
+        const horaB = b._hora_sort || b.hora_inicio_segmento || '99:99';
+        return horaA.localeCompare(horaB);
+      });
       
       setHtmlPreviewData({
         relatorio: selectedRelatorio,
@@ -2734,15 +2768,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         fotografias: fotosRes.data,
         equipamentos: equipRes.data,
         materiais: materiaisRes.data,
-        // Ordenar registos por data e hora de início
-        registos: [...registosRes.data].sort((a, b) => {
-          const dataA = new Date(a.data || '1970-01-01');
-          const dataB = new Date(b.data || '1970-01-01');
-          if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
-          const horaA = a.hora_inicio_segmento || '';
-          const horaB = b.hora_inicio_segmento || '';
-          return horaA.localeCompare(horaB);
-        })
+        registos: allRegistos
       });
       
       // Buscar assinaturas existentes
