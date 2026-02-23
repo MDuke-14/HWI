@@ -1,153 +1,177 @@
 <analysis>**original_problem_statement:**
-The user's goal is to build and iteratively enhance a full-stack time-tracking and work-order (OT) management application. The current primary focus is on developing a dedicated, professional, and performant mobile-first experience for the entire application.
+The user's goal is to build and iteratively enhance a full-stack time-tracking and work-order (OT) management application.
 
-**Latest User Requests from this session:**
-1.  **Feature:** Adapt the OTs page () for a mobile-first interface.
-2.  **Bug Fix:** The modal for viewing/editing an existing OT was not adapted for mobile, had horizontal scroll issues, and hid critical action buttons. This needed to be fixed for both mobile and desktop views.
-3.  **Feature:** Adapt the Calendar page () for a mobile-first interface.
+**Recent User Requests:**
+1.  **Feature:** When adding or editing material in an OT, add an editable date of use field. (Completed)
+2.  **Feature:** The date a photo was inserted must be editable. (Completed)
+3.  **Enhancement:** When viewing clients, display secondary emails in separate fields, similar to the edit view. (Completed)
+4.  **Bug Fix:** The search functionality on the OT list page is not working. (Completed)
+5.  **Feature:** Reorganize the generated OT PDF to group all information (hours, materials, photos, signatures) by intervention date. (Completed)
+6.  **Refinement:** In the PDF, signatures should be grouped by their signature date, not the intervention date. (Completed)
+7.  **Refinement:** The work log table in the PDF must clearly show the type of work (T/V) and the rate code (1/2/S/D). (Completed)
+8.  **Feature:** The visual layout of the Visualizar Relatório (HTML preview) must be replicated for the final Download PDF and Enviar por Email actions, while maintaining the grouping by intervention date. (In Progress)
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-The application is a full-stack time-tracking and OT management system built with React, FastAPI, and MongoDB. A significant effort has been made to create a mobile-first UI. A foundational mobile architecture exists, using React Context for mobile detection () and theme management (), along with a dedicated bottom navigation bar ().
-
-So far, the Dashboard and the OTs page () have been made fully responsive. The adaptation of the OTs page was a major task in this session, which included refactoring its main layout (tabs, cards, search) and, crucially, a complete overhaul of the very complex OT details modal to eliminate horizontal scrolling and ensure all information and action buttons are accessible and correctly laid out on both mobile and desktop screens.
+The application is a full-stack system using React, FastAPI, and MongoDB. In this session, several features and fixes were implemented:
+-   A date of use field was added for materials within an OT, including backend support and UI changes for both mobile and desktop.
+-   Functionality to edit the timestamp of existing photos was added.
+-   The client detail view was improved to show secondary emails in separate, clearly-labeled fields.
+-   A critical bug preventing searching on the OT list page was fixed.
+-   The backend PDF generation logic was significantly refactored. It now groups all OT data (work logs, materials, photos, signatures) into distinct blocks based on the intervention date, includes more detailed work log codes, and correctly associates signatures based on their own timestamps.
 
 **Last working item**:
--   **Last item agent was working:** The user requested to Adaptar Calendário para mobile (Adapt Calendar page for mobile). The agent began by analyzing the structure of the relevant component, .
--   **Status:** NOT STARTED
+-   **Last item agent was working:** The agent was tasked with making the final generated PDF's visual style identical to the existing in-app HTML preview. The goal is to replicate the layout (headers, colors, fonts, section styles) from  in the Python-based PDF generator (), while preserving the recently added logic that groups content by intervention date.
+-   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend testing agent. The agent should instruct the testing agent to:
-    1.  Navigate to the Calendar page () in a mobile viewport.
-    2.  Verify the calendar grid, monthly statistics, and navigation controls are responsive and readable.
-    3.  Confirm that clicking on a day opens a mobile-optimized modal or view.
-    4.  Ensure the List View tab is also responsive.
+-   **Which testing method agent to use?** Backend testing. The agent must trigger the PDF generation via its API endpoint () for an OT with multiple interventions. The resulting PDF file must then be manually inspected to confirm that its visual layout matches the HTML preview and that the data is correctly grouped by date.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Recurring VAPID Key Mismatch (P1)**
--   **Issue 2: Unresolved Edit OT Equipment Test Failure (P2)**
--   **Issue 3: Reverse Geocoding Fails in Preview Environment (P2)**
+-   **Issue 1: Align PDF layout with HTML preview (P0)**
+-   **Issue 2: Forced mobile/desktop view does not persist across pages (P0)**
+-   **Issue 3: Recurring VAPID Key Mismatch (P2)**
+-   **Issue 4: Unresolved Edit OT Equipment Test Failure (P2)**
+-   **Issue 5: Reverse Geocoding Fails in Preview Environment (P3)**
 
 **Issues Detail:**
--   **Issue 1: Recurring VAPID Key Mismatch**
-    -   **Attempted fixes:** A system is in place to fetch the key from the server and force re-subscription. The issue is likely related to browser notification permissions on the admin's side.
-    -   **Next debug checklist:** Ask the user to confirm that all relevant admin accounts have browser notifications enabled for the application site. If the issue persists, inspect the browser's developer console for service worker or push subscription errors.
-    -   **Why fix this issue and what will be achieved with the fix?** Reliable push notifications are critical for admin alerts on new authorization requests.
-    -   **Status:** USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Backend
--   **Issue 2: Unresolved Edit OT Equipment Test Failure**
-    -   **Attempted fixes:** None in this session.
-    -   **Next debug checklist:** Re-run the previously failing test and investigate server logs and browser console output to identify the root cause.
-    -   **Why fix this issue and what will be achieved with the fix?** This ensures all core CRUD features related to OTs are functional and prevents regressions.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Both
--   **Issue 3: Reverse Geocoding Fails in Preview Environment**
-    -   **Attempted fixes:** None. This is an environmental limitation.
-    -   **Next debug checklist:** This cannot be fixed by the agent as it requires outbound internet access from the container, which is restricted in the preview environment.
-    -   **Status:** BLOCKED
+-   **Issue 1: Align PDF layout with HTML preview**
+    -   **Attempted fixes:** The agent identified that the HTML preview () and the PDF generator () are two separate implementations. The agent was about to overwrite the Python script to start implementing the new layout.
+    -   **Next debug checklist:**
+        1.  Completely rewrite the  function in .
+        2.  Using the  library, replicate the specific visual styles (dark gray header, section borders, table styling, photo grids, green signature boxes) found in .
+        3.  Ensure the new layout code correctly incorporates the existing logic for grouping all data by .
+        4.  Generate a test PDF and compare it side-by-side with a screenshot of the HTML preview to verify visual parity and data integrity.
+    -   **Why fix this issue and what will be achieved with the fix?** To create a consistent and professional user experience, ensuring the document the user previews is identical to the one they download or email.
+    -   **Status:** IN PROGRESS
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on other issue:** None
+
+-   **Issue 2: Forced mobile/desktop view does not persist across pages**
+    -   **Attempted fixes:** (From previous fork) The agent confirmed that  uses , but the state is not persisting during navigation.
+    -   **Next debug checklist:**
+        1.  Verify  reads from  synchronously upon initialization.
+        2.  Ensure the  wraps the entire application's router in .
+        3.  Use  to trace the state value during navigation to see where it gets lost.
+        4.  Files to check: , .
+    -   **Why fix this issue and what will be achieved with the fix?** The view-toggle feature is broken and provides an inconsistent user experience. Fixing it is required for reliable layout testing.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None
+
+-   **Issue 3: Recurring VAPID Key Mismatch**
+    -   **Status:** USER VERIFICATION PENDING
+
+-   **Issue 4: Unresolved Edit OT Equipment Test Failure**
+    -   **Status:** NOT STARTED
+
+-   **Issue 5: Reverse Geocoding Fails in Preview Environment**
+    -   **Status:** BLOCKED
 
 **In progress Task List**:
--   None.
+-   **Task 1: PDF Layout Refactor**
+    -   **Where to resume:** Resume by overwriting the file  with code that uses the  library to generate a PDF with the same visual styling as the component .
+    -   **What will be achieved with this?** The final PDF will be visually identical to the in-app HTML preview, providing a consistent experience.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P0) Adapt Calendar page () for mobile:** This is the immediate next task requested by the user.
-    -   **(P1) Adapt all remaining pages for mobile:** The user wants a complete mobile experience, so pages like Admin, Time Entries, Reports, etc., need to be made responsive.
-    -   **(P1) Refactor  & :** This is a recurring high-priority task to manage technical debt as the components grow in complexity.
-    -   **(P1) Test Associate OT to Calendar feature:** This previously implemented feature has not yet been formally tested.
-    -   **(P1) Complete Work on Vacation Logic:** The logic to refund a vacation day when work is performed on that day is still pending.
+    -   (P1) Adapt all remaining pages for mobile (e.g., Reports).
+    -   (P1) Test Associate OT to Calendar feature.
+    -   (P1) Complete Work on Vacation Logic.
+    -   (P2) Refactor  &  to reduce technical debt.
 -   **Future Tasks:**
-    -   **(P1) OneDrive Integration:** Migrate file storage from the local server to OneDrive.
-    -   **(P2) Overtime Reporting:** Create a new dedicated report for administrators to analyze overtime data.
-    -   **(P2) Real-time Admin Notifications:** Implement WebSockets for instant UI updates.
-    -   **(P2) Metrics Dashboard:** Build a dashboard with charts and graphs for business intelligence.
-    -   **(P2) Data Export:** Add functionality to export various reports to Excel/CSV formats.
+    -   (P1) OneDrive Integration for file storage.
+    -   (P2) Overtime Reporting feature.
+    -   (P2) Real-time Admin Notifications via WebSockets.
+    -   (P2) Metrics Dashboard with charts.
+    -   (P2) Data Export to Excel/CSV.
 
 **Completed work in this session**
--   **Feature: Fully Responsive OTs Page () (DONE):**
-    -   Adapted the main page layout, including the header, tabs (Clientes, OTs, Estados, PCs), search functionality, and client/OT cards for a mobile-friendly, single-column view.
-    -   Conducted an extensive, multi-step refactor of the complex View OT modal based on iterative user feedback. This involved reorganizing all sections (customer data, labor, equipment, interventions, materials, etc.) into a vertical, scrollable layout for mobile, completely eliminating horizontal scroll issues.
-    -   Re-styled the action buttons at the bottom of the View OT modal to be fully visible and accessible on both mobile (stacked vertically) and desktop (responsive grid).
-    -   The initial adaptation passed a full suite of automated frontend tests. Subsequent fixes to the modal were verified via screenshots, confirming the fixes.
+-   **Feature: Add Date of Use to Materials (DONE):** Added a date field to the material management flow, affecting , , and .
+-   **Feature: Editable Date for Photos (DONE):** Implemented functionality to edit photo timestamps in  and .
+-   **Enhancement: Improved Client Email Display (DONE):** Modified  to render secondary emails in separate, read-only fields in the view modal.
+-   **Bug Fix: Search on OT Page (DONE):** Implemented client-side search filtering in  by OT number, client name, and location.
+-   **Feature: PDF Content Grouping & Refinement (DONE):** Overhauled  to group all data by intervention date, include detailed work log codes, and correctly group signatures by signature date.
 
 **Earlier issues found/mentioned but not fixed**
--   The **Edit OT Equipment test failure** from previous sessions remains unresolved.
--   **Reverse geocoding** in the preview environment remains blocked.
+-   **Issue 1: Forced mobile/desktop view does not persist across pages.** This is a P0 issue from the previous fork that was superseded by the user's new requests in this session.
+-   **Issue 2: Edit OT Equipment test failure** (from previous forks).
+-   **Issue 3: VAPID key mismatch** (from previous forks, pending user verification).
 
 **Known issue recurrence from previous fork**
--   **VAPID key mismatch:** The issue remains pending user verification of browser notification settings.
--   **Edit OT Equipment test failure:** No progress was made on this issue. Status remains .
+-   **VAPID key mismatch:** Status remains .
+-   **Edit OT Equipment test failure:** Status remains .
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Responsive Design:** Intensive use of the  hook for conditional rendering of entire component structures (e.g., mobile-specific divs vs. desktop tables) and Tailwind CSS responsive prefixes (, , ) for adaptive styling.
--   **Complex Component Refactoring:** The  component, at over 5000 lines, required significant refactoring of its JSX structure to support both mobile and desktop views without duplicating logic. The agent used ternary operators with the  flag to switch between different layouts.
--   **Iterative Debugging:** The agent went through a long debugging loop to fix the View OT modal, using screenshots, DOM inspection, and style adjustments to diagnose and resolve layout issues like hidden buttons and horizontal overflow.
+-   **ReportLab:** The core Python library for all PDF generation tasks. The current work requires advanced use of its styling, table, and layout features to replicate a CSS-defined layout.
+-   **Client-Side Filtering (React):** The OT search was implemented using  to filter the displayed list based on a search term, providing a responsive UI without extra backend calls.
+-   **Data Grouping in Python:** The PDF refactor relied on iterating through data, extracting unique keys (dates), and building a nested document structure where all content is organized under the corresponding date.
 
 **key DB schema**
--   No changes made to the database schema in this session.
+-   **relatorios_tecnicos (collection):**
+    -    (array of objects): Each object can now contain an optional  (string).
+    -    (array of objects): The  field is now mutable via its dedicated API endpoint.
 
 **All files of reference**
--   /app/frontend/src/components/TechnicalReports.jsx (Heavily Modified)
--   /app/frontend/src/pages/Calendar.jsx (Next target for modification)
--   /app/frontend/src/pages/Dashboard.jsx
--   /app/frontend/src/components/mobile/MobileLayout.jsx
--   /app/frontend/src/contexts/MobileContext.jsx
--   /app/memory/PRD.md
-
-**Areas that need refactoring**:
--   **/app/backend/server.py**: Still a monolithic file that should be broken into a route-based structure.
--   **/app/frontend/src/components/TechnicalReports.jsx**: Although now responsive, this massive component (over 5000 lines) is a prime candidate for being broken down into smaller, more manageable child components to improve maintainability.
-
-**key api endpoints**
--   No new or modified API endpoints in this session.
+-    (Target for rewrite)
+-    (Visual style guide)
+-   
+-   
+-   
+-   
+-    (For pending bug)
+-    (For pending bug)
+-   
 
 **Critical Info for New Agent**
--   **Immediate Priority:** The user's next request is to adapt the Calendar page () for the mobile UI.
--   **Mobile Architecture:** All new frontend work must be mobile-aware. Use the  hook from  for conditional rendering and Tailwind's responsive prefixes for styling. The pattern used in  (switching between desktop and mobile layouts using ) is the established method.
--   **User Feedback is Key:** The user is actively involved in testing and providing specific feedback. Be prepared to iterate on UI/UX changes based on their requests, as seen with the detailed fixes for the OT modal.
+-   **TOP PRIORITY:** The immediate task is to rewrite . The final PDF must have the **exact same visual layout** as the HTML preview generated by . This involves replicating colors, fonts, borders, and section styles using the  library.
+-   **CRITICAL REQUIREMENT:** While implementing the new visual layout, you **must preserve** the recently added data organization logic. The PDF content must remain grouped into blocks by .
+-   **NEXT PRIORITY (PENDING BUG):** Once the PDF task is complete, you must fix the P0 bug where the forced mobile/desktop view mode does not persist across pages. The investigation should start in  and .
+-   **USER'S RULE:** Remember that all changes must apply to both mobile and desktop views.
 
 **documents and test reports created in this job**
--   /app/memory/PRD.md (Updated)
--   /app/test_reports/iteration_2.json (Generated for OTs page adaptation)
+-    (Updated with completed features)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Adapt Calendar page for mobile. (IN PROGRESS)
-2.  **Request:** Organize the 5 action buttons at the end of the OT modal so they are all visible on mobile and desktop. (DONE)
-3.  **Feedback:** The OT view has horizontal scroll on mobile and is not optimized. (DONE)
-4.  **Feedback:** The buttons in the OT modal are not showing their text. (DONE)
-5.  **Feedback:** The travel (Viagem) button is missing in the OT modal on mobile. (DONE)
-6.  **Feedback:** The OT view on mobile is the same (not fixed), adapt it to avoid horizontal scroll. (DONE)
-7.  **Feedback:** The modal for opening an OT is not adapted for mobile. (DONE)
-8.  **User Confirmation:** Agent will now finalize the OTs page adaptation. (HANDLED)
-9.  **User Confirmation:** Agent will now verify the client list on the OTs page. (HANDLED)
-10. **User Confirmation:** Agent will now verify the OT view modal. (HANDLED)
+1.  **User (Chat 327):** Requested that the layout of the Visualizar Relatório (HTML preview) become the definitive layout for the final PDF (Download/Email), while keeping the content organized by intervention date. (IN PROGRESS)
+2.  **User (Chat 312):** Requested that the PDF must include the work log codes (T/V and 1/2/S/D) for each time entry. (Completed)
+3.  **User (Chat 293):** Requested that signatures in the PDF be grouped by their signature date, not the intervention date. (Completed)
+4.  **User (Chat 256):** Requested that the PDF be organized and separated by intervention date, with each date forming an independent block of information. (Completed)
+5.  **User (Chat 223):** Reported a bug where searching for OTs by client or number was not working. (Completed)
+6.  **User (Chat 198):** Requested that the client view shows secondary emails in separate fields, matching the edit view. (Completed)
+7.  **User (Chat 153):** Requested that the date of a photo be editable. (Completed)
+8.  **User (Chat 8):** Clarified that the date for materials should be the date of use/application and should be editable. (Completed)
+9.  **User (Chat 5):** Requested a date field when adding or editing materials in an OT. (Completed)
+10. **Agent (Chat 342):** Confirmed understanding of the final PDF layout task and was about to start the implementation.
 
 **Project Health Check:**
--   **Broken:** None.
--   **In Progress:** The major initiative to adapt the entire application to a mobile-first UI is ongoing. The Calendar page is the next task.
+-   **Broken:**
+    -   The visual consistency between the in-app HTML report preview and the final generated PDF is broken.
+    -   The feature to force a mobile/desktop view mode is not functional across pages.
+-   **In Progress:** The major refactor of the PDF generation service to align its visual output with the frontend preview.
 -   **Mocked:** None.
 
 **3rd Party Integrations**
--   No new integrations were added.
+-   None.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES, for the initial mobile adaptation of the OTs page.
--   **Troubleshoot agent used after agent stuck in loop:** NO. The agent self-debugged a complex UI loop using screenshots and DOM inspection.
+-   **Testing agent used after significant changes:** NO
+-   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None.
--   **Known regressions:** The Edit OT Equipment test failure from previous sessions remains unresolved.
+-   **Known regressions:** None identified in this session.
 
 **Credentials to test flow:**
--   **admin:**  / 
--   **admin:**  / 
--   **non-admin:**  / 
+-   email: 
+-   password: 
 
 **What agent forgot to execute**
--   The agent correctly prioritized and executed tasks based on user feedback. No tasks were overlooked.</analysis>
+-   The agent correctly prioritized the user's immediate requests over the pending P0 issue from the previous fork (Forced mobile/desktop view does not persist). This issue remains outstanding and should be addressed next.</analysis>
