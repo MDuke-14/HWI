@@ -48,7 +48,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [tarifaForm, setTarifaForm] = useState({
     nome: '',
     valor_por_hora: '',
-    codigo: ''  // "1", "2", "S", "D" ou vazio para todos
+    codigo: '',  // "1", "2", "S", "D" ou vazio para todos
+    tipo_registo: ''  // "trabalho", "viagem" ou vazio para ambos
   });
   const [tabelaForm, setTabelaForm] = useState({
     nome: '',
