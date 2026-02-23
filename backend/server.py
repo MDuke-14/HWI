@@ -3511,6 +3511,44 @@ async def refresh_assinaturas(
     }
 
 
+@api_router.patch("/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_id}")
+async def update_assinatura(
+    relatorio_id: str,
+    assinatura_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar dados de uma assinatura (data_intervencao)"""
+    # Verificar se a assinatura existe
+    assinatura = await db.assinaturas_relatorio.find_one({
+        "id": assinatura_id,
+        "relatorio_id": relatorio_id
+    })
+    
+    if not assinatura:
+        raise HTTPException(status_code=404, detail="Assinatura não encontrada")
+    
+    # Campos permitidos para atualização
+    update_fields = {}
+    if "data_intervencao" in data:
+        update_fields["data_intervencao"] = data["data_intervencao"]
+    
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="Nenhum campo válido para atualizar")
+    
+    result = await db.assinaturas_relatorio.update_one(
+        {"id": assinatura_id, "relatorio_id": relatorio_id},
+        {"$set": update_fields}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=400, detail="Nenhuma alteração realizada")
+    
+    logging.info(f"Assinatura {assinatura_id} atualizada: {update_fields}")
+    
+    return {"message": "Assinatura atualizada com sucesso", "updated_fields": update_fields}
+
+
 @api_router.delete("/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_id}")
 async def delete_assinatura(
     relatorio_id: str,
