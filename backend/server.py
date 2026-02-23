@@ -3738,7 +3738,7 @@ async def enviar_pdf_ot(
         registos_mao_obra = await db.registos_tecnico_ot.find(
             {"relatorio_id": relatorio_id},
             {"_id": 0}
-        ).sort("data_trabalho", 1).to_list(length=None)
+        ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
         
         # Gerar PDF
         pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra)
