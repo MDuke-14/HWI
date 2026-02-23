@@ -1946,26 +1946,40 @@ const AdminDashboard = ({ user, onLogout }) => {
                       placeholder="Ex: 35.00"
                     />
                   </div>
-                  <div>
-                    <Label>Código Horário</Label>
-                    <select
-                      value={tarifaForm.codigo}
-                      onChange={(e) => setTarifaForm({...tarifaForm, codigo: e.target.value})}
-                      className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
-                    >
-                      <option value="">Todos os códigos</option>
-                      <option value="manual">Apenas Selecionar (manual)</option>
-                      <option value="1">1 - Dias úteis (07h-19h)</option>
-                      <option value="2">2 - Dias úteis (19h-07h)</option>
-                      <option value="S">S - Sábado</option>
-                      <option value="D">D - Domingos/Feriados</option>
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {tarifaForm.codigo === 'manual' 
-                        ? 'Esta tarifa só será aplicada quando selecionada manualmente na Folha de Horas'
-                        : 'A tarifa será aplicada automaticamente aos registos com este código na Folha de Horas'}
-                    </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tipo de Registo</Label>
+                      <select
+                        value={tarifaForm.tipo_registo}
+                        onChange={(e) => setTarifaForm({...tarifaForm, tipo_registo: e.target.value})}
+                        className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
+                      >
+                        <option value="">Trabalho + Viagem</option>
+                        <option value="trabalho">Apenas Trabalho</option>
+                        <option value="viagem">Apenas Viagem</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Código Horário</Label>
+                      <select
+                        value={tarifaForm.codigo}
+                        onChange={(e) => setTarifaForm({...tarifaForm, codigo: e.target.value})}
+                        className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
+                      >
+                        <option value="">Todos os códigos</option>
+                        <option value="manual">Apenas Selecionar (manual)</option>
+                        <option value="1">1 - Dias úteis (07h-19h)</option>
+                        <option value="2">2 - Dias úteis (19h-07h)</option>
+                        <option value="S">S - Sábado</option>
+                        <option value="D">D - Domingos/Feriados</option>
+                      </select>
+                    </div>
                   </div>
+                  <p className="text-xs text-gray-500">
+                    {tarifaForm.codigo === 'manual' 
+                      ? 'Esta tarifa só será aplicada quando selecionada manualmente na Folha de Horas'
+                      : `A tarifa será aplicada automaticamente aos registos ${tarifaForm.tipo_registo ? `de ${tarifaForm.tipo_registo}` : ''} com ${tarifaForm.codigo ? `código ${tarifaForm.codigo}` : 'qualquer código'}`}
+                  </p>
                   <Button 
                     onClick={handleSaveTarifa} 
                     disabled={loading}
