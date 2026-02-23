@@ -218,6 +218,41 @@ const FolhaHorasModal = ({
               <p className="text-gray-400 text-sm mt-1">Localização: {folhaHorasData.relatorio?.local_intervencao}</p>
             </div>
 
+            {/* Seleção de Tabela de Preço - Logo após o cliente para rápida seleção */}
+            <div className="bg-gradient-to-r from-amber-900/30 to-orange-900/30 p-4 rounded-lg border border-amber-500/30">
+              <h3 className="text-lg font-semibold text-amber-400 mb-3 flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Tabela de Preço
+              </h3>
+              <p className="text-gray-400 text-sm mb-3">
+                Selecione a tabela de preço a utilizar para os cálculos desta Folha de Horas.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {tabelasPreco.map((tabela) => (
+                  <button
+                    key={tabela.table_id}
+                    onClick={() => setSelectedTableId(tabela.table_id)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                      selectedTableId === tabela.table_id
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#252525] border border-gray-700'
+                    }`}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    {tabela.nome}
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      selectedTableId === tabela.table_id ? 'bg-amber-700' : 'bg-gray-700'
+                    }`}>
+                      {tabela.valor_km?.toFixed(2)}€/km
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {tabelasPreco.length === 0 && (
+                <p className="text-gray-500 text-sm">A carregar tabelas de preço...</p>
+              )}
+            </div>
+
             {/* Tarifas por Técnico */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
