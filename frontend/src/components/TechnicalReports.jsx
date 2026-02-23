@@ -1544,6 +1544,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const openEditFotoModal = (foto) => {
     setSelectedFoto(foto);
     setEditFotoDescricao(foto.descricao || '');
+    // Converter data para formato de input datetime-local (YYYY-MM-DDTHH:MM)
+    if (foto.uploaded_at) {
+      const date = new Date(foto.uploaded_at);
+      const localDateTime = date.toISOString().slice(0, 16);
+      setEditFotoData(localDateTime);
+    } else {
+      setEditFotoData('');
+    }
     setShowEditFotoModal(true);
   };
 
