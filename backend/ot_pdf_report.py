@@ -660,15 +660,28 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 # Foto 1
                 cell1 = []
-                if foto1.get('foto_base64'):
+                img1_added = False
+                # Tentar primeiro carregar do caminho do ficheiro
+                if foto1.get('foto_path'):
+                    img_path = Path(foto1['foto_path'])
+                    if img_path.exists():
+                        try:
+                            img = RLImage(str(img_path), width=7.5*cm, height=5*cm, kind='proportional')
+                            cell1.append(img)
+                            img1_added = True
+                        except:
+                            pass
+                # Fallback para base64
+                if not img1_added and foto1.get('foto_base64'):
                     try:
                         foto_bytes = base64.b64decode(foto1['foto_base64'])
                         foto_buffer = BytesIO(foto_bytes)
                         img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
                         cell1.append(img)
+                        img1_added = True
                     except:
                         cell1.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
-                else:
+                if not img1_added:
                     cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                 
                 if foto1.get('descricao'):
@@ -679,15 +692,28 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 # Foto 2
                 if foto2:
                     cell2 = []
-                    if foto2.get('foto_base64'):
+                    img2_added = False
+                    # Tentar primeiro carregar do caminho do ficheiro
+                    if foto2.get('foto_path'):
+                        img_path = Path(foto2['foto_path'])
+                        if img_path.exists():
+                            try:
+                                img = RLImage(str(img_path), width=7.5*cm, height=5*cm, kind='proportional')
+                                cell2.append(img)
+                                img2_added = True
+                            except:
+                                pass
+                    # Fallback para base64
+                    if not img2_added and foto2.get('foto_base64'):
                         try:
                             foto_bytes = base64.b64decode(foto2['foto_base64'])
                             foto_buffer = BytesIO(foto_bytes)
                             img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
                             cell2.append(img)
+                            img2_added = True
                         except:
                             cell2.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
-                    else:
+                    if not img2_added:
                         cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                     
                     if foto2.get('descricao'):
