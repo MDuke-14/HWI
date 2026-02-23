@@ -7115,12 +7115,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Desenhe a sua assinatura:
                     </label>
-                    <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
+                    <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white" style={{ height: '150px' }}>
                       <canvas
                         ref={htmlSignatureCanvasRef}
-                        width={500}
-                        height={150}
-                        className="w-full cursor-crosshair touch-none"
+                        style={{ width: '100%', height: '150px', touchAction: 'none' }}
+                        className="cursor-crosshair"
                         onMouseDown={startDrawing}
                         onMouseMove={draw}
                         onMouseUp={stopDrawing}
@@ -7128,7 +7127,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                         onTouchStart={startDrawing}
                         onTouchMove={draw}
                         onTouchEnd={stopDrawing}
-                        onLoad={initSignatureCanvas}
                       />
                     </div>
                   </div>
