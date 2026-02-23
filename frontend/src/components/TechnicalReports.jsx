@@ -7047,6 +7047,87 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
+                {/* CANVAS DE ASSINATURA - Para o cliente assinar após ler o documento */}
+                <section className="border-2 border-orange-400 rounded-lg p-4 bg-gradient-to-b from-orange-50 to-white">
+                  <h2 className="text-lg font-bold text-orange-700 border-b border-orange-300 pb-2 mb-4 flex items-center gap-2">
+                    <PenTool className="w-5 h-5" />
+                    ASSINAR DOCUMENTO
+                  </h2>
+                  
+                  <p className="text-sm text-gray-600 mb-4">
+                    Após ler o relatório, utilize o espaço abaixo para assinar digitalmente o documento.
+                  </p>
+                  
+                  {/* Nome do Signatário */}
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nome completo do signatário:
+                    </label>
+                    <input
+                      type="text"
+                      value={htmlSignatureName}
+                      onChange={(e) => setHtmlSignatureName(e.target.value)}
+                      placeholder="Introduza o seu nome..."
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                  
+                  {/* Canvas de Assinatura */}
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Desenhe a sua assinatura:
+                    </label>
+                    <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
+                      <canvas
+                        ref={htmlSignatureCanvasRef}
+                        width={500}
+                        height={150}
+                        className="w-full cursor-crosshair touch-none"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        onLoad={initSignatureCanvas}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Botões de Ação do Canvas */}
+                  <div className="flex justify-between items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={clearSignatureCanvas}
+                      className="text-gray-600 border-gray-300"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Limpar
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      onClick={saveHtmlSignature}
+                      disabled={savingHtmlSignature || !htmlSignatureName.trim()}
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      {savingHtmlSignature ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          A guardar...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Confirmar Assinatura
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </section>
+
                 {/* Rodapé */}
                 <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
                   <p>Documento gerado em {new Date().toLocaleString('pt-PT')}</p>
