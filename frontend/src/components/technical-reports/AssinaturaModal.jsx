@@ -788,7 +788,7 @@ const AssinaturaModal = ({
         formData.append('file', blob, 'assinatura.png');
         formData.append('primeiro_nome', assinaturaNome.primeiro);
         formData.append('ultimo_nome', assinaturaNome.ultimo);
-        formData.append('data_intervencao', assinaturaDataIntervencao);
+        formData.append('data_intervencao', `${assinaturaDataIntervencao}T${assinaturaHoraIntervencao}`);
 
         try {
           await axios.post(
