@@ -11075,7 +11075,7 @@ async def generate_folha_horas(
     tarifas_db = await db.tarifas.find({
         "ativo": True, 
         "table_id": table_id,
-        "codigo": {"$ne": None, "$ne": "", "$nin": ["manual"]}
+        "codigo": {"$nin": [None, "", "manual"]}
     }, {"_id": 0}).to_list(length=None)
     
     tarifas_por_codigo = {}
