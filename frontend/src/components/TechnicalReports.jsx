@@ -3468,9 +3468,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                   const matchNumero = relatorio.numero_assistencia?.toString().includes(search);
                   // Pesquisar por nome do cliente
                   const matchCliente = relatorio.cliente_nome?.toLowerCase().includes(search);
-                  // Pesquisar por local/morada
-                  const matchLocal = relatorio.cliente_local?.toLowerCase().includes(search);
-                  return matchNumero || matchCliente || matchLocal;
+                  // Pesquisar por local de intervenção (campo preenchido ao criar OT)
+                  const matchLocalIntervencao = relatorio.local_intervencao?.toLowerCase().includes(search);
+                  // Pesquisar por local/morada do cliente
+                  const matchLocalCliente = relatorio.cliente_local?.toLowerCase().includes(search);
+                  return matchNumero || matchCliente || matchLocalIntervencao || matchLocalCliente;
                 })
                 .map((relatorio) => (
                 <div
