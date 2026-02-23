@@ -6749,10 +6749,93 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
-      {/* HTML Preview Modal - Visualização estilo PDF para Cliente */}
+      {/* HTML Preview Modal - Visualização estilo PDF para Cliente - ORGANIZADO POR DATA DE INTERVENÇÃO */}
       <Dialog open={showHTMLPreviewModal} onOpenChange={setShowHTMLPreviewModal}>
         <DialogContent className="bg-white text-black max-w-4xl max-h-[95vh] overflow-y-auto p-0">
-          {htmlPreviewData && (
+          {htmlPreviewData && (() => {
+            // Agrupar dados por data de intervenção
+            const intervencoesPorData = {};
+            
+            // Primeiro, criar blocos para cada intervenção (pela data_intervencao)
+            htmlPreviewData.intervencoes?.forEach((int, idx) => {
+              const dataKey = int.data_intervencao ? int.data_intervencao.split('T')[0] : 'sem_data';
+              if (!intervencoesPorData[dataKey]) {
+                intervencoesPorData[dataKey] = {
+                  intervencoes: [],
+                  registos: [],
+                  materiais: [],
+                  equipamentos: [],
+                  assinaturas: []
+                };
+              }
+              intervencoesPorData[dataKey].intervencoes.push({ ...int, numero: idx + 1 });
+            });
+            
+            // Adicionar registos de mão de obra pela data
+            htmlPreviewData.registos?.forEach(reg => {
+              const dataKey = reg.data ? reg.data.split('T')[0] : 'sem_data';
+              if (!intervencoesPorData[dataKey]) {
+                intervencoesPorData[dataKey] = {
+                  intervencoes: [],
+                  registos: [],
+                  materiais: [],
+                  equipamentos: [],
+                  assinaturas: []
+                };
+              }
+              intervencoesPorData[dataKey].registos.push(reg);
+            });
+            
+            // Adicionar materiais pela data_utilizacao
+            htmlPreviewData.materiais?.forEach(mat => {
+              const dataKey = mat.data_utilizacao ? mat.data_utilizacao.split('T')[0] : 'sem_data';
+              if (!intervencoesPorData[dataKey]) {
+                intervencoesPorData[dataKey] = {
+                  intervencoes: [],
+                  registos: [],
+                  materiais: [],
+                  equipamentos: [],
+                  assinaturas: []
+                };
+              }
+              intervencoesPorData[dataKey].materiais.push(mat);
+            });
+            
+            // Adicionar equipamentos (associar à primeira intervenção se tiver, ou ao primeiro grupo)
+            // Equipamentos geralmente são associados ao relatório, não a uma data específica
+            // Vamos mostrar no primeiro bloco de data
+            
+            // Adicionar assinaturas pela data_intervencao
+            htmlPreviewData.assinaturas?.forEach(ass => {
+              const dataKey = ass.data_intervencao ? ass.data_intervencao.split('T')[0] : 'sem_data';
+              if (!intervencoesPorData[dataKey]) {
+                intervencoesPorData[dataKey] = {
+                  intervencoes: [],
+                  registos: [],
+                  materiais: [],
+                  equipamentos: [],
+                  assinaturas: []
+                };
+              }
+              intervencoesPorData[dataKey].assinaturas.push(ass);
+            });
+            
+            // Ordenar datas cronologicamente
+            const datasOrdenadas = Object.keys(intervencoesPorData)
+              .filter(d => d !== 'sem_data')
+              .sort((a, b) => new Date(a) - new Date(b));
+            
+            // Adicionar 'sem_data' no final se existir
+            if (intervencoesPorData['sem_data'] && (
+              intervencoesPorData['sem_data'].intervencoes.length > 0 ||
+              intervencoesPorData['sem_data'].registos.length > 0 ||
+              intervencoesPorData['sem_data'].materiais.length > 0 ||
+              intervencoesPorData['sem_data'].assinaturas.length > 0
+            )) {
+              datasOrdenadas.push('sem_data');
+            }
+            
+            return (
             <div className="pdf-preview-container">
               {/* Header */}
               <div className="bg-gray-800 text-white p-6 print:bg-gray-800">
@@ -6792,7 +6875,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 </section>
 
-                {/* Equipamentos */}
+                {/* Equipamentos - Secção global (não têm data específica) */}
                 {(htmlPreviewData.equipamentos?.length > 0 || 
                   htmlPreviewData.relatorio?.equipamento_marca || 
                   htmlPreviewData.relatorio?.equipamento_tipologia ||
@@ -6880,100 +6963,157 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
-                {/* Intervenções */}
-                {htmlPreviewData.intervencoes?.length > 0 && (
-                  <section className="border border-gray-300 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">INTERVENÇÕES REALIZADAS</h2>
-                    <div className="space-y-3">
-                      {htmlPreviewData.intervencoes.map((int, idx) => (
-                        <div key={idx} className="bg-gray-50 p-3 rounded border border-gray-200">
-                          <div className="flex justify-between mb-2">
-                            <span className="font-semibold text-blue-600">{idx + 1}ª Intervenção</span>
-                            <span className="text-gray-500">
-                              {int.data_intervencao ? new Date(int.data_intervencao).toLocaleDateString('pt-PT') : '-'}
-                            </span>
+                {/* BLOCOS POR DATA DE INTERVENÇÃO */}
+                {datasOrdenadas.map((dataKey, blocoIdx) => {
+                  const dados = intervencoesPorData[dataKey];
+                  const dataFormatada = dataKey === 'sem_data' 
+                    ? 'Data não especificada' 
+                    : new Date(dataKey).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                  
+                  const temConteudo = dados.intervencoes.length > 0 || 
+                                      dados.registos.length > 0 || 
+                                      dados.materiais.length > 0 || 
+                                      dados.assinaturas.length > 0;
+                  
+                  if (!temConteudo) return null;
+                  
+                  return (
+                    <section key={dataKey} className="border-2 border-blue-400 rounded-lg overflow-hidden">
+                      {/* Cabeçalho do Bloco de Data */}
+                      <div className="bg-blue-600 text-white px-4 py-3">
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                          <Calendar className="w-5 h-5" />
+                          {blocoIdx + 1}ª INTERVENÇÃO - {dataFormatada}
+                        </h2>
+                      </div>
+                      
+                      <div className="p-4 space-y-4 bg-blue-50/30">
+                        {/* Intervenções desta data */}
+                        {dados.intervencoes.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-blue-500" />
+                              Descrição da Intervenção
+                            </h3>
+                            {dados.intervencoes.map((int, idx) => (
+                              <div key={idx} className="space-y-2">
+                                {int.tecnico_nome && (
+                                  <div>
+                                    <span className="font-medium text-gray-600">Técnico: </span>
+                                    <span className="text-gray-800">{int.tecnico_nome}</span>
+                                  </div>
+                                )}
+                                {int.motivo_assistencia && (
+                                  <div>
+                                    <span className="font-medium text-gray-600">Motivo: </span>
+                                    <span className="text-gray-700">{int.motivo_assistencia}</span>
+                                  </div>
+                                )}
+                                {int.relatorio_assistencia && (
+                                  <div>
+                                    <span className="font-medium text-gray-600">Relatório: </span>
+                                    <p className="text-gray-700 whitespace-pre-wrap mt-1">{int.relatorio_assistencia}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                          {int.tecnico_nome && (
-                            <div className="mb-2">
-                              <span className="font-medium text-gray-600">Técnico: </span>
-                              <span className="text-gray-800">{int.tecnico_nome}</span>
+                        )}
+                        
+                        {/* Mão de Obra / Horas desta data */}
+                        {dados.registos.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-green-500" />
+                              Mão de Obra / Deslocação
+                            </h3>
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="p-2 text-left">Técnico</th>
+                                  <th className="p-2 text-left">Início</th>
+                                  <th className="p-2 text-left">Fim</th>
+                                  <th className="p-2 text-left">Horas</th>
+                                  <th className="p-2 text-left">KM</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {dados.registos.map((reg, idx) => (
+                                  <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                                    <td className="p-2">{reg.tecnico_nome}</td>
+                                    <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                                    <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                                    <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
+                                    <td className="p-2">{reg.km || '-'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                        
+                        {/* Materiais desta data */}
+                        {dados.materiais.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <Package className="w-4 h-4 text-orange-500" />
+                              Materiais Utilizados
+                            </h3>
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="p-2 text-left">Descrição</th>
+                                  <th className="p-2 text-left">Quantidade</th>
+                                  <th className="p-2 text-left">Fornecido por</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {dados.materiais.map((mat, idx) => (
+                                  <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                                    <td className="p-2">{mat.descricao}</td>
+                                    <td className="p-2">{mat.quantidade}</td>
+                                    <td className="p-2">{mat.fornecido_por}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                        
+                        {/* Assinaturas desta data */}
+                        {dados.assinaturas.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <PenTool className="w-4 h-4 text-purple-500" />
+                              Assinaturas
+                            </h3>
+                            <div className="grid grid-cols-2 gap-3">
+                              {dados.assinaturas.map((ass, idx) => (
+                                <div key={idx} className="border border-gray-200 rounded p-2 bg-gray-50">
+                                  <p className="text-sm font-medium text-gray-700">
+                                    {ass.assinado_por || `${ass.primeiro_nome || ''} ${ass.ultimo_nome || ''}`.trim() || 'Assinatura'}
+                                  </p>
+                                  {ass.assinatura_url && (
+                                    <img 
+                                      src={`${API}${ass.assinatura_url}`} 
+                                      alt="Assinatura" 
+                                      className="max-h-16 mt-1"
+                                    />
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                          {int.motivo_assistencia && (
-                            <div className="mb-2">
-                              <span className="font-medium text-gray-600">Motivo: </span>
-                              <span className="text-gray-700">{int.motivo_assistencia}</span>
-                            </div>
-                          )}
-                          {int.relatorio_assistencia && (
-                            <div>
-                              <span className="font-medium text-gray-600">Relatório: </span>
-                              <p className="text-gray-700 whitespace-pre-wrap">{int.relatorio_assistencia}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })}
 
-                {/* Mão de Obra / Deslocação */}
-                {htmlPreviewData.registos?.length > 0 && (
-                  <section className="border border-gray-300 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MÃO DE OBRA / DESLOCAÇÃO</h2>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-2 text-left">Técnico</th>
-                          <th className="p-2 text-left">Data</th>
-                          <th className="p-2 text-left">Início</th>
-                          <th className="p-2 text-left">Fim</th>
-                          <th className="p-2 text-left">Horas</th>
-                          <th className="p-2 text-left">KM</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {htmlPreviewData.registos.map((reg, idx) => (
-                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                            <td className="p-2">{reg.tecnico_nome}</td>
-                            <td className="p-2">{reg.data ? new Date(reg.data).toLocaleDateString('pt-PT') : '-'}</td>
-                            <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
-                            <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
-                            <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
-                            <td className="p-2">{reg.km || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </section>
-                )}
-
-                {/* Materiais Utilizados */}
-                {htmlPreviewData.materiais?.length > 0 && (
-                  <section className="border border-gray-300 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">MATERIAIS UTILIZADOS</h2>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-200">
-                          <th className="p-2 text-left">Descrição</th>
-                          <th className="p-2 text-left">Quantidade</th>
-                          <th className="p-2 text-left">Fornecido por</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {htmlPreviewData.materiais.map((mat, idx) => (
-                          <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                            <td className="p-2">{mat.descricao}</td>
-                            <td className="p-2">{mat.quantidade}</td>
-                            <td className="p-2">{mat.fornecido_por}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </section>
-                )}
-
-                {/* Fotografias */}
+                {/* Fotografias - Secção global */}
                 {htmlPreviewData.fotografias?.length > 0 && (
                   <section className="border border-gray-300 rounded-lg p-4">
                     <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">FOTOGRAFIAS</h2>
@@ -6994,84 +7134,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </section>
                 )}
 
-                {/* CANVAS DE ASSINATURA - Para o cliente assinar após ler o documento */}
-                <section className="border-2 border-orange-400 rounded-lg p-4 bg-gradient-to-b from-orange-50 to-white">
-                  <h2 className="text-lg font-bold text-orange-700 border-b border-orange-300 pb-2 mb-4 flex items-center gap-2">
-                    <PenTool className="w-5 h-5" />
-                    ASSINAR DOCUMENTO
-                  </h2>
-                  
-                  <p className="text-sm text-gray-600 mb-4">
-                    Após ler o relatório, utilize o espaço abaixo para assinar digitalmente o documento.
-                  </p>
-                  
-                  {/* Nome do Signatário */}
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nome completo do signatário:
-                    </label>
-                    <input
-                      type="text"
-                      value={htmlSignatureName}
-                      onChange={(e) => setHtmlSignatureName(e.target.value)}
-                      placeholder="Introduza o seu nome..."
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    />
-                  </div>
-                  
-                  {/* Canvas de Assinatura */}
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Desenhe a sua assinatura:
-                    </label>
-                    <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white" style={{ height: '150px' }}>
-                      <canvas
-                        ref={htmlSignatureCanvasRef}
-                        style={{ width: '100%', height: '150px', touchAction: 'none' }}
-                        className="cursor-crosshair"
-                        onMouseDown={startDrawing}
-                        onMouseMove={draw}
-                        onMouseUp={stopDrawing}
-                        onMouseLeave={stopDrawing}
-                        onTouchStart={startDrawing}
-                        onTouchMove={draw}
-                        onTouchEnd={stopDrawing}
-                      />
+                {/* Assinaturas sem data específica (globais) */}
+                {htmlPreviewData.assinaturas?.filter(a => !a.data_intervencao).length > 0 && (
+                  <section className="border border-gray-300 rounded-lg p-4">
+                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">ASSINATURAS</h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      {htmlPreviewData.assinaturas.filter(a => !a.data_intervencao).map((ass, idx) => (
+                        <div key={idx} className="border border-gray-200 rounded p-3 bg-gray-50">
+                          <p className="font-medium text-gray-700">
+                            {ass.assinado_por || `${ass.primeiro_nome || ''} ${ass.ultimo_nome || ''}`.trim() || 'Assinatura'}
+                          </p>
+                          {ass.assinatura_url && (
+                            <img 
+                              src={`${API}${ass.assinatura_url}`} 
+                              alt="Assinatura" 
+                              className="max-h-20 mt-2"
+                            />
+                          )}
+                          <p className="text-sm text-gray-500 mt-2">
+                            {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  
-                  {/* Botões de Ação do Canvas */}
-                  <div className="flex justify-between items-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={clearSignatureCanvas}
-                      className="text-gray-600 border-gray-300"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Limpar
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      onClick={saveHtmlSignature}
-                      disabled={savingHtmlSignature || !htmlSignatureName.trim()}
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                      {savingHtmlSignature ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          A guardar...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Confirmar Assinatura
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </section>
+                  </section>
+                )}
 
                 {/* Rodapé */}
                 <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
@@ -7118,7 +7205,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
               </div>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
