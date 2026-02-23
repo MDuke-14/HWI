@@ -24,7 +24,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const Dashboard = ({ user, onLogout }) => {
   // Mobile e Theme hooks
-  const { isMobile, isTablet } = useMobile();
+  const { isMobile, isTablet, forcedMode, toggleViewMode, setViewMode } = useMobile();
   const { isDark } = useTheme();
   
   const [entry, setEntry] = useState(null);
