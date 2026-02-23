@@ -10892,11 +10892,11 @@ async def generate_folha_horas(
         {"_id": 0}
     ).to_list(length=None)
     
-    # Buscar registos de cronómetros
+    # Buscar registos de cronómetros - ordenados cronologicamente
     registos_mao_obra = await db.registos_tecnico_ot.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).to_list(length=None)
+    ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
     
     # Buscar tarifas por código (configuradas no Admin Dashboard)
     # Excluir tarifas com código "manual" pois são apenas para seleção manual
