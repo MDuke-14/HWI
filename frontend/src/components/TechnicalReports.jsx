@@ -5596,13 +5596,14 @@ const TechnicalReports = ({ user, onLogout }) => {
         if (!open) {
           setSelectedFoto(null);
           setEditFotoDescricao('');
+          setEditFotoData('');
         }
       }}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Edit className="w-5 h-5 text-blue-400" />
-              Editar Descrição da Fotografia
+              Editar Fotografia
             </DialogTitle>
           </DialogHeader>
 
@@ -5614,6 +5615,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                   src={`${API}${selectedFoto.foto_url}`}
                   alt={selectedFoto.descricao || 'Fotografia'}
                   className="w-full max-h-48 object-contain rounded"
+                />
+              </div>
+
+              {/* Campo de data */}
+              <div>
+                <Label className="text-gray-300 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Data da Fotografia
+                </Label>
+                <Input
+                  type="datetime-local"
+                  value={editFotoData}
+                  onChange={(e) => setEditFotoData(e.target.value)}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  data-testid="edit-foto-data"
                 />
               </div>
 
@@ -5636,6 +5652,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     setShowEditFotoModal(false);
                     setSelectedFoto(null);
                     setEditFotoDescricao('');
+                    setEditFotoData('');
                   }}
                   variant="outline"
                   className="flex-1 border-gray-600"
