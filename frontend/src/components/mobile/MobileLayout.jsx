@@ -19,10 +19,13 @@ import { Button } from '@/components/ui/button';
 
 const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
   const location = useLocation();
-  const { isMobile, isStandalone } = useMobile();
+  const { isMobile, isStandalone, forcedMode } = useMobile();
   const { isDark } = useTheme();
   const { isOnline, pendingCount, forceSync } = useOfflineData(API);
   const [activeTimer, setActiveTimer] = useState(null);
+
+  // Log para debug
+  console.log('MobileLayout render:', { isMobile, forcedMode, showBottomNav });
 
   // Verificar se há timer ativo
   const checkActiveTimer = async () => {
