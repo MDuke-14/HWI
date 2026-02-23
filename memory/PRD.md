@@ -14,6 +14,8 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - ✅ ~~Funcionalidade "Justificar Dia" na Gestão de Entradas~~ (19 Fevereiro 2026)
 - ✅ ~~Campos de email dinâmicos para clientes~~ (20 Fevereiro 2026)
 - ✅ **Bug Assinatura Mobile Corrigido** (21 Fevereiro 2026) - Canvas e botões não respondiam a touch
+- ✅ **PDF Layout Alinhado com HTML Preview** (23 Fevereiro 2026) - Visual do PDF replica o preview HTML, mantendo organização por data de intervenção
+- ✅ **Mobile/Desktop View Persistence** (23 Fevereiro 2026) - Verificado que o modo forçado persiste correctamente via localStorage
 - 🔄 **Modo Mobile PWA** - EM PROGRESSO (20 Fevereiro 2026)
   - ✅ Bottom Navigation para mobile
   - ✅ Sistema de temas (claro/escuro)
