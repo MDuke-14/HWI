@@ -813,6 +813,83 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         elements.append(Spacer(1, 0.3*cm))
     
+    # ========== FOTOGRAFIAS NÃO ASSOCIADAS A DATAS (FALLBACK) ==========
+    # Se houver fotografias que não foram incluídas nos blocos de data, mostrar aqui
+    if fotografias:
+        # Verificar quais fotografias não foram incluídas
+        fotos_incluidas = set()
+        for date in sorted_dates:
+            for foto in fotografias:
+                foto_date = normalize_date(foto.get('uploaded_at'))
+                if foto_date == date or (date is None and not foto_date):
+                    fotos_incluidas.add(foto.get('id') or id(foto))
+        
+        fotos_nao_incluidas = [f for f in fotografias if (f.get('id') or id(f)) not in fotos_incluidas]
+        
+        if fotos_nao_incluidas:
+            foto_content = []
+            
+            for i in range(0, len(fotos_nao_incluidas), 2):
+                foto1 = fotos_nao_incluidas[i]
+                foto2 = fotos_nao_incluidas[i + 1] if i + 1 < len(fotos_nao_incluidas) else None
+                
+                row_content = []
+                
+                # Foto 1
+                cell1 = []
+                if foto1.get('foto_base64'):
+                    try:
+                        foto_bytes = base64.b64decode(foto1['foto_base64'])
+                        foto_buffer = BytesIO(foto_bytes)
+                        img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
+                        cell1.append(img)
+                    except:
+                        cell1.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
+                else:
+                    cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
+                
+                if foto1.get('descricao'):
+                    cell1.append(Paragraph(foto1.get('descricao', '')[:100], foto_desc_style))
+                
+                row_content.append(cell1)
+                
+                # Foto 2
+                if foto2:
+                    cell2 = []
+                    if foto2.get('foto_base64'):
+                        try:
+                            foto_bytes = base64.b64decode(foto2['foto_base64'])
+                            foto_buffer = BytesIO(foto_bytes)
+                            img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
+                            cell2.append(img)
+                        except:
+                            cell2.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
+                    else:
+                        cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
+                    
+                    if foto2.get('descricao'):
+                        cell2.append(Paragraph(foto2.get('descricao', '')[:100], foto_desc_style))
+                    
+                    row_content.append(cell2)
+                else:
+                    row_content.append('')
+                
+                foto_row_table = Table([row_content], colWidths=[8.7*cm, 8.7*cm])
+                foto_row_table.setStyle(TableStyle([
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#e5e7eb')),
+                    ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#e5e7eb')),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ]))
+                foto_content.append(foto_row_table)
+                foto_content.append(Spacer(1, 0.1*cm))
+            
+            foto_section = create_section_box(foto_content, "FOTOGRAFIAS")
+            elements.append(foto_section)
+            elements.append(Spacer(1, 0.3*cm))
+    
     # ========== LEGENDA ==========
     
     legenda_content = []
