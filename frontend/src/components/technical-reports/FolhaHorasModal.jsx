@@ -275,13 +275,13 @@ const FolhaHorasModal = ({
                 Tabela de Preço
               </h3>
               <p className="text-gray-400 text-sm mb-3">
-                Selecione a tabela de preço a utilizar para os cálculos desta Folha de Horas.
+                Selecione a tabela de preço. As tarifas serão preenchidas automaticamente por código horário.
               </p>
               <div className="flex gap-2 flex-wrap">
                 {tabelasPreco.map((tabela) => (
                   <button
                     key={tabela.table_id}
-                    onClick={() => setSelectedTableId(tabela.table_id)}
+                    onClick={() => handleTableChange(tabela.table_id)}
                     className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                       selectedTableId === tabela.table_id
                         ? 'bg-amber-600 text-white'
