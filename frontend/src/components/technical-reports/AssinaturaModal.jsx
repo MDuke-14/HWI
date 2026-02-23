@@ -788,7 +788,7 @@ const AssinaturaModal = ({
         formData.append('file', blob, 'assinatura.png');
         formData.append('primeiro_nome', assinaturaNome.primeiro);
         formData.append('ultimo_nome', assinaturaNome.ultimo);
-        formData.append('data_intervencao', `${assinaturaDataIntervencao}T${assinaturaHoraIntervencao}`);
+        formData.append('data_intervencao', assinaturaDataIntervencao);
 
         try {
           await axios.post(
@@ -902,7 +902,7 @@ const AssinaturaModal = ({
         formData.append('file', blob, 'assinatura.png');
         formData.append('primeiro_nome', assinaturaNome.primeiro);
         formData.append('ultimo_nome', assinaturaNome.ultimo);
-        formData.append('data_intervencao', `${assinaturaDataIntervencao}T${assinaturaHoraIntervencao}`);
+        formData.append('data_intervencao', assinaturaDataIntervencao);
 
         try {
           await axios.post(
@@ -940,7 +940,7 @@ const AssinaturaModal = ({
       const formData = new FormData();
       formData.append('primeiro_nome', assinaturaNome.primeiro);
       formData.append('ultimo_nome', assinaturaNome.ultimo);
-      formData.append('data_intervencao', `${assinaturaDataIntervencao}T${assinaturaHoraIntervencao}`);
+      formData.append('data_intervencao', assinaturaDataIntervencao);
 
       await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinatura-manual`,
