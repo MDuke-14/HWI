@@ -4098,6 +4098,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }))
                           ]
                           .sort((a, b) => {
+                            // Primeiro ordenar por data
                             const dataAStr = a._data_sort || '1970-01-01';
                             const dataBStr = b._data_sort || '1970-01-01';
                             const dataA = new Date(dataAStr);
@@ -4108,7 +4109,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                             if (!dataAValid) return 1;
                             if (!dataBValid) return -1;
                             if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
-                            return 0;
+                            
+                            // Se mesma data, ordenar por hora de início
+                            const horaA = a._hora_inicio_sort || a.hora_inicio || '';
+                            const horaB = b._hora_inicio_sort || b.hora_inicio || '';
+                            return horaA.localeCompare(horaB);
                           })
                           .map((item) => (
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
