@@ -2732,8 +2732,15 @@ const TechnicalReports = ({ user, onLogout }) => {
       
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-      setPdfViewerUrl(url);
-      setShowPDFViewerModal(true);
+      
+      // Abrir PDF numa nova aba para visualização
+      window.open(url, '_blank');
+      
+      // Libertar URL após um pequeno delay para garantir que a aba abriu
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+      
     } catch (error) {
       console.error('Erro ao carregar PDF:', error);
       toast.error('Erro ao carregar PDF para visualização');
