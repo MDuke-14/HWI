@@ -527,6 +527,7 @@ class MaterialOT(BaseModel):
     descricao: str
     quantidade: int
     fornecido_por: str  # "Cliente", "HWI", "Cotação"
+    data_utilizacao: Optional[str] = None  # Data de utilização/aplicação do material (YYYY-MM-DD)
     pc_id: Optional[str] = None  # ID do Pedido de Cotação (se fornecido_por = Cotação)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
