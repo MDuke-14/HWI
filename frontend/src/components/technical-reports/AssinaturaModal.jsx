@@ -1039,26 +1039,60 @@ const AssinaturaModal = ({
                             <Input
                               type="date"
                               defaultValue={ass.data_intervencao?.split('T')[0]}
-                              className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'h-7 w-32 text-xs' : 'h-8 w-40'}`}
+                              className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'h-7 w-28 text-xs' : 'h-8 w-36'}`}
                               onChange={(e) => {
-                                if (e.target.value) {
-                                  handleUpdateAssinaturaData(ass.id, e.target.value);
-                                }
+                                setEditingHora(prev => ({ ...prev, [ass.id]: { ...prev[ass.id], date: e.target.value }}));
                               }}
                             />
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingAssinatura(null)}
-                              className={`text-gray-400 ${isMobile ? 'h-6 text-xs px-2' : 'h-8'}`}
-                            >
-                              Cancelar
-                            </Button>
+                            <Input
+                              type="time"
+                              defaultValue={ass.data_intervencao?.includes('T') ? ass.data_intervencao.split('T')[1]?.substring(0,5) : '00:00'}
+                              className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'h-7 w-24 text-xs' : 'h-8 w-28'}`}
+                              onChange={(e) => {
+                                setEditingHora(prev => ({ ...prev, [ass.id]: { ...prev[ass.id], time: e.target.value }}));
+                              }}
+                            />
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                  const data = editingHora[ass.id]?.date || ass.data_intervencao?.split('T')[0];
+                                  const hora = editingHora[ass.id]?.time || ass.data_intervencao?.split('T')[1]?.substring(0,5) || '00:00';
+                                  handleUpdateAssinaturaData(ass.id, `${data}T${hora}`);
+                                  setEditingAssinatura(null);
+                                  setEditingHora(prev => { const n = {...prev}; delete n[ass.id]; return n; });
+                                }}
+                                className={`bg-green-600 hover:bg-green-700 ${isMobile ? 'h-6 text-xs px-2' : 'h-8'}`}
+                              >
+                                Guardar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingAssinatura(null);
+                                  setEditingHora(prev => { const n = {...prev}; delete n[ass.id]; return n; });
+                                }}
+                                className={`text-gray-400 ${isMobile ? 'h-6 text-xs px-2' : 'h-8'}`}
+                              >
+                                Cancelar
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <p className={`text-gray-400 flex items-center gap-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                             <Calendar className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
-                            {ass.data_intervencao ? new Date(ass.data_intervencao).toLocaleDateString('pt-PT') : 'Sem data'}
+                            {ass.data_intervencao ? (
+                              <>
+                                {new Date(ass.data_intervencao).toLocaleDateString('pt-PT')}
+                                {ass.data_intervencao.includes('T') && (
+                                  <span className="ml-1">
+                                    {ass.data_intervencao.split('T')[1]?.substring(0,5)}
+                                  </span>
+                                )}
+                              </>
+                            ) : 'Sem data'}
                             <button
                               onClick={() => setEditingAssinatura(ass.id)}
                               className="ml-1 text-blue-400 hover:text-blue-300"
