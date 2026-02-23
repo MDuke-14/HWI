@@ -118,6 +118,29 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ---
 
+#### ✅ Visualização de Emails Adicionais em Campos Separados (23 Fevereiro 2026) - MELHORIA UI
+**Melhorada a visualização de emails adicionais nos detalhes do cliente:**
+
+**Antes:** Emails adicionais eram mostrados numa única linha separados por ponto-e-vírgula
+**Depois:** Cada email adicional é mostrado num campo individual com:
+- Ícone de email
+- Link clicável (`mailto:`)
+- Estilo visual consistente com fundo escuro
+
+**Frontend (`TechnicalReports.jsx`):**
+- Secção "Emails Adicionais" no modal de visualização de cliente reformulada
+- Emails são separados por `;` ou `,` e renderizados individualmente
+- Cada email é clicável para abrir cliente de email
+
+**Funcionalidades:**
+- ✅ Visualização clara de múltiplos emails (desktop + mobile)
+- ✅ Links clicáveis para cada email
+- ✅ Layout responsivo
+
+**Testado:** ✅ Screenshots desktop + Screenshots mobile
+
+---
+
 #### ✅ Bug Crítico Assinatura Mobile (21 Fevereiro 2026) - CORRIGIDO
 **Problema:** O canvas de assinatura e os botões (Limpar, Guardar, Fechar) não respondiam a eventos de toque em dispositivos móveis.
 
