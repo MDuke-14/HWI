@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileSpreadsheet, DollarSign, FileText, User, Calendar, Download, Zap } from 'lucide-react';
+import { FileSpreadsheet, DollarSign, FileText, User, Calendar, Download, Zap, Settings } from 'lucide-react';
+import axios from 'axios';
+import { API } from '@/App';
 
 const FolhaHorasModal = ({
   open,
@@ -20,8 +22,31 @@ const FolhaHorasModal = ({
 }) => {
   const [dietaAutomatica, setDietaAutomatica] = useState(false);
   const [dietaValor, setDietaValor] = useState('');
+  const [tabelasPreco, setTabelasPreco] = useState([]);
+  const [selectedTableId, setSelectedTableId] = useState(1);
   
   const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+  // Buscar tabelas de preço quando o modal abre
+  useEffect(() => {
+    if (open) {
+      fetchTabelasPreco();
+    }
+  }, [open]);
+
+  const fetchTabelasPreco = async () => {
+    try {
+      const response = await axios.get(`${API}/tabelas-preco`);
+      setTabelasPreco(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar tabelas de preço');
+    }
+  };
+
+  const handleGeneratePDF = () => {
+    // Passar o table_id selecionado para a função de gerar PDF
+    onGeneratePDF(selectedTableId);
+  };
 
   const getDataInfo = (dataStr) => {
     const dataObj = new Date(dataStr + 'T00:00:00');
