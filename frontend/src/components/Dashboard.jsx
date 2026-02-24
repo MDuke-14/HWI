@@ -330,19 +330,26 @@ const Dashboard = ({ user, onLogout }) => {
   const fetchTodayEntry = async () => {
     try {
       const response = await axios.get(`${API}/time-entries/today`);
-      if (!response.data || response.data.has_active === false) {
-        // No entry or multiple entries for today
-        setEntry(null);
-        setTodayEntries(response.data?.entries || []);
-        // Se o dia já tem "Fora de Zona", marcar automaticamente para a próxima entrada
-        if (response.data?.day_has_outside_zone) {
-          setOutsideResidenceZone(true);
-        }
-      } else {
+      
+      // Verificar se há uma entrada ativa
+      const hasActiveEntry = response.data && 
+        response.data.status === 'active' && 
+        !response.data.entries; // Se tiver "entries" é porque não tem entrada ativa
+      
+      if (hasActiveEntry) {
         // Active entry - também guardar entradas completadas do dia
         setEntry(response.data);
         setTodayEntries(response.data?.today_completed_entries || []);
         // Se o dia já tem "Fora de Zona", marcar automaticamente
+        if (response.data?.day_has_outside_zone) {
+          setOutsideResidenceZone(true);
+        }
+      } else {
+        // Sem entrada ativa - limpar estado e mostrar entradas completadas
+        setEntry(null);
+        setElapsedTime(0); // Garantir que o timer para
+        setTodayEntries(response.data?.entries || []);
+        // Se o dia já tem "Fora de Zona", marcar automaticamente para a próxima entrada
         if (response.data?.day_has_outside_zone) {
           setOutsideResidenceZone(true);
         }
