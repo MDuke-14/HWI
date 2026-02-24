@@ -2280,7 +2280,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/cronometros`);
       setCronometrosAtivos(response.data);
       
-      // Iniciar timers para cronómetros ativos
+      // Recalcular timers apenas para cronómetros ativos (limpa os antigos)
       const newTimers = {};
       response.data.forEach(crono => {
         const horaInicio = new Date(crono.hora_inicio);
@@ -2288,7 +2288,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         const diffMs = agora - horaInicio;
         newTimers[`${crono.tecnico_id}_${crono.tipo}`] = Math.floor(diffMs / 1000);
       });
-      setTimers(newTimers);
+      setTimers(newTimers); // Substitui completamente, removendo timers de cronómetros parados
     } catch (error) {
       console.error('Erro ao buscar cronómetros:', error);
     }
