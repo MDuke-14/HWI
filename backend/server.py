@@ -452,6 +452,9 @@ class RelatorioTecnico(BaseModel):
     # Motivo (mudou de "descricao_problema")
     motivo_assistencia: str
     
+    # KM Inicial da viatura (para associar ao primeiro técnico)
+    km_inicial: Optional[float] = None
+    
     # Relatório
     diagnostico: Optional[str] = None
     acoes_realizadas: Optional[str] = None
