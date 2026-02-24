@@ -286,7 +286,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     ]))
     
     client_section = create_section_box([client_table], "INFORMAÇÕES DO CLIENTE")
-    elements.append(client_section)
+    add_section_to_elements(elements, client_section)
     elements.append(Spacer(1, 0.3*cm))
     
     # ========== EQUIPAMENTOS ==========
