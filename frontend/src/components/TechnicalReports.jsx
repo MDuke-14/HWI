@@ -5543,6 +5543,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                     {isMobile ? 'Enviar Email' : 'Enviar Por Email'}
                   </Button>
                 )}
+                
+                {/* Botão FECHAR - Para fechar o painel da OT */}
+                <Button
+                  onClick={() => {
+                    setSelectedRelatorio(null);
+                    setShowViewRelatorioModal(false);
+                  }}
+                  variant="outline"
+                  className={`border-gray-600 hover:bg-gray-700 text-gray-300 hover:text-white ${isMobile ? 'w-full py-3 text-sm mt-4' : 'px-4 py-3 col-span-full'}`}
+                  data-testid="fechar-ot-btn"
+                >
+                  <X className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                  FECHAR
+                </Button>
               </div>
 
 
