@@ -889,6 +889,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       data_fim: '',
       local_intervencao: '',
       pedido_por: '',
+      km_inicial: '',
       equipamento_tipologia: '',
       equipamento_marca: '',
       equipamento_modelo: '',
