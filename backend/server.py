@@ -2708,6 +2708,11 @@ async def add_tecnico_relatorio(
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     
+    # Verificar se é o primeiro técnico - para usar km_inicial da OT
+    existing_tecnicos_count = await db.tecnicos_relatorio.count_documents({"relatorio_id": relatorio_id})
+    existing_registos_count = await db.registos_tecnico_ot.count_documents({"relatorio_id": relatorio_id})
+    is_first_tecnico = (existing_tecnicos_count == 0 and existing_registos_count == 0)
+    
     # Obter dados básicos
     tecnico_id_user = tecnico_data.get("tecnico_id", "")
     tecnico_nome = tecnico_data.get("tecnico_nome", "")
@@ -2716,8 +2721,12 @@ async def add_tecnico_relatorio(
     hora_inicio_str = tecnico_data.get("hora_inicio")
     hora_fim_str = tecnico_data.get("hora_fim")
     
-    # Calcular kms
+    # Calcular kms - Se é o primeiro técnico e não tem kms_inicial definido, usar da OT
     kms_inicial = float(tecnico_data.get("kms_inicial", 0))
+    if is_first_tecnico and kms_inicial == 0 and relatorio.get("km_inicial"):
+        kms_inicial = float(relatorio.get("km_inicial", 0))
+        logging.info(f"Usando km_inicial da OT ({kms_inicial}) para o primeiro técnico")
+    
     kms_final = float(tecnico_data.get("kms_final", 0))
     kms_inicial_volta = float(tecnico_data.get("kms_inicial_volta", 0))
     kms_final_volta = float(tecnico_data.get("kms_final_volta", 0))
