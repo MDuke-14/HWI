@@ -141,10 +141,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             section_content.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#e5e7eb'), spaceAfter=6))
         section_content.extend(content_elements)
         
-        # Se permitir split, retornar os elementos diretamente com uma borda simples
+        # Se permitir split e houver muito conteúdo, retornar lista em vez de tabela
         if allow_split and len(content_elements) > 3:
             # Para secções grandes, não usar tabela envolvente (evita erro de "too large")
-            # Apenas adicionar um separador visual no início
             result = []
             if title:
                 result.append(Paragraph(title, section_title_style))
@@ -165,6 +164,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ]))
         return inner_table
+    
+    def add_section_to_elements(elements, section):
+        """Adiciona secção aos elementos (trata lista ou tabela)"""
+        if isinstance(section, list):
+            elements.extend(section)
+        else:
+            elements.append(section)
     
     # ========== CABEÇALHO COM LOGO ==========
     
