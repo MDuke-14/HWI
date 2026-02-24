@@ -133,15 +133,27 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         except:
             return date_str
     
-    def create_section_box(content_elements, title=None):
-        """Cria uma caixa de secção com borda"""
+    def create_section_box(content_elements, title=None, allow_split=True):
+        """Cria uma caixa de secção - permite split para conteúdos grandes"""
         section_content = []
         if title:
             section_content.append(Paragraph(title, section_title_style))
             section_content.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#e5e7eb'), spaceAfter=6))
         section_content.extend(content_elements)
         
-        # Criar tabela para simular borda
+        # Se permitir split, retornar os elementos diretamente com uma borda simples
+        if allow_split and len(content_elements) > 3:
+            # Para secções grandes, não usar tabela envolvente (evita erro de "too large")
+            # Apenas adicionar um separador visual no início
+            result = []
+            if title:
+                result.append(Paragraph(title, section_title_style))
+                result.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6))
+            result.extend(content_elements)
+            result.append(Spacer(1, 0.2*cm))
+            return result
+        
+        # Para secções pequenas, manter o estilo de caixa
         inner_table = Table([[section_content]], colWidths=[18.4*cm])
         inner_table.setStyle(TableStyle([
             ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#d1d5db')),
