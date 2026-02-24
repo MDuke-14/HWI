@@ -712,7 +712,7 @@ const Dashboard = ({ user, onLogout }) => {
         <Navigation user={user} onLogout={onLogout} activePage="dashboard" />
       )}
       
-      <div className={`container mx-auto px-4 ${isMobile ? 'py-4 pb-24' : 'py-8'} max-w-4xl`}>
+      <div className={`container mx-auto px-4 ${isMobile ? 'pt-8 pb-24' : 'py-8'} max-w-4xl`}>
         <div className="fade-in">
           {/* Online/Offline Indicator */}
           {!isOnline && (
