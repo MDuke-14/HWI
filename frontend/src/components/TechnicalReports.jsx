@@ -2527,13 +2527,23 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Atualizar timers a cada segundo
   useEffect(() => {
-    if (cronometrosAtivos.length === 0) return;
+    if (cronometrosAtivos.length === 0) {
+      // Limpar todos os timers se não há cronómetros ativos
+      setTimers({});
+      return;
+    }
+    
+    // Criar set de keys de cronómetros ativos para validação
+    const activeKeys = new Set(
+      cronometrosAtivos.map(crono => `${crono.tecnico_id}_${crono.tipo}`)
+    );
     
     const interval = setInterval(() => {
       setTimers(prevTimers => {
-        const newTimers = { ...prevTimers };
-        Object.keys(newTimers).forEach(key => {
-          newTimers[key] = newTimers[key] + 1;
+        const newTimers = {};
+        // Só incrementar timers que correspondem a cronómetros ativos
+        activeKeys.forEach(key => {
+          newTimers[key] = (prevTimers[key] || 0) + 1;
         });
         return newTimers;
       });
