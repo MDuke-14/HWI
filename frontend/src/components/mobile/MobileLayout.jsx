@@ -129,8 +129,10 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
           end_geo_location: endLocationData
         });
         
-        setActiveTimer(null);
         toast.success(`Saída registada! Total: ${response.data.total_hours || '0'}h`);
+        
+        // Forçar reload da página para atualizar o dashboard
+        window.location.href = window.location.href;
       }
     } catch (error) {
       console.error('Erro na ação rápida:', error);
