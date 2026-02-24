@@ -619,7 +619,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ]))
             
             mao_obra_section = create_section_box([mao_obra_table], "MÃO DE OBRA / DESLOCAÇÃO")
-            elements.append(mao_obra_section)
+            add_section_to_elements(elements, mao_obra_section)
             elements.append(Spacer(1, 0.2*cm))
         
         # ---- Materiais desta data ----
