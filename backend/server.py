@@ -9195,6 +9195,16 @@ async def get_calendar_data(
     
     ots_for_calendar = []
     
+    # Buscar IDs de OTs que foram criadas pelo calendário (têm service_appointment associado)
+    calendar_ot_ids = set()
+    calendar_services = await db.service_appointments.find(
+        {"ot_id": {"$exists": True}},
+        {"_id": 0, "ot_id": 1}
+    ).to_list(10000)
+    for svc in calendar_services:
+        if svc.get("ot_id"):
+            calendar_ot_ids.add(svc["ot_id"])
+    
     # Buscar todas as OTs que podem aparecer neste mês
     # (data_servico no mês OU data_fim que abrange o mês)
     relatorios = await db.relatorios_tecnicos.find({
@@ -9205,6 +9215,41 @@ async def get_calendar_data(
             {"data_servico": {"$lt": end_date}, "data_fim": {"$gte": start_date}},
         ]
     }, {"_id": 0}).to_list(1000)
+    
+    # Também buscar OTs com intervenções neste mês (mesmo que data_servico seja de outro mês)
+    intervencoes_mes = await db.intervencoes_relatorio.find({
+        "$or": [
+            {"data_intervencao": {"$gte": start_date, "$lt": end_date}},
+            {"data": {"$gte": start_date, "$lt": end_date}},
+        ]
+    }, {"_id": 0, "relatorio_id": 1, "data_intervencao": 1, "data": 1}).to_list(10000)
+    
+    # Coletar IDs de OTs com intervenções no mês
+    ots_com_intervencoes_mes = {}
+    for interv in intervencoes_mes:
+        rel_id = interv.get("relatorio_id")
+        if rel_id:
+            data_interv = interv.get("data_intervencao") or interv.get("data")
+            if data_interv:
+                if rel_id not in ots_com_intervencoes_mes:
+                    ots_com_intervencoes_mes[rel_id] = set()
+                try:
+                    if isinstance(data_interv, str):
+                        ots_com_intervencoes_mes[rel_id].add(data_interv[:10])
+                    else:
+                        ots_com_intervencoes_mes[rel_id].add(data_interv.strftime("%Y-%m-%d"))
+                except:
+                    pass
+    
+    # Buscar OTs adicionais que têm intervenções neste mês mas data_servico de outro mês
+    relatorios_ids_ja_buscados = {r.get("id") for r in relatorios}
+    ots_adicionais_ids = [rid for rid in ots_com_intervencoes_mes.keys() if rid not in relatorios_ids_ja_buscados]
+    
+    if ots_adicionais_ids:
+        ots_adicionais = await db.relatorios_tecnicos.find({
+            "id": {"$in": ots_adicionais_ids}
+        }, {"_id": 0}).to_list(1000)
+        relatorios.extend(ots_adicionais)
     
     for rel in relatorios:
         rel_id = rel.get("id")
