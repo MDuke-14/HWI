@@ -656,7 +656,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ]))
             
             mat_section = create_section_box([mat_table], "MATERIAIS UTILIZADOS")
-            elements.append(mat_section)
+            add_section_to_elements(elements, mat_section)
             elements.append(Spacer(1, 0.2*cm))
         
         # ---- Fotografias desta data ----
