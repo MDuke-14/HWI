@@ -3772,8 +3772,14 @@ async def enviar_pdf_ot(
         # Buscar informações da empresa (para logo e dados no cabeçalho)
         company_info = await db.company_info.find_one({"id": "company_info_default"}, {"_id": 0})
         
-        # Gerar PDF
-        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info)
+        # Gerar PDF com tratamento de erros
+        try:
+            pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info)
+        except Exception as e:
+            logging.error(f"Erro ao gerar PDF para envio - OT {relatorio_id}: {str(e)}")
+            import traceback
+            logging.error(f"Traceback: {traceback.format_exc()}")
+            raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
         
         # Configuração SMTP
         smtp_host = os.environ.get('SMTP_HOST', 'smtp.office365.com')
