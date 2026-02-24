@@ -386,7 +386,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             equip_content.append(Spacer(1, 0.2*cm))
         
         equip_section = create_section_box(equip_content, "EQUIPAMENTOS")
-        elements.append(equip_section)
+        add_section_to_elements(elements, equip_section)
         elements.append(Spacer(1, 0.3*cm))
     
     # ========== ORGANIZAR DADOS POR DATA DE INTERVENÇÃO ==========
