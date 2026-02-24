@@ -820,11 +820,11 @@ const Dashboard = ({ user, onLogout }) => {
                   </div>
                 </div>
                 
-                {todayEntries.length > 0 && (
+                {(todayEntries.length > 0 || entry) && (
                   <div className="text-right">
                     <div className={`text-xs ${textSecondary}`}>Registos</div>
                     <div className={`text-lg font-semibold ${textPrimary}`}>
-                      {todayEntries.length + (entry ? 1 : 0)}
+                      {todayEntries.length + (entry && entry.status === 'active' ? 1 : 0)}
                     </div>
                   </div>
                 )}
