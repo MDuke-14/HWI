@@ -336,9 +336,9 @@ const Dashboard = ({ user, onLogout }) => {
           setOutsideResidenceZone(true);
         }
       } else {
-        // Active entry
+        // Active entry - também guardar entradas completadas do dia
         setEntry(response.data);
-        setTodayEntries([]);
+        setTodayEntries(response.data?.today_completed_entries || []);
         // Se o dia já tem "Fora de Zona", marcar automaticamente
         if (response.data?.day_has_outside_zone) {
           setOutsideResidenceZone(true);
