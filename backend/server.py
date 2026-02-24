@@ -9333,7 +9333,8 @@ async def get_calendar_data(
                         "status": status,
                         "type": "ot_intervention",  # OT baseada em intervenções
                         "data_inicio": data_servico,
-                        "data_fim": None
+                        "data_fim": None,
+                        "from_calendar": from_calendar
                     })
     
     return {
