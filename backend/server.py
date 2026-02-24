@@ -9261,6 +9261,9 @@ async def get_calendar_data(
         local = rel.get("local_intervencao", "")
         status = rel.get("status", "em_execucao")
         
+        # Verificar se foi criada pelo calendário
+        from_calendar = rel_id in calendar_ot_ids
+        
         # Converter datas para objetos date
         try:
             data_inicio_obj = datetime.strptime(data_servico[:10], "%Y-%m-%d").date() if data_servico else None
