@@ -852,7 +852,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 assin_content.append(Spacer(1, 0.15*cm))
             
             assin_section = create_section_box(assin_content, "ASSINATURAS")
-            elements.append(assin_section)
+            add_section_to_elements(elements, assin_section)
             elements.append(Spacer(1, 0.2*cm))
         
         elements.append(Spacer(1, 0.3*cm))
