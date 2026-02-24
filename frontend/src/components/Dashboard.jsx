@@ -679,6 +679,7 @@ const Dashboard = ({ user, onLogout }) => {
       
       // Atualizar estado imediatamente
       setEntry(null);  // Limpar entrada ativa
+      setElapsedTime(0);  // Parar o timer imediatamente
       
       // Buscar estado atualizado
       await fetchTodayEntry();
