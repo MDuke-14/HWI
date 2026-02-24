@@ -9292,7 +9292,8 @@ async def get_calendar_data(
                         "status": status,
                         "type": "ot_range",  # OT com intervalo de datas
                         "data_inicio": data_servico,
-                        "data_fim": data_fim
+                        "data_fim": data_fim,
+                        "from_calendar": from_calendar
                     })
                 current += timedelta(days=1)
         else:
