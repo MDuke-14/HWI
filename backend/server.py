@@ -4851,23 +4851,25 @@ async def get_today_entry(current_user: dict = Depends(get_current_user)):
         "status": "active"
     }, {"_id": 0})
     
-    if active_entry:
-        # Adicionar flag de outside_zone do dia
-        active_entry["day_has_outside_zone"] = has_outside_zone_today
-        return active_entry
-    
-    # If no active entry, get today's completed entries aggregated
-    today_entries = await db.time_entries.find({
+    # SEMPRE buscar entradas completadas do dia (para mostrar total correto)
+    today_completed_entries = await db.time_entries.find({
         "user_id": current_user["sub"],
         "date": today,
         "status": "completed"
     }, {"_id": 0}).sort("created_at", 1).to_list(100)
     
-    if not today_entries:
+    if active_entry:
+        # Retornar entrada ativa + entradas completadas do dia
+        active_entry["day_has_outside_zone"] = has_outside_zone_today
+        active_entry["today_completed_entries"] = today_completed_entries
+        return active_entry
+    
+    # If no active entry, return only completed entries
+    if not today_completed_entries:
         return {"entries": [], "has_active": False, "day_has_outside_zone": has_outside_zone_today}
     
     return {
-        "entries": today_entries, 
+        "entries": today_completed_entries, 
         "has_active": False, 
         "day_has_outside_zone": has_outside_zone_today
     }
