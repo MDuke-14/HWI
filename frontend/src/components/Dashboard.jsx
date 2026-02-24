@@ -609,15 +609,10 @@ const Dashboard = ({ user, onLogout }) => {
         geo_location: location
       });
       toast.success('Relógio iniciado!');
-      setObservations('');
-      // Não resetar outsideResidenceZone se o dia já tem essa flag (será definido pelo fetchTodayEntry)
-      setLocationDescription('');
-      setGeoLocation(null);
       
-      // Recarregar a página para garantir atualização completa
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Forçar reload imediato da página
+      window.location.href = window.location.href;
+      return;
     } catch (error) {
       // Verificar se foi guardado offline
       if (error.response?.data?.offline) {
