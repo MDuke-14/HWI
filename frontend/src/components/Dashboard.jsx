@@ -681,8 +681,10 @@ const Dashboard = ({ user, onLogout }) => {
       setEntry(null);  // Limpar entrada ativa
       setElapsedTime(0);  // Parar o timer imediatamente
       
-      // Buscar estado atualizado
-      await fetchTodayEntry();
+      // Recarregar a página para garantir atualização completa
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
       
       console.log('Estado atualizado após finalizar');
     } catch (error) {
