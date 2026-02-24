@@ -321,6 +321,9 @@ const Dashboard = ({ user, onLogout }) => {
       }, 1000);
 
       return () => clearInterval(interval);
+    } else {
+      // Resetar elapsed time quando não há entrada ativa
+      setElapsedTime(0);
     }
   }, [entry]);
 
