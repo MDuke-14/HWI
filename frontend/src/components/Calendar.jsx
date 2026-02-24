@@ -944,43 +944,58 @@ const Calendar = ({ user, onLogout }) => {
                       <Wrench className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
                       Ordens de Trabalho ({selectedDay.ots.length})
                     </h4>
-                    {selectedDay.ots.map(ot => (
-                      <div 
-                        key={`ot-detail-${ot.id}-${selectedDay.dateStr}`} 
-                        className={`bg-orange-500/10 border border-orange-500/30 rounded-lg ${isMobile ? 'p-2.5' : 'p-3'} cursor-pointer hover:bg-orange-500/20 transition-colors`}
-                        onClick={() => {
-                          setDayDetailOpen(false);
-                          window.location.href = `/technical-reports?ot=${ot.id}`;
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`font-semibold text-white ${isMobile ? 'text-sm' : ''}`}>{ot.cliente_nome}</span>
-                          <span className={`font-bold text-orange-400 ${isMobile ? 'text-sm' : ''}`}>OT#{ot.numero_ot}</span>
-                        </div>
-                        <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400 flex items-center gap-1 mt-1`}>
-                          <MapPin className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
-                          {ot.local}
-                        </div>
-                        <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded mt-1 inline-block ${
-                          ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
-                          ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
-                          ot.status === 'agendado' ? 'bg-cyan-500/20 text-cyan-400' :
-                          ot.status === 'orcamento' ? 'bg-amber-500/20 text-amber-400' :
-                          'bg-gray-500/20 text-gray-400'
-                        }`}>
-                          {ot.status === 'agendado' ? 'Agendado' :
-                           ot.status === 'concluido' ? 'Concluído' : 
-                           ot.status === 'em_execucao' ? 'Em Execução' : 
-                           ot.status === 'orcamento' ? 'Orçamento' : 
-                           ot.status === 'facturado' ? 'Facturado' : ot.status}
-                        </span>
-                        {ot.data_fim && (
-                          <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-orange-400/70 mt-1`}>
-                            {new Date(ot.data_inicio).toLocaleDateString('pt-PT')} → {new Date(ot.data_fim).toLocaleDateString('pt-PT')}
+                    {selectedDay.ots.map(ot => {
+                      const isFromCalendar = ot.from_calendar;
+                      const bgColor = isFromCalendar ? 'bg-orange-500/10' : 'bg-cyan-500/10';
+                      const borderColor = isFromCalendar ? 'border-orange-500/30' : 'border-cyan-500/30';
+                      const hoverColor = isFromCalendar ? 'hover:bg-orange-500/20' : 'hover:bg-cyan-500/20';
+                      const accentColor = isFromCalendar ? 'text-orange-400' : 'text-cyan-400';
+                      
+                      return (
+                        <div 
+                          key={`ot-detail-${ot.id}-${selectedDay.dateStr}`} 
+                          className={`${bgColor} border ${borderColor} rounded-lg ${isMobile ? 'p-2.5' : 'p-3'} cursor-pointer ${hoverColor} transition-colors`}
+                          onClick={() => {
+                            setDayDetailOpen(false);
+                            window.location.href = `/technical-reports?ot=${ot.id}`;
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`font-semibold text-white ${isMobile ? 'text-sm' : ''}`}>{ot.cliente_nome}</span>
+                            <span className={`font-bold ${accentColor} ${isMobile ? 'text-sm' : ''}`}>OT#{ot.numero_ot}</span>
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400 flex items-center gap-1 mt-1`}>
+                            <MapPin className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
+                            {ot.local}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded inline-block ${
+                              ot.status === 'concluido' ? 'bg-green-500/20 text-green-400' :
+                              ot.status === 'em_execucao' ? 'bg-blue-500/20 text-blue-400' :
+                              ot.status === 'agendado' ? 'bg-cyan-500/20 text-cyan-400' :
+                              ot.status === 'orcamento' ? 'bg-amber-500/20 text-amber-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {ot.status === 'agendado' ? 'Agendado' :
+                               ot.status === 'concluido' ? 'Concluído' : 
+                               ot.status === 'em_execucao' ? 'Em Execução' : 
+                               ot.status === 'orcamento' ? 'Orçamento' : 
+                               ot.status === 'facturado' ? 'Facturado' : ot.status}
+                            </span>
+                            {!isFromCalendar && (
+                              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400`}>
+                                Intervenção
+                              </span>
+                            )}
+                          </div>
+                          {ot.data_fim && (
+                            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} ${accentColor}/70 mt-1`}>
+                              {new Date(ot.data_inicio).toLocaleDateString('pt-PT')} → {new Date(ot.data_fim).toLocaleDateString('pt-PT')}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 
