@@ -9297,24 +9297,25 @@ async def get_calendar_data(
                     })
                 current += timedelta(days=1)
         else:
-            # Sem data_fim - buscar datas das intervenções
-            intervencoes = await db.intervencoes_relatorio.find({
-                "relatorio_id": rel_id
-            }, {"_id": 0, "data": 1}).to_list(100)
+            # Sem data_fim - usar datas das intervenções (já buscadas anteriormente)
+            datas_intervencoes = ots_com_intervencoes_mes.get(rel_id, set())
             
-            # Coletar datas únicas das intervenções
-            datas_intervencoes = set()
-            for interv in intervencoes:
-                data_interv = interv.get("data")
-                if data_interv:
-                    try:
-                        # Pode ser string ou date
-                        if isinstance(data_interv, str):
-                            datas_intervencoes.add(data_interv[:10])
-                        else:
-                            datas_intervencoes.add(data_interv.strftime("%Y-%m-%d"))
-                    except:
-                        pass
+            # Se não tem intervenções buscadas, fazer query individual (fallback)
+            if not datas_intervencoes:
+                intervencoes = await db.intervencoes_relatorio.find({
+                    "relatorio_id": rel_id
+                }, {"_id": 0, "data": 1, "data_intervencao": 1}).to_list(100)
+                
+                for interv in intervencoes:
+                    data_interv = interv.get("data_intervencao") or interv.get("data")
+                    if data_interv:
+                        try:
+                            if isinstance(data_interv, str):
+                                datas_intervencoes.add(data_interv[:10])
+                            else:
+                                datas_intervencoes.add(data_interv.strftime("%Y-%m-%d"))
+                        except:
+                            pass
             
             # Adicionar a data de início se não tiver intervenções
             if not datas_intervencoes and data_inicio_obj:
