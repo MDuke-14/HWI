@@ -429,15 +429,24 @@ const Calendar = ({ user, onLogout }) => {
                       )}
                       
                       {/* OTs - Mobile: show fewer, smaller */}
-                      {dayOts.slice(0, isMobile ? 2 : 3).map(ot => (
-                        <div
-                          key={`ot-${ot.id}-${dateStr}`}
-                          className={`${isMobile ? 'text-[8px] px-1 py-0.5' : 'text-[10px] px-1.5 py-0.5'} rounded bg-orange-500/10 text-orange-300 border-l-2 border-orange-500 truncate mb-0.5 hover:bg-orange-500/20 transition-colors`}
-                          title={`${ot.cliente_nome} - OT#${ot.numero_ot} - ${ot.local}`}
-                        >
-                          {isMobile ? `#${ot.numero_ot}` : `${ot.cliente_nome} OT#${ot.numero_ot}`}
-                        </div>
-                      ))}
+                      {/* Cor laranja para OTs criadas pelo calendário, cyan para intervenções */}
+                      {dayOts.slice(0, isMobile ? 2 : 3).map(ot => {
+                        const isFromCalendar = ot.from_calendar;
+                        const bgColor = isFromCalendar ? 'bg-orange-500/10' : 'bg-cyan-500/10';
+                        const textColor = isFromCalendar ? 'text-orange-300' : 'text-cyan-300';
+                        const borderColor = isFromCalendar ? 'border-orange-500' : 'border-cyan-500';
+                        const hoverColor = isFromCalendar ? 'hover:bg-orange-500/20' : 'hover:bg-cyan-500/20';
+                        
+                        return (
+                          <div
+                            key={`ot-${ot.id}-${dateStr}`}
+                            className={`${isMobile ? 'text-[8px] px-1 py-0.5' : 'text-[10px] px-1.5 py-0.5'} rounded ${bgColor} ${textColor} border-l-2 ${borderColor} truncate mb-0.5 ${hoverColor} transition-colors`}
+                            title={`${ot.cliente_nome} - OT#${ot.numero_ot} - ${ot.local}${!isFromCalendar ? ' (Intervenção)' : ''}`}
+                          >
+                            {isMobile ? `#${ot.numero_ot}` : `${ot.cliente_nome} OT#${ot.numero_ot}`}
+                          </div>
+                        );
+                      })}
                       
                       {/* Vacations - Mobile: show fewer */}
                       {dayVacations.slice(0, isMobile ? 0 : 1).map(vacation => (
