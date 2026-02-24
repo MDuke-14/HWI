@@ -754,7 +754,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 foto_content.append(Spacer(1, 0.1*cm))
             
             foto_section = create_section_box(foto_content, "FOTOGRAFIAS")
-            elements.append(foto_section)
+            add_section_to_elements(elements, foto_section)
             elements.append(Spacer(1, 0.2*cm))
         
         # ---- Assinaturas desta data (por data_assinatura) ----
@@ -953,7 +953,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 foto_content.append(Spacer(1, 0.1*cm))
             
             foto_section = create_section_box(foto_content, "FOTOGRAFIAS")
-            elements.append(foto_section)
+            add_section_to_elements(elements, foto_section)
             elements.append(Spacer(1, 0.3*cm))
     
     # ========== LEGENDA ==========
