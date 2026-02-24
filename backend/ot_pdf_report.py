@@ -514,7 +514,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             
             if interv_content:
                 interv_section = create_section_box(interv_content, "DETALHES DA INTERVENÇÃO")
-                elements.append(interv_section)
+                add_section_to_elements(elements, interv_section)
                 elements.append(Spacer(1, 0.2*cm))
         
         # ---- Mão de Obra / Registos desta data ----
