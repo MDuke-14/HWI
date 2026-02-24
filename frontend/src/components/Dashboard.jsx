@@ -674,18 +674,10 @@ const Dashboard = ({ user, onLogout }) => {
         end_geo_location: endLocation
       });
       toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
-      setEndObservations('');
       
-      // Atualizar estado imediatamente
-      setEntry(null);  // Limpar entrada ativa
-      setElapsedTime(0);  // Parar o timer imediatamente
-      
-      // Recarregar a página para garantir atualização completa
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-      
-      console.log('Estado atualizado após finalizar');
+      // Forçar reload imediato da página
+      window.location.href = window.location.href;
+      return;
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao finalizar');
     } finally {
