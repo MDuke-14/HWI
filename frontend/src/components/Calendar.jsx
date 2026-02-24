@@ -345,7 +345,11 @@ const Calendar = ({ user, onLogout }) => {
           <div className={`flex ${isMobile ? 'overflow-x-auto gap-3 px-3 py-2 scrollbar-hide' : 'flex-wrap gap-6 px-6 py-3'} border-b border-white/5 bg-white/[0.02]`}>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-orange-500`}></div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>OTs</span>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>OTs (Agendadas)</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-cyan-500`}></div>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>OTs (Intervenções)</span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-purple-500`}></div>
