@@ -386,6 +386,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     data_fim: '',  // Campo "Até" - opcional
     local_intervencao: '',
     pedido_por: '',
+    km_inicial: '',  // KM iniciais da viatura
     equipamento_tipologia: '',
     equipamento_marca: '',
     equipamento_modelo: '',
