@@ -613,7 +613,11 @@ const Dashboard = ({ user, onLogout }) => {
       // Não resetar outsideResidenceZone se o dia já tem essa flag (será definido pelo fetchTodayEntry)
       setLocationDescription('');
       setGeoLocation(null);
-      fetchTodayEntry();
+      
+      // Recarregar a página para garantir atualização completa
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       // Verificar se foi guardado offline
       if (error.response?.data?.offline) {
