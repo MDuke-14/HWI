@@ -992,7 +992,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     legenda_content.append(Paragraph("Nota: Aos quilómetros de ida já contabilizados, serão adicionados os quilómetros de volta após assinatura deste relatório.", nota_style))
     
     legenda_section = create_section_box(legenda_content, "LEGENDA")
-    elements.append(legenda_section)
+    add_section_to_elements(elements, legenda_section)
     
     # ========== RODAPÉ ==========
     
