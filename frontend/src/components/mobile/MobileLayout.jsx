@@ -85,8 +85,10 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
           geo_location: locationData
         });
         
-        setActiveTimer(response.data);
         toast.success('Entrada registada!');
+        
+        // Forçar reload da página para atualizar o dashboard
+        window.location.href = window.location.href;
       } else {
         // Verificar novamente se há timer ativo
         let timerToEnd = activeTimer;
