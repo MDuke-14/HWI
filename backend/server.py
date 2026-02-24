@@ -645,6 +645,7 @@ class RelatorioTecnicoCreate(BaseModel):
     local_intervencao: str
     pedido_por: str
     contacto_pedido: Optional[str] = None
+    km_inicial: Optional[float] = None  # KM inicial da viatura
     equipamento_tipologia: Optional[str] = None
     equipamento_marca: Optional[str] = None
     equipamento_modelo: Optional[str] = None
