@@ -3961,6 +3961,25 @@ const TechnicalReports = ({ user, onLogout }) => {
                   required
                 />
               </div>
+              
+              {/* KM Inicial */}
+              <div>
+                <Label htmlFor="km_inicial" className="text-gray-300">
+                  KM Inicial (Viatura)
+                </Label>
+                <Input
+                  id="km_inicial"
+                  type="number"
+                  value={relatorioFormData.km_inicial}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, km_inicial: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 125000"
+                  min="0"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Será associado ao primeiro técnico adicionado
+                </p>
+              </div>
             </div>
 
             {/* Intervenções / Assistências */}
