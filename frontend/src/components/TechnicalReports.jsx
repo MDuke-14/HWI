@@ -2280,6 +2280,23 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleUpdateAssinaturaNome = async (assinaturaId) => {
+    if (!selectedRelatorio) return;
+    
+    try {
+      await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinaturaId}`, {
+        primeiro_nome: editingNomeData.primeiro_nome,
+        ultimo_nome: editingNomeData.ultimo_nome
+      });
+      toast.success('Nome atualizado com sucesso!');
+      setEditingAssinaturaNome(null);
+      await fetchAssinaturas(selectedRelatorio.id);
+    } catch (error) {
+      console.error('Erro ao atualizar nome:', error);
+      toast.error('Erro ao atualizar nome');
+    }
+  };
+
   // ========== Fetch All System Users (para Cronómetros) ==========
   
   const fetchAllSystemUsers = async () => {
