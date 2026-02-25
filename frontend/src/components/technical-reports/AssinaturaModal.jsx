@@ -882,7 +882,7 @@ const AssinaturaModal = ({
         return;
       }
       
-      // Se temos paths guardados, criar imagem a partir dos paths
+      // Se temos paths guardados, criar imagem a partir dos paths (normalizado)
       if (savedPaths.length > 0) {
         // Criar um canvas temporário com fundo branco e a assinatura
         const tempCanvas = document.createElement('canvas');
@@ -896,42 +896,81 @@ const AssinaturaModal = ({
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, outputWidth, outputHeight);
         
-        // Encontrar bounding box dos paths
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        savedPaths.forEach(path => {
-          path.forEach(point => {
-            minX = Math.min(minX, point.x);
-            minY = Math.min(minY, point.y);
-            maxX = Math.max(maxX, point.x);
-            maxY = Math.max(maxY, point.y);
-          });
-        });
-        
-        const pathWidth = maxX - minX;
-        const pathHeight = maxY - minY;
-        
-        const margin = 20;
-        const scaleX = (outputWidth - margin * 2) / pathWidth;
-        const scaleY = (outputHeight - margin * 2) / pathHeight;
-        const scale = Math.min(scaleX, scaleY, 1.5);
-        
-        const offsetX = (outputWidth - pathWidth * scale) / 2 - minX * scale;
-        const offsetY = (outputHeight - pathHeight * scale) / 2 - minY * scale;
+        // Usar coordenadas normalizadas (nx, ny em [0..1]) para renderizar
+        // Se os paths têm nx/ny, usar esses; senão fallback para x/y com bounding box
+        const hasNormalized = savedPaths[0]?.[0]?.nx !== undefined;
         
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         
-        savedPaths.forEach(path => {
-          if (path.length < 2) return;
-          ctx.beginPath();
-          ctx.moveTo(path[0].x * scale + offsetX, path[0].y * scale + offsetY);
-          for (let i = 1; i < path.length; i++) {
-            ctx.lineTo(path[i].x * scale + offsetX, path[i].y * scale + offsetY);
-          }
-          ctx.stroke();
-        });
+        if (hasNormalized) {
+          // Paths normalizados - mapear directamente para output
+          const margin = 20;
+          const drawW = outputWidth - margin * 2;
+          const drawH = outputHeight - margin * 2;
+          
+          // Encontrar bounding box normalizado
+          let minNx = Infinity, minNy = Infinity, maxNx = -Infinity, maxNy = -Infinity;
+          savedPaths.forEach(path => {
+            path.forEach(p => {
+              minNx = Math.min(minNx, p.nx);
+              minNy = Math.min(minNy, p.ny);
+              maxNx = Math.max(maxNx, p.nx);
+              maxNy = Math.max(maxNy, p.ny);
+            });
+          });
+          
+          const nw = maxNx - minNx || 1;
+          const nh = maxNy - minNy || 1;
+          const scaleX = drawW / nw;
+          const scaleY = drawH / nh;
+          const scale = Math.min(scaleX, scaleY);
+          
+          const offsetX = margin + (drawW - nw * scale) / 2;
+          const offsetY = margin + (drawH - nh * scale) / 2;
+          
+          savedPaths.forEach(path => {
+            if (path.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo((path[0].nx - minNx) * scale + offsetX, (path[0].ny - minNy) * scale + offsetY);
+            for (let i = 1; i < path.length; i++) {
+              ctx.lineTo((path[i].nx - minNx) * scale + offsetX, (path[i].ny - minNy) * scale + offsetY);
+            }
+            ctx.stroke();
+          });
+        } else {
+          // Legacy paths com x/y absoluto
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          savedPaths.forEach(path => {
+            path.forEach(point => {
+              minX = Math.min(minX, point.x);
+              minY = Math.min(minY, point.y);
+              maxX = Math.max(maxX, point.x);
+              maxY = Math.max(maxY, point.y);
+            });
+          });
+          
+          const pathWidth = maxX - minX || 1;
+          const pathHeight = maxY - minY || 1;
+          const margin = 20;
+          const scaleX = (outputWidth - margin * 2) / pathWidth;
+          const scaleY = (outputHeight - margin * 2) / pathHeight;
+          const scale = Math.min(scaleX, scaleY, 1.5);
+          const offsetX = (outputWidth - pathWidth * scale) / 2 - minX * scale;
+          const offsetY = (outputHeight - pathHeight * scale) / 2 - minY * scale;
+          
+          savedPaths.forEach(path => {
+            if (path.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(path[0].x * scale + offsetX, path[0].y * scale + offsetY);
+            for (let i = 1; i < path.length; i++) {
+              ctx.lineTo(path[i].x * scale + offsetX, path[i].y * scale + offsetY);
+            }
+            ctx.stroke();
+          });
+        }
         
         tempCanvas.toBlob(async (blob) => {
           const formData = new FormData();
