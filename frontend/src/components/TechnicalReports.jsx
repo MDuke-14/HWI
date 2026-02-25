@@ -2260,6 +2260,24 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleDeleteAssinatura = async (assinaturaId) => {
+    if (!selectedRelatorio) return;
+    
+    if (!window.confirm('Tem a certeza que deseja eliminar esta assinatura?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinaturaId}`);
+      toast.success('Assinatura eliminada com sucesso!');
+      // Atualizar lista de assinaturas
+      await fetchAssinaturas(selectedRelatorio.id);
+    } catch (error) {
+      console.error('Erro ao eliminar assinatura:', error);
+      toast.error('Erro ao eliminar assinatura');
+    }
+  };
+
   // ========== Fetch All System Users (para Cronómetros) ==========
   
   const fetchAllSystemUsers = async () => {
