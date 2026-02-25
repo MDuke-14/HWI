@@ -29,25 +29,27 @@ const SignatureCanvasOptimized = React.forwardRef(({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     
-    // Ajustar para resolução real do dispositivo
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    // Usar tamanho fixo interno para consistência (independente do tamanho CSS)
+    // Isto garante que as coordenadas funcionam igual em portrait e landscape
+    const internalWidth = 600;
+    const internalHeight = 200;
     
-    // Guardar dimensões CSS originais para cálculo de coordenadas
-    canvas.dataset.cssWidth = rect.width;
-    canvas.dataset.cssHeight = rect.height;
+    canvas.width = internalWidth;
+    canvas.height = internalHeight;
+    
+    // Guardar proporções para escalar coordenadas
+    canvas.dataset.internalWidth = internalWidth;
+    canvas.dataset.internalHeight = internalHeight;
     
     const ctx = canvas.getContext('2d', { 
       alpha: false,
-      desynchronized: true // Melhor performance em alguns browsers
+      desynchronized: true
     });
     
-    ctx.scale(dpr, dpr);
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, internalWidth, internalHeight);
     
     // Configurações de linha otimizadas
     ctx.strokeStyle = '#000000';
