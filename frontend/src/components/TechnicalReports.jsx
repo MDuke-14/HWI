@@ -209,6 +209,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
   const [editingAssinaturaDesktop, setEditingAssinaturaDesktop] = useState(null);
   const [editingAssinaturaData, setEditingAssinaturaData] = useState({ date: '', time: '' });
+  const [editingAssinaturaNome, setEditingAssinaturaNome] = useState(null);
+  const [editingNomeData, setEditingNomeData] = useState({ primeiro_nome: '', ultimo_nome: '' });
 
   // Visualizar PDF
   const [showPDFPreviewModal, setShowPDFPreviewModal] = useState(false);
