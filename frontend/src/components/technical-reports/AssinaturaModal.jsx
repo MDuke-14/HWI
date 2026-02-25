@@ -36,6 +36,10 @@ const SignatureCanvasOptimized = React.forwardRef(({
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     
+    // Guardar dimensões CSS originais para cálculo de coordenadas
+    canvas.dataset.cssWidth = rect.width;
+    canvas.dataset.cssHeight = rect.height;
+    
     const ctx = canvas.getContext('2d', { 
       alpha: false,
       desynchronized: true // Melhor performance em alguns browsers
