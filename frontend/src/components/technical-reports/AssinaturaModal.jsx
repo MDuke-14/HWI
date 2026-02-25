@@ -118,6 +118,8 @@ const SignatureCanvasOptimized = React.forwardRef(({
     if (!canvas) return null;
     
     const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    
     let clientX, clientY;
     
     if (e.touches && e.touches.length > 0) {
@@ -131,17 +133,18 @@ const SignatureCanvasOptimized = React.forwardRef(({
       clientY = e.clientY;
     }
     
-    // Calcular posição relativa ao canvas
+    // Calcular posição relativa ao canvas considerando scroll e posição
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Coordenadas relativas ao canvas
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     
-    // Escalar para as dimensões originais do canvas (quando foi inicializado)
-    const originalWidth = parseFloat(canvas.dataset.cssWidth) || rect.width;
-    const originalHeight = parseFloat(canvas.dataset.cssHeight) || rect.height;
-    
-    // Se o canvas mudou de tamanho (rotação), escalar coordenadas
-    const scaleX = originalWidth / rect.width;
-    const scaleY = originalHeight / rect.height;
+    // Escalar para o tamanho interno do canvas (considerando devicePixelRatio)
+    // O canvas interno é maior que o CSS display por causa do dpr
+    const scaleX = canvas.width / (rect.width * dpr);
+    const scaleY = canvas.height / (rect.height * dpr);
     
     return {
       x: x * scaleX,
