@@ -2284,10 +2284,13 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleUpdateAssinaturaNome = async (assinaturaId) => {
     if (!selectedRelatorio) return;
     
+    const nomeCompleto = `${editingNomeData.primeiro_nome} ${editingNomeData.ultimo_nome}`.trim();
+    
     try {
       await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinaturaId}`, {
         primeiro_nome: editingNomeData.primeiro_nome,
-        ultimo_nome: editingNomeData.ultimo_nome
+        ultimo_nome: editingNomeData.ultimo_nome,
+        assinado_por: nomeCompleto  // Também atualizar assinado_por
       });
       toast.success('Nome atualizado com sucesso!');
       setEditingAssinaturaNome(null);
