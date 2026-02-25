@@ -2916,8 +2916,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     // Ajustar resolução do canvas para alta qualidade
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
+    
+    // Guardar dimensões atuais
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
+    
+    // Guardar dimensões CSS para cálculos de coordenadas
+    canvas.dataset.cssWidth = rect.width;
+    canvas.dataset.cssHeight = rect.height;
     
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.scale(dpr, dpr);
@@ -2928,6 +2934,24 @@ const TechnicalReports = ({ user, onLogout }) => {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
   };
+  
+  // Reinicializar canvas quando a orientação muda
+  useEffect(() => {
+    const handleResize = () => {
+      // Pequeno delay para deixar o browser atualizar o layout
+      setTimeout(() => {
+        initSignatureCanvas();
+      }, 100);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
   
   const getCanvasCoordinates = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
@@ -2944,9 +2968,17 @@ const TechnicalReports = ({ user, onLogout }) => {
       clientY = e.clientY;
     }
     
+    // Calcular coordenadas relativas ao canvas atual
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    
+    // Escalar coordenadas se o canvas foi redimensionado
+    const scaleX = (parseFloat(canvas.dataset.cssWidth) || rect.width) / rect.width;
+    const scaleY = (parseFloat(canvas.dataset.cssHeight) || rect.height) / rect.height;
+    
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: x * scaleX,
+      y: y * scaleY
     };
   };
   
