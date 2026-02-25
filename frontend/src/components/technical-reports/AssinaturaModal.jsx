@@ -572,9 +572,9 @@ const SignaturePopup = ({
     if (!canvas) return;
     
     canvas.toBlob((blob) => {
-      onSave(canvas, paths, blob);
+      onSave(canvas, pathsDataRef.current, blob);
     }, 'image/png', 0.95);
-  }, [onSave, paths]);
+  }, [onSave]);
   
   // Fechar
   const handleClose = useCallback((e) => {
