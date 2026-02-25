@@ -458,38 +458,30 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         if date_intervencoes:
             interv_content = []
             for interv in date_intervencoes:
-                interv_data = []
+                interv_content_items = []
                 
                 # Equipamento relacionado
                 if interv.get('equipamento_id') and equipamentos_adicionais:
                     equip_rel = next((e for e in equipamentos_adicionais if e.get('id') == interv.get('equipamento_id')), None)
                     if equip_rel:
                         equip_desc = f"{equip_rel.get('tipologia', '')} - {equip_rel.get('marca', '')} {equip_rel.get('modelo', '')}"
-                        interv_data.append([Paragraph("Equipamento:", label_style), Paragraph(equip_desc, value_style)])
+                        interv_content_items.append(Paragraph(f"<b>Equipamento:</b> {equip_desc}", normal_style))
                 
                 if interv.get('motivo_assistencia'):
-                    # Preservar formatação original
                     motivo_text = interv.get('motivo_assistencia', '').replace('\n', '<br/>')
-                    interv_data.append([Paragraph("Motivo:", label_style), Paragraph(motivo_text, value_style)])
+                    interv_content_items.append(Paragraph(f"<b>Motivo:</b> {motivo_text}", normal_style))
                 
                 if interv.get('relatorio_assistencia'):
-                    # Preservar formatação original: converter quebras de linha em <br/>
                     relatorio_text = interv.get('relatorio_assistencia', '')
-                    # Substituir \n por <br/> para preservar quebras de linha
                     relatorio_text = relatorio_text.replace('\n', '<br/>')
-                    interv_data.append([Paragraph("Relatório:", label_style), Paragraph(relatorio_text, value_style)])
+                    interv_content_items.append(Paragraph("<b>Relatório:</b>", normal_style))
+                    interv_content_items.append(Paragraph(relatorio_text, normal_style))
                 
-                if interv_data:
-                    interv_table = Table(interv_data, colWidths=[2.5*cm, 15*cm])
-                    interv_table.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),
-                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                        ('TOPPADDING', (0, 0), (-1, -1), 4),
-                        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-                        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                    ]))
-                    interv_content.append(interv_table)
-                    interv_content.append(Spacer(1, 0.1*cm))
+                if interv_content_items:
+                    # Adicionar todos os itens diretamente (sem tabela para evitar "too large")
+                    for item in interv_content_items:
+                        interv_content.append(item)
+                    interv_content.append(Spacer(1, 0.2*cm))
             
             if interv_content:
                 interv_section = create_section_box(interv_content, "DETALHES DA INTERVENÇÃO")
