@@ -472,11 +472,17 @@ const SignaturePopup = ({
       canvas.setPointerCapture(e.pointerId);
       
       const rect = canvas.getBoundingClientRect();
+      const cssW = rect.width;
+      const cssH = rect.height;
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       
+      // Guardar coordenada normalizada (0..1) para sobreviver a resize
+      const nx = x / cssW;
+      const ny = y / cssH;
+      
       isDrawingRef.current = true;
-      currentPathRef.current = [{x, y}];
+      currentPathRef.current = [{ x, y, nx, ny }];
       
       contextRef.current.beginPath();
       contextRef.current.moveTo(x, y);
@@ -488,15 +494,19 @@ const SignaturePopup = ({
       e.stopPropagation();
       
       const rect = canvas.getBoundingClientRect();
+      const cssW = rect.width;
+      const cssH = rect.height;
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+      const nx = x / cssW;
+      const ny = y / cssH;
       
       contextRef.current.lineTo(x, y);
       contextRef.current.stroke();
       contextRef.current.beginPath();
       contextRef.current.moveTo(x, y);
       
-      currentPathRef.current.push({x, y});
+      currentPathRef.current.push({ x, y, nx, ny });
     };
     
     const onPointerUp = (e) => {
@@ -508,7 +518,9 @@ const SignaturePopup = ({
       isDrawingRef.current = false;
       
       if (currentPathRef.current.length > 1) {
-        setPaths(prev => [...prev, [...currentPathRef.current]]);
+        const newPath = [...currentPathRef.current];
+        pathsDataRef.current = [...pathsDataRef.current, newPath];
+        setPaths(prev => [...prev, newPath]);
       }
       
       currentPathRef.current = [];
