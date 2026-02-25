@@ -134,39 +134,18 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             return date_str
     
     def create_section_box(content_elements, title=None, allow_split=True):
-        """Cria uma caixa de secção - permite split para conteúdos grandes"""
-        section_content = []
+        """Cria uma caixa de secção - SEMPRE permite split para evitar erro 'too large'"""
+        # NUNCA usar tabela envolvente - sempre permitir quebra de página
+        result = []
         if title:
-            section_content.append(Paragraph(title, section_title_style))
-            section_content.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#e5e7eb'), spaceAfter=6))
-        section_content.extend(content_elements)
-        
-        # Se permitir split e houver muito conteúdo, retornar lista em vez de tabela
-        if allow_split and len(content_elements) > 3:
-            # Para secções grandes, não usar tabela envolvente (evita erro de "too large")
-            result = []
-            if title:
-                result.append(Paragraph(title, section_title_style))
-                result.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6))
-            result.extend(content_elements)
-            result.append(Spacer(1, 0.2*cm))
-            return result
-        
-        # Para secções pequenas, manter o estilo de caixa
-        inner_table = Table([[section_content]], colWidths=[18.4*cm])
-        inner_table.setStyle(TableStyle([
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#d1d5db')),
-            ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('LEFTPADDING', (0, 0), (-1, -1), 12),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        return inner_table
+            result.append(Paragraph(title, section_title_style))
+            result.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6))
+        result.extend(content_elements)
+        result.append(Spacer(1, 0.3*cm))
+        return result
     
     def add_section_to_elements(elements, section):
-        """Adiciona secção aos elementos (trata lista ou tabela)"""
+        """Adiciona secção aos elementos (sempre é lista agora)"""
         if isinstance(section, list):
             elements.extend(section)
         else:
