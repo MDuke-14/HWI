@@ -582,8 +582,8 @@ const SignaturePopup = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    onClose(paths);
-  }, [onClose, paths]);
+    onClose(pathsDataRef.current);
+  }, [onClose]);
   
   if (!isOpen) return null;
   
