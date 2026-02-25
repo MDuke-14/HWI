@@ -333,82 +333,127 @@ const SignaturePopup = ({
     }
   }, [isOpen]);
   
-  // Inicializar canvas - usando requestAnimationFrame para garantir que o layout está pronto
+  // Referência para guardar as dimensões CSS do canvas (para coordenadas)
+  const canvasCssSizeRef = useRef({ width: 0, height: 0 });
+  // Guardar paths internamente com ref para acesso em event handlers
+  const pathsDataRef = useRef(initialPaths || []);
+  
+  // Função reutilizável de inicialização do canvas
+  const initCanvasFromContainer = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return false;
+    
+    const rect = container.getBoundingClientRect();
+    if (rect.width < 50 || rect.height < 50) return false;
+    
+    const dpr = window.devicePixelRatio || 1;
+    const width = rect.width;
+    const height = rect.height;
+    
+    // Guardar tamanho CSS para cálculo de coordenadas
+    canvasCssSizeRef.current = { width, height };
+    
+    // Configurar canvas com dimensões reais (pixel backing store)
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    contextRef.current = ctx;
+    
+    // Redesenhar paths existentes (normalizados para [0..1])
+    const currentPaths = pathsDataRef.current;
+    if (currentPaths.length > 0) {
+      currentPaths.forEach(path => {
+        if (path.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(path[0].nx * width, path[0].ny * height);
+        for (let i = 1; i < path.length; i++) {
+          ctx.lineTo(path[i].nx * width, path[i].ny * height);
+        }
+        ctx.stroke();
+      });
+    }
+    
+    return true;
+  }, []);
+
+  // Inicializar canvas quando abre
   useEffect(() => {
     if (!isOpen) return;
     
+    // Reset pathsDataRef com initialPaths normalizados
+    if (initialPaths.length > 0) {
+      pathsDataRef.current = initialPaths;
+      setPaths(initialPaths);
+    } else {
+      pathsDataRef.current = [];
+    }
+    
     let frameId;
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 15;
     
-    const initCanvas = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      
-      if (!canvas || !container) {
-        if (attempts < maxAttempts) {
-          attempts++;
-          frameId = requestAnimationFrame(initCanvas);
-        }
-        return;
-      }
-      
-      const rect = container.getBoundingClientRect();
-      
-      // Verificar se as dimensões são válidas
-      if (rect.width < 50 || rect.height < 50) {
-        if (attempts < maxAttempts) {
-          attempts++;
-          frameId = requestAnimationFrame(initCanvas);
-        }
-        return;
-      }
-      
-      const dpr = window.devicePixelRatio || 1;
-      const width = rect.width;
-      const height = rect.height;
-      
-      // Configurar canvas com dimensões reais
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, width, height);
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      
-      contextRef.current = ctx;
-      setIsCanvasReady(true);
-      
-      // Redesenhar paths existentes
-      if (initialPaths.length > 0) {
-        initialPaths.forEach(path => {
-          if (path.length < 2) return;
-          ctx.beginPath();
-          ctx.moveTo(path[0].x, path[0].y);
-          for (let i = 1; i < path.length; i++) {
-            ctx.lineTo(path[i].x, path[i].y);
-          }
-          ctx.stroke();
-        });
-        setPaths(initialPaths);
+    const tryInit = () => {
+      if (initCanvasFromContainer()) {
+        setIsCanvasReady(true);
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        frameId = requestAnimationFrame(tryInit);
       }
     };
     
     // Iniciar após um pequeno delay para garantir que o DOM está renderizado
     const timer = setTimeout(() => {
-      frameId = requestAnimationFrame(initCanvas);
+      frameId = requestAnimationFrame(tryInit);
     }, 100);
     
     return () => {
       clearTimeout(timer);
       if (frameId) cancelAnimationFrame(frameId);
     };
-  }, [isOpen, initialPaths]);
+  }, [isOpen, initialPaths, initCanvasFromContainer]);
+  
+  // Reagir a mudanças de orientação/resize - CRÍTICO para landscape mode
+  useEffect(() => {
+    if (!isOpen || !isCanvasReady) return;
+    
+    let resizeTimer = null;
+    
+    const handleOrientationResize = () => {
+      // Debounce para esperar que o browser estabilize o layout
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        initCanvasFromContainer();
+      }, 250);
+    };
+    
+    window.addEventListener('resize', handleOrientationResize);
+    window.addEventListener('orientationchange', handleOrientationResize);
+    
+    // Também usar a Screen Orientation API se disponível
+    const screenOrientation = window.screen?.orientation;
+    if (screenOrientation) {
+      screenOrientation.addEventListener('change', handleOrientationResize);
+    }
+    
+    return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleOrientationResize);
+      window.removeEventListener('orientationchange', handleOrientationResize);
+      if (screenOrientation) {
+        screenOrientation.removeEventListener('change', handleOrientationResize);
+      }
+    };
+  }, [isOpen, isCanvasReady, initCanvasFromContainer]);
   
   // Adicionar event listeners diretamente ao canvas (mais confiável para touch)
   useEffect(() => {
