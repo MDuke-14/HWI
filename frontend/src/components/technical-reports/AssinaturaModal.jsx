@@ -112,7 +112,7 @@ const SignatureCanvasOptimized = React.forwardRef(({
     };
   }, [initCanvas, initialData, redrawPaths]);
   
-  // Obter coordenadas do evento
+  // Obter coordenadas do evento (corrigido para rotação de dispositivo)
   const getCoordinates = useCallback((e) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -131,9 +131,21 @@ const SignatureCanvasOptimized = React.forwardRef(({
       clientY = e.clientY;
     }
     
+    // Calcular posição relativa ao canvas
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    
+    // Escalar para as dimensões originais do canvas (quando foi inicializado)
+    const originalWidth = parseFloat(canvas.dataset.cssWidth) || rect.width;
+    const originalHeight = parseFloat(canvas.dataset.cssHeight) || rect.height;
+    
+    // Se o canvas mudou de tamanho (rotação), escalar coordenadas
+    const scaleX = originalWidth / rect.width;
+    const scaleY = originalHeight / rect.height;
+    
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: x * scaleX,
+      y: y * scaleY
     };
   }, []);
   
