@@ -553,9 +553,10 @@ const SignaturePopup = ({
     const canvas = canvasRef.current;
     if (!ctx || !canvas) return;
     
-    const rect = canvas.getBoundingClientRect();
+    const { width, height } = canvasCssSizeRef.current;
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, width || canvas.width, height || canvas.height);
+    pathsDataRef.current = [];
     setPaths([]);
     currentPathRef.current = [];
   }, []);
