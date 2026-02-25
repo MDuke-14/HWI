@@ -5353,10 +5353,61 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </div>
                               )}
                               <div>
-                                <p className="text-xs text-gray-500">Nome:</p>
-                                <p className="text-white font-semibold">
-                                  {assinatura.assinado_por || `${assinatura.primeiro_nome} ${assinatura.ultimo_nome}`}
+                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                  Nome:
+                                  {editingAssinaturaNome !== assinatura.id && (
+                                    <button
+                                      onClick={() => {
+                                        setEditingAssinaturaNome(assinatura.id);
+                                        setEditingNomeData({
+                                          primeiro_nome: assinatura.primeiro_nome || '',
+                                          ultimo_nome: assinatura.ultimo_nome || ''
+                                        });
+                                      }}
+                                      className="text-blue-400 hover:text-blue-300"
+                                      title="Editar nome"
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </p>
+                                {editingAssinaturaNome === assinatura.id ? (
+                                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                                    <Input
+                                      type="text"
+                                      placeholder="Primeiro nome"
+                                      value={editingNomeData.primeiro_nome}
+                                      onChange={(e) => setEditingNomeData(prev => ({ ...prev, primeiro_nome: e.target.value }))}
+                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-28 text-sm"
+                                    />
+                                    <Input
+                                      type="text"
+                                      placeholder="Último nome"
+                                      value={editingNomeData.ultimo_nome}
+                                      onChange={(e) => setEditingNomeData(prev => ({ ...prev, ultimo_nome: e.target.value }))}
+                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-28 text-sm"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleUpdateAssinaturaNome(assinatura.id)}
+                                      className="h-7 px-2 bg-green-600 hover:bg-green-700"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setEditingAssinaturaNome(null)}
+                                      className="h-7 px-2 text-gray-400 hover:text-white"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p className="text-white font-semibold">
+                                    {assinatura.assinado_por || `${assinatura.primeiro_nome || ''} ${assinatura.ultimo_nome || ''}`.trim() || 'Sem nome'}
+                                  </p>
+                                )}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 flex items-center gap-1">
