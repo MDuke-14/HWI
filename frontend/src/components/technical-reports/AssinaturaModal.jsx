@@ -71,9 +71,11 @@ const SignatureCanvasOptimized = React.forwardRef(({
     const canvas = canvasRef.current;
     if (!ctx || !canvas) return;
     
-    const rect = canvas.getBoundingClientRect();
+    const internalWidth = parseFloat(canvas.dataset.internalWidth) || canvas.width;
+    const internalHeight = parseFloat(canvas.dataset.internalHeight) || canvas.height;
+    
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, internalWidth, internalHeight);
     
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2.5;
