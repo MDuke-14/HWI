@@ -232,7 +232,7 @@ def generate_folha_horas_pdf(
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
         codigo = reg.get('codigo', '-')
-        tipo_registo = reg.get('tipo', 'trabalho')  # trabalho ou viagem
+        tipo_registo = reg.get('tipo', 'trabalho')  # trabalho, viagem ou oficina
         
         dados_por_tecnico[tecnico_id]['nome'] = tecnico_nome
         dados_por_tecnico[tecnico_id]['registos'].append({
