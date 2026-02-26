@@ -4403,8 +4403,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {allSystemUsers.map((userItem) => {
                         const cronoTrabalho = getCronometroStatus(userItem, 'trabalho');
                         const cronoViagem = getCronometroStatus(userItem, 'viagem');
+                        const cronoOficina = getCronometroStatus(userItem, 'oficina');
                         const timerKeyTrabalho = `${userItem.id}_trabalho`;
                         const timerKeyViagem = `${userItem.id}_viagem`;
+                        const timerKeyOficina = `${userItem.id}_oficina`;
 
                         return (
                           <div key={userItem.id} className={`flex items-center justify-between ${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} ${isMobile ? 'p-1.5' : 'p-2'} rounded-lg border ${borderColor} overflow-hidden`}>
