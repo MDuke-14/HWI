@@ -7629,10 +7629,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <span className={`px-2 py-1 rounded text-sm ${
                     selectedTecnicoForTipo._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
                     selectedTecnicoForTipo._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
+                    selectedTecnicoForTipo._tipo_registo === 'oficina' ? 'bg-orange-600/20 text-orange-400' :
                     'bg-blue-600/20 text-blue-400'
                   }`}>
                     {selectedTecnicoForTipo._tipo_registo === 'manual' ? 'Manual' : 
-                     selectedTecnicoForTipo._tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                     selectedTecnicoForTipo._tipo_registo === 'trabalho' ? 'Trabalho' : 
+                     selectedTecnicoForTipo._tipo_registo === 'oficina' ? 'Oficina' : 'Viagem'}
                   </span>
                 </div>
               </div>
