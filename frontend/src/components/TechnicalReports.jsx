@@ -4270,7 +4270,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </div>
                   </div>
 
-                  {/* Botões de Trabalho e Viagem */}
+                  {/* Botões de Trabalho, Viagem e Oficina */}
                   <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-2 ${isMobile ? 'mb-2' : 'mb-4'}`}>
                     {(() => {
                       const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
