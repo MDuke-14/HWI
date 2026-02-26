@@ -169,6 +169,7 @@ const TecnicoModal = ({
               <option value="manual">Manual</option>
               <option value="trabalho">Trabalho</option>
               <option value="viagem">Viagem</option>
+              <option value="oficina">Oficina</option>
             </select>
           </div>
 

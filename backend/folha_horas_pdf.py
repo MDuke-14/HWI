@@ -436,7 +436,7 @@ def generate_folha_horas_pdf(
             
             # Tipo de Registo
             tipo_registo_list = list(set(r.get('tipo_registo', '') for r in registos if r.get('tipo_registo')))
-            tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Manual'}
+            tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Manual', 'oficina': 'Oficina'}
             tipo_registo = ', '.join([tipo_map.get(t, t) for t in tipo_registo_list]) if tipo_registo_list else '-'
             
             # Acumular para legenda de totais

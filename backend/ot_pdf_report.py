@@ -560,6 +560,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     tipo_display = 'T'
                 elif tipo_raw == 'viagem':
                     tipo_display = 'V'
+                elif tipo_raw == 'oficina':
+                    tipo_display = 'O'
                 else:
                     tipo_display = tipo_raw[:1].upper() if tipo_raw else '-'
                 
@@ -935,7 +937,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         ['Tipo de Registo', 'Código Horário'],
         ['T = Trabalho', '1 = Dias úteis (07h-19h)'],
         ['V = Viagem/Deslocação', '2 = Dias úteis (19h-07h)'],
-        ['', 'S = Sábado'],
+        ['O = Oficina', 'S = Sábado'],
         ['', 'D = Domingos/Feriados'],
     ]
     

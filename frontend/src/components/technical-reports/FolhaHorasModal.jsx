@@ -387,6 +387,7 @@ const FolhaHorasModal = ({
                     const tipoLabels = {
                       'trabalho': { label: 'Trabalho', color: 'bg-green-600/20 text-green-400' },
                       'viagem': { label: 'Viagem', color: 'bg-blue-600/20 text-blue-400' },
+                      'oficina': { label: 'Oficina', color: 'bg-orange-600/20 text-orange-400' },
                       'manual': { label: 'Manual', color: 'bg-gray-600/20 text-gray-300' },
                       'cronómetro': { label: 'Cronómetro', color: 'bg-purple-600/20 text-purple-400' }
                     };

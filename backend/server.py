@@ -9461,8 +9461,8 @@ async def iniciar_cronometro(
     tecnico_id = dados.get("tecnico_id")
     tecnico_nome = dados.get("tecnico_nome")
     
-    if tipo not in ["trabalho", "viagem"]:
-        raise HTTPException(status_code=400, detail="Tipo deve ser 'trabalho' ou 'viagem'")
+    if tipo not in ["trabalho", "viagem", "oficina"]:
+        raise HTTPException(status_code=400, detail="Tipo deve ser 'trabalho', 'viagem' ou 'oficina'")
     
     # Verificar se já existe cronómetro ativo para este técnico nesta OT
     cronometro_ativo = await db.cronometros_ot.find_one({
@@ -10941,8 +10941,8 @@ async def create_tarifa(
         raise HTTPException(status_code=400, detail="ID de tabela inválido. Use 1, 2 ou 3.")
     
     # Validar tipo_registo
-    if tarifa_data.tipo_registo and tarifa_data.tipo_registo not in ["trabalho", "viagem"]:
-        raise HTTPException(status_code=400, detail="Tipo de registo inválido. Use 'trabalho', 'viagem' ou deixe vazio.")
+    if tarifa_data.tipo_registo and tarifa_data.tipo_registo not in ["trabalho", "viagem", "oficina"]:
+        raise HTTPException(status_code=400, detail="Tipo de registo inválido. Use 'trabalho', 'viagem', 'oficina' ou deixe vazio.")
     
     tarifa = Tarifa(
         numero=tarifa_data.numero,
