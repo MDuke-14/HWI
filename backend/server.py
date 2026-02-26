@@ -475,7 +475,7 @@ class TecnicoRelatorio(BaseModel):
     kms_final_volta: float = 0  # Km's finais volta
     kms_deslocacao: float = 0  # Calculado automaticamente (kms_final - kms_inicial + volta)
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
-    tipo_registo: str = "manual"  # "manual", "trabalho", "viagem"
+    tipo_registo: str = "manual"  # "manual", "trabalho", "viagem", "oficina"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     hora_inicio: Optional[str] = None  # Hora de início (HH:MM) para Folha de Horas
     hora_fim: Optional[str] = None  # Hora de fim (HH:MM) para Folha de Horas
@@ -483,13 +483,13 @@ class TecnicoRelatorio(BaseModel):
     ordem: int = 0
 
 class CronometroOT(BaseModel):
-    """Cronómetro ativo de Trabalho ou Viagem"""
+    """Cronómetro ativo de Trabalho, Viagem ou Oficina"""
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
     tecnico_id: str
     tecnico_nome: str
-    tipo: str  # "trabalho" ou "viagem"
+    tipo: str  # "trabalho", "viagem" ou "oficina"
     hora_inicio: datetime
     ativo: bool = True
 
@@ -500,7 +500,7 @@ class RegistoTecnicoOT(BaseModel):
     relatorio_id: str
     tecnico_id: str
     tecnico_nome: str
-    tipo: str  # "trabalho" ou "viagem"
+    tipo: str  # "trabalho", "viagem" ou "oficina"
     data: date
     hora_inicio_segmento: datetime
     hora_fim_segmento: datetime
