@@ -87,7 +87,8 @@ const FolhaHorasModal = ({
           data = data.split('T')[0];
         }
         // Determinar tipo de registo
-        const tipoRegisto = reg.tipo?.toLowerCase() === 'viagem' ? 'viagem' : 'trabalho';
+        const tipoLower = reg.tipo?.toLowerCase() || 'trabalho';
+        const tipoRegisto = ['viagem', 'oficina', 'trabalho'].includes(tipoLower) ? tipoLower : 'trabalho';
         registos.push({
           tecnico_id: reg.tecnico_id,
           data: data,
@@ -103,7 +104,8 @@ const FolhaHorasModal = ({
           data = data.split('T')[0];
         }
         // Determinar tipo de registo para manuais
-        const tipoRegisto = tec.tipo?.toLowerCase() === 'viagem' ? 'viagem' : 'trabalho';
+        const tipoLowerM = tec.tipo?.toLowerCase() || 'trabalho';
+        const tipoRegisto = ['viagem', 'oficina', 'trabalho'].includes(tipoLowerM) ? tipoLowerM : 'trabalho';
         registos.push({
           tecnico_id: tec.id,
           data: data,
