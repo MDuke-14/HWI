@@ -1,0 +1,82 @@
+{
+  "summary": "Comprehensive testing of SignaturePopup canvas orientation change fix. All tests passed - canvas drawing works in portrait mode, landscape mode, and after multiple orientation rotations. The normalized coordinates (nx, ny) system correctly preserves drawn paths when viewport changes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    ".screenshots/33_portrait_P.png",
+    ".screenshots/34_landscape_preserved.png", 
+    ".screenshots/35_landscape_L.png",
+    ".screenshots/36_back_to_portrait.png",
+    ".screenshots/37_portrait_final.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - Frontend only testing",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "username": "pedro",
+    "password": "password"
+  },
+  "seed_data_creation": "Test signatures created: SaveTest User123 on OT #358",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "SignaturePopup canvas orientation change fix verified working. The fix includes: 1) resize/orientationchange event listeners that reinitialize canvas with new dimensions, 2) normalized coordinates (nx, ny in 0-1 range) to preserve paths across resize, 3) pathsDataRef for consistent path data. Test flow: Login as pedro/password -> /technical-reports -> OTs tab -> Click OT #358 -> Scroll to 'Assinaturas do Cliente' -> Click 'Nova Assinatura' -> Fill name -> Click 'Abrir para Assinar' -> SignaturePopup opens. To test rotation, change viewport from portrait (390x844) to landscape (844x390).",
+  "features_tested": {
+    "SignaturePopup_portrait_mode": {
+      "status": "PASS",
+      "details": "Canvas drawing works correctly in portrait mode (390x844 viewport). Canvas size: 358x691. Drawing responds immediately to mouse/touch input."
+    },
+    "SignaturePopup_landscape_mode": {
+      "status": "PASS", 
+      "details": "Canvas drawing works correctly in landscape mode (844x390 viewport). Canvas size: 812x237. Drawing remains responsive after orientation change."
+    },
+    "orientation_change_path_preservation": {
+      "status": "PASS",
+      "details": "Paths drawn in portrait mode are preserved when rotating to landscape and vice versa. Normalized coordinates (nx, ny) successfully scale paths to new canvas dimensions."
+    },
+    "multiple_rotation_cycles": {
+      "status": "PASS",
+      "details": "Canvas remains responsive after multiple portrait->landscape->portrait rotations. All previously drawn paths are preserved."
+    },
+    "limpar_clear_button": {
+      "status": "PASS",
+      "details": "Clicking 'Limpar' button (data-testid='signature-clear-btn') successfully clears all drawn content from canvas."
+    },
+    "guardar_save_button": {
+      "status": "PASS",
+      "details": "Clicking 'Guardar' button (data-testid='signature-save-btn') saves signature and returns to AssinaturaModal with 'Assinatura capturada' indicator."
+    },
+    "close_x_button": {
+      "status": "PASS",
+      "details": "Clicking 'X' button (data-testid='signature-close-btn') closes popup and preserves drawn paths for later use."
+    },
+    "signature_final_save": {
+      "status": "PASS",
+      "details": "Full save flow works: Draw -> Guardar -> 'Guardar Assinatura' button -> Success toast 'Assinatura digital guardada com sucesso!'. Signature appears in list."
+    }
+  },
+  "canvas_dimensions_tested": {
+    "portrait_390x844": "Canvas renders at 358x691",
+    "landscape_844x390": "Canvas renders at 812x237"
+  },
+  "ui_elements_verified": {
+    "data_testids": [
+      "signature-clear-btn (Limpar button)",
+      "signature-save-btn (Guardar button)", 
+      "signature-close-btn (X close button)"
+    ],
+    "header_elements": "Name display (truncated on mobile), Limpar button, Guardar button, X button",
+    "footer_elements": "Instruction text: 'Desenhe a assinatura com o dedo ou rato'",
+    "canvas_area": "White canvas with dashed border, fullscreen layout"
+  }
+}
