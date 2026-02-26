@@ -7686,6 +7686,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </div>
                   </div>
                 </Button>
+
+                <Button
+                  onClick={() => handleChangeTipo('oficina')}
+                  className="w-full justify-start bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-400"
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-10 h-10 rounded bg-orange-500 flex items-center justify-center">
+                      <Wrench className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="font-semibold">Oficina</div>
+                      <div className="text-xs text-gray-400">Trabalho em oficina</div>
+                    </div>
+                  </div>
+                </Button>
               </div>
 
               <Button
