@@ -8961,8 +8961,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                   <div>
                     <span className="text-gray-400">Tipo:</span>
-                    <span className={`ml-2 ${editingRegisto.tipo === 'trabalho' ? 'text-green-400' : 'text-blue-400'}`}>
-                      {editingRegisto.tipo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                    <span className={`ml-2 ${editingRegisto.tipo === 'trabalho' ? 'text-green-400' : editingRegisto.tipo === 'oficina' ? 'text-orange-400' : 'text-blue-400'}`}>
+                      {editingRegisto.tipo === 'trabalho' ? 'Trabalho' : editingRegisto.tipo === 'oficina' ? 'Oficina' : 'Viagem'}
                     </span>
                   </div>
                   <div>
