@@ -4528,10 +4528,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
                                     item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
                                     item._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
+                                    item._tipo_registo === 'oficina' ? 'bg-orange-600/20 text-orange-400' :
                                     'bg-blue-600/20 text-blue-400'
                                   }`}
                                 >
-                                  {item._tipo_registo === 'manual' ? 'M' : item._tipo_registo === 'trabalho' ? 'T' : 'V'}
+                                  {item._tipo_registo === 'manual' ? 'M' : item._tipo_registo === 'trabalho' ? 'T' : item._tipo_registo === 'oficina' ? 'O' : 'V'}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-[10px]">
