@@ -4443,6 +4443,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   {formatTimer(timers[timerKeyViagem] || 0)}
                                 </span>
                               )}
+                              {cronoOficina && (
+                                <span className={`flex items-center gap-0.5 text-orange-400 font-mono ${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} bg-orange-900/30 rounded`}>
+                                  <Wrench className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} flex-shrink-0`} />
+                                  {formatTimer(timers[timerKeyOficina] || 0)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         );
