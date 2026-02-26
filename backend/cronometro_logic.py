@@ -147,7 +147,7 @@ def segmentar_periodo(hora_inicio, hora_fim, tipo):
     Args:
         hora_inicio: datetime de início
         hora_fim: datetime de fim
-        tipo: "trabalho" ou "viagem"
+        tipo: "trabalho", "viagem" ou "oficina"
     
     Returns:
         list: Lista de dicts com segmentos
