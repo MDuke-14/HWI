@@ -4353,6 +4353,47 @@ const TechnicalReports = ({ user, onLogout }) => {
                         </button>
                       );
                     })()}
+
+                    {(() => {
+                      const selectedUsers = allSystemUsers.filter(u => selectedCronoUsers[u.id]);
+                      const hasAnyActiveOficina = selectedUsers.some(u => getCronometroStatus(u, 'oficina'));
+                      
+                      return (
+                        <button
+                          onClick={async () => {
+                            if (selectedUsers.length === 0) {
+                              toast.error('Selecione pelo menos um técnico');
+                              return;
+                            }
+                            for (const user of selectedUsers) {
+                              const hasActive = getCronometroStatus(user, 'oficina');
+                              if (hasAnyActiveOficina) {
+                                if (hasActive) {
+                                  await handlePararCronometro({
+                                    id: user.id,
+                                    tecnico_id: user.id,
+                                    tecnico_nome: user.full_name || user.username
+                                  }, 'oficina');
+                                }
+                              } else {
+                                if (!hasActive) {
+                                  await handleIniciarCronometro({
+                                    id: user.id,
+                                    tecnico_id: user.id,
+                                    tecnico_nome: user.full_name || user.username
+                                  }, 'oficina');
+                                }
+                              }
+                            }
+                          }}
+                          className={`${isMobile ? 'w-full' : 'flex-1'} flex items-center justify-center gap-2 ${hasAnyActiveOficina ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50 ${isMobile ? 'text-sm' : ''}`}
+                          disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
+                        >
+                          {hasAnyActiveOficina ? <StopCircle className="w-4 h-4 flex-shrink-0" /> : <Wrench className="w-4 h-4 flex-shrink-0" />}
+                          <span>{hasAnyActiveOficina ? 'Parar Oficina' : 'Iniciar Oficina'}</span>
+                        </button>
+                      );
+                    })()}
                   </div>
 
                   {/* Lista de Técnicos */}
