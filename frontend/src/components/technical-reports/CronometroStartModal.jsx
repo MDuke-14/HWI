@@ -69,7 +69,7 @@ const CronometroStartModal = ({
           {/* Tipo de Cronómetro */}
           <div>
             <Label className="text-gray-300 mb-2 block">Tipo de Cronómetro</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 type="button"
                 onClick={() => setTipoCronometro('trabalho')}
@@ -93,6 +93,18 @@ const CronometroStartModal = ({
               >
                 <Clock className="w-4 h-4 mr-2" />
                 Viagem
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setTipoCronometro('oficina')}
+                variant={tipoCronometro === 'oficina' ? 'default' : 'outline'}
+                className={tipoCronometro === 'oficina' 
+                  ? 'bg-orange-600 hover:bg-orange-700' 
+                  : 'border-gray-600 hover:bg-gray-800'
+                }
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Oficina
               </Button>
             </div>
           </div>
