@@ -2385,7 +2385,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
     
     if (successCount > 0) {
-      const tipoLabel = cronoTipo === 'trabalho' ? 'Trabalho' : 'Viagem';
+      const tipoLabel = cronoTipo === 'trabalho' ? 'Trabalho' : cronoTipo === 'oficina' ? 'Oficina' : 'Viagem';
       toast.success(`Cronómetro de ${tipoLabel} iniciado para ${successCount} técnico(s)!`);
     }
     if (errorCount > 0) {
