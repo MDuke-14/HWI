@@ -3832,6 +3832,23 @@ async def enviar_pdf_ot(
             logging.error(f"Traceback: {traceback.format_exc()}")
             raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
         
+        # Gerar Folha de Horas se solicitado
+        folha_horas_buffer = None
+        if request.incluir_folha_horas:
+            try:
+                folha_horas_buffer = generate_folha_horas_pdf(
+                    relatorio=relatorio,
+                    cliente=cliente,
+                    registos=registos_mao_obra,
+                    tecnicos=tecnicos,
+                    tarifas_por_tecnico={},
+                    dados_extras={},
+                    table_id=1
+                )
+            except Exception as e:
+                logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
+                # Continuar sem a folha de horas - não bloquear o envio
+        
         # Configuração SMTP
         smtp_host = os.environ.get('SMTP_HOST', 'smtp.office365.com')
         smtp_port = int(os.environ.get('SMTP_PORT', '587'))
