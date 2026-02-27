@@ -3143,12 +3143,22 @@ const TechnicalReports = ({ user, onLogout }) => {
       return;
     }
     
+    // Guardar emails e abrir popup de confirmação da Folha de Horas
+    setEmailsPendentes(emailsSelecionados);
+    setShowFolhaHorasConfirm(true);
+  };
+
+  const handleConfirmSendEmail = async (incluirFolhaHoras) => {
+    setShowFolhaHorasConfirm(false);
     setSendingEmail(true);
     
     try {
       const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/enviar-pdf`,
-        { emails: emailsSelecionados }
+        { 
+          emails: emailsPendentes,
+          incluir_folha_horas: incluirFolhaHoras
+        }
       );
       
       const { emails_enviados, emails_falhados } = response.data;
@@ -3156,10 +3166,14 @@ const TechnicalReports = ({ user, onLogout }) => {
       if (emails_falhados && emails_falhados.length > 0) {
         toast.warning(`PDF enviado para ${emails_enviados.length} email(s). ${emails_falhados.length} falharam.`);
       } else {
-        toast.success(`PDF enviado com sucesso para ${emails_enviados.length} email(s)!`);
+        const msg = incluirFolhaHoras 
+          ? `PDF da OT + Folha de Horas enviados com sucesso para ${emails_enviados.length} email(s)!`
+          : `PDF da OT enviado com sucesso para ${emails_enviados.length} email(s)!`;
+        toast.success(msg);
       }
       
       setShowEmailModal(false);
+      setEmailsPendentes([]);
     } catch (error) {
       toast.error(formatErrorMessage(error));
     } finally {
