@@ -327,18 +327,27 @@ def generate_folha_horas_pdf(
             tipo_r = reg.get('tipo_registo', 'trabalho')
             registos_por_data_codigo_tipo[reg['data']][reg['codigo']][tipo_r].append(reg)
         
-        # Criar lista ordenada para a tabela
+        # Criar lista ordenada para a tabela - CRONOLOGICAMENTE
+        # Ordenar por: 1) data, 2) hora_inicio do primeiro registo do grupo
         registos_ordenados = []
-        tipo_ordem = {'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3}
         for data in sorted(registos_por_data_codigo_tipo.keys()):
-            for codigo in sorted(registos_por_data_codigo_tipo[data].keys()):
-                for tipo_r in sorted(registos_por_data_codigo_tipo[data][codigo].keys(), key=lambda t: tipo_ordem.get(t, 99)):
+            for codigo in registos_por_data_codigo_tipo[data].keys():
+                for tipo_r in registos_por_data_codigo_tipo[data][codigo].keys():
+                    regs_grupo = registos_por_data_codigo_tipo[data][codigo][tipo_r]
+                    # Determinar a hora de início mais cedo deste grupo
+                    horas_inicio = [r.get('hora_inicio') or '' for r in regs_grupo]
+                    horas_inicio = [h for h in horas_inicio if h]
+                    hora_min = min(horas_inicio) if horas_inicio else ''
                     registos_ordenados.append({
                         'data': data,
                         'codigo': codigo,
                         'tipo_registo': tipo_r,
-                        'registos': registos_por_data_codigo_tipo[data][codigo][tipo_r]
+                        'registos': regs_grupo,
+                        '_hora_inicio_min': hora_min
                     })
+        
+        # Ordenar cronologicamente: data primeiro, depois hora de início
+        registos_ordenados.sort(key=lambda x: (x['data'], x['_hora_inicio_min'] or 'zzz'))
         
         # ---------- TABELA (SEM COLUNA TÉCNICO) ----------
         header = [
