@@ -9296,11 +9296,11 @@ const TechnicalReports = ({ user, onLogout }) => {
             {/* Tipo de Cronómetro */}
             <div>
               <Label className="text-gray-300 mb-2 block">Tipo de Cronómetro</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   type="button"
                   onClick={() => setCronoTipo('trabalho')}
-                  className={`flex-1 ${cronoTipo === 'trabalho' 
+                  className={`${cronoTipo === 'trabalho' 
                     ? 'bg-blue-600 hover:bg-blue-700' 
                     : 'bg-gray-700 hover:bg-gray-600'}`}
                 >
@@ -9310,12 +9310,22 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <Button
                   type="button"
                   onClick={() => setCronoTipo('viagem')}
-                  className={`flex-1 ${cronoTipo === 'viagem' 
-                    ? 'bg-orange-600 hover:bg-orange-700' 
+                  className={`${cronoTipo === 'viagem' 
+                    ? 'bg-purple-600 hover:bg-purple-700' 
                     : 'bg-gray-700 hover:bg-gray-600'}`}
                 >
                   <Car className="w-4 h-4 mr-2" />
                   Viagem
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setCronoTipo('oficina')}
+                  className={`${cronoTipo === 'oficina' 
+                    ? 'bg-orange-600 hover:bg-orange-700' 
+                    : 'bg-gray-700 hover:bg-gray-600'}`}
+                >
+                  <Wrench className="w-4 h-4 mr-2" />
+                  Oficina
                 </Button>
               </div>
             </div>
