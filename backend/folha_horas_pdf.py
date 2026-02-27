@@ -318,21 +318,27 @@ def generate_folha_horas_pdf(
         elements.append(Paragraph(f"<b>Técnico:</b> {tecnico_nome}", tecnico_heading_style))
         elements.append(Spacer(1, 0.3*cm))
         
-        # ---------- AGRUPAR REGISTOS POR DATA/CÓDIGO ----------
-        # Estrutura: {data: {codigo: [registos]}}
-        registos_por_data_codigo = defaultdict(lambda: defaultdict(list))
+        # ---------- AGRUPAR REGISTOS POR DATA/CÓDIGO/TIPO ----------
+        # Estrutura: {data: {codigo: {tipo_registo: [registos]}}}
+        # IMPORTANTE: Separar por tipo_registo para que Viagem, Trabalho e Oficina 
+        # tenham linhas separadas, mesmo com o mesmo código horário
+        registos_por_data_codigo_tipo = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         for reg in registos_tecnico:
-            registos_por_data_codigo[reg['data']][reg['codigo']].append(reg)
+            tipo_r = reg.get('tipo_registo', 'trabalho')
+            registos_por_data_codigo_tipo[reg['data']][reg['codigo']][tipo_r].append(reg)
         
         # Criar lista ordenada para a tabela
         registos_ordenados = []
-        for data in sorted(registos_por_data_codigo.keys()):
-            for codigo in sorted(registos_por_data_codigo[data].keys()):
-                registos_ordenados.append({
-                    'data': data,
-                    'codigo': codigo,
-                    'registos': registos_por_data_codigo[data][codigo]
-                })
+        tipo_ordem = {'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3}
+        for data in sorted(registos_por_data_codigo_tipo.keys()):
+            for codigo in sorted(registos_por_data_codigo_tipo[data].keys()):
+                for tipo_r in sorted(registos_por_data_codigo_tipo[data][codigo].keys(), key=lambda t: tipo_ordem.get(t, 99)):
+                    registos_ordenados.append({
+                        'data': data,
+                        'codigo': codigo,
+                        'tipo_registo': tipo_r,
+                        'registos': registos_por_data_codigo_tipo[data][codigo][tipo_r]
+                    })
         
         # ---------- TABELA (SEM COLUNA TÉCNICO) ----------
         header = [
