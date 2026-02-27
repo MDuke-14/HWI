@@ -7098,34 +7098,34 @@ const TechnicalReports = ({ user, onLogout }) => {
                         htmlPreviewData.relatorio?.equipamento_tipologia || 
                         htmlPreviewData.relatorio?.equipamento_modelo) && (
                         <div className="bg-gray-50 p-3 rounded">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="space-y-1.5 text-sm">
                             {htmlPreviewData.relatorio.equipamento_tipologia && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">TIPOLOGIA:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Tipo:</span>
                                 <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_tipologia}</span>
                               </div>
                             )}
-                            {htmlPreviewData.relatorio.equipamento_numero_serie && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">Nº SÉRIE:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_numero_serie}</span>
-                              </div>
-                            )}
                             {htmlPreviewData.relatorio.equipamento_marca && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">MARCA:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Marca:</span>
                                 <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_marca}</span>
                               </div>
                             )}
                             {htmlPreviewData.relatorio.equipamento_modelo && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">MODELO:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Modelo:</span>
                                 <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_modelo}</span>
                               </div>
                             )}
+                            {htmlPreviewData.relatorio.equipamento_numero_serie && (
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Nº Série:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_numero_serie}</span>
+                              </div>
+                            )}
                             {htmlPreviewData.relatorio.equipamento_ano_fabrico && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">ANO FABRICO:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Ano:</span>
                                 <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_ano_fabrico}</span>
                               </div>
                             )}
@@ -7135,34 +7135,34 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {/* Equipamentos adicionais */}
                       {htmlPreviewData.equipamentos?.map((eq, idx) => (
                         <div key={idx} className="bg-gray-50 p-3 rounded">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="space-y-1.5 text-sm">
                             {eq.tipologia && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">TIPOLOGIA:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Tipo:</span>
                                 <span className="text-gray-800">{eq.tipologia}</span>
                               </div>
                             )}
-                            {eq.numero_serie && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">Nº SÉRIE:</span>
-                                <span className="text-gray-800">{eq.numero_serie}</span>
-                              </div>
-                            )}
                             {eq.marca && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">MARCA:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Marca:</span>
                                 <span className="text-gray-800">{eq.marca}</span>
                               </div>
                             )}
                             {eq.modelo && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">MODELO:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Modelo:</span>
                                 <span className="text-gray-800">{eq.modelo}</span>
                               </div>
                             )}
+                            {eq.numero_serie && (
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Nº Série:</span>
+                                <span className="text-gray-800">{eq.numero_serie}</span>
+                              </div>
+                            )}
                             {eq.ano_fabrico && (
-                              <div className="flex">
-                                <span className="font-semibold text-gray-600 min-w-[120px]">ANO FABRICO:</span>
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Ano:</span>
                                 <span className="text-gray-800">{eq.ano_fabrico}</span>
                               </div>
                             )}
