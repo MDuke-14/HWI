@@ -8776,6 +8776,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <SelectContent className="bg-gray-800 border-gray-700">
                   <SelectItem value="trabalho" className="text-white">Trabalho</SelectItem>
                   <SelectItem value="viagem" className="text-white">Viagem</SelectItem>
+                  <SelectItem value="oficina" className="text-white">Oficina</SelectItem>
                 </SelectContent>
               </Select>
             </div>
