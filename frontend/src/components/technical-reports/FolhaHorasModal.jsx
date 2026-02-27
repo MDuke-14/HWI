@@ -403,7 +403,7 @@ const FolhaHorasModal = ({
                     const tipoInfo = tipoLabels[registo.tipo] || { label: registo.tipo, color: 'bg-gray-600/20 text-gray-400' };
                     
                     return (
-                      <div key={`${registo.tecnico_id}_${registo.data}_${registo.registo_id}_${idx}`} className="bg-[#0f0f0f] p-4 rounded-lg">
+                      <div key={`${registo.tecnico_id}_${registo.data}_${registo.tipo}_${registo.registo_id}_${idx}`} className="bg-[#0f0f0f] p-4 rounded-lg">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-blue-400" />
@@ -430,8 +430,8 @@ const FolhaHorasModal = ({
                           <Label className="text-gray-400 text-sm">Tarifa ({registo.codigo} - €/h):</Label>
                           {folhaHorasData.tarifas?.length > 0 ? (
                             <select
-                              value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
-                              onChange={(e) => updateFolhaHorasTarifa(`${registo.tecnico_id}_${registo.data}_${registo.codigo}`, e.target.value)}
+                              value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo}`] || folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
+                              onChange={(e) => updateFolhaHorasTarifa(`${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo}`, e.target.value)}
                               className="flex-1 bg-[#1a1a1a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
                             >
                               <option value="">Sem tarifa</option>
@@ -447,8 +447,8 @@ const FolhaHorasModal = ({
                               step="0.01"
                               min="0"
                               placeholder="0.00"
-                              value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
-                              onChange={(e) => updateFolhaHorasTarifa(`${registo.tecnico_id}_${registo.data}_${registo.codigo}`, e.target.value)}
+                              value={folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo}`] || folhaHorasTarifas[`${registo.tecnico_id}_${registo.data}_${registo.codigo}`] || folhaHorasTarifas[registo.tecnico_id] || ''}
+                              onChange={(e) => updateFolhaHorasTarifa(`${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo}`, e.target.value)}
                               className="flex-1 bg-[#1a1a1a] border-gray-700 text-white"
                             />
                           )}
