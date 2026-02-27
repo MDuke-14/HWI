@@ -201,6 +201,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [editFotoData, setEditFotoData] = useState('');
 
   // Email OT
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [showFolhaHorasConfirm, setShowFolhaHorasConfirm] = useState(false);
   const [emailsPendentes, setEmailsPendentes] = useState([]);
   const [emailsCliente, setEmailsCliente] = useState([]);
