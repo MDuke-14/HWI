@@ -332,7 +332,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     todos_equipamentos = []
     
     # Equipamento principal
-    if relatorio.get('equipamento_tipologia') or relatorio.get('equipamento_marca') or relatorio.get('equipamento_modelo'):
+    if relatorio.get('equipamento_tipologia') or relatorio.get('equipamento_marca') or relatorio.get('equipamento_modelo') or relatorio.get('equipamento_numero_serie'):
         equip_card = create_equipment_card(
             tipologia=relatorio.get('equipamento_tipologia'),
             marca=relatorio.get('equipamento_marca'),
