@@ -616,6 +616,7 @@ class AssinaturaRelatorio(BaseModel):
 
 class EnviarEmailRequest(BaseModel):
     emails: List[str]
+    incluir_folha_horas: bool = False
 
 
 class Notification(BaseModel):
