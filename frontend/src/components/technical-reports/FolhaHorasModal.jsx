@@ -135,7 +135,7 @@ const FolhaHorasModal = ({
     
     // Preencher cada registo com a tarifa correspondente
     registos.forEach(registo => {
-      const chave = `${registo.tecnico_id}_${registo.data}_${registo.codigo}`;
+      const chave = `${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo_registo}`;
       const codigo = registo.codigo;
       const tipoRegisto = registo.tipo_registo || 'trabalho';
       
