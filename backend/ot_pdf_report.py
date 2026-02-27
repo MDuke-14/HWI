@@ -279,36 +279,36 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     
     def create_equipment_card(tipologia, marca, modelo, numero_serie, ano_fabrico, is_principal=False):
         """Cria um card de equipamento com campos separados"""
-        # Dados do equipamento em campos separados
+        # Dados do equipamento em campos separados - Ordem: Tipo, Marca, Modelo, Nº Série, Ano
         equip_data = []
         
         if tipologia:
             equip_data.append([
-                Paragraph("<b>TIPOLOGIA:</b>", label_style),
+                Paragraph("<b>Tipo:</b>", label_style),
                 Paragraph(tipologia, value_style)
-            ])
-        
-        if numero_serie:
-            equip_data.append([
-                Paragraph("<b>Nº SÉRIE:</b>", label_style),
-                Paragraph(numero_serie, value_style)
             ])
         
         if marca:
             equip_data.append([
-                Paragraph("<b>MARCA:</b>", label_style),
+                Paragraph("<b>Marca:</b>", label_style),
                 Paragraph(marca, value_style)
             ])
         
         if modelo:
             equip_data.append([
-                Paragraph("<b>MODELO:</b>", label_style),
+                Paragraph("<b>Modelo:</b>", label_style),
                 Paragraph(modelo, value_style)
+            ])
+        
+        if numero_serie:
+            equip_data.append([
+                Paragraph("<b>Nº Série:</b>", label_style),
+                Paragraph(numero_serie, value_style)
             ])
         
         if ano_fabrico:
             equip_data.append([
-                Paragraph("<b>ANO DE FABRICO:</b>", label_style),
+                Paragraph("<b>Ano:</b>", label_style),
                 Paragraph(format_ano_fabrico(ano_fabrico), value_style)
             ])
         
