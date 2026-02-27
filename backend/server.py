@@ -11131,11 +11131,13 @@ async def get_folha_horas_data(
                 'source': 'manual',
                 'registo_id': tec.get('id'),
                 'minutos': tec.get('minutos_cliente', 0),
-                'km': tec.get('kms_deslocacao', 0)
+                'km': tec.get('kms_deslocacao', 0),
+                'hora_inicio': tec.get('hora_inicio') or '',
+                'hora_fim': tec.get('hora_fim') or ''
             })
     
-    # Ordenar registos individuais por data
-    registos_individuais.sort(key=lambda x: x['data'])
+    # Ordenar registos individuais cronologicamente: data, depois hora_inicio
+    registos_individuais.sort(key=lambda x: (x['data'], x.get('hora_inicio') or 'zzz'))
     
     # Buscar despesas da OT para pré-preencher na folha de horas
     despesas = await db.despesas_ot.find(
