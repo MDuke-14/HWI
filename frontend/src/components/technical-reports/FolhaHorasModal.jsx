@@ -189,17 +189,18 @@ const FolhaHorasModal = ({
     // Combinar todos os registos
     const todosRegistos = [];
     
-    // Adicionar registos de cronómetro
+    // Adicionar registos de cronómetro - cada um como entrada individual
     registos.forEach(reg => {
       let data = reg.data || '';
       if (typeof data === 'string' && data.includes('T')) {
         data = data.split('T')[0];
       }
+      const tipoReg = reg.tipo || 'trabalho';
       todosRegistos.push({
         tecnico_id: reg.tecnico_id,
         tecnico_nome: reg.tecnico_nome,
         data: data,
-        tipo: reg.tipo || 'cronómetro',
+        tipo: tipoReg,
         codigo: reg.codigo || '-',
         source: 'cronometro',
         registo_id: reg.id
@@ -217,15 +218,21 @@ const FolhaHorasModal = ({
         tecnico_id: tec.id,
         tecnico_nome: tec.tecnico_nome,
         data: data,
-        tipo: tec.tipo_registo || 'manual',
+        tipo: tec.tipo_registo || tec.tipo || 'manual',
         codigo: codigosMap[tec.tipo_horario] || '-',
         source: 'manual',
         registo_id: tec.id
       });
     });
     
-    // Ordenar por data
-    return todosRegistos.sort((a, b) => new Date(a.data) - new Date(b.data));
+    // Ordenar por data, depois por tipo
+    return todosRegistos.sort((a, b) => {
+      const dateCompare = new Date(a.data) - new Date(b.data);
+      if (dateCompare !== 0) return dateCompare;
+      // Mesma data: ordenar por tipo (trabalho, viagem, oficina)
+      const tipoOrdem = { 'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3 };
+      return (tipoOrdem[a.tipo] || 99) - (tipoOrdem[b.tipo] || 99);
+    });
   };
 
   // Para extras (dietas, portagens, despesas) - UMA entrada por técnico/dia
