@@ -11104,7 +11104,9 @@ async def get_folha_horas_data(
                 'source': 'cronometro',
                 'registo_id': reg.get('id'),
                 'minutos': int((reg.get('horas_arredondadas', 0) or 0) * 60),
-                'km': reg.get('km', 0)
+                'km': reg.get('km', 0),
+                'hora_inicio': reg.get('hora_inicio_segmento') or reg.get('hora_inicio') or '',
+                'hora_fim': reg.get('hora_fim_segmento') or reg.get('hora_fim') or ''
             })
     
     for tec in tecnicos:
