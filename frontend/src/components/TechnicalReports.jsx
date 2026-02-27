@@ -7242,6 +7242,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <thead>
                                 <tr className="bg-gray-100">
                                   <th className="p-2 text-left">Técnico</th>
+                                  <th className="p-2 text-left">Tipo</th>
                                   <th className="p-2 text-left">Início</th>
                                   <th className="p-2 text-left">Fim</th>
                                   <th className="p-2 text-left">Horas</th>
@@ -7249,15 +7250,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {dados.registos.map((reg, idx) => (
+                                {dados.registos.map((reg, idx) => {
+                                  const tipoR = reg._tipo || reg.tipo || 'trabalho';
+                                  const tipoLabel = tipoR === 'trabalho' ? 'T' : tipoR === 'oficina' ? 'O' : tipoR === 'viagem' ? 'V' : 'M';
+                                  const tipoColor = tipoR === 'trabalho' ? 'text-green-700 bg-green-100' : tipoR === 'oficina' ? 'text-orange-700 bg-orange-100' : tipoR === 'viagem' ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100';
+                                  return (
                                   <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                                     <td className="p-2">{reg.tecnico_nome}</td>
+                                    <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
                                     <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
                                     <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
                                     <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
                                     <td className="p-2">{reg.km || '-'}</td>
                                   </tr>
-                                ))}
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
