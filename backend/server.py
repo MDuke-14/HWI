@@ -3893,12 +3893,21 @@ async def enviar_pdf_ot(
                 
                 message.attach(MIMEText(body, 'html'))
                 
-                # Anexar PDF
+                # Anexar PDF da OT
                 pdf_attachment = MIMEBase('application', 'pdf')
                 pdf_attachment.set_payload(pdf_buffer.getvalue())
                 encoders.encode_base64(pdf_attachment)
                 pdf_attachment.add_header('Content-Disposition', f'attachment; filename="OT_{numero_ot}.pdf"')
                 message.attach(pdf_attachment)
+                
+                # Anexar Folha de Horas se disponível
+                if folha_horas_buffer:
+                    fh_attachment = MIMEBase('application', 'pdf')
+                    fh_attachment.set_payload(folha_horas_buffer.getvalue())
+                    encoders.encode_base64(fh_attachment)
+                    fh_attachment.add_header('Content-Disposition', f'attachment; filename="Folha_Horas_OT_{numero_ot}.pdf"')
+                    message.attach(fh_attachment)
+                    folha_horas_buffer.seek(0)
                 
                 # Resetar buffer para próximo email
                 pdf_buffer.seek(0)
