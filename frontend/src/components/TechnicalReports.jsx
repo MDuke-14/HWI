@@ -5856,58 +5856,55 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Popup 2 — Confirmação Folha de Horas */}
-      <Dialog open={showFolhaHorasConfirm} onOpenChange={(open) => {
+      <AlertDialog open={showFolhaHorasConfirm} onOpenChange={(open) => {
         if (!open) setShowFolhaHorasConfirm(false);
       }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
+        <AlertDialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-white">
               <FileText className="w-5 h-5 text-amber-400" />
               Anexar Folha de Horas?
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 mt-4">
-            <p className="text-gray-300 text-sm">
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
               Deseja anexar a Folha de Horas ao email juntamente com o PDF da OT?
-            </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-              <div className="space-y-1 text-sm text-amber-300">
-                <p><strong>SIM</strong> — PDF da OT + Folha de Horas</p>
-                <p><strong>NÃO</strong> — Apenas PDF da OT</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={() => setShowFolhaHorasConfirm(false)}
-                variant="outline"
-                className="flex-1 border-gray-600 text-gray-300 hover:text-white"
-                data-testid="folha-horas-cancelar"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => handleConfirmSendEmail(false)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                data-testid="folha-horas-nao"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Não
-              </Button>
-              <Button
-                onClick={() => handleConfirmSendEmail(true)}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                data-testid="folha-horas-sim"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Sim
-              </Button>
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mt-2">
+            <div className="space-y-1 text-sm text-amber-300">
+              <p><strong>SIM</strong> — PDF da OT + Folha de Horas</p>
+              <p><strong>NÃO</strong> — Apenas PDF da OT</p>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <AlertDialogFooter className="flex gap-3 pt-4 sm:flex-row">
+            <Button
+              onClick={() => setShowFolhaHorasConfirm(false)}
+              variant="outline"
+              className="flex-1 border-gray-600 text-gray-300 hover:text-white"
+              data-testid="folha-horas-cancelar"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => handleConfirmSendEmail(false)}
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              data-testid="folha-horas-nao"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Não
+            </Button>
+            <Button
+              onClick={() => handleConfirmSendEmail(true)}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              data-testid="folha-horas-sim"
+            >
+              <Check className="w-4 h-4 mr-2" />
+              Sim
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add Intervenção Modal */}
       <Dialog open={showAddIntervencaoModal} onOpenChange={setShowAddIntervencaoModal}>
