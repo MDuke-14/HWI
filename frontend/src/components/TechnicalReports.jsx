@@ -7089,7 +7089,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {(htmlPreviewData.equipamentos?.length > 0 || 
                   htmlPreviewData.relatorio?.equipamento_marca || 
                   htmlPreviewData.relatorio?.equipamento_tipologia ||
-                  htmlPreviewData.relatorio?.equipamento_modelo) && (
+                  htmlPreviewData.relatorio?.equipamento_modelo ||
+                  htmlPreviewData.relatorio?.equipamento_numero_serie) && (
                   <section className="border border-gray-300 rounded-lg p-4">
                     <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">EQUIPAMENTOS</h2>
                     <div className="space-y-3">
