@@ -7097,7 +7097,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {/* Equipamento principal */}
                       {(htmlPreviewData.relatorio?.equipamento_marca || 
                         htmlPreviewData.relatorio?.equipamento_tipologia || 
-                        htmlPreviewData.relatorio?.equipamento_modelo) && (
+                        htmlPreviewData.relatorio?.equipamento_modelo ||
+                        htmlPreviewData.relatorio?.equipamento_numero_serie) && (
                         <div className="bg-gray-50 p-3 rounded">
                           <div className="space-y-1.5 text-sm">
                             {htmlPreviewData.relatorio.equipamento_tipologia && (
