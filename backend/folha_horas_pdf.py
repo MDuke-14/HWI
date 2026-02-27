@@ -377,6 +377,7 @@ def generate_folha_horas_pdf(
         for item in registos_ordenados:
             data = item['data']
             codigo = item['codigo']
+            tipo_registo_grupo = item['tipo_registo']
             registos = item['registos']
             
             tarifa_key = registos[0].get('tarifa_key', '')
@@ -385,9 +386,13 @@ def generate_folha_horas_pdf(
             total_minutos = sum(r.get('minutos', 0) for r in registos)
             total_km = sum(r.get('km', 0) for r in registos)
             
-            # Tarifa
+            # Tarifa - usar chave com tipo_registo para distinguir
             tarifa_valor = 0
-            if tarifa_key:
+            # Tentar chave composta com tipo: tecnico_data_codigo_tipo
+            chave_tarifa_tipo = f"{tecnico_id}_{data}_{codigo}_{tipo_registo_grupo}"
+            tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_tipo, 0)
+            
+            if tarifa_valor == 0 and tarifa_key:
                 tarifa_valor = tarifas_por_tecnico.get(tarifa_key, 0)
             
             if tarifa_valor == 0:
@@ -440,10 +445,9 @@ def generate_folha_horas_pdf(
             tem_pausa = any(r.get('incluir_pausa', False) for r in registos)
             pausa_minutos = 60 if tem_pausa else 0
             
-            # Tipo de Registo
-            tipo_registo_list = list(set(r.get('tipo_registo', '') for r in registos if r.get('tipo_registo')))
+            # Tipo de Registo - usar o tipo do grupo directamente
             tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Manual', 'oficina': 'Oficina'}
-            tipo_registo = ', '.join([tipo_map.get(t, t) for t in tipo_registo_list]) if tipo_registo_list else '-'
+            tipo_registo = tipo_map.get(tipo_registo_grupo, tipo_registo_grupo)
             
             # Acumular para legenda de totais
             for reg in registos:
