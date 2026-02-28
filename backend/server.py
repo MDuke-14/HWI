@@ -6425,8 +6425,8 @@ async def adjust_entry_to_8hours(
                 continue  # Pular a entrada que vamos ajustar
             
             if e.get("start_time") and e.get("end_time"):
-                start = datetime.fromisoformat(e["start_time"])
-                end = datetime.fromisoformat(e["end_time"])
+                start = normalizar_tempo(datetime.fromisoformat(e["start_time"]))
+                end = normalizar_tempo(datetime.fromisoformat(e["end_time"]))
                 total_seconds_other += (end - start).total_seconds()
         
         # Converter para horas
