@@ -2151,31 +2151,33 @@ async def export_clientes_emails_pdf(current_user: dict = Depends(get_current_us
     # Buscar todos os clientes ativos
     clientes = await db.clientes.find(
         {"ativo": True},
-        {"_id": 0, "email": 1, "emails_adicionais": 1}
-    ).to_list(length=None)
+        {"_id": 0, "nome": 1, "email": 1, "emails_adicionais": 1}
+    ).sort("nome", 1).to_list(length=None)
     
-    # Recolher todos os emails
-    all_emails = set()  # Usar set para remover duplicados automaticamente
+    # Agrupar emails por cliente
+    clientes_com_emails = []
+    total_emails = 0
     
     for cliente in clientes:
+        nome = cliente.get("nome", "Sem Nome")
+        emails_cliente = []
+        
         # Email principal
         email = cliente.get("email", "")
         if email and "@" in email:
-            all_emails.add(email.strip().lower())
+            emails_cliente.append(email.strip().lower())
         
-        # Emails adicionais (podem estar separados por ; ou ,)
+        # Emails adicionais
         emails_adicionais = cliente.get("emails_adicionais", "")
         if emails_adicionais:
             for e in emails_adicionais.replace(",", ";").split(";"):
                 e = e.strip().lower()
-                if e and "@" in e:
-                    all_emails.add(e)
-    
-    # Ordenar alfabeticamente
-    sorted_emails = sorted(all_emails)
-    
-    # Concatenar com ;
-    emails_string = ";".join(sorted_emails)
+                if e and "@" in e and e not in emails_cliente:
+                    emails_cliente.append(e)
+        
+        if emails_cliente:
+            clientes_com_emails.append({"nome": nome, "emails": emails_cliente})
+            total_emails += len(emails_cliente)
     
     # Gerar PDF
     from reportlab.lib.pagesizes import A4
