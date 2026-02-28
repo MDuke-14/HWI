@@ -9111,8 +9111,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                             const [h1, m1] = prev.hora_inicio.split(':').map(Number);
                             const [h2, m2] = newHoraFim.split(':').map(Number);
                             let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
-                            if (mins < 0) mins += 24 * 60; // passar para dia seguinte
+                            if (mins < 0) mins += 24 * 60;
                             updated.minutos_trabalhados = mins;
+                            // Calcular arredondamento para preview
+                            const remainder = mins % 60;
+                            const baseHours = Math.floor(mins / 60);
+                            if (remainder <= 10) updated.horas_arredondadas = baseHours;
+                            else if (remainder <= 40) updated.horas_arredondadas = baseHours + 0.5;
+                            else updated.horas_arredondadas = baseHours + 1;
                           }
                           return updated;
                         });
