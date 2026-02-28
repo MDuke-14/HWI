@@ -7561,7 +7561,7 @@ async def admin_start_clock(
         user_id=user_id,
         username=user.get("username", ""),
         date=today,
-        start_time=datetime.now(timezone.utc),
+        start_time=normalizar_tempo(datetime.now(timezone.utc)),
         status="active",
         observations=f"[Iniciado por admin: {current_user['username']}]",
         is_overtime_day=is_ot,
