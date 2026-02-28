@@ -936,13 +936,13 @@ const Reports = ({ user, onLogout }) => {
                         <div className="text-3xl font-bold text-purple-400">{formatHours(detailedMonthlyReport.summary.total_special_hours || 0)}</div>
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">Subsídio Alimentação</div>
+                        <div className="text-gray-400 text-sm mb-2">SA (Subs. Alimentação)</div>
                         <div className="text-3xl font-bold text-green-400">
                           {detailedMonthlyReport.summary.days_with_meal_allowance} dias
                         </div>
                       </div>
                       <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">Ajuda de Custos</div>
+                        <div className="text-gray-400 text-sm mb-2">ADC (Ajuda de Custos)</div>
                         <div className="text-3xl font-bold text-blue-400">
                           {detailedMonthlyReport.summary.days_with_travel_allowance} dias
                         </div>
