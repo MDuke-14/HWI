@@ -3836,24 +3836,62 @@ async def enviar_pdf_ot(
         folha_horas_buffer = None
         if request.incluir_folha_horas:
             try:
-                # Buscar registos manuais (tecnicos_relatorio) necessários para a folha de horas
+                # Buscar registos manuais (tecnicos_relatorio)
                 tecnicos_manuais = await db.tecnicos_relatorio.find(
                     {"relatorio_id": relatorio_id}, {"_id": 0}
+                ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
+                
+                # Buscar tarifas da primeira tabela de preço activa
+                tabela_config = await db.tabelas_preco.find_one({"table_id": 1}, {"_id": 0})
+                valor_km = tabela_config.get("valor_km", 0.65) if tabela_config else 0.65
+                
+                tarifas_db = await db.tarifas.find({
+                    "ativo": True, 
+                    "table_id": 1,
+                    "codigo": {"$nin": [None, "", "manual"]}
+                }, {"_id": 0}).to_list(length=None)
+                
+                tarifas_por_codigo = {}
+                tarifas_por_tecnico = {}
+                for tarifa in tarifas_db:
+                    codigo = tarifa.get('codigo')
+                    if codigo and codigo != 'manual':
+                        tarifas_por_codigo[codigo] = tarifa.get('valor_por_hora', 0)
+                
+                # Buscar despesas da OT
+                despesas_ot = await db.despesas_ot.find(
+                    {"relatorio_id": relatorio_id}, {"_id": 0}
                 ).to_list(length=None)
+                
+                dados_extras = {}
+                for desp in despesas_ot:
+                    key = f"{desp['tecnico_id']}_{desp['data']}"
+                    tipo = desp.get('tipo', 'outras')
+                    
+                    if key not in dados_extras:
+                        dados_extras[key] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
+                    
+                    if tipo == 'portagens':
+                        dados_extras[key]['portagens'] += desp.get('valor', 0)
+                    elif tipo == 'combustivel':
+                        pass  # Excluir combustível
+                    else:
+                        dados_extras[key]['despesas'] += desp.get('valor', 0)
                 
                 folha_horas_buffer = generate_folha_horas_pdf(
                     relatorio=relatorio,
                     cliente=cliente,
                     registos_mao_obra=registos_mao_obra,
                     tecnicos_manuais=tecnicos_manuais,
-                    tarifas_por_tecnico={},
-                    dados_extras={}
+                    tarifas_por_tecnico=tarifas_por_tecnico,
+                    dados_extras=dados_extras,
+                    tarifas_por_codigo=tarifas_por_codigo,
+                    valor_km=valor_km
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
                 import traceback
                 logging.error(f"Traceback FH: {traceback.format_exc()}")
-                # Continuar sem a folha de horas - não bloquear o envio
         
         # Configuração SMTP
         smtp_host = os.environ.get('SMTP_HOST', 'smtp.office365.com')
