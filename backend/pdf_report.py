@@ -11,6 +11,73 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from datetime import datetime
+import re
+
+
+def _extrair_localizacao_e_limpar_obs(entries):
+    """
+    Extrai localização das observações e limpa texto de sistema.
+    Retorna (location, observacoes_limpas)
+    """
+    location = None
+    obs_unicas = set()
+    
+    for entry in entries:
+        obs = entry.get('observations') or ''
+        
+        # Extrair localização do padrão: \nn LOCATION | ou -\nn LOCATION |
+        loc_match = re.search(r'\\?n\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]+?)\s*\|', obs)
+        if not loc_match:
+            loc_match = re.search(r'\nn\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]+?)\s*\|', obs)
+        if loc_match and not location:
+            location = loc_match.group(1).strip()
+        
+        # Remover todos os textos automáticos do sistema
+        cleaned = obs
+        # Remover padrão de localização
+        cleaned = re.sub(r'-?\s*\\?n\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]+?\s*\|', '', cleaned)
+        cleaned = re.sub(r'\nn\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]+?\s*\|', '', cleaned)
+        # Remover textos de importação
+        cleaned = re.sub(r'Importado de (PDF|Excel) \(entrada \d+/\d+\)', '', cleaned)
+        # Remover textos de mobile
+        cleaned = re.sub(r'Entrada via mobile', '', cleaned)
+        cleaned = re.sub(r'\[Ao finalizar\]:\s*Saída via mobile', '', cleaned)
+        cleaned = re.sub(r'Saída via mobile', '', cleaned)
+        # Remover textos de admin
+        cleaned = re.sub(r'\[Iniciado por admin:.*?\]', '', cleaned)
+        cleaned = re.sub(r'\[Finalizado por admin.*?\]', '', cleaned)
+        cleaned = re.sub(r'\[Finalizado por admnin.*?\]', '', cleaned)
+        cleaned = re.sub(r'\[Dia oferecido pelo admin.*?\]', '', cleaned)
+        cleaned = re.sub(r'Entrada manual \d+/\d+ pelo administrador', '', cleaned)
+        # Remover "Teste geolocalização"
+        cleaned = re.sub(r'Teste geolocalização.*', '', cleaned)
+        # Limpar separadores e espaços
+        cleaned = re.sub(r'\s*\|\s*', ' ', cleaned)
+        cleaned = re.sub(r'\s*-\s*$', '', cleaned)
+        cleaned = re.sub(r'^\s*-\s*', '', cleaned)
+        cleaned = re.sub(r'\n+', ' ', cleaned)
+        cleaned = cleaned.strip()
+        
+        # Tratar "Ajustado por admin"
+        ajuste = re.search(r'Ajustado por admin \((\d{2}:\d{2})\)', cleaned)
+        if ajuste:
+            cleaned = f"Ajustado por admin ({ajuste.group(1)})"
+        
+        # Tratar "Continuação do registo anterior"
+        if 'Continuação do registo anterior' in cleaned:
+            cleaned = 'Continuação do registo anterior'
+        
+        # Tratar "Férias"
+        if cleaned == 'Férias':
+            cleaned = ''
+        
+        if cleaned:
+            obs_unicas.add(cleaned)
+    
+    # Remover observações vazias
+    obs_limpas = [o for o in obs_unicas if o]
+    return location, ' | '.join(obs_limpas) if obs_limpas else '-'
+
 
 def generate_monthly_pdf_report(report_data):
     """
@@ -29,38 +96,23 @@ def generate_monthly_pdf_report(report_data):
     elements = []
     styles = getSampleStyleSheet()
     
-    # Title style
     title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#1a1a1a'),
-        spaceAfter=20,
-        alignment=1
+        'CustomTitle', parent=styles['Heading1'],
+        fontSize=16, textColor=colors.HexColor('#1a1a1a'),
+        spaceAfter=20, alignment=1
     )
-    
-    # Subtitle style
     subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#666666'),
-        spaceAfter=10,
-        alignment=1
+        'CustomSubtitle', parent=styles['Normal'],
+        fontSize=10, textColor=colors.HexColor('#666666'),
+        spaceAfter=10, alignment=1
     )
-    
-    # User info style
     user_style = ParagraphStyle(
-        'UserStyle',
-        parent=styles['Normal'],
-        fontSize=12,
-        textColor=colors.HexColor('#2d3748'),
-        spaceAfter=15,
-        alignment=1,
-        fontName='Helvetica-Bold'
+        'UserStyle', parent=styles['Normal'],
+        fontSize=12, textColor=colors.HexColor('#2d3748'),
+        spaceAfter=15, alignment=1, fontName='Helvetica-Bold'
     )
     
-    # Add logo
+    # Logo
     from pathlib import Path
     from reportlab.platypus import Image as RLImage
     
@@ -70,10 +122,9 @@ def generate_monthly_pdf_report(report_data):
         elements.append(logo)
         elements.append(Spacer(1, 0.3*cm))
     
-    # Add title
+    # Header
     start_date = datetime.strptime(report_data['start_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
     end_date = datetime.strptime(report_data['end_date'], '%Y-%m-%d').strftime('%d/%m/%Y')
-    
     full_name = report_data.get('full_name', report_data.get('username', 'Utilizador'))
     
     elements.append(Paragraph("RELATÓRIO MENSAL DE HORAS", title_style))
@@ -81,7 +132,7 @@ def generate_monthly_pdf_report(report_data):
     elements.append(Paragraph(f"Período: {start_date} - {end_date}", subtitle_style))
     elements.append(Spacer(1, 0.3*cm))
     
-    # Summary table - wider for landscape
+    # Summary table
     summary = report_data['summary']
     summary_data = [
         ['RESUMO MENSAL', ''],
@@ -121,104 +172,76 @@ def generate_monthly_pdf_report(report_data):
     elements.append(Paragraph("REGISTO DIÁRIO DETALHADO", title_style))
     elements.append(Spacer(1, 0.3*cm))
     
-    # Daily table headers
+    # Daily table
     daily_data = [
         ['Data', 'Dia', 'Entradas/Saídas', 'Total', 'Trab.Supl.', 'Observações', 'Pagamento']
     ]
     
-    # Add daily records
     for day in report_data['daily_records']:
         date_obj = datetime.strptime(day['date'], '%Y-%m-%d')
         date_str = date_obj.strftime('%d/%m')
         day_of_week = day['day_of_week']
-        
         justification = day.get('justification')
+        
+        # Default values for non-worked days
+        entries_text = '-'
+        observations_text = justification if justification else '-'
         
         if day['status'] == 'FOLGA':
             entries_text = 'FOLGA'
-            observations_text = justification if justification else '-'
         elif day['status'] == 'FERIADO':
             entries_text = 'FERIADO'
-            observations_text = justification if justification else '-'
         elif day['status'] == 'FÉRIAS':
             entries_text = 'FÉRIAS'
-            observations_text = justification if justification else '-'
         elif day['status'] == 'FALTA':
             entries_text = 'FALTA'
-            observations_text = justification if justification else '-'
         elif day['status'] == 'NÃO TRABALHADO':
             entries_text = 'N/T'
-            observations_text = justification if justification else '-'
         elif day['status'] == 'TRABALHADO' and day.get('entries'):
             entries_list = []
-            obs_list = []
-            
-            if justification:
-                obs_list.append(justification)
-            
-            for idx, entry in enumerate(day['entries']):
+            for entry in day['entries']:
                 if entry.get('start_time') and entry.get('end_time'):
                     start = datetime.fromisoformat(entry['start_time']).strftime('%H:%M')
                     end = datetime.fromisoformat(entry['end_time']).strftime('%H:%M')
                     entries_list.append(f"{start}-{end}")
-                    
-                    if entry.get('observations'):
-                        import re
-                        obs_text = entry['observations']
-                        # Filtrar textos automáticos do sistema
-                        obs_text = re.sub(r'Entrada manual \d+/\d+ pelo administrador', '', obs_text).strip()
-                        obs_text = re.sub(r'Importado de (PDF|Excel) \(entrada \d+/\d+\)', '', obs_text).strip()
-                        obs_text = re.sub(r'Entrada via mobile', '', obs_text).strip()
-                        obs_text = re.sub(r'\[Ao finalizar\]:\s*', '', obs_text).strip()
-                        obs_text = re.sub(r'Saída via mobile', '', obs_text).strip()
-                        obs_text = re.sub(r'\[Iniciado por admin:.*?\]', '', obs_text).strip()
-                        obs_text = re.sub(r'\[Finalizado por admin:.*?\]', '', obs_text).strip()
-                        obs_text = re.sub(r'\[Dia oferecido pelo admin.*?\]', '', obs_text).strip()
-                        obs_text = re.sub(r'Teste geolocalização.*', '', obs_text).strip()
-                        
-                        match = re.search(r'\[Ajustado para 8h - Original: (\d{2}:\d{2})\]', obs_text)
-                        if match:
-                            hora_original = match.group(1)
-                            obs_list.append(f"Ajustado por admin ({hora_original})")
-                        elif obs_text:
-                            obs_list.append(obs_text)
             
             entries_text = '\n'.join(entries_list) if entries_list else '-'
-            observations_text = '\n'.join(obs_list) if obs_list else '-'
-        else:
-            entries_text = '-'
-            observations_text = justification if justification else '-'
+            
+            # Extrair localização das obs e limpar observações
+            extracted_location, clean_obs = _extrair_localizacao_e_limpar_obs(day['entries'])
+            observations_text = clean_obs
         
-        # Total hours
-        total_text = format_hours(day['total_hours']) if day['total_hours'] > 0 else '-'
+        # Total / Overtime
+        total_text = format_hours(day['total_hours']) if day.get('total_hours', 0) > 0 else '-'
+        ot = (day.get('overtime_hours', 0) or 0) + (day.get('saturday_hours', 0) or 0)
+        overtime_text = format_hours(ot) if ot > 0 else '-'
         
-        # Overtime hours
-        overtime_text = format_hours(day.get('overtime_hours', 0) + day.get('saturday_hours', 0)) if (day.get('overtime_hours', 0) + day.get('saturday_hours', 0)) > 0 else '-'
-        
-        # Payment: SA or ADC + municipality only
+        # Pagamento: SA ou ADC + localização (município)
         payment_parts = []
         if day.get('payment_type'):
             label = 'ADC' if day['payment_type'] == 'Ajuda de Custos' else 'SA'
             payment_parts.append(label)
-        if day.get('location'):
-            municipio = day['location'].split(',')[0].strip()
+        
+        # Localização: primeiro day.location, depois extraída das observações
+        loc = day.get('location')
+        if loc:
+            municipio = loc.split(',')[0].strip()
             payment_parts.append(municipio)
+        elif day['status'] == 'TRABALHADO' and day.get('entries'):
+            extracted_location, _ = _extrair_localizacao_e_limpar_obs(day['entries'])
+            if extracted_location:
+                payment_parts.append(extracted_location)
+        
         payment_text = '\n'.join(payment_parts) if payment_parts else '-'
         
         daily_data.append([
-            date_str,
-            day_of_week,
-            entries_text,
-            total_text,
-            overtime_text,
-            observations_text,
-            payment_text
+            date_str, day_of_week, entries_text, total_text,
+            overtime_text, observations_text, payment_text
         ])
     
-    # Landscape column widths (total ~27.7cm usable width)
-    daily_table = Table(daily_data, colWidths=[1.5*cm, 2*cm, 6*cm, 2*cm, 2*cm, 8*cm, 4*cm])
+    # Column widths for landscape (~27.7cm usable)
+    daily_table = Table(daily_data, colWidths=[1.5*cm, 2*cm, 5*cm, 2*cm, 2*cm, 9*cm, 4*cm])
     
-    # Style the table
     table_style = [
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -240,7 +263,7 @@ def generate_monthly_pdf_report(report_data):
         ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
     ]
     
-    # Color code rows based on status
+    # Color rows by status
     for idx, day in enumerate(report_data['daily_records'], start=1):
         if day['status'] == 'FOLGA':
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#e2e8f0')))
@@ -256,13 +279,12 @@ def generate_monthly_pdf_report(report_data):
     daily_table.setStyle(TableStyle(table_style))
     elements.append(daily_table)
     
-    # Build PDF
     doc.build(elements)
     buffer.seek(0)
     return buffer
 
+
 def format_hours(decimal_hours):
-    """Format decimal hours as HH:MM string"""
     if not decimal_hours:
         return '0h00m'
     hours = int(decimal_hours)
