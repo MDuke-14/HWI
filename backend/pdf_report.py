@@ -165,8 +165,16 @@ def generate_monthly_pdf_report(report_data):
                     if entry.get('observations'):
                         import re
                         obs_text = entry['observations']
+                        # Filtrar textos automáticos do sistema
                         obs_text = re.sub(r'Entrada manual \d+/\d+ pelo administrador', '', obs_text).strip()
                         obs_text = re.sub(r'Importado de (PDF|Excel) \(entrada \d+/\d+\)', '', obs_text).strip()
+                        obs_text = re.sub(r'Entrada via mobile', '', obs_text).strip()
+                        obs_text = re.sub(r'\[Ao finalizar\]:\s*', '', obs_text).strip()
+                        obs_text = re.sub(r'Saída via mobile', '', obs_text).strip()
+                        obs_text = re.sub(r'\[Iniciado por admin:.*?\]', '', obs_text).strip()
+                        obs_text = re.sub(r'\[Finalizado por admin:.*?\]', '', obs_text).strip()
+                        obs_text = re.sub(r'\[Dia oferecido pelo admin.*?\]', '', obs_text).strip()
+                        obs_text = re.sub(r'Teste geolocalização.*', '', obs_text).strip()
                         
                         match = re.search(r'\[Ajustado para 8h - Original: (\d{2}:\d{2})\]', obs_text)
                         if match:
