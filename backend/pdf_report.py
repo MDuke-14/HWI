@@ -240,7 +240,8 @@ def generate_monthly_pdf_report(report_data):
         ])
     
     # Column widths for landscape (~27.7cm usable)
-    daily_table = Table(daily_data, colWidths=[1.5*cm, 2*cm, 5*cm, 2*cm, 2*cm, 9*cm, 4*cm])
+    # Data(1.5) Dia(2) Entradas(3.5) Total(2) Trab.Supl(2) Obs(6) Pagamento(4) = 21cm + restante margem
+    daily_table = Table(daily_data, colWidths=[1.5*cm, 2*cm, 3.5*cm, 2*cm, 2*cm, 6*cm, 4*cm])
     
     table_style = [
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
@@ -253,7 +254,9 @@ def generate_monthly_pdf_report(report_data):
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e0')),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
         ('ALIGN', (0, 1), (1, -1), 'CENTER'),
+        ('ALIGN', (2, 1), (2, -1), 'CENTER'),
         ('ALIGN', (3, 1), (4, -1), 'CENTER'),
+        ('ALIGN', (5, 1), (5, -1), 'CENTER'),
         ('ALIGN', (6, 0), (6, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f7fafc')]),
