@@ -9119,6 +9119,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {editRegistoForm.hora_inicio && editRegistoForm.hora_fim && (
                   <p className="text-xs text-blue-400 mt-2">
                     Duração calculada: {Math.floor(editRegistoForm.minutos_trabalhados / 60)}h {editRegistoForm.minutos_trabalhados % 60}min
+                    {editRegistoForm.horas_arredondadas != null && (
+                      <span className="ml-2 text-green-400">
+                        (Arredondado: {Math.floor(editRegistoForm.horas_arredondadas)}h {Math.round((editRegistoForm.horas_arredondadas % 1) * 60)}min)
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
