@@ -7154,15 +7154,15 @@ async def recalculate_user_hours(
                 has_time_data = True
                 for e in entry["entries"]:
                     if e.get("start_time") and e.get("end_time"):
-                        start = datetime.fromisoformat(e["start_time"])
-                        end = datetime.fromisoformat(e["end_time"])
+                        start = normalizar_tempo(datetime.fromisoformat(e["start_time"]))
+                        end = normalizar_tempo(datetime.fromisoformat(e["end_time"]))
                         total_seconds += (end - start).total_seconds()
             
             # FORMATO ANTIGO: start_time e end_time diretos
             elif entry.get("start_time") and entry.get("end_time"):
                 has_time_data = True
-                start = datetime.fromisoformat(entry["start_time"])
-                end = datetime.fromisoformat(entry["end_time"])
+                start = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
+                end = normalizar_tempo(datetime.fromisoformat(entry["end_time"]))
                 total_seconds = (end - start).total_seconds()
             
             if not has_time_data:
