@@ -7774,11 +7774,10 @@ async def import_pdf_timesheet(
                         minute=int(end_parts[1])
                     )
                     
-                    # Calculate hours
-                    total_seconds = (end_datetime - start_datetime).total_seconds()
-                    entry_minutes = math.floor(total_seconds / 60)
+                    # Calculate hours (timestamps já em HH:MM, sem segundos)
+                    entry_minutes = int((end_datetime - start_datetime).total_seconds() / 60)
                     entry_hours = entry_minutes / 60
-                    entry_hours = round(entry_hours, 2)
+                    entry_hours = round(entry_hours, 4)
                     
                     total_day_hours += entry_hours
                     
