@@ -5469,11 +5469,13 @@ async def list_time_entries(
         if entry.get("observations"):
             daily_entries[date]["observations"].append(entry["observations"])
     
-    # Convert to list and truncate hours (sem segundos)
+    # Convert to list - recalcular minutos a partir dos timestamps
     result = []
     for date_key in sorted(daily_entries.keys(), reverse=True):
         day_data = daily_entries[date_key]
-        day_data["total_hours"] = round(truncar_horas_para_minutos(day_data["total_hours"]), 2)
+        # Recalcular total a partir dos timestamps (sem erros de arredondamento)
+        total_min = calcular_minutos_de_entradas(day_data["entries"])
+        day_data["total_hours"] = round(total_min / 60, 2)
         day_data["regular_hours"] = round(truncar_horas_para_minutos(day_data["regular_hours"]), 2)
         day_data["overtime_hours"] = round(truncar_horas_para_minutos(day_data["overtime_hours"]), 2)
         day_data["observations"] = " | ".join(day_data["observations"]) if day_data["observations"] else None
