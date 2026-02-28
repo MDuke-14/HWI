@@ -6,11 +6,11 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 ## Backlog Prioritizado
 
 ### P0 (Concluído)
-- **Saldo Negativo de Férias** (28 Fevereiro 2026) - Backend permite saldo negativo, frontend mostra valor a vermelho
+- **Regra de cálculo sem segundos** (28 Fevereiro 2026) - Normalização HH:MM em todos os cálculos; somas por minutos inteiros nos relatórios
+- **Saldo Negativo de Férias** (28 Fevereiro 2026)
 - **Folha de Horas - Separação por tipo de registo** (27 Fevereiro 2026)
 - **Canvas Assinatura Mobile Landscape** (25 Fevereiro 2026)
 - **Tipo "Oficina" adicionado** (27 Fevereiro 2026)
-- **Equipamentos no Visualizar Relatório** (27 Fevereiro 2026)
 - **Arredondamento em edições** (27 Fevereiro 2026)
 - **Anexar Folha de Horas no email** (27 Fevereiro 2026)
 
