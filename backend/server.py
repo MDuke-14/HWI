@@ -5556,8 +5556,6 @@ async def get_reports(
     total_days = len(entries)
     
     avg_hours = round(total_hours / total_days, 2) if total_days > 0 else 0
-    total_hours = truncar_horas_para_minutos(total_hours)
-    avg_hours = round(total_hours / total_days, 2) if total_days > 0 else 0
     
     return {
         "period": period,
