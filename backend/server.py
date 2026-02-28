@@ -1620,7 +1620,7 @@ def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
     
     # 2 days per month, max 22 days per year
     days_earned = min(months_worked * 2, 22)
-    days_available = max(0, days_earned - days_taken)
+    days_available = days_earned - days_taken
     
     return {
         "days_earned": days_earned,
@@ -5777,7 +5777,7 @@ async def get_custom_range_report(
                 current += timedelta(days=1)
     
     vacation_entitlement = user.get("vacation_days_per_year", 22)
-    vacation_days_available = max(0, vacation_entitlement - vacation_days_used)
+    vacation_days_available = vacation_entitlement - vacation_days_used
     
     return {
         "username": username,
@@ -6018,7 +6018,7 @@ async def get_monthly_detailed_report(
     
     # Get user's vacation entitlement (default 22 days per year in Portugal)
     vacation_entitlement = user.get("vacation_days_per_year", 22)
-    vacation_days_available = max(0, vacation_entitlement - vacation_days_used)
+    vacation_days_available = vacation_entitlement - vacation_days_used
     
     return {
         "username": username,
