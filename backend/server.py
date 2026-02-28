@@ -972,16 +972,17 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return current_user
 
+def normalizar_tempo(dt: datetime) -> datetime:
+    """
+    Remove segundos e microsegundos de um datetime.
+    Ex: 12:02:49 → 12:02:00, 17:11:45 → 17:11:00
+    Deve ser aplicado a start_time e end_time ANTES de calcular diferenças.
+    """
+    return dt.replace(second=0, microsecond=0)
+
 def truncar_horas_para_minutos(horas: float) -> float:
     """
     Trunca horas para minutos inteiros (sem segundos).
-    Ex: 8.6833... (8:41:00) -> 8.68 (8:40:48 arredondado para baixo)
-    Ex: 8.6999... (8:41:59) -> 8.68 (8:41:00 truncado)
-    
-    Processo:
-    1. Converte para minutos totais
-    2. Trunca (floor) para minutos inteiros
-    3. Converte de volta para horas decimais
     """
     total_minutos = math.floor(horas * 60)
     return total_minutos / 60
@@ -989,10 +990,25 @@ def truncar_horas_para_minutos(horas: float) -> float:
 def truncar_segundos_para_horas(segundos: float) -> float:
     """
     Converte segundos para horas, truncando os segundos restantes.
-    Ex: 31259 segundos (8:41:59) -> 8.68h (8:41)
     """
     total_minutos = math.floor(segundos / 60)
     return total_minutos / 60
+
+def calcular_minutos_de_entradas(entries: list) -> int:
+    """
+    Calcula total de minutos de uma lista de entradas, normalizando timestamps (sem segundos).
+    Usa aritmética inteira para evitar erros de arredondamento em somas.
+    """
+    total_minutos = 0
+    for e in entries:
+        if e.get("start_time") and e.get("end_time"):
+            start = datetime.fromisoformat(str(e["start_time"]).replace('Z', '+00:00'))
+            end = datetime.fromisoformat(str(e["end_time"]).replace('Z', '+00:00'))
+            start = normalizar_tempo(start)
+            end = normalizar_tempo(end)
+            diff = (end - start).total_seconds()
+            total_minutos += int(diff / 60)
+    return total_minutos
 
 def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
     """
