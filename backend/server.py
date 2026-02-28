@@ -5396,9 +5396,9 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
 # ============ Time Entry Reports Routes ============
     total_minutes_today = calcular_minutos_de_entradas(today_entries)
     total_hours = total_minutes_today / 60
-    regular_hours = sum(e.get("regular_hours", 0) for e in today_entries)
-    overtime_hours = sum(e.get("overtime_hours", 0) for e in today_entries)
-    special_hours = sum(e.get("special_hours", 0) for e in today_entries)
+    regular_hours = sum(e.get("regular_hours") or 0 for e in today_entries)
+    overtime_hours = sum(e.get("overtime_hours") or 0 for e in today_entries)
+    special_hours = sum(e.get("special_hours") or 0 for e in today_entries)
     
     return {
         "entries": today_entries,
