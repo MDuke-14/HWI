@@ -8436,12 +8436,12 @@ async def admin_create_time_entry(
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     
     # Parse times
-    start_time = datetime.fromisoformat(entry_data["start_time"].replace("Z", ""))
-    end_time = datetime.fromisoformat(entry_data["end_time"].replace("Z", ""))
+    start_time = normalizar_tempo(datetime.fromisoformat(entry_data["start_time"].replace("Z", "")))
+    end_time = normalizar_tempo(datetime.fromisoformat(entry_data["end_time"].replace("Z", "")))
     
-    # Calculate total hours
-    total_seconds = (end_time - start_time).total_seconds()
-    total_hours = total_seconds / 3600
+    # Calculate total hours (sem segundos)
+    total_minutes = int((end_time - start_time).total_seconds() / 60)
+    total_hours = total_minutes / 60
     
     # Create entry
     new_entry = {
