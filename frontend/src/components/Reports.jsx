@@ -949,101 +949,111 @@ const Reports = ({ user, onLogout }) => {
                       </div>
                     </div>
 
-                    {/* Daily Records Table */}
+                    {/* Daily Records Table - Horizontal */}
                     <div className="glass-effect p-6 overflow-x-auto">
                       <h3 className="text-xl font-bold text-white mb-4">
                         Período: {new Date(detailedMonthlyReport.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} - {new Date(detailedMonthlyReport.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}
                       </h3>
-                      <div className="space-y-2">
-                        {detailedMonthlyReport.daily_records.map((day) => (
-                          <div key={day.date} className={`border rounded-lg p-4 ${
-                            day.status === 'FOLGA' ? 'bg-gray-800/30 border-gray-600' :
-                            day.status === 'FERIADO' ? 'bg-amber-900/20 border-amber-600' :
-                            day.status === 'FÉRIAS' ? 'bg-blue-900/20 border-blue-600' :
-                            day.status === 'FALTA' ? 'bg-red-900/20 border-red-600' :
-                            day.status === 'TRABALHADO' ? 'bg-green-900/20 border-green-600' :
-                            'bg-gray-800/10 border-gray-700'
-                          }`}>
-                            <div className="grid md:grid-cols-12 gap-4 items-center">
-                              {/* Date and Day */}
-                              <div className="md:col-span-2">
-                                <div className="font-bold text-white">{day.day_of_week}</div>
-                                <div className="text-gray-400 text-sm">Dia {day.day_number}</div>
-                              </div>
+                      <table className="w-full min-w-[900px] text-sm" data-testid="monthly-report-table">
+                        <thead>
+                          <tr className="border-b border-gray-600 text-gray-400">
+                            <th className="text-left py-2 px-2 w-[100px]">Dia</th>
+                            <th className="text-left py-2 px-2">Estado</th>
+                            <th className="text-left py-2 px-2">Entradas</th>
+                            <th className="text-center py-2 px-2 w-[80px]">Total</th>
+                            <th className="text-center py-2 px-2 w-[80px]">H. Extra</th>
+                            <th className="text-center py-2 px-2 w-[100px]">Pagamento</th>
+                            {user?.is_admin && <th className="text-center py-2 px-2 w-[50px]"></th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detailedMonthlyReport.daily_records.map((day) => (
+                            <tr key={day.date} data-testid={`report-day-${day.date}`} className={`border-b ${
+                              day.status === 'FOLGA' ? 'border-gray-700/50 text-gray-500' :
+                              day.status === 'FERIADO' ? 'border-amber-800/30 bg-amber-900/10' :
+                              day.status === 'FÉRIAS' ? 'border-blue-800/30 bg-blue-900/10' :
+                              day.status === 'FALTA' ? 'border-red-800/30 bg-red-900/10' :
+                              day.status === 'TRABALHADO' ? 'border-gray-700/50' :
+                              'border-gray-700/30'
+                            }`}>
+                              {/* Dia */}
+                              <td className="py-2 px-2">
+                                <div className="font-bold text-white text-xs">{day.day_of_week}</div>
+                                <div className="text-gray-400 text-xs">Dia {day.day_number}</div>
+                              </td>
 
-                              {/* Status / Entries */}
-                              <div className="md:col-span-3">
-                                {day.status === 'FOLGA' && (
-                                  <div className="text-gray-400 font-semibold">🏖️ FOLGA</div>
-                                )}
-                                {day.status === 'FERIADO' && (
-                                  <div className="text-amber-400 font-semibold">🎉 FERIADO - {day.holiday_name}</div>
-                                )}
-                                {day.status === 'FÉRIAS' && (
-                                  <div className="text-blue-400 font-semibold">✈️ FÉRIAS</div>
-                                )}
-                                {day.status === 'FALTA' && (
-                                  <div className="text-red-400 font-semibold">⚠️ FALTA</div>
-                                )}
-                                {day.status === 'NÃO TRABALHADO' && (
-                                  <div className="text-gray-500 font-semibold">❌ Não Trabalhado</div>
-                                )}
+                              {/* Estado */}
+                              <td className="py-2 px-2">
+                                {day.status === 'FOLGA' && <span className="text-gray-400 text-xs font-semibold">FOLGA</span>}
+                                {day.status === 'FERIADO' && <span className="text-amber-400 text-xs font-semibold">FERIADO</span>}
+                                {day.status === 'FÉRIAS' && <span className="text-blue-400 text-xs font-semibold">FÉRIAS</span>}
+                                {day.status === 'FALTA' && <span className="text-red-400 text-xs font-semibold">FALTA</span>}
+                                {day.status === 'NÃO TRABALHADO' && <span className="text-gray-500 text-xs">N/T</span>}
+                                {day.status === 'TRABALHADO' && <span className="text-green-400 text-xs font-semibold">OK</span>}
+                              </td>
+
+                              {/* Entradas */}
+                              <td className="py-2 px-2">
                                 {day.status === 'TRABALHADO' && day.entries && (
-                                  <div className="space-y-1">
+                                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                                     {day.entries.map((entry, idx) => (
-                                      <div key={idx} className="text-sm text-gray-300">
+                                      <span key={idx} className="text-xs text-gray-300">
                                         {entry.start_time && entry.end_time && (
-                                          <span>
-                                            {new Date(entry.start_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})} - {new Date(entry.end_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})}
-                                          </span>
+                                          <>
+                                            {new Date(entry.start_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})}{String.fromCharCode(8211)}{new Date(entry.end_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})}
+                                          </>
                                         )}
-                                      </div>
+                                      </span>
                                     ))}
                                   </div>
                                 )}
-                              </div>
+                              </td>
 
-                              {/* Total Hours */}
-                              <div className="md:col-span-2 text-center">
-                                <div className="text-xs text-gray-400">Total</div>
-                                <div className="font-bold text-white">{day.total_hours > 0 ? formatHours(day.total_hours) : '-'}</div>
-                              </div>
+                              {/* Total */}
+                              <td className="py-2 px-2 text-center">
+                                {day.total_hours > 0 && (
+                                  <span className="font-bold text-white text-xs">{formatHours(day.total_hours)}</span>
+                                )}
+                              </td>
 
-                              {/* Overtime */}
-                              <div className="md:col-span-2 text-center">
-                                <div className="text-xs text-gray-400">Horas Extra</div>
-                                <div className="font-bold text-amber-400">{day.overtime_hours > 0 ? formatHours(day.overtime_hours) : '0h00m'}</div>
-                              </div>
+                              {/* Horas Extra */}
+                              <td className="py-2 px-2 text-center">
+                                {day.overtime_hours > 0 && (
+                                  <span className="font-bold text-amber-400 text-xs">{formatHours(day.overtime_hours)}</span>
+                                )}
+                              </td>
 
-                              {/* Payment Type */}
-                              <div className="md:col-span-2 text-right">
+                              {/* Pagamento */}
+                              <td className="py-2 px-2 text-center">
                                 {day.payment_type && (
                                   <div>
-                                    <div className={`text-sm font-semibold ${day.payment_type === 'Ajuda de Custos' ? 'text-blue-400' : 'text-green-400'}`}>
+                                    <span className={`text-xs font-bold ${day.payment_type === 'Ajuda de Custos' ? 'text-blue-400' : 'text-green-400'}`}>
                                       {day.payment_type === 'Ajuda de Custos' ? 'ADC' : 'SA'}
-                                    </div>
-                                    {day.location && <div className="text-xs text-gray-500">{day.location.split(',')[0].trim()}</div>}
+                                    </span>
+                                    {day.location && (
+                                      <div className="text-[10px] text-gray-500 leading-tight">{day.location.split(',')[0].trim()}</div>
+                                    )}
                                   </div>
                                 )}
-                              </div>
+                              </td>
 
-                              {/* Edit Button (Admin only) - Available on ALL days */}
+                              {/* Edit */}
                               {user?.is_admin && (
-                                <div className="md:col-span-1 text-right">
+                                <td className="py-2 px-2 text-center">
                                   <Button
                                     onClick={() => handleEdit(day)}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1.5"
                                     size="sm"
                                     title={day.entries && day.entries.length > 0 ? "Editar entradas" : "Adicionar entradas"}
                                   >
-                                    <Edit className="w-4 h-4" />
+                                    <Edit className="w-3 h-3" />
                                   </Button>
-                                </div>
+                                </td>
                               )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 ) : (
