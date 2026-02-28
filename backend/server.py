@@ -9959,13 +9959,13 @@ async def update_registo_tecnico(
         if "hora_inicio" not in registo_data and old_pausa != new_pausa:
             current_mins = existing.get("minutos_trabalhados", 0)
             if new_pausa and not old_pausa:
-                # Adicionou pausa - desconta 60 min
-                update_data["minutos_trabalhados"] = max(0, current_mins - 60)
-                update_data["horas_arredondadas"] = max(0, current_mins - 60) / 60
+                new_mins = max(0, current_mins - 60)
             elif not new_pausa and old_pausa:
-                # Removeu pausa - adiciona 60 min
-                update_data["minutos_trabalhados"] = current_mins + 60
-                update_data["horas_arredondadas"] = (current_mins + 60) / 60
+                new_mins = current_mins + 60
+            else:
+                new_mins = current_mins
+            update_data["minutos_trabalhados"] = new_mins
+            update_data["horas_arredondadas"] = arredondar_horas(new_mins)
     
     if update_data:
         await db.registos_tecnico_ot.update_one(
