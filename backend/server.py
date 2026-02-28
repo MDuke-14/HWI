@@ -6431,7 +6431,7 @@ async def adjust_entry_to_8hours(
         
         # Converter para horas
         import math
-        total_minutes_other = math.floor(total_seconds_other / 60)
+        total_minutes_other = int(total_seconds_other / 60)
         hours_other = total_minutes_other / 60
         
         # Verificar quanto falta para 8h
