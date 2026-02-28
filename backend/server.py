@@ -4917,8 +4917,8 @@ async def end_time_entry(
         # Handle final day
         final_seconds = (end_time - current_start).total_seconds()
         
-        # TRUNCAR segundos (não arredondar)
-        final_minutes = math.floor(final_seconds / 60)
+        # Calcular minutos (timestamps já normalizados, sem segundos)
+        final_minutes = int(final_seconds / 60)
         final_hours = final_minutes / 60
         final_hours = round(final_hours, 2)
         
