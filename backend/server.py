@@ -3836,17 +3836,23 @@ async def enviar_pdf_ot(
         folha_horas_buffer = None
         if request.incluir_folha_horas:
             try:
+                # Buscar registos manuais (tecnicos_relatorio) necessários para a folha de horas
+                tecnicos_manuais = await db.tecnicos_relatorio.find(
+                    {"relatorio_id": relatorio_id}, {"_id": 0}
+                ).to_list(length=None)
+                
                 folha_horas_buffer = generate_folha_horas_pdf(
                     relatorio=relatorio,
                     cliente=cliente,
-                    registos=registos_mao_obra,
-                    tecnicos=tecnicos,
+                    registos_mao_obra=registos_mao_obra,
+                    tecnicos_manuais=tecnicos_manuais,
                     tarifas_por_tecnico={},
-                    dados_extras={},
-                    table_id=1
+                    dados_extras={}
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
+                import traceback
+                logging.error(f"Traceback FH: {traceback.format_exc()}")
                 # Continuar sem a folha de horas - não bloquear o envio
         
         # Configuração SMTP
