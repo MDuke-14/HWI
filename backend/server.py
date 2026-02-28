@@ -6883,14 +6883,14 @@ async def update_time_entry(
         
         if start_time_str and end_time_str:
             # Parse times
-            start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
-            end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
+            start_time = normalizar_tempo(datetime.fromisoformat(start_time_str.replace('Z', '+00:00')))
+            end_time = normalizar_tempo(datetime.fromisoformat(end_time_str.replace('Z', '+00:00')))
             
-            # Calculate total hours - TRUNCAR segundos
+            # Calculate total hours (timestamps normalizados, sem segundos)
             total_seconds = (end_time - start_time).total_seconds()
-            total_minutes = math.floor(total_seconds / 60)
+            total_minutes = int(total_seconds / 60)
             total_hours = total_minutes / 60
-            total_hours = round(total_hours, 2)
+            total_hours = round(total_hours, 4)
             
             # Get entry date to check if it's overtime day
             entry_date_str = entry.get("date")
