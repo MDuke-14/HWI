@@ -7598,12 +7598,13 @@ async def admin_end_clock(
     if not entry:
         raise HTTPException(status_code=404, detail="Nenhum relógio ativo encontrado para este utilizador")
     
-    end_time = datetime.now(timezone.utc)
-    start_time = datetime.fromisoformat(entry["start_time"])
+    end_time = normalizar_tempo(datetime.now(timezone.utc))
+    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
     
-    # Calcular horas
+    # Calcular horas (timestamps normalizados)
     total_seconds = (end_time - start_time).total_seconds()
-    total_hours = total_seconds / 3600
+    total_minutes = int(total_seconds / 60)
+    total_hours = total_minutes / 60
     
     # Calcular horas normais e extras (máximo 8h normais por dia)
     regular_hours = min(total_hours, 8)
