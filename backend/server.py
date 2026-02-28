@@ -4963,10 +4963,10 @@ async def end_time_entry(
         # Single day entry - USAR NOVA LÓGICA
         hours_breakdown = calcular_breakdown_completo(start_time, end_time, start_time.date())
         
-        # Calcular total truncando segundos
+        # Calcular total (timestamps já normalizados)
         total_seconds = (end_time - start_time).total_seconds()
-        total_minutes = math.floor(total_seconds / 60)
-        total_hours = round(total_minutes / 60, 2)
+        total_minutes = int(total_seconds / 60)
+        total_hours = round(total_minutes / 60, 4)
         
         # Preparar dados de actualização
         update_data = {
