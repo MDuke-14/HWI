@@ -108,7 +108,7 @@ const Vacations = ({ user, onLogout }) => {
                 </div>
               </DialogContent>
             </Dialog>
-            {balance && balance.days_available > 0 && (
+            {balance && (
               <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-full">Pedir Férias</Button>
@@ -148,7 +148,7 @@ const Vacations = ({ user, onLogout }) => {
             </div>
             <div className="glass-effect p-6 rounded-xl">
               <div className="text-gray-400 text-sm mb-2">Dias Disponíveis</div>
-              <div className="text-4xl font-bold text-green-400">{balance.days_available}</div>
+              <div className={`text-4xl font-bold ${balance.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>{balance.days_available}</div>
             </div>
           </div>
         ) : (

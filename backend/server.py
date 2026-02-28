@@ -7901,12 +7901,8 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
             days_requested += 1
         current_date += timedelta(days=1)
     
-    # Check available days
+    # Check if user has vacation balance configured
     balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]})
-    if balance:
-        calc = calculate_vacation_days(balance["company_start_date"], balance.get("days_taken", 0))
-        if days_requested > calc["days_available"]:
-            raise HTTPException(status_code=400, detail=f"Dias insuficientes. Disponível: {calc['days_available']} dias")
     
     # Create vacation request
     vac_request = VacationRequest(
