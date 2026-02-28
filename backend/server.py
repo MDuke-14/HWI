@@ -5669,9 +5669,9 @@ async def get_custom_range_report(
     # Build daily records for entire period
     daily_records = []
     current_date = start_date
-    total_worked_hours = 0
-    total_overtime_hours = 0
-    total_special_hours = 0
+    total_worked_minutes = 0
+    total_overtime_minutes = 0
+    total_special_minutes = 0
     days_with_meal_allowance = 0
     days_with_travel_allowance = 0
     
@@ -5748,9 +5748,9 @@ async def get_custom_range_report(
                 day_data["payment_type"] = None
                 day_data["payment_value"] = None
             
-            total_worked_hours += total_hours
-            total_overtime_hours += overtime_hours
-            total_special_hours += special_hours
+            total_worked_minutes += total_minutos_dia
+            total_overtime_minutes += breakdown_min["horas_extra"]
+            total_special_minutes += breakdown_min["horas_especial"]
         else:
             # Not worked - determine status
             if date_str in manual_statuses:
