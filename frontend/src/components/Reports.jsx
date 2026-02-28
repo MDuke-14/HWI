@@ -1020,9 +1020,9 @@ const Reports = ({ user, onLogout }) => {
                                 {day.payment_type && (
                                   <div>
                                     <div className={`text-sm font-semibold ${day.payment_type === 'Ajuda de Custos' ? 'text-blue-400' : 'text-green-400'}`}>
-                                      {day.payment_type}
+                                      {day.payment_type === 'Ajuda de Custos' ? 'ADC' : 'SA'}
                                     </div>
-                                    {day.location && <div className="text-xs text-gray-500">{day.location}</div>}
+                                    {day.location && <div className="text-xs text-gray-500">{day.location.split(',')[0].trim()}</div>}
                                   </div>
                                 )}
                               </div>
