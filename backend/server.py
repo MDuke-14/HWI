@@ -2241,39 +2241,47 @@ async def export_clientes_emails_pdf(current_user: dict = Depends(get_current_us
     from datetime import datetime
     elements.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", subtitle_style))
     
-    # Instruções
-    elements.append(Paragraph(
-        "<b>Instruções:</b> Copie o bloco abaixo e cole diretamente no campo 'PARA' do seu email.",
-        info_style
-    ))
     elements.append(Spacer(1, 15))
     
-    # Caixa com emails
-    if emails_string:
-        # Criar uma caixa visual com fundo
+    # Estilo para nome do cliente
+    client_name_style = ParagraphStyle(
+        'ClientName',
+        parent=styles['Normal'],
+        fontSize=11,
+        fontName='Helvetica-Bold',
+        textColor=colors.HexColor('#1a1a1a'),
+        spaceBefore=12,
+        spaceAfter=4
+    )
+    
+    # Caixa com emails agrupados por cliente
+    if clientes_com_emails:
         from reportlab.platypus import Table, TableStyle
         
-        email_paragraph = Paragraph(emails_string, email_box_style)
-        
-        # Wrap em tabela para criar efeito de caixa
-        table_data = [[email_paragraph]]
-        email_table = Table(table_data, colWidths=[16*cm])
-        email_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9f9f9')),
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#cccccc')),
-            ('TOPPADDING', (0, 0), (-1, -1), 15),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
-            ('LEFTPADDING', (0, 0), (-1, -1), 15),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 15),
-        ]))
-        elements.append(email_table)
+        for cliente_info in clientes_com_emails:
+            elements.append(Paragraph(cliente_info["nome"], client_name_style))
+            
+            emails_str = ";".join(cliente_info["emails"])
+            email_paragraph = Paragraph(emails_str, email_box_style)
+            
+            table_data = [[email_paragraph]]
+            email_table = Table(table_data, colWidths=[16*cm])
+            email_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9f9f9')),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#cccccc')),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            elements.append(email_table)
     else:
         elements.append(Paragraph("Nenhum email encontrado.", styles['Normal']))
     
     # Estatísticas
     elements.append(Spacer(1, 25))
-    elements.append(Paragraph(f"<b>Total:</b> {len(sorted_emails)} email(s) únicos", info_style))
-    elements.append(Paragraph(f"<b>Clientes analisados:</b> {len(clientes)}", info_style))
+    elements.append(Paragraph(f"<b>Total:</b> {total_emails} email(s)", info_style))
+    elements.append(Paragraph(f"<b>Clientes:</b> {len(clientes_com_emails)}", info_style))
     
     doc.build(elements)
     buffer.seek(0)
