@@ -6445,7 +6445,7 @@ async def adjust_entry_to_8hours(
             )
         
         # Calcular nova hora de saída
-        start_time = datetime.fromisoformat(entry["start_time"])
+        start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
         minutes_needed = round(hours_needed * 60)
         new_end_time = start_time + timedelta(minutes=minutes_needed)
         
@@ -6463,8 +6463,8 @@ async def adjust_entry_to_8hours(
         
         # Calcular novo total de horas desta entrada
         new_total_seconds = (new_end_time - start_time).total_seconds()
-        new_total_minutes = math.floor(new_total_seconds / 60)
-        new_total_hours = round(new_total_minutes / 60, 2)
+        new_total_minutes = int(new_total_seconds / 60)
+        new_total_hours = round(new_total_minutes / 60, 4)
         
         # Atualizar entrada
         await db.time_entries.update_one(
