@@ -7338,7 +7338,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
                                     <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
                                     <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
-                                    <td className="p-2">{Math.floor((reg.minutos_trabalhados || 0) / 60)}h{String((reg.minutos_trabalhados || 0) % 60).padStart(2, '0')}</td>
+                                    <td className="p-2">{(() => { const h = reg.horas_arredondadas || 0; const hi = Math.floor(h); const mi = Math.round((h - hi) * 60); return `${hi}h${String(mi).padStart(2, '0')}`; })()}</td>
                                     <td className="p-2">{reg.km || '-'}</td>
                                   </tr>
                                   );
