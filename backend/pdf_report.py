@@ -223,6 +223,7 @@ def generate_monthly_pdf_report(report_data):
         ('FONTSIZE', (0, 1), (-1, -1), 8),
         ('ALIGN', (0, 1), (1, -1), 'CENTER'),
         ('ALIGN', (3, 1), (4, -1), 'CENTER'),
+        ('ALIGN', (6, 0), (6, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f7fafc')]),
         ('LEFTPADDING', (0, 0), (-1, -1), 4),
