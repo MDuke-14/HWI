@@ -5462,9 +5462,9 @@ async def list_time_entries(
             }
         
         daily_entries[date]["entries"].append(entry)
-        daily_entries[date]["total_hours"] += entry.get("total_hours", 0)
-        daily_entries[date]["regular_hours"] += entry.get("regular_hours", 0)
-        daily_entries[date]["overtime_hours"] += entry.get("overtime_hours", 0)
+        daily_entries[date]["total_hours"] += entry.get("total_hours") or 0
+        daily_entries[date]["regular_hours"] += entry.get("regular_hours") or 0
+        daily_entries[date]["overtime_hours"] += entry.get("overtime_hours") or 0
         
         # Collect observations
         if entry.get("observations"):
