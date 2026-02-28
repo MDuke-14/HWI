@@ -96,11 +96,15 @@ def calcular_breakdown_completo(
         - overtime_hours (horas extra)
         - special_hours (horas sábado/domingo/feriado JUNTAS)
     """
-    # Calcular total de segundos
+    # Normalizar timestamps: remover segundos antes de calcular
+    start_time = start_time.replace(second=0, microsecond=0)
+    end_time = end_time.replace(second=0, microsecond=0)
+    
+    # Calcular total de segundos (agora sempre múltiplo de 60)
     total_seconds = (end_time - start_time).total_seconds()
     
-    # TRUNCAR segundos (não arredondar)
-    total_minutos = math.floor(total_seconds / 60)
+    # Converter para minutos inteiros
+    total_minutos = int(total_seconds / 60)
     
     # Verificar dia da semana e se é feriado
     dia_semana = data_entrada.weekday()  # 0=Segunda, 6=Domingo (diferente do JS!)
