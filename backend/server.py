@@ -7382,14 +7382,12 @@ async def create_manual_time_entry(
                 # Split entry at midnight
                 midnight = datetime.combine(start_datetime.date() + timedelta(days=1), datetime.min.time())
                 
-                # First part: start_time to 23:59:59
+                # First part: start_time to midnight
                 first_part_end = midnight - timedelta(seconds=1)
-                first_seconds = (first_part_end - start_datetime).total_seconds()
-                
-                # TRUNCAR segundos
-                first_minutes = math.floor(first_seconds / 60)
+                # Calcular duração usando midnight (não first_part_end que tem -1s)
+                first_minutes = int((midnight - start_datetime).total_seconds() / 60)
                 first_hours = first_minutes / 60
-                first_hours = round(first_hours, 2)
+                first_hours = round(first_hours, 4)
                 
                 # Determine if first day is special
                 first_is_special, first_ot_reason = is_overtime_day(start_datetime.date())
