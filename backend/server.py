@@ -2839,6 +2839,8 @@ async def update_tecnico_relatorio(
     current_user: dict = Depends(get_current_user)
 ):
     """Atualizar dados de um técnico no relatório"""
+    from cronometro_logic import arredondar_horas
+    
     # Verificar se técnico existe
     existing = await db.tecnicos_relatorio.find_one({
         "id": tecnico_id,
@@ -2853,7 +2855,10 @@ async def update_tecnico_relatorio(
     if "tecnico_nome" in tecnico_data:
         update_data["tecnico_nome"] = tecnico_data["tecnico_nome"]
     if "minutos_cliente" in tecnico_data:
-        update_data["minutos_cliente"] = tecnico_data["minutos_cliente"]
+        minutos_raw = tecnico_data["minutos_cliente"]
+        horas_arred = arredondar_horas(minutos_raw)
+        update_data["minutos_cliente"] = minutos_raw
+        update_data["horas_arredondadas"] = horas_arred
     
     # Atualizar kms ida
     if "kms_inicial" in tecnico_data:
