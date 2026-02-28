@@ -7444,12 +7444,9 @@ async def create_manual_time_entry(
                 
             else:
                 # Single day entry (no midnight crossing)
-                total_seconds = (end_datetime - start_datetime).total_seconds()
-                
-                # TRUNCAR segundos
-                entry_minutes = math.floor(total_seconds / 60)
+                entry_minutes = int((end_datetime - start_datetime).total_seconds() / 60)
                 entry_hours = entry_minutes / 60
-                entry_hours = round(entry_hours, 2)
+                entry_hours = round(entry_hours, 4)
                 
                 total_day_hours += entry_hours
                 
