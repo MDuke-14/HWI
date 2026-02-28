@@ -2897,8 +2897,41 @@ async def update_tecnico_relatorio(
         update_data["hora_inicio"] = tecnico_data["hora_inicio"]
     if "hora_fim" in tecnico_data:
         update_data["hora_fim"] = tecnico_data["hora_fim"]
+    
+    # Recalcular minutos e aplicar arredondamento quando as horas mudam
+    h_inicio = tecnico_data.get("hora_inicio", existing.get("hora_inicio"))
+    h_fim = tecnico_data.get("hora_fim", existing.get("hora_fim"))
+    if ("hora_inicio" in tecnico_data or "hora_fim" in tecnico_data) and h_inicio and h_fim:
+        try:
+            parts_ini = h_inicio.split(":")
+            parts_fim = h_fim.split(":")
+            mins_ini = int(parts_ini[0]) * 60 + int(parts_ini[1])
+            mins_fim = int(parts_fim[0]) * 60 + int(parts_fim[1])
+            if mins_fim <= mins_ini:
+                mins_fim += 24 * 60
+            duracao = mins_fim - mins_ini
+            
+            incluir_pausa = tecnico_data.get("incluir_pausa", existing.get("incluir_pausa", False))
+            if incluir_pausa:
+                duracao = max(0, duracao - 60)
+            
+            horas_arred = arredondar_horas(duracao)
+            update_data["minutos_cliente"] = duracao
+            update_data["horas_arredondadas"] = horas_arred
+        except Exception as e:
+            logging.error(f"Erro ao recalcular horas manuais: {str(e)}")
+    
     if "incluir_pausa" in tecnico_data:
         update_data["incluir_pausa"] = tecnico_data["incluir_pausa"]
+    
+    # Salvaguarda: garantir arredondamento consistente mesmo em edições de outros campos
+    if update_data and "horas_arredondadas" not in update_data:
+        mins_existentes = existing.get("minutos_cliente", 0)
+        horas_arred_existentes = existing.get("horas_arredondadas", 0)
+        if mins_existentes > 0:
+            horas_arred_correctas = arredondar_horas(mins_existentes)
+            if abs(horas_arred_existentes - horas_arred_correctas) > 0.01:
+                update_data["horas_arredondadas"] = horas_arred_correctas
     
     await db.tecnicos_relatorio.update_one(
         {"id": tecnico_id, "relatorio_id": relatorio_id},
