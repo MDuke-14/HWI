@@ -4829,8 +4829,8 @@ async def end_time_entry(
     if entry["status"] == "completed":
         raise HTTPException(status_code=400, detail="O registo já foi finalizado")
     
-    end_time = datetime.now(timezone.utc)
-    start_time = datetime.fromisoformat(entry["start_time"])
+    end_time = normalizar_tempo(datetime.now(timezone.utc))
+    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
     
     # Merge observations - keep start observations and add end observations if provided
     final_observations = entry.get("observations", "")
