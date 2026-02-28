@@ -5547,13 +5547,15 @@ async def get_reports(
         "status": "completed"
     }, {"_id": 0}).to_list(1000)
     
-    total_hours = sum(entry.get("total_hours", 0) for entry in entries)
+    # Calcular totais a partir dos timestamps (sem erros de arredondamento)
+    total_minutes_all = calcular_minutos_de_entradas(entries)
+    total_hours = total_minutes_all / 60
     regular_hours = sum(entry.get("regular_hours", 0) for entry in entries)
     overtime_hours = sum(entry.get("overtime_hours", 0) for entry in entries)
     special_hours = sum(entry.get("special_hours", 0) for entry in entries)
     total_days = len(entries)
     
-    # Truncar horas para minutos
+    avg_hours = round(total_hours / total_days, 2) if total_days > 0 else 0
     total_hours = truncar_horas_para_minutos(total_hours)
     avg_hours = round(total_hours / total_days, 2) if total_days > 0 else 0
     
