@@ -7176,19 +7176,19 @@ async def recalculate_user_hours(
             
             # Usar start_time para calcular breakdown (precisa de datetime)
             if entry.get("entries") and len(entry["entries"]) > 0:
-                first_start = datetime.fromisoformat(entry["entries"][0]["start_time"])
-                last_end = datetime.fromisoformat(entry["entries"][-1]["end_time"])
+                first_start = normalizar_tempo(datetime.fromisoformat(entry["entries"][0]["start_time"]))
+                last_end = normalizar_tempo(datetime.fromisoformat(entry["entries"][-1]["end_time"]))
             else:
-                first_start = datetime.fromisoformat(entry["start_time"])
-                last_end = datetime.fromisoformat(entry["end_time"])
+                first_start = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
+                last_end = normalizar_tempo(datetime.fromisoformat(entry["end_time"]))
             
             # Usar a NOVA LÓGICA do script fornecido
             date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
             hours_breakdown = calcular_breakdown_completo(first_start, last_end, date_obj)
             
-            # Calcular total truncando segundos
-            total_minutes = math.floor(total_seconds / 60)
-            total_hours = round(total_minutes / 60, 2)
+            # Calcular total (timestamps normalizados, sem segundos)
+            total_minutes = int(total_seconds / 60)
+            total_hours = round(total_minutes / 60, 4)
             
             # Verificar se os valores mudaram
             old_regular = entry.get("regular_hours", 0)
