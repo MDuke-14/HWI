@@ -5922,21 +5922,20 @@ async def get_monthly_detailed_report(
         if date_str in entries_by_date:
             day_entries = entries_by_date[date_str]
             
-            # Calculate total hours for the day (sum all entries) - TRUNCAR segundos
-            total_hours = truncar_horas_para_minutos(sum(e.get("total_hours", 0) for e in day_entries))
+            # Calcular total de minutos do dia a partir dos timestamps (sem segundos)
+            total_minutos_dia = calcular_minutos_de_entradas(day_entries)
+            total_hours = total_minutos_dia / 60
             
             # RECALCULAR breakdown baseado no TOTAL do dia
             from hours_calculator import calcular_horas_dia, feriados_portugueses, minutos_para_horas
-            import math
             
-            total_minutos = math.floor(total_hours * 60)
             dia_semana_py = current_date.weekday()
             dia_semana_js = (dia_semana_py + 1) % 7
             ano = current_date.year
             feriados = feriados_portugueses(ano)
             is_feriado = current_date in feriados
             
-            breakdown_min = calcular_horas_dia(total_minutos, dia_semana_js, is_feriado)
+            breakdown_min = calcular_horas_dia(total_minutos_dia, dia_semana_js, is_feriado)
             
             overtime_hours = minutos_para_horas(breakdown_min["horas_extra"])
             special_hours = minutos_para_horas(breakdown_min["horas_especial"])
