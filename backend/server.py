@@ -5897,9 +5897,9 @@ async def get_monthly_detailed_report(
     # Build daily records for entire period
     daily_records = []
     current_date = start_date
-    total_worked_hours = 0
-    total_overtime_hours = 0
-    total_special_hours = 0
+    total_worked_minutes_m = 0
+    total_overtime_minutes_m = 0
+    total_special_minutes_m = 0
     days_with_meal_allowance = 0
     days_with_travel_allowance = 0
     
