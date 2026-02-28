@@ -9922,11 +9922,16 @@ async def update_registo_tecnico(
     
     # Outros campos
     if "minutos_trabalhados" in registo_data and "hora_inicio" not in registo_data:
-        update_data["minutos_trabalhados"] = registo_data["minutos_trabalhados"]
-        update_data["horas_arredondadas"] = registo_data["minutos_trabalhados"] / 60
-    if "horas_arredondadas" in registo_data and "hora_inicio" not in registo_data:
-        update_data["horas_arredondadas"] = registo_data["horas_arredondadas"]
-        update_data["minutos_trabalhados"] = int(registo_data["horas_arredondadas"] * 60)
+        minutos_raw = registo_data["minutos_trabalhados"]
+        horas_arred = arredondar_horas(minutos_raw)
+        update_data["minutos_trabalhados"] = minutos_raw
+        update_data["horas_arredondadas"] = horas_arred
+    if "horas_arredondadas" in registo_data and "hora_inicio" not in registo_data and "minutos_trabalhados" not in registo_data:
+        # Converter horas para minutos reais, depois arredondar
+        minutos_raw = registo_data["horas_arredondadas"] * 60
+        horas_arred = arredondar_horas(minutos_raw)
+        update_data["horas_arredondadas"] = horas_arred
+        update_data["minutos_trabalhados"] = int(minutos_raw)
     if "km" in registo_data:
         update_data["km"] = registo_data["km"]
     if "codigo" in registo_data and "hora_inicio" not in registo_data:
