@@ -757,22 +757,7 @@ const Reports = ({ user, onLogout }) => {
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Faturação (26-25)
                 </TabsTrigger>
-                <TabsTrigger
-                  data-testid="week-tab"
-                  value="week"
-                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  Última Semana
-                </TabsTrigger>
-                <TabsTrigger
-                  data-testid="month-tab"
-                  value="month"
-                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Último Mês
-                </TabsTrigger>
+                {/* Tabs removidos: Última Semana e Último Mês */}
               </TabsList>
 
               <TabsContent value="billing">
@@ -1066,13 +1051,7 @@ const Reports = ({ user, onLogout }) => {
                 )}
               </TabsContent>
 
-              <TabsContent value="week">
-                <ReportCard report={weeklyReport} title="Relatório Semanal" icon={Clock} />
-              </TabsContent>
-
-              <TabsContent value="month">
-                <ReportCard report={monthlyReport} title="Relatório Mensal" icon={Calendar} />
-              </TabsContent>
+              {/* Tabs removidos: week e month */}
             </Tabs>
           )}
         </div>
