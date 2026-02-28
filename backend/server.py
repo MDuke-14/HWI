@@ -9967,6 +9967,15 @@ async def update_registo_tecnico(
             update_data["minutos_trabalhados"] = new_mins
             update_data["horas_arredondadas"] = arredondar_horas(new_mins)
     
+    # Salvaguarda: garantir que horas_arredondadas está consistente com o arredondamento
+    # Mesmo quando só se editam km's ou outros campos, verificar consistência
+    if update_data and "horas_arredondadas" not in update_data:
+        mins_existentes = existing.get("minutos_trabalhados", 0)
+        horas_arred_existentes = existing.get("horas_arredondadas", 0)
+        horas_arred_correctas = arredondar_horas(mins_existentes)
+        if abs(horas_arred_existentes - horas_arred_correctas) > 0.01:
+            update_data["horas_arredondadas"] = horas_arred_correctas
+    
     if update_data:
         await db.registos_tecnico_ot.update_one(
             {"id": registo_id, "relatorio_id": relatorio_id},
