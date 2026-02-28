@@ -8387,10 +8387,10 @@ async def admin_update_time_entry(
     
     # Calculate total hours if times are provided
     if "start_time" in update_data and "end_time" in update_data:
-        start = datetime.fromisoformat(update_data["start_time"].replace("Z", ""))
-        end = datetime.fromisoformat(update_data["end_time"].replace("Z", ""))
-        total_seconds = (end - start).total_seconds()
-        update_data["total_hours"] = total_seconds / 3600
+        start = normalizar_tempo(datetime.fromisoformat(update_data["start_time"].replace("Z", "")))
+        end = normalizar_tempo(datetime.fromisoformat(update_data["end_time"].replace("Z", "")))
+        total_minutes = int((end - start).total_seconds() / 60)
+        update_data["total_hours"] = total_minutes / 60
     
     # Update entry
     await db.time_entries.update_one(
