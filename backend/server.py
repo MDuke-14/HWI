@@ -2286,7 +2286,7 @@ async def export_clientes_emails_pdf(current_user: dict = Depends(get_current_us
     doc.build(elements)
     buffer.seek(0)
     
-    logging.info(f"Lista de emails de clientes exportada para PDF por {current_user['sub']} ({len(sorted_emails)} emails)")
+    logging.info(f"Lista de emails de clientes exportada para PDF por {current_user['sub']} ({total_emails} emails)")
     
     # Nome do ficheiro: Emails_Clientes_DD-MM-AAAA.pdf
     filename = f"Emails_Clientes_{datetime.now().strftime('%d-%m-%Y')}.pdf"
