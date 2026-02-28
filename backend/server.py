@@ -4854,8 +4854,8 @@ async def end_time_entry(
             midnight = datetime.combine(current_start.date() + timedelta(days=1), datetime.min.time(), timezone.utc)
             day_seconds = (midnight - current_start).total_seconds()
             
-            # TRUNCAR segundos (não arredondar)
-            day_minutes = math.floor(day_seconds / 60)
+            # Calcular minutos (timestamps já normalizados, sem segundos)
+            day_minutes = int(day_seconds / 60)
             day_hours = day_minutes / 60
             day_hours = round(day_hours, 2)
             
