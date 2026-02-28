@@ -5982,9 +5982,9 @@ async def get_monthly_detailed_report(
                 day_data["payment_type"] = None
                 day_data["payment_value"] = None
             
-            total_worked_hours += total_hours
-            total_overtime_hours += overtime_hours
-            total_special_hours += special_hours
+            total_worked_minutes_m += total_minutos_dia
+            total_overtime_minutes_m += breakdown_min["horas_extra"]
+            total_special_minutes_m += breakdown_min["horas_especial"]
         else:
             # Not worked - determine status
             # First check if admin set a manual status
@@ -6289,9 +6289,9 @@ async def download_monthly_pdf_report(
                 day_data["payment_type"] = None
                 day_data["payment_value"] = None
             
-            total_worked_hours += total_hours
-            total_overtime_hours += overtime_hours
-            total_special_hours += special_hours
+            total_worked_minutes_p += total_minutos_dia
+            total_overtime_minutes_p += breakdown_min["horas_extra"]
+            total_special_minutes_p += breakdown_min["horas_especial"]
         else:
             # Not worked - determine status
             # First check if admin set a manual status
