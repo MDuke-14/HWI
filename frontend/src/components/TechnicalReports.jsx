@@ -4711,11 +4711,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </td>
                               <td className={`py-2 px-2 text-center ${textPrimary} font-medium`}>
                                 {(() => {
-                                  // Tentar obter minutos de várias fontes
-                                  const mins = item.minutos_trabalhados || 
-                                    item.minutos_cliente || 
-                                    Math.round((item.horas_arredondadas || 0) * 60);
-                                  return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+                                  const horas = item.horas_arredondadas || 0;
+                                  const h = Math.floor(horas);
+                                  const m = Math.round((horas - h) * 60);
+                                  return `${h}h ${m > 0 ? m + 'min' : ''}`;
                                 })()}
                               </td>
                               <td className={`py-2 px-2 text-center ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
