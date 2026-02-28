@@ -4578,8 +4578,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </span>
                                 <span className={`${textPrimary} font-medium`}>
                                   {(() => {
-                                    const mins = item.minutos_trabalhados || item.minutos_cliente || Math.round((item.horas_arredondadas || 0) * 60);
-                                    return `${Math.floor(mins / 60)}h${mins % 60}m`;
+                                    const horas = item.horas_arredondadas || 0;
+                                    const h = Math.floor(horas);
+                                    const m = Math.round((horas - h) * 60);
+                                    return `${h}h${m > 0 ? m + 'm' : ''}`;
                                   })()}
                                 </span>
                                 <div className="flex gap-1">
