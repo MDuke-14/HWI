@@ -107,7 +107,7 @@ const FolhaHorasModal = ({
         const tipoLowerM = tec.tipo?.toLowerCase() || 'trabalho';
         const tipoRegisto = ['viagem', 'oficina', 'trabalho'].includes(tipoLowerM) ? tipoLowerM : 'trabalho';
         registos.push({
-          tecnico_id: tec.id,
+          tecnico_id: tec.tecnico_id || tec.id,
           data: data,
           codigo: codigosMap[tec.tipo_horario] || '-',
           tipo_registo: tipoRegisto
@@ -215,7 +215,7 @@ const FolhaHorasModal = ({
       }
       const codigosMap = { 'diurno': '1', 'noturno': '2', 'sabado': 'S', 'domingo_feriado': 'D' };
       todosRegistos.push({
-        tecnico_id: tec.id,
+        tecnico_id: tec.tecnico_id || tec.id,
         tecnico_nome: tec.tecnico_nome,
         data: data,
         tipo: tec.tipo_registo || tec.tipo || 'manual',

@@ -251,8 +251,12 @@ def generate_folha_horas_pdf(
     
     # Processar registos manuais
     for tec in tecnicos_manuais:
-        tecnico_id = tec.get('id', 'manual')
+        # Usar tecnico_id real, fallback para agrupamento por nome
+        tecnico_id = tec.get('tecnico_id') or ''
         tecnico_nome = tec.get('tecnico_nome', 'N/A')
+        # Se tecnico_id vazio, usar o nome como chave para agrupar corretamente
+        if not tecnico_id:
+            tecnico_id = f"nome_{tecnico_nome}"
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
@@ -270,6 +274,8 @@ def generate_folha_horas_pdf(
         }.get(tec.get('tipo_horario', ''), '-')
         
         dados_por_tecnico[tecnico_id]['nome'] = tecnico_nome
+        # Guardar o id original do registo para lookup de tarifas
+        original_id = tec.get('id', tecnico_id)
         dados_por_tecnico[tecnico_id]['registos'].append({
             'tipo': 'manual',
             'tipo_registo': tipo_registo_atual,
@@ -279,8 +285,9 @@ def generate_folha_horas_pdf(
             'km': tec.get('kms_deslocacao', 0),
             'codigo': codigo,
             'data': data,
-            'registo_id': tecnico_id,
-            'tarifa_key': f"{tecnico_id}_{data}_{codigo}",
+            'registo_id': original_id,
+            'tarifa_key': f"{original_id}_{data}_{codigo}",
+            'tarifa_key_alt': f"{tecnico_id}_{data}_{codigo}",
             'incluir_pausa': tec.get('incluir_pausa', False)
         })
     
@@ -403,6 +410,15 @@ def generate_folha_horas_pdf(
             
             if tarifa_valor == 0 and tarifa_key:
                 tarifa_valor = tarifas_por_tecnico.get(tarifa_key, 0)
+            
+            # Tentar chave alternativa (id original do registo manual)
+            if tarifa_valor == 0:
+                for r in registos:
+                    alt_key = r.get('tarifa_key_alt')
+                    if alt_key:
+                        tarifa_valor = tarifas_por_tecnico.get(f"{alt_key}_{tipo_registo_grupo}", 0) or tarifas_por_tecnico.get(alt_key, 0)
+                        if tarifa_valor:
+                            break
             
             if tarifa_valor == 0:
                 chave_tarifa_completa = f"{tecnico_id}_{data}_{codigo}"

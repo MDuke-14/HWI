@@ -11196,16 +11196,19 @@ async def get_folha_horas_data(
     ).sort("numero", 1).to_list(length=None)
     
     # Extrair lista única de técnicos
-    # Para técnicos manuais, usamos o 'id' do registo como identificador único
+    # Para técnicos manuais, agrupamos por tecnico_id (ou nome se tecnico_id vazio)
     # Para cronómetros, usamos o 'tecnico_id'
     tecnicos_unicos = {}
     for tec in tecnicos:
-        # Para registos manuais, usar o 'id' do registo como chave
-        tid = tec.get('id')
-        if tid and tid not in tecnicos_unicos:
+        # Usar tecnico_id real, fallback para nome como agrupador
+        tid = tec.get('tecnico_id') or ''
+        nome = tec.get('tecnico_nome', 'N/A')
+        if not tid:
+            tid = f"nome_{nome}"
+        if tid not in tecnicos_unicos:
             tecnicos_unicos[tid] = {
                 'id': tid,
-                'nome': tec.get('tecnico_nome')
+                'nome': nome
             }
     
     for reg in registos:
@@ -11245,8 +11248,11 @@ async def get_folha_horas_data(
             })
     
     for tec in tecnicos:
-        # Para registos manuais, usar o tecnico_id do registo
-        tid = tec.get('tecnico_id') or tec.get('id')
+        # Para registos manuais, usar o tecnico_id real, fallback para nome
+        tid = tec.get('tecnico_id') or ''
+        nome = tec.get('tecnico_nome', 'N/A')
+        if not tid:
+            tid = f"nome_{nome}"
         data = tec.get('data_trabalho', '')
         if isinstance(data, str) and 'T' in data:
             data = data.split('T')[0]
@@ -11259,7 +11265,7 @@ async def get_folha_horas_data(
             # Adicionar registo individual
             registos_individuais.append({
                 'tecnico_id': tid,
-                'tecnico_nome': tec.get('tecnico_nome'),
+                'tecnico_nome': nome,
                 'data': data,
                 'tipo': tec.get('tipo_registo', 'manual'),
                 'codigo': codigo_map.get(tec.get('tipo_horario', ''), '-'),
