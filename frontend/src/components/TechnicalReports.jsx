@@ -4638,7 +4638,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                           .map((item) => (
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
                               <div className="flex items-center justify-between mb-1">
-                                <span className={`${textPrimary} text-xs font-medium truncate flex-1 mr-2`}>{item.tecnico_nome}</span>
+                                <span className={`${textPrimary} text-xs font-medium truncate flex-1 mr-2`}>
+                                  {item.tecnico_nome} <span className={item.funcao_ot === 'ajudante' ? 'text-yellow-400' : 'text-cyan-400'}>({item.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})</span>
+                                </span>
                                 <span 
                                   className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
                                     item._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
@@ -4648,11 +4650,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   }`}
                                 >
                                   {item._tipo_registo === 'manual' ? 'M' : item._tipo_registo === 'trabalho' ? 'T' : item._tipo_registo === 'oficina' ? 'O' : 'V'}
-                                </span>
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
-                                  item.funcao_ot === 'ajudante' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-cyan-600/20 text-cyan-400'
-                                }`}>
-                                  {item.funcao_ot === 'ajudante' ? 'Aj' : 'Téc'}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-[10px]">
