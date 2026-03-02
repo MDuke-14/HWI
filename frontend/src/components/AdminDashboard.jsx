@@ -49,7 +49,8 @@ const AdminDashboard = ({ user, onLogout }) => {
     nome: '',
     valor_por_hora: '',
     codigo: '',  // "1", "2", "S", "D" ou vazio para todos
-    tipo_registo: ''  // "trabalho", "viagem" ou vazio para ambos
+    tipo_registo: '',  // "trabalho", "viagem" ou vazio para ambos
+    tipo_colaborador: ''  // "tecnico", "ajudante" ou vazio para ambos
   });
   const [tabelaForm, setTabelaForm] = useState({
     nome: '',
@@ -385,7 +386,8 @@ const AdminDashboard = ({ user, onLogout }) => {
         nome: tarifa.nome,
         valor_por_hora: tarifa.valor_por_hora.toString(),
         codigo: tarifa.codigo || '',
-        tipo_registo: tarifa.tipo_registo || ''
+        tipo_registo: tarifa.tipo_registo || '',
+        tipo_colaborador: tarifa.tipo_colaborador || ''
       });
     } else {
       setEditingTarifa(null);
@@ -393,7 +395,8 @@ const AdminDashboard = ({ user, onLogout }) => {
         nome: '',
         valor_por_hora: '',
         codigo: '',
-        tipo_registo: ''
+        tipo_registo: '',
+        tipo_colaborador: ''
       });
     }
     setShowTarifaDialog(true);
@@ -410,9 +413,10 @@ const AdminDashboard = ({ user, onLogout }) => {
       const data = {
         nome: tarifaForm.nome,
         valor_por_hora: parseFloat(tarifaForm.valor_por_hora),
-        codigo: tarifaForm.codigo || null,  // null se vazio
-        tipo_registo: tarifaForm.tipo_registo || null,  // null se vazio (aplica a ambos)
-        table_id: selectedTableId  // Associar à tabela de preço selecionada
+        codigo: tarifaForm.codigo || null,
+        tipo_registo: tarifaForm.tipo_registo || null,
+        tipo_colaborador: tarifaForm.tipo_colaborador || null,
+        table_id: selectedTableId
       };
 
       if (editingTarifa) {
@@ -424,7 +428,7 @@ const AdminDashboard = ({ user, onLogout }) => {
       }
       
       setShowTarifaDialog(false);
-      setTarifaForm({ nome: '', valor_por_hora: '', codigo: '', tipo_registo: '' });
+      setTarifaForm({ nome: '', valor_por_hora: '', codigo: '', tipo_registo: '', tipo_colaborador: '' });
       setEditingTarifa(null);
       fetchTarifas();
     } catch (error) {
@@ -1862,6 +1866,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                                       {tarifa.tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
                                     </span>
                                   )}
+                                  {tarifa.tipo_colaborador && (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mt-1 ml-1 ${
+                                      tarifa.tipo_colaborador === 'tecnico' ? 'bg-cyan-600/20 text-cyan-300' :
+                                      'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                      {tarifa.tipo_colaborador === 'tecnico' ? 'Técnico' : 'Ajudante'}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1978,7 +1990,7 @@ const AdminDashboard = ({ user, onLogout }) => {
             <Dialog open={showTarifaDialog} onOpenChange={(open) => {
               setShowTarifaDialog(open);
               if (!open) {
-                setTarifaForm({ nome: '', valor_por_hora: '', codigo: '', tipo_registo: '' });
+                setTarifaForm({ nome: '', valor_por_hora: '', codigo: '', tipo_registo: '', tipo_colaborador: '' });
                 setEditingTarifa(null);
               }
             }}>
@@ -2040,6 +2052,19 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <option value="D">D - Domingos/Feriados</option>
                       </select>
                     </div>
+                  </div>
+                  <div>
+                    <Label>Tipo de Colaborador</Label>
+                    <select
+                      value={tarifaForm.tipo_colaborador}
+                      onChange={(e) => setTarifaForm({...tarifaForm, tipo_colaborador: e.target.value})}
+                      className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
+                      data-testid="tarifa-tipo-colaborador-select"
+                    >
+                      <option value="">Técnico + Ajudante (ambos)</option>
+                      <option value="tecnico">Apenas Técnico</option>
+                      <option value="ajudante">Apenas Ajudante</option>
+                    </select>
                   </div>
                   <p className="text-xs text-gray-500">
                     {tarifaForm.codigo === 'manual' 

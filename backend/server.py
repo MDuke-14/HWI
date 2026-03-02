@@ -490,6 +490,7 @@ class CronometroOT(BaseModel):
     tecnico_id: str
     tecnico_nome: str
     tipo: str  # "trabalho", "viagem" ou "oficina"
+    funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
     hora_inicio: datetime
     ativo: bool = True
 
@@ -501,6 +502,7 @@ class RegistoTecnicoOT(BaseModel):
     tecnico_id: str
     tecnico_nome: str
     tipo: str  # "trabalho", "viagem" ou "oficina"
+    funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
     data: date
     hora_inicio_segmento: datetime
     hora_fim_segmento: datetime
@@ -836,6 +838,7 @@ class Tarifa(BaseModel):
     valor_por_hora: float  # Valor em euros por hora
     codigo: Optional[str] = None  # "1" (diurno), "2" (noturno), "S" (sábado), "D" (domingo/feriado), None (todos)
     tipo_registo: Optional[str] = None  # "trabalho", "viagem", ou None (ambos)
+    tipo_colaborador: Optional[str] = None  # "tecnico", "ajudante", ou None (ambos)
     table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -848,6 +851,7 @@ class TarifaCreate(BaseModel):
     numero: Optional[int] = None  # Opcional
     codigo: Optional[str] = None  # "1", "2", "S", "D" ou None
     tipo_registo: Optional[str] = None  # "trabalho", "viagem", ou None (ambos)
+    tipo_colaborador: Optional[str] = None  # "tecnico", "ajudante", ou None (ambos)
     table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
 
 
@@ -857,6 +861,7 @@ class TarifaUpdate(BaseModel):
     valor_por_hora: Optional[float] = None
     codigo: Optional[str] = None
     tipo_registo: Optional[str] = None
+    tipo_colaborador: Optional[str] = None  # "tecnico", "ajudante", ou None (ambos)
     table_id: Optional[int] = None
     ativo: Optional[bool] = None
 
@@ -9595,6 +9600,7 @@ async def iniciar_cronometro(
     tipo = dados.get("tipo")  # "trabalho" ou "viagem"
     tecnico_id = dados.get("tecnico_id")
     tecnico_nome = dados.get("tecnico_nome")
+    funcao_ot = dados.get("funcao_ot", "tecnico")  # "tecnico" ou "ajudante"
     
     if tipo not in ["trabalho", "viagem", "oficina"]:
         raise HTTPException(status_code=400, detail="Tipo deve ser 'trabalho', 'viagem' ou 'oficina'")
@@ -9616,6 +9622,7 @@ async def iniciar_cronometro(
         tecnico_id=tecnico_id,
         tecnico_nome=tecnico_nome,
         tipo=tipo,
+        funcao_ot=funcao_ot,
         hora_inicio=datetime.now(timezone.utc),
         ativo=True
     )
@@ -9672,6 +9679,9 @@ async def parar_cronometro(
     # Segmentar período
     segmentos = segmentar_periodo(hora_inicio, hora_fim, tipo)
     
+    # Obter funcao_ot do cronómetro
+    funcao_ot = cronometro.get("funcao_ot", "tecnico")
+    
     # Criar registos
     registos_criados = []
     for seg in segmentos:
@@ -9682,6 +9692,7 @@ async def parar_cronometro(
             tecnico_id=tecnico_id,
             tecnico_nome=cronometro["tecnico_nome"],
             tipo=tipo,
+            funcao_ot=funcao_ot,
             data=seg["data"],
             hora_inicio_segmento=seg["hora_inicio_segmento"],
             hora_fim_segmento=seg["hora_fim_segmento"],
@@ -9774,6 +9785,7 @@ async def create_registo_tecnico_manual(
     tecnico_id = registo_data.get("tecnico_id")
     tecnico_nome = registo_data.get("tecnico_nome")
     tipo = registo_data.get("tipo", "manual")  # trabalho, viagem, manual
+    funcao_ot = registo_data.get("funcao_ot", "tecnico")  # tecnico ou ajudante
     
     # Obter horários
     data_str = registo_data.get("data")  # YYYY-MM-DD
@@ -9842,6 +9854,7 @@ async def create_registo_tecnico_manual(
             "tecnico_id": tecnico_id,
             "tecnico_nome": tecnico_nome,
             "tipo": tipo,
+            "funcao_ot": funcao_ot,
             "data": data_obj.isoformat(),
             "hora_inicio_segmento": hora_inicio.isoformat(),
             "hora_fim_segmento": hora_fim.isoformat(),
@@ -9882,6 +9895,7 @@ async def create_registo_tecnico_manual(
             "tecnico_id": tecnico_id,
             "tecnico_nome": tecnico_nome,
             "tipo": tipo,
+            "funcao_ot": funcao_ot,
             "data": seg["data"].isoformat(),
             "hora_inicio_segmento": seg["hora_inicio_segmento"].isoformat(),
             "hora_fim_segmento": seg["hora_fim_segmento"].isoformat(),
@@ -11099,6 +11113,7 @@ async def create_tarifa(
         valor_por_hora=tarifa_data.valor_por_hora,
         codigo=tarifa_data.codigo,
         tipo_registo=tarifa_data.tipo_registo,
+        tipo_colaborador=tarifa_data.tipo_colaborador,
         table_id=tarifa_data.table_id
     )
     
@@ -11108,7 +11123,7 @@ async def create_tarifa(
     await db.tarifas.insert_one(tarifa_dict)
     tarifa_dict.pop("_id", None)
     
-    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} - Tipo: {tarifa.tipo_registo} - Tabela: {tarifa.table_id} por {current_user['sub']}")
+    logging.info(f"Tarifa criada: {tarifa.nome} - €{tarifa.valor_por_hora}/h - Código: {tarifa.codigo} - Tipo: {tarifa.tipo_registo} - Colaborador: {tarifa.tipo_colaborador} - Tabela: {tarifa.table_id} por {current_user['sub']}")
     
     return tarifa_dict
 
@@ -11125,6 +11140,11 @@ async def update_tarifa(
         raise HTTPException(status_code=404, detail="Tarifa não encontrada")
     
     update_data = {k: v for k, v in tarifa_data.model_dump().items() if v is not None}
+    # Allow explicitly setting fields to None/empty via special handling
+    raw_data = tarifa_data.model_dump()
+    for field in ["tipo_registo", "tipo_colaborador", "codigo"]:
+        if field in raw_data and raw_data[field] is None:
+            update_data[field] = None
     if not update_data:
         raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
     
@@ -11252,6 +11272,7 @@ async def get_folha_horas_data(
                 'tecnico_nome': reg.get('tecnico_nome'),
                 'data': data,
                 'tipo': reg.get('tipo', ''),
+                'funcao_ot': reg.get('funcao_ot', 'tecnico'),
                 'codigo': reg.get('codigo', '-'),
                 'source': 'cronometro',
                 'registo_id': reg.get('id'),
@@ -11282,6 +11303,7 @@ async def get_folha_horas_data(
                 'tecnico_nome': nome,
                 'data': data,
                 'tipo': tec.get('tipo_registo', 'manual'),
+                'funcao_ot': tec.get('funcao_ot', 'tecnico'),
                 'codigo': codigo_map.get(tec.get('tipo_horario', ''), '-'),
                 'source': 'manual',
                 'registo_id': tec.get('id'),
@@ -11410,10 +11432,21 @@ async def generate_folha_horas(
         "codigo": {"$nin": [None, "", "manual"]}
     }, {"_id": 0}).to_list(length=None)
     
+    # Build tariff lookup: key = (codigo, tipo_registo, tipo_colaborador)
+    # More specific matches take priority over generic ones
     tarifas_por_codigo = {}
+    tarifas_detalhadas = []
     for tarifa in tarifas_db:
-        if tarifa.get('codigo') and tarifa.get('codigo') != 'manual':
-            tarifas_por_codigo[tarifa['codigo']] = tarifa.get('valor_por_hora', 0)
+        cod = tarifa.get('codigo', '')
+        if cod and cod != 'manual':
+            tarifas_por_codigo[cod] = tarifa.get('valor_por_hora', 0)
+            tarifas_detalhadas.append({
+                'codigo': cod,
+                'tipo_registo': tarifa.get('tipo_registo'),
+                'tipo_colaborador': tarifa.get('tipo_colaborador'),
+                'valor_por_hora': tarifa.get('valor_por_hora', 0),
+                'nome': tarifa.get('nome', '')
+            })
     
     # Gerar PDF com valor_km da tabela selecionada
     pdf_buffer = generate_folha_horas_pdf(
@@ -11424,7 +11457,8 @@ async def generate_folha_horas(
         tarifas_por_tecnico=request.tarifas_por_tecnico,
         dados_extras=request.dados_extras,
         tarifas_por_codigo=tarifas_por_codigo,
-        valor_km=valor_km
+        valor_km=valor_km,
+        tarifas_detalhadas=tarifas_detalhadas
     )
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')

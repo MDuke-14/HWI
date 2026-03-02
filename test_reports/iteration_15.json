@@ -1,0 +1,113 @@
+{
+  "summary": "Comprehensive testing of 'Função na OT' (Function in OT) feature implementation. All backend APIs pass (9/9 tests). Frontend features verified: Função column in registos table, Função na OT dropdown in manual record modal, and Tipo de Colaborador in tarifa form.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_funcao_ot_feature.py",
+    "/app/test_reports/pytest/pytest_funcao_ot.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_funcao_ot_feature.py"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "username": "teste@email.com",
+    "password": "teste"
+  },
+  "seed_data_creation": "Test data created with TEST_ prefix and cleaned up after tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Função na OT feature fully implemented and working. OT#356 used for testing (id: 8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85). Existing records default to funcao_ot='tecnico' (shown as cyan badge). Admin tarifa form is at /admin under 'Tabela de Preço' tab.",
+  "features_tested": {
+    "backend_api": {
+      "cronometro_iniciar": {
+        "status": "PASS",
+        "verified": [
+          "POST /api/relatorios-tecnicos/{id}/cronometro/iniciar accepts funcao_ot='tecnico'",
+          "POST /api/relatorios-tecnicos/{id}/cronometro/iniciar accepts funcao_ot='ajudante'",
+          "funcao_ot is stored and returned in cronometro object",
+          "funcao_ot is preserved when cronometro is stopped and registo is created"
+        ]
+      },
+      "registos_manual": {
+        "status": "PASS",
+        "verified": [
+          "POST /api/relatorios-tecnicos/{id}/registos-tecnicos accepts funcao_ot='tecnico'",
+          "POST /api/relatorios-tecnicos/{id}/registos-tecnicos accepts funcao_ot='ajudante'",
+          "funcao_ot defaults to 'tecnico' if not provided"
+        ]
+      },
+      "tarifas": {
+        "status": "PASS",
+        "verified": [
+          "POST /api/tarifas accepts tipo_colaborador='tecnico'",
+          "POST /api/tarifas accepts tipo_colaborador='ajudante'",
+          "POST /api/tarifas accepts tipo_colaborador=null (both)",
+          "tipo_colaborador is stored and returned correctly"
+        ]
+      },
+      "registos_list": {
+        "status": "PASS",
+        "verified": [
+          "GET /api/relatorios-tecnicos/{id}/registos-tecnicos returns funcao_ot field",
+          "Existing records have funcao_ot='tecnico' as default"
+        ]
+      }
+    },
+    "frontend_ui": {
+      "registos_table_funcao_column": {
+        "status": "PASS",
+        "verified": [
+          "'Função' column header exists in registos table",
+          "Técnico badges displayed with cyan background (bg-cyan-600/20)",
+          "All existing records show 'Técnico' badge correctly"
+        ]
+      },
+      "novo_registo_modal": {
+        "status": "PASS",
+        "verified": [
+          "Modal opens from '+ Novo Registo' button",
+          "'Função na OT *' field exists with data-testid='manual-funcao-ot-select'",
+          "Dropdown contains 'Técnico' and 'Ajudante' options",
+          "Default value is 'Técnico'"
+        ]
+      },
+      "admin_tarifa_form": {
+        "status": "PASS",
+        "verified": [
+          "'Tabela de Preço' tab exists in /admin",
+          "'Nova Tarifa' button opens modal",
+          "'Tipo de Colaborador' dropdown with data-testid='tarifa-tipo-colaborador-select'",
+          "Options: 'Técnico + Ajudante (ambos)', 'Apenas Técnico', 'Apenas Ajudante'",
+          "Tarifa cards show 'Ajudante' badge for specific tariffs"
+        ]
+      },
+      "cronometro_funcao_popup": {
+        "status": "NOT_FULLY_TESTED",
+        "note": "The function popup for chronometer requires selecting technician checkboxes first. The buttons are disabled when no user is selected. Feature code verified in TechnicalReports.jsx lines 9119-9190. data-testid='crono-funcao-select-0' exists for function select."
+      }
+    }
+  },
+  "screenshots_taken": [
+    ".screenshots/ot356_detail.png - OT modal showing registos table with Função column",
+    ".screenshots/novo_registo_modal.png - Manual record modal with Função na OT dropdown",
+    ".screenshots/funcao_dropdown_open.png - Dropdown showing Técnico/Ajudante options",
+    ".screenshots/admin_page.png - Admin dashboard",
+    ".screenshots/tabela_preco_tab.png - Tarifa list with Ajudante badges",
+    ".screenshots/nova_tarifa_modal.png - New tarifa form with Tipo de Colaborador",
+    ".screenshots/tipo_colaborador_dropdown.png - Dropdown with all 3 options",
+    ".screenshots/registos_table_funcao.png - Final verification of Função column"
+  ]
+}

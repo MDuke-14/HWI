@@ -110,7 +110,8 @@ def generate_folha_horas_pdf(
     tarifas_por_tecnico,  # dict: {tecnico_id: tarifa_valor} ou {tecnico_id_data_codigo: valor}
     dados_extras,  # dict: {tecnico_id_data: {dieta, portagens, despesas}}
     tarifas_por_codigo=None,  # dict: {"1": valor, "2": valor, "S": valor, "D": valor}
-    valor_km=0.65  # Valor por km da tabela de preço selecionada
+    valor_km=0.65,  # Valor por km da tabela de preço selecionada
+    tarifas_detalhadas=None  # list: [{codigo, tipo_registo, tipo_colaborador, valor_por_hora}]
 ):
     """
     Gera PDF da Folha de Horas em formato horizontal (landscape)
@@ -129,6 +130,36 @@ def generate_folha_horas_pdf(
     # Inicializar tarifas por código se não fornecido
     if tarifas_por_codigo is None:
         tarifas_por_codigo = {}
+    if tarifas_detalhadas is None:
+        tarifas_detalhadas = []
+    
+    def find_best_tariff(codigo, tipo_registo, funcao_ot, tarifas_detalhadas, tarifas_por_codigo):
+        """Find the best matching tariff considering tipo_colaborador."""
+        best_match = None
+        best_score = -1
+        
+        for t in tarifas_detalhadas:
+            if t['codigo'] != codigo:
+                continue
+            score = 0
+            # Match tipo_registo
+            if t.get('tipo_registo') and t['tipo_registo'] != tipo_registo:
+                continue
+            if t.get('tipo_registo') == tipo_registo:
+                score += 2
+            # Match tipo_colaborador
+            if t.get('tipo_colaborador') and t['tipo_colaborador'] != funcao_ot:
+                continue
+            if t.get('tipo_colaborador') == funcao_ot:
+                score += 4
+            
+            if score > best_score:
+                best_score = score
+                best_match = t
+        
+        if best_match:
+            return best_match['valor_por_hora']
+        return tarifas_por_codigo.get(codigo, 0)
     
     buffer = BytesIO()
     
@@ -238,6 +269,7 @@ def generate_folha_horas_pdf(
         dados_por_tecnico[tecnico_id]['registos'].append({
             'tipo': 'cronometro',
             'tipo_registo': tipo_registo,
+            'funcao_ot': reg.get('funcao_ot', 'tecnico'),
             'hora_inicio': reg.get('hora_inicio_segmento'),
             'hora_fim': reg.get('hora_fim_segmento'),
             'minutos': int((reg.get('horas_arredondadas', 0) or 0) * 60),
@@ -279,6 +311,7 @@ def generate_folha_horas_pdf(
         dados_por_tecnico[tecnico_id]['registos'].append({
             'tipo': 'manual',
             'tipo_registo': tipo_registo_atual,
+            'funcao_ot': tec.get('funcao_ot', 'tecnico'),
             'hora_inicio': hora_inicio_manual,
             'hora_fim': hora_fim_manual,
             'minutos': tec.get('minutos_cliente', 0),
@@ -332,15 +365,22 @@ def generate_folha_horas_pdf(
         registos_por_data_codigo_tipo = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         for reg in registos_tecnico:
             tipo_r = reg.get('tipo_registo', 'trabalho')
-            registos_por_data_codigo_tipo[reg['data']][reg['codigo']][tipo_r].append(reg)
+            funcao = reg.get('funcao_ot', 'tecnico')
+            # Group by data, codigo, tipo_registo+funcao to separate Técnico/Ajudante
+            group_key = f"{tipo_r}_{funcao}"
+            registos_por_data_codigo_tipo[reg['data']][reg['codigo']][group_key].append(reg)
         
         # Criar lista ordenada para a tabela - CRONOLOGICAMENTE
         # Ordenar por: 1) data, 2) hora_inicio do primeiro registo do grupo
         registos_ordenados = []
         for data in sorted(registos_por_data_codigo_tipo.keys()):
             for codigo in registos_por_data_codigo_tipo[data].keys():
-                for tipo_r in registos_por_data_codigo_tipo[data][codigo].keys():
-                    regs_grupo = registos_por_data_codigo_tipo[data][codigo][tipo_r]
+                for group_key in registos_por_data_codigo_tipo[data][codigo].keys():
+                    regs_grupo = registos_por_data_codigo_tipo[data][codigo][group_key]
+                    # Parse tipo_registo and funcao from group_key
+                    parts = group_key.rsplit('_', 1)
+                    tipo_r = parts[0] if len(parts) > 1 else group_key
+                    funcao = parts[1] if len(parts) > 1 else 'tecnico'
                     # Determinar a hora de início mais cedo deste grupo
                     horas_inicio = [r.get('hora_inicio') or '' for r in regs_grupo]
                     horas_inicio = [h for h in horas_inicio if h]
@@ -349,6 +389,7 @@ def generate_folha_horas_pdf(
                         'data': data,
                         'codigo': codigo,
                         'tipo_registo': tipo_r,
+                        'funcao_ot': funcao,
                         'registos': regs_grupo,
                         '_hora_inicio_min': hora_min
                     })
@@ -360,6 +401,7 @@ def generate_folha_horas_pdf(
         header = [
             'Data',
             'Dia Semana',
+            'Função',
             'Registo',
             'Horas',
             'Tarifa',
@@ -394,6 +436,7 @@ def generate_folha_horas_pdf(
             data = item['data']
             codigo = item['codigo']
             tipo_registo_grupo = item['tipo_registo']
+            funcao_ot_grupo = item.get('funcao_ot', 'tecnico')
             registos = item['registos']
             
             tarifa_key = registos[0].get('tarifa_key', '')
@@ -402,11 +445,15 @@ def generate_folha_horas_pdf(
             total_minutos = sum(r.get('minutos', 0) for r in registos)
             total_km = sum(r.get('km', 0) for r in registos)
             
-            # Tarifa - usar chave com tipo_registo para distinguir
+            # Tarifa - tentar primeiro com tarifas_detalhadas (tipo_colaborador aware)
             tarifa_valor = 0
-            # Tentar chave composta com tipo: tecnico_data_codigo_tipo
-            chave_tarifa_tipo = f"{tecnico_id}_{data}_{codigo}_{tipo_registo_grupo}"
-            tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_tipo, 0)
+            if tarifas_detalhadas:
+                tarifa_valor = find_best_tariff(codigo, tipo_registo_grupo, funcao_ot_grupo, tarifas_detalhadas, tarifas_por_codigo)
+            
+            # Fallback: usar chave composta com tipo: tecnico_data_codigo_tipo
+            if tarifa_valor == 0:
+                chave_tarifa_tipo = f"{tecnico_id}_{data}_{codigo}_{tipo_registo_grupo}"
+                tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_tipo, 0)
             
             if tarifa_valor == 0 and tarifa_key:
                 tarifa_valor = tarifas_por_tecnico.get(tarifa_key, 0)
@@ -490,9 +537,13 @@ def generate_folha_horas_pdf(
             except:
                 date_obj = None
             
+            # Função label
+            funcao_label = 'Técnico' if funcao_ot_grupo == 'tecnico' else 'Ajudante'
+            
             row = [
                 format_date_pt(date_obj),
                 get_weekday_pt(date_obj),
+                funcao_label,
                 tipo_registo,
                 minutes_to_hhmm(total_minutos),
                 f'{codigo} - {tarifa_valor:.2f}€/h' if tarifa_valor else f'{codigo} - -',
@@ -512,7 +563,7 @@ def generate_folha_horas_pdf(
         
         # Linha de totais
         table_data.append([
-            '', 'TOTAIS:', '', '', '',
+            '', 'TOTAIS:', '', '', '', '',
             f'{total_geral_valor:.2f}€',
             '', '',
             f'{total_geral_km_valor:.2f}€',
@@ -526,7 +577,7 @@ def generate_folha_horas_pdf(
         # Grande total
         grande_total = total_geral_valor + total_geral_km_valor + total_geral_dietas + total_geral_portagens + total_geral_despesas
         table_data.append([
-            '', '', '', '', '',
+            '', '', '', '', '', '',
             '', '', '',
             '', '', '', '',
             f'TOTAL GERAL:',
@@ -534,24 +585,25 @@ def generate_folha_horas_pdf(
             '', ''
         ])
         
-        # Criar tabela (sem coluna Técnico - menos 1 coluna)
+        # Criar tabela (com coluna Função)
         col_widths = [
-            1.8*cm,    # Data
-            2.4*cm,    # Dia Semana
-            1.8*cm,    # Registo
-            1.4*cm,    # Horas
-            1.8*cm,    # Tarifa
-            1.7*cm,    # Total Valor
-            1.2*cm,    # Km's
-            1.4*cm,    # Preço/Km
-            1.5*cm,    # Total Km
-            1.3*cm,    # Início
-            1.2*cm,    # Pausa
-            1.3*cm,    # Fim
-            1.5*cm,    # Dieta
-            1.5*cm,    # Portagens
-            1.5*cm,    # Despesas
-            1.7*cm,    # Obs.
+            1.7*cm,    # Data
+            2.2*cm,    # Dia Semana
+            1.6*cm,    # Função
+            1.5*cm,    # Registo
+            1.3*cm,    # Horas
+            1.7*cm,    # Tarifa
+            1.5*cm,    # Total Valor
+            1.1*cm,    # Km's
+            1.3*cm,    # Preço/Km
+            1.4*cm,    # Total Km
+            1.2*cm,    # Início
+            1.1*cm,    # Pausa
+            1.2*cm,    # Fim
+            1.3*cm,    # Dieta
+            1.4*cm,    # Portagens
+            1.4*cm,    # Despesas
+            1.5*cm,    # Obs.
         ]
         
         table = Table(table_data, colWidths=col_widths)

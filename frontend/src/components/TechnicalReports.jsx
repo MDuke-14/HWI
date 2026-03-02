@@ -47,7 +47,8 @@ import {
   Coffee,
   CheckCircle,
   Check,
-  Wrench
+  Wrench,
+  UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -351,10 +352,17 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Modal para adicionar registo manual
   const [showAddRegistoManualModal, setShowAddRegistoManualModal] = useState(false);
+  // Modal/popup para função no cronómetro
+  const [showCronometroFuncaoPopup, setShowCronometroFuncaoPopup] = useState(false);
+  const [cronometroFuncaoData, setCronometroFuncaoData] = useState({
+    tecnicos: [],  // [{id, nome, funcao_ot: 'tecnico'}]
+    tipo: '',      // 'trabalho', 'viagem', 'oficina'
+  });
   const [addRegistoManualForm, setAddRegistoManualForm] = useState({
     tecnico_id: '',
     tecnico_nome: '',
     tipo: 'trabalho',
+    funcao_ot: 'tecnico',
     data: new Date().toISOString().split('T')[0],
     hora_inicio: '09:00',
     hora_fim: '18:00',
@@ -2355,12 +2363,13 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleIniciarCronometro = async (tecnico, tipo) => {
+  const handleIniciarCronometro = async (tecnico, tipo, funcao_ot = 'tecnico') => {
     try {
       await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/iniciar`, {
         tipo,
         tecnico_id: tecnico.tecnico_id || tecnico.id,
-        tecnico_nome: tecnico.tecnico_nome
+        tecnico_nome: tecnico.tecnico_nome || tecnico.nome,
+        funcao_ot
       });
       
       toast.success(`Cronómetro de ${tipo} iniciado!`);
@@ -2370,41 +2379,86 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  // Iniciar cronómetro após criar nova OT (não depende de selectedRelatorio)
+  // Abrir popup de função antes de iniciar cronómetro para técnico individual
+  const openCronometroFuncaoPopup = (tecnico, tipo) => {
+    setCronometroFuncaoData({
+      tecnicos: [{
+        id: tecnico.tecnico_id || tecnico.id,
+        nome: tecnico.tecnico_nome || tecnico.nome,
+        funcao_ot: 'tecnico'
+      }],
+      tipo,
+      context: 'existing_ot'
+    });
+    setShowCronometroFuncaoPopup(true);
+  };
+
+  // Confirmar início de cronómetro com funções definidas
+  const handleConfirmCronometroFuncao = async () => {
+    const { tecnicos, tipo, context } = cronometroFuncaoData;
+    
+    if (context === 'nova_ot') {
+      // Iniciar cronómetros para nova OT
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const tec of tecnicos) {
+        try {
+          await axios.post(`${API}/relatorios-tecnicos/${novaOTParaCrono.id}/cronometro/iniciar`, {
+            tipo,
+            tecnico_id: tec.id,
+            tecnico_nome: tec.nome,
+            funcao_ot: tec.funcao_ot
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Erro ao iniciar cronómetro para ${tec.nome}:`, error);
+          errorCount++;
+        }
+      }
+      
+      if (successCount > 0) {
+        const tipoLabel = tipo === 'trabalho' ? 'Trabalho' : tipo === 'oficina' ? 'Oficina' : 'Viagem';
+        toast.success(`Cronómetro de ${tipoLabel} iniciado para ${successCount} técnico(s)!`);
+      }
+      if (errorCount > 0) {
+        toast.error(`Falha ao iniciar cronómetro para ${errorCount} técnico(s)`);
+      }
+      
+      setShowIniciarCronoModal(false);
+      setNovaOTParaCrono(null);
+      setCronoTecnicosSelecionados([]);
+    } else {
+      // Iniciar cronómetro individual em OT existente
+      for (const tec of tecnicos) {
+        await handleIniciarCronometro(
+          { tecnico_id: tec.id, tecnico_nome: tec.nome },
+          tipo,
+          tec.funcao_ot
+        );
+      }
+    }
+    
+    setShowCronometroFuncaoPopup(false);
+  };
+
+  // Iniciar cronómetro após criar nova OT (abre popup de função)
   const handleIniciarCronoNovaOT = async () => {
     if (!novaOTParaCrono || cronoTecnicosSelecionados.length === 0) {
       toast.error('Selecione pelo menos um técnico');
       return;
     }
     
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (const tecnico of cronoTecnicosSelecionados) {
-      try {
-        await axios.post(`${API}/relatorios-tecnicos/${novaOTParaCrono.id}/cronometro/iniciar`, {
-          tipo: cronoTipo,
-          tecnico_id: tecnico.id,
-          tecnico_nome: tecnico.nome
-        });
-        successCount++;
-      } catch (error) {
-        console.error(`Erro ao iniciar cronómetro para ${tecnico.nome}:`, error);
-        errorCount++;
-      }
-    }
-    
-    if (successCount > 0) {
-      const tipoLabel = cronoTipo === 'trabalho' ? 'Trabalho' : cronoTipo === 'oficina' ? 'Oficina' : 'Viagem';
-      toast.success(`Cronómetro de ${tipoLabel} iniciado para ${successCount} técnico(s)!`);
-    }
-    if (errorCount > 0) {
-      toast.error(`Falha ao iniciar cronómetro para ${errorCount} técnico(s)`);
-    }
-    
-    setShowIniciarCronoModal(false);
-    setNovaOTParaCrono(null);
-    setCronoTecnicosSelecionados([]);
+    setCronometroFuncaoData({
+      tecnicos: cronoTecnicosSelecionados.map(tec => ({
+        id: tec.id,
+        nome: tec.nome,
+        funcao_ot: 'tecnico'
+      })),
+      tipo: cronoTipo,
+      context: 'nova_ot'
+    });
+    setShowCronometroFuncaoPopup(true);
   };
 
   const handlePararCronometro = async (tecnico, tipo) => {
@@ -2466,6 +2520,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         tecnico_id: '',
         tecnico_nome: '',
         tipo: 'trabalho',
+        funcao_ot: 'tecnico',
         data: new Date().toISOString().split('T')[0],
         hora_inicio: '09:00',
         hora_fim: '18:00',
@@ -4323,12 +4378,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 }
                               } else {
                                 if (!hasActive) {
-                                  await handleIniciarCronometro({
-                                    id: user.id,
-                                    tecnico_id: user.id,
-                                    tecnico_nome: user.full_name || user.username
-                                  }, 'trabalho');
+                                  // Collect users to start - will open popup
                                 }
+                              }
+                            }
+                            // For start: open function popup
+                            if (!hasAnyActiveTrabalho) {
+                              const usersToStart = selectedUsers.filter(u => !getCronometroStatus(u, 'trabalho'));
+                              if (usersToStart.length > 0) {
+                                setCronometroFuncaoData({
+                                  tecnicos: usersToStart.map(u => ({
+                                    id: u.id,
+                                    nome: u.full_name || u.username,
+                                    funcao_ot: 'tecnico'
+                                  })),
+                                  tipo: 'trabalho',
+                                  context: 'existing_ot'
+                                });
+                                setShowCronometroFuncaoPopup(true);
                               }
                             }
                           }}
@@ -4364,12 +4431,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 }
                               } else {
                                 if (!hasActive) {
-                                  await handleIniciarCronometro({
-                                    id: user.id,
-                                    tecnico_id: user.id,
-                                    tecnico_nome: user.full_name || user.username
-                                  }, 'viagem');
+                                  // Collect users to start - will open popup
                                 }
+                              }
+                            }
+                            // For start: open function popup
+                            if (!hasAnyActiveViagem) {
+                              const usersToStart = selectedUsers.filter(u => !getCronometroStatus(u, 'viagem'));
+                              if (usersToStart.length > 0) {
+                                setCronometroFuncaoData({
+                                  tecnicos: usersToStart.map(u => ({
+                                    id: u.id,
+                                    nome: u.full_name || u.username,
+                                    funcao_ot: 'tecnico'
+                                  })),
+                                  tipo: 'viagem',
+                                  context: 'existing_ot'
+                                });
+                                setShowCronometroFuncaoPopup(true);
                               }
                             }
                           }}
@@ -4405,12 +4484,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 }
                               } else {
                                 if (!hasActive) {
-                                  await handleIniciarCronometro({
-                                    id: user.id,
-                                    tecnico_id: user.id,
-                                    tecnico_nome: user.full_name || user.username
-                                  }, 'oficina');
+                                  // Collect users to start - will open popup
                                 }
+                              }
+                            }
+                            // For start: open function popup
+                            if (!hasAnyActiveOficina) {
+                              const usersToStart = selectedUsers.filter(u => !getCronometroStatus(u, 'oficina'));
+                              if (usersToStart.length > 0) {
+                                setCronometroFuncaoData({
+                                  tecnicos: usersToStart.map(u => ({
+                                    id: u.id,
+                                    nome: u.full_name || u.username,
+                                    funcao_ot: 'tecnico'
+                                  })),
+                                  tipo: 'oficina',
+                                  context: 'existing_ot'
+                                });
+                                setShowCronometroFuncaoPopup(true);
                               }
                             }
                           }}
@@ -4558,6 +4649,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 >
                                   {item._tipo_registo === 'manual' ? 'M' : item._tipo_registo === 'trabalho' ? 'T' : item._tipo_registo === 'oficina' ? 'O' : 'V'}
                                 </span>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
+                                  item.funcao_ot === 'ajudante' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-cyan-600/20 text-cyan-400'
+                                }`}>
+                                  {item.funcao_ot === 'ajudante' ? 'Aj' : 'Téc'}
+                                </span>
                               </div>
                               <div className="flex items-center justify-between text-[10px]">
                                 <span className={textSecondary}>
@@ -4608,6 +4704,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <thead>
                           <tr className={`border-b ${borderColor}`}>
                             <th className={`text-left py-2 px-2 ${textSecondary}`}>Técnico</th>
+                            <th className={`text-center py-2 px-2 ${textSecondary}`}>Função</th>
                             <th className={`text-center py-2 px-2 ${textSecondary}`}>Tipo</th>
                             <th className={`text-center py-2 px-2 ${textSecondary}`}>Data</th>
                             <th className={`text-center py-2 px-2 ${textSecondary}`}>Início</th>
@@ -4658,6 +4755,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                           .map((item) => (
                             <tr key={item._key} className={`border-b ${isDark ? 'border-gray-800 hover:bg-gray-800/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                               <td className={`py-2 px-2 ${textPrimary}`}>{item.tecnico_nome}</td>
+                              <td className="py-2 px-2 text-center">
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  item.funcao_ot === 'ajudante' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-cyan-600/20 text-cyan-400'
+                                }`}>
+                                  {item.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'}
+                                </span>
+                              </td>
                               <td className="py-2 px-2 text-center">
                                 <span 
                                   className={`px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity ${
@@ -8845,6 +8949,23 @@ const TechnicalReports = ({ user, onLogout }) => {
               </Select>
             </div>
 
+            {/* Função na OT */}
+            <div>
+              <Label className="text-gray-300">Função na OT *</Label>
+              <Select
+                value={addRegistoManualForm.funcao_ot}
+                onValueChange={(val) => setAddRegistoManualForm(prev => ({ ...prev, funcao_ot: val }))}
+              >
+                <SelectTrigger data-testid="manual-funcao-ot-select" className="bg-gray-800 border-gray-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
+                  <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Data */}
             <div>
               <Label className="text-gray-300">Data *</Label>
@@ -9005,6 +9126,65 @@ const TechnicalReports = ({ user, onLogout }) => {
                 Criar Registo
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Popup Função na OT para Cronómetro */}
+      <Dialog open={showCronometroFuncaoPopup} onOpenChange={setShowCronometroFuncaoPopup}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <UserCheck className="w-5 h-5 text-blue-400" />
+              Definir Função na OT
+            </DialogTitle>
+            <p className="text-sm text-gray-400 mt-1">
+              Defina a função de cada técnico antes de iniciar o cronómetro de {cronometroFuncaoData.tipo === 'trabalho' ? 'Trabalho' : cronometroFuncaoData.tipo === 'viagem' ? 'Viagem' : 'Oficina'}.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-4">
+            {cronometroFuncaoData.tecnicos.map((tec, idx) => (
+              <div key={tec.id} className="flex items-center justify-between gap-3 bg-gray-800/50 p-3 rounded-lg border border-gray-700" data-testid={`crono-funcao-row-${idx}`}>
+                <span className="text-white font-medium text-sm flex-1 truncate">{tec.nome}</span>
+                <Select
+                  value={tec.funcao_ot}
+                  onValueChange={(val) => {
+                    setCronometroFuncaoData(prev => ({
+                      ...prev,
+                      tecnicos: prev.tecnicos.map((t, i) => 
+                        i === idx ? { ...t, funcao_ot: val } : t
+                      )
+                    }));
+                  }}
+                >
+                  <SelectTrigger data-testid={`crono-funcao-select-${idx}`} className="w-[140px] bg-gray-800 border-gray-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
+                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowCronometroFuncaoPopup(false)}
+              className="border-gray-600 text-gray-300"
+            >
+              Cancelar
+            </Button>
+            <Button
+              data-testid="confirm-crono-funcao-btn"
+              onClick={handleConfirmCronometroFuncao}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Iniciar Cronómetro
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
