@@ -213,8 +213,11 @@ def segmentar_periodo(hora_inicio, hora_fim, tipo):
             # Determinar código horário
             codigo = get_codigo_horario(atual)
             
-            # Arredondar horas
-            horas_arredondadas = arredondar_horas(duracao_minutos)
+            # Arredondar horas (exceto viagem que usa tempo real)
+            if tipo == "viagem":
+                horas_arredondadas = duracao_minutos / 60
+            else:
+                horas_arredondadas = arredondar_horas(duracao_minutos)
             
             segmentos.append({
                 "hora_inicio_segmento": atual,

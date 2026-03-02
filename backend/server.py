@@ -2882,7 +2882,8 @@ async def update_tecnico_relatorio(
         update_data["tecnico_nome"] = tecnico_data["tecnico_nome"]
     if "minutos_cliente" in tecnico_data:
         minutos_raw = tecnico_data["minutos_cliente"]
-        horas_arred = arredondar_horas(minutos_raw)
+        tipo_reg = existing.get("tipo", "trabalho")
+        horas_arred = minutos_raw / 60 if tipo_reg == "viagem" else arredondar_horas(minutos_raw)
         update_data["minutos_cliente"] = minutos_raw
         update_data["horas_arredondadas"] = horas_arred
     
@@ -2941,7 +2942,8 @@ async def update_tecnico_relatorio(
             if incluir_pausa:
                 duracao = max(0, duracao - 60)
             
-            horas_arred = arredondar_horas(duracao)
+            tipo_reg = existing.get("tipo", "trabalho")
+            horas_arred = duracao / 60 if tipo_reg == "viagem" else arredondar_horas(duracao)
             update_data["minutos_cliente"] = duracao
             update_data["horas_arredondadas"] = horas_arred
         except Exception as e:
@@ -2954,8 +2956,9 @@ async def update_tecnico_relatorio(
     if update_data and "horas_arredondadas" not in update_data:
         mins_existentes = existing.get("minutos_cliente", 0)
         horas_arred_existentes = existing.get("horas_arredondadas", 0)
+        tipo_reg = existing.get("tipo", "trabalho")
         if mins_existentes > 0:
-            horas_arred_correctas = arredondar_horas(mins_existentes)
+            horas_arred_correctas = mins_existentes / 60 if tipo_reg == "viagem" else arredondar_horas(mins_existentes)
             if abs(horas_arred_existentes - horas_arred_correctas) > 0.01:
                 update_data["horas_arredondadas"] = horas_arred_correctas
     
@@ -9817,7 +9820,7 @@ async def create_registo_tecnico_manual(
         if incluir_pausa:
             duracao_minutos = max(0, duracao_minutos - 60)
         from cronometro_logic import arredondar_horas
-        horas_arredondadas = arredondar_horas(duracao_minutos)
+        horas_arredondadas = duracao_minutos / 60 if tipo == "viagem" else arredondar_horas(duracao_minutos)
         
         registo = {
             "id": str(uuid.uuid4()),
