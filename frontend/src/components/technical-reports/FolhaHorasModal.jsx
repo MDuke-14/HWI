@@ -93,7 +93,8 @@ const FolhaHorasModal = ({
           tecnico_id: reg.tecnico_id,
           data: data,
           codigo: reg.codigo || '-',
-          tipo_registo: tipoRegisto
+          tipo_registo: tipoRegisto,
+          funcao_ot: reg.funcao_ot || 'tecnico'
         });
       });
       
@@ -138,9 +139,11 @@ const FolhaHorasModal = ({
       const chave = `${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo_registo}`;
       const codigo = registo.codigo;
       const tipoRegisto = registo.tipo_registo || 'trabalho';
+      // Oficina usa a mesma tarifa que trabalho
+      const tipoParaTarifa = tipoRegisto === 'oficina' ? 'trabalho' : tipoRegisto;
       
       // Primeiro, tentar encontrar tarifa específica para este tipo de registo
-      const chaveEspecifica = `${codigo}_${tipoRegisto}`;
+      const chaveEspecifica = `${codigo}_${tipoParaTarifa}`;
       let valorTarifa = tarifasPorCodigoTipo[chaveEspecifica];
       
       // Se não houver tarifa específica, usar a genérica
@@ -199,6 +202,7 @@ const FolhaHorasModal = ({
       todosRegistos.push({
         tecnico_id: reg.tecnico_id,
         tecnico_nome: reg.tecnico_nome,
+        funcao_ot: reg.funcao_ot || 'tecnico',
         data: data,
         tipo: tipoReg,
         codigo: reg.codigo || '-',
@@ -217,6 +221,7 @@ const FolhaHorasModal = ({
       todosRegistos.push({
         tecnico_id: tec.tecnico_id || tec.id,
         tecnico_nome: tec.tecnico_nome,
+        funcao_ot: tec.funcao_ot || 'tecnico',
         data: data,
         tipo: tec.tipo_registo || tec.tipo || 'manual',
         codigo: codigosMap[tec.tipo_horario] || '-',
@@ -381,7 +386,7 @@ const FolhaHorasModal = ({
             <div>
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-amber-400" />
-                Tarifas por Técnico
+                Tarifas por Colaborador
               </h3>
               <p className="text-gray-400 text-sm mb-4">
                 Selecione a tarifa (valor/hora) para cada técnico e data. Deixe vazio para não aplicar tarifa.
@@ -407,7 +412,12 @@ const FolhaHorasModal = ({
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-blue-400" />
-                            <span className="text-white font-medium">{registo.tecnico_nome}</span>
+                            <span className="text-white font-medium">
+                              {registo.tecnico_nome}
+                              <span className={`ml-1 text-xs ${registo.funcao_ot === 'ajudante' ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                                ({registo.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})
+                              </span>
+                            </span>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
                             {/* Tipo de Entrada */}
