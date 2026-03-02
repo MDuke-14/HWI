@@ -4710,7 +4710,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <table className="w-full text-sm">
                         <thead>
                           <tr className={`border-b ${borderColor}`}>
-                            <th className={`text-left py-2 px-2 ${textSecondary}`}>Técnico</th>
+                            <th className={`text-left py-2 px-2 ${textSecondary}`}>Colaborador</th>
                             <th className={`text-center py-2 px-2 ${textSecondary}`}>Função</th>
                             <th className={`text-center py-2 px-2 ${textSecondary}`}>Tipo</th>
                             <th className={`text-center py-2 px-2 ${textSecondary}`}>Data</th>
@@ -7416,7 +7416,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="bg-gray-100">
-                                  <th className="p-2 text-left">Técnico</th>
+                                  <th className="p-2 text-left">Colaborador</th>
                                   <th className="p-2 text-left">Tipo</th>
                                   <th className="p-2 text-left">Início</th>
                                   <th className="p-2 text-left">Fim</th>
@@ -7431,7 +7431,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   const tipoColor = tipoR === 'trabalho' ? 'text-green-700 bg-green-100' : tipoR === 'oficina' ? 'text-orange-700 bg-orange-100' : tipoR === 'viagem' ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100';
                                   return (
                                   <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                                    <td className="p-2">{reg.tecnico_nome}</td>
+                                    <td className="p-2">
+                                      {reg.tecnico_nome}
+                                      <span className={`ml-1 text-xs ${reg.funcao_ot === 'ajudante' ? 'text-yellow-600' : 'text-cyan-600'}`}>
+                                        ({reg.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})
+                                      </span>
+                                    </td>
                                     <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
                                     <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
                                     <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>

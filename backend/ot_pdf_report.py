@@ -497,6 +497,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 if tec_date == date or (date is None and not tec_date):
                     date_mao_obra.append({
                         'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
+                        'funcao_ot': tec.get('funcao_ot', 'tecnico'),
                         'hora_inicio': tec.get('hora_inicio', ''),
                         'hora_fim': tec.get('hora_fim', ''),
                         'minutos': tec.get('minutos_cliente', 0),
@@ -530,6 +531,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     
                     date_mao_obra.append({
                         'tecnico_nome': reg.get('tecnico_nome', 'N/A'),
+                        'funcao_ot': reg.get('funcao_ot', 'tecnico'),
                         'hora_inicio': hora_inicio_str,
                         'hora_fim': hora_fim_str,
                         'minutos': minutos_total,
@@ -543,7 +545,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             date_mao_obra.sort(key=lambda x: (x.get('hora_inicio', '') or '99:99', x.get('tecnico_nome', '')))
             
             # Cabeçalho da tabela
-            mao_obra_header = [['Técnico', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
+            mao_obra_header = [['Colaborador', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
             
             for reg in date_mao_obra:
                 minutos_total = reg.get('minutos', 0)
@@ -565,8 +567,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 else:
                     tipo_display = tipo_raw[:1].upper() if tipo_raw else '-'
                 
+                # Função: Técnico ou Ajudante
+                funcao = reg.get('funcao_ot', 'tecnico')
+                funcao_label = 'Ajudante' if funcao == 'ajudante' else 'Técnico'
+                nome_display = f"{reg.get('tecnico_nome', 'N/A')} ({funcao_label})"
+                
                 mao_obra_header.append([
-                    reg.get('tecnico_nome', 'N/A'),
+                    nome_display,
                     tipo_display,
                     reg.get('codigo', '-'),
                     reg.get('hora_inicio', '') or '-',
@@ -575,7 +582,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     km_formatado
                 ])
             
-            mao_obra_table = Table(mao_obra_header, colWidths=[4*cm, 1.5*cm, 1.5*cm, 2*cm, 2*cm, 2*cm, 2.5*cm])
+            mao_obra_table = Table(mao_obra_header, colWidths=[5*cm, 1.5*cm, 1.5*cm, 2*cm, 2*cm, 1.5*cm, 2.5*cm])
             mao_obra_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e5e7eb')),  # gray-200
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
