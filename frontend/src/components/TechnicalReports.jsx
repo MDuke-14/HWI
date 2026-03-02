@@ -2867,14 +2867,17 @@ const TechnicalReports = ({ user, onLogout }) => {
           _hora_sort: tec.hora_inicio || ''
         }))
       ].sort((a, b) => {
-        // Ordenar por data primeiro
-        const dataA = new Date(a.data || '1970-01-01');
-        const dataB = new Date(b.data || '1970-01-01');
-        if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
-        // Depois por hora (registos sem hora ficam no final)
-        const horaA = a._hora_sort || a.hora_inicio_segmento || '99:99';
-        const horaB = b._hora_sort || b.hora_inicio_segmento || '99:99';
-        return horaA.localeCompare(horaB);
+        // Normalizar datas para YYYY-MM-DD
+        const dataAStr = (a.data || '1970-01-01').substring(0, 10);
+        const dataBStr = (b.data || '1970-01-01').substring(0, 10);
+        if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
+        // Normalizar horas para HH:MM
+        const extractTime = (item) => {
+          const h = item._hora_sort || '';
+          if (h.length > 10) return h.substring(11, 16);
+          return h || '99:99';
+        };
+        return extractTime(a).localeCompare(extractTime(b));
       });
       
       setHtmlPreviewData({
@@ -4527,22 +4530,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }))
                           ]
                           .sort((a, b) => {
-                            // Primeiro ordenar por data
-                            const dataAStr = a._data_sort || '1970-01-01';
-                            const dataBStr = b._data_sort || '1970-01-01';
-                            const dataA = new Date(dataAStr);
-                            const dataB = new Date(dataBStr);
-                            const dataAValid = !isNaN(dataA.getTime());
-                            const dataBValid = !isNaN(dataB.getTime());
-                            if (!dataAValid && !dataBValid) return 0;
-                            if (!dataAValid) return 1;
-                            if (!dataBValid) return -1;
-                            if (dataA.getTime() !== dataB.getTime()) return dataA - dataB;
+                            // Normalizar datas para YYYY-MM-DD (primeiros 10 chars)
+                            const dataAStr = (a._data_sort || '1970-01-01').substring(0, 10);
+                            const dataBStr = (b._data_sort || '1970-01-01').substring(0, 10);
+                            if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
                             
-                            // Se mesma data, ordenar por hora de início
-                            const horaA = a._hora_inicio_sort || a.hora_inicio || '';
-                            const horaB = b._hora_inicio_sort || b.hora_inicio || '';
-                            return horaA.localeCompare(horaB);
+                            // Se mesma data, ordenar por hora de início normalizada (HH:MM)
+                            const extractTime = (item) => {
+                              if (item._source === 'cronometro' && item.hora_inicio_segmento) {
+                                return item.hora_inicio_segmento.substring(11, 16);
+                              }
+                              return item.hora_inicio || '00:00';
+                            };
+                            return extractTime(a).localeCompare(extractTime(b));
                           })
                           .map((item) => (
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
@@ -4641,33 +4641,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }))
                           ]
                           .sort((a, b) => {
-                            // Ordenar por data primeiro (com fallback seguro)
-                            const dataAStr = a._data_sort || '1970-01-01';
-                            const dataBStr = b._data_sort || '1970-01-01';
-                            const dataA = new Date(dataAStr);
-                            const dataB = new Date(dataBStr);
+                            // Normalizar datas para YYYY-MM-DD (primeiros 10 chars)
+                            const dataAStr = (a._data_sort || '1970-01-01').substring(0, 10);
+                            const dataBStr = (b._data_sort || '1970-01-01').substring(0, 10);
+                            if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
                             
-                            // Verificar se as datas são válidas
-                            const dataAValid = !isNaN(dataA.getTime());
-                            const dataBValid = !isNaN(dataB.getTime());
-                            
-                            if (!dataAValid && !dataBValid) return 0;
-                            if (!dataAValid) return 1;
-                            if (!dataBValid) return -1;
-                            
-                            if (dataA.getTime() !== dataB.getTime()) {
-                              return dataA - dataB;
-                            }
-                            // Se mesma data, ordenar por hora de início
-                            const horaAStr = a._hora_inicio_sort || '';
-                            const horaBStr = b._hora_inicio_sort || '';
-                            if (!horaAStr && !horaBStr) return 0;
-                            if (!horaAStr) return 1;
-                            if (!horaBStr) return -1;
-                            const horaA = new Date(horaAStr);
-                            const horaB = new Date(horaBStr);
-                            if (isNaN(horaA.getTime()) || isNaN(horaB.getTime())) return 0;
-                            return horaA - horaB;
+                            // Se mesma data, ordenar por hora de início normalizada (HH:MM)
+                            const extractTime = (item) => {
+                              if (item._source === 'cronometro' && item.hora_inicio_segmento) {
+                                return item.hora_inicio_segmento.substring(11, 16);
+                              }
+                              return item.hora_inicio || '00:00';
+                            };
+                            return extractTime(a).localeCompare(extractTime(b));
                           })
                           .map((item) => (
                             <tr key={item._key} className={`border-b ${isDark ? 'border-gray-800 hover:bg-gray-800/50' : 'border-gray-200 hover:bg-gray-50'}`}>

@@ -14,6 +14,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Arredondamento em edições** (27 Fevereiro 2026)
 - **Anexar Folha de Horas no email** (27 Fevereiro 2026)
 
+### P0 (Concluído recente)
+- **Ordenação cronológica dos registos de mão de obra nas OTs** (2 Março 2026) - Corrigida lógica de sort em 3 locais (mobile, desktop, preview modal). Normalização de datas para YYYY-MM-DD e horas para HH:MM.
+
 ### P0 (Pendente)
 - **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358
 - **Signature editing does not save correctly** - Verificação pendente
