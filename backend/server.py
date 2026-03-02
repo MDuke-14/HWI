@@ -2561,7 +2561,18 @@ async def get_relatorios(
     # Criar mapa de contagens
     counts_map = {item["_id"]: item["count"] for item in equipamentos_counts}
     
-    # Processar relatórios (sem queries adicionais no loop)
+    # Buscar primeiro equipamento de cada OT que tem exatamente 1 equipamento na coleção
+    single_equip_ids = [rid for rid in relatorio_ids if counts_map.get(rid, 0) == 1]
+    single_equip_map = {}
+    if single_equip_ids:
+        single_equips = await db.equipamentos_ot.find(
+            {"relatorio_id": {"$in": single_equip_ids}},
+            {"_id": 0, "relatorio_id": 1, "tipologia": 1, "marca": 1}
+        ).to_list(None)
+        for eq in single_equips:
+            single_equip_map[eq["relatorio_id"]] = eq
+    
+    # Processar relatórios
     for relatorio in relatorios:
         relatorio_id = relatorio.get("id")
         equipamentos_count = counts_map.get(relatorio_id, 0)
@@ -2576,7 +2587,7 @@ async def get_relatorios(
         # Calcular total de equipamentos
         total_equipamentos = equipamentos_count + (1 if tem_equip_principal else 0)
         
-        # Definir texto a mostrar (sem queries adicionais)
+        # Definir texto a mostrar
         if total_equipamentos == 0:
             relatorio["equipamento_display"] = "Não especificado"
         elif total_equipamentos == 1:
@@ -2586,12 +2597,15 @@ async def get_relatorios(
                     parts.append(relatorio["equipamento_tipologia"])
                 if relatorio.get("equipamento_marca"):
                     parts.append(relatorio["equipamento_marca"])
-                if relatorio.get("equipamento_modelo"):
-                    parts.append(relatorio["equipamento_modelo"])
-                relatorio["equipamento_display"] = " • ".join(parts) if parts else "Equipamento"
+                relatorio["equipamento_display"] = " - ".join(parts) if parts else "Equipamento"
             else:
-                # Se não tem principal, mostra "Equipamento" (sem query adicional)
-                relatorio["equipamento_display"] = "Equipamento"
+                eq = single_equip_map.get(relatorio_id, {})
+                parts = []
+                if eq.get("tipologia"):
+                    parts.append(eq["tipologia"])
+                if eq.get("marca"):
+                    parts.append(eq["marca"])
+                relatorio["equipamento_display"] = " - ".join(parts) if parts else "Equipamento"
         else:
             relatorio["equipamento_display"] = "Vários"
         
