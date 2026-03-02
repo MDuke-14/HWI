@@ -135,6 +135,9 @@ def generate_folha_horas_pdf(
     
     def find_best_tariff(codigo, tipo_registo, funcao_ot, tarifas_detalhadas, tarifas_por_codigo):
         """Find the best matching tariff considering tipo_colaborador."""
+        # Oficina usa a mesma tarifa que trabalho
+        tipo_registo_normalizado = 'trabalho' if tipo_registo == 'oficina' else tipo_registo
+        
         best_match = None
         best_score = -1
         
@@ -143,9 +146,9 @@ def generate_folha_horas_pdf(
                 continue
             score = 0
             # Match tipo_registo
-            if t.get('tipo_registo') and t['tipo_registo'] != tipo_registo:
+            if t.get('tipo_registo') and t['tipo_registo'] != tipo_registo_normalizado:
                 continue
-            if t.get('tipo_registo') == tipo_registo:
+            if t.get('tipo_registo') == tipo_registo_normalizado:
                 score += 2
             # Match tipo_colaborador
             if t.get('tipo_colaborador') and t['tipo_colaborador'] != funcao_ot:

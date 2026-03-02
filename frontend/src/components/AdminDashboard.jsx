@@ -1863,7 +1863,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                                       tarifa.tipo_registo === 'trabalho' ? 'bg-cyan-500/20 text-cyan-400' :
                                       'bg-purple-500/20 text-purple-400'
                                     }`}>
-                                      {tarifa.tipo_registo === 'trabalho' ? 'Trabalho' : 'Viagem'}
+                                      {tarifa.tipo_registo === 'trabalho' ? 'Trabalho/Oficina' : 'Viagem'}
                                     </span>
                                   )}
                                   {tarifa.tipo_colaborador && (
@@ -1885,7 +1885,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                                 Aplica-se a: {tarifa.codigo === '1' ? 'Dias úteis (07h-19h)' :
                                               tarifa.codigo === '2' ? 'Dias úteis (19h-07h)' :
                                               tarifa.codigo === 'S' ? 'Sábados' : 'Domingos/Feriados'}
-                                {tarifa.tipo_registo && ` (${tarifa.tipo_registo === 'trabalho' ? 'apenas trabalho' : 'apenas viagem'})`}
+                                {tarifa.tipo_registo && ` (${tarifa.tipo_registo === 'trabalho' ? 'apenas trabalho/oficina' : 'apenas viagem'})`}
                               </p>
                             )}
                             {tarifa.codigo === 'manual' && (
@@ -2032,8 +2032,8 @@ const AdminDashboard = ({ user, onLogout }) => {
                         onChange={(e) => setTarifaForm({...tarifaForm, tipo_registo: e.target.value})}
                         className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
                       >
-                        <option value="">Trabalho + Viagem</option>
-                        <option value="trabalho">Apenas Trabalho</option>
+                        <option value="">Trabalho/Oficina + Viagem</option>
+                        <option value="trabalho">Apenas Trabalho/Oficina</option>
                         <option value="viagem">Apenas Viagem</option>
                       </select>
                     </div>
