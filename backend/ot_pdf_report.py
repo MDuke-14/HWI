@@ -254,7 +254,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         [Paragraph("Cliente:", label_style), Paragraph(cliente.get('nome', 'N/A'), value_style),
          Paragraph("Pedido por:", label_style), Paragraph(relatorio.get('pedido_por', '-') or '-', value_style)],
         [Paragraph("Local:", label_style), Paragraph(relatorio.get('local_intervencao', '-') or '-', value_style),
-         Paragraph("Motivo:", label_style), Paragraph(relatorio.get('motivo_assistencia', '-') or '-', value_style)],
+         Paragraph("", label_style), Paragraph("", value_style)],
     ]
     
     client_table = Table(client_grid, colWidths=[2*cm, 7*cm, 2.5*cm, 6.5*cm])
