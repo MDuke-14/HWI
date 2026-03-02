@@ -173,6 +173,23 @@ const TecnicoModal = ({
             </select>
           </div>
 
+          {/* Função na OT */}
+          <div>
+            <Label className="text-gray-300 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Função na OT *
+            </Label>
+            <select
+              value={tecnicoFormData.funcao_ot || 'tecnico'}
+              onChange={(e) => setTecnicoFormData({ ...tecnicoFormData, funcao_ot: e.target.value })}
+              className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+              data-testid="tecnico-modal-funcao-ot"
+            >
+              <option value="tecnico">Técnico</option>
+              <option value="ajudante">Ajudante</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Seleção de Técnico */}
             <div>

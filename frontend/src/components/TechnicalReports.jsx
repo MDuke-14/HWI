@@ -347,7 +347,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     codigo: '',
     hora_inicio: '',
     hora_fim: '',
-    incluir_pausa: false
+    incluir_pausa: false,
+    funcao_ot: 'tecnico'
   });
 
   // Modal para adicionar registo manual
@@ -384,7 +385,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     tipo_horario: 'diurno',
     data_trabalho: new Date().toISOString().split('T')[0],
     hora_inicio: '',
-    hora_fim: ''
+    hora_fim: '',
+    funcao_ot: 'tecnico'
   });
 
   const [showCodigoModal, setShowCodigoModal] = useState(false);
@@ -1358,7 +1360,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       data_trabalho: tecnico.data_trabalho ? tecnico.data_trabalho.split('T')[0] : new Date().toISOString().split('T')[0],
       hora_inicio: tecnico.hora_inicio || '',
       hora_fim: tecnico.hora_fim || '',
-      incluir_pausa: tecnico.incluir_pausa || false
+      incluir_pausa: tecnico.incluir_pausa || false,
+      funcao_ot: tecnico.funcao_ot || 'tecnico'
     });
     setShowEditTecnicoModal(true);
   };
@@ -1408,7 +1411,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       data_trabalho: new Date().toISOString().split('T')[0],
       hora_inicio: '',
       hora_fim: '',
-      incluir_pausa: false
+      incluir_pausa: false,
+      funcao_ot: 'tecnico'
     });
   };
 
@@ -2567,7 +2571,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       codigo: registo.codigo || '',
       hora_inicio: horaInicio,
       hora_fim: horaFim,
-      incluir_pausa: registo.incluir_pausa || false
+      incluir_pausa: registo.incluir_pausa || false,
+      funcao_ot: registo.funcao_ot || 'tecnico'
     });
     setShowEditRegistoModal(true);
   };
@@ -2587,7 +2592,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_final: parseFloat(editRegistoForm.kms_final || 0),
       kms_inicial_volta: parseFloat(editRegistoForm.kms_inicial_volta || 0),
       kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0),
-      incluir_pausa: editRegistoForm.incluir_pausa
+      incluir_pausa: editRegistoForm.incluir_pausa,
+      funcao_ot: editRegistoForm.funcao_ot
     };
     
     // Se temos hora início e fim, enviar para recalcular duração e código
@@ -9221,6 +9227,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Função na OT */}
+              <div>
+                <Label className="text-gray-300">Função na OT</Label>
+                <Select
+                  value={editRegistoForm.funcao_ot}
+                  onValueChange={(val) => setEditRegistoForm(prev => ({ ...prev, funcao_ot: val }))}
+                >
+                  <SelectTrigger data-testid="edit-funcao-ot-select" className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
+                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Campos de Hora Início e Fim */}

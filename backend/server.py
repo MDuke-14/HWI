@@ -476,6 +476,7 @@ class TecnicoRelatorio(BaseModel):
     kms_deslocacao: float = 0  # Calculado automaticamente (kms_final - kms_inicial + volta)
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
     tipo_registo: str = "manual"  # "manual", "trabalho", "viagem", "oficina"
+    funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     hora_inicio: Optional[str] = None  # Hora de início (HH:MM) para Folha de Horas
     hora_fim: Optional[str] = None  # Hora de fim (HH:MM) para Folha de Horas
@@ -2763,6 +2764,7 @@ async def add_tecnico_relatorio(
     tecnico_id_user = tecnico_data.get("tecnico_id", "")
     tecnico_nome = tecnico_data.get("tecnico_nome", "")
     tipo_registo = tecnico_data.get("tipo_registo", "manual")
+    funcao_ot = tecnico_data.get("funcao_ot", "tecnico")
     data_trabalho_str = tecnico_data.get("data_trabalho")
     hora_inicio_str = tecnico_data.get("hora_inicio")
     hora_fim_str = tecnico_data.get("hora_fim")
@@ -2817,6 +2819,7 @@ async def add_tecnico_relatorio(
                     "tecnico_id": tecnico_id_user,
                     "tecnico_nome": tecnico_nome,
                     "tipo": tipo_registo,
+                    "funcao_ot": funcao_ot,
                     "data": seg["data"].isoformat(),
                     "hora_inicio_segmento": seg["hora_inicio_segmento"].isoformat(),
                     "hora_fim_segmento": seg["hora_fim_segmento"].isoformat(),
@@ -2860,6 +2863,7 @@ async def add_tecnico_relatorio(
         kms_deslocacao=kms_deslocacao,
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
         tipo_registo=tipo_registo,
+        funcao_ot=funcao_ot,
         data_trabalho=data_trabalho_str if data_trabalho_str else datetime.now(timezone.utc).date(),
         hora_inicio=hora_inicio_str,
         hora_fim=hora_fim_str,
@@ -2932,6 +2936,8 @@ async def update_tecnico_relatorio(
         update_data["tipo_horario"] = tecnico_data["tipo_horario"]
     if "tipo_registo" in tecnico_data:
         update_data["tipo_registo"] = tecnico_data["tipo_registo"]
+    if "funcao_ot" in tecnico_data:
+        update_data["funcao_ot"] = tecnico_data["funcao_ot"]
     if "data_trabalho" in tecnico_data:
         # Converter para string ISO se necessário
         if isinstance(tecnico_data["data_trabalho"], str):
@@ -10016,6 +10022,8 @@ async def update_registo_tecnico(
         update_data["codigo"] = registo_data["codigo"]
     if "tipo" in registo_data:
         update_data["tipo"] = registo_data["tipo"]
+    if "funcao_ot" in registo_data:
+        update_data["funcao_ot"] = registo_data["funcao_ot"]
     
     # Novos campos de Km's Ida e Volta
     if "kms_inicial" in registo_data:
