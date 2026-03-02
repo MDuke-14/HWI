@@ -492,6 +492,7 @@ class CronometroOT(BaseModel):
     tecnico_nome: str
     tipo: str  # "trabalho", "viagem" ou "oficina"
     funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
+    km_inicial: float = 0  # Km's iniciais (usado em viagem)
     hora_inicio: datetime
     ativo: bool = True
 
@@ -9607,6 +9608,7 @@ async def iniciar_cronometro(
     tecnico_id = dados.get("tecnico_id")
     tecnico_nome = dados.get("tecnico_nome")
     funcao_ot = dados.get("funcao_ot", "tecnico")  # "tecnico" ou "ajudante"
+    km_inicial = float(dados.get("km_inicial", 0))  # Km's iniciais para viagem
     
     if tipo not in ["trabalho", "viagem", "oficina"]:
         raise HTTPException(status_code=400, detail="Tipo deve ser 'trabalho', 'viagem' ou 'oficina'")
@@ -9629,6 +9631,7 @@ async def iniciar_cronometro(
         tecnico_nome=tecnico_nome,
         tipo=tipo,
         funcao_ot=funcao_ot,
+        km_inicial=km_inicial,
         hora_inicio=datetime.now(timezone.utc),
         ativo=True
     )
@@ -9685,12 +9688,13 @@ async def parar_cronometro(
     # Segmentar período
     segmentos = segmentar_periodo(hora_inicio, hora_fim, tipo)
     
-    # Obter funcao_ot do cronómetro
+    # Obter funcao_ot e km_inicial do cronómetro
     funcao_ot = cronometro.get("funcao_ot", "tecnico")
+    km_inicial_crono = cronometro.get("km_inicial", 0)
     
     # Criar registos
     registos_criados = []
-    for seg in segmentos:
+    for i, seg in enumerate(segmentos):
         km_segmento = 0 if tipo == "viagem" else km_ot
         
         registo = RegistoTecnicoOT(
@@ -9707,7 +9711,10 @@ async def parar_cronometro(
             codigo=seg["codigo"]
         )
         
-        registo_dict = registo.dict()
+        registo_dict = registo.model_dump()
+        # Guardar km_inicial no primeiro registo de viagem
+        if i == 0 and tipo == "viagem" and km_inicial_crono > 0:
+            registo_dict["kms_inicial"] = km_inicial_crono
         registo_dict["data"] = registo_dict["data"].isoformat()
         registo_dict["hora_inicio_segmento"] = registo_dict["hora_inicio_segmento"].isoformat()
         registo_dict["hora_fim_segmento"] = registo_dict["hora_fim_segmento"].isoformat()

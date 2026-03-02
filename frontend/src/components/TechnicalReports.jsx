@@ -2367,13 +2367,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleIniciarCronometro = async (tecnico, tipo, funcao_ot = 'tecnico') => {
+  const handleIniciarCronometro = async (tecnico, tipo, funcao_ot = 'tecnico', km_inicial = 0) => {
     try {
       await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/iniciar`, {
         tipo,
         tecnico_id: tecnico.tecnico_id || tecnico.id,
         tecnico_nome: tecnico.tecnico_nome || tecnico.nome,
-        funcao_ot
+        funcao_ot,
+        km_inicial
       });
       
       toast.success(`Cronómetro de ${tipo} iniciado!`);
@@ -2434,11 +2435,14 @@ const TechnicalReports = ({ user, onLogout }) => {
       setCronoTecnicosSelecionados([]);
     } else {
       // Iniciar cronómetro individual em OT existente
-      for (const tec of tecnicos) {
+      const km_inicial = cronometroFuncaoData.km_inicial ? parseFloat(cronometroFuncaoData.km_inicial) : 0;
+      for (let i = 0; i < tecnicos.length; i++) {
+        const tec = tecnicos[i];
         await handleIniciarCronometro(
           { tecnico_id: tec.id, tecnico_nome: tec.nome },
           tipo,
-          tec.funcao_ot
+          tec.funcao_ot,
+          i === 0 ? km_inicial : 0  // Km's iniciais apenas no primeiro técnico
         );
       }
     }
@@ -9172,6 +9176,24 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             ))}
           </div>
+
+          {/* Km's Iniciais - apenas para Viagem */}
+          {cronometroFuncaoData.tipo === 'viagem' && (
+            <div className="mt-4">
+              <Label className="text-gray-300 flex items-center gap-2">
+                <Car className="w-4 h-4" />
+                Km's Iniciais
+              </Label>
+              <Input
+                type="number"
+                data-testid="crono-km-inicial"
+                value={cronometroFuncaoData.km_inicial || ''}
+                onChange={(e) => setCronometroFuncaoData(prev => ({ ...prev, km_inicial: e.target.value }))}
+                placeholder="Ex: 45230"
+                className="bg-gray-800 border-gray-700 text-white mt-1"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button
