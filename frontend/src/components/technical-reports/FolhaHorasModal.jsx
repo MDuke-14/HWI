@@ -75,7 +75,8 @@ const FolhaHorasModal = ({
       // Adicionar tipo de registo aos registos individuais
       registos = folhaHorasData.registos_individuais.map(reg => ({
         ...reg,
-        tipo_registo: reg.tipo?.toLowerCase() || 'trabalho'
+        tipo_registo: reg.tipo?.toLowerCase() || 'trabalho',
+        funcao_ot: reg.funcao_ot || 'tecnico'
       }));
     } else if (folhaHorasData?.tecnicos) {
       const registosBase = folhaHorasData.registos || [];
@@ -111,49 +112,65 @@ const FolhaHorasModal = ({
           tecnico_id: tec.tecnico_id || tec.id,
           data: data,
           codigo: codigosMap[tec.tipo_horario] || '-',
-          tipo_registo: tipoRegisto
+          tipo_registo: tipoRegisto,
+          funcao_ot: tec.funcao_ot || 'tecnico'
         });
       });
     }
     
-    // Criar mapa de (codigo, tipo_registo) -> valor da tarifa
-    // Prioridade: tarifa específica para tipo > tarifa genérica
-    const tarifasPorCodigoTipo = {};
-    const tarifasPorCodigo = {};
+    // Criar mapa de tarifas com 3 dimensões: codigo + tipo_registo + tipo_colaborador
+    // Prioridade: específica tipo+colaborador > específica tipo > específica colaborador > genérica
+    const tarifaMap = [];
     
     tarifas.forEach(t => {
       if (t.codigo && t.codigo !== 'manual') {
-        if (t.tipo_registo) {
-          // Tarifa específica para tipo de registo
-          const chave = `${t.codigo}_${t.tipo_registo}`;
-          tarifasPorCodigoTipo[chave] = t.valor_por_hora;
-        } else {
-          // Tarifa genérica (aplica a ambos)
-          tarifasPorCodigo[t.codigo] = t.valor_por_hora;
-        }
+        tarifaMap.push({
+          id: t.id,
+          codigo: t.codigo,
+          tipo_registo: t.tipo_registo || null,
+          tipo_colaborador: t.tipo_colaborador || null,
+          valor: t.valor_por_hora
+        });
       }
     });
+    
+    const findBestTarifa = (codigo, tipoRegisto, funcaoOt) => {
+      // Oficina usa mesma tarifa que trabalho
+      const tipoNorm = tipoRegisto === 'oficina' ? 'trabalho' : tipoRegisto;
+      
+      let bestMatch = null;
+      let bestScore = -1;
+      
+      for (const t of tarifaMap) {
+        if (t.codigo !== codigo) continue;
+        let score = 0;
+        // tipo_registo match
+        if (t.tipo_registo && t.tipo_registo !== tipoNorm) continue;
+        if (t.tipo_registo === tipoNorm) score += 2;
+        // tipo_colaborador match
+        if (t.tipo_colaborador && t.tipo_colaborador !== funcaoOt) continue;
+        if (t.tipo_colaborador === funcaoOt) score += 4;
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = t;
+        }
+      }
+      return bestMatch?.id || null;
+    };
     
     // Preencher cada registo com a tarifa correspondente
     registos.forEach(registo => {
       const chave = `${registo.tecnico_id}_${registo.data}_${registo.codigo}_${registo.tipo_registo}`;
       const codigo = registo.codigo;
       const tipoRegisto = registo.tipo_registo || 'trabalho';
-      // Oficina usa a mesma tarifa que trabalho
-      const tipoParaTarifa = tipoRegisto === 'oficina' ? 'trabalho' : tipoRegisto;
+      const funcaoOt = registo.funcao_ot || 'tecnico';
       
-      // Primeiro, tentar encontrar tarifa específica para este tipo de registo
-      const chaveEspecifica = `${codigo}_${tipoParaTarifa}`;
-      let valorTarifa = tarifasPorCodigoTipo[chaveEspecifica];
+      const tarifaId = findBestTarifa(codigo, tipoRegisto, funcaoOt);
       
-      // Se não houver tarifa específica, usar a genérica
-      if (valorTarifa === undefined) {
-        valorTarifa = tarifasPorCodigo[codigo];
-      }
-      
-      // Se existe uma tarifa, preencher automaticamente
-      if (codigo && codigo !== '-' && valorTarifa !== undefined) {
-        updateFolhaHorasTarifa(chave, valorTarifa.toString());
+      // Se existe uma tarifa, preencher automaticamente com o id da tarifa
+      if (codigo && codigo !== '-' && tarifaId) {
+        updateFolhaHorasTarifa(chave, tarifaId);
       }
     });
   };
@@ -446,7 +463,7 @@ const FolhaHorasModal = ({
                             >
                               <option value="">Sem tarifa</option>
                               {folhaHorasData.tarifas.map(tarifa => (
-                                <option key={tarifa.id} value={tarifa.valor_por_hora}>
+                                <option key={tarifa.id} value={tarifa.id}>
                                   {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h)
                                 </option>
                               ))}

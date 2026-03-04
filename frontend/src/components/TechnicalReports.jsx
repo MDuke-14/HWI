@@ -2752,11 +2752,21 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleGenerateFolhaHoras = async (tableId = 1) => {
     if (!selectedRelatorio || !folhaHorasData) return;
     
-    // Preparar dados
+    // Preparar dados - converter tarifa IDs para valores
     const tarifasPorTecnico = {};
-    Object.entries(folhaHorasTarifas).forEach(([tecnicoId, valor]) => {
-      if (valor) {
-        tarifasPorTecnico[tecnicoId] = parseFloat(valor);
+    const tarifasMap = {};
+    if (folhaHorasData?.tarifas) {
+      folhaHorasData.tarifas.forEach(t => { tarifasMap[t.id] = t.valor_por_hora; });
+    }
+    Object.entries(folhaHorasTarifas).forEach(([tecnicoId, tarifaIdOrValor]) => {
+      if (tarifaIdOrValor) {
+        // Se é um id de tarifa, converter para valor; senão, usar como número
+        const valor = tarifasMap[tarifaIdOrValor] !== undefined 
+          ? tarifasMap[tarifaIdOrValor] 
+          : parseFloat(tarifaIdOrValor);
+        if (!isNaN(valor)) {
+          tarifasPorTecnico[tecnicoId] = valor;
+        }
       }
     });
     
