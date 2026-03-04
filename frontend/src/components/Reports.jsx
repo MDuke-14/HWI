@@ -577,35 +577,35 @@ const Reports = ({ user, onLogout }) => {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-3 rounded-xl">
-            <Icon className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 md:p-3 rounded-xl">
+            <Icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white">{title}</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-white">{title}</h2>
         </div>
 
-        <div className="grid md:grid-cols-5 gap-4 mb-6">
-          <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Total de Horas</div>
-            <div className="text-3xl font-bold text-white" data-testid="total-hours">{formatHours(report.total_hours)}</div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
+          <div className="glass-effect p-4 md:p-6 rounded-xl col-span-2 md:col-span-1">
+            <div className="text-gray-400 text-xs md:text-sm mb-1">Total de Horas</div>
+            <div className="text-2xl md:text-3xl font-bold text-white" data-testid="total-hours">{formatHours(report.total_hours)}</div>
           </div>
-          <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Horas Normais</div>
-            <div className="text-3xl font-bold text-blue-400" data-testid="regular-hours">{formatHours(report.regular_hours)}</div>
+          <div className="glass-effect p-4 md:p-6 rounded-xl">
+            <div className="text-gray-400 text-xs md:text-sm mb-1">Horas Normais</div>
+            <div className="text-xl md:text-3xl font-bold text-blue-400" data-testid="regular-hours">{formatHours(report.regular_hours)}</div>
           </div>
-          <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Trabalho Suplementar</div>
-            <div className="text-sm text-gray-500">(Dias Úteis)</div>
-            <div className="text-3xl font-bold text-amber-400" data-testid="overtime-hours">{formatHours(report.overtime_hours)}</div>
+          <div className="glass-effect p-4 md:p-6 rounded-xl">
+            <div className="text-gray-400 text-xs md:text-sm mb-1">Trab. Suplementar</div>
+            <div className="text-[10px] md:text-sm text-gray-500">(Dias Úteis)</div>
+            <div className="text-xl md:text-3xl font-bold text-amber-400" data-testid="overtime-hours">{formatHours(report.overtime_hours)}</div>
           </div>
-          <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Trab. Supl. Dias Descanso</div>
-            <div className="text-sm text-gray-500">(Feriados/Fins Semana)</div>
-            <div className="text-3xl font-bold text-purple-400" data-testid="special-hours">{formatHours(report.special_hours || 0)}</div>
+          <div className="glass-effect p-4 md:p-6 rounded-xl">
+            <div className="text-gray-400 text-xs md:text-sm mb-1">Trab. Supl. Descanso</div>
+            <div className="text-[10px] md:text-sm text-gray-500">(Feriados/FS)</div>
+            <div className="text-xl md:text-3xl font-bold text-purple-400" data-testid="special-hours">{formatHours(report.special_hours || 0)}</div>
           </div>
-          <div className="glass-effect p-6 rounded-xl">
-            <div className="text-gray-400 text-sm mb-2">Dias Trabalhados</div>
-            <div className="text-3xl font-bold text-green-400" data-testid="total-days">{report.total_days}</div>
+          <div className="glass-effect p-4 md:p-6 rounded-xl">
+            <div className="text-gray-400 text-xs md:text-sm mb-1">Dias Trabalhados</div>
+            <div className="text-xl md:text-3xl font-bold text-green-400" data-testid="total-days">{report.total_days}</div>
           </div>
         </div>
 
@@ -737,9 +737,9 @@ const Reports = ({ user, onLogout }) => {
             </div>
           )}
           
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-              <TrendingUp className="w-10 h-10" />
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-4xl font-bold text-white flex items-center gap-2 md:gap-3">
+              <TrendingUp className="w-7 h-7 md:w-10 md:h-10" />
               Relatórios
             </h1>
           </div>
@@ -767,87 +767,89 @@ const Reports = ({ user, onLogout }) => {
                     <div className="glass-effect p-4 rounded-xl">
                       <div className="mb-4">
                         <label className="text-gray-400 text-sm mb-2 block">Tipo de Relatório</label>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           <Button
                             onClick={() => setReportType('monthly')}
-                            className={`flex-1 ${reportType === 'monthly' ? 'bg-blue-600' : 'bg-gray-700'}`}
+                            className={`text-xs md:text-sm ${reportType === 'monthly' ? 'bg-blue-600' : 'bg-gray-700'}`}
                           >
-                            📅 Relatório Mensal
+                            Relatório Mensal
                           </Button>
                           <Button
                             onClick={() => setReportType('custom')}
-                            className={`flex-1 ${reportType === 'custom' ? 'bg-blue-600' : 'bg-gray-700'}`}
+                            className={`text-xs md:text-sm ${reportType === 'custom' ? 'bg-blue-600' : 'bg-gray-700'}`}
                           >
-                            🔍 Intervalo Personalizado
+                            Intervalo Personalizado
                           </Button>
                         </div>
                       </div>
 
                       {reportType === 'monthly' ? (
                         /* Monthly Selection */
-                        <div className="flex gap-4 items-end">
-                          <div className="flex-1">
-                            <label className="text-gray-400 text-sm mb-2 block">Mês</label>
-                            <select
-                              value={selectedMonth}
-                              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                              className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
-                            >
-                              <option value={1}>Janeiro</option>
-                              <option value={2}>Fevereiro</option>
-                              <option value={3}>Março</option>
-                              <option value={4}>Abril</option>
-                              <option value={5}>Maio</option>
-                              <option value={6}>Junho</option>
-                              <option value={7}>Julho</option>
-                              <option value={8}>Agosto</option>
-                              <option value={9}>Setembro</option>
-                              <option value={10}>Outubro</option>
-                              <option value={11}>Novembro</option>
-                              <option value={12}>Dezembro</option>
-                            </select>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-gray-400 text-sm mb-1 block">Mês</label>
+                              <select
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                                className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                              >
+                                <option value={1}>Janeiro</option>
+                                <option value={2}>Fevereiro</option>
+                                <option value={3}>Março</option>
+                                <option value={4}>Abril</option>
+                                <option value={5}>Maio</option>
+                                <option value={6}>Junho</option>
+                                <option value={7}>Julho</option>
+                                <option value={8}>Agosto</option>
+                                <option value={9}>Setembro</option>
+                                <option value={10}>Outubro</option>
+                                <option value={11}>Novembro</option>
+                                <option value={12}>Dezembro</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-gray-400 text-sm mb-1 block">Ano</label>
+                              <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
+                              >
+                                {[2024, 2025, 2026].map(year => (
+                                  <option key={year} value={year}>{year}</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <label className="text-gray-400 text-sm mb-2 block">Ano</label>
-                            <select
-                              value={selectedYear}
-                              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                              className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2"
-                            >
-                              {[2024, 2025, 2026].map(year => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex-1 flex gap-2 items-end">
-                          {user?.is_admin && (
+                          <div className="grid grid-cols-3 gap-2">
+                            {user?.is_admin && (
+                              <Button
+                                data-testid="import-report-button"
+                                onClick={() => setShowImportDialog(true)}
+                                className="bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs md:text-sm"
+                              >
+                                <Upload className="w-4 h-4 mr-1" />
+                                Importar
+                              </Button>
+                            )}
                             <Button
-                              data-testid="import-report-button"
-                              onClick={() => setShowImportDialog(true)}
-                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-full"
+                              data-testid="export-pdf-button"
+                              onClick={downloadPdfReport}
+                              className="bg-red-600 hover:bg-red-700 text-white rounded-full text-xs md:text-sm"
                             >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Importar
+                              <FileText className="w-4 h-4 mr-1" />
+                              PDF
                             </Button>
-                          )}
-                          <Button
-                            data-testid="export-pdf-button"
-                            onClick={downloadPdfReport}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full"
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            PDF
-                          </Button>
-                          <Button
-                            data-testid="refresh-button"
-                            onClick={fetchDetailedMonthlyReport}
-                            disabled={loading}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                          >
-                            {loading ? 'A atualizar...' : 'Atualizar'}
-                          </Button>
+                            <Button
+                              data-testid="refresh-button"
+                              onClick={fetchDetailedMonthlyReport}
+                              disabled={loading}
+                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs md:text-sm"
+                            >
+                              {loading ? 'A atualizar...' : 'Atualizar'}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
                       ) : (
                         /* Custom Range Selection */
                         <div className="space-y-4">
@@ -920,40 +922,43 @@ const Reports = ({ user, onLogout }) => {
                     )}
                     
                     {/* Summary Cards */}
-                    <div className="grid md:grid-cols-5 gap-4">
-                      <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">Total Horas Trabalhadas</div>
-                        <div className="text-3xl font-bold text-white">{formatHours(detailedMonthlyReport.summary.total_worked_hours)}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+                      <div className="glass-effect p-4 md:p-6 rounded-xl col-span-2 md:col-span-1">
+                        <div className="text-gray-400 text-xs md:text-sm mb-1">Total Horas Trabalhadas</div>
+                        <div className="text-2xl md:text-3xl font-bold text-white">{formatHours(detailedMonthlyReport.summary.total_worked_hours)}</div>
                       </div>
-                      <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">Trabalho Suplementar</div>
-                        <div className="text-sm text-gray-500">(Dias Úteis)</div>
-                        <div className="text-3xl font-bold text-amber-400">{formatHours(detailedMonthlyReport.summary.total_overtime_hours)}</div>
+                      <div className="glass-effect p-4 md:p-6 rounded-xl">
+                        <div className="text-gray-400 text-xs md:text-sm mb-1">Trab. Suplementar</div>
+                        <div className="text-[10px] md:text-sm text-gray-500">(Dias Úteis)</div>
+                        <div className="text-xl md:text-3xl font-bold text-amber-400">{formatHours(detailedMonthlyReport.summary.total_overtime_hours)}</div>
                       </div>
-                      <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">Trab. Supl. Dias Descanso</div>
-                        <div className="text-sm text-gray-500">(Feriados/Fins Semana)</div>
-                        <div className="text-3xl font-bold text-purple-400">{formatHours(detailedMonthlyReport.summary.total_special_hours || 0)}</div>
+                      <div className="glass-effect p-4 md:p-6 rounded-xl">
+                        <div className="text-gray-400 text-xs md:text-sm mb-1">Trab. Supl. Descanso</div>
+                        <div className="text-[10px] md:text-sm text-gray-500">(Feriados/FS)</div>
+                        <div className="text-xl md:text-3xl font-bold text-purple-400">{formatHours(detailedMonthlyReport.summary.total_special_hours || 0)}</div>
                       </div>
-                      <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">SA (Subs. Alimentação)</div>
-                        <div className="text-3xl font-bold text-green-400">
+                      <div className="glass-effect p-4 md:p-6 rounded-xl">
+                        <div className="text-gray-400 text-xs md:text-sm mb-1">SA (Subs. Alim.)</div>
+                        <div className="text-xl md:text-3xl font-bold text-green-400">
                           {detailedMonthlyReport.summary.days_with_meal_allowance} dias
                         </div>
                       </div>
-                      <div className="glass-effect p-6 rounded-xl">
-                        <div className="text-gray-400 text-sm mb-2">ADC (Ajuda de Custos)</div>
-                        <div className="text-3xl font-bold text-blue-400">
+                      <div className="glass-effect p-4 md:p-6 rounded-xl">
+                        <div className="text-gray-400 text-xs md:text-sm mb-1">ADC (Ajuda Custos)</div>
+                        <div className="text-xl md:text-3xl font-bold text-blue-400">
                           {detailedMonthlyReport.summary.days_with_travel_allowance} dias
                         </div>
                       </div>
                     </div>
 
-                    {/* Daily Records Table - Horizontal */}
-                    <div className="glass-effect p-6 overflow-x-auto">
-                      <h3 className="text-xl font-bold text-white mb-4">
+                    {/* Daily Records Table - Responsive */}
+                    <div className="glass-effect p-3 md:p-6">
+                      <h3 className="text-lg md:text-xl font-bold text-white mb-4">
                         Período: {new Date(detailedMonthlyReport.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} - {new Date(detailedMonthlyReport.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}
                       </h3>
+                      
+                      {/* Desktop Table */}
+                      <div className="hidden md:block overflow-x-auto">
                       <table className="w-full min-w-[900px] text-sm" data-testid="monthly-report-table">
                         <thead>
                           <tr className="border-b border-gray-600 text-gray-400">
@@ -1054,6 +1059,66 @@ const Reports = ({ user, onLogout }) => {
                           ))}
                         </tbody>
                       </table>
+                      </div>
+                      
+                      {/* Mobile Cards */}
+                      <div className="md:hidden space-y-2">
+                        {detailedMonthlyReport.daily_records.map((day) => (
+                          <div key={day.date} data-testid={`report-day-mobile-${day.date}`} className={`rounded-lg p-3 border ${
+                            day.status === 'FOLGA' ? 'border-gray-700/50 bg-[#111]' :
+                            day.status === 'FERIADO' ? 'border-amber-800/30 bg-amber-900/10' :
+                            day.status === 'FÉRIAS' ? 'border-blue-800/30 bg-blue-900/10' :
+                            day.status === 'FALTA' ? 'border-red-800/30 bg-red-900/10' :
+                            day.status === 'TRABALHADO' ? 'border-gray-700/50 bg-[#111]' :
+                            'border-gray-800 bg-[#111]'
+                          }`}>
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="text-white font-bold text-sm">{day.day_of_week}</span>
+                                <span className="text-gray-500 text-xs ml-1">Dia {day.day_number}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {day.status === 'FOLGA' && <span className="text-gray-400 text-xs font-semibold">FOLGA</span>}
+                                {day.status === 'FERIADO' && <span className="text-amber-400 text-xs font-semibold">FERIADO</span>}
+                                {day.status === 'FÉRIAS' && <span className="text-blue-400 text-xs font-semibold">FÉRIAS</span>}
+                                {day.status === 'FALTA' && <span className="text-red-400 text-xs font-semibold">FALTA</span>}
+                                {day.status === 'NÃO TRABALHADO' && <span className="text-gray-500 text-xs">N/T</span>}
+                                {day.status === 'TRABALHADO' && (
+                                  <span className="text-green-400 font-bold text-sm">{formatHours(day.total_hours)}</span>
+                                )}
+                                {user?.is_admin && day.status === 'TRABALHADO' && (
+                                  <button
+                                    onClick={() => handleEdit(day)}
+                                    className="text-blue-400 hover:text-blue-300 p-1"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            {day.status === 'TRABALHADO' && day.entries && day.entries.length > 0 && (
+                              <div className="mt-1.5 space-y-0.5">
+                                {day.entries.map((entry, idx) => (
+                                  <div key={idx} className="text-xs text-gray-400 flex justify-between">
+                                    <span>
+                                      {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                      {' → '}
+                                      {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                    </span>
+                                    <span className="text-gray-500">{formatHours(entry.total_hours)}</span>
+                                  </div>
+                                ))}
+                                {day.overtime_hours > 0 && (
+                                  <div className="text-xs text-amber-400 font-semibold mt-1">
+                                    H. Extra: {formatHours(day.overtime_hours)}
+                                    {day.payment_type && ` (${day.payment_type})`}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
