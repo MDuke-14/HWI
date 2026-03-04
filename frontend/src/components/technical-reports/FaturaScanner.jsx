@@ -286,7 +286,7 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
             crop={crop}
             zoom={zoom}
             rotation={rotation}
-            aspect={undefined}
+            aspect={210 / 297}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onRotationChange={setRotation}
