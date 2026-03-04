@@ -8015,6 +8015,119 @@ async def get_my_vacation_requests(current_user: dict = Depends(get_current_user
     ).sort("created_at", -1).to_list(100)
     return requests
 
+@api_router.get("/vacations/approved-days")
+async def get_approved_vacation_days(current_user: dict = Depends(get_current_user)):
+    """Get all individual approved vacation days for the current user"""
+    approved_requests = await db.vacation_requests.find(
+        {"user_id": current_user["sub"], "status": "approved"},
+        {"_id": 0}
+    ).to_list(200)
+    
+    # Also get cancelled days to exclude them
+    cancelled = await db.cancelled_vacation_days.find(
+        {"user_id": current_user["sub"]},
+        {"_id": 0}
+    ).to_list(500)
+    cancelled_dates = set(c["date"] for c in cancelled)
+    
+    days = []
+    for req in approved_requests:
+        start = datetime.strptime(req["start_date"], "%Y-%m-%d").date()
+        end = datetime.strptime(req["end_date"], "%Y-%m-%d").date()
+        current = start
+        while current <= end:
+            if current.weekday() < 5:  # Only weekdays
+                date_str = current.strftime("%Y-%m-%d")
+                if date_str not in cancelled_dates:
+                    days.append({
+                        "date": date_str,
+                        "request_id": req["id"],
+                        "start_date": req["start_date"],
+                        "end_date": req["end_date"]
+                    })
+            current += timedelta(days=1)
+    
+    return days
+
+@api_router.post("/vacations/cancel-days")
+async def cancel_vacation_days(
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Cancel specific vacation days and refund them to the balance"""
+    dates_to_cancel = data.get("dates", [])
+    if not dates_to_cancel:
+        raise HTTPException(status_code=400, detail="Nenhum dia selecionado")
+    
+    # Verify all dates belong to approved vacation requests of this user
+    approved_requests = await db.vacation_requests.find(
+        {"user_id": current_user["sub"], "status": "approved"},
+        {"_id": 0}
+    ).to_list(200)
+    
+    # Get already cancelled days
+    cancelled = await db.cancelled_vacation_days.find(
+        {"user_id": current_user["sub"]},
+        {"_id": 0}
+    ).to_list(500)
+    already_cancelled = set(c["date"] for c in cancelled)
+    
+    valid_dates = []
+    for date_str in dates_to_cancel:
+        if date_str in already_cancelled:
+            continue
+        for req in approved_requests:
+            start = datetime.strptime(req["start_date"], "%Y-%m-%d").date()
+            end = datetime.strptime(req["end_date"], "%Y-%m-%d").date()
+            cancel_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            if start <= cancel_date <= end and cancel_date.weekday() < 5:
+                valid_dates.append(date_str)
+                break
+    
+    if not valid_dates:
+        raise HTTPException(status_code=400, detail="Nenhum dia válido para cancelar")
+    
+    # Insert cancelled days records
+    for date_str in valid_dates:
+        await db.cancelled_vacation_days.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["sub"],
+            "date": date_str,
+            "cancelled_at": datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Update vacation balance - refund the days
+    days_refunded = len(valid_dates)
+    await db.vacation_balances.update_one(
+        {"user_id": current_user["sub"]},
+        {"$inc": {"days_taken": -days_refunded}}
+    )
+    
+    # Recalculate balance
+    balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]}, {"_id": 0})
+    if balance:
+        calc = calculate_vacation_days(balance["company_start_date"], balance.get("days_taken", 0))
+        await db.vacation_balances.update_one(
+            {"user_id": current_user["sub"]},
+            {"$set": {
+                "days_earned": calc["days_earned"],
+                "days_available": calc["days_available"],
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    
+    # Notify admins
+    await create_notification(
+        current_user["sub"],
+        "vacation_day_refunded",
+        f"Cancelou {days_refunded} dia(s) de férias: {', '.join(valid_dates)}",
+        None
+    )
+    
+    return {"message": f"{days_refunded} dia(s) de férias cancelado(s) e devolvido(s)", "days_refunded": days_refunded}
+
+
+
 @api_router.post("/vacations/update-start-date")
 async def update_company_start_date(
     company_start_date: str,

@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw } from 'lucide-react';
+import VacationReviewModal from './VacationReviewModal';
 
 const Vacations = ({ user, onLogout }) => {
   const { isMobile } = useMobile();
@@ -18,6 +19,7 @@ const Vacations = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [requestForm, setRequestForm] = useState({ start_date: '', end_date: '', reason: '' });
   const [setupForm, setSetupForm] = useState({ company_start_date: '', vacation_days_taken: 0 });
 
@@ -93,7 +95,7 @@ const Vacations = ({ user, onLogout }) => {
             <Palmtree className="w-7 h-7 md:w-10 md:h-10 text-green-400" />
             <h1 className="text-2xl md:text-4xl font-bold text-white">Gestão de Férias</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-gray-700 hover:bg-gray-600 text-white rounded-full text-xs md:text-sm">Configurar</Button>
@@ -137,6 +139,17 @@ const Vacations = ({ user, onLogout }) => {
                   </div>
                 </DialogContent>
               </Dialog>
+            )}
+            {balance && balance.days_taken > 0 && (
+              <Button
+                size="sm"
+                onClick={() => setShowReviewDialog(true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs md:text-sm"
+                data-testid="review-vacations-btn"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                Rever
+              </Button>
             )}
           </div>
         </div>
@@ -191,6 +204,11 @@ const Vacations = ({ user, onLogout }) => {
           )}
         </div>
       </div>
+      <VacationReviewModal
+        open={showReviewDialog}
+        onOpenChange={setShowReviewDialog}
+        onSuccess={() => { fetchBalance(); fetchRequests(); }}
+      />
     </div>
   );
 };

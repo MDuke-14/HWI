@@ -15,6 +15,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Anexar Folha de Horas no email** (27 Fevereiro 2026)
 
 ### P0 (Concluído recente)
+- **Rever Férias — Cancelamento de dias** (4 Março 2026) - Botão "Rever" na página de férias, modal com calendário estilo /calendar, dias de férias a azul, seleção para cancelamento a vermelho, devolução automática dos dias ao saldo
 - **Notificações com redirecionamento** (4 Março 2026) - Clicar em notificações redireciona para a página relevante (férias→/vacations, despesas→OT, faltas→/absences, etc.)
 - **Adaptação mobile da página de Faltas** (4 Março 2026) - Classes responsivas Tailwind, layout compacto mobile, dialog responsivo
 - **Adaptação mobile da página de Férias** (4 Março 2026) - Verificado: layout responsivo com cards empilhados, texto adaptável
