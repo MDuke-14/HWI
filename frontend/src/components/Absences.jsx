@@ -130,21 +130,21 @@ const Absences = ({ user, onLogout }) => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
       <Navigation user={user} onLogout={onLogout} activePage="absences" />
-      <div className="container mx-auto px-4 py-8 max-w-6xl fade-in">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-            <FileText className="w-10 h-10" />
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl fade-in">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-white flex items-center gap-2 md:gap-3">
+            <FileText className="w-7 h-7 md:w-10 md:h-10" />
             Gestão de Faltas
           </h1>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-full">
+              <Button className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-full text-xs md:text-sm w-fit" size="sm">
                 Registar Falta
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+            <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-[95vw] md:max-w-md mx-auto">
               <DialogHeader>
-                <DialogTitle>Registar Falta</DialogTitle>
+                <DialogTitle className="text-base md:text-lg">Registar Falta</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
@@ -226,12 +226,12 @@ const Absences = ({ user, onLogout }) => {
           </Dialog>
         </div>
 
-        <div className="glass-effect p-6 rounded-xl mb-6 border-l-4 border-amber-500">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
+        <div className="glass-effect p-4 md:p-6 rounded-xl mb-4 md:mb-6 border-l-4 border-amber-500">
+          <div className="flex items-start gap-2 md:gap-3">
+            <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-white font-semibold mb-2">Informação Importante</h3>
-              <p className="text-gray-300 text-sm">
+              <h3 className="text-white font-semibold text-sm md:text-base mb-1 md:mb-2">Informação Importante</h3>
+              <p className="text-gray-300 text-xs md:text-sm">
                 Se não iniciar o ponto até às <strong>9h00</strong> em dias úteis, será notificado automaticamente. 
                 Caso esteja ausente, registe a falta e faça upload da justificação (PDF ou JPG) se aplicável.
               </p>
@@ -239,15 +239,15 @@ const Absences = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <div className="glass-effect p-6 rounded-xl">
-          <h2 className="text-2xl font-semibold text-white mb-6">Minhas Faltas</h2>
+        <div className="glass-effect p-4 md:p-6 rounded-xl">
+          <h2 className="text-lg md:text-2xl font-semibold text-white mb-4 md:mb-6">Minhas Faltas</h2>
           {absences.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {absences.map((absence) => (
-                <div key={absence.id} className="bg-[#1a1a1a] p-5 rounded-lg">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="text-white font-semibold text-lg mb-1">
+                <div key={absence.id} className="bg-[#1a1a1a] p-3 md:p-5 rounded-lg" data-testid={`absence-card-${absence.id}`}>
+                  <div className="flex justify-between items-start gap-2 mb-2 md:mb-3">
+                    <div className="min-w-0">
+                      <div className="text-white font-semibold text-sm md:text-lg mb-0.5 md:mb-1">
                         {new Date(absence.date + 'T00:00:00').toLocaleDateString('pt-PT', {
                           weekday: 'long',
                           year: 'numeric',
@@ -255,9 +255,9 @@ const Absences = ({ user, onLogout }) => {
                           day: 'numeric'
                         })}
                       </div>
-                      <div className="text-gray-400 text-sm">{getAbsenceTypeText(absence.absence_type, absence.hours)}</div>
+                      <div className="text-gray-400 text-xs md:text-sm">{getAbsenceTypeText(absence.absence_type, absence.hours)}</div>
                       {absence.is_justified && (
-                        <span className="inline-block mt-2 px-2 py-1 bg-blue-700 text-blue-200 rounded text-xs">
+                        <span className="inline-block mt-1 md:mt-2 px-2 py-0.5 md:py-1 bg-blue-700 text-blue-200 rounded text-xs">
                           Justificada
                         </span>
                       )}
@@ -266,19 +266,20 @@ const Absences = ({ user, onLogout }) => {
                   </div>
 
                   {absence.reason && (
-                    <div className="text-gray-300 text-sm mt-3 pt-3 border-t border-gray-700">
+                    <div className="text-gray-300 text-xs md:text-sm mt-2 md:mt-3 pt-2 md:pt-3 border-t border-gray-700">
                       <strong>Motivo:</strong> {absence.reason}
                     </div>
                   )}
 
-                  <div className="mt-4 pt-4 border-t border-gray-700 flex gap-2">
+                  <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-700 flex flex-wrap gap-2">
                     {absence.justification_file ? (
                       <Button
                         onClick={() => downloadFile(absence.justification_file)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs md:text-sm"
                         size="sm"
+                        data-testid={`download-justification-${absence.id}`}
                       >
-                        <FileText className="w-4 h-4 mr-1" />
+                        <FileText className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
                         Ver Justificação
                       </Button>
                     ) : (
@@ -298,10 +299,11 @@ const Absences = ({ user, onLogout }) => {
                         <Button
                           onClick={() => document.getElementById(`file-${absence.id}`).click()}
                           disabled={uploadingFile === absence.id}
-                          className="bg-green-600 hover:bg-green-700 text-white rounded-full text-sm"
+                          className="bg-green-600 hover:bg-green-700 text-white rounded-full text-xs md:text-sm"
                           size="sm"
+                          data-testid={`upload-justification-${absence.id}`}
                         >
-                          <Upload className="w-4 h-4 mr-1" />
+                          <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
                           {uploadingFile === absence.id ? 'A carregar...' : 'Upload Justificação'}
                         </Button>
                       </div>
@@ -309,7 +311,7 @@ const Absences = ({ user, onLogout }) => {
                   </div>
 
                   {absence.reviewed_by && (
-                    <div className="text-gray-500 text-xs mt-3">
+                    <div className="text-gray-500 text-xs mt-2 md:mt-3">
                       Revisto por: {absence.reviewed_by}
                     </div>
                   )}
@@ -317,9 +319,9 @@ const Absences = ({ user, onLogout }) => {
               ))}
             </div>
           ) : (
-            <div className="text-center text-gray-400 py-12">
-              <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-lg">Não há faltas registadas</p>
+            <div className="text-center text-gray-400 py-8 md:py-12">
+              <FileText className="w-10 h-10 md:w-16 md:h-16 text-gray-600 mx-auto mb-3 md:mb-4" />
+              <p className="text-sm md:text-lg">Não há faltas registadas</p>
             </div>
           )}
         </div>

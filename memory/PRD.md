@@ -15,8 +15,12 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Anexar Folha de Horas no email** (27 Fevereiro 2026)
 
 ### P0 (Concluído recente)
-- **Função na OT** (2 Março 2026) - Campo obrigatório "Técnico/Ajudante" ao adicionar colaboradores. Popup de seleção individual ao iniciar cronómetro. Nova coluna "Função" na tabela de registos. Tipo de Colaborador adicionado às tarifas (admin). Tarifa matching 3D: tipo_colaborador + tipo_registo + código.
-- **Ordenação cronológica dos registos de mão de obra nas OTs** (2 Março 2026) - Corrigida lógica de sort em 3 locais (mobile, desktop, preview modal). Normalização de datas para YYYY-MM-DD e horas para HH:MM.
+- **Adaptação mobile da página de Faltas** (4 Março 2026) - Classes responsivas Tailwind, layout compacto mobile, dialog responsivo
+- **Adaptação mobile da página de Férias** (4 Março 2026) - Verificado: layout responsivo com cards empilhados, texto adaptável
+- **Scanner de Faturas** (3 Março 2026) - Componente FaturaScanner.jsx com captura, crop A4, conversão PDF
+- **Reports mobile** (3 Março 2026) - Refactored Reports.jsx com layout card-based mobile
+- **Função na OT** (2 Março 2026) - Campo obrigatório "Técnico/Ajudante" ao adicionar colaboradores
+- **Ordenação cronológica dos registos** (2 Março 2026) - Corrigida lógica de sort
 
 ### P0 (Pendente)
 - **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358
