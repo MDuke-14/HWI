@@ -48,7 +48,9 @@ import {
   CheckCircle,
   Check,
   Wrench,
-  UserCheck
+  UserCheck,
+  Camera,
+  ScanLine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -285,6 +287,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     factura_mimetype: null
   });
   const [uploadingFactura, setUploadingFactura] = useState(false);
+  const cameraInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const editCameraInputRef = useRef(null);
+  const editFileInputRef = useRef(null);
 
   // Tipos de despesa disponíveis
   const tiposDespesa = [
@@ -6562,17 +6568,43 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </Button>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-emerald-500 transition-colors">
-                    <Upload className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-400">Carregar factura (PDF, JPG, PNG)</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-emerald-600/50 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-900/20 transition-colors"
+                      data-testid="despesa-scan-btn"
+                    >
+                      <ScanLine className="w-6 h-6 text-emerald-400" />
+                      <span className="text-emerald-400 text-xs font-medium text-center">Digitalizar Documento</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-800/30 transition-colors"
+                      data-testid="despesa-file-btn"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400" />
+                      <span className="text-gray-400 text-xs font-medium text-center">Escolher Ficheiro</span>
+                    </button>
                     <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFacturaUpload}
+                      className="hidden"
+                      disabled={uploadingFactura}
+                    />
+                    <input
+                      ref={fileInputRef}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={handleFacturaUpload}
                       className="hidden"
                       disabled={uploadingFactura}
                     />
-                  </label>
+                  </div>
                 )}
               </div>
             </div>
@@ -6707,17 +6739,43 @@ const TechnicalReports = ({ user, onLogout }) => {
                     </Button>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-emerald-500 transition-colors">
-                    <Upload className="w-5 h-5 text-gray-400" />
-                    <span className="text-gray-400">Carregar factura (PDF, JPG, PNG)</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => editCameraInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-emerald-600/50 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-900/20 transition-colors"
+                      data-testid="edit-despesa-scan-btn"
+                    >
+                      <ScanLine className="w-6 h-6 text-emerald-400" />
+                      <span className="text-emerald-400 text-xs font-medium text-center">Digitalizar Documento</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => editFileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-800/30 transition-colors"
+                      data-testid="edit-despesa-file-btn"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400" />
+                      <span className="text-gray-400 text-xs font-medium text-center">Escolher Ficheiro</span>
+                    </button>
                     <input
+                      ref={editCameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFacturaUpload}
+                      className="hidden"
+                      disabled={uploadingFactura}
+                    />
+                    <input
+                      ref={editFileInputRef}
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={handleFacturaUpload}
                       className="hidden"
                       disabled={uploadingFactura}
                     />
-                  </label>
+                  </div>
                 )}
               </div>
             </div>
