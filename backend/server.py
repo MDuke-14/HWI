@@ -10049,7 +10049,7 @@ async def create_registo_tecnico_manual(
         primeiro = segmentos[0]
         primeiro["duracao_minutos"] = max(0, primeiro["duracao_minutos"] - 60)
         from cronometro_logic import arredondar_horas
-        primeiro["horas_arredondadas"] = arredondar_horas(primeiro["duracao_minutos"])
+        primeiro["horas_arredondadas"] = primeiro["duracao_minutos"] / 60 if tipo == "viagem" else arredondar_horas(primeiro["duracao_minutos"])
     
     registos_criados = []
     for i, seg in enumerate(segmentos):
@@ -10149,7 +10149,8 @@ async def update_registo_tecnico(
                 duracao_minutos = max(0, duracao_minutos - 60)
             
             codigo = get_codigo_horario(hora_inicio)
-            horas_arredondadas = arredondar_horas(duracao_minutos)
+            tipo_reg = existing.get("tipo", registo_data.get("tipo", "trabalho"))
+            horas_arredondadas = duracao_minutos / 60 if tipo_reg == "viagem" else arredondar_horas(duracao_minutos)
             
             update_data["hora_inicio_segmento"] = hora_inicio.isoformat()
             update_data["hora_fim_segmento"] = hora_fim.isoformat()
@@ -10165,13 +10166,15 @@ async def update_registo_tecnico(
     # Outros campos
     if "minutos_trabalhados" in registo_data and "hora_inicio" not in registo_data:
         minutos_raw = registo_data["minutos_trabalhados"]
-        horas_arred = arredondar_horas(minutos_raw)
+        tipo_reg = registo_data.get("tipo", existing.get("tipo", "trabalho"))
+        horas_arred = minutos_raw / 60 if tipo_reg == "viagem" else arredondar_horas(minutos_raw)
         update_data["minutos_trabalhados"] = minutos_raw
         update_data["horas_arredondadas"] = horas_arred
     if "horas_arredondadas" in registo_data and "hora_inicio" not in registo_data and "minutos_trabalhados" not in registo_data:
         # Converter horas para minutos reais, depois arredondar
         minutos_raw = registo_data["horas_arredondadas"] * 60
-        horas_arred = arredondar_horas(minutos_raw)
+        tipo_reg = registo_data.get("tipo", existing.get("tipo", "trabalho"))
+        horas_arred = minutos_raw / 60 if tipo_reg == "viagem" else arredondar_horas(minutos_raw)
         update_data["horas_arredondadas"] = horas_arred
         update_data["minutos_trabalhados"] = int(minutos_raw)
     if "km" in registo_data:
@@ -10209,14 +10212,16 @@ async def update_registo_tecnico(
             else:
                 new_mins = current_mins
             update_data["minutos_trabalhados"] = new_mins
-            update_data["horas_arredondadas"] = arredondar_horas(new_mins)
+            tipo_reg = existing.get("tipo", "trabalho")
+            update_data["horas_arredondadas"] = new_mins / 60 if tipo_reg == "viagem" else arredondar_horas(new_mins)
     
     # Salvaguarda: garantir que horas_arredondadas está consistente com o arredondamento
     # Mesmo quando só se editam km's ou outros campos, verificar consistência
     if update_data and "horas_arredondadas" not in update_data:
         mins_existentes = existing.get("minutos_trabalhados", 0)
         horas_arred_existentes = existing.get("horas_arredondadas", 0)
-        horas_arred_correctas = arredondar_horas(mins_existentes)
+        tipo_reg = existing.get("tipo", "trabalho")
+        horas_arred_correctas = mins_existentes / 60 if tipo_reg == "viagem" else arredondar_horas(mins_existentes)
         if abs(horas_arred_existentes - horas_arred_correctas) > 0.01:
             update_data["horas_arredondadas"] = horas_arred_correctas
     
