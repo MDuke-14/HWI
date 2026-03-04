@@ -1396,6 +1396,15 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <Input value={editForm.full_name} onChange={(e) => setEditForm({...editForm, full_name: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
                     </div>
                     <div>
+                      <Label>Password Actual</Label>
+                      <Input
+                        value={editingUser?.plain_password || '(não disponível)'}
+                        readOnly
+                        className="bg-[#0a0a0a] border-gray-700 text-gray-400 cursor-default"
+                        data-testid="current-password-field"
+                      />
+                    </div>
+                    <div>
                       <Label>Nova Password (deixar vazio para não alterar)</Label>
                       <Input type="password" value={editForm.password} onChange={(e) => setEditForm({...editForm, password: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" placeholder="Deixar vazio para não alterar" />
                     </div>

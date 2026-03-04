@@ -1698,6 +1698,7 @@ async def register(user_data: UserCreate):
     
     user_dict = user.model_dump()
     user_dict['created_at'] = user_dict['created_at'].isoformat()
+    user_dict['plain_password'] = user_data.password
     await db.users.insert_one(user_dict)
     
     # Create vacation balance if company start date provided
@@ -8409,7 +8410,7 @@ async def get_my_day_authorization_status(
 @api_router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_admin)):
     """Get all users (admin only)"""
-    users = await db.users.find({}, {"_id": 0, "hashed_password": 0}).to_list(1000)
+    users = await db.users.find({}, {"_id": 0, "hashed_password": 0, "password": 0}).to_list(1000)
     return users
 
 
@@ -8649,6 +8650,7 @@ async def admin_create_user(user_data: UserCreate, current_user: dict = Depends(
     
     user_dict = user.model_dump()
     user_dict['created_at'] = user_dict['created_at'].isoformat()
+    user_dict['plain_password'] = user_data.password
     await db.users.insert_one(user_dict)
     
     # Create vacation balance if company start date provided
@@ -8699,6 +8701,7 @@ async def admin_update_user(
     
     if update_data.password:
         update_dict["hashed_password"] = get_password_hash(update_data.password)
+        update_dict["plain_password"] = update_data.password
     
     if update_data.is_admin is not None:
         update_dict["is_admin"] = update_data.is_admin
