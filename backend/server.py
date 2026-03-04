@@ -4188,7 +4188,14 @@ async def get_notifications(
     unread_only: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
-    """Buscar notificações do usuário"""
+    """Buscar notificações do usuário (auto-limpa >8 dias)"""
+    # Auto-cleanup: remover notificações com mais de 8 dias
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+    await db.notifications.delete_many({
+        "user_id": current_user["sub"],
+        "created_at": {"$lt": cutoff}
+    })
+    
     query = {"user_id": current_user["sub"]}
     
     if unread_only:
@@ -11740,6 +11747,20 @@ async def list_overtime_authorizations(
     ).sort("requested_at", -1).to_list(100)
     
     return authorizations
+
+@api_router.delete("/admin/overtime-authorizations/all")
+async def delete_all_overtime_authorizations(current_user: dict = Depends(get_current_admin)):
+    """Remover todas as autorizações de horas extra"""
+    result = await db.overtime_authorizations.delete_many({})
+    return {"message": f"{result.deleted_count} autorizações removidas"}
+
+@api_router.delete("/admin/overtime-authorizations/{auth_id}")
+async def delete_overtime_authorization(auth_id: str, current_user: dict = Depends(get_current_admin)):
+    """Remover uma autorização de horas extra"""
+    result = await db.overtime_authorizations.delete_one({"id": auth_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Autorização não encontrada")
+    return {"message": "Autorização removida"}
 
 
 @api_router.get("/notifications/logs")
