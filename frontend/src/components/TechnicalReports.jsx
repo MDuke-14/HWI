@@ -264,7 +264,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [materialFormData, setMaterialFormData] = useState({
     descricao: '',
-    quantidade: 1,
+    quantidade: '',
     fornecido_por: 'Cliente',
     data_utilizacao: ''
   });
@@ -313,7 +313,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Editar Material PC
   const [showEditMaterialPCModal, setShowEditMaterialPCModal] = useState(false);
   const [editMaterialPC, setEditMaterialPC] = useState(null);
-  const [editMaterialPCForm, setEditMaterialPCForm] = useState({ descricao: '', quantidade: 1 });
+  const [editMaterialPCForm, setEditMaterialPCForm] = useState({ descricao: '', quantidade: '' });
   
   // Faturas PC
   const [faturasPC, setFaturasPC] = useState([]);
@@ -1814,7 +1814,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.success('Material adicionado!');
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
-      setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente', data_utilizacao: '' });
+      setMaterialFormData({ descricao: '', quantidade: '', fornecido_por: 'Cliente', data_utilizacao: '' });
       
       // Se foi marcado como "Cotação", atualizar lista de PCs
       if (materialFormData.fornecido_por === 'Cotação') {
@@ -6417,7 +6417,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         onSubmit={handleAddMaterial}
         onCancel={() => {
           setShowAddMaterialModal(false);
-          setMaterialFormData({ descricao: '', quantidade: 1, fornecido_por: 'Cliente', data_utilizacao: '' });
+          setMaterialFormData({ descricao: '', quantidade: '', fornecido_por: 'Cliente', data_utilizacao: '' });
         }}
       />
 

@@ -49,8 +49,9 @@ const MaterialModal = ({
               type="number"
               min="1"
               value={materialFormData.quantidade}
-              onChange={(e) => setMaterialFormData({ ...materialFormData, quantidade: parseInt(e.target.value) || 1 })}
+              onChange={(e) => setMaterialFormData({ ...materialFormData, quantidade: e.target.value === '' ? '' : (parseInt(e.target.value) || '') })}
               className="bg-[#0f0f0f] border-gray-700 text-white"
+              placeholder="Ex: 1"
               required
             />
           </div>
