@@ -109,8 +109,9 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     elements.append(Paragraph("DADOS DA MÁQUINA", heading_style))
     
     maquina_data = [
-        ['Tipologia:', ot.get('equipamento_tipologia', 'N/A'), 'Marca:', ot.get('equipamento_marca', 'N/A')],
-        ['Modelo:', ot.get('equipamento_modelo', 'N/A'), 'Nº Série:', ot.get('equipamento_numero_serie', 'N/A')],
+        ['Tipologia:', ot.get('equipamento_tipologia', '') or 'N/A', 'Marca:', ot.get('equipamento_marca', '') or 'N/A'],
+        ['Modelo:', ot.get('equipamento_modelo', '') or 'N/A', 'Nº Série:', ot.get('equipamento_numero_serie', '') or 'N/A'],
+        ['Ano:', ot.get('equipamento_ano_fabrico', '') or 'N/A', '', ''],
     ]
     
     maquina_table = Table(maquina_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])

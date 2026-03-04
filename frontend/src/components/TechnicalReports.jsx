@@ -7008,6 +7008,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <span className="text-gray-400">Nº Série:</span>
                       <span className="text-white ml-2">{selectedPC.equipamento_numero_serie || 'N/A'}</span>
                     </div>
+                    {selectedPC.equipamento_ano_fabrico && (
+                      <div>
+                        <span className="text-gray-400">Ano:</span>
+                        <span className="text-white ml-2">{selectedPC.equipamento_ano_fabrico}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -10474,10 +10474,26 @@ async def get_pedido_cotacao(
     if ot:
         pc["numero_ot"] = ot.get("numero_assistencia", "N/A")
         pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
-        pc["equipamento_tipologia"] = ot.get("equipamento_tipologia")
-        pc["equipamento_marca"] = ot.get("equipamento_marca")
+        
+        # Verificar se dados do equipamento existem na OT directamente
+        equip_marca = ot.get("equipamento_marca")
+        equip_tipologia = ot.get("equipamento_tipologia")
+        
+        # Se não, buscar da coleção equipamentos_ot
+        if not equip_marca and not equip_tipologia:
+            equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc.get("relatorio_id")}, {"_id": 0})
+            if equip_ot:
+                equip_tipologia = equip_ot.get("tipologia", "")
+                equip_marca = equip_ot.get("marca", "")
+                ot["equipamento_modelo"] = equip_ot.get("modelo", "")
+                ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
+                ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
+        
+        pc["equipamento_tipologia"] = equip_tipologia
+        pc["equipamento_marca"] = equip_marca
         pc["equipamento_modelo"] = ot.get("equipamento_modelo")
         pc["equipamento_numero_serie"] = ot.get("equipamento_numero_serie")
+        pc["equipamento_ano_fabrico"] = ot.get("equipamento_ano_fabrico", "")
     
     # Buscar materiais associados
     materiais = await db.materiais_ot.find(
@@ -10768,6 +10784,17 @@ async def preview_pdf_pc(
     if not ot:
         raise HTTPException(status_code=404, detail="OT não encontrada")
     
+    # Enriquecer OT com dados do equipamento se não estiverem nos campos directos
+    if not ot.get("equipamento_marca") and not ot.get("equipamento_tipologia"):
+        # Buscar equipamento associado na coleção equipamentos_ot (dados inline)
+        equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc["relatorio_id"]}, {"_id": 0})
+        if equip_ot:
+            ot["equipamento_tipologia"] = equip_ot.get("tipologia", "")
+            ot["equipamento_marca"] = equip_ot.get("marca", "")
+            ot["equipamento_modelo"] = equip_ot.get("modelo", "")
+            ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
+            ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
+    
     # Buscar materiais do PC
     materiais = await db.materiais_ot.find(
         {"pc_id": pc_id},
@@ -10810,6 +10837,16 @@ async def send_email_pc(
     ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
     if not ot:
         raise HTTPException(status_code=404, detail="OT não encontrada")
+    
+    # Enriquecer OT com dados do equipamento se não estiverem nos campos directos
+    if not ot.get("equipamento_marca") and not ot.get("equipamento_tipologia"):
+        equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc["relatorio_id"]}, {"_id": 0})
+        if equip_ot:
+            ot["equipamento_tipologia"] = equip_ot.get("tipologia", "")
+            ot["equipamento_marca"] = equip_ot.get("marca", "")
+            ot["equipamento_modelo"] = equip_ot.get("modelo", "")
+            ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
+            ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
     
     # Buscar materiais e fotografias
     materiais = await db.materiais_ot.find(
