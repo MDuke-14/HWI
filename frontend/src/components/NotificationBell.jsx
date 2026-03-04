@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '@/App';
 import { Bell, X, BellRing, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 let VAPID_PUBLIC_KEY = 'BJCgtNpncNcP5DTu_5qf3pltLEte5V8X9ZcYqn67_XTXsl-zaWJdFCbG2N4MXweZFyFCTl8W-U0CIeABuwLWCuQ';
 
 const NotificationBell = ({ user }) => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -235,6 +237,44 @@ const NotificationBell = ({ user }) => {
     return styles[type] || styles['default'];
   };
 
+  const getNotificationRoute = (notif) => {
+    const type = notif.type;
+    const relatedId = notif.related_id;
+
+    // Férias
+    if (type?.startsWith('vacation_')) {
+      if (type === 'vacation_request' && user?.is_admin) return '/admin';
+      return '/vacations';
+    }
+
+    // Faltas
+    if (type?.startsWith('absence_') || type === 'late_arrival') return '/absences';
+
+    // Despesas - abre a OT em questão
+    if (type === 'despesa_created' && relatedId) return `/technical-reports?ot=${relatedId}`;
+
+    // Pedidos de Cotação
+    if (type === 'pc_created') return '/technical-reports';
+
+    // Serviços
+    if (type === 'service_assigned' || type === 'service_reminder') return '/calendar';
+
+    // Ponto
+    if (type === 'missing_clock_in' || type === 'missing_clock_out') return '/';
+
+    // Horas extra
+    if (type === 'overtime_approved' || type === 'overtime_rejected') return '/reports';
+
+    return null;
+  };
+
+  const handleNotificationClick = async (notif) => {
+    await markAsRead(notif.id);
+    setShowDropdown(false);
+    const route = getNotificationRoute(notif);
+    if (route) navigate(route);
+  };
+
   if (!user) return null;
 
   return (
@@ -337,7 +377,7 @@ const NotificationBell = ({ user }) => {
                   <div
                     key={notif.id}
                     className={`p-4 hover:bg-gray-800/50 cursor-pointer border-l-4 ${style.color}`}
-                    onClick={() => markAsRead(notif.id)}
+                    onClick={() => handleNotificationClick(notif)}
                     data-testid={`notification-item-${notif.id}`}
                   >
                     <div className="flex items-start justify-between">
