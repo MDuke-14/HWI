@@ -1055,7 +1055,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       
       // Buscar lista de utilizadores e mostrar modal para iniciar cronómetro
       try {
-        const usersResponse = await axios.get(`${API}/admin/users`);
+        const usersResponse = await axios.get(`${API}/users`);
         setAllSystemUsers(usersResponse.data);
       } catch (err) {
         console.error('Erro ao buscar utilizadores:', err);
