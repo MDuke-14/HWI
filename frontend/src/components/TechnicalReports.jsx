@@ -1994,10 +1994,36 @@ const TechnicalReports = ({ user, onLogout }) => {
       return;
     }
     
-    const link = document.createElement('a');
-    link.href = despesa.factura_data;
-    link.download = despesa.factura_filename || 'factura';
-    link.click();
+    try {
+      // Convert base64 data URL to Blob for reliable mobile download
+      const base64Data = despesa.factura_data.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: despesa.factura_mimetype || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      
+      // Mobile: open in new tab (allows save/share). Desktop: trigger download.
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        window.open(url, '_blank');
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = despesa.factura_filename || 'factura';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (error) {
+      console.error('Erro ao fazer download:', error);
+      toast.error('Erro ao fazer download do ficheiro');
+    }
   };
 
   // ========== Pedidos de Cotação Functions ==========
