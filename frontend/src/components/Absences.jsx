@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
+import { useMobile } from '@/contexts/MobileContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 import { FileText, Upload, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 const Absences = ({ user, onLogout }) => {
+  const { isMobile } = useMobile();
   const [absences, setAbsences] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
@@ -129,7 +131,7 @@ const Absences = ({ user, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
-      <Navigation user={user} onLogout={onLogout} activePage="absences" />
+      {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="absences" />}
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl fade-in">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 md:mb-8">
           <h1 className="text-2xl md:text-4xl font-bold text-white flex items-center gap-2 md:gap-3">

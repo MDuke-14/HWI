@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
+import { useMobile } from '@/contexts/MobileContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 import { TrendingUp, Calendar, Clock, BarChart3, FileText, Edit, Upload, Plus, Minus, MapPin, Trash2 } from 'lucide-react';
 
 const Reports = ({ user, onLogout }) => {
+  const { isMobile } = useMobile();
   const [weeklyReport, setWeeklyReport] = useState(null);
   const [monthlyReport, setMonthlyReport] = useState(null);
   const [billingReport, setBillingReport] = useState(null);
@@ -713,7 +715,7 @@ const Reports = ({ user, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
-      <Navigation user={user} onLogout={onLogout} activePage="reports" />
+      {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="reports" />}
       
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="fade-in">
