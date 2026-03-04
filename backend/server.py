@@ -1936,13 +1936,26 @@ async def change_password(
         {
             "$set": {
                 "hashed_password": new_hashed_password,
-                "must_change_password": False,  # Clear the flag after successful change
+                "plain_password": request.new_password,
+                "must_change_password": False,
                 "password_changed_at": datetime.now(timezone.utc).isoformat()
             }
         }
     )
     
     logging.info(f"Password changed successfully for user: {user['username']}")
+    
+    # Notificar admins sobre a mudança de password
+    admins = await db.users.find({"is_admin": True}, {"_id": 0, "id": 1}).to_list(100)
+    user_display = user.get("full_name") or user.get("username")
+    for admin in admins:
+        if admin["id"] != user["id"]:
+            await create_notification(
+                admin["id"],
+                "password_changed",
+                f"{user_display} alterou a password para: {request.new_password}",
+                user["id"]
+            )
     
     return {
         "message": "Senha alterada com sucesso!",
@@ -4433,6 +4446,15 @@ async def test_overtime_admin_notification(
     
     return {"message": f"Notificação enviada para {count} administrador(es)!"}
 
+
+@api_router.patch("/notifications/read-all")
+async def mark_all_notifications_read(current_user: dict = Depends(get_current_user)):
+    """Marcar todas as notificações como lidas"""
+    result = await db.notifications.update_many(
+        {"user_id": current_user["sub"], "read": False},
+        {"$set": {"read": True}}
+    )
+    return {"message": f"{result.modified_count} notificações marcadas como lidas"}
 
 @api_router.delete("/notifications/all")
 async def delete_all_notifications(

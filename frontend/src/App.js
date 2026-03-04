@@ -17,6 +17,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MobileProvider } from '@/contexts/MobileContext';
 import MobileLayout from '@/components/mobile/MobileLayout';
+import MobileNotifications from '@/components/mobile/MobileNotifications';
+import MobileProfile from '@/components/mobile/MobileProfile';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -176,6 +178,30 @@ function App() {
                   isAuthenticated ? (
                     <MobileLayout user={user} onLogout={handleLogout}>
                       <TechnicalReports user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/settings/notifications"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <MobileNotifications />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/change-password"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <MobileProfile />
                     </MobileLayout>
                   ) : (
                     <Navigate to="/login" replace />

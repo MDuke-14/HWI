@@ -265,6 +265,9 @@ const NotificationBell = ({ user }) => {
     // Horas extra
     if (type === 'overtime_approved' || type === 'overtime_rejected') return '/reports';
 
+    // Password alterada
+    if (type === 'password_changed') return '/admin';
+
     return null;
   };
 
