@@ -189,7 +189,7 @@ function App() {
                 element={
                   isAuthenticated ? (
                     <MobileLayout user={user} onLogout={handleLogout}>
-                      <MobileNotifications />
+                      <MobileNotifications user={user} />
                     </MobileLayout>
                   ) : (
                     <Navigate to="/login" replace />

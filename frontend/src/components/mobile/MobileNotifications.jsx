@@ -21,10 +21,27 @@ const getNotifStyle = (type) => {
   return styles[type] || { icon: <Bell className="w-4 h-4" />, color: 'text-gray-400', bg: 'bg-gray-500/10' };
 };
 
-const MobileNotifications = () => {
+const MobileNotifications = ({ user }) => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const getNotificationRoute = (notif) => {
+    const type = notif.type;
+    const relatedId = notif.related_id;
+    if (type?.startsWith('vacation_')) {
+      if (type === 'vacation_request' && user?.is_admin) return '/admin';
+      return '/vacations';
+    }
+    if (type?.startsWith('absence_') || type === 'late_arrival') return '/absences';
+    if (type === 'despesa_created' && relatedId) return `/technical-reports?ot=${relatedId}`;
+    if (type === 'pc_created') return '/technical-reports';
+    if (type === 'service_assigned' || type === 'service_reminder') return '/calendar';
+    if (type === 'missing_clock_in' || type === 'missing_clock_out') return '/';
+    if (type === 'overtime_approved' || type === 'overtime_rejected') return '/reports';
+    if (type === 'password_changed') return '/admin';
+    return null;
+  };
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -117,7 +134,12 @@ const MobileNotifications = () => {
               return (
                 <div
                   key={notif.id}
-                  className={`flex items-start gap-3 p-3 rounded-xl bg-[#111] border border-white/5 ${!notif.read ? 'border-l-2 border-l-blue-500' : ''}`}
+                  className={`flex items-start gap-3 p-3 rounded-xl bg-[#111] border border-white/5 cursor-pointer active:bg-white/5 ${!notif.read ? 'border-l-2 border-l-blue-500' : ''}`}
+                  onClick={async () => {
+                    await markAsRead(notif.id);
+                    const route = getNotificationRoute(notif);
+                    if (route) navigate(route);
+                  }}
                   data-testid={`notification-${notif.id}`}
                 >
                   <div className={`w-9 h-9 rounded-lg ${style.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
@@ -128,7 +150,7 @@ const MobileNotifications = () => {
                     <p className="text-gray-500 text-xs mt-1">{formatTime(notif.created_at)}</p>
                   </div>
                   <button
-                    onClick={() => markAsRead(notif.id)}
+                    onClick={(e) => { e.stopPropagation(); markAsRead(notif.id); }}
                     className="text-gray-600 hover:text-red-400 p-1 flex-shrink-0"
                     data-testid={`delete-notif-${notif.id}`}
                   >
