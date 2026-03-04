@@ -85,13 +85,16 @@ const Vacations = ({ user, onLogout }) => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
       <Navigation user={user} onLogout={onLogout} activePage="vacations" />
-      <div className="container mx-auto px-4 py-8 max-w-6xl fade-in">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3"><Palmtree className="w-10 h-10" />Gestão de Férias</h1>
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-6xl fade-in">
+        <div className="mb-6 md:mb-8">
+          <div className="flex items-center gap-2 md:gap-3 mb-3">
+            <Palmtree className="w-7 h-7 md:w-10 md:h-10 text-green-400" />
+            <h1 className="text-2xl md:text-4xl font-bold text-white">Gestão de Férias</h1>
+          </div>
           <div className="flex gap-2">
             <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
               <DialogTrigger asChild>
-                <Button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full">Configurar</Button>
+                <Button size="sm" className="bg-gray-700 hover:bg-gray-600 text-white rounded-full text-xs md:text-sm">Configurar</Button>
               </DialogTrigger>
               <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
                 <DialogHeader><DialogTitle>Configurar Dados</DialogTitle></DialogHeader>
@@ -111,7 +114,7 @@ const Vacations = ({ user, onLogout }) => {
             {balance && (
               <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
                 <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-full">Pedir Férias</Button>
+                  <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-full text-xs md:text-sm">Pedir Férias</Button>
                 </DialogTrigger>
                 <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
                   <DialogHeader><DialogTitle>Pedir Férias</DialogTitle></DialogHeader>
@@ -137,18 +140,18 @@ const Vacations = ({ user, onLogout }) => {
         </div>
 
         {balance ? (
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="glass-effect p-6 rounded-xl">
-              <div className="text-gray-400 text-sm mb-2">Dias Acumulados</div>
-              <div className="text-4xl font-bold text-blue-400">{balance.days_earned}</div>
+          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
+            <div className="glass-effect p-4 md:p-6 rounded-xl">
+              <div className="text-gray-400 text-xs md:text-sm mb-1">Dias Acumulados</div>
+              <div className="text-2xl md:text-4xl font-bold text-blue-400">{balance.days_earned}</div>
             </div>
-            <div className="glass-effect p-6 rounded-xl">
-              <div className="text-gray-400 text-sm mb-2">Dias Gozados</div>
-              <div className="text-4xl font-bold text-amber-400">{balance.days_taken}</div>
+            <div className="glass-effect p-4 md:p-6 rounded-xl">
+              <div className="text-gray-400 text-xs md:text-sm mb-1">Dias Gozados</div>
+              <div className="text-2xl md:text-4xl font-bold text-amber-400">{balance.days_taken}</div>
             </div>
-            <div className="glass-effect p-6 rounded-xl">
-              <div className="text-gray-400 text-sm mb-2">Dias Disponíveis</div>
-              <div className={`text-4xl font-bold ${balance.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>{balance.days_available}</div>
+            <div className="glass-effect p-4 md:p-6 rounded-xl">
+              <div className="text-gray-400 text-xs md:text-sm mb-1">Dias Disponíveis</div>
+              <div className={`text-2xl md:text-4xl font-bold ${balance.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>{balance.days_available}</div>
             </div>
           </div>
         ) : (
@@ -163,26 +166,26 @@ const Vacations = ({ user, onLogout }) => {
           </div>
         )}
 
-        <div className="glass-effect p-6 rounded-xl">
-          <h2 className="text-2xl font-semibold text-white mb-6">Meus Pedidos</h2>
+        <div className="glass-effect p-4 md:p-6 rounded-xl">
+          <h2 className="text-lg md:text-2xl font-semibold text-white mb-4 md:mb-6">Meus Pedidos</h2>
           {requests.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {requests.map((req) => (
-                <div key={req.id} className="bg-[#1a1a1a] p-5 rounded-lg">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="text-white font-semibold mb-1">{new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
-                      <div className="text-gray-400 text-sm">{req.days_requested} dias</div>
+                <div key={req.id} className="bg-[#1a1a1a] p-3 md:p-5 rounded-lg">
+                  <div className="flex justify-between items-start gap-2 mb-2 md:mb-3">
+                    <div className="min-w-0">
+                      <div className="text-white font-semibold text-sm md:text-base mb-0.5">{new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')} até {new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</div>
+                      <div className="text-gray-400 text-xs md:text-sm">{req.days_requested} dias</div>
                     </div>
                     {getStatusBadge(req.status)}
                   </div>
-                  {req.reason && <div className="text-gray-300 text-sm mt-2">Motivo: {req.reason}</div>}
-                  {req.reviewed_by && <div className="text-gray-500 text-xs mt-2">Revisto por: {req.reviewed_by}</div>}
+                  {req.reason && <div className="text-gray-300 text-xs md:text-sm mt-1">Motivo: {req.reason}</div>}
+                  {req.reviewed_by && <div className="text-gray-500 text-xs mt-1">Revisto por: {req.reviewed_by}</div>}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center text-gray-400 py-12">Ainda não fez pedidos de férias</div>
+            <div className="text-center text-gray-400 py-8 md:py-12 text-sm">Ainda não fez pedidos de férias</div>
           )}
         </div>
       </div>
