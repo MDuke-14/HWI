@@ -550,6 +550,8 @@ class DespesaOT(BaseModel):
     tecnico_id: str  # ID do técnico que pagou
     tecnico_nome: str  # Nome do técnico
     data: str  # Data da despesa (YYYY-MM-DD)
+    numero_fatura: Optional[str] = None  # Número da fatura
+    data_fatura: Optional[str] = None  # Data da fatura (YYYY-MM-DD)
     factura_data: Optional[str] = None  # Base64 da factura
     factura_filename: Optional[str] = None
     factura_mimetype: Optional[str] = None
@@ -10292,6 +10294,8 @@ async def create_despesa_ot(
         tecnico_id=despesa_data["tecnico_id"],
         tecnico_nome=tecnico_nome,
         data=despesa_data["data"],
+        numero_fatura=despesa_data.get("numero_fatura"),
+        data_fatura=despesa_data.get("data_fatura"),
         factura_data=despesa_data.get("factura_data"),
         factura_filename=despesa_data.get("factura_filename"),
         factura_mimetype=despesa_data.get("factura_mimetype"),

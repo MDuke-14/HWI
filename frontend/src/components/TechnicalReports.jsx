@@ -88,6 +88,7 @@ import {
   MaterialModal,
   CronometroStartModal
 } from './technical-reports';
+import FaturaScanner from './technical-reports/FaturaScanner';
 
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
@@ -282,13 +283,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     valor: '',
     tecnico_id: '',
     data: new Date().toISOString().split('T')[0],
+    numero_fatura: '',
+    data_fatura: '',
     factura_data: null,
     factura_filename: null,
     factura_mimetype: null
   });
   const [uploadingFactura, setUploadingFactura] = useState(false);
-  const cameraInputRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const [showScanner, setShowScanner] = useState(false);
   const editCameraInputRef = useRef(null);
   const editFileInputRef = useRef(null);
 
@@ -1920,18 +1922,29 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
+    if (!despesaFormData.numero_fatura) {
+      toast.error('Número da fatura é obrigatório');
+      return;
+    }
+    if (!despesaFormData.factura_data) {
+      toast.error('Fatura digitalizada é obrigatória. Use o scanner para anexar.');
+      return;
+    }
     
     try {
       await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas`, despesaFormData);
       toast.success('Despesa registada! Admin notificado.');
       fetchDespesas(selectedRelatorio.id);
       setShowAddDespesaModal(false);
+      setShowScanner(false);
       setDespesaFormData({
         tipo: 'outras',
         descricao: '',
         valor: '',
         tecnico_id: '',
         data: new Date().toISOString().split('T')[0],
+        numero_fatura: '',
+        data_fatura: '',
         factura_data: null,
         factura_filename: null,
         factura_mimetype: null
@@ -1987,6 +2000,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       valor: despesa.valor,
       tecnico_id: despesa.tecnico_id,
       data: despesa.data,
+      numero_fatura: despesa.numero_fatura || '',
+      data_fatura: despesa.data_fatura || '',
       factura_data: despesa.factura_data,
       factura_filename: despesa.factura_filename,
       factura_mimetype: despesa.factura_mimetype
@@ -5423,6 +5438,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                           <div className="flex gap-4 mt-1 text-sm text-gray-400">
                             <span className="text-emerald-400 font-semibold">{despesa.valor?.toFixed(2)}€</span>
+                            {despesa.numero_fatura && (
+                              <span>Fatura: {despesa.numero_fatura}</span>
+                            )}
                             <span>Pago por: {despesa.tecnico_nome}</span>
                             <span>{new Date(despesa.data).toLocaleDateString('pt-PT')}</span>
                           </div>
@@ -6468,8 +6486,11 @@ const TechnicalReports = ({ user, onLogout }) => {
       />
 
       {/* Add Despesa Modal */}
-      <Dialog open={showAddDespesaModal} onOpenChange={setShowAddDespesaModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+      <Dialog open={showAddDespesaModal} onOpenChange={(open) => {
+        setShowAddDespesaModal(open);
+        if (!open) { setShowScanner(false); }
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Receipt className="w-5 h-5 text-emerald-400" />
@@ -6477,26 +6498,34 @@ const TechnicalReports = ({ user, onLogout }) => {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddDespesa} className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="despesa-tipo" className="text-gray-300">Tipo de Despesa *</Label>
-              <select
-                id="despesa-tipo"
-                value={despesaFormData.tipo}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tipo: e.target.value }))}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
-                required
-              >
-                {tiposDespesa.map(tipo => (
-                  <option key={tipo.value} value={tipo.value}>
-                    {tipo.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                {despesaFormData.tipo === 'portagens' 
-                  ? '→ Vai para a coluna "Portagens" na Folha de Horas'
-                  : '→ Vai para a coluna "Despesas" na Folha de Horas'}
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="despesa-tipo" className="text-gray-300">Tipo *</Label>
+                <select
+                  id="despesa-tipo"
+                  value={despesaFormData.tipo}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, tipo: e.target.value }))}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                  required
+                >
+                  {tiposDespesa.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="despesa-data" className="text-gray-300">Data *</Label>
+                <Input
+                  id="despesa-data"
+                  type="date"
+                  value={despesaFormData.data}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, data: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="despesa-descricao" className="text-gray-300">Descrição *</Label>
@@ -6509,117 +6538,141 @@ const TechnicalReports = ({ user, onLogout }) => {
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="despesa-valor" className="text-gray-300">Valor (€) *</Label>
-              <Input
-                id="despesa-valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={despesaFormData.valor}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))}
-                placeholder="0.00"
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="despesa-valor" className="text-gray-300">Valor (€) *</Label>
+                <Input
+                  id="despesa-valor"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={despesaFormData.valor}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))}
+                  placeholder="0.00"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="despesa-numero-fatura" className="text-gray-300">N.º Fatura *</Label>
+                <Input
+                  id="despesa-numero-fatura"
+                  value={despesaFormData.numero_fatura}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, numero_fatura: e.target.value }))}
+                  placeholder="Ex: FT 2026/001"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  data-testid="despesa-numero-fatura"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="despesa-tecnico" className="text-gray-300">Pago por (Técnico) *</Label>
-              <select
-                id="despesa-tecnico"
-                value={despesaFormData.tecnico_id}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tecnico_id: e.target.value }))}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
-                required
-              >
-                <option value="">Selecionar técnico...</option>
-                {allSystemUsers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name || user.username}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="despesa-tecnico" className="text-gray-300">Pago por *</Label>
+                <select
+                  id="despesa-tecnico"
+                  value={despesaFormData.tecnico_id}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, tecnico_id: e.target.value }))}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                  required
+                >
+                  <option value="">Selecionar...</option>
+                  {allSystemUsers.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name || user.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="despesa-data-fatura" className="text-gray-300">Data Fatura</Label>
+                <Input
+                  id="despesa-data-fatura"
+                  type="date"
+                  value={despesaFormData.data_fatura}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, data_fatura: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  data-testid="despesa-data-fatura"
+                />
+                <p className="text-xs text-gray-500 mt-0.5">Recomendado</p>
+              </div>
             </div>
+            
+            {/* Fatura Scanner Section */}
             <div>
-              <Label htmlFor="despesa-data" className="text-gray-300">Data *</Label>
-              <Input
-                id="despesa-data"
-                type="date"
-                value={despesaFormData.data}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, data: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300">Factura (opcional)</Label>
-              <div className="mt-1">
+              <Label className="text-gray-300 flex items-center gap-2">
+                <ScanLine className="w-4 h-4 text-emerald-400" />
+                Fatura Digitalizada *
+              </Label>
+              <div className="mt-2">
                 {despesaFormData.factura_filename ? (
-                  <div className="flex items-center gap-2 p-2 bg-emerald-900/30 border border-emerald-700 rounded">
-                    <span className="text-emerald-400">📎 {despesaFormData.factura_filename}</span>
+                  <div className="flex items-center gap-2 p-3 bg-emerald-900/20 border border-emerald-700 rounded-lg">
+                    <FileText className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-emerald-400 text-sm font-medium block truncate">{despesaFormData.factura_filename}</span>
+                      <span className="text-emerald-600 text-xs">PDF digitalizado</span>
+                    </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="text-red-400 hover:text-red-300"
-                      onClick={() => setDespesaFormData(prev => ({ ...prev, factura_data: null, factura_filename: null, factura_mimetype: null }))}
+                      className="text-red-400 hover:text-red-300 shrink-0"
+                      onClick={() => {
+                        setDespesaFormData(prev => ({ ...prev, factura_data: null, factura_filename: null, factura_mimetype: null }));
+                        setShowScanner(false);
+                      }}
+                      data-testid="despesa-remove-fatura"
                     >
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-emerald-600/50 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-900/20 transition-colors"
-                      data-testid="despesa-scan-btn"
-                    >
-                      <ScanLine className="w-6 h-6 text-emerald-400" />
-                      <span className="text-emerald-400 text-xs font-medium text-center">Digitalizar Documento</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-800/30 transition-colors"
-                      data-testid="despesa-file-btn"
-                    >
-                      <Upload className="w-6 h-6 text-gray-400" />
-                      <span className="text-gray-400 text-xs font-medium text-center">Escolher Ficheiro</span>
-                    </button>
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFacturaUpload}
-                      className="hidden"
-                      disabled={uploadingFactura}
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={handleFacturaUpload}
-                      className="hidden"
-                      disabled={uploadingFactura}
+                ) : showScanner ? (
+                  <div className="border border-gray-700 rounded-lg p-4 bg-[#0f0f0f]">
+                    <FaturaScanner
+                      onComplete={(result) => {
+                        setDespesaFormData(prev => ({
+                          ...prev,
+                          factura_data: result.factura_data,
+                          factura_filename: result.factura_filename,
+                          factura_mimetype: result.factura_mimetype
+                        }));
+                        setShowScanner(false);
+                      }}
+                      onCancel={() => setShowScanner(false)}
                     />
                   </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="w-full flex items-center justify-center gap-3 p-5 border-2 border-dashed border-emerald-600/50 rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-900/10 transition-all"
+                    data-testid="despesa-open-scanner"
+                  >
+                    <ScanLine className="w-7 h-7 text-emerald-400" />
+                    <div className="text-left">
+                      <span className="text-emerald-400 text-sm font-semibold block">Digitalizar Fatura</span>
+                      <span className="text-gray-500 text-xs">Tire uma foto ou selecione um ficheiro</span>
+                    </div>
+                  </button>
                 )}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-4">
+
+            <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   setShowAddDespesaModal(false);
+                  setShowScanner(false);
                   setDespesaFormData({
                     tipo: 'outras',
                     descricao: '',
                     valor: '',
                     tecnico_id: '',
                     data: new Date().toISOString().split('T')[0],
+                    numero_fatura: '',
+                    data_fatura: '',
                     factura_data: null,
                     factura_filename: null,
                     factura_mimetype: null
@@ -6640,7 +6693,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* Edit Despesa Modal */}
       <Dialog open={showEditDespesaModal} onOpenChange={setShowEditDespesaModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Receipt className="w-5 h-5 text-emerald-400" />
@@ -6648,26 +6701,34 @@ const TechnicalReports = ({ user, onLogout }) => {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdateDespesa} className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="edit-despesa-tipo" className="text-gray-300">Tipo de Despesa *</Label>
-              <select
-                id="edit-despesa-tipo"
-                value={despesaFormData.tipo}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tipo: e.target.value }))}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
-                required
-              >
-                {tiposDespesa.map(tipo => (
-                  <option key={tipo.value} value={tipo.value}>
-                    {tipo.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                {despesaFormData.tipo === 'portagens' 
-                  ? '→ Vai para a coluna "Portagens" na Folha de Horas'
-                  : '→ Vai para a coluna "Despesas" na Folha de Horas'}
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-despesa-tipo" className="text-gray-300">Tipo *</Label>
+                <select
+                  id="edit-despesa-tipo"
+                  value={despesaFormData.tipo}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, tipo: e.target.value }))}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                  required
+                >
+                  {tiposDespesa.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="edit-despesa-data" className="text-gray-300">Data *</Label>
+                <Input
+                  id="edit-despesa-data"
+                  type="date"
+                  value={despesaFormData.data}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, data: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="edit-despesa-descricao" className="text-gray-300">Descrição *</Label>
@@ -6680,59 +6741,79 @@ const TechnicalReports = ({ user, onLogout }) => {
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="edit-despesa-valor" className="text-gray-300">Valor (€) *</Label>
-              <Input
-                id="edit-despesa-valor"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={despesaFormData.valor}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))}
-                placeholder="0.00"
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-despesa-valor" className="text-gray-300">Valor (€) *</Label>
+                <Input
+                  id="edit-despesa-valor"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={despesaFormData.valor}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))}
+                  placeholder="0.00"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-despesa-numero-fatura" className="text-gray-300">N.º Fatura *</Label>
+                <Input
+                  id="edit-despesa-numero-fatura"
+                  value={despesaFormData.numero_fatura || ''}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, numero_fatura: e.target.value }))}
+                  placeholder="Ex: FT 2026/001"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  data-testid="edit-despesa-numero-fatura"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="edit-despesa-tecnico" className="text-gray-300">Pago por (Técnico) *</Label>
-              <select
-                id="edit-despesa-tecnico"
-                value={despesaFormData.tecnico_id}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, tecnico_id: e.target.value }))}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
-                required
-              >
-                <option value="">Selecionar técnico...</option>
-                {allSystemUsers.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name || user.username}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-despesa-tecnico" className="text-gray-300">Pago por *</Label>
+                <select
+                  id="edit-despesa-tecnico"
+                  value={despesaFormData.tecnico_id}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, tecnico_id: e.target.value }))}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                  required
+                >
+                  <option value="">Selecionar...</option>
+                  {allSystemUsers.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name || user.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="edit-despesa-data-fatura" className="text-gray-300">Data Fatura</Label>
+                <Input
+                  id="edit-despesa-data-fatura"
+                  type="date"
+                  value={despesaFormData.data_fatura || ''}
+                  onChange={(e) => setDespesaFormData(prev => ({ ...prev, data_fatura: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                />
+              </div>
             </div>
+            
+            {/* Fatura attachment for edit */}
             <div>
-              <Label htmlFor="edit-despesa-data" className="text-gray-300">Data *</Label>
-              <Input
-                id="edit-despesa-data"
-                type="date"
-                value={despesaFormData.data}
-                onChange={(e) => setDespesaFormData(prev => ({ ...prev, data: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300">Factura</Label>
-              <div className="mt-1">
+              <Label className="text-gray-300 flex items-center gap-2">
+                <ScanLine className="w-4 h-4 text-emerald-400" />
+                Fatura Digitalizada
+              </Label>
+              <div className="mt-2">
                 {despesaFormData.factura_filename ? (
-                  <div className="flex items-center gap-2 p-2 bg-emerald-900/30 border border-emerald-700 rounded">
-                    <span className="text-emerald-400">📎 {despesaFormData.factura_filename}</span>
+                  <div className="flex items-center gap-2 p-3 bg-emerald-900/20 border border-emerald-700 rounded-lg">
+                    <FileText className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <span className="text-emerald-400 text-sm font-medium flex-1 truncate">{despesaFormData.factura_filename}</span>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="text-red-400 hover:text-red-300"
+                      className="text-red-400 hover:text-red-300 shrink-0"
                       onClick={() => setDespesaFormData(prev => ({ ...prev, factura_data: null, factura_filename: null, factura_mimetype: null }))}
                     >
                       <X className="w-4 h-4" />
@@ -6746,8 +6827,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                       className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-emerald-600/50 rounded-lg cursor-pointer hover:border-emerald-400 hover:bg-emerald-900/20 transition-colors"
                       data-testid="edit-despesa-scan-btn"
                     >
-                      <ScanLine className="w-6 h-6 text-emerald-400" />
-                      <span className="text-emerald-400 text-xs font-medium text-center">Digitalizar Documento</span>
+                      <Camera className="w-6 h-6 text-emerald-400" />
+                      <span className="text-emerald-400 text-xs font-medium text-center">Tirar Foto</span>
                     </button>
                     <button
                       type="button"
@@ -6779,7 +6860,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
