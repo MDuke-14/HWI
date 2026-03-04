@@ -5868,7 +5868,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                   {loadingHTMLPreview ? 'A carregar...' : (isMobile ? 'Visualizar' : 'Visualizar Relatório')}
                 </Button>
 
-                {/* Folha de Horas - Laranja */}
+                {/* Folha de Horas - Laranja (apenas admin) */}
+                {user?.is_admin && (
                 <Button
                   onClick={handleOpenFolhaHoras}
                   disabled={loadingFolhaHoras}
@@ -5878,6 +5879,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <FileSpreadsheet className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
                   {loadingFolhaHoras ? 'A carregar...' : 'Folha de Horas'}
                 </Button>
+                )}
                 
                 {/* Botões de Mudança de Estado - Fluxo: Pendente → Em Execução → Concluído */}
                 {(selectedRelatorio?.status === 'pendente' || selectedRelatorio?.status === 'agendado') && (
