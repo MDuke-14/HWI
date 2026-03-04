@@ -218,6 +218,24 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro ao executar migrações: {str(e)}")
     
+    # Migração: Recalcular horas de viagem sem arredondamento
+    try:
+        viagem_registos = await db.registos_tecnico_ot.find({"tipo": "viagem"}, {"_id": 0, "id": 1, "minutos_trabalhados": 1, "horas_arredondadas": 1}).to_list(None)
+        updated = 0
+        for r in viagem_registos:
+            mins = r.get("minutos_trabalhados", 0)
+            correcto = round(mins / 60, 4)
+            actual = r.get("horas_arredondadas", 0)
+            if abs(actual - correcto) > 0.001:
+                await db.registos_tecnico_ot.update_one({"id": r["id"]}, {"$set": {"horas_arredondadas": correcto}})
+                updated += 1
+        if updated > 0:
+            logging.info(f"✅ Migração viagem: {updated} registos corrigidos (sem arredondamento)")
+        else:
+            logging.info("✅ Migração viagem: todos os registos já correctos")
+    except Exception as e:
+        logging.error(f"❌ Erro na migração de viagem: {str(e)}")
+    
     # Criar índices para melhorar performance
     logging.info("🔧 Criando índices de base de dados...")
     try:
