@@ -167,6 +167,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEquipamentoOTsModal, setShowEquipamentoOTsModal] = useState(false);
   const [equipamentoOTs, setEquipamentoOTs] = useState([]);
   const [selectedEquipamento, setSelectedEquipamento] = useState(null);
+  const [showAddClienteEquipModal, setShowAddClienteEquipModal] = useState(false);
+  const [showEditClienteEquipModal, setShowEditClienteEquipModal] = useState(false);
+  const [clienteEquipForm, setClienteEquipForm] = useState({
+    tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: ''
+  });
   
   // Modal iniciar cronómetro após criar OT
   const [showIniciarCronoModal, setShowIniciarCronoModal] = useState(false);
@@ -737,6 +742,54 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.error('Erro ao carregar equipamentos do cliente');
     }
   };
+
+  // CRUD Equipamentos do Cliente
+  const handleAddClienteEquip = async (e) => {
+    e.preventDefault();
+    if (!clienteEquipForm.marca || !clienteEquipForm.modelo) {
+      toast.error('Marca e Modelo são obrigatórios');
+      return;
+    }
+    try {
+      await axios.post(`${API}/equipamentos`, {
+        ...clienteEquipForm,
+        cliente_id: selectedCliente.id
+      });
+      toast.success('Equipamento adicionado!');
+      setShowAddClienteEquipModal(false);
+      setClienteEquipForm({ tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: '' });
+      fetchClienteEquipamentosDetalhado(selectedCliente.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleEditClienteEquip = async (e) => {
+    e.preventDefault();
+    if (!selectedEquipamento) return;
+    try {
+      await axios.put(`${API}/equipamentos/${selectedEquipamento.id}`, clienteEquipForm);
+      toast.success('Equipamento atualizado!');
+      setShowEditClienteEquipModal(false);
+      setSelectedEquipamento(null);
+      setClienteEquipForm({ tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: '' });
+      fetchClienteEquipamentosDetalhado(selectedCliente.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDeleteClienteEquip = async (equipId) => {
+    if (!window.confirm('Tem certeza que deseja eliminar este equipamento?')) return;
+    try {
+      await axios.delete(`${API}/equipamentos/${equipId}`);
+      toast.success('Equipamento eliminado!');
+      fetchClienteEquipamentosDetalhado(selectedCliente.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
 
   const fetchEquipamentoOTs = async (equipamento) => {
     try {
@@ -8511,7 +8564,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* View Cliente Modal */}
       <Dialog open={showViewModal} onOpenChange={setShowViewModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <User className="w-5 h-5 text-blue-400" />
@@ -8686,10 +8739,24 @@ const TechnicalReports = ({ user, onLogout }) => {
       <Dialog open={showClienteEquipamentosModal} onOpenChange={setShowClienteEquipamentosModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Settings className="w-5 h-5 text-amber-400" />
-              Equipamentos do Cliente
-            </DialogTitle>
+            <div className="flex items-center justify-between w-full pr-8">
+              <DialogTitle className="flex items-center gap-2 text-white">
+                <Settings className="w-5 h-5 text-amber-400" />
+                Equipamentos do Cliente
+              </DialogTitle>
+              <Button
+                onClick={() => {
+                  setClienteEquipForm({ tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: '' });
+                  setShowAddClienteEquipModal(true);
+                }}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                data-testid="add-cliente-equip-btn"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Adicionar
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="mt-4">
@@ -8697,6 +8764,16 @@ const TechnicalReports = ({ user, onLogout }) => {
               <div className="text-center py-12">
                 <Settings className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <p className="text-gray-400 text-lg">Nenhum equipamento cadastrado para este cliente</p>
+                <Button
+                  onClick={() => {
+                    setClienteEquipForm({ tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: '' });
+                    setShowAddClienteEquipModal(true);
+                  }}
+                  className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Equipamento
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -8710,7 +8787,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       key={equipamento.id}
                       className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-amber-500 transition"
                     >
-                      {/* Header */}
+                      {/* Header with actions */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -8720,6 +8797,36 @@ const TechnicalReports = ({ user, onLogout }) => {
                             </span>
                           </div>
                           <p className="text-sm text-gray-400">{equipamento.tipologia}</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={() => {
+                              setSelectedEquipamento(equipamento);
+                              setClienteEquipForm({
+                                tipologia: equipamento.tipologia || '',
+                                marca: equipamento.marca || '',
+                                modelo: equipamento.modelo || '',
+                                numero_serie: equipamento.numero_serie || '',
+                                ano_fabrico: equipamento.ano_fabrico || ''
+                              });
+                              setShowEditClienteEquipModal(true);
+                            }}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                            data-testid={`edit-equip-${equipamento.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteClienteEquip(equipamento.id)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            data-testid={`delete-equip-${equipamento.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
 
@@ -8732,7 +8839,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         
                         {equipamento.numero_serie && (
                           <div>
-                            <span className="text-xs text-gray-500">Nº Série:</span>
+                            <span className="text-xs text-gray-500">N. Série:</span>
                             <p className="text-sm text-gray-300 font-mono">{equipamento.numero_serie}</p>
                           </div>
                         )}
@@ -8772,6 +8879,150 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Equipamento do Cliente Modal */}
+      <Dialog open={showAddClienteEquipModal} onOpenChange={setShowAddClienteEquipModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Plus className="w-5 h-5 text-emerald-400" />
+              Novo Equipamento
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddClienteEquip} className="space-y-4 mt-4">
+            <div>
+              <Label className="text-gray-300">Tipologia</Label>
+              <Input
+                value={clienteEquipForm.tipologia}
+                onChange={(e) => setClienteEquipForm(prev => ({ ...prev, tipologia: e.target.value }))}
+                placeholder="Ex: Lavadora, Secador, Calandra..."
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-gray-300">Marca *</Label>
+                <Input
+                  value={clienteEquipForm.marca}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, marca: e.target.value }))}
+                  placeholder="Ex: Kannegiesser"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Modelo *</Label>
+                <Input
+                  value={clienteEquipForm.modelo}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, modelo: e.target.value }))}
+                  placeholder="Ex: PowerTrans 3200"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-gray-300">N. Série</Label>
+                <Input
+                  value={clienteEquipForm.numero_serie}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, numero_serie: e.target.value }))}
+                  placeholder="Ex: SN-12345"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Ano Fabrico</Label>
+                <Input
+                  value={clienteEquipForm.ano_fabrico}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, ano_fabrico: e.target.value }))}
+                  placeholder="Ex: 2020"
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowAddClienteEquipModal(false)} className="border-gray-600">
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="w-4 h-4 mr-1" />
+                Adicionar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Equipamento do Cliente Modal */}
+      <Dialog open={showEditClienteEquipModal} onOpenChange={setShowEditClienteEquipModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editar Equipamento
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditClienteEquip} className="space-y-4 mt-4">
+            <div>
+              <Label className="text-gray-300">Tipologia</Label>
+              <Input
+                value={clienteEquipForm.tipologia}
+                onChange={(e) => setClienteEquipForm(prev => ({ ...prev, tipologia: e.target.value }))}
+                placeholder="Ex: Lavadora, Secador, Calandra..."
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-gray-300">Marca *</Label>
+                <Input
+                  value={clienteEquipForm.marca}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, marca: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Modelo *</Label>
+                <Input
+                  value={clienteEquipForm.modelo}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, modelo: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-gray-300">N. Série</Label>
+                <Input
+                  value={clienteEquipForm.numero_serie}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, numero_serie: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Ano Fabrico</Label>
+                <Input
+                  value={clienteEquipForm.ano_fabrico}
+                  onChange={(e) => setClienteEquipForm(prev => ({ ...prev, ano_fabrico: e.target.value }))}
+                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowEditClienteEquipModal(false)} className="border-gray-600">
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                <Check className="w-4 h-4 mr-1" />
+                Guardar
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
