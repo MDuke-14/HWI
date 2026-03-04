@@ -117,7 +117,7 @@ const Absences = ({ user, onLogout }) => {
       approved: { color: 'bg-green-700 text-green-200', icon: <CheckCircle className="w-3 h-3" />, text: 'Aprovado' },
       rejected: { color: 'bg-red-700 text-red-200', icon: <XCircle className="w-3 h-3" />, text: 'Rejeitado' }
     };
-    const badge = badges[status];
+    const badge = badges[status] || { color: 'bg-gray-700 text-gray-200', icon: <Clock className="w-3 h-3" />, text: status || 'Desconhecido' };
     return <span className={`${badge.color} px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1`}>{badge.icon}{badge.text}</span>;
   };
 
