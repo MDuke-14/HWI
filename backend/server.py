@@ -11232,7 +11232,6 @@ async def send_email_pc(
             <p><b>Cliente:</b> {ot.get('cliente_nome', 'N/A')}</p>
             <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
             <hr>
-            <p style="color: #666; font-size: 12px;">Este é um email automático. Por favor, não responda.</p>
             <p style="color: #666; font-size: 12px;">HWI Unipessoal, Lda.</p>
         </body>
         </html>
