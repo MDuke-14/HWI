@@ -4098,17 +4098,17 @@ async def enviar_pdf_ot(
         
         # Criar mensagem de email
         numero_ot = relatorio.get('numero_assistencia', 'N/A')
+        status = relatorio.get('estado', 'Em Execução')
         subject = f"Ordem de Trabalho #{numero_ot} - {cliente.get('nome', '')}"
         
         body = f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
-            <h2 style="color: #1e40af;">Ordem de Trabalho #{numero_ot}</h2>
+            <h2 style="color: #1e40af;">Ordem de Trabalho #{numero_ot} - {status}</h2>
             <p>Exmo(a) Sr(a),</p>
             <p>Segue em anexo a Ordem de Trabalho #{numero_ot} referente ao serviço realizado.</p>
             <p><strong>Cliente:</strong> {cliente.get('nome', 'N/A')}</p>
             <p><strong>Data de Serviço:</strong> {relatorio.get('data_servico', 'N/A')}</p>
-            <p><strong>Equipamento:</strong> {relatorio.get('equipamento_marca', '')} {relatorio.get('equipamento_modelo', '')}</p>
             <br>
             <p>Com os melhores cumprimentos,</p>
             <p><strong>HWI Unipessoal, Lda</strong></p>
