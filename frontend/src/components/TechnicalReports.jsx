@@ -50,7 +50,8 @@ import {
   Wrench,
   UserCheck,
   Camera,
-  ScanLine
+  ScanLine,
+  Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -374,6 +375,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   });
   const [showStopCronoPopup, setShowStopCronoPopup] = useState(false);
   const [stopCronoData, setStopCronoData] = useState({ tecnico: null, tipo: '', km_inicial: 0, km_final: '' });
+  const [showWorkKmPopup, setShowWorkKmPopup] = useState(false);
+  const [workKmData, setWorkKmData] = useState({ km_inicial: '', km_final: '' });
   const [addRegistoManualForm, setAddRegistoManualForm] = useState({
     tecnico_id: '',
     tecnico_nome: '',
@@ -2587,13 +2590,23 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const handlePararCronometro = async (tecnico, tipo, km_final = 0) => {
     try {
-      const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/parar`, {
+      const payload = {
         tipo,
         tecnico_id: tecnico.tecnico_id || tecnico.id,
         km_final
-      });
+      };
+      // Se for trabalho e tiver KMs de deslocação registados, incluir
+      if (tipo === 'trabalho' && workKmData.km_inicial && workKmData.km_final) {
+        payload.work_km_inicial = parseFloat(workKmData.km_inicial) || 0;
+        payload.work_km_final = parseFloat(workKmData.km_final) || 0;
+      }
+      const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/parar`, payload);
       
       toast.success(response.data.message);
+      // Reset work KM data after stopping
+      if (tipo === 'trabalho') {
+        setWorkKmData({ km_inicial: '', km_final: '' });
+      }
       fetchCronometros(selectedRelatorio.id);
       fetchRegistosTecnicos(selectedRelatorio.id);
     } catch (error) {
@@ -4466,6 +4479,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       const hasAnyActiveTrabalho = selectedUsers.some(u => getCronometroStatus(u, 'trabalho'));
                       
                       return (
+                        <div className={`flex ${isMobile ? 'w-full' : 'flex-1'} gap-1`}>
                         <button
                           onClick={async () => {
                             if (selectedUsers.length === 0) {
@@ -4505,12 +4519,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                               }
                             }
                           }}
-                          className={`${isMobile ? 'w-full' : 'flex-1'} flex items-center justify-center gap-2 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50 ${isMobile ? 'text-sm' : ''}`}
+                          className={`flex-1 flex items-center justify-center gap-2 ${hasAnyActiveTrabalho ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-medium py-2.5 px-4 rounded-md transition-colors disabled:opacity-50 ${isMobile ? 'text-sm' : ''}`}
                           disabled={Object.values(selectedCronoUsers).filter(Boolean).length === 0}
                         >
                           {hasAnyActiveTrabalho ? <StopCircle className="w-4 h-4 flex-shrink-0" /> : <PlayCircle className="w-4 h-4 flex-shrink-0" />}
                           <span>{hasAnyActiveTrabalho ? 'Parar Trabalho' : 'Iniciar Trabalho'}</span>
                         </button>
+                        {hasAnyActiveTrabalho && (
+                          <button
+                            onClick={() => setShowWorkKmPopup(true)}
+                            className={`flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors ${isMobile ? 'px-3' : 'px-2.5'} ${workKmData.km_inicial && workKmData.km_final ? 'ring-2 ring-green-400' : ''}`}
+                            title="Registar KMs de deslocação durante trabalho"
+                            data-testid="work-km-edit-btn"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        )}
+                        </div>
                       );
                     })()}
 
@@ -9599,6 +9624,60 @@ const TechnicalReports = ({ user, onLogout }) => {
               data-testid="confirm-stop-crono-btn"
             >
               Parar Cronómetro
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal KMs Deslocação durante Trabalho */}
+      <Dialog open={showWorkKmPopup} onOpenChange={setShowWorkKmPopup}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-sm" data-testid="work-km-popup">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white text-base">
+              <Car className="w-5 h-5 text-amber-400" />
+              Deslocação durante Trabalho
+            </DialogTitle>
+            <p className="text-xs text-gray-400 mt-1">Registar KMs de deslocação (ex: compra de peças)</p>
+          </DialogHeader>
+          <div className="space-y-4 mt-3">
+            <div>
+              <Label className="text-gray-400 text-xs">KMs Iniciais</Label>
+              <Input
+                type="number"
+                value={workKmData.km_inicial}
+                onChange={(e) => setWorkKmData(prev => ({ ...prev, km_inicial: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                placeholder="Ex: 125000"
+                min="0"
+                data-testid="work-km-inicial"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-400 text-xs">KMs Finais</Label>
+              <Input
+                type="number"
+                value={workKmData.km_final}
+                onChange={(e) => setWorkKmData(prev => ({ ...prev, km_final: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                placeholder="Ex: 125050"
+                min="0"
+                data-testid="work-km-final"
+              />
+            </div>
+            {workKmData.km_inicial && workKmData.km_final && (
+              <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3 flex items-center justify-between">
+                <span className="text-green-400 text-sm font-medium">Total KM</span>
+                <span className="text-green-400 font-bold text-lg">
+                  {Math.max(0, (parseFloat(workKmData.km_final) || 0) - (parseFloat(workKmData.km_inicial) || 0)).toFixed(1)} km
+                </span>
+              </div>
+            )}
+            <Button
+              onClick={() => setShowWorkKmPopup(false)}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+              data-testid="save-work-km-btn"
+            >
+              Guardar
             </Button>
           </div>
         </DialogContent>

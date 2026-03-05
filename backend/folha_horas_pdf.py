@@ -281,7 +281,8 @@ def generate_folha_horas_pdf(
             'data': data,
             'registo_id': registo_id,
             'tarifa_key': f"{tecnico_id}_{data}_{codigo}",
-            'incluir_pausa': False
+            'incluir_pausa': False,
+            'observacoes': reg.get('observacoes', '')
         })
     
     # Processar registos manuais
@@ -524,6 +525,13 @@ def generate_folha_horas_pdf(
             # Função label
             funcao_label = 'Técnico' if funcao_ot_grupo == 'tecnico' else 'Ajudante'
             
+            # Observações do registo
+            obs_text = ''
+            for reg in registos:
+                if reg.get('observacoes'):
+                    obs_text = reg['observacoes']
+                    break
+            
             row = [
                 format_date_pt(date_obj),
                 get_weekday_pt(date_obj),
@@ -541,7 +549,7 @@ def generate_folha_horas_pdf(
                 f'{dieta:.2f}€' if dieta else '0,00€',
                 f'{portagens:.2f}€' if portagens else '0,00€',
                 f'{despesas:.2f}€' if despesas else '0,00€',
-                ''
+                obs_text
             ]
             table_data.append(row)
         

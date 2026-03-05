@@ -9827,6 +9827,8 @@ async def parar_cronometro(
     tipo = dados.get("tipo")
     tecnico_id = dados.get("tecnico_id")
     km_final = float(dados.get("km_final", 0))
+    work_km_inicial = float(dados.get("work_km_inicial", 0))
+    work_km_final = float(dados.get("work_km_final", 0))
     
     # Buscar cronómetro ativo
     cronometro = await db.cronometros_ot.find_one({
@@ -9890,6 +9892,13 @@ async def parar_cronometro(
             registo_dict["kms_final"] = km_final
             if km_inicial_crono > 0:
                 registo_dict["km"] = max(0, km_final - km_inicial_crono)
+        # Deslocação durante trabalho: guardar KMs e observação
+        if tipo == "trabalho" and work_km_inicial > 0 and work_km_final > 0:
+            if i == 0:
+                registo_dict["kms_inicial"] = work_km_inicial
+                registo_dict["kms_final"] = work_km_final
+                registo_dict["km"] = max(0, work_km_final - work_km_inicial)
+                registo_dict["observacoes"] = "Deslocação durante Trabalho"
         registo_dict["data"] = registo_dict["data"].isoformat()
         registo_dict["hora_inicio_segmento"] = registo_dict["hora_inicio_segmento"].isoformat()
         registo_dict["hora_fim_segmento"] = registo_dict["hora_fim_segmento"].isoformat()
