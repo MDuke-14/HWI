@@ -7937,61 +7937,6 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* Equipamento */}
-            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
-              <h3 className="text-blue-400 font-semibold mb-4">Equipamento</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit_equipamento_tipologia" className="text-gray-300">
-                    Tipologia
-                  </Label>
-                  <Input
-                    id="edit_equipamento_tipologia"
-                    value={relatorioFormData.equipamento_tipologia}
-                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_tipologia: e.target.value })}
-                    className="bg-[#0f0f0f] border-gray-700 text-white"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_equipamento_marca" className="text-gray-300">
-                    Marca
-                  </Label>
-                  <Input
-                    id="edit_equipamento_marca"
-                    value={relatorioFormData.equipamento_marca}
-                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_marca: e.target.value })}
-                    className="bg-[#0f0f0f] border-gray-700 text-white"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_equipamento_modelo" className="text-gray-300">
-                    Modelo
-                  </Label>
-                  <Input
-                    id="edit_equipamento_modelo"
-                    value={relatorioFormData.equipamento_modelo}
-                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_modelo: e.target.value })}
-                    className="bg-[#0f0f0f] border-gray-700 text-white"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_equipamento_numero_serie" className="text-gray-300">
-                    Número de Série
-                  </Label>
-                  <Input
-                    id="edit_equipamento_numero_serie"
-                    value={relatorioFormData.equipamento_numero_serie}
-                    onChange={(e) => setRelatorioFormData({ ...relatorioFormData, equipamento_numero_serie: e.target.value })}
-                    className="bg-[#0f0f0f] border-gray-700 text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
