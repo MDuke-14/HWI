@@ -171,7 +171,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAddClienteEquipModal, setShowAddClienteEquipModal] = useState(false);
   const [showEditClienteEquipModal, setShowEditClienteEquipModal] = useState(false);
   const [clienteEquipForm, setClienteEquipForm] = useState({
-    tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: ''
+    tipologia: '', marca: '', modelo: '', numero_serie: '', ano_fabrico: '', horas_funcionamento: ''
   });
   
   // Modal iniciar cronómetro após criar OT
@@ -1719,7 +1719,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         marca: '',
         modelo: '',
         numero_serie: '',
-        ano_fabrico: ''
+        ano_fabrico: '',
+        horas_funcionamento: ''
       });
     } else {
       // Preencher campos com dados do equipamento existente
@@ -1730,7 +1731,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           marca: equipamento.marca || '',
           modelo: equipamento.modelo || '',
           numero_serie: equipamento.numero_serie || '',
-          ano_fabrico: equipamento.ano_fabrico || ''
+          ano_fabrico: equipamento.ano_fabrico || '',
+          horas_funcionamento: equipamento.horas_funcionamento || ''
         });
       }
     }
@@ -1748,7 +1750,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       marca: '',
       modelo: '',
       numero_serie: '',
-      ano_fabrico: ''
+      ano_fabrico: '',
+      horas_funcionamento: ''
     });
     setShowAddEquipamentoModal(true);
   };
@@ -1760,7 +1763,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       // Se é um equipamento novo, enviar flag para criar na base do cliente
       const dataToSend = {
         ...equipamentoFormData,
-        criar_na_base_cliente: equipamentoOTSelecionado === 'novo'
+        criar_na_base_cliente: equipamentoOTSelecionado === 'novo',
+        equipamento_cliente_id: (equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot') ? equipamentoOTSelecionado : undefined
       };
       
       await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`, dataToSend);
@@ -7555,6 +7559,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_ano_fabrico}</span>
                               </div>
                             )}
+                            {htmlPreviewData.relatorio.equipamento_horas_funcionamento && (
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Horas:</span>
+                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_horas_funcionamento}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -7590,6 +7600,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <div className="flex flex-col sm:flex-row sm:gap-2">
                                 <span className="font-semibold text-gray-600 shrink-0">Ano:</span>
                                 <span className="text-gray-800">{eq.ano_fabrico}</span>
+                              </div>
+                            )}
+                            {eq.horas_funcionamento && (
+                              <div className="flex flex-col sm:flex-row sm:gap-2">
+                                <span className="font-semibold text-gray-600 shrink-0">Horas:</span>
+                                <span className="text-gray-800">{eq.horas_funcionamento}</span>
                               </div>
                             )}
                           </div>
@@ -8919,6 +8935,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                 />
               </div>
             </div>
+            <div>
+              <Label className="text-gray-300">Horas de Funcionamento</Label>
+              <Input
+                value={clienteEquipForm.horas_funcionamento}
+                onChange={(e) => setClienteEquipForm(prev => ({ ...prev, horas_funcionamento: e.target.value }))}
+                placeholder="Ex: 1500"
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowAddClienteEquipModal(false)} className="border-gray-600">
                 Cancelar
@@ -8988,6 +9013,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                   className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
                 />
               </div>
+            </div>
+            <div>
+              <Label className="text-gray-300">Horas de Funcionamento</Label>
+              <Input
+                value={clienteEquipForm.horas_funcionamento}
+                onChange={(e) => setClienteEquipForm(prev => ({ ...prev, horas_funcionamento: e.target.value }))}
+                placeholder="Ex: 1500"
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowEditClienteEquipModal(false)} className="border-gray-600">

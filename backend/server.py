@@ -425,6 +425,7 @@ class Equipamento(BaseModel):
     modelo: str
     numero_serie: Optional[str] = None
     ano_fabrico: Optional[str] = None  # Ano de fabricação (aceita: AAAA, MM-AAAA, MM/AAAA)
+    horas_funcionamento: Optional[str] = None
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_used: Optional[datetime] = None  # Última vez usado em OT
@@ -3256,12 +3257,22 @@ async def add_equipamento_ot(
                 marca=equipamento_data["marca"],
                 modelo=equipamento_data["modelo"],
                 numero_serie=equipamento_data.get("numero_serie"),
-                ano_fabrico=equipamento_data.get("ano_fabrico")
+                ano_fabrico=equipamento_data.get("ano_fabrico"),
+                horas_funcionamento=equipamento_data.get("horas_funcionamento")
             )
             equip_cliente_dict = novo_equipamento.dict()
             equip_cliente_dict["created_at"] = equip_cliente_dict["created_at"].isoformat()
             await db.equipamentos.insert_one(equip_cliente_dict)
             logging.info(f"Novo equipamento criado na base do cliente {cliente_id}: {equipamento_data['marca']} {equipamento_data['modelo']}")
+    
+    # Se for equipamento existente do cliente, atualizar horas_funcionamento se fornecido
+    equipamento_cliente_id = equipamento_data.get("equipamento_cliente_id")
+    if equipamento_cliente_id and equipamento_data.get("horas_funcionamento"):
+        await db.equipamentos.update_one(
+            {"id": equipamento_cliente_id, "ativo": True},
+            {"$set": {"horas_funcionamento": equipamento_data["horas_funcionamento"]}}
+        )
+        logging.info(f"Horas de funcionamento atualizadas no equipamento do cliente {equipamento_cliente_id}")
     
     # Obter ordem (último + 1)
     last = await db.equipamentos_ot.find_one(
