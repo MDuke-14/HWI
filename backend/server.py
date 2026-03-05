@@ -611,6 +611,7 @@ class RelatorioAssistencia(BaseModel):
     relatorio_id: str
     texto: str
     equipamento_ids: list = Field(default_factory=list)  # IDs dos equipamentos da OT relacionados
+    data_intervencao: Optional[str] = None  # Data da intervenção para agrupar no relatório
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MaterialRelatorio(BaseModel):
@@ -4009,9 +4010,14 @@ async def enviar_pdf_ot(
         # Buscar informações da empresa (para logo e dados no cabeçalho)
         company_info = await db.company_info.find_one({"id": "company_info_default"}, {"_id": 0})
         
+        # Buscar relatórios de assistência
+        rel_assistencia = await db.relatorios_assistencia.find(
+            {"relatorio_id": relatorio_id}, {"_id": 0}
+        ).sort("created_at", 1).to_list(length=None)
+        
         # Gerar PDF com tratamento de erros
         try:
-            pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info)
+            pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia)
         except Exception as e:
             logging.error(f"Erro ao gerar PDF para envio - OT {relatorio_id}: {str(e)}")
             import traceback
@@ -4232,9 +4238,14 @@ async def preview_pdf_ot(
     # Buscar informações da empresa (para logo e dados no cabeçalho)
     company_info = await db.company_info.find_one({"id": "company_info_default"}, {"_id": 0})
     
+    # Buscar relatórios de assistência
+    rel_assistencia = await db.relatorios_assistencia.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(length=None)
+    
     # Gerar PDF com tratamento de erros
     try:
-        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info)
+        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia)
     except Exception as e:
         logging.error(f"Erro ao gerar PDF para OT {relatorio_id}: {str(e)}")
         import traceback
@@ -10520,7 +10531,8 @@ async def create_relatorio_assistencia(
     item = RelatorioAssistencia(
         relatorio_id=relatorio_id,
         texto=data["texto"],
-        equipamento_ids=data.get("equipamento_ids", [])
+        equipamento_ids=data.get("equipamento_ids", []),
+        data_intervencao=data.get("data_intervencao")
     )
     item_dict = item.dict()
     item_dict["created_at"] = item_dict["created_at"].isoformat()
@@ -10541,6 +10553,8 @@ async def update_relatorio_assistencia(
         update_fields["texto"] = data["texto"]
     if "equipamento_ids" in data:
         update_fields["equipamento_ids"] = data["equipamento_ids"]
+    if "data_intervencao" in data:
+        update_fields["data_intervencao"] = data["data_intervencao"]
     
     if update_fields:
         await db.relatorios_assistencia.update_one(

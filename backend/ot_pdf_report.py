@@ -11,7 +11,7 @@ import base64
 import os
 from collections import defaultdict
 
-def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None):
+def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None, relatorios_assistencia=None):
     """
     Gera PDF completo de uma Ordem de Trabalho
     Layout baseado na visualização HTML, organizado por data de intervenção
@@ -478,12 +478,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     motivo_text = interv.get('motivo_assistencia', '').replace('\n', '<br/>')
                     interv_content_items.append(Paragraph(f"<b>Motivo:</b> {motivo_text}", normal_style))
                 
-                if interv.get('relatorio_assistencia'):
-                    relatorio_text = interv.get('relatorio_assistencia', '')
-                    relatorio_text = relatorio_text.replace('\n', '<br/>')
-                    interv_content_items.append(Paragraph("<b>Relatório:</b>", normal_style))
-                    interv_content_items.append(Paragraph(relatorio_text, normal_style))
-                
                 if interv_content_items:
                     # Adicionar todos os itens diretamente (sem tabela para evitar "too large")
                     for item in interv_content_items:
@@ -494,6 +488,36 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 interv_section = create_section_box(interv_content, "DETALHES DA INTERVENÇÃO")
                 add_section_to_elements(elements, interv_section)
                 elements.append(Spacer(1, 0.2*cm))
+        
+        # ---- Relatórios de Assistência desta data ----
+        if relatorios_assistencia:
+            date_rel_assist = [ra for ra in relatorios_assistencia if normalize_date(ra.get('data_intervencao')) == date]
+            if date_rel_assist:
+                ra_content = []
+                for ra in date_rel_assist:
+                    # Equipamentos relacionados
+                    equip_names = []
+                    for eq_id in (ra.get('equipamento_ids') or []):
+                        if eq_id == 'principal':
+                            name = f"{relatorio.get('equipamento_tipologia', '')} {relatorio.get('equipamento_marca', '')} {relatorio.get('equipamento_modelo', '')}".strip()
+                            if name:
+                                equip_names.append(name)
+                        else:
+                            eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
+                            if eq:
+                                name = f"{eq.get('tipologia', '')} {eq.get('marca', '')} {eq.get('modelo', '')}".strip()
+                                equip_names.append(name)
+                    if equip_names:
+                        ra_content.append(Paragraph(f"<b>Equipamento(s):</b> {', '.join(equip_names)}", normal_style))
+                    
+                    ra_text = ra.get('texto', '').replace('\n', '<br/>')
+                    ra_content.append(Paragraph(ra_text, normal_style))
+                    ra_content.append(Spacer(1, 0.2*cm))
+                
+                if ra_content:
+                    ra_section = create_section_box(ra_content, "RELATÓRIO DE ASSISTÊNCIA")
+                    add_section_to_elements(elements, ra_section)
+                    elements.append(Spacer(1, 0.2*cm))
         
         # ---- Mão de Obra / Registos desta data ----
         date_mao_obra = []

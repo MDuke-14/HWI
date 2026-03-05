@@ -286,7 +286,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAddRelAssistModal, setShowAddRelAssistModal] = useState(false);
   const [showEditRelAssistModal, setShowEditRelAssistModal] = useState(false);
   const [selectedRelAssist, setSelectedRelAssist] = useState(null);
-  const [relAssistFormData, setRelAssistFormData] = useState({ texto: '', equipamento_ids: [] });
+  const [relAssistFormData, setRelAssistFormData] = useState({ texto: '', equipamento_ids: [], data_intervencao: '' });
   const [showAddDespesaModal, setShowAddDespesaModal] = useState(false);
   const [showEditDespesaModal, setShowEditDespesaModal] = useState(false);
   const [selectedDespesa, setSelectedDespesa] = useState(null);
@@ -1980,7 +1980,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.success('Relatório de assistência adicionado!');
       fetchRelatoriosAssistencia(selectedRelatorio.id);
       setShowAddRelAssistModal(false);
-      setRelAssistFormData({ texto: '', equipamento_ids: [] });
+      setRelAssistFormData({ texto: '', equipamento_ids: [], data_intervencao: '' });
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
@@ -1997,7 +1997,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       fetchRelatoriosAssistencia(selectedRelatorio.id);
       setShowEditRelAssistModal(false);
       setSelectedRelAssist(null);
-      setRelAssistFormData({ texto: '', equipamento_ids: [] });
+      setRelAssistFormData({ texto: '', equipamento_ids: [], data_intervencao: '' });
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
@@ -2015,7 +2015,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   const openEditRelAssist = (item) => {
     setSelectedRelAssist(item);
-    setRelAssistFormData({ texto: item.texto || '', equipamento_ids: item.equipamento_ids || [] });
+    setRelAssistFormData({ texto: item.texto || '', equipamento_ids: item.equipamento_ids || [], data_intervencao: item.data_intervencao || '' });
     setShowEditRelAssistModal(true);
   };
 
@@ -3166,7 +3166,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         fotografias: fotosRes.data,
         equipamentos: equipRes.data,
         materiais: materiaisRes.data,
-        registos: allRegistos
+        registos: allRegistos,
+        relatoriosAssistencia: relatoriosAssistencia
       });
       
       // Buscar assinaturas existentes
@@ -5676,7 +5677,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </h4>
                   <Button
                     onClick={() => {
-                      setRelAssistFormData({ texto: '', equipamento_ids: [] });
+                      setRelAssistFormData({ texto: '', equipamento_ids: [], data_intervencao: new Date().toISOString().split('T')[0] });
                       setShowAddRelAssistModal(true);
                     }}
                     size="sm"
@@ -5694,6 +5695,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <div key={item.id} className={`${bgCard} ${isMobile ? 'p-2' : 'p-4'} rounded border ${borderColor}`}>
                         <div className={`flex items-start justify-between ${isMobile ? 'mb-1' : 'mb-2'}`}>
                           <div className="flex-1">
+                            {/* Data da Intervenção */}
+                            {item.data_intervencao && (
+                              <div className="flex items-center gap-1 mb-2">
+                                <Calendar className="w-3 h-3 text-orange-400" />
+                                <span className="text-xs text-orange-400 font-medium">
+                                  {new Date(item.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT')}
+                                </span>
+                              </div>
+                            )}
                             {/* Equipamentos Relacionados */}
                             {item.equipamento_ids && item.equipamento_ids.length > 0 && (
                               <div className="flex flex-wrap gap-1 mb-2">
@@ -6352,22 +6362,6 @@ const TechnicalReports = ({ user, onLogout }) => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="relatorio_assistencia" className="text-gray-300">
-                Relatório de Assistência
-              </Label>
-              <p className="text-xs text-gray-500 mb-2">
-                Descreva o trabalho realizado durante esta intervenção
-              </p>
-              <textarea
-                id="relatorio_assistencia"
-                value={intervencaoFormData.relatorio_assistencia}
-                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, relatorio_assistencia: e.target.value })}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[150px]"
-                placeholder="Ex: Substituição do motor principal, limpeza e lubrificação..."
-              />
-            </div>
-
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -6448,18 +6442,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, motivo_assistencia: e.target.value })}
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
                 required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit_relatorio_assistencia_int" className="text-gray-300">
-                Relatório de Assistência
-              </Label>
-              <textarea
-                id="edit_relatorio_assistencia_int"
-                value={intervencaoFormData.relatorio_assistencia}
-                onChange={(e) => setIntervencaoFormData({ ...intervencaoFormData, relatorio_assistencia: e.target.value })}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[150px]"
               />
             </div>
 
@@ -6723,6 +6705,16 @@ const TechnicalReports = ({ user, onLogout }) => {
           </DialogHeader>
           <form onSubmit={handleAddRelAssist} className="space-y-4 mt-4">
             <div>
+              <Label className="text-gray-300">Data da Intervenção *</Label>
+              <Input
+                type="date"
+                value={relAssistFormData.data_intervencao}
+                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, data_intervencao: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
+            <div>
               <Label className="text-gray-300">Texto *</Label>
               <textarea
                 value={relAssistFormData.texto}
@@ -6799,6 +6791,16 @@ const TechnicalReports = ({ user, onLogout }) => {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdateRelAssist} className="space-y-4 mt-4">
+            <div>
+              <Label className="text-gray-300">Data da Intervenção *</Label>
+              <Input
+                type="date"
+                value={relAssistFormData.data_intervencao}
+                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, data_intervencao: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                required
+              />
+            </div>
             <div>
               <Label className="text-gray-300">Texto *</Label>
               <textarea
@@ -7721,7 +7723,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                   registos: [],
                   materiais: [],
                   fotografias: [],
-                  assinaturas: []
+                  assinaturas: [],
+                  relatoriosAssistencia: []
                 };
               }
             };
@@ -7759,6 +7762,13 @@ const TechnicalReports = ({ user, onLogout }) => {
               const dataKey = ass.data_assinatura ? ass.data_assinatura.split('T')[0] : 'sem_data';
               criarGrupoPorData(dataKey);
               intervencoesPorData[dataKey].assinaturas.push(ass);
+            });
+            
+            // Adicionar relatórios de assistência pela data_intervencao
+            htmlPreviewData.relatoriosAssistencia?.forEach(ra => {
+              const dataKey = ra.data_intervencao ? ra.data_intervencao.split('T')[0] : 'sem_data';
+              criarGrupoPorData(dataKey);
+              intervencoesPorData[dataKey].relatoriosAssistencia.push(ra);
             });
             
             // Ordenar datas cronologicamente
@@ -7973,6 +7983,40 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         )}
                         
+                        {/* Relatórios de Assistência desta data */}
+                        {dados.relatoriosAssistencia?.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-orange-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-orange-500" />
+                              Relatório de Assistência
+                            </h3>
+                            {dados.relatoriosAssistencia.map((ra, raIdx) => (
+                              <div key={raIdx} className="mb-3 last:mb-0">
+                                {ra.equipamento_ids?.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-1">
+                                    {ra.equipamento_ids.map(eqId => {
+                                      const eq = htmlPreviewData.equipamentos?.find(e => e.id === eqId);
+                                      const eqPrincipal = eqId === 'principal' ? {
+                                        tipologia: htmlPreviewData.relatorio?.equipamento_tipologia,
+                                        marca: htmlPreviewData.relatorio?.equipamento_marca,
+                                        modelo: htmlPreviewData.relatorio?.equipamento_modelo
+                                      } : null;
+                                      const eqData = eq || eqPrincipal;
+                                      if (!eqData) return null;
+                                      return (
+                                        <span key={eqId} className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
+                                          {eqData.tipologia ? `${eqData.tipologia} - ` : ''}{eqData.marca} {eqData.modelo}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                <p className="text-gray-700 whitespace-pre-wrap text-sm">{ra.texto}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Mão de Obra / Horas desta data */}
                         {dados.registos.length > 0 && (
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
