@@ -4248,25 +4248,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                   required
                 />
               </div>
-              
-              {/* KM Inicial */}
-              <div>
-                <Label htmlFor="km_inicial" className="text-gray-300">
-                  KM Inicial (Viatura)
-                </Label>
-                <Input
-                  id="km_inicial"
-                  type="number"
-                  value={relatorioFormData.km_inicial}
-                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, km_inicial: e.target.value })}
-                  className="bg-[#0f0f0f] border-gray-700 text-white"
-                  placeholder="Ex: 125000"
-                  min="0"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Será associado ao primeiro técnico adicionado
-                </p>
-              </div>
             </div>
 
             {/* Intervenções / Assistências */}
@@ -4326,18 +4307,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                           className="w-full bg-[#1a1a1a] border border-gray-700 text-white rounded-md p-3 min-h-[80px]"
                           placeholder="Descreva o motivo da assistência..."
                           required
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-gray-300">
-                          Relatório de Assistência
-                        </Label>
-                        <textarea
-                          value={intervencao.relatorio_assistencia}
-                          onChange={(e) => updateIntervencaoForm(intervencao.id, 'relatorio_assistencia', e.target.value)}
-                          className="w-full bg-[#1a1a1a] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
-                          placeholder="Descreva o trabalho realizado (opcional)..."
                         />
                       </div>
                     </div>
