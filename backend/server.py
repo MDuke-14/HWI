@@ -9826,6 +9826,7 @@ async def parar_cronometro(
     """Parar cronómetro e gerar registos segmentados"""
     tipo = dados.get("tipo")
     tecnico_id = dados.get("tecnico_id")
+    km_final = float(dados.get("km_final", 0))
     
     # Buscar cronómetro ativo
     cronometro = await db.cronometros_ot.find_one({
@@ -9884,6 +9885,11 @@ async def parar_cronometro(
         # Guardar km_inicial no primeiro registo de viagem
         if i == 0 and tipo == "viagem" and km_inicial_crono > 0:
             registo_dict["kms_inicial"] = km_inicial_crono
+        # Guardar km_final no último registo de viagem e calcular km total
+        if i == len(segmentos) - 1 and tipo == "viagem" and km_final > 0:
+            registo_dict["kms_final"] = km_final
+            if km_inicial_crono > 0:
+                registo_dict["km"] = max(0, km_final - km_inicial_crono)
         registo_dict["data"] = registo_dict["data"].isoformat()
         registo_dict["hora_inicio_segmento"] = registo_dict["hora_inicio_segmento"].isoformat()
         registo_dict["hora_fim_segmento"] = registo_dict["hora_fim_segmento"].isoformat()

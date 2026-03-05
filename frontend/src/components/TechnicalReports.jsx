@@ -372,6 +372,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     tecnicos: [],  // [{id, nome, funcao_ot: 'tecnico'}]
     tipo: '',      // 'trabalho', 'viagem', 'oficina'
   });
+  const [showStopCronoPopup, setShowStopCronoPopup] = useState(false);
+  const [stopCronoData, setStopCronoData] = useState({ tecnico: null, tipo: '', km_inicial: 0, km_final: '' });
   const [addRegistoManualForm, setAddRegistoManualForm] = useState({
     tecnico_id: '',
     tecnico_nome: '',
@@ -2569,11 +2571,26 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowCronometroFuncaoPopup(true);
   };
 
-  const handlePararCronometro = async (tecnico, tipo) => {
+  const openStopCronoPopup = (tecnico, tipo, cronometros) => {
+    // Find the active chronometer to get km_inicial
+    const crono = cronometros?.find(c => 
+      (c.tecnico_id === (tecnico.tecnico_id || tecnico.id)) && c.tipo === tipo && c.ativo
+    );
+    setStopCronoData({
+      tecnico,
+      tipo,
+      km_inicial: crono?.km_inicial || 0,
+      km_final: ''
+    });
+    setShowStopCronoPopup(true);
+  };
+
+  const handlePararCronometro = async (tecnico, tipo, km_final = 0) => {
     try {
       const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/cronometro/parar`, {
         tipo,
-        tecnico_id: tecnico.tecnico_id || tecnico.id
+        tecnico_id: tecnico.tecnico_id || tecnico.id,
+        km_final
       });
       
       toast.success(response.data.message);
@@ -4512,11 +4529,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                               const hasActive = getCronometroStatus(user, 'viagem');
                               if (hasAnyActiveViagem) {
                                 if (hasActive) {
-                                  await handlePararCronometro({
+                                  openStopCronoPopup({
                                     id: user.id,
                                     tecnico_id: user.id,
                                     tecnico_nome: user.full_name || user.username
-                                  }, 'viagem');
+                                  }, 'viagem', cronometrosAtivos);
+                                  return; // Handle one at a time via popup
                                 }
                               } else {
                                 if (!hasActive) {
@@ -9617,6 +9635,56 @@ const TechnicalReports = ({ user, onLogout }) => {
               className="bg-blue-600 hover:bg-blue-700"
             >
               Iniciar Cronómetro
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Parar Cronómetro - KMs */}
+      <Dialog open={showStopCronoPopup} onOpenChange={setShowStopCronoPopup}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-sm" data-testid="stop-crono-popup">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white text-base">
+              <MapPin className="w-5 h-5 text-blue-400" />
+              Parar Cronómetro
+            </DialogTitle>
+            <p className="text-sm text-gray-400 mt-1">
+              {stopCronoData.tecnico?.tecnico_nome || 'Técnico'} — {stopCronoData.tipo === 'viagem' ? 'Viagem' : stopCronoData.tipo === 'trabalho' ? 'Trabalho' : 'Oficina'}
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 mt-3">
+            <div>
+              <Label className="text-gray-400 text-xs">KMs Iniciais</Label>
+              <Input
+                value={stopCronoData.km_inicial || 0}
+                readOnly
+                className="bg-[#0a0a0a] border-gray-700 text-gray-400 cursor-default mt-1"
+                data-testid="stop-crono-km-inicial"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-400 text-xs">KMs Finais</Label>
+              <Input
+                type="number"
+                value={stopCronoData.km_final}
+                onChange={(e) => setStopCronoData(prev => ({ ...prev, km_final: e.target.value }))}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                placeholder="Ex: 125500"
+                min="0"
+                autoFocus
+                data-testid="stop-crono-km-final"
+              />
+            </div>
+            <Button
+              onClick={async () => {
+                const kmFinal = stopCronoData.km_final ? parseFloat(stopCronoData.km_final) : 0;
+                await handlePararCronometro(stopCronoData.tecnico, stopCronoData.tipo, kmFinal);
+                setShowStopCronoPopup(false);
+              }}
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              data-testid="confirm-stop-crono-btn"
+            >
+              Parar Cronómetro
             </Button>
           </div>
         </DialogContent>
