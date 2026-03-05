@@ -5137,6 +5137,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <span className={textPrimary}>{selectedRelatorio.equipamento_ano_fabrico}</span>
                           </div>
                         )}
+                        {selectedRelatorio.equipamento_horas_funcionamento && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>HORAS:</span>
+                            <span className={textPrimary}>{selectedRelatorio.equipamento_horas_funcionamento}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -5192,6 +5198,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <div className="flex">
                             <span className={`font-semibold ${textSecondary} min-w-[100px]`}>ANO FABRICO:</span>
                             <span className={textPrimary}>{equip.ano_fabrico}</span>
+                          </div>
+                        )}
+                        {equip.horas_funcionamento && (
+                          <div className="flex">
+                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>HORAS:</span>
+                            <span className={textPrimary}>{equip.horas_funcionamento}</span>
                           </div>
                         )}
                       </div>
