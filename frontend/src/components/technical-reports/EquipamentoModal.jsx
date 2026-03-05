@@ -217,6 +217,16 @@ const EquipamentoModal = ({
             />
           </div>
 
+          <div>
+            <Label className="text-gray-300">Horas de Funcionamento</Label>
+            <Input
+              value={editEquipamentoFormData.horas_funcionamento}
+              onChange={(e) => setEditEquipamentoFormData({...editEquipamentoFormData, horas_funcionamento: e.target.value})}
+              className="bg-[#0f0f0f] border-gray-700 text-white"
+              placeholder="Ex: 1500"
+            />
+          </div>
+
           {/* Botões */}
           <div className="flex gap-3 pt-4">
             <Button

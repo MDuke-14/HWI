@@ -466,6 +466,7 @@ class RelatorioTecnico(BaseModel):
     equipamento_modelo: Optional[str] = None
     equipamento_numero_serie: Optional[str] = None
     equipamento_ano_fabrico: Optional[str] = None  # Aceita: AAAA, MM-AAAA, MM/AAAA
+    equipamento_horas_funcionamento: Optional[str] = None
     
     # Motivo (mudou de "descricao_problema")
     motivo_assistencia: str
@@ -542,6 +543,7 @@ class EquipamentoOT(BaseModel):
     modelo: str
     numero_serie: Optional[str] = None
     ano_fabrico: Optional[str] = None
+    horas_funcionamento: Optional[str] = None
     ordem: int = 0  # Para ordenação na lista
 
 class MaterialOT(BaseModel):
@@ -676,6 +678,7 @@ class RelatorioTecnicoCreate(BaseModel):
     equipamento_modelo: Optional[str] = None
     equipamento_numero_serie: Optional[str] = None
     equipamento_ano_fabrico: Optional[str] = None  # Aceita: AAAA, MM-AAAA, MM/AAAA
+    equipamento_horas_funcionamento: Optional[str] = None
     motivo_assistencia: str  # Mudou de "descricao_problema"
 
 class Token(BaseModel):
@@ -3275,6 +3278,7 @@ async def add_equipamento_ot(
         modelo=equipamento_data["modelo"],
         numero_serie=equipamento_data.get("numero_serie"),
         ano_fabrico=equipamento_data.get("ano_fabrico"),
+        horas_funcionamento=equipamento_data.get("horas_funcionamento"),
         ordem=ordem
     )
     
@@ -3336,7 +3340,7 @@ async def update_equipamento_ot(
     
     # Campos permitidos para atualização
     update_fields = {}
-    allowed_fields = ["tipologia", "marca", "modelo", "numero_serie", "ano_fabrico"]
+    allowed_fields = ["tipologia", "marca", "modelo", "numero_serie", "ano_fabrico", "horas_funcionamento"]
     
     for field in allowed_fields:
         if field in equipamento_data:

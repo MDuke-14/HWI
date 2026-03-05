@@ -15,6 +15,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Anexar Folha de Horas no email** (27 Fevereiro 2026)
 
 ### P0 (Concluído recente)
+- **Campo "Horas de Funcionamento" em Equipamentos** (5 Março 2026) - Campo adicionado ao modelo EquipamentoOT, modais de adicionar e editar equipamento, cards de visualização, e PDF da OT. Funciona para equipamento principal e secundários.
 - **Páginas mobile Notificações e Perfil/Alterar Password** (4 Março 2026) - Novas páginas MobileNotifications.jsx e MobileProfile.jsx. Notificações com limpar individual/todas. Perfil mostra info do user + form de alterar password com validação. Admin recebe notificação com a nova password.
 - **Rever Férias — Cancelamento de dias** (4 Março 2026) - Botão "Rever" na página de férias, modal com calendário estilo /calendar, dias de férias a azul, seleção para cancelamento a vermelho, devolução automática dos dias ao saldo
 - **Notificações com redirecionamento** (4 Março 2026) - Clicar em notificações redireciona para a página relevante (férias→/vacations, despesas→OT, faltas→/absences, etc.)

@@ -473,7 +473,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     marca: '',
     modelo: '',
     numero_serie: '',
-    ano_fabrico: ''
+    ano_fabrico: '',
+    horas_funcionamento: ''
   });
   const [editingEquipamentoPrincipal, setEditingEquipamentoPrincipal] = useState(false);
 
@@ -1770,7 +1771,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         marca: '',
         modelo: '',
         numero_serie: '',
-        ano_fabrico: ''
+        ano_fabrico: '',
+        horas_funcionamento: ''
       });
       setEquipamentoOTSelecionado('novo');
       fetchEquipamentosOT(selectedRelatorio.id);
@@ -1798,7 +1800,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       marca: equipamento.marca || '',
       modelo: equipamento.modelo || '',
       numero_serie: equipamento.numero_serie || '',
-      ano_fabrico: equipamento.ano_fabrico || ''
+      ano_fabrico: equipamento.ano_fabrico || '',
+      horas_funcionamento: equipamento.horas_funcionamento || ''
     });
     setShowEditEquipamentoModal(true);
   };
@@ -1812,7 +1815,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       marca: selectedRelatorio.equipamento_marca || '',
       modelo: selectedRelatorio.equipamento_modelo || '',
       numero_serie: selectedRelatorio.equipamento_numero_serie || '',
-      ano_fabrico: selectedRelatorio.equipamento_ano_fabrico || ''
+      ano_fabrico: selectedRelatorio.equipamento_ano_fabrico || '',
+      horas_funcionamento: selectedRelatorio.equipamento_horas_funcionamento || ''
     });
     setShowEditEquipamentoModal(true);
   };
@@ -1829,7 +1833,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           equipamento_marca: editEquipamentoFormData.marca,
           equipamento_modelo: editEquipamentoFormData.modelo,
           equipamento_numero_serie: editEquipamentoFormData.numero_serie,
-          equipamento_ano_fabrico: editEquipamentoFormData.ano_fabrico
+          equipamento_ano_fabrico: editEquipamentoFormData.ano_fabrico,
+          equipamento_horas_funcionamento: editEquipamentoFormData.horas_funcionamento
         });
         
         // Atualizar estado local
@@ -1839,7 +1844,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           equipamento_marca: editEquipamentoFormData.marca,
           equipamento_modelo: editEquipamentoFormData.modelo,
           equipamento_numero_serie: editEquipamentoFormData.numero_serie,
-          equipamento_ano_fabrico: editEquipamentoFormData.ano_fabrico
+          equipamento_ano_fabrico: editEquipamentoFormData.ano_fabrico,
+          equipamento_horas_funcionamento: editEquipamentoFormData.horas_funcionamento
         });
         
         toast.success('Equipamento principal atualizado!');
@@ -8811,6 +8817,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <div>
                             <span className="text-xs text-gray-500">Ano de Fabrico:</span>
                             <p className="text-sm text-gray-300">{equipamento.ano_fabrico}</p>
+                          </div>
+                        )}
+
+                        {equipamento.horas_funcionamento && (
+                          <div>
+                            <span className="text-xs text-gray-500">Horas de Funcionamento:</span>
+                            <p className="text-sm text-gray-300">{equipamento.horas_funcionamento}</p>
                           </div>
                         )}
                         
