@@ -56,6 +56,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -280,6 +281,12 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Despesas OT
   const [despesas, setDespesas] = useState([]);
+  // Relatórios de Assistência
+  const [relatoriosAssistencia, setRelatoriosAssistencia] = useState([]);
+  const [showAddRelAssistModal, setShowAddRelAssistModal] = useState(false);
+  const [showEditRelAssistModal, setShowEditRelAssistModal] = useState(false);
+  const [selectedRelAssist, setSelectedRelAssist] = useState(null);
+  const [relAssistFormData, setRelAssistFormData] = useState({ texto: '', equipamento_ids: [] });
   const [showAddDespesaModal, setShowAddDespesaModal] = useState(false);
   const [showEditDespesaModal, setShowEditDespesaModal] = useState(false);
   const [selectedDespesa, setSelectedDespesa] = useState(null);
@@ -1093,6 +1100,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     await fetchEquipamentosOT(relatorio.id);
     await fetchMateriais(relatorio.id);
     await fetchDespesas(relatorio.id);
+    await fetchRelatoriosAssistencia(relatorio.id);
     await fetchPedidosCotacao(relatorio.id);
     await fetchCronometros(relatorio.id);
     await fetchRegistosTecnicos(relatorio.id);
@@ -1953,6 +1961,62 @@ const TechnicalReports = ({ user, onLogout }) => {
     } catch (error) {
       console.error('Erro ao buscar despesas:', error);
     }
+  };
+
+  // ============ Relatórios de Assistência ============
+  const fetchRelatoriosAssistencia = async (relatorioId) => {
+    try {
+      const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/relatorios-assistencia`);
+      setRelatoriosAssistencia(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar relatórios de assistência:', error);
+    }
+  };
+
+  const handleAddRelAssist = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/relatorios-assistencia`, relAssistFormData);
+      toast.success('Relatório de assistência adicionado!');
+      fetchRelatoriosAssistencia(selectedRelatorio.id);
+      setShowAddRelAssistModal(false);
+      setRelAssistFormData({ texto: '', equipamento_ids: [] });
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleUpdateRelAssist = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/relatorios-assistencia/${selectedRelAssist.id}`,
+        relAssistFormData
+      );
+      toast.success('Relatório de assistência atualizado!');
+      fetchRelatoriosAssistencia(selectedRelatorio.id);
+      setShowEditRelAssistModal(false);
+      setSelectedRelAssist(null);
+      setRelAssistFormData({ texto: '', equipamento_ids: [] });
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const handleDeleteRelAssist = async (itemId) => {
+    try {
+      await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/relatorios-assistencia/${itemId}`);
+      toast.success('Relatório de assistência removido!');
+      fetchRelatoriosAssistencia(selectedRelatorio.id);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    }
+  };
+
+  const openEditRelAssist = (item) => {
+    setSelectedRelAssist(item);
+    setRelAssistFormData({ texto: item.texto || '', equipamento_ids: item.equipamento_ids || [] });
+    setShowEditRelAssistModal(true);
   };
 
   const handleFacturaUpload = (e) => {
@@ -5279,15 +5343,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <p className="text-xs text-gray-500 mb-1">Motivo:</p>
                             <p className="text-gray-300 text-sm">{intervencao.motivo_assistencia}</p>
                           </div>
-                          
-                          {intervencao.relatorio_assistencia && (
-                            <div>
-                              <p className="text-xs text-gray-500 mb-1">Relatório:</p>
-                              <p className="text-gray-300 text-sm whitespace-pre-wrap">
-                                {intervencao.relatorio_assistencia}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -5611,6 +5666,88 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 </div>
               )}
+
+              {/* Relatório de Assistência */}
+              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
+                <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+                  <h4 className={`text-orange-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
+                    <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                    Relatório de Assistência ({relatoriosAssistencia.length})
+                  </h4>
+                  <Button
+                    onClick={() => {
+                      setRelAssistFormData({ texto: '', equipamento_ids: [] });
+                      setShowAddRelAssistModal(true);
+                    }}
+                    size="sm"
+                    className={`bg-orange-500 hover:bg-orange-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
+                    data-testid="btn-add-rel-assist"
+                  >
+                    <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
+                    {isMobile ? 'Adicionar' : 'Adicionar'}
+                  </Button>
+                </div>
+
+                {relatoriosAssistencia.length > 0 ? (
+                  <div className={`space-y-2 ${isMobile ? '' : 'space-y-3'}`}>
+                    {relatoriosAssistencia.map((item) => (
+                      <div key={item.id} className={`${bgCard} ${isMobile ? 'p-2' : 'p-4'} rounded border ${borderColor}`}>
+                        <div className={`flex items-start justify-between ${isMobile ? 'mb-1' : 'mb-2'}`}>
+                          <div className="flex-1">
+                            {/* Equipamentos Relacionados */}
+                            {item.equipamento_ids && item.equipamento_ids.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {item.equipamento_ids.map(eqId => {
+                                  const eq = equipamentosOT.find(e => e.id === eqId);
+                                  const eqPrincipal = selectedRelatorio && eqId === 'principal' ? {
+                                    tipologia: selectedRelatorio.equipamento_tipologia,
+                                    marca: selectedRelatorio.equipamento_marca,
+                                    modelo: selectedRelatorio.equipamento_modelo
+                                  } : null;
+                                  const eqData = eq || eqPrincipal;
+                                  if (!eqData) return null;
+                                  return (
+                                    <span key={eqId} className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 flex items-center gap-1">
+                                      <Settings className="w-3 h-3" />
+                                      {eqData.tipologia ? `${eqData.tipologia} - ` : ''}{eqData.marca} {eqData.modelo}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1 shrink-0 ml-2">
+                            <Button
+                              onClick={() => openEditRelAssist(item)}
+                              variant="outline"
+                              size="sm"
+                              className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300 hover:border-blue-500'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}
+                              data-testid={`btn-edit-rel-assist-${item.id}`}
+                            >
+                              <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteRelAssist(item.id)}
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2"
+                              data-testid={`btn-delete-rel-assist-${item.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap`}>{item.texto}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <FileText className="w-10 h-10 text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">Nenhum relatório de assistência registado</p>
+                  </div>
+                )}
+              </div>
 
               {/* Assinaturas */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
@@ -6574,6 +6711,157 @@ const TechnicalReports = ({ user, onLogout }) => {
           setSelectedMaterial(null);
         }}
       />
+
+      {/* Add Relatório de Assistência Modal */}
+      <Dialog open={showAddRelAssistModal} onOpenChange={setShowAddRelAssistModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-400" />
+              Adicionar Relatório de Assistência
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddRelAssist} className="space-y-4 mt-4">
+            <div>
+              <Label className="text-gray-300">Texto *</Label>
+              <textarea
+                value={relAssistFormData.texto}
+                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, texto: e.target.value }))}
+                className="w-full mt-1 bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 min-h-[120px] text-sm"
+                placeholder="Descreva o trabalho realizado..."
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300 mb-2 block">Equipamentos Relacionados</Label>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {selectedRelatorio?.equipamento_marca && (
+                  <label className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
+                    <Checkbox
+                      checked={relAssistFormData.equipamento_ids.includes('principal')}
+                      onCheckedChange={(checked) => {
+                        setRelAssistFormData(prev => ({
+                          ...prev,
+                          equipamento_ids: checked
+                            ? [...prev.equipamento_ids, 'principal']
+                            : prev.equipamento_ids.filter(id => id !== 'principal')
+                        }));
+                      }}
+                      className="border-purple-500 data-[state=checked]:bg-purple-600"
+                    />
+                    <span className="text-sm text-gray-300">
+                      <span className="text-purple-400 text-xs mr-1">(Principal)</span>
+                      {selectedRelatorio.equipamento_tipologia ? `${selectedRelatorio.equipamento_tipologia} - ` : ''}
+                      {selectedRelatorio.equipamento_marca} {selectedRelatorio.equipamento_modelo}
+                    </span>
+                  </label>
+                )}
+                {equipamentosOT.map(eq => (
+                  <label key={eq.id} className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
+                    <Checkbox
+                      checked={relAssistFormData.equipamento_ids.includes(eq.id)}
+                      onCheckedChange={(checked) => {
+                        setRelAssistFormData(prev => ({
+                          ...prev,
+                          equipamento_ids: checked
+                            ? [...prev.equipamento_ids, eq.id]
+                            : prev.equipamento_ids.filter(id => id !== eq.id)
+                        }));
+                      }}
+                      className="border-purple-500 data-[state=checked]:bg-purple-600"
+                    />
+                    <span className="text-sm text-gray-300">
+                      {eq.tipologia ? `${eq.tipologia} - ` : ''}{eq.marca} {eq.modelo}
+                      {eq.numero_serie && <span className="text-gray-500 ml-1">(SN: {eq.numero_serie})</span>}
+                    </span>
+                  </label>
+                ))}
+                {!selectedRelatorio?.equipamento_marca && equipamentosOT.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center py-2">Nenhum equipamento nesta OT</p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowAddRelAssistModal(false)} className="border-gray-600">Cancelar</Button>
+              <Button type="submit" className="bg-orange-500 hover:bg-orange-600">Adicionar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Relatório de Assistência Modal */}
+      <Dialog open={showEditRelAssistModal} onOpenChange={setShowEditRelAssistModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-400" />
+              Editar Relatório de Assistência
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateRelAssist} className="space-y-4 mt-4">
+            <div>
+              <Label className="text-gray-300">Texto *</Label>
+              <textarea
+                value={relAssistFormData.texto}
+                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, texto: e.target.value }))}
+                className="w-full mt-1 bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 min-h-[120px] text-sm"
+                placeholder="Descreva o trabalho realizado..."
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300 mb-2 block">Equipamentos Relacionados</Label>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {selectedRelatorio?.equipamento_marca && (
+                  <label className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
+                    <Checkbox
+                      checked={relAssistFormData.equipamento_ids.includes('principal')}
+                      onCheckedChange={(checked) => {
+                        setRelAssistFormData(prev => ({
+                          ...prev,
+                          equipamento_ids: checked
+                            ? [...prev.equipamento_ids, 'principal']
+                            : prev.equipamento_ids.filter(id => id !== 'principal')
+                        }));
+                      }}
+                      className="border-purple-500 data-[state=checked]:bg-purple-600"
+                    />
+                    <span className="text-sm text-gray-300">
+                      <span className="text-purple-400 text-xs mr-1">(Principal)</span>
+                      {selectedRelatorio.equipamento_tipologia ? `${selectedRelatorio.equipamento_tipologia} - ` : ''}
+                      {selectedRelatorio.equipamento_marca} {selectedRelatorio.equipamento_modelo}
+                    </span>
+                  </label>
+                )}
+                {equipamentosOT.map(eq => (
+                  <label key={eq.id} className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
+                    <Checkbox
+                      checked={relAssistFormData.equipamento_ids.includes(eq.id)}
+                      onCheckedChange={(checked) => {
+                        setRelAssistFormData(prev => ({
+                          ...prev,
+                          equipamento_ids: checked
+                            ? [...prev.equipamento_ids, eq.id]
+                            : prev.equipamento_ids.filter(id => id !== eq.id)
+                        }));
+                      }}
+                      className="border-purple-500 data-[state=checked]:bg-purple-600"
+                    />
+                    <span className="text-sm text-gray-300">
+                      {eq.tipologia ? `${eq.tipologia} - ` : ''}{eq.marca} {eq.modelo}
+                      {eq.numero_serie && <span className="text-gray-500 ml-1">(SN: {eq.numero_serie})</span>}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => { setShowEditRelAssistModal(false); setSelectedRelAssist(null); }} className="border-gray-600">Cancelar</Button>
+              <Button type="submit" className="bg-orange-500 hover:bg-orange-600">Guardar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Despesa Modal */}
       <Dialog open={showAddDespesaModal} onOpenChange={(open) => {

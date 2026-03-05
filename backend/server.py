@@ -604,6 +604,15 @@ class IntervencaoRelatorio(BaseModel):
     ordem: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class RelatorioAssistencia(BaseModel):
+    """Relatório de Assistência de uma OT - entradas independentes das intervenções"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    texto: str
+    equipamento_ids: list = Field(default_factory=list)  # IDs dos equipamentos da OT relacionados
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class MaterialRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -10482,6 +10491,84 @@ async def delete_material_ot(
         raise HTTPException(status_code=404, detail="Material não encontrado")
     
     return {"message": "Material removido"}
+
+
+# ============ Relatórios de Assistência Routes ============
+
+@api_router.get("/relatorios-tecnicos/{relatorio_id}/relatorios-assistencia")
+async def get_relatorios_assistencia(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Listar relatórios de assistência de uma OT"""
+    items = await db.relatorios_assistencia.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(length=None)
+    return items
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/relatorios-assistencia")
+async def create_relatorio_assistencia(
+    relatorio_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Criar novo relatório de assistência"""
+    if not data.get("texto"):
+        raise HTTPException(status_code=400, detail="Texto é obrigatório")
+    
+    item = RelatorioAssistencia(
+        relatorio_id=relatorio_id,
+        texto=data["texto"],
+        equipamento_ids=data.get("equipamento_ids", [])
+    )
+    item_dict = item.dict()
+    item_dict["created_at"] = item_dict["created_at"].isoformat()
+    await db.relatorios_assistencia.insert_one(item_dict)
+    del item_dict["_id"]
+    return item_dict
+
+@api_router.put("/relatorios-tecnicos/{relatorio_id}/relatorios-assistencia/{item_id}")
+async def update_relatorio_assistencia(
+    relatorio_id: str,
+    item_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Atualizar relatório de assistência"""
+    update_fields = {}
+    if "texto" in data:
+        update_fields["texto"] = data["texto"]
+    if "equipamento_ids" in data:
+        update_fields["equipamento_ids"] = data["equipamento_ids"]
+    
+    if update_fields:
+        await db.relatorios_assistencia.update_one(
+            {"id": item_id, "relatorio_id": relatorio_id},
+            {"$set": update_fields}
+        )
+    
+    updated = await db.relatorios_assistencia.find_one(
+        {"id": item_id, "relatorio_id": relatorio_id},
+        {"_id": 0}
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Relatório de assistência não encontrado")
+    return updated
+
+@api_router.delete("/relatorios-tecnicos/{relatorio_id}/relatorios-assistencia/{item_id}")
+async def delete_relatorio_assistencia(
+    relatorio_id: str,
+    item_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Eliminar relatório de assistência"""
+    result = await db.relatorios_assistencia.delete_one(
+        {"id": item_id, "relatorio_id": relatorio_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Relatório de assistência não encontrado")
+    return {"message": "Relatório de assistência removido"}
 
 
 # ============ Despesas OT Routes ============
