@@ -277,9 +277,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         # Pode vir como AAAA, MM-AAAA, MM/AAAA, DD-MM-AAAA, etc.
         return ano_str
     
-    def create_equipment_card(tipologia, marca, modelo, numero_serie, ano_fabrico, is_principal=False):
+    def create_equipment_card(tipologia, marca, modelo, numero_serie, ano_fabrico, horas_funcionamento=None, is_principal=False):
         """Cria um card de equipamento com campos separados"""
-        # Dados do equipamento em campos separados - Ordem: Tipo, Marca, Modelo, Nº Série, Ano
         equip_data = []
         
         if tipologia:
@@ -300,16 +299,22 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 Paragraph(modelo, value_style)
             ])
         
-        if numero_serie:
-            equip_data.append([
-                Paragraph("<b>Nº Série:</b>", label_style),
-                Paragraph(numero_serie, value_style)
-            ])
+        # Nº Série aparece sempre
+        equip_data.append([
+            Paragraph("<b>Nº Série:</b>", label_style),
+            Paragraph(numero_serie if numero_serie else "Sem Dados", value_style)
+        ])
         
         if ano_fabrico:
             equip_data.append([
                 Paragraph("<b>Ano:</b>", label_style),
                 Paragraph(format_ano_fabrico(ano_fabrico), value_style)
+            ])
+        
+        if horas_funcionamento:
+            equip_data.append([
+                Paragraph("<b>Horas:</b>", label_style),
+                Paragraph(str(horas_funcionamento), value_style)
             ])
         
         if not equip_data:
@@ -339,6 +344,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             modelo=relatorio.get('equipamento_modelo'),
             numero_serie=relatorio.get('equipamento_numero_serie'),
             ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
+            horas_funcionamento=relatorio.get('equipamento_horas_funcionamento'),
             is_principal=True
         )
         if equip_card:
@@ -353,6 +359,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 modelo=equip.get('modelo'),
                 numero_serie=equip.get('numero_serie'),
                 ano_fabrico=equip.get('ano_fabrico'),
+                horas_funcionamento=equip.get('horas_funcionamento'),
                 is_principal=False
             )
             if equip_card:

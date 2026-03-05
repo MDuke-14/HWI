@@ -456,7 +456,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     marca: '',
     modelo: '',
     numero_serie: '',
-    ano_fabrico: ''
+    ano_fabrico: '',
+    horas_funcionamento: ''
   });
 
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState('');
@@ -8768,7 +8769,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 marca: equipamento.marca || '',
                                 modelo: equipamento.modelo || '',
                                 numero_serie: equipamento.numero_serie || '',
-                                ano_fabrico: equipamento.ano_fabrico || ''
+                                ano_fabrico: equipamento.ano_fabrico || '',
+                                horas_funcionamento: equipamento.horas_funcionamento || ''
                               });
                               setShowEditClienteEquipModal(true);
                             }}

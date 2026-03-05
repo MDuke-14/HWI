@@ -110,15 +110,27 @@ const EquipamentoModal = ({
               </div>
             </div>
 
-            <div>
-              <Label className="text-gray-300">Ano de Fabrico</Label>
-              <Input
-                value={equipamentoFormData.ano_fabrico}
-                onChange={(e) => setEquipamentoFormData({...equipamentoFormData, ano_fabrico: e.target.value})}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: 2020, 03/2020, 03-2020"
-                disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-gray-300">Ano de Fabrico</Label>
+                <Input
+                  value={equipamentoFormData.ano_fabrico}
+                  onChange={(e) => setEquipamentoFormData({...equipamentoFormData, ano_fabrico: e.target.value})}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 2020, 03/2020, 03-2020"
+                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
+                />
+              </div>
+              <div>
+                <Label className="text-gray-300">Horas de Funcionamento</Label>
+                <Input
+                  value={equipamentoFormData.horas_funcionamento}
+                  onChange={(e) => setEquipamentoFormData({...equipamentoFormData, horas_funcionamento: e.target.value})}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: 1500"
+                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
+                />
+              </div>
             </div>
 
             {/* Botões */}
