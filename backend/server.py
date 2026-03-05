@@ -4098,7 +4098,15 @@ async def enviar_pdf_ot(
         
         # Criar mensagem de email
         numero_ot = relatorio.get('numero_assistencia', 'N/A')
-        status = relatorio.get('estado', 'Em Execução')
+        status_raw = relatorio.get('status', 'em_execucao')
+        status_map = {
+            'em_execucao': 'Em Execução',
+            'concluido': 'Concluído',
+            'orcamento': 'Orçamento',
+            'facturado': 'Facturado'
+        }
+        status = status_map.get(status_raw, status_raw)
+        local_intervencao = relatorio.get('local_intervencao', '')
         subject = f"Ordem de Trabalho #{numero_ot} - {cliente.get('nome', '')}"
         
         body = f"""
@@ -4109,6 +4117,7 @@ async def enviar_pdf_ot(
             <p>Segue em anexo a Ordem de Trabalho #{numero_ot} referente ao serviço realizado.</p>
             <p><strong>Cliente:</strong> {cliente.get('nome', 'N/A')}</p>
             <p><strong>Data de Serviço:</strong> {relatorio.get('data_servico', 'N/A')}</p>
+            <p><strong>Local:</strong> {local_intervencao if local_intervencao else 'N/A'}</p>
             <br>
             <p>Com os melhores cumprimentos,</p>
             <p><strong>HWI Unipessoal, Lda</strong></p>
