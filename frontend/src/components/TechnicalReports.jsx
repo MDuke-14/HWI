@@ -7983,40 +7983,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         )}
                         
-                        {/* Relatórios de Assistência desta data */}
-                        {dados.relatoriosAssistencia?.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-orange-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-orange-500" />
-                              Relatório de Assistência
-                            </h3>
-                            {dados.relatoriosAssistencia.map((ra, raIdx) => (
-                              <div key={raIdx} className="mb-3 last:mb-0">
-                                {ra.equipamento_ids?.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mb-1">
-                                    {ra.equipamento_ids.map(eqId => {
-                                      const eq = htmlPreviewData.equipamentos?.find(e => e.id === eqId);
-                                      const eqPrincipal = eqId === 'principal' ? {
-                                        tipologia: htmlPreviewData.relatorio?.equipamento_tipologia,
-                                        marca: htmlPreviewData.relatorio?.equipamento_marca,
-                                        modelo: htmlPreviewData.relatorio?.equipamento_modelo
-                                      } : null;
-                                      const eqData = eq || eqPrincipal;
-                                      if (!eqData) return null;
-                                      return (
-                                        <span key={eqId} className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
-                                          {eqData.tipologia ? `${eqData.tipologia} - ` : ''}{eqData.marca} {eqData.modelo}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                                <p className="text-gray-700 whitespace-pre-wrap text-sm">{ra.texto}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
                         {/* Mão de Obra / Horas desta data */}
                         {dados.registos.length > 0 && (
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
@@ -8089,6 +8055,40 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                         )}
                         
+                        {/* Relatórios de Assistência desta data */}
+                        {dados.relatoriosAssistencia?.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-orange-200">
+                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-orange-500" />
+                              Relatório de Assistência
+                            </h3>
+                            {dados.relatoriosAssistencia.map((ra, raIdx) => (
+                              <div key={raIdx} className="mb-3 last:mb-0">
+                                {ra.equipamento_ids?.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-1">
+                                    {ra.equipamento_ids.map(eqId => {
+                                      const eq = htmlPreviewData.equipamentos?.find(e => e.id === eqId);
+                                      const eqPrincipal = eqId === 'principal' ? {
+                                        tipologia: htmlPreviewData.relatorio?.equipamento_tipologia,
+                                        marca: htmlPreviewData.relatorio?.equipamento_marca,
+                                        modelo: htmlPreviewData.relatorio?.equipamento_modelo
+                                      } : null;
+                                      const eqData = eq || eqPrincipal;
+                                      if (!eqData) return null;
+                                      return (
+                                        <span key={eqId} className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
+                                          {eqData.tipologia ? `${eqData.tipologia} - ` : ''}{eqData.marca} {eqData.modelo}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                <p className="text-gray-700 whitespace-pre-wrap text-sm">{ra.texto}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Fotografias desta data */}
                         {dados.fotografias.length > 0 && (
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
