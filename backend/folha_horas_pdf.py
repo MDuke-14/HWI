@@ -362,40 +362,21 @@ def generate_folha_horas_pdf(
         elements.append(Spacer(1, 0.3*cm))
         
         # ---------- AGRUPAR REGISTOS POR DATA/CÓDIGO/TIPO ----------
-        # Estrutura: {data: {codigo: {tipo_registo: [registos]}}}
-        # IMPORTANTE: Separar por tipo_registo para que Viagem, Trabalho e Oficina 
-        # tenham linhas separadas, mesmo com o mesmo código horário
-        registos_por_data_codigo_tipo = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        # Estrutura: Cada registo individual fica na sua própria linha
+        # Para não fundir registos do mesmo tipo/código que estão separados por outros registos
+        registos_ordenados = []
         for reg in registos_tecnico:
             tipo_r = reg.get('tipo_registo', 'trabalho')
             funcao = reg.get('funcao_ot', 'tecnico')
-            # Group by data, codigo, tipo_registo+funcao to separate Técnico/Ajudante
-            group_key = f"{tipo_r}_{funcao}"
-            registos_por_data_codigo_tipo[reg['data']][reg['codigo']][group_key].append(reg)
-        
-        # Criar lista ordenada para a tabela - CRONOLOGICAMENTE
-        # Ordenar por: 1) data, 2) hora_inicio do primeiro registo do grupo
-        registos_ordenados = []
-        for data in sorted(registos_por_data_codigo_tipo.keys()):
-            for codigo in registos_por_data_codigo_tipo[data].keys():
-                for group_key in registos_por_data_codigo_tipo[data][codigo].keys():
-                    regs_grupo = registos_por_data_codigo_tipo[data][codigo][group_key]
-                    # Parse tipo_registo and funcao from group_key
-                    parts = group_key.rsplit('_', 1)
-                    tipo_r = parts[0] if len(parts) > 1 else group_key
-                    funcao = parts[1] if len(parts) > 1 else 'tecnico'
-                    # Determinar a hora de início mais cedo deste grupo
-                    horas_inicio = [r.get('hora_inicio') or '' for r in regs_grupo]
-                    horas_inicio = [h for h in horas_inicio if h]
-                    hora_min = min(horas_inicio) if horas_inicio else ''
-                    registos_ordenados.append({
-                        'data': data,
-                        'codigo': codigo,
-                        'tipo_registo': tipo_r,
-                        'funcao_ot': funcao,
-                        'registos': regs_grupo,
-                        '_hora_inicio_min': hora_min
-                    })
+            hora_inicio = reg.get('hora_inicio') or ''
+            registos_ordenados.append({
+                'data': reg['data'],
+                'codigo': reg['codigo'],
+                'tipo_registo': tipo_r,
+                'funcao_ot': funcao,
+                'registos': [reg],
+                '_hora_inicio_min': hora_inicio
+            })
         
         # Ordenar cronologicamente: data primeiro, depois hora de início
         registos_ordenados.sort(key=lambda x: (x['data'], x['_hora_inicio_min'] or 'zzz'))
