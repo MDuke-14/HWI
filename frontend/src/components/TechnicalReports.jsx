@@ -7499,10 +7499,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <span className="font-semibold text-gray-600">Local:</span>
                       <p className="text-gray-800">{htmlPreviewData.relatorio.local_intervencao || '-'}</p>
                     </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">Motivo:</span>
-                      <p className="text-gray-800">{htmlPreviewData.relatorio.motivo_assistencia || '-'}</p>
-                    </div>
                   </div>
                 </section>
 
