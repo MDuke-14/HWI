@@ -919,6 +919,7 @@ class FolhaHorasRequest(BaseModel):
     tarifas_por_tecnico: dict  # {tecnico_id: tarifa_valor}
     dados_extras: dict  # {f"{tecnico_id}_{data}": {"dieta": X, "portagens": Y, "despesas": Z}}
     table_id: int = 1  # ID da tabela de preço a usar
+    despesa_adjustments: Optional[dict] = None  # {despesa_id: {percentual: X, excluida: bool}}
 
 
 class OvertimeAuthorization(BaseModel):
@@ -11737,6 +11738,29 @@ async def generate_folha_horas(
             })
     
     # Gerar PDF com valor_km da tabela selecionada
+    
+    # Buscar despesas da OT e aplicar ajustes
+    despesas_ot = await db.despesas_ot.find(
+        {"relatorio_id": relatorio_id},
+        {"_id": 0}
+    ).to_list(length=None)
+    
+    # Aplicar ajustes de despesas (percentual e exclusões)
+    despesas_ajustadas = []
+    adjustments = request.despesa_adjustments or {}
+    for despesa in despesas_ot:
+        desp_id = despesa.get("id", "")
+        adj = adjustments.get(desp_id, {})
+        if adj.get("excluida", False):
+            continue  # Excluída da folha de horas
+        valor_original = despesa.get("valor", 0) or 0
+        percentual = adj.get("percentual", 0) or 0
+        valor_final = valor_original * (1 + percentual / 100)
+        despesa["valor_original"] = valor_original
+        despesa["valor_ajustado"] = valor_final
+        despesa["percentual_aplicado"] = percentual
+        despesas_ajustadas.append(despesa)
+    
     pdf_buffer = generate_folha_horas_pdf(
         relatorio=relatorio,
         cliente=cliente,
@@ -11746,7 +11770,8 @@ async def generate_folha_horas(
         dados_extras=request.dados_extras,
         tarifas_por_codigo=tarifas_por_codigo,
         valor_km=valor_km,
-        tarifas_detalhadas=tarifas_detalhadas
+        tarifas_detalhadas=tarifas_detalhadas,
+        despesas_ajustadas=despesas_ajustadas
     )
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')

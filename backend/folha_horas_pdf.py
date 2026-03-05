@@ -107,11 +107,12 @@ def generate_folha_horas_pdf(
     cliente,
     registos_mao_obra,
     tecnicos_manuais,
-    tarifas_por_tecnico,  # dict: {tecnico_id: tarifa_valor} ou {tecnico_id_data_codigo: valor}
-    dados_extras,  # dict: {tecnico_id_data: {dieta, portagens, despesas}}
-    tarifas_por_codigo=None,  # dict: {"1": valor, "2": valor, "S": valor, "D": valor}
-    valor_km=0.65,  # Valor por km da tabela de preço selecionada
-    tarifas_detalhadas=None  # list: [{codigo, tipo_registo, tipo_colaborador, valor_por_hora}]
+    tarifas_por_tecnico,
+    dados_extras,
+    tarifas_por_codigo=None,
+    valor_km=0.65,
+    tarifas_detalhadas=None,
+    despesas_ajustadas=None
 ):
     """
     Gera PDF da Folha de Horas em formato horizontal (landscape)
@@ -567,7 +568,23 @@ def generate_folha_horas_pdf(
         ])
         
         # Grande total
-        grande_total = total_geral_valor + total_geral_km_valor + total_geral_dietas + total_geral_portagens + total_geral_despesas
+        total_despesas_ot = 0
+        if despesas_ajustadas:
+            total_despesas_ot = sum(d.get("valor_ajustado", d.get("valor", 0)) for d in despesas_ajustadas)
+        
+        grande_total = total_geral_valor + total_geral_km_valor + total_geral_dietas + total_geral_portagens + total_geral_despesas + total_despesas_ot
+        
+        # Se existem despesas OT ajustadas, adicionar linha antes do total geral
+        if despesas_ajustadas and total_despesas_ot > 0:
+            table_data.append([
+                '', '', '', '', '', '',
+                '', '', '',
+                '', '', '', '',
+                f'Despesas OT:',
+                f'{total_despesas_ot:.2f}€',
+                '', ''
+            ])
+        
         table_data.append([
             '', '', '', '', '', '',
             '', '', '',

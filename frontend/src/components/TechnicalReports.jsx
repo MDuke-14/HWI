@@ -2890,7 +2890,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleGenerateFolhaHoras = async (tableId = 1) => {
+  const handleGenerateFolhaHoras = async (tableId = 1, despesaAdjustments = {}) => {
     if (!selectedRelatorio || !folhaHorasData) return;
     
     // Preparar dados - converter tarifa IDs para valores
@@ -2901,7 +2901,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
     Object.entries(folhaHorasTarifas).forEach(([tecnicoId, tarifaIdOrValor]) => {
       if (tarifaIdOrValor) {
-        // Se é um id de tarifa, converter para valor; senão, usar como número
         const valor = tarifasMap[tarifaIdOrValor] !== undefined 
           ? tarifasMap[tarifaIdOrValor] 
           : parseFloat(tarifaIdOrValor);
@@ -2927,7 +2926,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         {
           tarifas_por_tecnico: tarifasPorTecnico,
           dados_extras: dadosExtras,
-          table_id: tableId  // Incluir o ID da tabela de preço selecionada
+          table_id: tableId,
+          despesa_adjustments: despesaAdjustments
         },
         { responseType: 'blob' }
       );
@@ -10211,6 +10211,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         updateFolhaHorasExtra={updateFolhaHorasExtra}
         onGeneratePDF={handleGenerateFolhaHoras}
         generatingFolhaHoras={generatingFolhaHoras}
+        despesas={despesas}
       />
     </div>
   );

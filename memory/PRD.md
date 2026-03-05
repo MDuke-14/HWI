@@ -15,6 +15,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Anexar Folha de Horas no email** (27 Fevereiro 2026)
 
 ### P0 (Concluído recente)
+- **Card de Despesas na Folha de Horas** (5 Março 2026) - Card após seleção de tarifas mostra despesas da OT com botão VER. Popup de lista com cards clicáveis. Popup de detalhe com dados da despesa (read-only), campo "Adicionar Valor Percentual" com preview do valor final, e 3 botões (Fechar, Não Visualizar, Gravar). Despesas excluídas mostradas com opção Restaurar. Total ajustado propagado ao PDF.
 - **Campo "Horas de Funcionamento" em Equipamentos** (5 Março 2026) - Campo adicionado ao modelo EquipamentoOT e Equipamento (BD cliente). Guardado na BD do cliente ao criar novo; atualizado ao selecionar existente com horas novas. Mostrado na OT, PDF, Visualizar Relatório, e fichas de clientes. Formulários de adicionar e editar incluem o campo.
 - **Páginas mobile Notificações e Perfil/Alterar Password** (4 Março 2026) - Novas páginas MobileNotifications.jsx e MobileProfile.jsx. Notificações com limpar individual/todas. Perfil mostra info do user + form de alterar password com validação. Admin recebe notificação com a nova password.
 - **Rever Férias — Cancelamento de dias** (4 Março 2026) - Botão "Rever" na página de férias, modal com calendário estilo /calendar, dias de férias a azul, seleção para cancelamento a vermelho, devolução automática dos dias ao saldo
