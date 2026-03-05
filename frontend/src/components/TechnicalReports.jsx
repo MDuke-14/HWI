@@ -5356,12 +5356,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
-              {/* Componentes Adicionais (Fotografias) */}
+              {/* Fotografias */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-blue-400 font-semibold flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" />
-                    Componentes Adicionais
+                    Fotografias
                     <HelpTooltip section="fotografias" />
                   </h4>
                   <Button
