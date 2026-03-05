@@ -539,6 +539,7 @@ class EquipamentoOT(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
+    equipamento_cliente_id: Optional[str] = None  # Link para equipamento na BD do cliente
     tipologia: str
     marca: str
     modelo: str
@@ -3284,6 +3285,7 @@ async def add_equipamento_ot(
     # Criar equipamento na OT
     equipamento = EquipamentoOT(
         relatorio_id=relatorio_id,
+        equipamento_cliente_id=equipamento_data.get("equipamento_cliente_id"),
         tipologia=equipamento_data["tipologia"],
         marca=equipamento_data["marca"],
         modelo=equipamento_data["modelo"],
@@ -3362,6 +3364,34 @@ async def update_equipamento_ot(
             {"id": equipamento_id, "relatorio_id": relatorio_id},
             {"$set": update_fields}
         )
+    
+    # Propagar horas_funcionamento para a BD do cliente se existir link
+    if "horas_funcionamento" in update_fields and update_fields["horas_funcionamento"]:
+        equip_cliente_id = existing.get("equipamento_cliente_id")
+        if equip_cliente_id:
+            await db.equipamentos.update_one(
+                {"id": equip_cliente_id, "ativo": True},
+                {"$set": {"horas_funcionamento": update_fields["horas_funcionamento"]}}
+            )
+            logging.info(f"Horas de funcionamento propagadas para equipamento do cliente {equip_cliente_id}")
+        else:
+            # Tentar encontrar por marca/modelo/numero_serie na OT do cliente
+            ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0, "cliente_id": 1})
+            if ot and ot.get("cliente_id"):
+                match_query = {
+                    "cliente_id": ot["cliente_id"],
+                    "marca": existing.get("marca"),
+                    "modelo": existing.get("modelo"),
+                    "ativo": True
+                }
+                if existing.get("numero_serie"):
+                    match_query["numero_serie"] = existing["numero_serie"]
+                result = await db.equipamentos.update_one(
+                    match_query,
+                    {"$set": {"horas_funcionamento": update_fields["horas_funcionamento"]}}
+                )
+                if result.modified_count > 0:
+                    logging.info(f"Horas de funcionamento propagadas para equipamento do cliente (por match)")
     
     # Retornar equipamento atualizado
     updated = await db.equipamentos_ot.find_one(

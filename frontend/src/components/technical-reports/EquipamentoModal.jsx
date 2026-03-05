@@ -128,7 +128,6 @@ const EquipamentoModal = ({
                   onChange={(e) => setEquipamentoFormData({...equipamentoFormData, horas_funcionamento: e.target.value})}
                   className="bg-[#0f0f0f] border-gray-700 text-white"
                   placeholder="Ex: 1500"
-                  disabled={equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot'}
                 />
               </div>
             </div>
