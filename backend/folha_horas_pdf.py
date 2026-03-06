@@ -266,6 +266,11 @@ def generate_folha_horas_pdf(
         for item in registos_ordenados:
             minutos_por_dia[item['data']] += sum(r.get('minutos', 0) for r in item['registos'])
         
+        # Determinar o ÚLTIMO registo de cada dia (dieta aparece só nessa linha)
+        ultimo_registo_dia = {}
+        for idx, item in enumerate(registos_ordenados):
+            ultimo_registo_dia[item['data']] = idx
+        
         # ---------- TABELA PRINCIPAL ----------
         header = [
             'Data', 'Dia', 'Função', 'Registo', 'Horas',
@@ -281,7 +286,7 @@ def generate_folha_horas_pdf(
         totais_por_tarifa_tipo = defaultdict(lambda: {'minutos': 0, 'tipo_label': '', 'codigo_label': ''})
         dietas_aplicadas = set()
         
-        for item in registos_ordenados:
+        for idx_item, item in enumerate(registos_ordenados):
             data = item['data']
             codigo = item['codigo']
             tipo_registo_grupo = item['tipo_registo']
@@ -325,11 +330,16 @@ def generate_folha_horas_pdf(
             
             # Dieta - calculada com base no total de horas do dia
             # Regra: ≤4h = 0€, 4h-6h = 50%, >6h = 100%
+            # Aparece APENAS na última linha do dia
             chave_extras_id = f"{tecnico_id}_{data}"
             chave_extras_nome = f"{tecnico_nome}_{data}"
             extras = dados_extras.get(chave_extras_id, {}) or dados_extras.get(chave_extras_nome, {})
             
-            if chave_extras_id in dietas_aplicadas or chave_extras_nome in dietas_aplicadas:
+            is_ultimo_do_dia = (ultimo_registo_dia.get(data) == idx_item)
+            
+            if not is_ultimo_do_dia:
+                dieta = 0
+            elif chave_extras_id in dietas_aplicadas or chave_extras_nome in dietas_aplicadas:
                 dieta = 0
             else:
                 # Obter valor base da dieta (do admin ou da tabela de preço)
