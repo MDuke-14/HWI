@@ -578,9 +578,12 @@ const FolhaHorasModal = ({
                 </div>
                 {dietaAutomatica && dietaValor && (
                   <p className="text-green-400/70 text-xs mt-2">
-                    Dieta de {parseFloat(dietaValor).toFixed(2)}€ aplicada a {getExtrasOrdenados().length} registo(s)
+                    Valor base da dieta: {parseFloat(dietaValor).toFixed(2)}€
                   </p>
                 )}
+                <p className="text-amber-400/70 text-xs mt-1">
+                  Regra automática: ≤4h = 0€ | 4h-6h = 50% | &gt;6h = 100% (calculado no PDF)
+                </p>
               </div>
               
               {getExtrasOrdenados().length > 0 ? (

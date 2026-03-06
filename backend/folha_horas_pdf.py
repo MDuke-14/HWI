@@ -258,6 +258,11 @@ def generate_folha_horas_pdf(
             })
         registos_ordenados.sort(key=lambda x: (x['data'], x['_hora_inicio_min']))
         
+        # ---------- PRÉ-CALCULAR HORAS TOTAIS POR DIA (para regra de dieta) ----------
+        minutos_por_dia = defaultdict(int)
+        for item in registos_ordenados:
+            minutos_por_dia[item['data']] += sum(r.get('minutos', 0) for r in item['registos'])
+        
         # ---------- TABELA PRINCIPAL ----------
         header = [
             'Data', 'Dia', 'Função', 'Registo', 'Horas',
@@ -315,7 +320,8 @@ def generate_folha_horas_pdf(
             total_km_valor = total_km * PRECO_KM
             total_geral_km_valor += total_km_valor
             
-            # Dieta - tentar por ID e por Nome, com fallback para valor padrão da tabela
+            # Dieta - calculada com base no total de horas do dia
+            # Regra: ≤4h = 0€, 4h-6h = 50%, >6h = 100%
             chave_extras_id = f"{tecnico_id}_{data}"
             chave_extras_nome = f"{tecnico_nome}_{data}"
             extras = dados_extras.get(chave_extras_id, {}) or dados_extras.get(chave_extras_nome, {})
@@ -323,10 +329,23 @@ def generate_folha_horas_pdf(
             if chave_extras_id in dietas_aplicadas or chave_extras_nome in dietas_aplicadas:
                 dieta = 0
             else:
-                dieta = float(extras.get('dieta', 0) or 0)
-                # Fallback: usar valor_dieta_default da tabela de preço se não há dieta definida
-                if dieta == 0 and valor_dieta_default > 0:
-                    dieta = valor_dieta_default
+                # Obter valor base da dieta (do admin ou da tabela de preço)
+                dieta_base = float(extras.get('dieta', 0) or 0)
+                if dieta_base == 0 and valor_dieta_default > 0:
+                    dieta_base = valor_dieta_default
+                
+                # Aplicar regra de horas do dia
+                horas_dia = minutos_por_dia.get(data, 0) / 60
+                if dieta_base > 0:
+                    if horas_dia <= 4:
+                        dieta = 0
+                    elif horas_dia <= 6:
+                        dieta = dieta_base * 0.5
+                    else:
+                        dieta = dieta_base
+                else:
+                    dieta = 0
+                
                 if dieta > 0:
                     dietas_aplicadas.add(chave_extras_id)
                     dietas_aplicadas.add(chave_extras_nome)
