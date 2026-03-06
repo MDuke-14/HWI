@@ -257,6 +257,15 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
          Paragraph("", label_style), Paragraph("", value_style)],
     ]
     
+    # Adicionar OT Relacionada se existir
+    ot_rel_numero = relatorio.get('ot_relacionada_numero')
+    if ot_rel_numero:
+        client_grid.append([
+            Paragraph("OT Relacionada:", label_style),
+            Paragraph(f"OT #{ot_rel_numero}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#2563eb'))),
+            Paragraph("", label_style), Paragraph("", value_style)
+        ])
+    
     client_table = Table(client_grid, colWidths=[2*cm, 7*cm, 2.5*cm, 6.5*cm])
     client_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),

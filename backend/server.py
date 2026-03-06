@@ -475,6 +475,9 @@ class RelatorioTecnico(BaseModel):
     # KM Inicial da viatura (para associar ao primeiro técnico)
     km_inicial: Optional[float] = None
     
+    # OT Relacionada (referência informativa a uma OT anterior)
+    ot_relacionada_id: Optional[str] = None  # ID da OT relacionada anterior
+    
     # Relatório
     diagnostico: Optional[str] = None
     acoes_realizadas: Optional[str] = None
@@ -685,6 +688,7 @@ class RelatorioTecnicoCreate(BaseModel):
     pedido_por: str
     contacto_pedido: Optional[str] = None
     km_inicial: Optional[float] = None  # KM inicial da viatura
+    ot_relacionada_id: Optional[str] = None  # ID da OT relacionada anterior
     equipamento_tipologia: Optional[str] = None
     equipamento_marca: Optional[str] = None
     equipamento_modelo: Optional[str] = None
@@ -2533,6 +2537,7 @@ async def create_relatorio(
         local_intervencao=relatorio_data.local_intervencao,
         pedido_por=relatorio_data.pedido_por,
         contacto_pedido=relatorio_data.contacto_pedido,
+        ot_relacionada_id=relatorio_data.ot_relacionada_id,
         equipamento_tipologia=relatorio_data.equipamento_tipologia,
         equipamento_marca=relatorio_data.equipamento_marca,
         equipamento_modelo=relatorio_data.equipamento_modelo,
@@ -2674,6 +2679,48 @@ async def get_relatorios(
             relatorio["equipamento_display"] = "Vários"
         
         relatorio["equipamentos_count"] = total_equipamentos
+    
+    # Enriquecer com info de OTs relacionadas (forward + reverse)
+    # Forward: esta OT tem ot_relacionada_id (aponta para OT anterior)
+    # Reverse: outras OTs apontam para esta OT (OTs posteriores)
+    ids_relacionadas = set()
+    for r in relatorios:
+        if r.get("ot_relacionada_id"):
+            ids_relacionadas.add(r["ot_relacionada_id"])
+    # Buscar OTs posteriores que apontam para as OTs actuais
+    reverse_refs = await db.relatorios_tecnicos.find(
+        {"ot_relacionada_id": {"$in": relatorio_ids}},
+        {"_id": 0, "id": 1, "numero_assistencia": 1, "ot_relacionada_id": 1}
+    ).to_list(None)
+    reverse_map = {}
+    for ref in reverse_refs:
+        parent_id = ref["ot_relacionada_id"]
+        if parent_id not in reverse_map:
+            reverse_map[parent_id] = []
+        reverse_map[parent_id].append({
+            "id": ref["id"],
+            "numero_assistencia": ref["numero_assistencia"]
+        })
+    
+    # Buscar info das OTs relacionadas anteriores
+    if ids_relacionadas:
+        ots_relacionadas = await db.relatorios_tecnicos.find(
+            {"id": {"$in": list(ids_relacionadas)}},
+            {"_id": 0, "id": 1, "numero_assistencia": 1}
+        ).to_list(None)
+        ots_rel_map = {r["id"]: r for r in ots_relacionadas}
+    else:
+        ots_rel_map = {}
+    
+    for relatorio in relatorios:
+        rid = relatorio.get("id")
+        # Forward reference: OT anterior
+        if relatorio.get("ot_relacionada_id") and relatorio["ot_relacionada_id"] in ots_rel_map:
+            ref = ots_rel_map[relatorio["ot_relacionada_id"]]
+            relatorio["ot_relacionada_numero"] = ref.get("numero_assistencia")
+        # Reverse reference: OTs posteriores
+        if rid in reverse_map:
+            relatorio["ots_posteriores"] = reverse_map[rid]
     
     return relatorios
 
@@ -3963,6 +4010,14 @@ async def enviar_pdf_ot(
         if not relatorio:
             raise HTTPException(status_code=404, detail="Relatório não encontrado")
         
+        # Enriquecer com info da OT relacionada
+        if relatorio.get("ot_relacionada_id"):
+            ot_rel = await db.relatorios_tecnicos.find_one(
+                {"id": relatorio["ot_relacionada_id"]}, {"_id": 0, "numero_assistencia": 1}
+            )
+            if ot_rel:
+                relatorio["ot_relacionada_numero"] = ot_rel.get("numero_assistencia")
+        
         # Buscar cliente
         cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
         if not cliente:
@@ -4243,6 +4298,14 @@ async def preview_pdf_ot(
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Enriquecer com info da OT relacionada
+    if relatorio.get("ot_relacionada_id"):
+        ot_rel = await db.relatorios_tecnicos.find_one(
+            {"id": relatorio["ot_relacionada_id"]}, {"_id": 0, "numero_assistencia": 1}
+        )
+        if ot_rel:
+            relatorio["ot_relacionada_numero"] = ot_rel.get("numero_assistencia")
     
     # Buscar cliente
     cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
@@ -11845,6 +11908,14 @@ async def generate_folha_horas(
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Enriquecer com info da OT relacionada
+    if relatorio.get("ot_relacionada_id"):
+        ot_rel = await db.relatorios_tecnicos.find_one(
+            {"id": relatorio["ot_relacionada_id"]}, {"_id": 0, "numero_assistencia": 1}
+        )
+        if ot_rel:
+            relatorio["ot_relacionada_numero"] = ot_rel.get("numero_assistencia")
     
     # Buscar cliente
     cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})

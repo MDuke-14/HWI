@@ -51,7 +51,8 @@ import {
   UserCheck,
   Camera,
   ScanLine,
-  Pencil
+  Pencil,
+  Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -436,6 +437,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     local_intervencao: '',
     pedido_por: '',
     km_inicial: '',  // KM iniciais da viatura
+    ot_relacionada_id: '',  // OT Relacionada (referência informativa)
     equipamento_tipologia: '',
     equipamento_marca: '',
     equipamento_modelo: '',
@@ -989,6 +991,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       local_intervencao: '',
       pedido_por: '',
       km_inicial: '',
+      ot_relacionada_id: '',
       equipamento_tipologia: '',
       equipamento_marca: '',
       equipamento_modelo: '',
@@ -3926,6 +3929,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <div className={`${isMobile ? 'mb-2' : 'mb-3'} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
                     <p className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''} truncate`}>{relatorio.cliente_nome}</p>
                     <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
+                    {relatorio.ot_relacionada_id && (
+                      <p className="text-blue-400 text-xs mt-0.5 flex items-center gap-1">
+                        <Link2 className="w-3 h-3" /> OT #{relatorio.ot_relacionada_numero}
+                      </p>
+                    )}
+                    {relatorio.ots_posteriores?.length > 0 && (
+                      <p className="text-amber-400 text-xs mt-0.5 flex items-center gap-1">
+                        <Link2 className="w-3 h-3" /> Posterior: {relatorio.ots_posteriores.map(ot => `#${ot.numero_assistencia}`).join(', ')}
+                      </p>
+                    )}
                   </div>
 
                   {/* Equipamento */}
@@ -4360,6 +4373,37 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
+            {/* OT Relacionada (opcional) */}
+            <div>
+              <Label className="text-gray-300">
+                OT Relacionada <span className="text-gray-500">(opcional)</span>
+              </Label>
+              <div className="relative">
+                <select
+                  data-testid="ot-relacionada-select"
+                  value={relatorioFormData.ot_relacionada_id}
+                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, ot_relacionada_id: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 pr-8 appearance-none"
+                >
+                  <option value="">Nenhuma</option>
+                  {relatorios
+                    .filter(r => r.numero_assistencia)
+                    .sort((a, b) => b.numero_assistencia - a.numero_assistencia)
+                    .map(r => (
+                      <option key={r.id} value={r.id}>
+                        OT #{r.numero_assistencia} - {r.cliente_nome} ({r.data_servico ? new Date(r.data_servico + 'T00:00:00').toLocaleDateString('pt-PT') : '-'})
+                      </option>
+                    ))}
+                </select>
+                <Link2 className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              </div>
+              {relatorioFormData.ot_relacionada_id && (
+                <p className="text-blue-400/70 text-xs mt-1">
+                  Esta OT será associada como continuação da OT selecionada.
+                </p>
+              )}
+            </div>
+
             {/* Intervenções / Assistências */}
             <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
@@ -4512,6 +4556,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm truncate' : ''}`}>{selectedRelatorio.cliente_nome}</p>
                 <p className={`${textSecondary} ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>Local: {selectedRelatorio.local_intervencao}</p>
                 <p className={`${textSecondary} ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>Pedido por: {selectedRelatorio.pedido_por}</p>
+                {selectedRelatorio.ot_relacionada_id && (
+                  <p className={`text-blue-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 flex items-center gap-1`}>
+                    <Link2 className="w-3 h-3" />
+                    OT Relacionada: <span className="font-semibold" data-testid="ot-relacionada-ref">OT #{selectedRelatorio.ot_relacionada_numero}</span>
+                  </p>
+                )}
+                {selectedRelatorio.ots_posteriores?.length > 0 && (
+                  <p className={`text-amber-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 flex items-center gap-1`}>
+                    <Link2 className="w-3 h-3" />
+                    OT Posterior: {selectedRelatorio.ots_posteriores.map(ot => (
+                      <span key={ot.id} className="font-semibold" data-testid="ot-posterior-ref">OT #{ot.numero_assistencia}</span>
+                    )).reduce((prev, curr) => [prev, ', ', curr])}
+                  </p>
+                )}
               </div>
 
               {/* Mão de Obra / Cronómetros - Card Unificado */}

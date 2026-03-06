@@ -241,6 +241,9 @@ def generate_folha_horas_pdf(
         elements.append(Spacer(1, 0.2*cm))
         elements.append(Paragraph(f"<b>Cliente:</b> {cliente.get('nome', 'N/A')}", normal_style))
         elements.append(Paragraph(f"<b>Localização:</b> {relatorio.get('local_intervencao', 'N/A')}", normal_style))
+        ot_rel_num = relatorio.get('ot_relacionada_numero')
+        if ot_rel_num:
+            elements.append(Paragraph(f"<b>OT Relacionada:</b> <font color='#2563eb'>OT #{ot_rel_num}</font>", normal_style))
         elements.append(Spacer(1, 0.2*cm))
         elements.append(Paragraph(f"<b>Técnico:</b> {tecnico_nome}", tecnico_heading_style))
         elements.append(Spacer(1, 0.3*cm))

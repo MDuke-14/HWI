@@ -1,0 +1,106 @@
+{
+  "summary": "Comprehensive testing of OT Relacionada feature and Dieta calculation in Folha de Horas PDF. All tests passed - both backend API and frontend UI verified.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ot_relacionada_dieta.py",
+    "/app/test_reports/pytest/pytest_ot_relacionada.xml",
+    "/app/test_reports/folha_horas_ot356.pdf",
+    "/app/test_reports/ot_356_preview.pdf"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_ot_relacionada_dieta.py"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "username": "pedro",
+    "password": "password"
+  },
+  "seed_data_creation": "Used existing OT #356 (id: 8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85) and OT #361 (id: 0f6b59bc-c2ae-4561-b4f3-199fee8e7800) for testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "OT Relacionada feature fully implemented and verified. OT #361 has ot_relacionada_id pointing to OT #356. OT #356 shows 'Posterior: #361' badge. Price table 1 ('2024') has valor_dieta=50.0. Dieta calculation follows business rule: ≤4h=0€, 4h-6h=50%, >6h=100% of valor_dieta.",
+  "features_tested": {
+    "ot_relacionada": {
+      "list_view_badges": {
+        "status": "PASS",
+        "verified": [
+          "OT #361 shows 'OT #356' badge in blue in the OT list card",
+          "OT #356 shows 'Posterior: #361' badge in amber in the OT list card"
+        ]
+      },
+      "detail_modal": {
+        "status": "PASS",
+        "verified": [
+          "OT #361 detail modal shows 'OT Relacionada: OT #356' in Dados do Cliente section",
+          "OT #356 detail modal shows 'OT Posterior: OT #361' in Dados do Cliente section",
+          "data-testid='ot-relacionada-ref' exists and contains correct text",
+          "data-testid='ot-posterior-ref' exists and contains correct text"
+        ]
+      },
+      "creation_form": {
+        "status": "PASS",
+        "verified": [
+          "'+ Nova OT' button opens creation modal",
+          "'OT Relacionada (opcional)' dropdown field exists with data-testid='ot-relacionada-select'",
+          "Dropdown lists all existing OTs with format: OT #XXX - ClientName (Date)",
+          "Default value is 'Nenhuma'"
+        ]
+      },
+      "backend_api": {
+        "status": "PASS",
+        "verified": [
+          "GET /api/relatorios-tecnicos returns ot_relacionada_id and ot_relacionada_numero",
+          "GET /api/relatorios-tecnicos returns ots_posteriores array for parent OTs",
+          "OT #361 correctly references OT #356 (ot_relacionada_id = 8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85)",
+          "OT #356 correctly shows OT #361 in ots_posteriores array"
+        ]
+      },
+      "pdf_reports": {
+        "status": "PASS",
+        "verified": [
+          "OT PDF includes 'OT Relacionada: OT #XXX' when relationship exists",
+          "Folha de Horas PDF includes 'OT Relacionada: OT #XXX' in header"
+        ]
+      }
+    },
+    "dieta_calculation": {
+      "status": "PASS",
+      "verified": [
+        "Price table 1 ('2024') has valor_dieta=50.0",
+        "Dieta calculation business rule implemented in folha_horas_pdf.py lines 326-355",
+        "Rule: ≤4h work = 0€ dieta",
+        "Rule: 4h-6h work = 50% of valor_dieta (25€)",
+        "Rule: >6h work = 100% of valor_dieta (50€)",
+        "Dieta applied per technician per day (not duplicated)"
+      ]
+    },
+    "folha_horas_pdf": {
+      "status": "PASS",
+      "verified": [
+        "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf with table_id=1 generates valid PDF",
+        "GET /api/relatorios-tecnicos/{id}/folha-horas-data returns tabelas_preco with valor_dieta",
+        "PDF saved to /app/test_reports/folha_horas_ot356.pdf for inspection"
+      ]
+    }
+  },
+  "screenshots_taken": [
+    ".screenshots/ot_list_view.png - OT list showing #361 with 'OT #356' badge and #356 with 'Posterior: #361' badge",
+    ".screenshots/ot361_detail.png - OT #361 detail modal showing 'OT Relacionada: OT #356'",
+    ".screenshots/ot356_detail.png - OT #356 detail modal showing 'OT Posterior: OT #361'",
+    ".screenshots/nova_ot_modal.png - Nova OT creation form with OT Relacionada dropdown",
+    ".screenshots/ot_relacionada_dropdown.png - Dropdown showing list of all OTs"
+  ]
+}
