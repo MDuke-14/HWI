@@ -28,6 +28,9 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Função na OT** (2 Março 2026) - Campo obrigatório "Técnico/Ajudante" ao adicionar colaboradores
 - **Ordenação cronológica dos registos** (2 Março 2026) - Corrigida lógica de sort
 
+### P0 (Concluído recente cont.)
+- **Fix Mobile Cropper FaturaScanner** (6 Março 2026) - Corrigido bug crítico onde o cropper de imagens aparecia por baixo da imagem em mobile e bloqueava touch/scroll. Reescrito FaturaScanner.jsx com z-index correto, limpeza de touchAction/overflow no unmount, e bypass do cropper para PDFs.
+
 ### P0 (Pendente)
 - **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358
 - **Signature editing does not save correctly** - Verificação pendente
