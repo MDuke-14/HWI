@@ -54,7 +54,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   });
   const [tabelaForm, setTabelaForm] = useState({
     nome: '',
-    valor_km: ''
+    valor_km: '',
+    valor_dieta: ''
   });
 
   // Estados para Notificações e Autorizações
@@ -172,7 +173,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   const handleOpenTabelaDialog = (tabela) => {
     setTabelaForm({
       nome: tabela.nome || `Tabela ${tabela.table_id}`,
-      valor_km: tabela.valor_km?.toString() || '0.65'
+      valor_km: tabela.valor_km?.toString() || '0.65',
+      valor_dieta: tabela.valor_dieta?.toString() || '0'
     });
     setShowTabelaDialog(tabela.table_id);
   };
@@ -180,7 +182,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   const handleOpenCreateTabelaDialog = () => {
     setTabelaForm({
       nome: '',
-      valor_km: '0.65'
+      valor_km: '0.65',
+      valor_dieta: '0'
     });
     setShowTabelaDialog('new');
   };
@@ -202,14 +205,16 @@ const AdminDashboard = ({ user, onLogout }) => {
         }
         await axios.post(`${API}/tabelas-preco`, {
           nome: tabelaForm.nome,
-          valor_km: parseFloat(tabelaForm.valor_km)
+          valor_km: parseFloat(tabelaForm.valor_km),
+          valor_dieta: parseFloat(tabelaForm.valor_dieta) || 0
         });
         toast.success('Nova Tabela de Preço criada!');
       } else {
         // Atualizar tabela existente
         await axios.put(`${API}/tabelas-preco/${showTabelaDialog}`, {
           nome: tabelaForm.nome,
-          valor_km: parseFloat(tabelaForm.valor_km)
+          valor_km: parseFloat(tabelaForm.valor_km),
+          valor_dieta: parseFloat(tabelaForm.valor_dieta) || 0
         });
         toast.success('Tabela de Preço atualizada!');
       }
@@ -1775,6 +1780,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                             </h3>
                             <p className="text-gray-400 text-sm">
                               Valor por Km: <span className="text-amber-400 font-bold">{(tabelaAtual?.valor_km || 0.65).toFixed(2)}€</span>
+                              {' | '}Dieta: <span className="text-amber-400 font-bold">{(tabelaAtual?.valor_dieta || 0).toFixed(2)}€/dia</span>
                             </p>
                           </div>
                         </div>
@@ -1953,6 +1959,22 @@ const AdminDashboard = ({ user, onLogout }) => {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Este valor será usado para calcular o custo dos quilómetros na Folha de Horas
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Valor Dieta (€/dia)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tabelaForm.valor_dieta}
+                      onChange={(e) => setTabelaForm({...tabelaForm, valor_dieta: e.target.value})}
+                      className="bg-[#0a0a0a] border-gray-700 text-white"
+                      placeholder="Ex: 15.00"
+                      data-testid="tabela-valor-dieta"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Aplicado automaticamente por dia/técnico na Folha de Horas
                     </p>
                   </div>
                   <Button 

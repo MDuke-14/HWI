@@ -76,9 +76,28 @@ const FolhaHorasModal = ({
       setTarifasDaTabela(tarifas);
       if (folhaHorasData) {
         autoFillTarifas(tarifas);
+        autoFillDietas(tableId);
       }
     } catch (error) {
       console.error('Erro ao carregar tarifas da tabela');
+    }
+  };
+
+  const autoFillDietas = (tableId) => {
+    // Buscar valor_dieta da tabela selecionada
+    const tabelas = folhaHorasData?.tabelas_preco || tabelasPreco;
+    const tabela = tabelas.find(t => t.table_id === tableId);
+    const valorDieta = tabela?.valor_dieta || 0;
+    
+    if (valorDieta > 0) {
+      setDietaAutomatica(true);
+      setDietaValor(String(valorDieta));
+      // Aplicar a todos os dias/técnicos
+      const extras = getExtrasOrdenados();
+      extras.forEach(item => {
+        const chave = `${item.tecnicoNome}_${item.data}`;
+        updateFolhaHorasExtra(chave, 'dieta', String(valorDieta));
+      });
     }
   };
 

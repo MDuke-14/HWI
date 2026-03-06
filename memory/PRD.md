@@ -30,7 +30,8 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### P0 (Concluído recente cont.)
 - **FaturaScanner simplificado (sem cropper)** (6 Março 2026) - Removido react-easy-crop e filtros de melhoria que não funcionavam em iOS. Componente simplificado: upload direto de foto/ficheiro, preview da imagem, conversão para PDF. PDFs anexados diretamente sem etapas intermédias. Zero problemas de touch/scroll.
-- **Reestruturação Folha de Horas PDF** (6 Março 2026) - Removidas colunas "Portagens" e "Despesas" da tabela principal. Criada tabela DESPESAS separada na última página do documento com colunas: Técnico, Tipo, Valor, Data, Descrição. Removida tabela de subtotais por técnico. Corrigido incluir_pausa para registos cronómetro. Validação: descrição obrigatória apenas para tipo "Outras".
+- **Reestruturação Folha de Horas PDF** (6 Março 2026) - Removidas colunas "Portagens" e "Despesas" da tabela principal. Criada tabela DESPESAS separada na última página do documento. Removida tabela de subtotais por técnico. Corrigido incluir_pausa para registos cronómetro. Validação: descrição obrigatória apenas para tipo "Outras".
+- **Dietas automáticas na Folha de Horas** (6 Março 2026) - Adicionado campo `valor_dieta` às tabelas de preço. Dietas agora são aplicadas automaticamente por dia/técnico em ambos os fluxos (modal + email). Admin pode editar o valor na gestão de tabelas de preço. No modal, dieta é auto-preenchida ao selecionar tabela. Override manual pelo admin prevalece sobre valor automático.
 
 ### P0 (Pendente)
 - **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358

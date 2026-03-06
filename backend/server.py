@@ -909,6 +909,7 @@ class TabelaPrecoConfig(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     table_id: int  # ID da tabela de preço (auto-incrementado)
     valor_km: float = 0.65  # Valor por quilómetro em euros
+    valor_dieta: float = 0  # Valor da dieta diária em euros
     nome: str = ""  # Nome customizado da tabela
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
@@ -917,10 +918,12 @@ class TabelaPrecoConfig(BaseModel):
 class TabelaPrecoCreate(BaseModel):
     nome: str  # Nome da tabela (obrigatório)
     valor_km: float = 0.65  # Valor por Km (default 0.65)
+    valor_dieta: float = 0  # Valor dieta diária
 
 
 class TabelaPrecoConfigUpdate(BaseModel):
     valor_km: Optional[float] = None
+    valor_dieta: Optional[float] = None
     nome: Optional[str] = None
 
 
@@ -4036,6 +4039,7 @@ async def enviar_pdf_ot(
                 # Buscar tarifas da primeira tabela de preço activa
                 tabela_config = await db.tabelas_preco.find_one({"table_id": 1}, {"_id": 0})
                 valor_km = tabela_config.get("valor_km", 0.65) if tabela_config else 0.65
+                valor_dieta_tabela = tabela_config.get("valor_dieta", 0) if tabela_config else 0
                 
                 tarifas_db = await db.tarifas.find({
                     "ativo": True, 
@@ -4080,6 +4084,35 @@ async def enviar_pdf_ot(
                         dados_extras[key]['despesas'] += desp.get('valor', 0)
                     
                     despesas_ajustadas_email.append(desp)
+                
+                # Aplicar dieta automática da tabela de preço a cada técnico/dia
+                if valor_dieta_tabela > 0:
+                    dias_tecnicos = set()
+                    for reg in registos_mao_obra:
+                        data_r = reg.get('data', '')
+                        if isinstance(data_r, str) and 'T' in data_r:
+                            data_r = data_r.split('T')[0]
+                        tid = reg.get('tecnico_id', '')
+                        tname = reg.get('tecnico_nome', '')
+                        if tid and data_r:
+                            dias_tecnicos.add((tid, tname, data_r))
+                    for tec in tecnicos_manuais:
+                        data_t = tec.get('data_trabalho', '')
+                        if isinstance(data_t, str) and 'T' in data_t:
+                            data_t = data_t.split('T')[0]
+                        tid = tec.get('tecnico_id', '')
+                        tname = tec.get('tecnico_nome', '')
+                        if tid and data_t:
+                            dias_tecnicos.add((tid, tname, data_t))
+                    for tid, tname, data_d in dias_tecnicos:
+                        key_id = f"{tid}_{data_d}"
+                        key_nome = f"{tname}_{data_d}"
+                        if key_id not in dados_extras:
+                            dados_extras[key_id] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
+                        dados_extras[key_id]['dieta'] = valor_dieta_tabela
+                        if key_nome not in dados_extras:
+                            dados_extras[key_nome] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
+                        dados_extras[key_nome]['dieta'] = valor_dieta_tabela
                 
                 folha_horas_buffer = generate_folha_horas_pdf(
                     relatorio=relatorio,
@@ -11387,6 +11420,7 @@ async def create_tabela_preco(
     new_config = TabelaPrecoConfig(
         table_id=next_table_id,
         valor_km=config_data.valor_km,
+        valor_dieta=config_data.valor_dieta,
         nome=config_data.nome
     )
     
@@ -11794,7 +11828,8 @@ async def get_folha_horas_data(
         "registos_individuais": registos_individuais,
         "despesas": despesas,
         "despesas_por_tecnico_data": despesas_por_tecnico_data,
-        "portagens_por_tecnico_data": portagens_por_tecnico_data
+        "portagens_por_tecnico_data": portagens_por_tecnico_data,
+        "tabelas_preco": await db.tabelas_preco.find({}, {"_id": 0}).to_list(length=None)
     }
 
 
@@ -11833,6 +11868,42 @@ async def generate_folha_horas(
     # Buscar configuração da tabela de preço selecionada (valor por Km)
     tabela_config = await db.tabelas_preco.find_one({"table_id": table_id}, {"_id": 0})
     valor_km = tabela_config.get("valor_km", 0.65) if tabela_config else 0.65
+    valor_dieta_tabela = tabela_config.get("valor_dieta", 0) if tabela_config else 0
+    
+    # Auto-preencher dietas da tabela de preço quando não definidas pelo admin
+    dados_extras_final = dict(request.dados_extras)
+    if valor_dieta_tabela > 0:
+        dias_tecnicos = set()
+        for reg in registos_mao_obra:
+            data_r = reg.get('data', '')
+            if isinstance(data_r, str) and 'T' in data_r:
+                data_r = data_r.split('T')[0]
+            tid = reg.get('tecnico_id', '')
+            tname = reg.get('tecnico_nome', '')
+            if tid and data_r:
+                dias_tecnicos.add((tid, tname, data_r))
+        for tec in tecnicos_manuais:
+            data_t = tec.get('data_trabalho', '')
+            if isinstance(data_t, str) and 'T' in data_t:
+                data_t = data_t.split('T')[0]
+            tid = tec.get('tecnico_id', '')
+            tname = tec.get('tecnico_nome', '')
+            if tid and data_t:
+                dias_tecnicos.add((tid, tname, data_t))
+        for tid, tname, data_d in dias_tecnicos:
+            key_id = f"{tid}_{data_d}"
+            key_nome = f"{tname}_{data_d}"
+            # Só preencher se o admin não definiu manualmente
+            existing_by_id = dados_extras_final.get(key_id, {})
+            existing_by_nome = dados_extras_final.get(key_nome, {})
+            dieta_admin = float(existing_by_id.get('dieta', 0) or 0) + float(existing_by_nome.get('dieta', 0) or 0)
+            if dieta_admin == 0:
+                if key_id not in dados_extras_final:
+                    dados_extras_final[key_id] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
+                dados_extras_final[key_id]['dieta'] = valor_dieta_tabela
+                if key_nome not in dados_extras_final:
+                    dados_extras_final[key_nome] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
+                dados_extras_final[key_nome]['dieta'] = valor_dieta_tabela
     
     # Buscar tarifas por código DA TABELA SELECIONADA
     # Excluir tarifas com código "manual" pois são apenas para seleção manual
@@ -11888,7 +11959,7 @@ async def generate_folha_horas(
         registos_mao_obra=registos_mao_obra,
         tecnicos_manuais=tecnicos_manuais,
         tarifas_por_tecnico=request.tarifas_por_tecnico,
-        dados_extras=request.dados_extras,
+        dados_extras=dados_extras_final,
         tarifas_por_codigo=tarifas_por_codigo,
         valor_km=valor_km,
         tarifas_detalhadas=tarifas_detalhadas,
