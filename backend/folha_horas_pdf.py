@@ -248,6 +248,20 @@ def generate_folha_horas_pdf(
     grande_total_geral = 0
     dietas_aplicadas = set()
     
+    # Acumuladores globais por colaborador (para tabela resumo final)
+    resumo_colaborador = defaultdict(lambda: {
+        'nome': '',
+        'funcao': 'tecnico',
+        'trabalho': defaultdict(int),   # codigo -> minutos (trabalho + oficina)
+        'viagem': defaultdict(int),     # codigo -> minutos (viagem)
+        'trabalho_valor': defaultdict(float),  # codigo -> valor €
+        'viagem_valor': defaultdict(float),    # codigo -> valor €
+        'km_total': 0,
+        'km_valor': 0,
+        'dieta_total': 0,
+        'total_valor': 0,
+    })
+    
     # ==========================================
     # PASSO 3: Gerar uma página por cada DIA
     # ==========================================
@@ -370,6 +384,22 @@ def generate_folha_horas_pdf(
                     dietas_aplicadas.add(chave_dieta_nome)
             total_dia_dietas += dieta
             
+            # Acumular no resumo por colaborador
+            rc = resumo_colaborador[tecnico_id]
+            rc['nome'] = tecnico_nome
+            rc['funcao'] = funcao_ot
+            tipo_registo_norm = 'trabalho' if tipo_registo in ('trabalho', 'oficina', 'manual') else tipo_registo
+            if tipo_registo_norm == 'viagem':
+                rc['viagem'][codigo] += total_minutos
+                rc['viagem_valor'][codigo] += total_valor
+            else:
+                rc['trabalho'][codigo] += total_minutos
+                rc['trabalho_valor'][codigo] += total_valor
+            rc['km_total'] += total_km
+            rc['km_valor'] += total_km_valor
+            rc['dieta_total'] += dieta
+            rc['total_valor'] += total_valor + total_km_valor + dieta
+            
             # Pausa
             tem_pausa = reg.get('incluir_pausa', False)
             pausa_str = '1:00' if tem_pausa else '-'
@@ -480,7 +510,107 @@ def generate_folha_horas_pdf(
         ))
     
     # ==========================================
-    # PASSO 4: TABELA DESPESAS (última página)
+    # PASSO 4: TABELA RESUMO POR COLABORADOR
+    # ==========================================
+    if resumo_colaborador:
+        elements.append(PageBreak())
+        
+        if logo_path.exists():
+            logo = RLImage(str(logo_path), width=4*cm, height=1.3*cm)
+            elements.append(logo)
+        
+        elements.append(Paragraph("FOLHA DE HORAS – RESUMO POR COLABORADOR", title_style))
+        elements.append(Paragraph(f"OT #{relatorio.get('numero_assistencia', 'N/A')}", heading_style))
+        elements.append(Spacer(1, 0.2*cm))
+        elements.append(Paragraph(f"<b>Cliente:</b> {cliente.get('nome', 'N/A')}", normal_style))
+        elements.append(Spacer(1, 0.4*cm))
+        
+        resumo_header = [
+            'Colaborador', 'Função',
+            'Cód. 1', 'Cód. 2', 'Cód. S', 'Cód. D',
+            'V1', 'V2', 'VS', 'VD',
+            'KM', 'TOTAL'
+        ]
+        resumo_data = [resumo_header]
+        
+        grande_total_resumo = 0
+        
+        for tid, rc in sorted(resumo_colaborador.items(), key=lambda x: x[1]['nome']):
+            funcao_label = 'Técnico' if rc['funcao'] == 'tecnico' else 'Ajudante'
+            
+            # Horas de trabalho por código
+            t1 = minutes_to_hhmm(rc['trabalho'].get('1', 0)) if rc['trabalho'].get('1', 0) > 0 else '-'
+            t2 = minutes_to_hhmm(rc['trabalho'].get('2', 0)) if rc['trabalho'].get('2', 0) > 0 else '-'
+            ts = minutes_to_hhmm(rc['trabalho'].get('S', 0)) if rc['trabalho'].get('S', 0) > 0 else '-'
+            td = minutes_to_hhmm(rc['trabalho'].get('D', 0)) if rc['trabalho'].get('D', 0) > 0 else '-'
+            
+            # Horas de viagem por código
+            v1 = minutes_to_hhmm(rc['viagem'].get('1', 0)) if rc['viagem'].get('1', 0) > 0 else '-'
+            v2 = minutes_to_hhmm(rc['viagem'].get('2', 0)) if rc['viagem'].get('2', 0) > 0 else '-'
+            vs = minutes_to_hhmm(rc['viagem'].get('S', 0)) if rc['viagem'].get('S', 0) > 0 else '-'
+            vd = minutes_to_hhmm(rc['viagem'].get('D', 0)) if rc['viagem'].get('D', 0) > 0 else '-'
+            
+            km_str = f"{rc['km_total']:.1f}" if rc['km_total'] > 0 else '-'
+            
+            total_colab = rc['total_valor']
+            grande_total_resumo += total_colab
+            
+            resumo_data.append([
+                rc['nome'],
+                funcao_label,
+                t1, t2, ts, td,
+                v1, v2, vs, vd,
+                km_str,
+                f"{total_colab:.2f}€"
+            ])
+        
+        # Linha de totais
+        resumo_data.append([
+            '', 'TOTAL:', '', '', '', '', '', '', '', '', '',
+            f"{grande_total_resumo:.2f}€"
+        ])
+        
+        resumo_col_widths = [
+            3.2*cm, 1.6*cm,
+            1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm,
+            1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm,
+            1.8*cm, 2.5*cm,
+        ]
+        
+        resumo_table = Table(resumo_data, colWidths=resumo_col_widths)
+        resumo_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 7),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#dbeafe')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor('#1e40af')),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(resumo_table)
+        
+        elements.append(Spacer(1, 0.3*cm))
+        elements.append(Paragraph(
+            "<b>Legenda:</b> Cód. 1/2/S/D = Horas Trabalho | V1/V2/VS/VD = Horas Viagem | KM = Quilómetros | TOTAL = Valor a cobrar (horas + km + dieta)",
+            small_style
+        ))
+        elements.append(Paragraph(
+            f"Documento gerado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}",
+            small_style
+        ))
+    
+    # ==========================================
+    # PASSO 5: TABELA DESPESAS (última página)
     # ==========================================
     if despesas_ajustadas:
         elements.append(PageBreak())
