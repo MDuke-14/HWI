@@ -1,74 +1,38 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import { jsPDF } from 'jspdf';
 import { Button } from '../ui/button';
 import { Camera, ScanLine, RotateCw, Sun, Contrast, Check, X, ZoomIn, ZoomOut, Upload, FileText } from 'lucide-react';
 
-// Canvas-based image processing utilities
 const applyEnhancement = (canvas, settings) => {
   const ctx = canvas.getContext('2d');
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
   const { brightness, contrast, sharpness, grayscale } = settings;
 
-  // Apply brightness and contrast
   const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
   for (let i = 0; i < data.length; i += 4) {
-    let r = data[i];
-    let g = data[i + 1];
-    let b = data[i + 2];
-
-    // Brightness
-    r += brightness;
-    g += brightness;
-    b += brightness;
-
-    // Contrast
+    let r = data[i] + brightness;
+    let g = data[i + 1] + brightness;
+    let b = data[i + 2] + brightness;
     r = factor * (r - 128) + 128;
     g = factor * (g - 128) + 128;
     b = factor * (b - 128) + 128;
-
-    // Grayscale
     if (grayscale) {
       const gray = 0.299 * r + 0.587 * g + 0.114 * b;
       r = g = b = gray;
     }
-
     data[i] = Math.max(0, Math.min(255, r));
     data[i + 1] = Math.max(0, Math.min(255, g));
     data[i + 2] = Math.max(0, Math.min(255, b));
   }
-
   ctx.putImageData(imageData, 0, 0);
-
-  // Sharpness (unsharp mask - lightweight)
-  if (sharpness > 0) {
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.filter = `blur(1px)`;
-    tempCtx.drawImage(canvas, 0, 0);
-    ctx.globalAlpha = sharpness / 100;
-    ctx.globalCompositeOperation = 'difference';
-    ctx.drawImage(tempCanvas, 0, 0);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    // Re-read blended result and add to original
-    const sharpData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const origData = imageData;
-    for (let i = 0; i < data.length; i += 4) {
-      sharpData.data[i] = Math.min(255, origData.data[i] + sharpData.data[i] * (sharpness / 50));
-      sharpData.data[i+1] = Math.min(255, origData.data[i+1] + sharpData.data[i+1] * (sharpness / 50));
-      sharpData.data[i+2] = Math.min(255, origData.data[i+2] + sharpData.data[i+2] * (sharpness / 50));
-    }
-    ctx.putImageData(sharpData, 0, 0);
-  }
 };
 
 const getCroppedImg = (imageSrc, pixelCrop) => {
   return new Promise((resolve) => {
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = pixelCrop.width;
@@ -95,7 +59,7 @@ const SCANNER_PRESETS = {
 };
 
 const FaturaScanner = ({ onComplete, onCancel }) => {
-  const [step, setStep] = useState('capture'); // capture | crop | enhance | preview
+  const [step, setStep] = useState('capture');
   const [rawImage, setRawImage] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -109,22 +73,57 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
   const cameraRef = useRef(null);
   const fileRef = useRef(null);
   const enhanceCanvasRef = useRef(null);
+  const containerRef = useRef(null);
 
-  // Step 1: Capture
+  // Restore touch-action when step changes away from crop or component unmounts
+  useEffect(() => {
+    return () => {
+      // Cleanup: ensure touch-action is restored on unmount
+      document.body.style.touchAction = '';
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
+    if (step !== 'crop') {
+      // Re-enable touch/scroll after leaving crop step
+      document.body.style.touchAction = '';
+      document.body.style.overflow = '';
+    }
+  }, [step]);
+
   const handleCapture = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // If it's a PDF, send directly without cropping
+    if (file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        onComplete({
+          factura_data: ev.target.result,
+          factura_filename: file.name,
+          factura_mimetype: 'application/pdf'
+        });
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
+    // For images, proceed to crop
     const reader = new FileReader();
     reader.onload = (ev) => {
       setRawImage(ev.target.result);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setRotation(0);
       setStep('crop');
     };
     reader.readAsDataURL(file);
-    // Reset input so same file can be selected again
     e.target.value = '';
   };
 
-  // Step 2: Crop complete callback
   const onCropComplete = useCallback((_, croppedPixels) => {
     setCroppedAreaPixels(croppedPixels);
   }, []);
@@ -136,7 +135,6 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
       const canvas = await getCroppedImg(rawImage, croppedAreaPixels);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
       setCroppedImage(dataUrl);
-      // Auto-apply enhancement preset
       await applyPreset('auto', canvas);
       setStep('enhance');
     } finally {
@@ -144,7 +142,6 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
     }
   };
 
-  // Step 3: Enhancement
   const applyPreset = async (preset, sourceCanvas = null) => {
     setActivePreset(preset);
     const settings = SCANNER_PRESETS[preset];
@@ -168,33 +165,17 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
     }
   };
 
-  // Step 4: Generate PDF and return
   const handleConfirm = async () => {
     setProcessing(true);
     try {
       const canvas = enhanceCanvasRef.current;
       if (!canvas) return;
 
-      // Generate PDF with jsPDF
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
-      
-      // A4 dimensions in mm
       const a4Width = 210;
       const a4Height = 297;
-      
-      // Calculate scaling to fit A4 with margins
       const margin = 10;
-      const maxWidth = a4Width - (margin * 2);
-      const maxHeight = a4Height - (margin * 2);
-      
-      let pdfWidth = maxWidth;
-      let pdfHeight = (imgHeight / imgWidth) * maxWidth;
-      
-      if (pdfHeight > maxHeight) {
-        pdfHeight = maxHeight;
-        pdfWidth = (imgWidth / imgHeight) * maxHeight;
-      }
       
       const orientation = imgWidth > imgHeight ? 'landscape' : 'portrait';
       const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
@@ -204,8 +185,8 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
       const maxW = pageW - (margin * 2);
       const maxH = pageH - (margin * 2);
       
-      pdfWidth = maxW;
-      pdfHeight = (imgHeight / imgWidth) * maxW;
+      let pdfWidth = maxW;
+      let pdfHeight = (imgHeight / imgWidth) * maxW;
       if (pdfHeight > maxH) {
         pdfHeight = maxH;
         pdfWidth = (imgWidth / imgHeight) * maxH;
@@ -233,7 +214,7 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
   // Capture step
   if (step === 'capture') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" style={{ touchAction: 'auto' }}>
         <div className="text-center py-6">
           <ScanLine className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
           <h3 className="text-white text-lg font-semibold">Scanner de Fatura</h3>
@@ -274,13 +255,24 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
   // Crop step
   if (step === 'crop') {
     return (
-      <div className="space-y-3">
+      <div ref={containerRef} className="space-y-3" style={{ touchAction: 'auto' }}>
         <div className="text-center">
           <h3 className="text-white text-base font-semibold">Recortar Documento</h3>
           <p className="text-gray-400 text-xs">Ajuste a área de recorte para enquadrar a fatura</p>
         </div>
         
-        <div className="relative w-full h-[340px] bg-black rounded-lg overflow-hidden">
+        <div 
+          className="relative bg-black rounded-lg overflow-hidden"
+          style={{ 
+            width: '100%', 
+            height: '50vh',
+            maxHeight: '400px',
+            minHeight: '250px',
+            touchAction: 'none',
+            position: 'relative',
+            zIndex: 10
+          }}
+        >
           <Cropper
             image={rawImage}
             crop={crop}
@@ -292,12 +284,26 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
             onRotationChange={setRotation}
             onCropComplete={onCropComplete}
             style={{
-              containerStyle: { borderRadius: '0.5rem' },
+              containerStyle: { 
+                borderRadius: '0.5rem',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0
+              },
+              mediaStyle: {
+                maxHeight: '100%'
+              },
+              cropAreaStyle: {
+                border: '2px solid #10b981',
+                color: 'rgba(0, 0, 0, 0.6)'
+              }
             }}
           />
         </div>
         
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4" style={{ touchAction: 'auto' }}>
           <div className="flex items-center gap-2">
             <ZoomOut className="w-4 h-4 text-gray-400" />
             <input
@@ -321,7 +327,7 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
           </Button>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2" style={{ touchAction: 'auto' }}>
           <Button type="button" variant="outline" onClick={() => { setStep('capture'); setRawImage(null); }} className="flex-1 border-gray-600">
             Voltar
           </Button>
@@ -336,7 +342,7 @@ const FaturaScanner = ({ onComplete, onCancel }) => {
   // Enhance step
   if (step === 'enhance') {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3" style={{ touchAction: 'auto' }}>
         <div className="text-center">
           <h3 className="text-white text-base font-semibold">Melhorar Documento</h3>
           <p className="text-gray-400 text-xs">Escolha o modo de digitalização</p>
