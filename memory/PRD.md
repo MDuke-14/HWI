@@ -25,6 +25,8 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - Admin panel with user management, price tables, notifications
 - Push notifications (VAPID)
 - Search by OT number, client, location
+- **OT Relacionada**: Link OTs to previous OTs for traceability
+- **Ver Intervenções**: View equipment intervention history across all OTs
 
 ## Recent Implementations (March 2026)
 
@@ -41,6 +43,13 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - Visible in: OT list cards, OT detail modal, OT PDF report, Folha de Horas PDF
 - DB field: ot_relacionada_id (string, optional) on relatorios_tecnicos collection
 
+### Ver Intervenções do Equipamento
+- Replaced "Ver OTs deste Equipamento" with "Ver Intervenções" button
+- New backend endpoint: GET /api/equipamentos/{id}/intervencoes
+- Shows intervention cards: "Intervenção — OT #XXX — Data DD/MM/YYYY"
+- Expandable cards showing Motivo and Relatório fields
+- Matches equipment via: equipamento_cliente_id, marca/modelo in equipamentos_ot, marca/modelo in relatorios_tecnicos
+
 ### Folha de Horas PDF Restructuring
 - Expenses moved to separate DESPESAS table at end of document
 - PAUSA and DIETA columns correctly populated
@@ -50,8 +59,9 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - FaturaScanner.jsx simplified to direct file upload (removed problematic cropper)
 
 ## Key API Endpoints
-- POST /api/relatorios-tecnicos - Create OT (now accepts ot_relacionada_id)
+- POST /api/relatorios-tecnicos - Create OT (accepts ot_relacionada_id)
 - GET /api/relatorios-tecnicos - List OTs (includes ot_relacionada_numero, ots_posteriores)
+- GET /api/equipamentos/{id}/intervencoes - Get equipment intervention history
 - POST /api/relatorios-tecnicos/{id}/folha-horas-pdf - Generate timesheet PDF
 - GET /api/relatorios-tecnicos/{id}/preview-pdf - Preview OT PDF
 - POST /api/relatorios-tecnicos/{id}/send-email - Email OT report
@@ -60,6 +70,8 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 ## Key DB Collections
 - relatorios_tecnicos: ot_relacionada_id (optional string)
 - tabelas_preco: valor_dieta (optional float)
+- intervencoes_relatorio: equipamento_id (optional, links to equipamentos_ot)
+- equipamentos_ot: marca, modelo, numero_serie, equipamento_cliente_id
 
 ## Credentials
 - Admin: pedro / password
