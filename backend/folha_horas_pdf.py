@@ -612,7 +612,10 @@ def generate_folha_horas_pdf(
     # ==========================================
     # PASSO 5: TABELA DESPESAS (última página)
     # ==========================================
-    if despesas_ajustadas:
+    # Filtrar combustível (apenas controlo interno, não aparece na folha de horas)
+    despesas_para_pdf = [d for d in despesas_ajustadas if d.get('tipo') != 'combustivel']
+    
+    if despesas_para_pdf:
         elements.append(PageBreak())
         
         if logo_path.exists():
@@ -625,8 +628,7 @@ def generate_folha_horas_pdf(
         elements.append(Paragraph(f"<b>Cliente:</b> {cliente.get('nome', 'N/A')}", normal_style))
         elements.append(Spacer(1, 0.4*cm))
         
-        # Ordenar despesas por data e técnico
-        despesas_sorted = sorted(despesas_ajustadas, key=lambda d: (d.get('data', ''), d.get('tecnico_nome', '')))
+        despesas_sorted = sorted(despesas_para_pdf, key=lambda d: (d.get('data', ''), d.get('tecnico_nome', '')))
         
         desp_header = ['Técnico', 'Tipo de Despesa', 'Valor', 'Data', 'Descrição']
         desp_table_data = [desp_header]
