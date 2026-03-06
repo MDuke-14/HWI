@@ -4064,6 +4064,7 @@ async def enviar_pdf_ot(
                 ).to_list(length=None)
                 
                 dados_extras = {}
+                despesas_ajustadas_email = []
                 for desp in despesas_ot:
                     key = f"{desp['tecnico_id']}_{desp['data']}"
                     tipo = desp.get('tipo', 'outras')
@@ -4074,9 +4075,11 @@ async def enviar_pdf_ot(
                     if tipo == 'portagens':
                         dados_extras[key]['portagens'] += desp.get('valor', 0)
                     elif tipo == 'combustivel':
-                        pass  # Excluir combustível
+                        pass
                     else:
                         dados_extras[key]['despesas'] += desp.get('valor', 0)
+                    
+                    despesas_ajustadas_email.append(desp)
                 
                 folha_horas_buffer = generate_folha_horas_pdf(
                     relatorio=relatorio,
@@ -4087,7 +4090,8 @@ async def enviar_pdf_ot(
                     dados_extras=dados_extras,
                     tarifas_por_codigo=tarifas_por_codigo,
                     valor_km=valor_km,
-                    tarifas_detalhadas=tarifas_detalhadas_email
+                    tarifas_detalhadas=tarifas_detalhadas_email,
+                    despesas_ajustadas=despesas_ajustadas_email
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
@@ -10615,8 +10619,12 @@ async def create_despesa_ot(
     from notifications_scheduler import send_push_notification
     
     # Validar campos obrigatórios
-    if not despesa_data.get("descricao"):
-        raise HTTPException(status_code=400, detail="Descrição é obrigatória")
+    tipo_despesa = despesa_data.get("tipo", "outras")
+    if tipo_despesa not in ["outras", "combustivel", "ferramentas", "portagens"]:
+        tipo_despesa = "outras"
+    
+    if tipo_despesa == "outras" and not despesa_data.get("descricao"):
+        raise HTTPException(status_code=400, detail="Descrição é obrigatória para despesas do tipo 'Outras'")
     if not despesa_data.get("valor") or despesa_data.get("valor") <= 0:
         raise HTTPException(status_code=400, detail="Valor deve ser maior que zero")
     if not despesa_data.get("tecnico_id"):
@@ -10631,17 +10639,13 @@ async def create_despesa_ot(
     
     # Buscar nome do técnico
     tecnico = await db.users.find_one({"id": despesa_data["tecnico_id"]}, {"_id": 0})
-    tecnico_nome = tecnico.get("nome", tecnico.get("username", "Desconhecido")) if tecnico else despesa_data.get("tecnico_nome", "Desconhecido")
+    tecnico_nome = (tecnico.get("full_name") or tecnico.get("nome") or tecnico.get("username", "Desconhecido")) if tecnico else despesa_data.get("tecnico_nome", "Desconhecido")
     
     # Criar despesa
-    tipo_despesa = despesa_data.get("tipo", "outras")
-    if tipo_despesa not in ["outras", "combustivel", "ferramentas", "portagens"]:
-        tipo_despesa = "outras"
-    
     despesa = DespesaOT(
         relatorio_id=relatorio_id,
         tipo=tipo_despesa,
-        descricao=despesa_data["descricao"],
+        descricao=despesa_data.get("descricao", ""),
         valor=float(despesa_data["valor"]),
         tecnico_id=despesa_data["tecnico_id"],
         tecnico_nome=tecnico_nome,

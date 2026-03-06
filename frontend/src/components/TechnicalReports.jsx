@@ -2051,8 +2051,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleAddDespesa = async (e) => {
     e.preventDefault();
     
-    if (!despesaFormData.descricao || !despesaFormData.valor || !despesaFormData.tecnico_id || !despesaFormData.data) {
+    if (!despesaFormData.valor || !despesaFormData.tecnico_id || !despesaFormData.data) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+    if (despesaFormData.tipo === 'outras' && !despesaFormData.descricao) {
+      toast.error('Descrição é obrigatória para despesas do tipo "Outras"');
       return;
     }
     if (!despesaFormData.numero_fatura) {
@@ -6908,14 +6912,14 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
             <div>
-              <Label htmlFor="despesa-descricao" className="text-gray-300">Descrição *</Label>
+              <Label htmlFor="despesa-descricao" className="text-gray-300">Descrição {despesaFormData.tipo === 'outras' ? '*' : ''}</Label>
               <Input
                 id="despesa-descricao"
                 value={despesaFormData.descricao}
                 onChange={(e) => setDespesaFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                placeholder="Ex: Combustível, Almoço, Parque..."
+                placeholder={despesaFormData.tipo === 'outras' ? 'Obrigatório - descreva a despesa' : 'Opcional - descrição adicional'}
                 className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
+                required={despesaFormData.tipo === 'outras'}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
