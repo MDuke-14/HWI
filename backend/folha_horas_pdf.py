@@ -1,7 +1,7 @@
 """
 Gerador de PDF para Folha de Horas
 PDF em formato HORIZONTAL (landscape)
-Gera uma folha individual por técnico (PDFs concatenados)
+Gera uma folha individual por DIA DE INTERVENÇÃO (todos os técnicos do dia na mesma folha)
 Tabela DESPESAS no final do documento
 """
 from reportlab.lib.pagesizes import A4, landscape
@@ -118,8 +118,8 @@ def generate_folha_horas_pdf(
         fontSize=10, textColor=colors.HexColor('#1e40af'),
         spaceAfter=4, spaceBefore=4, fontName='Helvetica-Bold'
     )
-    tecnico_heading_style = ParagraphStyle(
-        'TecnicoHeading', parent=styles['Heading2'],
+    date_heading_style = ParagraphStyle(
+        'DateHeading', parent=styles['Heading2'],
         fontSize=12, textColor=colors.HexColor('#059669'),
         spaceAfter=6, spaceBefore=4, fontName='Helvetica-Bold'
     )
@@ -153,11 +153,12 @@ def generate_folha_horas_pdf(
         'combustivel': 'Combustível', 'ferramentas': 'Ferramentas',
         'portagens': 'Portagens', 'outras': 'Outras'
     }
+    tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Manual', 'oficina': 'Oficina'}
     
     # ==========================================
-    # PASSO 1: Organizar dados por técnico
+    # PASSO 1: Recolher TODOS os registos numa lista plana
     # ==========================================
-    dados_por_tecnico = defaultdict(lambda: {'nome': 'N/A', 'registos': []})
+    todos_registos = []
     
     for reg in registos_mao_obra:
         tecnico_id = reg.get('tecnico_id', 'unknown')
@@ -167,9 +168,9 @@ def generate_folha_horas_pdf(
             data = data.split('T')[0]
         codigo = reg.get('codigo', '-')
         
-        dados_por_tecnico[tecnico_id]['nome'] = tecnico_nome
-        dados_por_tecnico[tecnico_id]['registos'].append({
-            'tipo': 'cronometro',
+        todos_registos.append({
+            'tecnico_id': tecnico_id,
+            'tecnico_nome': tecnico_nome,
             'tipo_registo': reg.get('tipo', 'trabalho'),
             'funcao_ot': reg.get('funcao_ot', 'tecnico'),
             'hora_inicio': reg.get('hora_inicio_segmento'),
@@ -181,7 +182,7 @@ def generate_folha_horas_pdf(
             'registo_id': reg.get('id', ''),
             'tarifa_key': f"{tecnico_id}_{data}_{codigo}",
             'incluir_pausa': reg.get('incluir_pausa', False),
-            'observacoes': reg.get('observacoes', '')
+            'observacoes': reg.get('observacoes', ''),
         })
     
     for tec in tecnicos_manuais:
@@ -198,9 +199,10 @@ def generate_folha_horas_pdf(
         }.get(tec.get('tipo_horario', ''), '-')
         
         original_id = tec.get('id', tecnico_id)
-        dados_por_tecnico[tecnico_id]['nome'] = tecnico_nome
-        dados_por_tecnico[tecnico_id]['registos'].append({
-            'tipo': 'manual',
+        
+        todos_registos.append({
+            'tecnico_id': tecnico_id,
+            'tecnico_nome': tecnico_nome,
             'tipo_registo': tec.get('tipo_registo', 'manual'),
             'funcao_ot': tec.get('funcao_ot', 'tecnico'),
             'hora_inicio': tec.get('hora_inicio'),
@@ -213,22 +215,49 @@ def generate_folha_horas_pdf(
             'tarifa_key': f"{original_id}_{data}_{codigo}",
             'tarifa_key_alt': f"{tecnico_id}_{data}_{codigo}",
             'incluir_pausa': tec.get('incluir_pausa', False),
+            'observacoes': '',
         })
     
     # ==========================================
-    # PASSO 2: Gerar página para cada técnico
+    # PASSO 2: Agrupar por DIA e ordenar cronologicamente
     # ==========================================
-    tecnicos_list = list(dados_por_tecnico.items())
-    grande_total_geral = 0  # Acumular total de todos os técnicos
+    registos_por_dia = defaultdict(list)
+    for reg in todos_registos:
+        registos_por_dia[reg['data']].append(reg)
     
-    for idx_tecnico, (tecnico_id, tecnico_data) in enumerate(tecnicos_list):
-        tecnico_nome = tecnico_data['nome']
-        registos_tecnico = tecnico_data['registos']
+    # Ordenar dias
+    dias_ordenados = sorted(registos_por_dia.keys())
+    
+    # Ordenar registos dentro de cada dia por hora de início
+    for dia in dias_ordenados:
+        registos_por_dia[dia].sort(key=lambda r: r.get('hora_inicio') or 'zzz')
+    
+    # Pré-calcular horas totais por técnico por dia (para regra de dieta)
+    minutos_por_tecnico_dia = defaultdict(int)
+    for reg in todos_registos:
+        key = f"{reg['tecnico_id']}_{reg['data']}"
+        minutos_por_tecnico_dia[key] += reg.get('minutos', 0)
+    
+    # Determinar último registo de cada técnico em cada dia (para posicionar a dieta)
+    ultimo_registo_tecnico_dia = {}
+    for dia in dias_ordenados:
+        for idx, reg in enumerate(registos_por_dia[dia]):
+            key = f"{reg['tecnico_id']}_{dia}"
+            ultimo_registo_tecnico_dia[key] = idx
+    
+    grande_total_geral = 0
+    dietas_aplicadas = set()
+    
+    # ==========================================
+    # PASSO 3: Gerar uma página por cada DIA
+    # ==========================================
+    for idx_dia, dia in enumerate(dias_ordenados):
+        registos_dia = registos_por_dia[dia]
         
-        if not registos_tecnico:
+        if not registos_dia:
             continue
         
-        if idx_tecnico > 0:
+        if idx_dia > 0:
             elements.append(PageBreak())
         
         # ---------- CABEÇALHO ----------
@@ -245,114 +274,91 @@ def generate_folha_horas_pdf(
         if ot_rel_num:
             elements.append(Paragraph(f"<b>OT Relacionada:</b> <font color='#2563eb'>OT #{ot_rel_num}</font>", normal_style))
         elements.append(Spacer(1, 0.2*cm))
-        elements.append(Paragraph(f"<b>Técnico:</b> {tecnico_nome}", tecnico_heading_style))
+        
+        # Data do dia como cabeçalho
+        try:
+            date_obj_dia = datetime.fromisoformat(dia).date()
+        except:
+            date_obj_dia = None
+        data_formatada = format_date_pt(date_obj_dia)
+        dia_semana = get_weekday_pt(date_obj_dia)
+        elements.append(Paragraph(f"Data: {data_formatada} ({dia_semana})", date_heading_style))
         elements.append(Spacer(1, 0.3*cm))
-        
-        # ---------- AGRUPAR REGISTOS ----------
-        registos_ordenados = []
-        for reg in registos_tecnico:
-            registos_ordenados.append({
-                'data': reg['data'],
-                'codigo': reg['codigo'],
-                'tipo_registo': reg.get('tipo_registo', 'trabalho'),
-                'funcao_ot': reg.get('funcao_ot', 'tecnico'),
-                'registos': [reg],
-                '_hora_inicio_min': reg.get('hora_inicio') or 'zzz'
-            })
-        registos_ordenados.sort(key=lambda x: (x['data'], x['_hora_inicio_min']))
-        
-        # ---------- PRÉ-CALCULAR HORAS TOTAIS POR DIA (para regra de dieta) ----------
-        minutos_por_dia = defaultdict(int)
-        for item in registos_ordenados:
-            minutos_por_dia[item['data']] += sum(r.get('minutos', 0) for r in item['registos'])
-        
-        # Determinar o ÚLTIMO registo de cada dia (dieta aparece só nessa linha)
-        ultimo_registo_dia = {}
-        for idx, item in enumerate(registos_ordenados):
-            ultimo_registo_dia[item['data']] = idx
         
         # ---------- TABELA PRINCIPAL ----------
         header = [
-            'Data', 'Dia', 'Função', 'Registo', 'Horas',
+            'Técnico', 'Função', 'Registo', 'Horas',
             'Tarifa', 'Total Valor', "Km's", 'Preço/Km', 'Total Km',
             'Início', 'Pausa', 'Fim', 'Dieta', 'Obs.'
         ]
         
         table_data = [header]
-        total_geral_valor = 0
-        total_geral_km_valor = 0
-        total_geral_dietas = 0
+        total_dia_valor = 0
+        total_dia_km_valor = 0
+        total_dia_dietas = 0
         
         totais_por_tarifa_tipo = defaultdict(lambda: {'minutos': 0, 'tipo_label': '', 'codigo_label': ''})
-        dietas_aplicadas = set()
         
-        for idx_item, item in enumerate(registos_ordenados):
-            data = item['data']
-            codigo = item['codigo']
-            tipo_registo_grupo = item['tipo_registo']
-            funcao_ot_grupo = item.get('funcao_ot', 'tecnico')
-            registos = item['registos']
-            
-            tarifa_key = registos[0].get('tarifa_key', '')
-            total_minutos = sum(r.get('minutos', 0) for r in registos)
-            total_km = sum(r.get('km', 0) for r in registos)
+        for idx_reg, reg in enumerate(registos_dia):
+            tecnico_id = reg['tecnico_id']
+            tecnico_nome = reg['tecnico_nome']
+            codigo = reg['codigo']
+            tipo_registo = reg['tipo_registo']
+            funcao_ot = reg.get('funcao_ot', 'tecnico')
+            total_minutos = reg.get('minutos', 0)
+            total_km = reg.get('km', 0)
             
             # Tarifa
             tarifa_valor = 0
             if tarifas_detalhadas:
-                tarifa_valor = find_best_tariff(codigo, tipo_registo_grupo, funcao_ot_grupo, tarifas_detalhadas, tarifas_por_codigo)
+                tarifa_valor = find_best_tariff(codigo, tipo_registo, funcao_ot, tarifas_detalhadas, tarifas_por_codigo)
             if tarifa_valor == 0:
-                chave_tarifa_tipo = f"{tecnico_id}_{data}_{codigo}_{tipo_registo_grupo}"
+                chave_tarifa_tipo = f"{tecnico_id}_{dia}_{codigo}_{tipo_registo}"
                 tarifa_valor = tarifas_por_tecnico.get(chave_tarifa_tipo, 0)
-            if tarifa_valor == 0 and tarifa_key:
-                tarifa_valor = tarifas_por_tecnico.get(tarifa_key, 0)
             if tarifa_valor == 0:
-                for r in registos:
-                    alt_key = r.get('tarifa_key_alt')
-                    if alt_key:
-                        tarifa_valor = tarifas_por_tecnico.get(f"{alt_key}_{tipo_registo_grupo}", 0) or tarifas_por_tecnico.get(alt_key, 0)
-                        if tarifa_valor:
-                            break
+                tarifa_key = reg.get('tarifa_key', '')
+                if tarifa_key:
+                    tarifa_valor = tarifas_por_tecnico.get(tarifa_key, 0)
             if tarifa_valor == 0:
-                tarifa_valor = tarifas_por_tecnico.get(f"{tecnico_id}_{data}_{codigo}", 0)
+                alt_key = reg.get('tarifa_key_alt')
+                if alt_key:
+                    tarifa_valor = tarifas_por_tecnico.get(f"{alt_key}_{tipo_registo}", 0) or tarifas_por_tecnico.get(alt_key, 0)
             if tarifa_valor == 0:
-                tarifa_valor = tarifas_por_tecnico.get(f"{tecnico_id}_{data}", 0)
+                tarifa_valor = tarifas_por_tecnico.get(f"{tecnico_id}_{dia}_{codigo}", 0)
+            if tarifa_valor == 0:
+                tarifa_valor = tarifas_por_tecnico.get(f"{tecnico_id}_{dia}", 0)
             if tarifa_valor == 0:
                 tarifa_valor = tarifas_por_tecnico.get(tecnico_id, 0)
             if tarifa_valor == 0 and codigo:
                 tarifa_valor = tarifas_por_codigo.get(codigo, 0)
             
             total_valor = (total_minutos / 60) * tarifa_valor
-            total_geral_valor += total_valor
+            total_dia_valor += total_valor
             
             total_km_valor = total_km * PRECO_KM
-            total_geral_km_valor += total_km_valor
+            total_dia_km_valor += total_km_valor
             
-            # Dieta - calculada com base no total de horas do dia
-            # Regra: ≤4h = 0€, 4h-6h = 50%, >6h = 100%
-            # Aparece APENAS na última linha do dia
-            chave_extras_id = f"{tecnico_id}_{data}"
-            chave_extras_nome = f"{tecnico_nome}_{data}"
-            extras = dados_extras.get(chave_extras_id, {}) or dados_extras.get(chave_extras_nome, {})
+            # Dieta - por técnico por dia, na última linha desse técnico neste dia
+            chave_dieta = f"{tecnico_id}_{dia}"
+            chave_dieta_nome = f"{tecnico_nome}_{dia}"
+            extras = dados_extras.get(chave_dieta, {}) or dados_extras.get(chave_dieta_nome, {})
             
-            is_ultimo_do_dia = (ultimo_registo_dia.get(data) == idx_item)
+            is_ultimo_do_tecnico = (ultimo_registo_tecnico_dia.get(chave_dieta) == idx_reg)
             
-            if not is_ultimo_do_dia:
+            if not is_ultimo_do_tecnico:
                 dieta = 0
-            elif chave_extras_id in dietas_aplicadas or chave_extras_nome in dietas_aplicadas:
+            elif chave_dieta in dietas_aplicadas or chave_dieta_nome in dietas_aplicadas:
                 dieta = 0
             else:
-                # Obter valor base da dieta (do admin ou da tabela de preço)
                 dieta_base = float(extras.get('dieta', 0) or 0)
                 if dieta_base == 0 and valor_dieta_default > 0:
                     dieta_base = valor_dieta_default
                 
-                # Aplicar regra de horas do dia
-                horas_dia = minutos_por_dia.get(data, 0) / 60
+                horas_tecnico_dia = minutos_por_tecnico_dia.get(chave_dieta, 0) / 60
                 if dieta_base > 0:
-                    if horas_dia <= 4:
+                    if horas_tecnico_dia <= 4:
                         dieta = 0
-                    elif horas_dia <= 6:
+                    elif horas_tecnico_dia <= 6:
                         dieta = dieta_base * 0.5
                     else:
                         dieta = dieta_base
@@ -360,81 +366,59 @@ def generate_folha_horas_pdf(
                     dieta = 0
                 
                 if dieta > 0:
-                    dietas_aplicadas.add(chave_extras_id)
-                    dietas_aplicadas.add(chave_extras_nome)
-            total_geral_dietas += dieta
+                    dietas_aplicadas.add(chave_dieta)
+                    dietas_aplicadas.add(chave_dieta_nome)
+            total_dia_dietas += dieta
             
-            # Pausa (1h almoço)
-            tem_pausa = any(r.get('incluir_pausa', False) for r in registos)
+            # Pausa
+            tem_pausa = reg.get('incluir_pausa', False)
             pausa_str = '1:00' if tem_pausa else '-'
             
-            # Início e Fim
-            registos_ord_hora = sorted(registos, key=lambda r: r.get('hora_inicio') or '')
-            primeiro_inicio = registos_ord_hora[0].get('hora_inicio') if registos_ord_hora else None
-            ultimo_fim = registos_ord_hora[-1].get('hora_fim') if registos_ord_hora else None
+            # Legenda acumulada
+            tipo_label = tipo_map.get(tipo_registo, tipo_registo)
+            chave_legenda = f"{codigo}_{tipo_registo}"
+            totais_por_tarifa_tipo[chave_legenda]['minutos'] += total_minutos
+            totais_por_tarifa_tipo[chave_legenda]['tipo_label'] = tipo_label
+            totais_por_tarifa_tipo[chave_legenda]['codigo_label'] = codigo
             
-            tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Manual', 'oficina': 'Oficina'}
-            tipo_registo = tipo_map.get(tipo_registo_grupo, tipo_registo_grupo)
-            
-            for reg in registos:
-                tipo_r = reg.get('tipo_registo', 'trabalho')
-                tipo_label = tipo_map.get(tipo_r, tipo_r)
-                codigo_r = reg.get('codigo', '-')
-                chave_legenda = f"{codigo_r}_{tipo_r}"
-                totais_por_tarifa_tipo[chave_legenda]['minutos'] += reg.get('minutos', 0)
-                totais_por_tarifa_tipo[chave_legenda]['tipo_label'] = tipo_label
-                totais_por_tarifa_tipo[chave_legenda]['codigo_label'] = codigo_r
-            
-            try:
-                date_obj = datetime.fromisoformat(data).date() if data else None
-            except:
-                date_obj = None
-            
-            funcao_label = 'Técnico' if funcao_ot_grupo == 'tecnico' else 'Ajudante'
-            
-            obs_text = ''
-            for reg in registos:
-                if reg.get('observacoes'):
-                    obs_text = reg['observacoes']
-                    break
+            funcao_label = 'Técnico' if funcao_ot == 'tecnico' else 'Ajudante'
             
             row = [
-                format_date_pt(date_obj),
-                get_weekday_pt(date_obj),
+                tecnico_nome,
                 funcao_label,
-                tipo_registo,
+                tipo_label,
                 minutes_to_hhmm(total_minutos),
                 f'{codigo} - {tarifa_valor:.2f}€/h' if tarifa_valor else f'{codigo} - -',
                 f'{total_valor:.2f}€',
                 f'{total_km:.1f}',
                 f'{PRECO_KM:.2f}€',
                 f'{total_km_valor:.2f}€',
-                format_time_hhmm(primeiro_inicio),
+                format_time_hhmm(reg.get('hora_inicio')),
                 pausa_str,
-                format_time_hhmm(ultimo_fim),
+                format_time_hhmm(reg.get('hora_fim')),
                 f'{dieta:.2f}€' if dieta > 0 else '-',
-                obs_text
+                reg.get('observacoes', '') or ''
             ]
             table_data.append(row)
         
-        subtotal_tecnico = total_geral_valor + total_geral_km_valor + total_geral_dietas
-        grande_total_geral += subtotal_tecnico
+        subtotal_dia = total_dia_valor + total_dia_km_valor + total_dia_dietas
+        grande_total_geral += subtotal_dia
         
         # Linha de totais
         table_data.append([
-            '', 'TOTAIS:', '', '', '', '',
-            f'{total_geral_valor:.2f}€',
+            '', 'TOTAIS:', '', '', '',
+            f'{total_dia_valor:.2f}€',
             '', '',
-            f'{total_geral_km_valor:.2f}€',
+            f'{total_dia_km_valor:.2f}€',
             '', '', '',
-            f'{total_geral_dietas:.2f}€',
+            f'{total_dia_dietas:.2f}€',
             ''
         ])
         
         col_widths = [
-            1.8*cm, 1.8*cm, 1.7*cm, 1.6*cm, 1.4*cm,
-            2.0*cm, 1.6*cm, 1.2*cm, 1.4*cm, 1.5*cm,
-            1.3*cm, 1.2*cm, 1.3*cm, 1.4*cm, 2.6*cm,
+            2.8*cm, 1.7*cm, 1.6*cm, 1.2*cm,
+            2.0*cm, 1.6*cm, 1.0*cm, 1.2*cm, 1.4*cm,
+            1.3*cm, 1.0*cm, 1.3*cm, 1.4*cm, 2.3*cm,
         ]
         
         table = Table(table_data, colWidths=col_widths)
@@ -445,7 +429,8 @@ def generate_folha_horas_pdf(
             ('FONTSIZE', (0, 0), (-1, 0), 7),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTSIZE', (0, 1), (-1, -1), 7),
-            ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+            ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -2), 0.5, colors.grey),
             ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e5e7eb')),
@@ -495,7 +480,7 @@ def generate_folha_horas_pdf(
         ))
     
     # ==========================================
-    # PASSO 3: TABELA DESPESAS (última página)
+    # PASSO 4: TABELA DESPESAS (última página)
     # ==========================================
     if despesas_ajustadas:
         elements.append(PageBreak())
