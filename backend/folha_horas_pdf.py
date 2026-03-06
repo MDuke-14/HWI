@@ -66,7 +66,8 @@ def generate_folha_horas_pdf(
     tarifas_por_codigo=None,
     valor_km=0.65,
     tarifas_detalhadas=None,
-    despesas_ajustadas=None
+    despesas_ajustadas=None,
+    valor_dieta_default=0
 ):
     if tarifas_por_codigo is None:
         tarifas_por_codigo = {}
@@ -314,7 +315,7 @@ def generate_folha_horas_pdf(
             total_km_valor = total_km * PRECO_KM
             total_geral_km_valor += total_km_valor
             
-            # Dieta - tentar por ID e por Nome
+            # Dieta - tentar por ID e por Nome, com fallback para valor padrão da tabela
             chave_extras_id = f"{tecnico_id}_{data}"
             chave_extras_nome = f"{tecnico_nome}_{data}"
             extras = dados_extras.get(chave_extras_id, {}) or dados_extras.get(chave_extras_nome, {})
@@ -323,6 +324,9 @@ def generate_folha_horas_pdf(
                 dieta = 0
             else:
                 dieta = float(extras.get('dieta', 0) or 0)
+                # Fallback: usar valor_dieta_default da tabela de preço se não há dieta definida
+                if dieta == 0 and valor_dieta_default > 0:
+                    dieta = valor_dieta_default
                 if dieta > 0:
                     dietas_aplicadas.add(chave_extras_id)
                     dietas_aplicadas.add(chave_extras_nome)

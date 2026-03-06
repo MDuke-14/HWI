@@ -4124,7 +4124,8 @@ async def enviar_pdf_ot(
                     tarifas_por_codigo=tarifas_por_codigo,
                     valor_km=valor_km,
                     tarifas_detalhadas=tarifas_detalhadas_email,
-                    despesas_ajustadas=despesas_ajustadas_email
+                    despesas_ajustadas=despesas_ajustadas_email,
+                    valor_dieta_default=valor_dieta_tabela
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
@@ -11872,6 +11873,7 @@ async def generate_folha_horas(
     
     # Auto-preencher dietas da tabela de preço quando não definidas pelo admin
     dados_extras_final = dict(request.dados_extras)
+    logging.info(f"Folha Horas PDF: table_id={table_id}, valor_dieta_tabela={valor_dieta_tabela}, frontend_extras_count={len(request.dados_extras)}")
     if valor_dieta_tabela > 0:
         dias_tecnicos = set()
         for reg in registos_mao_obra:
@@ -11963,7 +11965,8 @@ async def generate_folha_horas(
         tarifas_por_codigo=tarifas_por_codigo,
         valor_km=valor_km,
         tarifas_detalhadas=tarifas_detalhadas,
-        despesas_ajustadas=despesas_ajustadas
+        despesas_ajustadas=despesas_ajustadas,
+        valor_dieta_default=valor_dieta_tabela
     )
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
