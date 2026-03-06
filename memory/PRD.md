@@ -1,60 +1,91 @@
-# PRD - Sistema de Gestão de OTs (Ordens de Trabalho)
+# HWI Unipessoal - Time Tracking & OT Management System
 
-## Visão Geral
-Sistema de gestão de tempo e ordens de trabalho para empresa de assistência técnica. Permite controlo de ponto, gestão de OTs, cronómetros de trabalho/viagem/oficina, e geração de relatórios PDF.
+## Original Problem Statement
+Full-stack time-tracking and work-order (OT) management application for HWI Unipessoal, Lda.
 
-## Backlog Prioritizado
+## Architecture
+- **Frontend**: React + Tailwind + Shadcn/UI (port 3000)
+- **Backend**: FastAPI + Motor (MongoDB async) (port 8001)
+- **Database**: MongoDB
+- **PDF Generation**: ReportLab
 
-### P0 (Concluído)
-- **Regra de cálculo sem segundos** (28 Fevereiro 2026) - Normalização HH:MM em todos os cálculos; somas por minutos inteiros nos relatórios
-- **Saldo Negativo de Férias** (28 Fevereiro 2026)
-- **Folha de Horas - Separação por tipo de registo** (27 Fevereiro 2026)
-- **Canvas Assinatura Mobile Landscape** (25 Fevereiro 2026)
-- **Tipo "Oficina" adicionado** (27 Fevereiro 2026)
-- **Arredondamento em edições** (27 Fevereiro 2026)
-- **Anexar Folha de Horas no email** (27 Fevereiro 2026)
+## Core Features Implemented
+- OT creation, management, and lifecycle (status: em execução → concluído → faturado)
+- Time tracking with chronometer (clock in/out)
+- Client management with NIF/email
+- Equipment tracking per OT
+- Intervention management with dates and descriptions
+- Signature management (add, edit, delete)
+- Photo uploads for OT reports
+- Material tracking per OT
+- Expense management (despesas) with receipt scanning
+- PDF report generation (OT Report + Folha de Horas)
+- Calendar integration showing OTs
+- Mobile-optimized dashboard
+- Admin panel with user management, price tables, notifications
+- Push notifications (VAPID)
+- Search by OT number, client, location
 
-### P0 (Concluído recente)
-- **Novo card "Relatório de Assistência" separado e agrupado por data** (5 Março 2026) - Campo removido dos modais de intervenção. Novo card dedicado antes de Assinaturas com CRUD (texto + checkboxes de equipamentos + data de intervenção). Agrupado por data no "Visualizar Relatório" modal e no PDF da OT (secção "RELATÓRIO DE ASSISTÊNCIA" com equipamentos e texto). Modelo `RelatorioAssistencia` com `data_intervencao` e 4 endpoints CRUD.
-- **Card de Despesas na Folha de Horas** (5 Março 2026) - Card após seleção de tarifas mostra despesas da OT com botão VER. Popup de lista com cards clicáveis. Popup de detalhe com dados da despesa (read-only), campo "Adicionar Valor Percentual" com preview do valor final, e 3 botões (Fechar, Não Visualizar, Gravar). Despesas excluídas mostradas com opção Restaurar. Total ajustado propagado ao PDF.
-- **Campo "Horas de Funcionamento" em Equipamentos** (5 Março 2026) - Campo adicionado ao modelo EquipamentoOT e Equipamento (BD cliente). Guardado na BD do cliente ao criar novo; atualizado ao selecionar existente com horas novas. Mostrado na OT, PDF, Visualizar Relatório, e fichas de clientes. Formulários de adicionar e editar incluem o campo.
-- **Páginas mobile Notificações e Perfil/Alterar Password** (4 Março 2026) - Novas páginas MobileNotifications.jsx e MobileProfile.jsx. Notificações com limpar individual/todas. Perfil mostra info do user + form de alterar password com validação. Admin recebe notificação com a nova password.
-- **Rever Férias — Cancelamento de dias** (4 Março 2026) - Botão "Rever" na página de férias, modal com calendário estilo /calendar, dias de férias a azul, seleção para cancelamento a vermelho, devolução automática dos dias ao saldo
-- **Notificações com redirecionamento** (4 Março 2026) - Clicar em notificações redireciona para a página relevante (férias→/vacations, despesas→OT, faltas→/absences, etc.)
-- **Adaptação mobile da página de Faltas** (4 Março 2026) - Classes responsivas Tailwind, layout compacto mobile, dialog responsivo
-- **Adaptação mobile da página de Férias** (4 Março 2026) - Verificado: layout responsivo com cards empilhados, texto adaptável
-- **Scanner de Faturas** (3 Março 2026) - Componente FaturaScanner.jsx com captura, crop A4, conversão PDF
-- **Reports mobile** (3 Março 2026) - Refactored Reports.jsx com layout card-based mobile
-- **Função na OT** (2 Março 2026) - Campo obrigatório "Técnico/Ajudante" ao adicionar colaboradores
-- **Ordenação cronológica dos registos** (2 Março 2026) - Corrigida lógica de sort
+## Recent Implementations (March 2026)
 
-### P0 (Concluído recente cont.)
-- **FaturaScanner simplificado (sem cropper)** (6 Março 2026) - Removido react-easy-crop e filtros de melhoria que não funcionavam em iOS. Componente simplificado: upload direto de foto/ficheiro, preview da imagem, conversão para PDF. PDFs anexados diretamente sem etapas intermédias. Zero problemas de touch/scroll.
-- **Reestruturação Folha de Horas PDF** (6 Março 2026) - Removidas colunas "Portagens" e "Despesas" da tabela principal. Criada tabela DESPESAS separada na última página do documento. Removida tabela de subtotais por técnico. Corrigido incluir_pausa para registos cronómetro. Validação: descrição obrigatória apenas para tipo "Outras".
-- **Dietas automáticas na Folha de Horas** (6 Março 2026) - Adicionado campo `valor_dieta` às tabelas de preço. Dietas agora são aplicadas automaticamente por dia/técnico em ambos os fluxos (modal + email). Admin pode editar o valor na gestão de tabelas de preço. No modal, dieta é auto-preenchida ao selecionar tabela. Override manual pelo admin prevalece sobre valor automático.
+### Dieta (Meal Allowance) Business Rules
+- Rule: ≤4h work/day = 0€, 4h-6h = 50%, >6h = 100% of base valor_dieta
+- Base valor_dieta stored in tabelas_preco collection
+- Applied automatically in PDF generator with fallback (valor_dieta_default parameter)
+- Works in both direct PDF download and email sending
 
-### P0 (Pendente)
-- **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358
-- **Signature editing does not save correctly** - Verificação pendente
+### OT Relacionada (Related OT)
+- Optional field when creating a new OT to link to a previous OT
+- Forward reference: new OT shows "OT Relacionada: OT #XXX"
+- Reverse reference: original OT shows "OT Posterior: OT #YYY"
+- Visible in: OT list cards, OT detail modal, OT PDF report, Folha de Horas PDF
+- DB field: ot_relacionada_id (string, optional) on relatorios_tecnicos collection
+
+### Folha de Horas PDF Restructuring
+- Expenses moved to separate DESPESAS table at end of document
+- PAUSA and DIETA columns correctly populated
+- Tariff calculation fixed (uses work/technician type correctly)
+
+### iOS Receipt Scanner Fix
+- FaturaScanner.jsx simplified to direct file upload (removed problematic cropper)
+
+## Key API Endpoints
+- POST /api/relatorios-tecnicos - Create OT (now accepts ot_relacionada_id)
+- GET /api/relatorios-tecnicos - List OTs (includes ot_relacionada_numero, ots_posteriores)
+- POST /api/relatorios-tecnicos/{id}/folha-horas-pdf - Generate timesheet PDF
+- GET /api/relatorios-tecnicos/{id}/preview-pdf - Preview OT PDF
+- POST /api/relatorios-tecnicos/{id}/send-email - Email OT report
+- PUT /api/tabelas-preco/{id} - Update price table (includes valor_dieta)
+
+## Key DB Collections
+- relatorios_tecnicos: ot_relacionada_id (optional string)
+- tabelas_preco: valor_dieta (optional float)
+
+## Credentials
+- Admin: pedro / password
+- Non-admin: teste@email.com / teste
+
+## Pending Issues (Prioritized)
+### P0
+- PDF Generation Fails for Large Reports (Flowable too large - use OT#358 to test)
 
 ### P1
-- Completar/Testar Tabela de Preços Dinâmica
-- Refactoring `window.location.reload()` hack
-- Testar "Associar OT ao Calendário"
-- Completar lógica "Trabalhar em Férias"
-- Adaptar restantes páginas para mobile
-- Integração OneDrive
+- Complete and Test Dynamic Price Table Creation
+- Signature editing may not save correctly (needs verification)
+- Refactor server.py (12000+ lines) into separate routers
+- Refactor TechnicalReports.jsx (10000+ lines) into smaller components
 
 ### P2
-- VAPID Key Mismatch, Edit OT Equipment
-- Refactoring server.py (~11500 linhas) e TechnicalReports.jsx (~9500 linhas)
-- Overtime Report, WebSockets, Metrics Dashboard, Excel/CSV Export
+- Recurring VAPID Key Mismatch
+- Unresolved "Edit OT Equipment" Test Failure
+- Refactor window.location.reload() hack in mobile
 
-## Stack
-- Frontend: React + shadcn/ui
-- Backend: FastAPI + MongoDB
-- PDF: ReportLab
-
-## Credenciais
-- Admin: `pedro` / `password`
-- Test: `teste@email.com` / `teste`
+## Future Tasks
+- P0: Refactor monolithic files (server.py, TechnicalReports.jsx)
+- P1: OneDrive Integration for file storage
+- P1: Adapt remaining pages for mobile
+- P1: Test "Associate OT to Calendar" feature
+- P2: Overtime Reporting
+- P2: Real-time Admin Notifications (WebSockets)
+- P2: Metrics Dashboard with charts
+- P2: Data Export to Excel/CSV
