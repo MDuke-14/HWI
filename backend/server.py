@@ -4045,10 +4045,18 @@ async def enviar_pdf_ot(
                 
                 tarifas_por_codigo = {}
                 tarifas_por_tecnico = {}
+                tarifas_detalhadas_email = []
                 for tarifa in tarifas_db:
                     codigo = tarifa.get('codigo')
                     if codigo and codigo != 'manual':
                         tarifas_por_codigo[codigo] = tarifa.get('valor_por_hora', 0)
+                        tarifas_detalhadas_email.append({
+                            'codigo': codigo,
+                            'tipo_registo': tarifa.get('tipo_registo'),
+                            'tipo_colaborador': tarifa.get('tipo_colaborador'),
+                            'valor_por_hora': tarifa.get('valor_por_hora', 0),
+                            'nome': tarifa.get('nome', '')
+                        })
                 
                 # Buscar despesas da OT
                 despesas_ot = await db.despesas_ot.find(
@@ -4078,7 +4086,8 @@ async def enviar_pdf_ot(
                     tarifas_por_tecnico=tarifas_por_tecnico,
                     dados_extras=dados_extras,
                     tarifas_por_codigo=tarifas_por_codigo,
-                    valor_km=valor_km
+                    valor_km=valor_km,
+                    tarifas_detalhadas=tarifas_detalhadas_email
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
@@ -11537,12 +11546,11 @@ async def update_tarifa(
     if not existing:
         raise HTTPException(status_code=404, detail="Tarifa não encontrada")
     
-    update_data = {k: v for k, v in tarifa_data.model_dump().items() if v is not None}
-    # Allow explicitly setting fields to None/empty via special handling
-    raw_data = tarifa_data.model_dump()
-    for field in ["tipo_registo", "tipo_colaborador", "codigo"]:
-        if field in raw_data and raw_data[field] is None:
-            update_data[field] = None
+    # Only include fields that were explicitly sent by the client
+    raw_data = tarifa_data.model_dump(exclude_unset=True)
+    update_data = {}
+    for k, v in raw_data.items():
+        update_data[k] = v
     if not update_data:
         raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
     

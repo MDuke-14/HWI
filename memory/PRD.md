@@ -30,6 +30,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 
 ### P0 (Concluído recente cont.)
 - **FaturaScanner simplificado (sem cropper)** (6 Março 2026) - Removido react-easy-crop e filtros de melhoria que não funcionavam em iOS. Componente simplificado: upload direto de foto/ficheiro, preview da imagem, conversão para PDF. PDFs anexados diretamente sem etapas intermédias. Zero problemas de touch/scroll.
+- **Fix cálculo tarifas na Folha de Horas (email)** (6 Março 2026) - Corrigido bug crítico: o fluxo de email não passava `tarifas_detalhadas` ao PDF, fazendo com que `find_best_tariff` nunca fosse chamado. O sistema usava fallback `tarifas_por_codigo` que sobrescrevia valores (última tarifa por código ganhava). Fix: agora o email passa `tarifas_detalhadas` completo. Também corrigido o endpoint PUT de tarifas que resetava `tipo_registo`, `tipo_colaborador` e `codigo` para None ao atualizar qualquer campo (usando `exclude_unset=True`).
 
 ### P0 (Pendente)
 - **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358
