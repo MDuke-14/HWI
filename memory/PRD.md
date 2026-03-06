@@ -29,7 +29,7 @@ Sistema de gestão de tempo e ordens de trabalho para empresa de assistência t�
 - **Ordenação cronológica dos registos** (2 Março 2026) - Corrigida lógica de sort
 
 ### P0 (Concluído recente cont.)
-- **Fix Mobile Cropper FaturaScanner** (6 Março 2026) - Corrigido bug crítico onde o cropper de imagens aparecia por baixo da imagem em mobile e bloqueava touch/scroll. Reescrito FaturaScanner.jsx com z-index correto, limpeza de touchAction/overflow no unmount, e bypass do cropper para PDFs.
+- **FaturaScanner simplificado (sem cropper)** (6 Março 2026) - Removido react-easy-crop e filtros de melhoria que não funcionavam em iOS. Componente simplificado: upload direto de foto/ficheiro, preview da imagem, conversão para PDF. PDFs anexados diretamente sem etapas intermédias. Zero problemas de touch/scroll.
 
 ### P0 (Pendente)
 - **PDF Generation Fails for Large Reports** - "Flowable too large" para OT#358
