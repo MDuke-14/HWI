@@ -1,0 +1,88 @@
+{
+  "summary": "Tested new 'Ver Intervenções' feature for client equipment. Backend API and frontend UI both verified working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_intervencoes_equipamento.py",
+    "/app/test_reports/pytest/pytest_intervencoes.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_intervencoes_equipamento.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "username": "pedro",
+    "password": "password"
+  },
+  "seed_data_creation": "Used existing equipment ID: db7feed4-6bae-44d7-8b79-c2de54862f3d (TEST_DuplicateBrand, client 560Lab)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Ver Intervenções feature fully implemented. Equipment ID db7feed4-6bae-44d7-8b79-c2de54862f3d has 4 interventions from OT #356. OT Relacionada feature (tested in iteration_16) still works.",
+  "features_tested": {
+    "ver_intervencoes": {
+      "backend_api": {
+        "endpoint": "GET /api/equipamentos/{equipamento_id}/intervencoes",
+        "status": "PASS",
+        "tests": [
+          "Returns 200 status",
+          "Returns list of interventions",
+          "Interventions have required fields (id, relatorio_id, data_intervencao, motivo_assistencia, ot_numero)",
+          "ot_numero is integer for display as OT #XXX",
+          "relatorio_assistencia field present",
+          "Invalid equipment ID returns 404",
+          "Unauthenticated requests return 401/403"
+        ]
+      },
+      "frontend_ui": {
+        "status": "PASS",
+        "verified": [
+          "Ver Intervenções button exists in Equipamentos modal (purple button with Wrench icon)",
+          "Button has correct data-testid='ver-intervencoes-btn-{id}'",
+          "Clicking opens Intervenções popup with data-testid='intervencoes-equipamento-list'",
+          "Cards display format: 'Intervenção — OT #XXX — DD/MM/YYYY'",
+          "OT number displayed in blue text (#356 visible)",
+          "Cards are expandable with chevron icon",
+          "Expanded card shows 'MOTIVO' label with value",
+          "Expanded card shows 'RELATÓRIO' label with value (when present)"
+        ],
+        "screenshots": [
+          ".screenshots/02_client_view_modal.png - Client details with Ver Equipamentos button",
+          ".screenshots/03_equipamentos_modal.png - Equipment list with Ver Intervenções buttons",
+          ".screenshots/04_intervencoes_popup.png - Interventions popup showing 4 cards",
+          ".screenshots/05_expanded_card.png - Expanded intervention card with Motivo and Relatório"
+        ]
+      }
+    },
+    "ot_relacionada_regression": {
+      "status": "PASS",
+      "note": "Verified via backend test - OT #361 still correctly references OT #356 (ot_relacionada_numero=356)"
+    }
+  },
+  "test_data": {
+    "equipment_tested": {
+      "id": "db7feed4-6bae-44d7-8b79-c2de54862f3d",
+      "name": "TEST_DuplicateBrand TEST_DuplicateModel",
+      "client": "560Lab, Unipessoal Lda",
+      "interventions_count": 4
+    },
+    "interventions_sample": [
+      {
+        "ot_numero": 356,
+        "data_intervencao": "2026-01-24",
+        "motivo_assistencia": "545555"
+      }
+    ]
+  }
+}

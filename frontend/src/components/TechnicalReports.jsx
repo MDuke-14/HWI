@@ -168,8 +168,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showClienteEquipamentosModal, setShowClienteEquipamentosModal] = useState(false);
   const [clienteEquipamentos, setClienteEquipamentos] = useState([]);
   const [showEquipamentoOTsModal, setShowEquipamentoOTsModal] = useState(false);
-  const [equipamentoOTs, setEquipamentoOTs] = useState([]);
+  const [equipamentoIntervencoes, setEquipamentoIntervencoes] = useState([]);
   const [selectedEquipamento, setSelectedEquipamento] = useState(null);
+  const [expandedIntervencao, setExpandedIntervencao] = useState(null);
   const [showAddClienteEquipModal, setShowAddClienteEquipModal] = useState(false);
   const [showEditClienteEquipModal, setShowEditClienteEquipModal] = useState(false);
   const [clienteEquipForm, setClienteEquipForm] = useState({
@@ -807,26 +808,15 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
 
-  const fetchEquipamentoOTs = async (equipamento) => {
+  const fetchEquipamentoIntervencoes = async (equipamento) => {
     try {
-      // Buscar todas as OTs
-      const response = await axios.get(`${API}/relatorios-tecnicos`);
-      
-      // Filtrar OTs que usam este equipamento (comparar marca, modelo e número de série)
-      const otsDoEquipamento = response.data.filter(r => {
-        const marcaMatch = r.equipamento_marca === equipamento.marca;
-        const modeloMatch = r.equipamento_modelo === equipamento.modelo;
-        const serieMatch = (!equipamento.numero_serie && !r.equipamento_numero_serie) || 
-                          (r.equipamento_numero_serie === equipamento.numero_serie);
-        
-        return marcaMatch && modeloMatch && serieMatch && r.cliente_id === equipamento.cliente_id;
-      });
-      
-      setEquipamentoOTs(otsDoEquipamento);
+      const response = await axios.get(`${API}/equipamentos/${equipamento.id}/intervencoes`);
+      setEquipamentoIntervencoes(response.data);
       setSelectedEquipamento(equipamento);
+      setExpandedIntervencao(null);
       setShowEquipamentoOTsModal(true);
     } catch (error) {
-      toast.error('Erro ao carregar OTs do equipamento');
+      toast.error('Erro ao carregar intervenções do equipamento');
     }
   };
 
@@ -9259,17 +9249,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                         )}
                       </div>
 
-                      {/* Ver OTs Button */}
+                      {/* Ver Intervenções Button */}
                       <Button
                         onClick={() => {
                           setShowClienteEquipamentosModal(false);
-                          fetchEquipamentoOTs(equipamento);
+                          fetchEquipamentoIntervencoes(equipamento);
                         }}
                         size="sm"
                         className="w-full bg-purple-600 hover:bg-purple-700"
+                        data-testid={`ver-intervencoes-btn-${equipamento.id}`}
                       >
-                        <FileText className="w-3 h-3 mr-1" />
-                        Ver OTs deste Equipamento
+                        <Wrench className="w-3 h-3 mr-1" />
+                        Ver Intervenções
                       </Button>
                     </div>
                   ))}
@@ -9597,90 +9588,80 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* OTs do Equipamento Modal */}
+      {/* Intervenções do Equipamento Modal */}
       <Dialog open={showEquipamentoOTsModal} onOpenChange={setShowEquipamentoOTsModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-purple-400" />
-              OTs do Equipamento
+              <Wrench className="w-5 h-5 text-purple-400" />
+              Intervenções do Equipamento
               {selectedEquipamento && (
                 <span className="text-sm text-gray-400 ml-2">
-                  ({selectedEquipamento.marca} - {selectedEquipamento.modelo})
+                  ({selectedEquipamento.marca} {selectedEquipamento.modelo})
                 </span>
               )}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4">
-            {equipamentoOTs.length === 0 ? (
+          <div className="mt-4 space-y-3" data-testid="intervencoes-equipamento-list">
+            {equipamentoIntervencoes.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">Nenhuma OT encontrada para este equipamento</p>
+                <Wrench className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhuma intervenção encontrada</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="text-gray-400 text-sm mb-4">
-                  Total: {equipamentoOTs.length} OT(s) para este equipamento
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {equipamentoOTs.map((relatorio) => (
+              <>
+                <p className="text-gray-400 text-sm">
+                  Total: {equipamentoIntervencoes.length} intervenção(ões)
+                </p>
+                {equipamentoIntervencoes.map((interv) => {
+                  const isExpanded = expandedIntervencao === interv.id;
+                  return (
                     <div
-                      key={relatorio.id}
-                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-purple-500 transition cursor-pointer"
-                      onClick={() => {
-                        setShowEquipamentoOTsModal(false);
-                        openViewRelatorioModal(relatorio);
-                      }}
+                      key={interv.id}
+                      className="bg-[#0f0f0f] border border-gray-700 rounded-lg overflow-hidden hover:border-purple-500/50 transition"
+                      data-testid={`intervencao-card-${interv.id}`}
                     >
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-purple-400 font-bold text-lg">
-                              #{relatorio.numero_assistencia}
-                            </span>
-                            <span className={`text-xs px-2 py-1 rounded ${getStatusColor(relatorio.status)}`}>
-                              {getStatusLabel(relatorio.status)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-400">
-                            {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Local */}
-                      <div className="mb-3">
-                        <p className="text-sm text-gray-400">{relatorio.local_intervencao}</p>
-                      </div>
-
-                      {/* Problema */}
-                      <div className="mb-3 pb-3 border-b border-gray-700">
-                        <p className="text-xs text-gray-500 mb-1">Motivo</p>
-                        <p className="text-sm text-gray-300 line-clamp-2">
-                          {relatorio.motivo_assistencia || relatorio.descricao_problema}
-                        </p>
-                      </div>
-
-                      {/* View Button */}
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowEquipamentoOTsModal(false);
-                          openViewRelatorioModal(relatorio);
-                        }}
-                        size="sm"
-                        className="w-full bg-purple-600 hover:bg-purple-700 mt-2"
+                      <button
+                        onClick={() => setExpandedIntervencao(isExpanded ? null : interv.id)}
+                        className="w-full flex items-center justify-between p-4 text-left"
                       >
-                        <FileText className="w-3 h-3 mr-1" />
-                        Ver Detalhes
-                      </Button>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <Wrench className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-white font-medium text-sm">
+                              Intervenção — <span className="text-blue-400">OT #{interv.ot_numero}</span> — {interv.data_intervencao ? new Date(interv.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT') : '-'}
+                            </p>
+                            <p className="text-gray-500 text-xs truncate">{interv.ot_local}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="px-4 pb-4 space-y-3 border-t border-gray-800">
+                          <div className="pt-3">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Motivo</p>
+                            <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                              {interv.motivo_assistencia || <span className="text-gray-600 italic">Sem motivo registado</span>}
+                            </p>
+                          </div>
+                          {interv.relatorio_assistencia && (
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Relatório</p>
+                              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                                {interv.relatorio_assistencia}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  );
+                })}
+              </>
             )}
           </div>
         </DialogContent>
