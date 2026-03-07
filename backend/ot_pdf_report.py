@@ -257,6 +257,15 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
          Paragraph("", label_style), Paragraph("", value_style)],
     ]
     
+    # Referência interna do cliente
+    ref_interna = relatorio.get('referencia_interna_cliente')
+    if ref_interna:
+        client_grid.append([
+            Paragraph("Ref. Interna:", label_style),
+            Paragraph(ref_interna, ParagraphStyle('RefInternaStyle', parent=value_style, fontName='Helvetica-Bold')),
+            Paragraph("", label_style), Paragraph("", value_style)
+        ])
+    
     # Adicionar FS Relacionada se existir
     ot_rel_numero = relatorio.get('ot_relacionada_numero')
     if ot_rel_numero:

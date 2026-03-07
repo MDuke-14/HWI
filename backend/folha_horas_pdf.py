@@ -176,6 +176,9 @@ def generate_folha_horas_pdf(
         elems.append(Spacer(1, 0.15*cm))
         elems.append(Paragraph(f"<b>Cliente:</b> {cliente.get('nome', 'N/A')}", normal_style))
         elems.append(Paragraph(f"<b>Localização:</b> {relatorio.get('local_intervencao', 'N/A')}", normal_style))
+        ref_interna = relatorio.get('referencia_interna_cliente')
+        if ref_interna:
+            elems.append(Paragraph(f"<b>Ref. Interna:</b> {ref_interna}", normal_style))
         ot_rel_num = relatorio.get('ot_relacionada_numero')
         if ot_rel_num:
             elems.append(Paragraph(f"<b>FS Relacionada:</b> FS #{ot_rel_num}", normal_style))

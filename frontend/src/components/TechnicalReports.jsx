@@ -183,6 +183,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [cronoTecnicosSelecionados, setCronoTecnicosSelecionados] = useState([]);
   const [cronoTipo, setCronoTipo] = useState('trabalho');
   
+  // Modal referência interna do cliente
+  const [showReferenciaInternaModal, setShowReferenciaInternaModal] = useState(false);
+  const [referenciaInternaValue, setReferenciaInternaValue] = useState('');
+  const [referenciaInternaFSId, setReferenciaInternaFSId] = useState(null);
+  const [referenciaInternaPendingCrono, setReferenciaInternaPendingCrono] = useState(null);
+  
   // Relatórios modals
   const [showAddRelatorioModal, setShowAddRelatorioModal] = useState(false);
   const [showViewRelatorioModal, setShowViewRelatorioModal] = useState(false);
@@ -429,7 +435,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     telefone: '',
     morada: '',
     nif: '',
-    emails_adicionais: []  // Array de emails adicionais
+    emails_adicionais: [],
+    incluir_referencia_interna: false
   });
   
   const [relatorioFormData, setRelatorioFormData] = useState({
@@ -712,7 +719,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       telefone: cliente.telefone || '',
       morada: cliente.morada || '',
       nif: cliente.nif || '',
-      emails_adicionais: emailsArray
+      emails_adicionais: emailsArray,
+      incluir_referencia_interna: cliente.incluir_referencia_interna || false
     });
     setShowEditModal(true);
   };
@@ -946,7 +954,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       telefone: '',
       morada: '',
       nif: '',
-      emails_adicionais: []
+      emails_adicionais: [],
+      incluir_referencia_interna: false
     });
     setSelectedCliente(null);
   };
@@ -1014,6 +1023,39 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Handlers para referência interna do cliente
+  const handleGravarReferenciaInterna = async () => {
+    if (!referenciaInternaFSId || !referenciaInternaValue.trim()) return;
+    try {
+      await axios.put(`${API}/relatorios-tecnicos/${referenciaInternaFSId}`, {
+        referencia_interna_cliente: referenciaInternaValue.trim()
+      });
+      toast.success('Referência interna gravada!');
+      fetchRelatorios();
+    } catch (error) {
+      toast.error('Erro ao gravar referência interna');
+    }
+    handleCloseReferenciaInterna();
+  };
+
+  const handleIgnorarReferenciaInterna = () => {
+    handleCloseReferenciaInterna();
+  };
+
+  const handleCloseReferenciaInterna = () => {
+    setShowReferenciaInternaModal(false);
+    // Abrir modal do cronómetro com os dados pendentes
+    if (referenciaInternaPendingCrono) {
+      setNovaOTParaCrono(referenciaInternaPendingCrono);
+      setCronoTecnicosSelecionados([]);
+      setCronoTipo('trabalho');
+      setShowIniciarCronoModal(true);
+      setReferenciaInternaPendingCrono(null);
+    }
+    setReferenciaInternaFSId(null);
+    setReferenciaInternaValue('');
+  };
+
   const updateIntervencaoForm = (id, field, value) => {
     setIntervencoesForm(intervencoesForm.map(i => 
       i.id === id ? { ...i, [field]: value } : i
@@ -1067,14 +1109,27 @@ const TechnicalReports = ({ user, onLogout }) => {
         console.error('Erro ao buscar utilizadores:', err);
       }
       
-      // Guardar dados da nova OT e abrir modal
-      setNovaOTParaCrono({
-        id: relatorioId,
-        numero: response.data.numero_assistencia
-      });
-      setCronoTecnicosSelecionados([]);
-      setCronoTipo('trabalho');
-      setShowIniciarCronoModal(true);
+      // Verificar se cliente tem referência interna ativa
+      const clienteDoRelatorio = clientes.find(c => c.id === relatorioFormData.cliente_id);
+      if (clienteDoRelatorio?.incluir_referencia_interna) {
+        // Guardar dados para o cronómetro (será aberto depois do modal de referência)
+        setReferenciaInternaFSId(relatorioId);
+        setReferenciaInternaValue('');
+        setReferenciaInternaPendingCrono({
+          id: relatorioId,
+          numero: response.data.numero_assistencia
+        });
+        setShowReferenciaInternaModal(true);
+      } else {
+        // Guardar dados da nova OT e abrir modal do cronómetro diretamente
+        setNovaOTParaCrono({
+          id: relatorioId,
+          numero: response.data.numero_assistencia
+        });
+        setCronoTecnicosSelecionados([]);
+        setCronoTipo('trabalho');
+        setShowIniciarCronoModal(true);
+      }
       
     } catch (error) {
       toast.error(formatErrorMessage(error));
@@ -1118,7 +1173,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       equipamento_marca: relatorio.equipamento_marca,
       equipamento_modelo: relatorio.equipamento_modelo,
       equipamento_numero_serie: relatorio.equipamento_numero_serie || '',
-      equipamento_ano_fabrico: relatorio.equipamento_ano_fabrico || ''
+      equipamento_ano_fabrico: relatorio.equipamento_ano_fabrico || '',
+      referencia_interna_cliente: relatorio.referencia_interna_cliente || ''
     });
     setShowEditRelatorioModal(true);
   };
@@ -4546,6 +4602,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <p className={`${textPrimary} font-medium ${isMobile ? 'text-sm truncate' : ''}`}>{selectedRelatorio.cliente_nome}</p>
                 <p className={`${textSecondary} ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>Local: {selectedRelatorio.local_intervencao}</p>
                 <p className={`${textSecondary} ${isMobile ? 'text-xs truncate' : 'text-sm'}`}>Pedido por: {selectedRelatorio.pedido_por}</p>
+                {selectedRelatorio.referencia_interna_cliente && (
+                  <p className={`text-amber-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 font-semibold`} data-testid="ref-interna-display">
+                    Ref. Interna: {selectedRelatorio.referencia_interna_cliente}
+                  </p>
+                )}
                 {selectedRelatorio.ot_relacionada_id && (
                   <p className={`text-blue-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 flex items-center gap-1`}>
                     <Link2 className="w-3 h-3" />
@@ -8378,6 +8439,21 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
+            {/* Referência Interna do Cliente */}
+            <div>
+              <Label htmlFor="edit_referencia_interna" className="text-gray-300">
+                Referência Interna do Cliente
+              </Label>
+              <Input
+                id="edit_referencia_interna"
+                value={relatorioFormData.referencia_interna_cliente || ''}
+                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, referencia_interna_cliente: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                placeholder="Referência interna, nº encomenda, etc."
+                data-testid="edit-ref-interna-input"
+              />
+            </div>
+
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -8918,6 +8994,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-lg border border-gray-700">
+              <input
+                type="checkbox"
+                id="edit-ref-interna"
+                checked={formData.incluir_referencia_interna}
+                onChange={(e) => setFormData({ ...formData, incluir_referencia_interna: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                data-testid="checkbox-ref-interna"
+              />
+              <Label htmlFor="edit-ref-interna" className="text-gray-300 cursor-pointer text-sm">
+                Incluir Referência Interna na FS
+              </Label>
             </div>
 
             <div className="flex gap-3 pt-4">
@@ -10438,6 +10528,52 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Referência Interna do Cliente */}
+      <Dialog open={showReferenciaInternaModal} onOpenChange={(open) => {
+        if (!open) handleIgnorarReferenciaInterna();
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md" data-testid="modal-ref-interna">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg">
+              Referência Interna do Cliente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-gray-400 text-sm">
+              Existe referência interna do cliente para esta FS?
+            </p>
+            <Input
+              value={referenciaInternaValue}
+              onChange={(e) => setReferenciaInternaValue(e.target.value)}
+              className="bg-[#0f0f0f] border-gray-700 text-white"
+              placeholder="Nº encomenda, referência interna, etc."
+              autoFocus
+              data-testid="input-ref-interna"
+            />
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 border-gray-600 text-gray-300"
+                onClick={handleIgnorarReferenciaInterna}
+                data-testid="btn-ignorar-ref"
+              >
+                Ignorar
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+                onClick={handleGravarReferenciaInterna}
+                disabled={!referenciaInternaValue.trim()}
+                data-testid="btn-gravar-ref"
+              >
+                Gravar
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

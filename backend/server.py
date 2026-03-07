@@ -413,6 +413,7 @@ class Cliente(BaseModel):
     morada: Optional[str] = None
     nif: Optional[str] = None
     emails_adicionais: Optional[str] = None  # Separados por vírgula
+    incluir_referencia_interna: Optional[bool] = False  # Se True, pede referência interna ao criar FS
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -471,6 +472,9 @@ class RelatorioTecnico(BaseModel):
     
     # Motivo (mudou de "descricao_problema")
     motivo_assistencia: str
+    
+    # Referência interna do cliente
+    referencia_interna_cliente: Optional[str] = None
     
     # KM Inicial da viatura (para associar ao primeiro técnico)
     km_inicial: Optional[float] = None
