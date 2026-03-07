@@ -155,7 +155,7 @@ def generate_folha_horas_pdf(
         fontName='Helvetica-Oblique', alignment=TA_LEFT
     )
 
-    logo_path = Path(__file__).parent / "assets" / "hwi_logo.png"
+    logo_path = Path(__file__).parent / "assets" / "hwi_logo_dark.png"
     PRECO_KM = valor_km
     tipo_map = {'trabalho': 'Trabalho', 'viagem': 'Viagem', 'manual': 'Trabalho', 'oficina': 'Oficina'}
     tipo_despesa_labels = {
@@ -169,7 +169,7 @@ def generate_folha_horas_pdf(
 
     def add_header(elems):
         if logo_path.exists():
-            elems.append(RLImage(str(logo_path), width=4*cm, height=1.3*cm))
+            elems.append(RLImage(str(logo_path), width=5*cm, height=1.44*cm))
         elems.append(Paragraph("FOLHA DE HORAS", title_style))
         ot_num = relatorio.get('numero_assistencia', 'N/A')
         elems.append(Paragraph(f"FS #{ot_num}", subtitle_style))

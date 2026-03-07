@@ -159,7 +159,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         logo_url = company_info.get('logo_url')
         if logo_url:
             try:
-                # Se for URL relativa, construir caminho completo
                 if logo_url.startswith('/uploads/'):
                     logo_path = f"/app{logo_url}"
                 elif not logo_url.startswith('http'):
@@ -168,8 +167,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     logo_path = logo_url
                 
                 if os.path.exists(logo_path):
-                    # Usar imagem sem modificação de tamanho
-                    logo_element = RLImage(logo_path)
+                    logo_element = RLImage(logo_path, width=5*cm, height=1.44*cm)
             except Exception as e:
                 print(f"Erro ao carregar logo: {e}")
     
@@ -183,8 +181,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         for logo_path in default_logo_paths:
             if os.path.exists(logo_path):
                 try:
-                    # Usar imagem sem modificação de tamanho
-                    logo_element = RLImage(logo_path)
+                    logo_element = RLImage(logo_path, width=5*cm, height=1.44*cm)
                     break
                 except:
                     continue
@@ -207,20 +204,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     }
     status_text = status_labels.get(relatorio.get('status', ''), relatorio.get('status', ''))
     
-    # Construir cabeçalho com logo centrado
-    if logo_element:
-        # Cabeçalho com logo centrado no topo
-        logo_row = Table([[logo_element]], colWidths=[18*cm])
-        logo_row.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
-            ('VALIGN', (0, 0), (0, 0), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (0, 0), 10),
-            ('BOTTOMPADDING', (0, 0), (0, 0), 10),
-        ]))
-        elements.append(logo_row)
-        elements.append(Spacer(1, 0.3*cm))
-    
-    # Cabeçalho do relatório técnico (sem nome da empresa)
+    # Construir cabeçalho unificado com logo no fundo escuro
     header_left = [
         [Paragraph("RELATÓRIO TÉCNICO", header_title_style)],
         [Paragraph(f"Folha de Serviço #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
@@ -231,16 +215,22 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         [Paragraph(f"Estado: {status_text}", header_subtitle_style)]
     ]
     
-    header_table = Table([
-        [Table(header_left), Table(header_right)]
-    ], colWidths=[12*cm, 6*cm])
+    if logo_element:
+        # Logo à esquerda, título ao centro, info à direita
+        header_table = Table([
+            [logo_element, Table(header_left), Table(header_right)]
+        ], colWidths=[5.5*cm, 7.5*cm, 5*cm])
+    else:
+        header_table = Table([
+            [Table(header_left), Table(header_right)]
+        ], colWidths=[12*cm, 6*cm])
     
     header_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#333333')),
-        ('TOPPADDING', (0, 0), (-1, -1), 15),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
-        ('LEFTPADDING', (0, 0), (-1, -1), 15),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('ALIGN', (-1, 0), (-1, 0), 'RIGHT'),
     ]))

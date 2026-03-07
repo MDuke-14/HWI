@@ -123,6 +123,12 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - **Relatório de Assistência integrated**: Report text now appears within DETALHES DA INTERVENÇÃO section, grouped by intervention date (removed standalone section)
 - Tested with FS#358 (3 pages), FS#356 (5 pages with photos/signatures), FS#360 (2 pages with rel. assistência)
 
+### Logo Update (7 Mar 2026)
+- Updated company logo to "HARDWORK INDUSTRY" across all PDF documents
+- FS PDF: White logo integrated into dark header (#333333) with title and status
+- Folha de Horas PDF: Dark logo version on white background (auto-inverted from white original)
+- Logo files: `/app/backend/assets/hwi_logo.png` (white), `/app/backend/assets/hwi_logo_dark.png` (dark)
+
 ## Pending Issues (Prioritized)
 ### P0
 - PDF Generation Fails for Large Reports (Flowable too large - use OT#358 to test)
