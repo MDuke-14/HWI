@@ -212,7 +212,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [intervencaoFormData, setIntervencaoFormData] = useState({
     data_intervencao: new Date().toISOString().split('T')[0],
     motivo_assistencia: '',
-    relatorio_assistencia: '',
     equipamento_id: ''
   });
   
@@ -458,8 +457,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [intervencoesForm, setIntervencoesForm] = useState([{
     id: Date.now(),
     data_intervencao: new Date().toISOString().split('T')[0],
-    motivo_assistencia: '',
-    relatorio_assistencia: ''
+    motivo_assistencia: ''
   }]);
 
   // Equipamentos
@@ -1003,8 +1001,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     setIntervencoesForm([{
       id: Date.now(),
       data_intervencao: new Date().toISOString().split('T')[0],
-      motivo_assistencia: '',
-      relatorio_assistencia: ''
+      motivo_assistencia: ''
     }]);
   };
 
@@ -1012,8 +1009,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     setIntervencoesForm([...intervencoesForm, {
       id: Date.now(),
       data_intervencao: new Date().toISOString().split('T')[0],
-      motivo_assistencia: '',
-      relatorio_assistencia: ''
+      motivo_assistencia: ''
     }]);
   };
 
@@ -1091,7 +1087,6 @@ const TechnicalReports = ({ user, onLogout }) => {
           relatorio_id: relatorioId,
           data_intervencao: intervencao.data_intervencao,
           motivo_assistencia: intervencao.motivo_assistencia,
-          relatorio_assistencia: intervencao.relatorio_assistencia || null,
           ordem: i
         });
       }
@@ -1299,7 +1294,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       setIntervencaoFormData({
         data_intervencao: new Date().toISOString().split('T')[0],
         motivo_assistencia: '',
-        relatorio_assistencia: ''
       });
       fetchIntervencoesRelatorio(selectedRelatorio.id);
     } catch (error) {
@@ -1312,7 +1306,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     setIntervencaoFormData({
       data_intervencao: intervencao.data_intervencao.split('T')[0],
       motivo_assistencia: intervencao.motivo_assistencia,
-      relatorio_assistencia: intervencao.relatorio_assistencia || '',
       equipamento_id: intervencao.equipamento_id || ''
     });
     setShowEditIntervencaoModal(true);
@@ -6484,7 +6477,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                   setIntervencaoFormData({
                     data_intervencao: new Date().toISOString().split('T')[0],
                     motivo_assistencia: '',
-                    relatorio_assistencia: '',
                     equipamento_id: ''
                   });
                 }}
@@ -8084,12 +8076,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   <div>
                                     <span className="font-medium text-gray-600">Motivo: </span>
                                     <span className="text-gray-700">{int.motivo_assistencia}</span>
-                                  </div>
-                                )}
-                                {int.relatorio_assistencia && (
-                                  <div>
-                                    <span className="font-medium text-gray-600">Relatório: </span>
-                                    <p className="text-gray-700 whitespace-pre-wrap mt-1">{int.relatorio_assistencia}</p>
                                   </div>
                                 )}
                               </div>
@@ -9739,14 +9725,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                               {interv.motivo_assistencia || <span className="text-gray-600 italic">Sem motivo registado</span>}
                             </p>
                           </div>
-                          {interv.relatorio_assistencia && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Relatório</p>
-                              <p className="text-sm text-gray-300 whitespace-pre-wrap">
-                                {interv.relatorio_assistencia}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
