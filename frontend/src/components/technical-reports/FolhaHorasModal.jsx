@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { FileSpreadsheet, DollarSign, FileText, User, Calendar, Download, Zap, Settings, Receipt, Eye, EyeOff, X, Save, Percent } from 'lucide-react';
+import { FileSpreadsheet, DollarSign, FileText, User, Calendar, Download, Settings, Receipt, Eye, EyeOff, X, Save, Percent } from 'lucide-react';
 import axios from 'axios';
 import { API } from '@/App';
 
@@ -21,8 +20,6 @@ const FolhaHorasModal = ({
   generatingFolhaHoras,
   despesas = []
 }) => {
-  const [dietaAutomatica, setDietaAutomatica] = useState(false);
-  const [dietaValor, setDietaValor] = useState('');
   const [tabelasPreco, setTabelasPreco] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(1);
   const [tarifasDaTabela, setTarifasDaTabela] = useState([]);
@@ -76,28 +73,9 @@ const FolhaHorasModal = ({
       setTarifasDaTabela(tarifas);
       if (folhaHorasData) {
         autoFillTarifas(tarifas);
-        autoFillDietas(tableId);
       }
     } catch (error) {
       console.error('Erro ao carregar tarifas da tabela');
-    }
-  };
-
-  const autoFillDietas = (tableId) => {
-    // Buscar valor_dieta da tabela selecionada
-    const tabelas = folhaHorasData?.tabelas_preco || tabelasPreco;
-    const tabela = tabelas.find(t => t.table_id === tableId);
-    const valorDieta = tabela?.valor_dieta || 0;
-    
-    if (valorDieta > 0) {
-      setDietaAutomatica(true);
-      setDietaValor(String(valorDieta));
-      // Aplicar a todos os dias/técnicos
-      const extras = getExtrasOrdenados();
-      extras.forEach(item => {
-        const chave = `${item.tecnicoNome}_${item.data}`;
-        updateFolhaHorasExtra(chave, 'dieta', String(valorDieta));
-      });
     }
   };
 
@@ -259,24 +237,6 @@ const FolhaHorasModal = ({
       if (dateCompare !== 0) return dateCompare;
       return a.tecnicoNome.localeCompare(b.tecnicoNome);
     });
-  };
-
-  const handleAplicarDietaTodos = (checked) => {
-    setDietaAutomatica(checked);
-    if (checked && dietaValor) {
-      getExtrasOrdenados().forEach(({ tecnicoNome, data }) => {
-        updateFolhaHorasExtra(`${tecnicoNome}_${data}`, 'dieta', dietaValor);
-      });
-    }
-  };
-
-  const handleDietaValorChange = (valor) => {
-    setDietaValor(valor);
-    if (dietaAutomatica && valor) {
-      getExtrasOrdenados().forEach(({ tecnicoNome, data }) => {
-        updateFolhaHorasExtra(`${tecnicoNome}_${data}`, 'dieta', valor);
-      });
-    }
   };
 
   // Despesas helpers
@@ -533,11 +493,11 @@ const FolhaHorasModal = ({
               )}
             </div>
 
-            {/* Dietas, Portagens e Despesas */}
+            {/* Portagens e Despesas */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-green-400" />
-                Dietas, Portagens e Despesas
+                Portagens e Despesas
               </h3>
               <p className="text-gray-400 text-sm mb-2">
                 Preencha os valores extras por técnico e data. Campos vazios serão considerados 0,00€.
@@ -545,52 +505,14 @@ const FolhaHorasModal = ({
               <p className="text-amber-400/80 text-xs mb-4 flex items-center gap-1">
                 <span className="text-amber-500">!</span>
                 Nota: Despesas de <span className="font-semibold">Combustível</span> são excluídas automaticamente dos cálculos da Folha de Horas.
+                A <span className="font-semibold">Dieta</span> é calculada automaticamente com base nas horas trabalhadas (≤4h = 0€ | 4h-6h = 50% | &gt;6h = 100%).
               </p>
-              
-              {/* Opção de Dieta Automática */}
-              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 p-4 rounded-lg mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="dieta-automatica"
-                      checked={dietaAutomatica}
-                      onCheckedChange={handleAplicarDietaTodos}
-                      className="border-green-500 data-[state=checked]:bg-green-600"
-                    />
-                    <Label htmlFor="dieta-automatica" className="text-green-400 font-medium cursor-pointer flex items-center gap-2">
-                      <Zap className="w-4 h-4" />
-                      Aplicar dieta a todos os dias/técnicos
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-gray-400 text-sm">Valor (€):</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={dietaValor}
-                      onChange={(e) => handleDietaValorChange(e.target.value)}
-                      className="w-24 bg-[#1a1a1a] border-green-500/50 text-white h-8"
-                      disabled={!dietaAutomatica}
-                    />
-                  </div>
-                </div>
-                {dietaAutomatica && dietaValor && (
-                  <p className="text-green-400/70 text-xs mt-2">
-                    Valor base da dieta: {parseFloat(dietaValor).toFixed(2)}€
-                  </p>
-                )}
-                <p className="text-amber-400/70 text-xs mt-1">
-                  Regra automática: ≤4h = 0€ | 4h-6h = 50% | &gt;6h = 100% (calculado no PDF)
-                </p>
-              </div>
               
               {getExtrasOrdenados().length > 0 ? (
                 <div className="space-y-3">
                   {getExtrasOrdenados().map(({ tecnicoId, tecnicoNome, data }) => {
                     const chave = `${tecnicoNome}_${data}`;
-                    const valores = folhaHorasExtras[chave] || { dieta: '', portagens: '', despesas: '' };
+                    const valores = folhaHorasExtras[chave] || { portagens: '', despesas: '' };
                     const { formatted, weekday } = getDataInfo(data);
                     
                     return (
@@ -606,15 +528,7 @@ const FolhaHorasModal = ({
                             <span className="text-gray-500">({weekday})</span>
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <Label className="text-xs text-gray-500">Dieta (€)</Label>
-                            <Input type="number" step="0.01" min="0" placeholder="0.00"
-                              value={valores.dieta}
-                              onChange={(e) => updateFolhaHorasExtra(chave, 'dieta', e.target.value)}
-                              className="bg-[#1a1a1a] border-gray-700 text-white h-9"
-                            />
-                          </div>
+                        <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label className="text-xs text-gray-500">Portagens (€)</Label>
                             <Input type="number" step="0.01" min="0" placeholder="0.00"
