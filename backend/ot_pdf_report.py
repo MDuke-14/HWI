@@ -39,7 +39,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'HeaderSubtitle',
         parent=styles['Normal'],
         fontSize=11,
-        textColor=colors.HexColor('#d1d5db'),  # gray-300
+        textColor=colors.HexColor('#cccccc'),  # gray-300
         spaceAfter=0,
         spaceBefore=0
     )
@@ -49,7 +49,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'SectionTitle',
         parent=styles['Heading2'],
         fontSize=12,
-        textColor=colors.HexColor('#1f2937'),  # gray-800
+        textColor=colors.HexColor('#111111'),  # gray-800
         spaceAfter=6,
         spaceBefore=0,
         fontName='Helvetica-Bold'
@@ -73,7 +73,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         fontSize=9,
         spaceAfter=2,
         spaceBefore=0,
-        textColor=colors.HexColor('#374151')  # gray-700
+        textColor=colors.HexColor('#111111')  # gray-700
     )
     
     # Labels
@@ -81,7 +81,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'LabelStyle',
         parent=styles['Normal'],
         fontSize=8,
-        textColor=colors.HexColor('#6b7280'),  # gray-500
+        textColor=colors.HexColor('#666666'),  # gray-500
         fontName='Helvetica-Bold'
     )
     
@@ -90,7 +90,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'ValueStyle',
         parent=styles['Normal'],
         fontSize=9,
-        textColor=colors.HexColor('#1f2937'),  # gray-800
+        textColor=colors.HexColor('#111111'),  # gray-800
     )
     
     # Descrição de foto
@@ -98,7 +98,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'FotoDescStyle',
         parent=styles['Normal'],
         fontSize=7,
-        textColor=colors.HexColor('#4b5563'),
+        textColor=colors.HexColor('#666666'),
         spaceAfter=1
     )
     
@@ -139,7 +139,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         result = []
         if title:
             result.append(Paragraph(title, section_title_style))
-            result.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6))
+            result.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
         result.extend(content_elements)
         result.append(Spacer(1, 0.3*cm))
         return result
@@ -236,7 +236,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     ], colWidths=[12*cm, 6*cm])
     
     header_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#1f2937')),  # gray-800
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#333333')),
         ('TOPPADDING', (0, 0), (-1, -1), 15),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
         ('LEFTPADDING', (0, 0), (-1, -1), 15),
@@ -262,7 +262,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if ot_rel_numero:
         client_grid.append([
             Paragraph("FS Relacionada:", label_style),
-            Paragraph(f"FS #{ot_rel_numero}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#2563eb'))),
+            Paragraph(f"FS #{ot_rel_numero}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#555555'))),
             Paragraph("", label_style), Paragraph("", value_style)
         ])
     
@@ -332,13 +332,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         # Criar tabela com campos organizados
         eq_table = Table(equip_data, colWidths=[4*cm, 13.5*cm])
         eq_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),  # gray-50
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f7f7f7')),  # gray-50
             ('TOPPADDING', (0, 0), (-1, -1), 4),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
             ('LEFTPADDING', (0, 0), (-1, -1), 8),
             ('RIGHTPADDING', (0, 0), (-1, -1), 8),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
         ]))
         
         return eq_table
@@ -454,7 +454,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         date_header = Table([[Paragraph(date_header_text, intervention_title_style)]], colWidths=[18.4*cm])
         date_header.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#2563eb')),  # blue-600
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#555555')),  # blue-600
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('LEFTPADDING', (0, 0), (-1, -1), 12),
@@ -594,23 +594,23 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             
             mao_obra_table = Table(mao_obra_header, colWidths=[5*cm, 1.5*cm, 1.5*cm, 2*cm, 2*cm, 1.5*cm, 2.5*cm])
             mao_obra_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e5e7eb')),  # gray-200
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('ALIGN', (0, 1), (0, -1), 'LEFT'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('TOPPADDING', (0, 0), (-1, -1), 5),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
                 # Linhas alternadas
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f9fafb'), colors.white]),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f7f7f7'), colors.white]),
             ]))
             
             mao_obra_keep = [
                 Paragraph("MÃO DE OBRA / DESLOCAÇÃO", section_title_style),
-                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6),
+                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6),
                 mao_obra_table,
                 Spacer(1, 0.3*cm),
             ]
@@ -643,22 +643,22 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             
             mat_table = Table(mat_header, colWidths=[10*cm, 3*cm, 4.5*cm])
             mat_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e5e7eb')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('ALIGN', (1, 0), (1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('TOPPADDING', (0, 0), (-1, -1), 5),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f9fafb'), colors.white]),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f7f7f7'), colors.white]),
             ]))
             
             mat_keep = [
                 Paragraph("MATERIAIS UTILIZADOS", section_title_style),
-                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6),
+                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6),
                 mat_table,
                 Spacer(1, 0.3*cm),
             ]
@@ -779,8 +779,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 foto_row_table.setStyle(TableStyle([
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#e5e7eb')),
-                    ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#e5e7eb')),
+                    ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#cccccc')),
+                    ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#cccccc')),
                     ('TOPPADDING', (0, 0), (-1, -1), 4),
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
                 ]))
@@ -806,7 +806,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 'AssinNameStyle',
                 parent=styles['Normal'],
                 fontSize=10,
-                textColor=colors.HexColor('#1f2937'),
+                textColor=colors.HexColor('#111111'),
                 alignment=TA_CENTER,
                 fontName='Helvetica-Bold',
                 spaceAfter=2
@@ -816,7 +816,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 'AssinDataStyle',
                 parent=styles['Normal'],
                 fontSize=8,
-                textColor=colors.HexColor('#6b7280'),
+                textColor=colors.HexColor('#666666'),
                 alignment=TA_CENTER,
                 spaceAfter=0
             )
@@ -852,7 +852,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 # Linha separadora fina
                 assin_elements.append(Spacer(1, 0.15*cm))
-                assin_elements.append(HRFlowable(width="60%", thickness=0.5, color=colors.HexColor('#d1d5db'), spaceBefore=0, spaceAfter=0.1*cm))
+                assin_elements.append(HRFlowable(width="60%", thickness=0.5, color=colors.HexColor('#cccccc'), spaceBefore=0, spaceAfter=0.1*cm))
                 
                 # Dados da assinatura - POR BAIXO e CENTRADOS
                 nome_completo = assinatura.get('assinado_por') or f"{assinatura.get('primeiro_nome', '')} {assinatura.get('ultimo_nome', '')}".strip()
@@ -874,7 +874,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 assin_table = Table([[assin_elements]], colWidths=[17*cm])
                 assin_table.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-                    ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),  # gray-200 border
+                    ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#cccccc')),  # gray-200 border
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                     ('TOPPADDING', (0, 0), (-1, -1), 12),
@@ -887,7 +887,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             
             assin_keep = [
                 Paragraph("ASSINATURAS", section_title_style),
-                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6),
+                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6),
             ]
             assin_keep.extend(assin_content)
             assin_keep.append(Spacer(1, 0.3*cm))
@@ -983,8 +983,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 foto_row_table.setStyle(TableStyle([
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#e5e7eb')),
-                    ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#e5e7eb')),
+                    ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#cccccc')),
+                    ('BOX', (1, 0), (1, 0), 0.5, colors.HexColor('#cccccc')),
                     ('TOPPADDING', (0, 0), (-1, -1), 4),
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
                 ]))
@@ -1009,11 +1009,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     
     legenda_table = Table(legenda_data, colWidths=[6*cm, 8*cm])
     legenda_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f3f4f6')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8e8e8')),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e5e7eb')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('LEFTPADDING', (0, 0), (-1, -1), 6),
@@ -1024,7 +1024,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'NotaStyle',
         parent=normal_style,
         fontSize=7,
-        textColor=colors.HexColor('#6b7280'),
+        textColor=colors.HexColor('#666666'),
         fontName='Helvetica-Oblique'
     )
     legenda_content.append(Spacer(1, 0.1*cm))
@@ -1040,7 +1040,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         'FooterStyle',
         parent=normal_style,
         fontSize=8,
-        textColor=colors.HexColor('#9ca3af'),
+        textColor=colors.HexColor('#666666'),
         alignment=TA_CENTER
     )
     elements.append(Paragraph(f"Documento gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}", footer_style))
