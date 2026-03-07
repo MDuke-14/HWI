@@ -845,7 +845,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.setAttribute('download', `OT_${relatorio.numero_assistencia}_${relatorio.cliente_nome?.replace(/\s+/g, '_')}.pdf`);
+          link.setAttribute('download', `FS_${relatorio.numero_assistencia}_${relatorio.cliente_nome?.replace(/\s+/g, '_')}.pdf`);
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -2998,7 +2998,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `FolhaHoras_OT${selectedRelatorio.numero_assistencia}.pdf`;
+      link.download = `FolhaHoras_FS${selectedRelatorio.numero_assistencia}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -6075,7 +6075,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       const url = window.URL.createObjectURL(blob);
                       const link = document.createElement('a');
                       link.href = url;
-                      link.download = `OT_${selectedRelatorio.numero_assistencia}.pdf`;
+                      link.download = `FS_${selectedRelatorio.numero_assistencia}.pdf`;
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
@@ -7755,7 +7755,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           if (pdfPreviewUrl) {
             const link = document.createElement('a');
             link.href = pdfPreviewUrl;
-            link.download = `OT_${selectedRelatorio?.numero_assistencia}.pdf`;
+            link.download = `FS_${selectedRelatorio?.numero_assistencia}.pdf`;
             link.click();
           }
         }}
@@ -8231,7 +8231,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       const url = window.URL.createObjectURL(blob);
                       const link = document.createElement('a');
                       link.href = url;
-                      link.download = `OT_${selectedRelatorio.numero_assistencia}.pdf`;
+                      link.download = `FS_${selectedRelatorio.numero_assistencia}.pdf`;
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
@@ -9550,7 +9550,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               const url = window.URL.createObjectURL(blob);
                               const link = document.createElement('a');
                               link.href = url;
-                              link.download = `OT_${relatorio.numero_assistencia}.pdf`;
+                              link.download = `FS_${relatorio.numero_assistencia}.pdf`;
                               document.body.appendChild(link);
                               link.click();
                               document.body.removeChild(link);

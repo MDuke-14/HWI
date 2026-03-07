@@ -4335,7 +4335,7 @@ async def enviar_pdf_ot(
                 pdf_attachment = MIMEBase('application', 'pdf')
                 pdf_attachment.set_payload(pdf_buffer.getvalue())
                 encoders.encode_base64(pdf_attachment)
-                pdf_attachment.add_header('Content-Disposition', f'attachment; filename="OT_{numero_ot}.pdf"')
+                pdf_attachment.add_header('Content-Disposition', f'attachment; filename="FS_{numero_ot}.pdf"')
                 message.attach(pdf_attachment)
                 
                 # Anexar Folha de Horas se disponível
@@ -4343,7 +4343,7 @@ async def enviar_pdf_ot(
                     fh_attachment = MIMEBase('application', 'pdf')
                     fh_attachment.set_payload(folha_horas_buffer.getvalue())
                     encoders.encode_base64(fh_attachment)
-                    fh_attachment.add_header('Content-Disposition', f'attachment; filename="Folha_Horas_OT_{numero_ot}.pdf"')
+                    fh_attachment.add_header('Content-Disposition', f'attachment; filename="FolhaHoras_FS_{numero_ot}.pdf"')
                     message.attach(fh_attachment)
                     folha_horas_buffer.seek(0)
                 
@@ -4468,7 +4468,7 @@ async def preview_pdf_ot(
         pdf_buffer,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=OT_{numero_ot}_{cliente.get('nome', 'Cliente').replace(' ', '_')}.pdf"
+            "Content-Disposition": f"attachment; filename=FS_{numero_ot}_{cliente.get('nome', 'Cliente').replace(' ', '_')}.pdf"
         }
     )
 
@@ -12219,7 +12219,7 @@ async def generate_folha_horas(
         pdf_buffer,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=FolhaHoras_OT{numero_ot}_{cliente_nome}.pdf"
+            "Content-Disposition": f"attachment; filename=FolhaHoras_FS{numero_ot}_{cliente_nome}.pdf"
         }
     )
 
