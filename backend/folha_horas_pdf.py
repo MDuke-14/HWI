@@ -692,7 +692,7 @@ def generate_folha_horas_pdf(
         # Dimensões disponíveis em landscape A4 com margens (doc margins: 0.7cm each side)
         # Also account for title (~0.6cm) + spacers (~0.5cm) + footer (~0.5cm)
         page_w = landscape(A4)[0] - 1.4*cm  # ~28cm available width
-        page_h = landscape(A4)[1] - 1.4*cm - 2.0*cm  # ~17cm available height for image
+        page_h = landscape(A4)[1] - 1.4*cm - 3.5*cm  # reserve space for title + footer + spacers
 
         try:
             from PIL import Image as PILImage
