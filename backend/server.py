@@ -558,6 +558,7 @@ class MaterialOT(BaseModel):
     relatorio_id: str
     descricao: str
     quantidade: int
+    unidade: Optional[str] = "Un"  # Un (Unidades), L (Litros), M (Metros)
     fornecido_por: str  # "Cliente", "HWI", "Cotação"
     data_utilizacao: Optional[str] = None  # Data de utilização/aplicação do material (YYYY-MM-DD)
     pc_id: Optional[str] = None  # ID do Pedido de Cotação (se fornecido_por = Cotação)
@@ -10563,6 +10564,7 @@ async def add_material_ot(
         relatorio_id=relatorio_id,
         descricao=material_data["descricao"],
         quantidade=quantidade,
+        unidade=material_data.get("unidade", "Un"),
         fornecido_por=material_data["fornecido_por"],
         data_utilizacao=material_data.get("data_utilizacao")
     )

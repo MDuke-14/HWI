@@ -32,6 +32,7 @@ const MaterialModal = ({
             </Label>
             <Input
               id="descricao_material"
+              data-testid="material-descricao-input"
               value={materialFormData.descricao}
               onChange={(e) => setMaterialFormData({ ...materialFormData, descricao: e.target.value })}
               className="bg-[#0f0f0f] border-gray-700 text-white"
@@ -44,16 +45,30 @@ const MaterialModal = ({
             <Label htmlFor="quantidade_material" className="text-gray-300">
               Quantidade *
             </Label>
-            <Input
-              id="quantidade_material"
-              type="number"
-              min="1"
-              value={materialFormData.quantidade}
-              onChange={(e) => setMaterialFormData({ ...materialFormData, quantidade: e.target.value === '' ? '' : (parseInt(e.target.value) || '') })}
-              className="bg-[#0f0f0f] border-gray-700 text-white"
-              placeholder="Ex: 1"
-              required
-            />
+            <div className="flex gap-2">
+              <Input
+                id="quantidade_material"
+                data-testid="material-quantidade-input"
+                type="number"
+                min="0.01"
+                step="any"
+                value={materialFormData.quantidade}
+                onChange={(e) => setMaterialFormData({ ...materialFormData, quantidade: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white flex-1"
+                placeholder="Ex: 5"
+                required
+              />
+              <select
+                data-testid="material-unidade-select"
+                value={materialFormData.unidade || 'Un'}
+                onChange={(e) => setMaterialFormData({ ...materialFormData, unidade: e.target.value })}
+                className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 w-24"
+              >
+                <option value="Un">Un</option>
+                <option value="L">L</option>
+                <option value="M">M</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -62,6 +77,7 @@ const MaterialModal = ({
             </Label>
             <select
               id="fornecido_por"
+              data-testid="material-fornecido-select"
               value={materialFormData.fornecido_por}
               onChange={(e) => setMaterialFormData({ ...materialFormData, fornecido_por: e.target.value })}
               className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2"
@@ -76,7 +92,7 @@ const MaterialModal = ({
           {materialFormData.fornecido_por === 'Cotação' && (
             <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-3">
               <p className="text-yellow-400 text-sm">
-                ℹ️ Um Pedido de Cotação será criado automaticamente para este material
+                Um Pedido de Cotação será criado automaticamente para este material
               </p>
             </div>
           )}
@@ -88,6 +104,7 @@ const MaterialModal = ({
             </Label>
             <Input
               id="data_utilizacao"
+              data-testid="material-data-input"
               type="date"
               value={materialFormData.data_utilizacao || ''}
               onChange={(e) => setMaterialFormData({ ...materialFormData, data_utilizacao: e.target.value })}
@@ -107,6 +124,7 @@ const MaterialModal = ({
             </Button>
             <Button
               type="submit"
+              data-testid="material-submit-btn"
               disabled={loading}
               className={`flex-1 ${isEditing ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
             >

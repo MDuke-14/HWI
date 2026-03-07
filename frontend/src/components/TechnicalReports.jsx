@@ -277,6 +277,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [materialFormData, setMaterialFormData] = useState({
     descricao: '',
     quantidade: '',
+    unidade: 'Un',
     fornecido_por: 'Cliente',
     data_utilizacao: ''
   });
@@ -1892,7 +1893,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.success('Material adicionado!');
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
-      setMaterialFormData({ descricao: '', quantidade: '', fornecido_por: 'Cliente', data_utilizacao: '' });
+      setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
       
       // Se foi marcado como "Cotação", atualizar lista de PCs
       if (materialFormData.fornecido_por === 'Cotação') {
@@ -1939,6 +1940,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     setMaterialFormData({
       descricao: material.descricao,
       quantidade: material.quantidade,
+      unidade: material.unidade || 'Un',
       fornecido_por: material.fornecido_por,
       data_utilizacao: material.data_utilizacao || ''
     });
@@ -5531,7 +5533,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <div className="flex-1">
                           <p className="text-white font-medium">{material.descricao}</p>
                           <div className="flex flex-wrap gap-4 mt-1 text-sm text-gray-400">
-                            <span>Qtd: {material.quantidade}</span>
+                            <span>Qtd: {material.quantidade} {material.unidade || 'Un'}</span>
                             <span className={`px-2 py-0.5 rounded ${
                               material.fornecido_por === 'Cliente' ? 'bg-green-600/20 text-green-400' :
                               material.fornecido_por === 'HWI' ? 'bg-blue-600/20 text-blue-400' :
@@ -6728,7 +6730,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         onSubmit={handleAddMaterial}
         onCancel={() => {
           setShowAddMaterialModal(false);
-          setMaterialFormData({ descricao: '', quantidade: '', fornecido_por: 'Cliente', data_utilizacao: '' });
+          setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
         }}
       />
 
