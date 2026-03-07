@@ -4253,6 +4253,12 @@ async def enviar_pdf_ot(
                             dados_extras[key_nome] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
                         dados_extras[key_nome]['dieta'] = valor_dieta_tabela
                 
+                # Buscar imagem da tabela de preços
+                tabela_preco_image_email = None
+                if tabela_config and tabela_config.get("imagem_data"):
+                    import base64
+                    tabela_preco_image_email = base64.b64decode(tabela_config["imagem_data"])
+                
                 folha_horas_buffer = generate_folha_horas_pdf(
                     relatorio=relatorio,
                     cliente=cliente,
@@ -4264,7 +4270,8 @@ async def enviar_pdf_ot(
                     valor_km=valor_km,
                     tarifas_detalhadas=tarifas_detalhadas_email,
                     despesas_ajustadas=despesas_ajustadas_email,
-                    valor_dieta_default=valor_dieta_tabela
+                    valor_dieta_default=valor_dieta_tabela,
+                    tabela_preco_image=tabela_preco_image_email,
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
@@ -11556,6 +11563,15 @@ async def get_tabelas_preco(current_user: dict = Depends(get_current_user)):
         config_dict.pop("_id", None)
         configs = [config_dict]
     
+    # Replace large imagem_data with a boolean flag
+    for c in configs:
+        if c.get("imagem_data"):
+            c["has_imagem"] = True
+            del c["imagem_data"]
+        else:
+            c["has_imagem"] = False
+        c.pop("imagem_content_type", None)
+    
     return configs
 
 
@@ -11633,6 +11649,64 @@ async def delete_tabela_preco(
     await db.tabelas_preco.delete_one({"table_id": table_id})
     logging.info(f"Tabela de Preço {table_id} eliminada por {current_user['sub']}")
     return {"message": f"Tabela {table_id} eliminada com sucesso"}
+
+
+@api_router.post("/tabelas-preco/{table_id}/imagem")
+async def upload_tabela_preco_imagem(
+    table_id: int,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_admin)
+):
+    """Upload da imagem da tabela de preços"""
+    existing = await db.tabelas_preco.find_one({"table_id": table_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tabela de preço não encontrada")
+    
+    content = await file.read()
+    import base64
+    img_b64 = base64.b64encode(content).decode('utf-8')
+    
+    await db.tabelas_preco.update_one(
+        {"table_id": table_id},
+        {"$set": {
+            "imagem_data": img_b64,
+            "imagem_content_type": file.content_type,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    return {"message": "Imagem carregada com sucesso"}
+
+
+@api_router.get("/tabelas-preco/{table_id}/imagem")
+async def get_tabela_preco_imagem(
+    table_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obter imagem da tabela de preços"""
+    from fastapi.responses import Response
+    existing = await db.tabelas_preco.find_one({"table_id": table_id}, {"_id": 0})
+    if not existing or not existing.get("imagem_data"):
+        raise HTTPException(status_code=404, detail="Imagem não encontrada")
+    
+    import base64
+    img_bytes = base64.b64decode(existing["imagem_data"])
+    return Response(
+        content=img_bytes,
+        media_type=existing.get("imagem_content_type", "image/png")
+    )
+
+
+@api_router.delete("/tabelas-preco/{table_id}/imagem")
+async def delete_tabela_preco_imagem(
+    table_id: int,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Eliminar imagem da tabela de preços"""
+    await db.tabelas_preco.update_one(
+        {"table_id": table_id},
+        {"$unset": {"imagem_data": "", "imagem_content_type": ""}}
+    )
+    return {"message": "Imagem eliminada com sucesso"}
 
 
 # ============ Tarifas Routes ============
@@ -11981,7 +12055,10 @@ async def get_folha_horas_data(
         "despesas": despesas,
         "despesas_por_tecnico_data": despesas_por_tecnico_data,
         "portagens_por_tecnico_data": portagens_por_tecnico_data,
-        "tabelas_preco": await db.tabelas_preco.find({}, {"_id": 0}).to_list(length=None)
+        "tabelas_preco": [
+            {**{k: v for k, v in t.items() if k not in ('imagem_data', 'imagem_content_type')}, "has_imagem": bool(t.get('imagem_data'))}
+            for t in await db.tabelas_preco.find({}, {"_id": 0}).to_list(length=None)
+        ]
     }
 
 
@@ -12114,6 +12191,12 @@ async def generate_folha_horas(
         despesa["percentual_aplicado"] = percentual
         despesas_ajustadas.append(despesa)
     
+    # Buscar imagem da tabela de preços se existir
+    tabela_preco_image = None
+    if tabela_config and tabela_config.get("imagem_data"):
+        import base64
+        tabela_preco_image = base64.b64decode(tabela_config["imagem_data"])
+    
     pdf_buffer = generate_folha_horas_pdf(
         relatorio=relatorio,
         cliente=cliente,
@@ -12125,7 +12208,8 @@ async def generate_folha_horas(
         valor_km=valor_km,
         tarifas_detalhadas=tarifas_detalhadas,
         despesas_ajustadas=despesas_ajustadas,
-        valor_dieta_default=valor_dieta_tabela
+        valor_dieta_default=valor_dieta_tabela,
+        tabela_preco_image=tabela_preco_image,
     )
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')

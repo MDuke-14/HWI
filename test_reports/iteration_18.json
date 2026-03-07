@@ -1,0 +1,84 @@
+{
+  "summary": "Tested Folha de Horas PDF restructure and tabela-preco image endpoints. All 15 tests pass after fixing image scaling bug in folha_horas_pdf.py",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_folha_horas_pdf_v2.py",
+    "/app/test_reports/pytest/pytest_folha_horas_v2.xml",
+    "/app/test_reports/folha_horas_test_ot.pdf"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_folha_horas_pdf_v2.py",
+    "/app/backend/folha_horas_pdf.py"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15 tests passed)",
+    "frontend": "N/A (backend only testing)"
+  },
+  "test_credentials": {
+    "username": "pedro",
+    "password": "password"
+  },
+  "seed_data_creation": "Used test OT_ID: 6952755f-2fcf-4d34-a90d-38626782bc86 (OT #360)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Folha de Horas PDF restructure complete. New structure: 1) REGISTOS GERAIS table, 2) Per-collaborator sections with RESUMO FINANCEIRO, 3) DESPESAS table (excludes combustivel), 4) Legal note, 5) TABELA DE PREÇOS image (last page). Image upload/download/delete for tabelas-preco all working. Fixed image scaling bug that caused 500 error when image was too large for page frame.",
+  "features_tested": {
+    "folha_horas_pdf_generation": {
+      "endpoint": "POST /api/relatorios-tecnicos/{id}/folha-horas-pdf",
+      "status": "PASS",
+      "tests_passed": [
+        "Returns 200 with valid PDF",
+        "PDF contains REGISTOS GERAIS section",
+        "PDF contains RESUMO FINANCEIRO section for each collaborator",
+        "PDF contains legal note (Nota: Este documento é apenas informativo...)",
+        "PDF excludes combustivel/fuel expenses by design",
+        "Returns 404 for non-existent OT"
+      ]
+    },
+    "tabela_preco_image": {
+      "status": "PASS",
+      "endpoints_tested": [
+        "POST /api/tabelas-preco/{table_id}/imagem - Upload image",
+        "GET /api/tabelas-preco/{table_id}/imagem - Download image",
+        "DELETE /api/tabelas-preco/{table_id}/imagem - Delete image"
+      ],
+      "tests_passed": [
+        "Upload returns 200 success",
+        "GET /api/tabelas-preco returns has_imagem=true after upload",
+        "GET image returns binary data with correct content-type",
+        "DELETE returns 200 success",
+        "GET /api/tabelas-preco returns has_imagem=false after delete",
+        "GET image returns 404 when no image exists"
+      ]
+    },
+    "pdf_with_price_table_image": {
+      "status": "PASS",
+      "note": "Fixed image scaling bug - was causing 500 error when image exceeded page frame size"
+    },
+    "folha_horas_data_excludes_imagem": {
+      "status": "PASS",
+      "note": "GET /api/relatorios-tecnicos/{id}/folha-horas-data correctly excludes large imagem_data field, only returns has_imagem boolean"
+    },
+    "material_string_quantity": {
+      "status": "PASS",
+      "note": "Material creation with string quantity value (e.g., '2.5') works correctly"
+    }
+  },
+  "bug_fixed": {
+    "description": "Fixed image scaling bug in folha_horas_pdf.py that caused 500 error when price table image was uploaded",
+    "root_cause": "Image scaling calculation didn't account for title, spacers, and document margins - resulting in image that exceeded available page frame height",
+    "fix_applied": "Reduced available page height by 2.0cm to account for title, spacers, and footer content",
+    "file_modified": "/app/backend/folha_horas_pdf.py",
+    "line": "~687 - Changed page_h calculation from 'landscape(A4)[1] - 1.4*cm' to 'landscape(A4)[1] - 1.4*cm - 2.0*cm'"
+  }
+}

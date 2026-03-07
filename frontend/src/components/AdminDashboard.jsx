@@ -1977,6 +1977,58 @@ const AdminDashboard = ({ user, onLogout }) => {
                       Aplicado automaticamente por dia/técnico na Folha de Horas
                     </p>
                   </div>
+                  {showTabelaDialog && showTabelaDialog !== 'new' && (
+                    <div>
+                      <Label>Imagem da Tabela de Preços</Label>
+                      <p className="text-xs text-gray-500 mb-2">
+                        Esta imagem será anexada na última página da Folha de Horas
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          data-testid="tabela-imagem-upload"
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            try {
+                              await axios.post(`${API}/tabelas-preco/${showTabelaDialog}/imagem`, formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                              });
+                              toast.success('Imagem carregada com sucesso');
+                              fetchTabelasPreco();
+                            } catch {
+                              toast.error('Erro ao carregar imagem');
+                            }
+                          }}
+                          className="bg-[#0a0a0a] border-gray-700 text-white text-xs"
+                        />
+                      </div>
+                      {tabelasPreco.find(t => t.table_id === showTabelaDialog)?.has_imagem && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-xs text-green-400">Imagem carregada</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 h-6 px-2 text-xs"
+                            onClick={async () => {
+                              try {
+                                await axios.delete(`${API}/tabelas-preco/${showTabelaDialog}/imagem`);
+                                toast.success('Imagem eliminada');
+                                fetchTabelasPreco();
+                              } catch {
+                                toast.error('Erro ao eliminar imagem');
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Remover
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <Button 
                     onClick={handleSaveTabela} 
                     disabled={loading}
