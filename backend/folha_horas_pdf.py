@@ -411,17 +411,6 @@ def generate_folha_horas_pdf(
         total_km_valor_geral += reg['total_km_valor']
         total_dieta_geral += reg['dieta']
 
-    # Linha de totais
-    table_data.append([
-        '', '', '', 'TOTAIS:', '', '',
-        f'{total_valor_geral:.2f}€',
-        '', '',
-        f'{total_km_valor_geral:.2f}€',
-        '', '',
-        f'{total_dieta_geral:.2f}€',
-        ''
-    ])
-
     col_widths = [
         1.8*cm,  # Data
         2.8*cm,  # Colaborador
@@ -440,15 +429,8 @@ def generate_folha_horas_pdf(
     ]
 
     table = Table(table_data, colWidths=col_widths, repeatRows=1)
-    table.setStyle(TableStyle(make_table_style()))
+    table.setStyle(TableStyle(make_table_style(has_totals=False)))
     elements.append(table)
-
-    elements.append(Spacer(1, 0.3*cm))
-    grande_total_horas = total_valor_geral + total_km_valor_geral + total_dieta_geral
-    elements.append(Paragraph(
-        f"<b>Total Geral (Horas + KM + Dietas):</b> {grande_total_horas:.2f}€",
-        normal_style
-    ))
 
     # ==========================================
     # SECÇÃO 2: TABELA POR COLABORADOR + RESUMO
@@ -506,78 +488,91 @@ def generate_folha_horas_pdf(
             colab_total_km_valor += reg['total_km_valor']
             colab_total_dieta += reg['dieta']
 
-        colab_table_data.append([
-            '', '', '', 'TOTAIS:', '', '',
-            f'{colab_total_valor:.2f}€', '', '',
-            f'{colab_total_km_valor:.2f}€', '', '',
-            f'{colab_total_dieta:.2f}€', ''
-        ])
-
         ct = Table(colab_table_data, colWidths=col_widths, repeatRows=1)
-        ct.setStyle(TableStyle(make_table_style()))
+        ct.setStyle(TableStyle(make_table_style(has_totals=False)))
         elements.append(ct)
         elements.append(Spacer(1, 0.4*cm))
 
-        # --- Tabela Resumo Financeiro do Colaborador ---
-        elements.append(Paragraph(f"RESUMO FINANCEIRO — {nome.upper()}", heading_style))
+        # --- Tabela RESUMO do Colaborador ---
+        elements.append(Paragraph(f"RESUMO — {nome.upper()}", heading_style))
 
-        # Acumular valores por código
-        trabalho_por_cod = defaultdict(float)   # codigo -> euros
-        viagem_por_cod = defaultdict(float)     # codigo -> euros
+        # Acumular HORAS e EUROS por código
+        trabalho_horas_cod = defaultdict(float)   # codigo -> horas
+        viagem_horas_cod = defaultdict(float)     # codigo -> horas
+        trabalho_euros_cod = defaultdict(float)   # codigo -> euros
+        viagem_euros_cod = defaultdict(float)     # codigo -> euros
         km_total_euros = 0
+        km_total_val = 0
         tarifa_por_cod_trab = {}
         tarifa_por_cod_viag = {}
 
         for reg in regs:
             cod = reg['codigo']
+            horas = reg.get('minutos', 0) / 60
             tipo_norm = 'trabalho' if reg['tipo_registo'] in ('trabalho', 'oficina', 'manual') else reg['tipo_registo']
             if tipo_norm == 'viagem':
-                viagem_por_cod[cod] += reg['total_valor']
+                viagem_horas_cod[cod] += horas
+                viagem_euros_cod[cod] += reg['total_valor']
                 if cod not in tarifa_por_cod_viag:
                     tarifa_por_cod_viag[cod] = reg['tarifa_valor']
             else:
-                trabalho_por_cod[cod] += reg['total_valor']
+                trabalho_horas_cod[cod] += horas
+                trabalho_euros_cod[cod] += reg['total_valor']
                 if cod not in tarifa_por_cod_trab:
                     tarifa_por_cod_trab[cod] = reg['tarifa_valor']
             km_total_euros += reg['total_km_valor']
+            km_total_val += (reg.get('total_km', 0) or 0)
 
-        # Build resumo header and row
-        # Colunas: Colaborador | Função | Cod.1 XX€ | Cod.2 XX€ | Cod.S XX€ | Cod.D XX€ |
-        #          Cod.V1 XX€ | Cod.V2 XX€ | Cod.VS XX€ | Cod.VD XX€ | KM XX€ | TOTAL
         codigos = ['1', '2', 'S', 'D']
 
+        # --- Linha 1: TOTAL DE HORAS POR CÓDIGO ---
         resumo_header = ['Colaborador', 'Função']
         for c in codigos:
-            t_val = tarifa_por_cod_trab.get(c, tarifas_por_codigo.get(c, 0))
-            resumo_header.append(f"Cód.{c}\n{t_val:.2f}€/h")
+            resumo_header.append(f"Cód.{c}")
         for c in codigos:
-            t_val = tarifa_por_cod_viag.get(c, tarifas_por_codigo.get(c, 0))
-            resumo_header.append(f"Cód.V{c}\n{t_val:.2f}€/h")
-        resumo_header.append(f"KM\n{PRECO_KM:.2f}€/km")
-        resumo_header.append('TOTAL')
+            resumo_header.append(f"Cód.V{c}")
+        resumo_header.append('KM')
+        resumo_header.append('Dietas')
+        resumo_header.append('TOTAL\nHORAS')
 
-        resumo_row = [nome, funcao_label]
-        total_colab = 0
+        total_horas_colab = 0
+        resumo_row_horas = [nome, funcao_label]
         for c in codigos:
-            v = trabalho_por_cod.get(c, 0)
-            resumo_row.append(f"{v:.2f}€" if v > 0 else '-')
-            total_colab += v
+            h = trabalho_horas_cod.get(c, 0)
+            resumo_row_horas.append(f"{h:.1f}h" if h > 0 else '-')
+            total_horas_colab += h
         for c in codigos:
-            v = viagem_por_cod.get(c, 0)
-            resumo_row.append(f"{v:.2f}€" if v > 0 else '-')
-            total_colab += v
-        resumo_row.append(f"{km_total_euros:.2f}€" if km_total_euros > 0 else '-')
-        total_colab += km_total_euros
-        total_colab += colab_total_dieta
-        resumo_row.append(f"{total_colab:.2f}€")
+            h = viagem_horas_cod.get(c, 0)
+            resumo_row_horas.append(f"{h:.1f}h" if h > 0 else '-')
+            total_horas_colab += h
+        resumo_row_horas.append(f"{km_total_val:.1f}" if km_total_val > 0 else '-')
+        resumo_row_horas.append(f"{colab_total_dieta:.2f}€" if colab_total_dieta > 0 else '-')
+        resumo_row_horas.append(f"{total_horas_colab:.1f}h")
 
-        resumo_data = [resumo_header, resumo_row]
+        # --- Linha 2: TOTAL € POR CÓDIGO ---
+        resumo_row_euros = ['', 'TOTAL €']
+        total_euros_colab = 0
+        for c in codigos:
+            v = trabalho_euros_cod.get(c, 0)
+            resumo_row_euros.append(f"{v:.2f}€" if v > 0 else '-')
+            total_euros_colab += v
+        for c in codigos:
+            v = viagem_euros_cod.get(c, 0)
+            resumo_row_euros.append(f"{v:.2f}€" if v > 0 else '-')
+            total_euros_colab += v
+        resumo_row_euros.append(f"{km_total_euros:.2f}€" if km_total_euros > 0 else '-')
+        total_euros_colab += km_total_euros
+        resumo_row_euros.append(f"{colab_total_dieta:.2f}€" if colab_total_dieta > 0 else '-')
+        total_euros_colab += colab_total_dieta
+        resumo_row_euros.append(f"{total_euros_colab:.2f}€")
+
+        resumo_data = [resumo_header, resumo_row_horas, resumo_row_euros]
 
         resumo_col_widths = [
-            2.8*cm, 1.4*cm,
-            1.7*cm, 1.7*cm, 1.7*cm, 1.7*cm,
-            1.7*cm, 1.7*cm, 1.7*cm, 1.7*cm,
-            1.8*cm, 2.2*cm,
+            2.5*cm, 1.4*cm,
+            1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm,
+            1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm,
+            1.5*cm, 1.5*cm, 2.0*cm,
         ]
 
         rt = Table(resumo_data, colWidths=resumo_col_widths)
@@ -588,9 +583,13 @@ def generate_folha_horas_pdf(
             ('FONTSIZE', (0, 0), (-1, 0), 6),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('FONTSIZE', (0, 1), (-1, -1), 6.5),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -1), 0.4, GRID_COLOR),
+            # Row 2 (euros) styling
+            ('BACKGROUND', (0, 2), (-1, 2), TOTALS_BG),
+            ('FONTNAME', (0, 2), (-1, 2), 'Helvetica-Bold'),
+            # TOTAL column highlight
             ('BACKGROUND', (-1, 1), (-1, -1), TOTALS_BG),
             ('FONTNAME', (-1, 1), (-1, -1), 'Helvetica-Bold'),
             ('TOPPADDING', (0, 0), (-1, -1), 3),
@@ -653,32 +652,37 @@ def generate_folha_horas_pdf(
 
         # Nota legal
         elements.append(Paragraph(NOTA_LEGAL, legal_style))
+    else:
+        total_despesas = 0
 
-        # Total geral (horas + despesas)
-        elements.append(Spacer(1, 0.4*cm))
-        grande_total = grande_total_horas + total_despesas
-        gt_data = [[
-            'Subtotal Horas + KM + Dietas:',
-            f'{grande_total_horas:.2f}€',
-            'Subtotal Despesas:',
-            f'{total_despesas:.2f}€',
-            'TOTAL GERAL:',
-            f'{grande_total:.2f}€'
-        ]]
-        gt_widths = [4.0*cm, 2.5*cm, 3.5*cm, 2.5*cm, 3.0*cm, 2.5*cm]
-        gt_table = Table(gt_data, colWidths=gt_widths)
-        gt_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('BACKGROUND', (4, 0), (5, 0), TOTALS_BG),
-            ('TEXTCOLOR', (0, 0), (-1, -1), TEXT_BLACK),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('BOX', (0, 0), (-1, -1), 0.4, GRID_COLOR),
-            ('INNERGRID', (0, 0), (-1, -1), 0.4, GRID_COLOR),
-        ]))
-        elements.append(gt_table)
+    # ==========================================
+    # SECÇÃO FINAL: SUBTOTAIS SEPARADOS
+    # ==========================================
+    elements.append(Spacer(1, 0.4*cm))
+    grande_total = total_valor_geral + total_km_valor_geral + total_dieta_geral + total_despesas
+    gt_data = [
+        ['Subtotal Horas:', f'{total_valor_geral:.2f}€',
+         'Subtotal KM:', f'{total_km_valor_geral:.2f}€'],
+        ['Subtotal Dietas:', f'{total_dieta_geral:.2f}€',
+         'Subtotal Despesas:', f'{total_despesas:.2f}€'],
+        ['', '', 'TOTAL GERAL:', f'{grande_total:.2f}€'],
+    ]
+    gt_widths = [4.0*cm, 3.0*cm, 4.0*cm, 3.0*cm]
+    gt_table = Table(gt_data, colWidths=gt_widths)
+    gt_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+        ('BACKGROUND', (2, 2), (3, 2), TOTALS_BG),
+        ('TEXTCOLOR', (0, 0), (-1, -1), TEXT_BLACK),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('BOX', (0, 0), (-1, -1), 0.4, GRID_COLOR),
+        ('INNERGRID', (0, 0), (-1, -1), 0.4, GRID_COLOR),
+    ]))
+    elements.append(gt_table)
 
     # ==========================================
     # SECÇÃO 4: IMAGEM DA TABELA DE PREÇOS (última página)

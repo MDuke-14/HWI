@@ -38,6 +38,14 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - Each role supports independent tariffs (tipo_colaborador: junior/tecnico/senior)
 - Color coding: Junior=yellow, Técnico=cyan, Sénior=purple
 
+### Folha de Horas PDF - Restructure v2 (7 Mar 2026)
+- Removed TOTAIS rows from general and per-collaborator tables
+- Removed "Total Geral (Horas + KM + Dietas)" line
+- Renamed "RESUMO FINANCEIRO" to "RESUMO"
+- Summary now shows 2 rows: hours per code (1st) + euros per code (2nd/TOTAL €)
+- Added DIETAS column to collaborator summary
+- Separated final subtotals: Subtotal Horas | Subtotal KM | Subtotal Dietas | Subtotal Despesas | TOTAL GERAL
+
 ### Folha de Horas PDF - Complete Restructure (7 Mar 2026)
 - **Section 1 - REGISTOS GERAIS**: Single table with ALL records, sorted by Date > Start Time > Collaborator Name. Columns: Data | Colaborador | Função | Registo | Horas | Tarifa | Total Valor | KM's | Preço/KM | Total KM | Início | Fim | Dieta | Observações
 - **Section 2 - Per Collaborator**: Individual record tables + RESUMO FINANCEIRO summary table per collaborator showing total euros per code (Cód.1, Cód.2, Cód.S, Cód.D, Cód.V1-VD, KM, TOTAL)
