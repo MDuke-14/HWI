@@ -236,6 +236,39 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro na migração de viagem: {str(e)}")
     
+    # Migração: Mover relatorio_assistencia das intervenções para relatorios_assistencia
+    try:
+        intervs_to_migrate = await db.intervencoes_relatorio.find(
+            {'relatorio_assistencia': {'$exists': True, '$ne': None, '$ne': ''}},
+            {'_id': 1, 'relatorio_id': 1, 'data_intervencao': 1, 'relatorio_assistencia': 1, 'equipamento_id': 1}
+        ).to_list(None)
+        intervs_to_migrate = [i for i in intervs_to_migrate if i.get('relatorio_assistencia') and str(i['relatorio_assistencia']).strip()]
+        migrated = 0
+        for iv in intervs_to_migrate:
+            texto = iv['relatorio_assistencia'].strip()
+            existing = await db.relatorios_assistencia.find_one({
+                'relatorio_id': iv['relatorio_id'],
+                'data_intervencao': iv['data_intervencao'],
+                'texto': texto
+            })
+            if not existing:
+                equip_ids = [iv['equipamento_id']] if iv.get('equipamento_id') else []
+                await db.relatorios_assistencia.insert_one({
+                    'id': str(uuid.uuid4()),
+                    'relatorio_id': iv['relatorio_id'],
+                    'texto': texto,
+                    'equipamento_ids': equip_ids,
+                    'data_intervencao': iv['data_intervencao']
+                })
+                migrated += 1
+            await db.intervencoes_relatorio.update_one({'_id': iv['_id']}, {'$set': {'relatorio_assistencia': None}})
+        if migrated > 0:
+            logging.info(f"Migração rel. assistência: {migrated} registos movidos para relatorios_assistencia")
+        else:
+            logging.info("Migração rel. assistência: nada a migrar")
+    except Exception as e:
+        logging.error(f"Erro na migração rel. assistência: {str(e)}")
+    
     # Criar índices para melhorar performance
     logging.info("🔧 Criando índices de base de dados...")
     try:
