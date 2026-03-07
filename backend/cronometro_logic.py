@@ -105,17 +105,24 @@ def get_codigo_horario(dt, is_weekend_or_holiday=None):
 
 def arredondar_horas(total_minutos):
     """
-    Arredonda minutos conforme regra:
-    - Mínimo 1h
-    - 0-10min → :00
-    - 11-40min → :30
-    - 41-59min → próxima hora
+    Arredonda minutos conforme regra de 15 minutos:
+    - Mínimo 1h faturável (registos < 60 min → 1:00)
+    - A partir de 1h, arredondamento ao quarto de hora:
+      0-7 min → :00
+      8-22 min → :15
+      23-37 min → :30
+      38-52 min → :45
+      53-59 min → próxima hora
+    
+    Exemplos: 0:30→1:00, 1:08→1:15, 1:23→1:30, 1:38→1:45, 1:53→2:00
+    
+    NOTA: Viagem NÃO usa esta função (tempo real, sem arredondamento).
     
     Args:
         total_minutos: Total de minutos
     
     Returns:
-        float: Horas arredondadas (ex: 1.0, 1.5, 2.0)
+        float: Horas arredondadas (ex: 1.0, 1.25, 1.5, 1.75, 2.0)
     """
     if total_minutos < 60:
         return 1.0  # Mínimo 1h
@@ -123,12 +130,16 @@ def arredondar_horas(total_minutos):
     horas = int(total_minutos // 60)
     minutos = int(total_minutos % 60)
     
-    # Aplicar regra de arredondamento
-    if minutos <= 10:
+    # Arredondamento aos 15 minutos
+    if minutos <= 7:
         minutos_arredondados = 0
-    elif 11 <= minutos <= 40:
+    elif minutos <= 22:
+        minutos_arredondados = 15
+    elif minutos <= 37:
         minutos_arredondados = 30
-    else:  # 41-59
+    elif minutos <= 52:
+        minutos_arredondados = 45
+    else:  # 53-59
         minutos_arredondados = 0
         horas += 1
     
