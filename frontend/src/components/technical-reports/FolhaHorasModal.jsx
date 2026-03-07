@@ -265,7 +265,7 @@ const FolhaHorasModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <FileSpreadsheet className="w-5 h-5 text-amber-400" />
-            Folha de Horas - OT #{selectedRelatorio?.numero_assistencia}
+            Folha de Horas - FS #{selectedRelatorio?.numero_assistencia}
           </DialogTitle>
         </DialogHeader>
 
@@ -490,7 +490,7 @@ const FolhaHorasModal = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Receipt className="w-5 h-5 text-emerald-400" />
-              Despesas - OT #{selectedRelatorio?.numero_assistencia}
+              Despesas - FS #{selectedRelatorio?.numero_assistencia}
             </DialogTitle>
           </DialogHeader>
           

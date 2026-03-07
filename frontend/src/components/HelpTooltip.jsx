@@ -13,12 +13,12 @@ const helpContent = {
     title: '📋 Como funcionam as OTs',
     content: `
       <div class="space-y-4">
-        <p><strong>OT (Ordem de Trabalho)</strong> é o documento principal que regista toda a informação de uma assistência técnica.</p>
+        <p><strong>FS (Folha de Serviço)</strong> é o documento principal que regista toda a informação de uma assistência técnica.</p>
         
         <div class="bg-blue-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-blue-400 mb-2">📌 Processo típico:</h4>
           <ol class="list-decimal list-inside space-y-1 text-sm">
-            <li>Criar nova OT com dados do cliente e equipamento</li>
+            <li>Criar nova FS com dados do cliente e equipamento</li>
             <li>Adicionar técnicos responsáveis</li>
             <li>Registar intervenções realizadas</li>
             <li>Adicionar fotografias (antes/depois)</li>
@@ -30,7 +30,7 @@ const helpContent = {
 
         <div class="bg-amber-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-amber-400 mb-2">💡 Dica:</h4>
-          <p class="text-sm">O estado da OT (Pendente, Em Curso, Concluída, Faturada) ajuda a organizar o trabalho e acompanhar o progresso.</p>
+          <p class="text-sm">O estado da FS (Pendente, Em Curso, Concluída, Faturada) ajuda a organizar o trabalho e acompanhar o progresso.</p>
         </div>
       </div>
     `
@@ -40,20 +40,20 @@ const helpContent = {
     title: '👥 Técnicos',
     content: `
       <div class="space-y-4">
-        <p>Esta secção regista os técnicos que trabalharam nesta OT.</p>
+        <p>Esta secção regista os técnicos que trabalharam nesta FS.</p>
         
         <div class="bg-blue-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-blue-400 mb-2">📌 Como adicionar:</h4>
           <ol class="list-decimal list-inside space-y-1 text-sm">
             <li>Clique em "Adicionar Técnico"</li>
             <li>Selecione o técnico da lista</li>
-            <li>O técnico ficará associado à OT</li>
+            <li>O técnico ficará associado à FS</li>
           </ol>
         </div>
 
         <div class="bg-green-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-green-400 mb-2">✅ Para que serve:</h4>
-          <p class="text-sm">Os técnicos adicionados aparecem no PDF da OT e podem ser selecionados na Folha de Horas para cálculo de custos.</p>
+          <p class="text-sm">Os técnicos adicionados aparecem no PDF da FS e podem ser selecionados na Folha de Horas para cálculo de custos.</p>
         </div>
       </div>
     `
@@ -110,7 +110,7 @@ const helpContent = {
     title: '⚙️ Equipamentos',
     content: `
       <div class="space-y-4">
-        <p>Registe os equipamentos intervencionados nesta OT.</p>
+        <p>Registe os equipamentos intervencionados nesta FS.</p>
         
         <div class="bg-blue-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-blue-400 mb-2">📌 Informação a incluir:</h4>
@@ -124,7 +124,7 @@ const helpContent = {
 
         <div class="bg-green-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-green-400 mb-2">✅ Importante:</h4>
-          <p class="text-sm">Esta informação aparece no cabeçalho do PDF da OT.</p>
+          <p class="text-sm">Esta informação aparece no cabeçalho do PDF da FS.</p>
         </div>
       </div>
     `
@@ -157,7 +157,7 @@ const helpContent = {
     title: '💰 Despesas',
     content: `
       <div class="space-y-4">
-        <p>Registe despesas associadas a esta OT (combustível, portagens, refeições, etc.).</p>
+        <p>Registe despesas associadas a esta FS (combustível, portagens, refeições, etc.).</p>
         
         <div class="bg-blue-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-blue-400 mb-2">📌 Tipos de despesa:</h4>
@@ -223,7 +223,7 @@ const helpContent = {
 
         <div class="bg-green-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-green-400 mb-2">✅ Importante:</h4>
-          <p class="text-sm">A assinatura aparece no PDF da OT como comprovativo de aceitação do trabalho.</p>
+          <p class="text-sm">A assinatura aparece no PDF da FS como comprovativo de aceitação do trabalho.</p>
         </div>
 
         <div class="bg-amber-900/30 p-3 rounded-lg">
@@ -238,7 +238,7 @@ const helpContent = {
     title: '⏱️ Cronómetros',
     content: `
       <div class="space-y-4">
-        <p>Registe o tempo de trabalho de cada técnico nesta OT.</p>
+        <p>Registe o tempo de trabalho de cada técnico nesta FS.</p>
         
         <div class="bg-blue-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-blue-400 mb-2">📌 Tipos de registo:</h4>
@@ -265,7 +265,7 @@ const helpContent = {
     title: '📊 Folha de Horas',
     content: `
       <div class="space-y-4">
-        <p>Gere o documento com o resumo de horas, tarifas e custos da OT.</p>
+        <p>Gere o documento com o resumo de horas, tarifas e custos da FS.</p>
         
         <div class="bg-blue-900/30 p-3 rounded-lg">
           <h4 class="font-semibold text-blue-400 mb-2">📌 Passos:</h4>

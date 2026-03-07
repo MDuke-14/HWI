@@ -13,7 +13,7 @@ from collections import defaultdict
 
 def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None, relatorios_assistencia=None):
     """
-    Gera PDF completo de uma Ordem de Trabalho
+    Gera PDF completo de uma Folha de Serviço
     Layout baseado na visualização HTML, organizado por data de intervenção
     """
     buffer = BytesIO()
@@ -223,7 +223,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     # Cabeçalho do relatório técnico (sem nome da empresa)
     header_left = [
         [Paragraph("RELATÓRIO TÉCNICO", header_title_style)],
-        [Paragraph(f"Ordem de Trabalho #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
+        [Paragraph(f"Folha de Serviço #{relatorio.get('numero_assistencia', 'N/A')}", header_subtitle_style)]
     ]
     
     header_right = [
@@ -257,12 +257,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
          Paragraph("", label_style), Paragraph("", value_style)],
     ]
     
-    # Adicionar OT Relacionada se existir
+    # Adicionar FS Relacionada se existir
     ot_rel_numero = relatorio.get('ot_relacionada_numero')
     if ot_rel_numero:
         client_grid.append([
-            Paragraph("OT Relacionada:", label_style),
-            Paragraph(f"OT #{ot_rel_numero}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#2563eb'))),
+            Paragraph("FS Relacionada:", label_style),
+            Paragraph(f"FS #{ot_rel_numero}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#2563eb'))),
             Paragraph("", label_style), Paragraph("", value_style)
         ])
     

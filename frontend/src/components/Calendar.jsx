@@ -172,7 +172,7 @@ const Calendar = ({ user, onLogout }) => {
       } else {
         // Criar serviço e OT associada
         await axios.post(`${API}/services/with-ot`, serviceForm);
-        toast.success('Serviço e OT criados com sucesso!');
+        toast.success('Serviço e FS criados com sucesso!');
       }
       setDialogOpen(false);
       resetForm();
@@ -296,7 +296,7 @@ const Calendar = ({ user, onLogout }) => {
         {/* Stats Bar */}
         <div className={`grid grid-cols-2 ${isMobile ? 'gap-2' : 'md:grid-cols-4 gap-4'}`}>
           <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
-            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 mb-1`}>Total OTs</div>
+            <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase tracking-widest text-gray-500 mb-1`}>Total FS's</div>
             <div className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-white font-mono`}>{totalServicesThisMonth}</div>
           </div>
           <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-2.5' : 'p-4'}`}>
@@ -345,11 +345,11 @@ const Calendar = ({ user, onLogout }) => {
           <div className={`flex ${isMobile ? 'overflow-x-auto gap-3 px-3 py-2 scrollbar-hide' : 'flex-wrap gap-6 px-6 py-3'} border-b border-white/5 bg-white/[0.02]`}>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-orange-500`}></div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>OTs (Agendadas)</span>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>FS's (Agendadas)</span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-cyan-500`}></div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>OTs (Intervenções)</span>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>FS's (Intervenções)</span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-purple-500`}></div>
@@ -502,7 +502,7 @@ const Calendar = ({ user, onLogout }) => {
         {allItems.length === 0 ? (
           <div className={`bg-[#121212] border border-white/10 rounded-xl ${isMobile ? 'p-8' : 'p-12'} text-center`}>
             <CalendarDays className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} text-gray-600 mx-auto mb-3`} />
-            <p className={`text-gray-400 ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma OT agendada este mês</p>
+            <p className={`text-gray-400 ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma FS agendada este mês</p>
           </div>
         ) : (
           allItems.map(item => (
@@ -653,7 +653,7 @@ const Calendar = ({ user, onLogout }) => {
                   Calendário
                   {!isMobile && <HelpTooltip section="calendario_geral" />}
                 </h1>
-                {!isMobile && <p className="text-gray-500 mt-1">Gestão de OTs e disponibilidade da equipa</p>}
+                {!isMobile && <p className="text-gray-500 mt-1">Gestão de FS's e disponibilidade da equipa</p>}
               </div>
             </div>
             {user.is_admin && (
@@ -667,13 +667,13 @@ const Calendar = ({ user, onLogout }) => {
                     data-testid="new-service-btn"
                   >
                     <Plus className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5 mr-2'}`} />
-                    {isMobile ? 'Nova OT' : 'Nova OT'}
+                    {isMobile ? 'Nova FS' : 'Nova FS'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className={`bg-[#0a0a0a] border border-white/10 text-white ${isMobile ? 'max-w-[95vw] max-h-[85vh] rounded-xl' : 'max-w-2xl max-h-[90vh]'} overflow-y-auto`}>
                   <DialogHeader>
                     <DialogTitle className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold tracking-tight flex items-center gap-2`} style={{ fontFamily: "'Chivo', sans-serif" }}>
-                      {editingService ? 'Editar OT' : 'Nova OT'}
+                      {editingService ? 'Editar FS' : 'Nova FS'}
                       {!isMobile && <HelpTooltip section="calendario_servicos" />}
                     </DialogTitle>
                   </DialogHeader>
@@ -937,12 +937,12 @@ const Calendar = ({ user, onLogout }) => {
                   </div>
                 )}
                 
-                {/* OTs - Mostra todas as OTs incluindo as criadas via serviços */}
+                {/* FS's - Mostra todas as FS's incluindo as criadas via serviços */}
                 {selectedDay?.ots?.length > 0 && (
                   <div className="space-y-2">
                     <h4 className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-500 flex items-center gap-2`}>
                       <Wrench className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
-                      Ordens de Trabalho ({selectedDay.ots.length})
+                      Folhas de Serviço ({selectedDay.ots.length})
                     </h4>
                     {selectedDay.ots.map(ot => {
                       const isFromCalendar = ot.from_calendar;

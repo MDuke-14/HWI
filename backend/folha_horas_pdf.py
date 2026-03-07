@@ -172,13 +172,13 @@ def generate_folha_horas_pdf(
             elems.append(RLImage(str(logo_path), width=4*cm, height=1.3*cm))
         elems.append(Paragraph("FOLHA DE HORAS", title_style))
         ot_num = relatorio.get('numero_assistencia', 'N/A')
-        elems.append(Paragraph(f"OT #{ot_num}", subtitle_style))
+        elems.append(Paragraph(f"FS #{ot_num}", subtitle_style))
         elems.append(Spacer(1, 0.15*cm))
         elems.append(Paragraph(f"<b>Cliente:</b> {cliente.get('nome', 'N/A')}", normal_style))
         elems.append(Paragraph(f"<b>Localização:</b> {relatorio.get('local_intervencao', 'N/A')}", normal_style))
         ot_rel_num = relatorio.get('ot_relacionada_numero')
         if ot_rel_num:
-            elems.append(Paragraph(f"<b>OT Relacionada:</b> OT #{ot_rel_num}", normal_style))
+            elems.append(Paragraph(f"<b>FS Relacionada:</b> FS #{ot_rel_num}", normal_style))
         elems.append(Spacer(1, 0.2*cm))
 
     def make_table_style(header_bg=HEADER_BG, has_totals=True):

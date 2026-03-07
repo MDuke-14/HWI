@@ -30,6 +30,13 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026)
 
+### OT → FS Rename (7 Mar 2026)
+- Global rename: "OT (Ordem de Trabalho)" → "FS (Folha de Serviço)" across entire application
+- Updated: all frontend components (TechnicalReports, Calendar, Dashboard, HelpTooltip, MobileMenu, MobileBottomNav, FolhaHorasModal, AssinaturaModal, TecnicoModal, EquipamentoModal)
+- Updated: both PDF generators (folha_horas_pdf.py, ot_pdf_report.py)
+- Updated: backend server.py (email subjects, error messages, notifications)
+- Note: Variable names, DB fields, and API routes kept as-is for compatibility
+
 ### 3-Role Function System (7 Mar 2026)
 - Replaced 2-role system (Técnico/Ajudante) with 3 roles: **Téc. Júnior** (`junior`), **Técnico** (`tecnico`), **Téc. Sénior** (`senior`)
 - Migrated all existing 'ajudante' records in DB to 'junior'

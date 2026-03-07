@@ -31,7 +31,7 @@ const MobileBottomNav = ({ user, activeTimer, onQuickAction }) => {
       testId: 'mobile-nav-home'
     },
     { 
-      name: 'OTs', 
+      name: "FS's",
       path: '/technical-reports', 
       icon: Briefcase,
       testId: 'mobile-nav-ots'

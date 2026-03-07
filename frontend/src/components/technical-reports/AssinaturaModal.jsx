@@ -1119,7 +1119,7 @@ const AssinaturaModal = ({
           <DialogHeader>
             <DialogTitle className={`flex items-center gap-2 text-white ${isMobile ? 'text-base' : ''}`}>
               <PenTool className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400`} />
-              {isMobile ? `Assinaturas OT#${selectedRelatorio?.numero_assistencia}` : `Assinaturas - OT #${selectedRelatorio?.numero_assistencia}`}
+              {isMobile ? `Assinaturas FS#${selectedRelatorio?.numero_assistencia}` : `Assinaturas - FS #${selectedRelatorio?.numero_assistencia}`}
             </DialogTitle>
           </DialogHeader>
 

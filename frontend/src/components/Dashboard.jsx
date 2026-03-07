@@ -1186,15 +1186,15 @@ const Dashboard = ({ user, onLogout }) => {
             </Button>
           )}
 
-          {/* Floating Action Button - OTs (Ordens de Trabalho) */}
+          {/* Floating Action Button - FS's (Folhas de Serviço) */}
           <a
             href="/technical-reports"
             className="fixed bottom-32 sm:bottom-20 right-4 sm:right-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full p-3 sm:p-4 shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-110 z-50 group"
-            title="OTs - Ordens de Trabalho"
+            title="FS's - Folhas de Serviço"
           >
             <Clipboard className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="hidden sm:block absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              OTs - Ordens de Trabalho
+              FS's - Folhas de Serviço
             </span>
           </a>
 

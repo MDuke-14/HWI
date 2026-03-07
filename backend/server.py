@@ -833,7 +833,7 @@ class ServiceAppointmentCreate(BaseModel):
     observations: Optional[str] = None
 
 class ServiceWithOTCreate(BaseModel):
-    """Modelo para criar serviço que gera OT automaticamente"""
+    """Modelo para criar serviço que gera FS automaticamente"""
     client_name: str
     client_id: Optional[str] = None  # ID do cliente para criar OT
     location: str
@@ -2842,7 +2842,7 @@ async def update_relatorio(
         if not current_user.get("is_admin", False):
             raise HTTPException(
                 status_code=403, 
-                detail="Apenas administradores podem marcar OTs como 'Facturado'"
+                detail="Apenas administradores podem marcar FS's como 'Facturado'"
             )
     
     # Remover campos que não devem ser atualizados
@@ -3379,7 +3379,7 @@ async def add_equipamento_ot(
     # Verificar se OT existe
     ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not ot:
-        raise HTTPException(status_code=404, detail="OT não encontrada")
+        raise HTTPException(status_code=404, detail="FS não encontrada")
     
     # Se for novo equipamento, criar também na base de dados do cliente
     criar_na_base_cliente = equipamento_data.get("criar_na_base_cliente", False)
@@ -4300,14 +4300,14 @@ async def enviar_pdf_ot(
         }
         status = status_map.get(status_raw, status_raw)
         local_intervencao = relatorio.get('local_intervencao', '')
-        subject = f"Ordem de Trabalho #{numero_ot} - {cliente.get('nome', '')}"
+        subject = f"Folha de Serviço #{numero_ot} - {cliente.get('nome', '')}"
         
         body = f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
-            <h2 style="color: #1e40af;">Ordem de Trabalho #{numero_ot} - {status}</h2>
+            <h2 style="color: #1e40af;">Folha de Serviço #{numero_ot} - {status}</h2>
             <p>Exmo(a) Sr(a),</p>
-            <p>Segue em anexo a Ordem de Trabalho #{numero_ot} referente ao serviço realizado.</p>
+            <p>Segue em anexo a Folha de Serviço #{numero_ot} referente ao serviço realizado.</p>
             <p><strong>Cliente:</strong> {cliente.get('nome', 'N/A')}</p>
             <p><strong>Data de Serviço:</strong> {relatorio.get('data_servico', 'N/A')}</p>
             <p><strong>Local:</strong> {local_intervencao if local_intervencao else 'N/A'}</p>
@@ -4384,7 +4384,7 @@ async def preview_pdf_ot(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Gerar preview do PDF da OT sem enviar"""
+    """Gerar preview do PDF da FS sem enviar"""
     # Buscar dados do relatório
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
@@ -9599,7 +9599,7 @@ async def create_service(service_data: ServiceAppointmentCreate, current_user: d
 
 @api_router.post("/services/with-ot")
 async def create_service_with_ot(service_data: ServiceWithOTCreate, current_user: dict = Depends(get_current_admin)):
-    """Criar serviço e OT associada automaticamente"""
+    """Criar serviço e FS associada automaticamente"""
     from datetime import date as dt_date
     
     # Validar técnicos existem
@@ -9735,7 +9735,7 @@ async def create_service_with_ot(service_data: ServiceWithOTCreate, current_user
         await send_service_email(technician_emails, service_dict, "created")
     
     return {
-        "message": "Serviço e OT criados com sucesso",
+        "message": "Serviço e FS criados com sucesso",
         "service": {k: v for k, v in service_dict.items() if k != '_id'},
         "ot": {
             "id": relatorio.id,
@@ -9779,7 +9779,7 @@ async def get_calendar_data(
     year: int,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get calendar data including services, vacations, and OTs for a specific month"""
+    """Get calendar data including services, vacations, and FS's for a specific month"""
     from datetime import timedelta
     
     # Calculate start and end dates for the month
@@ -10559,7 +10559,7 @@ async def add_material_ot(
     """Adicionar material a uma OT"""
     ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not ot:
-        raise HTTPException(status_code=404, detail="OT não encontrada")
+        raise HTTPException(status_code=404, detail="FS não encontrada")
     
     # Validar quantidade
     try:
@@ -10625,7 +10625,7 @@ async def add_material_ot(
             await send_push_to_admins(
                 db,
                 f"📋 Novo Pedido de Cotação",
-                f"{numero_pc} criado para OT {relatorio_id}\nMaterial: {material_data.get('descricao', 'N/A')[:50]}",
+                f"{numero_pc} criado para FS {relatorio_id}\nMaterial: {material_data.get('descricao', 'N/A')[:50]}",
                 "pc_created",
                 "medium"
             )
@@ -10807,7 +10807,7 @@ async def create_despesa_ot(
     despesa_data: dict,
     current_user: dict = Depends(get_current_user)
 ):
-    """Criar nova despesa para uma OT"""
+    """Criar nova despesa para uma FS"""
     from notifications_scheduler import send_push_notification
     
     # Validar campos obrigatórios
@@ -11330,7 +11330,7 @@ async def preview_pdf_pc(
     # Buscar OT associada
     ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
     if not ot:
-        raise HTTPException(status_code=404, detail="OT não encontrada")
+        raise HTTPException(status_code=404, detail="FS não encontrada")
     
     # Enriquecer OT com dados do equipamento se não estiverem nos campos directos
     if not ot.get("equipamento_marca") and not ot.get("equipamento_tipologia"):
@@ -11384,7 +11384,7 @@ async def send_email_pc(
     # Buscar OT associada
     ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
     if not ot:
-        raise HTTPException(status_code=404, detail="OT não encontrada")
+        raise HTTPException(status_code=404, detail="FS não encontrada")
     
     # Enriquecer OT com dados do equipamento se não estiverem nos campos directos
     if not ot.get("equipamento_marca") and not ot.get("equipamento_tipologia"):
@@ -11427,13 +11427,13 @@ async def send_email_pc(
         msg = MIMEMultipart()
         msg['From'] = smtp_from
         msg['To'] = email_destinatario
-        msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - OT #{ot.get('numero_assistencia', 'N/A')}"
+        msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - FS #{ot.get('numero_assistencia', 'N/A')}"
         
         body = f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
             <h2>Pedido de Cotação</h2>
-            <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Ordem de Trabalho <b>#{ot.get('numero_assistencia', 'N/A')}</b>.</p>
+            <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Folha de Serviço <b>#{ot.get('numero_assistencia', 'N/A')}</b>.</p>
             <p><b>Cliente:</b> {ot.get('cliente_nome', 'N/A')}</p>
             <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
             <hr>

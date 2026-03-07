@@ -520,7 +520,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           }
         } catch (error) {
           console.error('Erro ao abrir OT da URL:', error);
-          toast.error('OT não encontrada');
+          toast.error('FS não encontrada');
           setSearchParams({});
         }
       };
@@ -584,7 +584,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         const cachedRelatorios = await getCachedData(STORES.RELATORIOS);
         if (cachedRelatorios && cachedRelatorios.length > 0) {
           setRelatorios(cachedRelatorios);
-          toast.info('OTs carregadas do cache offline');
+          toast.info("FS's carregadas do cache offline");
         } else {
           toast.error('Sem OTs em cache. Conecte à internet para carregar.');
         }
@@ -1054,7 +1054,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         });
       }
       
-      toast.success('OT criada com sucesso!');
+      toast.success('FS criada com sucesso!');
       setShowAddRelatorioModal(false);
       resetRelatorioForm();
       fetchRelatorios();
@@ -1135,7 +1135,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
     try {
       await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}`, relatorioFormData);
-      toast.success('OT atualizada com sucesso!');
+      toast.success('FS atualizada com sucesso!');
       setShowEditRelatorioModal(false);
       setSelectedRelatorio(null);
       fetchRelatorios();
@@ -1149,7 +1149,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
     try {
       await axios.delete(`${API}/relatorios-tecnicos/${relatorioToDelete.id}`);
-      toast.success('OT deletada com sucesso!');
+      toast.success('FS eliminada com sucesso!');
       setShowDeleteRelatorioModal(false);
       setRelatorioToDelete(null);
       fetchRelatorios();
@@ -3456,8 +3456,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         toast.warning(`PDF enviado para ${emails_enviados.length} email(s). ${emails_falhados.length} falharam.`);
       } else {
         const msg = incluirFolhaHoras 
-          ? `PDF da OT + Folha de Horas enviados com sucesso para ${emails_enviados.length} email(s)!`
-          : `PDF da OT enviado com sucesso para ${emails_enviados.length} email(s)!`;
+          ? `PDF da FS + Folha de Horas enviados com sucesso para ${emails_enviados.length} email(s)!`
+          : `PDF da FS enviado com sucesso para ${emails_enviados.length} email(s)!`;
         toast.success(msg);
       }
       
@@ -3551,7 +3551,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold ${textPrimary} truncate`}>
-                {isMobile ? 'OTs' : 'OTs - Ordens de Trabalho'}
+                {isMobile ? "FS's" : "FS's - Folhas de Serviço"}
               </h1>
               {!isMobile && <p className={textSecondary}>Gestão de Assistências Técnicas</p>}
             </div>
@@ -3601,7 +3601,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               data-testid="tab-ots"
             >
               <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              {isMobile ? 'OTs' : 'Ordens de Trabalho'}
+              {isMobile ? "FS's" : "Folhas de Serviço"}
             </button>
             <button
               onClick={() => setActiveTab('pesquisa')}
@@ -3827,7 +3827,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               data-testid="add-ot-btn"
             >
               <Plus className={`${isMobile ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'}`} />
-              Nova OT
+              Nova FS
             </Button>
           </div>
 
@@ -3840,7 +3840,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           ) : relatorios.length === 0 ? (
             <div className="text-center py-8">
               <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
-              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma OT criada</p>
+              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma FS criada</p>
               <Button
                 onClick={() => setShowAddRelatorioModal(true)}
                 className="mt-4 bg-blue-500 hover:bg-blue-600"
@@ -3973,7 +3973,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <div className="col-span-full text-center py-8">
                   <Search className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
                   <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>
-                    Nenhuma OT encontrada para "{searchTerm}"
+                    Nenhuma FS encontrada para "{searchTerm}"
                   </p>
                   <p className={`${textSecondary} text-sm mt-2`}>
                     Tente pesquisar por número da OT, nome do cliente ou local de intervenção
@@ -4026,7 +4026,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               ) : filteredByStatus.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
-                  <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma OT encontrada com este estado</p>
+                  <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma FS encontrada com este estado</p>
                 </div>
               ) : (
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
@@ -4261,7 +4261,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           <DialogHeader>
             <DialogTitle className={`flex items-center gap-2 ${textPrimary}`}>
               <Plus className="w-5 h-5 text-blue-400" />
-              Nova OT
+              Nova FS
             </DialogTitle>
           </DialogHeader>
 
@@ -4323,10 +4323,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                     onChange={(e) => setRelatorioFormData({ ...relatorioFormData, data_fim: e.target.value })}
                     className="bg-[#0f0f0f] border-gray-700 text-white"
                     min={relatorioFormData.data_servico}
-                    placeholder="Deixe vazio para OT de um só dia"
+                    placeholder="Deixe vazio para FS de um só dia"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Se preenchido, a OT aparecerá no calendário em todos os dias do intervalo
+                    Se preenchido, a FS aparecerá no calendário em todos os dias do intervalo
                   </p>
                 </div>
               </div>
@@ -4363,10 +4363,10 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* OT Relacionada (opcional) */}
+            {/* FS Relacionada (opcional) */}
             <div>
               <Label className="text-gray-300">
-                OT Relacionada <span className="text-gray-500">(opcional)</span>
+                FS Relacionada <span className="text-gray-500">(opcional)</span>
               </Label>
               <div className="relative">
                 <select
@@ -4381,7 +4381,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     .sort((a, b) => b.numero_assistencia - a.numero_assistencia)
                     .map(r => (
                       <option key={r.id} value={r.id}>
-                        OT #{r.numero_assistencia} - {r.cliente_nome} ({r.data_servico ? new Date(r.data_servico + 'T00:00:00').toLocaleDateString('pt-PT') : '-'})
+                        FS #{r.numero_assistencia} - {r.cliente_nome} ({r.data_servico ? new Date(r.data_servico + 'T00:00:00').toLocaleDateString('pt-PT') : '-'})
                       </option>
                     ))}
                 </select>
@@ -4389,7 +4389,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
               {relatorioFormData.ot_relacionada_id && (
                 <p className="text-blue-400/70 text-xs mt-1">
-                  Esta OT será associada como continuação da OT selecionada.
+                  Esta FS será associada como continuação da FS selecionada.
                 </p>
               )}
             </div>
@@ -4489,7 +4489,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className={`flex items-center justify-between w-full ${isMobile ? 'pr-6' : 'pr-8'}`}>
               <DialogTitle className={`flex items-center gap-2 ${textPrimary} ${isMobile ? 'text-base' : ''}`}>
                 <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400 flex-shrink-0`} />
-                <span className="truncate">OT #{selectedRelatorio?.numero_assistencia}</span>
+                <span className="truncate">FS #{selectedRelatorio?.numero_assistencia}</span>
               </DialogTitle>
               {!isMobile && (
                 <Button
@@ -4556,7 +4556,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <p className={`text-amber-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 flex items-center gap-1`}>
                     <Link2 className="w-3 h-3" />
                     OT Posterior: {selectedRelatorio.ots_posteriores.map(ot => (
-                      <span key={ot.id} className="font-semibold" data-testid="ot-posterior-ref">OT #{ot.numero_assistencia}</span>
+                      <span key={ot.id} className="font-semibold" data-testid="ot-posterior-ref">FS #{ot.numero_assistencia}</span>
                     )).reduce((prev, curr) => [prev, ', ', curr])}
                   </p>
                 )}
@@ -6053,7 +6053,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 ) : (
                   <div className="text-center py-8">
                     <PenTool className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">OT ainda não assinada</p>
+                    <p className="text-gray-400 text-sm">FS ainda não assinada</p>
                     <p className="text-gray-500 text-xs mt-1">Clique em "Nova Assinatura" para o cliente assinar</p>
                   </div>
                 )}
@@ -6124,7 +6124,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/status`, {
                           status: 'em_execucao'
                         });
-                        toast.success('OT marcada como Em Execução!');
+                        toast.success('FS marcada como Em Execução!');
                         setSelectedRelatorio({ ...selectedRelatorio, status: 'em_execucao' });
                         fetchRelatorios();
                       } catch (error) {
@@ -6145,7 +6145,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/status`, {
                           status: 'concluido'
                         });
-                        toast.success('OT marcada como Concluída!');
+                        toast.success('FS marcada como Concluída!');
                         setSelectedRelatorio({ ...selectedRelatorio, status: 'concluido' });
                         fetchRelatorios();
                       } catch (error) {
@@ -6166,7 +6166,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/status`, {
                           status: 'em_execucao'
                         });
-                        toast.success('OT reaberta - Em Execução!');
+                        toast.success('FS reaberta - Em Execução!');
                         setSelectedRelatorio({ ...selectedRelatorio, status: 'em_execucao' });
                         fetchRelatorios();
                       } catch (error) {
@@ -6177,7 +6177,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     data-testid="reabrir-ot-btn"
                   >
                     <RefreshCw className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
-                    {isMobile ? 'Reabrir OT' : 'Reabrir OT (Em Execução)'}
+                    {isMobile ? 'Reabrir FS' : 'Reabrir FS (Em Execução)'}
                   </Button>
                 )}
                 
@@ -6193,7 +6193,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </Button>
                 )}
                 
-                {/* Botão FECHAR - Para fechar o painel da OT */}
+                {/* Botão FECHAR - Para fechar o painel da FS */}
                 <Button
                   onClick={() => {
                     setSelectedRelatorio(null);
@@ -6214,13 +6214,13 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Enviar Email OT */}
+      {/* Modal Enviar Email FS */}
       <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Mail className="w-5 h-5 text-purple-400" />
-              Enviar OT Por Email
+              Enviar FS Por Email
             </DialogTitle>
           </DialogHeader>
 
@@ -6266,7 +6266,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             {/* Resumo */}
             <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
               <p className="text-sm text-purple-300">
-                <strong>OT #{selectedRelatorio?.numero_assistencia}</strong> será enviada para {emailsCliente.filter(e => e.selected).length + (emailsAdicionais.trim() ? emailsAdicionais.split(/[;,]/).filter(e => e.trim()).length : 0)} email(s)
+                <strong>FS #{selectedRelatorio?.numero_assistencia}</strong> será enviada para {emailsCliente.filter(e => e.selected).length + (emailsAdicionais.trim() ? emailsAdicionais.split(/[;,]/).filter(e => e.trim()).length : 0)} email(s)
               </p>
             </div>
 
@@ -6320,7 +6320,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mt-2">
             <div className="space-y-1 text-sm text-amber-300">
-              <p><strong>SIM</strong> — PDF da OT + Folha de Horas</p>
+              <p><strong>SIM</strong> — PDF da FS + Folha de Horas</p>
               <p><strong>NÃO</strong> — Apenas PDF da OT</p>
             </div>
           </div>
@@ -7352,9 +7352,9 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           {selectedPC && (
             <div className="space-y-4 mt-4">
-              {/* Informações da OT */}
+              {/* Informações da FS */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-blue-700">
-                <h4 className="text-blue-400 font-semibold mb-3">Informações da Ordem de Trabalho</h4>
+                <h4 className="text-blue-400 font-semibold mb-3">Informações da Folha de Serviço</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-400">Número OT:</span>
@@ -7750,7 +7750,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         open={showPDFPreviewModal}
         onOpenChange={closePDFPreview}
         pdfUrl={pdfPreviewUrl}
-        title={`Visualização do PDF - OT #${selectedRelatorio?.numero_assistencia}`}
+        title={`Visualização do PDF - FS #${selectedRelatorio?.numero_assistencia}`}
         onDownload={() => {
           if (pdfPreviewUrl) {
             const link = document.createElement('a');
@@ -7847,7 +7847,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h1 className="text-2xl font-bold">RELATÓRIO TÉCNICO</h1>
-                    <p className="text-gray-300 mt-1">Ordem de Trabalho #{htmlPreviewData.relatorio.numero_assistencia}</p>
+                    <p className="text-gray-300 mt-1">Folha de Serviço #{htmlPreviewData.relatorio.numero_assistencia}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-300">Data: {new Date(htmlPreviewData.relatorio.data_servico).toLocaleDateString('pt-PT')}</p>
@@ -8344,7 +8344,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   min={relatorioFormData.data_servico}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Se preenchido, a OT aparece no calendário em todos os dias do intervalo
+                  Se preenchido, a FS aparece no calendário em todos os dias do intervalo
                 </p>
               </div>
             </div>
@@ -8529,7 +8529,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className="space-y-4 mt-4">
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <p className="text-white font-semibold mb-2">
-                  OT #{selectedStatusRelatorio.numero_assistencia}
+                  FS #{selectedStatusRelatorio.numero_assistencia}
                 </p>
                 <p className="text-gray-400 text-sm">{selectedStatusRelatorio.cliente_nome}</p>
                 <div className="flex items-center gap-2 mt-2">
@@ -8632,7 +8632,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                 <p className="text-amber-200 text-sm">
-                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. A OT e todos os dados associados (técnicos, fotos, materiais) serão permanentemente eliminados.
+                  <strong>Atenção:</strong> Esta ação não pode ser desfeita. A FS e todos os dados associados (técnicos, fotos, materiais) serão permanentemente eliminados.
                 </p>
               </div>
 
@@ -9785,9 +9785,9 @@ const TechnicalReports = ({ user, onLogout }) => {
               </Select>
             </div>
 
-            {/* Função na OT */}
+            {/* Função na FS */}
             <div>
-              <Label className="text-gray-300">Função na OT *</Label>
+              <Label className="text-gray-300">Função na FS *</Label>
               <Select
                 value={addRegistoManualForm.funcao_ot}
                 onValueChange={(val) => setAddRegistoManualForm(prev => ({ ...prev, funcao_ot: val }))}
@@ -9936,7 +9936,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Popup Função na OT para Cronómetro */}
+      {/* Popup Função na FS para Cronómetro */}
       <Dialog open={showCronometroFuncaoPopup} onOpenChange={setShowCronometroFuncaoPopup}>
         <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -10155,9 +10155,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               </div>
 
-              {/* Função na OT */}
+              {/* Função na FS */}
               <div>
-                <Label className="text-gray-300">Função na OT</Label>
+                <Label className="text-gray-300">Função na FS</Label>
                 <Select
                   value={editRegistoForm.funcao_ot}
                   onValueChange={(val) => setEditRegistoForm(prev => ({ ...prev, funcao_ot: val }))}
@@ -10441,7 +10441,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal Iniciar Cronómetro após criar OT */}
+      {/* Modal Iniciar Cronómetro após criar FS */}
       <Dialog open={showIniciarCronoModal} onOpenChange={(open) => {
         if (!open) {
           setShowIniciarCronoModal(false);
@@ -10453,13 +10453,13 @@ const TechnicalReports = ({ user, onLogout }) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <PlayCircle className="w-5 h-5 text-green-400" />
-              Iniciar Cronómetro - OT #{novaOTParaCrono?.numero}
+              Iniciar Cronómetro - FS #{novaOTParaCrono?.numero}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             <p className="text-gray-400 text-sm">
-              OT criada com sucesso! Deseja iniciar um cronómetro?
+              FS criada com sucesso! Deseja iniciar um cronómetro?
             </p>
 
             {/* Tipo de Cronómetro */}

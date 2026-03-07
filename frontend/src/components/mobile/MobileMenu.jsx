@@ -43,7 +43,7 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
       title: 'Principal',
       items: [
         { name: 'Dashboard', path: '/', icon: Clock, description: 'Relógio de ponto' },
-        { name: 'Ordens de Trabalho', path: '/technical-reports', icon: Briefcase, description: 'Gestão de OTs' },
+        { name: 'Folhas de Serviço', path: '/technical-reports', icon: Briefcase, description: "Gestão de FS's" },
         { name: 'Calendário', path: '/calendar', icon: CalendarDays, description: 'Eventos e serviços' },
       ]
     },

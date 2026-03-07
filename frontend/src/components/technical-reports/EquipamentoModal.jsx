@@ -63,7 +63,7 @@ const EquipamentoModal = ({
               )}
               {equipamentoOTSelecionado === 'apenas_ot' && (
                 <p className="text-sm text-orange-400 mt-1">
-                  ⚠ O equipamento será associado apenas a esta OT (não fica na BD do cliente)
+                  O equipamento será associado apenas a esta FS (não fica na BD do cliente)
                 </p>
               )}
             </div>

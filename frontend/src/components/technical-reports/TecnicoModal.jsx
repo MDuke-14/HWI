@@ -173,11 +173,11 @@ const TecnicoModal = ({
             </select>
           </div>
 
-          {/* Função na OT */}
+          {/* Função na FS */}
           <div>
             <Label className="text-gray-300 flex items-center gap-2">
               <User className="w-4 h-4" />
-              Função na OT *
+              Função na FS *
             </Label>
             <select
               value={tecnicoFormData.funcao_ot || 'tecnico'}
