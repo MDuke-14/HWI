@@ -116,6 +116,13 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - Admin: pedro / password
 - Non-admin: teste@email.com / teste
 
+## Recent Implementations (March 2026 - Session 2)
+
+### FS PDF Layout Improvements (7 Mar 2026)
+- **KeepTogether**: MÃO DE OBRA / DESLOCAÇÃO, MATERIAIS UTILIZADOS, and ASSINATURAS sections now use ReportLab `KeepTogether` to prevent splitting across pages
+- **Relatório de Assistência integrated**: Report text now appears within DETALHES DA INTERVENÇÃO section, grouped by intervention date (removed standalone section)
+- Tested with FS#358 (3 pages), FS#356 (5 pages with photos/signatures), FS#360 (2 pages with rel. assistência)
+
 ## Pending Issues (Prioritized)
 ### P0
 - PDF Generation Fails for Large Reports (Flowable too large - use OT#358 to test)

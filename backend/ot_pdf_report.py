@@ -463,7 +463,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(date_header)
         elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Intervenções desta data ----
+        # ---- Intervenções desta data (inclui Relatório de Assistência) ----
         date_intervencoes = []
         if intervencoes:
             for interv in intervencoes:
@@ -471,7 +471,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 if interv_date == date or (date is None and not interv_date):
                     date_intervencoes.append(interv)
         
-        if date_intervencoes:
+        # Relatórios de assistência desta data
+        date_rel_assist = []
+        if relatorios_assistencia:
+            date_rel_assist = [ra for ra in relatorios_assistencia if normalize_date(ra.get('data_intervencao')) == date]
+        
+        if date_intervencoes or date_rel_assist:
             interv_content = []
             for interv in date_intervencoes:
                 interv_content_items = []
@@ -488,9 +493,35 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     interv_content_items.append(Paragraph(f"<b>Motivo:</b> {motivo_text}", normal_style))
                 
                 if interv_content_items:
-                    # Adicionar todos os itens diretamente (sem tabela para evitar "too large")
                     for item in interv_content_items:
                         interv_content.append(item)
+                    interv_content.append(Spacer(1, 0.2*cm))
+            
+            # Incluir Relatórios de Assistência agrupados por data na mesma secção
+            if date_rel_assist:
+                interv_content.append(Spacer(1, 0.1*cm))
+                ra_subtitle_style = ParagraphStyle(
+                    'RASubtitle', parent=normal_style, fontSize=9,
+                    fontName='Helvetica-Bold', textColor=colors.HexColor('#1f2937'),
+                    spaceBefore=4, spaceAfter=4
+                )
+                interv_content.append(Paragraph("Relatório de Assistência:", ra_subtitle_style))
+                for ra in date_rel_assist:
+                    equip_names = []
+                    for eq_id in (ra.get('equipamento_ids') or []):
+                        if eq_id == 'principal':
+                            name = f"{relatorio.get('equipamento_tipologia', '')} {relatorio.get('equipamento_marca', '')} {relatorio.get('equipamento_modelo', '')}".strip()
+                            if name:
+                                equip_names.append(name)
+                        else:
+                            eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
+                            if eq:
+                                name = f"{eq.get('tipologia', '')} {eq.get('marca', '')} {eq.get('modelo', '')}".strip()
+                                equip_names.append(name)
+                    if equip_names:
+                        interv_content.append(Paragraph(f"<b>Equipamento(s):</b> {', '.join(equip_names)}", normal_style))
+                    ra_text = ra.get('texto', '').replace('\n', '<br/>')
+                    interv_content.append(Paragraph(ra_text, normal_style))
                     interv_content.append(Spacer(1, 0.2*cm))
             
             if interv_content:
@@ -609,8 +640,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f9fafb'), colors.white]),
             ]))
             
-            mao_obra_section = create_section_box([mao_obra_table], "MÃO DE OBRA / DESLOCAÇÃO")
-            add_section_to_elements(elements, mao_obra_section)
+            mao_obra_keep = [
+                Paragraph("MÃO DE OBRA / DESLOCAÇÃO", section_title_style),
+                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6),
+                mao_obra_table,
+                Spacer(1, 0.3*cm),
+            ]
+            elements.append(KeepTogether(mao_obra_keep))
             elements.append(Spacer(1, 0.2*cm))
         
         # ---- Materiais desta data ----
@@ -652,36 +688,16 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f9fafb'), colors.white]),
             ]))
             
-            mat_section = create_section_box([mat_table], "MATERIAIS UTILIZADOS")
-            add_section_to_elements(elements, mat_section)
+            mat_keep = [
+                Paragraph("MATERIAIS UTILIZADOS", section_title_style),
+                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6),
+                mat_table,
+                Spacer(1, 0.3*cm),
+            ]
+            elements.append(KeepTogether(mat_keep))
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Relatórios de Assistência desta data ----
-        if relatorios_assistencia:
-            date_rel_assist = [ra for ra in relatorios_assistencia if normalize_date(ra.get('data_intervencao')) == date]
-            if date_rel_assist:
-                ra_content = []
-                for ra in date_rel_assist:
-                    equip_names = []
-                    for eq_id in (ra.get('equipamento_ids') or []):
-                        if eq_id == 'principal':
-                            name = f"{relatorio.get('equipamento_tipologia', '')} {relatorio.get('equipamento_marca', '')} {relatorio.get('equipamento_modelo', '')}".strip()
-                            if name:
-                                equip_names.append(name)
-                        else:
-                            eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
-                            if eq:
-                                name = f"{eq.get('tipologia', '')} {eq.get('marca', '')} {eq.get('modelo', '')}".strip()
-                                equip_names.append(name)
-                    if equip_names:
-                        ra_content.append(Paragraph(f"<b>Equipamento(s):</b> {', '.join(equip_names)}", normal_style))
-                    ra_text = ra.get('texto', '').replace('\n', '<br/>')
-                    ra_content.append(Paragraph(ra_text, normal_style))
-                    ra_content.append(Spacer(1, 0.2*cm))
-                if ra_content:
-                    ra_section = create_section_box(ra_content, "RELATÓRIO DE ASSISTÊNCIA")
-                    add_section_to_elements(elements, ra_section)
-                    elements.append(Spacer(1, 0.2*cm))
+        # Relatórios de Assistência já incluídos na secção DETALHES DA INTERVENÇÃO acima
         
         # ---- Fotografias desta data ----
         date_fotografias = []
@@ -875,8 +891,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 assin_content.append(assin_table)
                 assin_content.append(Spacer(1, 0.15*cm))
             
-            assin_section = create_section_box(assin_content, "ASSINATURAS")
-            add_section_to_elements(elements, assin_section)
+            assin_keep = [
+                Paragraph("ASSINATURAS", section_title_style),
+                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#d1d5db'), spaceAfter=6),
+            ]
+            assin_keep.extend(assin_content)
+            assin_keep.append(Spacer(1, 0.3*cm))
+            elements.append(KeepTogether(assin_keep))
             elements.append(Spacer(1, 0.2*cm))
         
         elements.append(Spacer(1, 0.3*cm))
