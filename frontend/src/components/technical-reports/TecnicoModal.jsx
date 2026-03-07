@@ -185,8 +185,9 @@ const TecnicoModal = ({
               className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
               data-testid="tecnico-modal-funcao-ot"
             >
+              <option value="junior">Téc. Júnior</option>
               <option value="tecnico">Técnico</option>
-              <option value="ajudante">Ajudante</option>
+              <option value="senior">Téc. Sénior</option>
             </select>
           </div>
 

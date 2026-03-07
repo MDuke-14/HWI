@@ -468,8 +468,8 @@ const FolhaHorasModal = ({
                             <User className="w-4 h-4 text-blue-400" />
                             <span className="text-white font-medium">
                               {registo.tecnico_nome}
-                              <span className={`ml-1 text-xs ${registo.funcao_ot === 'ajudante' ? 'text-yellow-400' : 'text-cyan-400'}`}>
-                                ({registo.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})
+                              <span className={`ml-1 text-xs ${registo.funcao_ot === 'senior' ? 'text-purple-400' : registo.funcao_ot === 'junior' ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                                ({registo.funcao_ot === 'senior' ? 'Téc. Sénior' : registo.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'})
                               </span>
                             </span>
                           </div>

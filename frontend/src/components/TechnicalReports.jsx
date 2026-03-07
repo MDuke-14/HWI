@@ -4901,7 +4901,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
                               <div className="flex items-center justify-between mb-1">
                                 <span className={`${textPrimary} text-xs font-medium truncate flex-1 mr-2`}>
-                                  {item.tecnico_nome} <span className={item.funcao_ot === 'ajudante' ? 'text-yellow-400' : 'text-cyan-400'}>({item.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})</span>
+                                  {item.tecnico_nome} <span className={item.funcao_ot === 'senior' ? 'text-purple-400' : item.funcao_ot === 'junior' ? 'text-yellow-400' : 'text-cyan-400'}>({item.funcao_ot === 'senior' ? 'Téc. Sénior' : item.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'})</span>
                                 </span>
                                 <span 
                                   className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
@@ -5016,9 +5016,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <td className={`py-2 px-2 ${textPrimary}`}>{item.tecnico_nome}</td>
                               <td className="py-2 px-2 text-center">
                                 <span className={`px-2 py-1 rounded text-xs ${
-                                  item.funcao_ot === 'ajudante' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-cyan-600/20 text-cyan-400'
+                                  item.funcao_ot === 'senior' ? 'bg-purple-600/20 text-purple-400' :
+                                  item.funcao_ot === 'junior' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-cyan-600/20 text-cyan-400'
                                 }`}>
-                                  {item.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'}
+                                  {item.funcao_ot === 'senior' ? 'Téc. Sénior' : item.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'}
                                 </span>
                               </td>
                               <td className="py-2 px-2 text-center">
@@ -8064,8 +8065,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                                     <td className="p-2">
                                       {reg.tecnico_nome}
-                                      <span className={`ml-1 text-xs ${reg.funcao_ot === 'ajudante' ? 'text-yellow-600' : 'text-cyan-600'}`}>
-                                        ({reg.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})
+                                      <span className={`ml-1 text-xs ${reg.funcao_ot === 'senior' ? 'text-purple-600' : reg.funcao_ot === 'junior' ? 'text-yellow-600' : 'text-cyan-600'}`}>
+                                        ({reg.funcao_ot === 'senior' ? 'Téc. Sénior' : reg.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'})
                                       </span>
                                     </td>
                                     <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
@@ -9797,8 +9798,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
                   <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
-                  <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
+                  <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -9968,8 +9970,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
                     <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
-                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
+                    <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -10165,8 +10168,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
                     <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
-                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
+                    <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

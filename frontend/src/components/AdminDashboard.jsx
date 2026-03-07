@@ -50,7 +50,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     valor_por_hora: '',
     codigo: '',  // "1", "2", "S", "D" ou vazio para todos
     tipo_registo: '',  // "trabalho", "viagem" ou vazio para ambos
-    tipo_colaborador: ''  // "tecnico", "ajudante" ou vazio para ambos
+    tipo_colaborador: ''  // "junior", "tecnico", "senior" ou vazio para todos
   });
   const [tabelaForm, setTabelaForm] = useState({
     nome: '',
@@ -1854,10 +1854,11 @@ const AdminDashboard = ({ user, onLogout }) => {
                                   )}
                                   {tarifa.tipo_colaborador && (
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold mt-1 ml-1 ${
+                                      tarifa.tipo_colaborador === 'senior' ? 'bg-purple-600/20 text-purple-300' :
                                       tarifa.tipo_colaborador === 'tecnico' ? 'bg-cyan-600/20 text-cyan-300' :
                                       'bg-yellow-500/20 text-yellow-400'
                                     }`}>
-                                      {tarifa.tipo_colaborador === 'tecnico' ? 'Técnico' : 'Ajudante'}
+                                      {tarifa.tipo_colaborador === 'senior' ? 'Téc. Sénior' : tarifa.tipo_colaborador === 'tecnico' ? 'Técnico' : 'Téc. Júnior'}
                                     </span>
                                   )}
                                 </div>
@@ -2115,9 +2116,10 @@ const AdminDashboard = ({ user, onLogout }) => {
                       className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2"
                       data-testid="tarifa-tipo-colaborador-select"
                     >
-                      <option value="">Técnico + Ajudante (ambos)</option>
+                      <option value="">Todas as Funções</option>
+                      <option value="junior">Apenas Téc. Júnior</option>
                       <option value="tecnico">Apenas Técnico</option>
-                      <option value="ajudante">Apenas Ajudante</option>
+                      <option value="senior">Apenas Téc. Sénior</option>
                     </select>
                   </div>
                   <p className="text-xs text-gray-500">

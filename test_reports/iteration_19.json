@@ -1,0 +1,95 @@
+{
+  "summary": "Tested the 3-role function system migration from 2 roles (Técnico, Ajudante) to 3 roles (Téc. Júnior, Técnico, Téc. Sénior). All 13 backend tests pass. Frontend UI correctly shows 3 function options in all dropdowns. No 'ajudante' references remain in code or API responses.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_funcao_ot_roles.py",
+    "/app/test_reports/pytest/pytest_funcao_ot_roles.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_funcao_ot_roles.py"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% - UI dropdowns verified"
+  },
+  "test_credentials": {
+    "admin": { "username": "pedro", "password": "password" }
+  },
+  "seed_data_creation": "Used existing OT_ID: 6952755f-2fcf-4d34-a90d-38626782bc86",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The 3-role system (junior, tecnico, senior) is fully implemented. All 'ajudante' references have been migrated to 'junior'. Backend tests confirm: POST/GET registos-tecnicos accepts all 3 funcao_ot values, POST/GET tarifas accepts all 3 tipo_colaborador values. Frontend UI in TecnicoModal and AdminDashboard tarifa form shows correct 3 options with labels: Téc. Júnior, Técnico, Téc. Sénior.",
+  "features_tested": {
+    "backend_funcao_ot_roles": {
+      "status": "PASS",
+      "tests_passed": [
+        "POST /api/registos-tecnicos with funcao_ot='junior' - PASS",
+        "POST /api/registos-tecnicos with funcao_ot='tecnico' - PASS",
+        "POST /api/registos-tecnicos with funcao_ot='senior' - PASS",
+        "GET /api/tarifas returns no 'ajudante' values - PASS",
+        "POST /api/tarifas with tipo_colaborador='junior' - PASS",
+        "POST /api/tarifas with tipo_colaborador='tecnico' - PASS",
+        "POST /api/tarifas with tipo_colaborador='senior' - PASS",
+        "POST /api/relatorios-tecnicos/{id}/tecnicos with funcao_ot='junior' - PASS",
+        "GET /api/relatorios-tecnicos/{id}/folha-horas-data has valid funcao_ot values - PASS"
+      ]
+    },
+    "frontend_tipo_colaborador_dropdown": {
+      "status": "PASS",
+      "location": "Admin Dashboard > Tabela de Preço > Nova Tarifa modal",
+      "options_verified": [
+        "Value: '' | Text: 'Todas as Funções'",
+        "Value: 'junior' | Text: 'Apenas Téc. Júnior'",
+        "Value: 'tecnico' | Text: 'Apenas Técnico'",
+        "Value: 'senior' | Text: 'Apenas Téc. Sénior'"
+      ],
+      "no_ajudante_option": true
+    },
+    "frontend_tecnico_modal_funcao_dropdown": {
+      "status": "PASS (code review)",
+      "location": "/app/frontend/src/components/technical-reports/TecnicoModal.jsx",
+      "options_in_code": [
+        "<option value=\"junior\">Téc. Júnior</option>",
+        "<option value=\"tecnico\">Técnico</option>",
+        "<option value=\"senior\">Téc. Sénior</option>"
+      ]
+    },
+    "folha_horas_pdf_labels": {
+      "status": "PASS (code review)",
+      "location": "/app/backend/folha_horas_pdf.py line 59",
+      "labels": {
+        "junior": "Téc. Júnior",
+        "tecnico": "Técnico",
+        "senior": "Téc. Sénior"
+      }
+    },
+    "ot_pdf_report_labels": {
+      "status": "PASS (code review)",
+      "location": "/app/backend/ot_pdf_report.py line 582",
+      "labels": {
+        "junior": "Téc. Júnior",
+        "tecnico": "Técnico",
+        "senior": "Téc. Sénior"
+      }
+    },
+    "no_ajudante_references": {
+      "status": "PASS",
+      "checks": [
+        "No 'ajudante' in /app/backend/server.py",
+        "No 'ajudante' in /app/backend/folha_horas_pdf.py",
+        "No 'ajudante' in /app/backend/ot_pdf_report.py",
+        "No 'ajudante' in /app/frontend/src/"
+      ]
+    }
+  }
+}

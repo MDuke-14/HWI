@@ -56,6 +56,9 @@ def minutes_to_hhmm(minutes):
     return f'{hours}:{mins:02d}'
 
 
+FUNCAO_LABELS = {'junior': 'Téc. Júnior', 'tecnico': 'Técnico', 'senior': 'Téc. Sénior'}
+
+
 # ===================== CORES NEUTRAS =====================
 HEADER_BG = colors.HexColor('#333333')       # cinzento escuro
 HEADER_TEXT = colors.white
@@ -374,7 +377,7 @@ def generate_folha_horas_pdf(
     total_dieta_geral = 0
 
     for reg in todos_registos:
-        funcao_label = 'Técnico' if reg.get('funcao_ot', 'tecnico') == 'tecnico' else 'Ajudante'
+        funcao_label = FUNCAO_LABELS.get(reg.get('funcao_ot', 'tecnico'), 'Técnico')
         tipo_label = tipo_map.get(reg['tipo_registo'], reg['tipo_registo'])
         tarifa_valor = reg['tarifa_valor']
         codigo = reg['codigo']
@@ -462,7 +465,7 @@ def generate_folha_horas_pdf(
         regs = registos_por_colab[tid]
         nome = regs[0]['tecnico_nome']
         funcao = regs[0].get('funcao_ot', 'tecnico')
-        funcao_label = 'Técnico' if funcao == 'tecnico' else 'Ajudante'
+        funcao_label = FUNCAO_LABELS.get(funcao, 'Técnico')
 
         elements.append(PageBreak())
         add_header(elements)
@@ -475,7 +478,7 @@ def generate_folha_horas_pdf(
         colab_total_dieta = 0
 
         for reg in regs:
-            fl = 'Técnico' if reg.get('funcao_ot', 'tecnico') == 'tecnico' else 'Ajudante'
+            fl = FUNCAO_LABELS.get(reg.get('funcao_ot', 'tecnico'), 'Técnico')
             tl = tipo_map.get(reg['tipo_registo'], reg['tipo_registo'])
             tv = reg['tarifa_valor']
             cod = reg['codigo']

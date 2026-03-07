@@ -577,9 +577,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 else:
                     tipo_display = tipo_raw[:1].upper() if tipo_raw else '-'
                 
-                # Função: Técnico ou Ajudante
+                # Função: Júnior, Técnico ou Sénior
                 funcao = reg.get('funcao_ot', 'tecnico')
-                funcao_label = 'Ajudante' if funcao == 'ajudante' else 'Técnico'
+                funcao_labels = {'junior': 'Téc. Júnior', 'tecnico': 'Técnico', 'senior': 'Téc. Sénior'}
+                funcao_label = funcao_labels.get(funcao, 'Técnico')
                 nome_display = f"{reg.get('tecnico_nome', 'N/A')} ({funcao_label})"
                 
                 mao_obra_header.append([

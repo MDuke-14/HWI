@@ -499,7 +499,7 @@ class TecnicoRelatorio(BaseModel):
     kms_deslocacao: float = 0  # Calculado automaticamente (kms_final - kms_inicial + volta)
     tipo_horario: str  # "diurno", "noturno", "sabado", "domingo_feriado"
     tipo_registo: str = "manual"  # "manual", "trabalho", "viagem", "oficina"
-    funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
+    funcao_ot: str = "tecnico"  # "junior", "tecnico" ou "senior"
     data_trabalho: date  # Data em que o técnico trabalhou nesta OT
     hora_inicio: Optional[str] = None  # Hora de início (HH:MM) para Folha de Horas
     hora_fim: Optional[str] = None  # Hora de fim (HH:MM) para Folha de Horas
@@ -514,7 +514,7 @@ class CronometroOT(BaseModel):
     tecnico_id: str
     tecnico_nome: str
     tipo: str  # "trabalho", "viagem" ou "oficina"
-    funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
+    funcao_ot: str = "tecnico"  # "junior", "tecnico" ou "senior"
     km_inicial: float = 0  # Km's iniciais (usado em viagem)
     hora_inicio: datetime
     ativo: bool = True
@@ -527,7 +527,7 @@ class RegistoTecnicoOT(BaseModel):
     tecnico_id: str
     tecnico_nome: str
     tipo: str  # "trabalho", "viagem" ou "oficina"
-    funcao_ot: str = "tecnico"  # "tecnico" ou "ajudante"
+    funcao_ot: str = "tecnico"  # "junior", "tecnico" ou "senior"
     data: date
     hora_inicio_segmento: datetime
     hora_fim_segmento: datetime
@@ -880,7 +880,7 @@ class Tarifa(BaseModel):
     valor_por_hora: float  # Valor em euros por hora
     codigo: Optional[str] = None  # "1" (diurno), "2" (noturno), "S" (sábado), "D" (domingo/feriado), None (todos)
     tipo_registo: Optional[str] = None  # "trabalho", "viagem", ou None (ambos)
-    tipo_colaborador: Optional[str] = None  # "tecnico", "ajudante", ou None (ambos)
+    tipo_colaborador: Optional[str] = None  # "junior", "tecnico", "senior", ou None (todos)
     table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -893,7 +893,7 @@ class TarifaCreate(BaseModel):
     numero: Optional[int] = None  # Opcional
     codigo: Optional[str] = None  # "1", "2", "S", "D" ou None
     tipo_registo: Optional[str] = None  # "trabalho", "viagem", ou None (ambos)
-    tipo_colaborador: Optional[str] = None  # "tecnico", "ajudante", ou None (ambos)
+    tipo_colaborador: Optional[str] = None  # "junior", "tecnico", "senior", ou None (todos)
     table_id: int = 1  # ID da tabela de preço (1, 2, ou 3)
 
 
@@ -903,7 +903,7 @@ class TarifaUpdate(BaseModel):
     valor_por_hora: Optional[float] = None
     codigo: Optional[str] = None
     tipo_registo: Optional[str] = None
-    tipo_colaborador: Optional[str] = None  # "tecnico", "ajudante", ou None (ambos)
+    tipo_colaborador: Optional[str] = None  # "junior", "tecnico", "senior", ou None (todos)
     table_id: Optional[int] = None
     ativo: Optional[bool] = None
 
@@ -10052,7 +10052,7 @@ async def iniciar_cronometro(
     tipo = dados.get("tipo")  # "trabalho" ou "viagem"
     tecnico_id = dados.get("tecnico_id")
     tecnico_nome = dados.get("tecnico_nome")
-    funcao_ot = dados.get("funcao_ot", "tecnico")  # "tecnico" ou "ajudante"
+    funcao_ot = dados.get("funcao_ot", "tecnico")  # "junior", "tecnico" ou "senior"
     km_inicial = float(dados.get("km_inicial", 0))  # Km's iniciais para viagem
     
     if tipo not in ["trabalho", "viagem", "oficina"]:
@@ -10258,7 +10258,7 @@ async def create_registo_tecnico_manual(
     tecnico_id = registo_data.get("tecnico_id")
     tecnico_nome = registo_data.get("tecnico_nome")
     tipo = registo_data.get("tipo", "manual")  # trabalho, viagem, manual
-    funcao_ot = registo_data.get("funcao_ot", "tecnico")  # tecnico ou ajudante
+    funcao_ot = registo_data.get("funcao_ot", "tecnico")  # junior, tecnico ou senior
     
     # Obter horários
     data_str = registo_data.get("data")  # YYYY-MM-DD
