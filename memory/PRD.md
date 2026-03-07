@@ -30,6 +30,14 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026)
 
+### 3-Role Function System (7 Mar 2026)
+- Replaced 2-role system (Técnico/Ajudante) with 3 roles: **Téc. Júnior** (`junior`), **Técnico** (`tecnico`), **Téc. Sénior** (`senior`)
+- Migrated all existing 'ajudante' records in DB to 'junior'
+- Updated all frontend dropdowns (TecnicoModal, TechnicalReports, AdminDashboard, FolhaHorasModal)
+- Updated both PDF generators (folha_horas_pdf.py, ot_pdf_report.py) with new labels
+- Each role supports independent tariffs (tipo_colaborador: junior/tecnico/senior)
+- Color coding: Junior=yellow, Técnico=cyan, Sénior=purple
+
 ### Folha de Horas PDF - Complete Restructure (7 Mar 2026)
 - **Section 1 - REGISTOS GERAIS**: Single table with ALL records, sorted by Date > Start Time > Collaborator Name. Columns: Data | Colaborador | Função | Registo | Horas | Tarifa | Total Valor | KM's | Preço/KM | Total KM | Início | Fim | Dieta | Observações
 - **Section 2 - Per Collaborator**: Individual record tables + RESUMO FINANCEIRO summary table per collaborator showing total euros per code (Cód.1, Cód.2, Cód.S, Cód.D, Cód.V1-VD, KM, TOTAL)
