@@ -615,18 +615,24 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         # ---- Materiais desta data ----
         date_materiais = []
         if materiais:
+            first_date = sorted_dates[0] if sorted_dates else None
             for mat in materiais:
                 mat_date = normalize_date(mat.get('data_utilizacao'))
-                if mat_date == date or (date is None and not mat_date):
+                if mat_date == date:
+                    date_materiais.append(mat)
+                elif not mat_date and (date == first_date):
+                    # Materiais sem data aparecem na primeira data
                     date_materiais.append(mat)
         
         if date_materiais:
             mat_header = [['Descrição', 'Quantidade', 'Fornecido por']]
             
             for mat in date_materiais:
+                qty = mat.get('quantidade', 0)
+                unit = mat.get('unidade', 'Un')
                 mat_header.append([
                     mat.get('descricao', 'N/A'),
-                    str(mat.get('quantidade', 0)),
+                    f"{qty} {unit}",
                     mat.get('fornecido_por', '-') or '-'
                 ])
             

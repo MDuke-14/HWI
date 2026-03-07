@@ -10555,7 +10555,10 @@ async def add_material_ot(
         raise HTTPException(status_code=404, detail="OT não encontrada")
     
     # Validar quantidade
-    quantidade = material_data.get("quantidade", 0)
+    try:
+        quantidade = float(material_data.get("quantidade", 0))
+    except (ValueError, TypeError):
+        quantidade = 0
     if quantidade <= 0:
         raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     

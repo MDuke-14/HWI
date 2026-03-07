@@ -7424,7 +7424,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <div key={mat.id} className="flex justify-between items-center p-2 bg-gray-800 rounded">
                         <div className="flex-1">
                           <span className="text-white">{mat.descricao}</span>
-                          <span className="text-gray-400 ml-3">Qtd: {mat.quantidade}</span>
+                          <span className="text-gray-400 ml-3">Qtd: {mat.quantidade} {mat.unidade || 'Un'}</span>
                         </div>
                         <Button
                           onClick={() => openEditMaterialPCModal(mat)}
@@ -8100,7 +8100,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {dados.materiais.map((mat, idx) => (
                                   <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                                     <td className="p-2">{mat.descricao}</td>
-                                    <td className="p-2">{mat.quantidade}</td>
+                                    <td className="p-2">{mat.quantidade} {mat.unidade || 'Un'}</td>
                                     <td className="p-2">{mat.fornecido_por}</td>
                                   </tr>
                                 ))}

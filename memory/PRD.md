@@ -30,6 +30,12 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026)
 
+### Material Units in PDF (7 Mar 2026)
+- Added unit display (L, Un, M) next to quantity in OT PDF report
+- Fixed bug: material creation failing with "erro ao processar solicitação" due to `quantidade` arriving as string from frontend (TypeError: '<=' not supported between str and int)
+- Fix: Backend now converts `quantidade` to float before validation
+- Units displayed in all views: OT detail, report preview, and PDF
+
 ### Dieta (Meal Allowance) Business Rules
 - Rule: ≤4h work/day = 0€, 4h-6h = 50%, >6h = 100% of base valor_dieta
 - Base valor_dieta stored in tabelas_preco collection
