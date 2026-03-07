@@ -438,7 +438,6 @@ const TechnicalReports = ({ user, onLogout }) => {
     data_fim: '',  // Campo "Até" - opcional
     local_intervencao: '',
     pedido_por: '',
-    km_inicial: '',  // KM iniciais da viatura
     ot_relacionada_id: '',  // OT Relacionada (referência informativa)
     equipamento_tipologia: '',
     equipamento_marca: '',
@@ -981,7 +980,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       data_fim: '',
       local_intervencao: '',
       pedido_por: '',
-      km_inicial: '',
       ot_relacionada_id: '',
       equipamento_tipologia: '',
       equipamento_marca: '',
