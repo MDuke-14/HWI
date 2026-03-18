@@ -3970,7 +3970,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
                     {relatorio.ot_relacionada_id && (
                       <p className="text-blue-400 text-xs mt-0.5 flex items-center gap-1">
-                        <Link2 className="w-3 h-3" /> OT #{relatorio.ot_relacionada_numero}
+                        <Link2 className="w-3 h-3" /> FS #{relatorio.ot_relacionada_numero}
                       </p>
                     )}
                     {relatorio.ots_posteriores?.length > 0 && (
@@ -4603,7 +4603,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {selectedRelatorio.ot_relacionada_id && (
                   <p className={`text-blue-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 flex items-center gap-1`}>
                     <Link2 className="w-3 h-3" />
-                    OT Relacionada: <span className="font-semibold" data-testid="ot-relacionada-ref">OT #{selectedRelatorio.ot_relacionada_numero}</span>
+                    FS Relacionada: <span className="font-semibold" data-testid="ot-relacionada-ref">FS #{selectedRelatorio.ot_relacionada_numero}</span>
                   </p>
                 )}
                 {selectedRelatorio.ots_posteriores?.length > 0 && (
@@ -9709,7 +9709,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                           <div className="min-w-0">
                             <p className="text-white font-medium text-sm">
-                              Intervenção — <span className="text-blue-400">OT #{interv.ot_numero}</span> — {interv.data_intervencao ? new Date(interv.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT') : '-'}
+                              Intervenção — <span className="text-blue-400">FS #{interv.ot_numero}</span> — {interv.data_intervencao ? new Date(interv.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT') : '-'}
                             </p>
                             <p className="text-gray-500 text-xs truncate">{interv.ot_local}</p>
                           </div>

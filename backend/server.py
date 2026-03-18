@@ -4348,6 +4348,8 @@ async def enviar_pdf_ot(
             <p><strong>Cliente:</strong> {cliente.get('nome', 'N/A')}</p>
             <p><strong>Data de Serviço:</strong> {relatorio.get('data_servico', 'N/A')}</p>
             <p><strong>Local:</strong> {local_intervencao if local_intervencao else 'N/A'}</p>
+            {"<p><strong>FS Relacionada:</strong> FS #" + str(relatorio.get('ot_relacionada_numero')) + "</p>" if relatorio.get('ot_relacionada_numero') else ""}
+            {"<p><strong>Ref. Interna:</strong> " + relatorio.get('referencia_interna_cliente') + "</p>" if relatorio.get('referencia_interna_cliente') else ""}
             <br>
             <p>Com os melhores cumprimentos,</p>
             <p><strong>HWI Unipessoal, Lda</strong></p>
