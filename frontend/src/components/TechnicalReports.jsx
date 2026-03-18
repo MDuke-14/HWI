@@ -4609,7 +4609,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {selectedRelatorio.ots_posteriores?.length > 0 && (
                   <p className={`text-amber-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1 flex items-center gap-1`}>
                     <Link2 className="w-3 h-3" />
-                    FS Posterior: {selectedRelatorio.ots_posteriores.map(ot => (
+                    FS Relacionada: {selectedRelatorio.ots_posteriores.map(ot => (
                       <span key={ot.id} className="font-semibold" data-testid="ot-posterior-ref">FS #{ot.numero_assistencia}</span>
                     )).reduce((prev, curr) => [prev, ', ', curr])}
                   </p>
