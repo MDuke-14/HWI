@@ -8126,11 +8126,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
                                     <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
                                     <td className="p-2">{(() => { const h = reg.horas_arredondadas || 0; const hi = Math.floor(h); const mi = Math.round((h - hi) * 60); return `${hi}h${String(mi).padStart(2, '0')}`; })()}</td>
-                                    <td className="p-2">{reg.km || '-'}</td>
+                                    <td className="p-2">{reg.km != null && reg.km > 0 ? reg.km : '-'}</td>
                                   </tr>
                                   );
                                 })}
                               </tbody>
+                              <tfoot>
+                                <tr className="bg-gray-200 font-bold text-gray-700">
+                                  <td className="p-2" colSpan="4">Total</td>
+                                  <td className="p-2">{(() => { const totalH = dados.registos.reduce((sum, r) => sum + (r.horas_arredondadas || 0), 0); const hi = Math.floor(totalH); const mi = Math.round((totalH - hi) * 60); return `${hi}h${String(mi).padStart(2, '0')}`; })()}</td>
+                                  <td className="p-2">{(() => { const totalKm = dados.registos.reduce((sum, r) => sum + (Number(r.km) || 0), 0); return totalKm > 0 ? `${totalKm} km` : '-'; })()}</td>
+                                </tr>
+                              </tfoot>
                             </table>
                           </div>
                         )}
