@@ -4983,6 +4983,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     : (item.hora_fim || '-')
                                   }
                                 </span>
+                                {(() => {
+                                  const kmVal = item._source === 'tecnico'
+                                    ? (item.kms_deslocacao || Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0)) + Math.max(0, (item.kms_final_volta || 0) - (item.kms_inicial_volta || 0)))
+                                    : (item.km || 0);
+                                  return kmVal > 0 ? (
+                                    <span className="text-blue-400 font-medium">{kmVal} km</span>
+                                  ) : null;
+                                })()}
                                 <span className={`${textPrimary} font-medium`}>
                                   {(() => {
                                     const horas = item.horas_arredondadas || 0;
