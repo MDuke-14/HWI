@@ -4066,7 +4066,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className={`${isMobile ? 'mt-4' : 'mt-6'}`}>
               <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'}`}>
                 <h3 className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''}`}>
-                  {isMobile ? `${filteredByStatus.length} OT(s)` : `Resultados: ${filteredByStatus.length} OT(s) com status "${getStatusLabel(statusFilter)}"`}
+                  {isMobile ? `${filteredByStatus.length} FS(s)` : `Resultados: ${filteredByStatus.length} FS(s) com status "${getStatusLabel(statusFilter)}"`}
                 </h3>
               </div>
 
@@ -4145,31 +4145,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
                       </div>
 
-                      {/* Equipamento - simplificado para mobile */}
-                      {!isMobile && (
-                        <div className="mb-3 pb-3 border-b border-gray-700">
-                          <p className="text-xs text-gray-500 mb-1">Equipamento</p>
-                          <p className="text-sm text-gray-300">
-                            {relatorio.equipamento_display ? (
-                              relatorio.equipamento_display === 'Não especificado' ? (
-                                <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
-                              ) : relatorio.equipamento_display === 'Vários' ? (
-                                <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
-                              ) : (
-                                <span>{relatorio.equipamento_display}</span>
-                              )
-                            ) : relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
-                              <>
-                                {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
-                                {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
-                                {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
-                              </>
+                      {/* Equipamento */}
+                      <div className={`${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b ${borderColor}`}>
+                        <p className={`text-xs ${textSecondary} mb-1`}>Equipamento</p>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`} data-testid="search-card-equipamento">
+                          {relatorio.equipamento_display ? (
+                            relatorio.equipamento_display === 'Não especificado' ? (
+                              <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'} italic`}>{relatorio.equipamento_display}</span>
+                            ) : relatorio.equipamento_display === 'Vários' ? (
+                              <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
                             ) : (
-                              <span className="text-gray-500 italic">Não especificado</span>
-                            )}
-                          </p>
-                        </div>
-                      )}
+                              <span className={textPrimary}>{relatorio.equipamento_display}</span>
+                            )
+                          ) : (
+                            <span className={`${isDark ? 'text-gray-500' : 'text-gray-400'} italic`}>Não especificado</span>
+                          )}
+                        </p>
+                      </div>
 
                       {/* Footer */}
                       <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`}>
