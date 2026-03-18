@@ -8131,13 +8131,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   );
                                 })}
                               </tbody>
-                              <tfoot>
-                                <tr className="bg-gray-200 font-bold text-gray-700">
-                                  <td className="p-2" colSpan="4">Total</td>
-                                  <td className="p-2">{(() => { const totalH = dados.registos.reduce((sum, r) => sum + (r.horas_arredondadas || 0), 0); const hi = Math.floor(totalH); const mi = Math.round((totalH - hi) * 60); return `${hi}h${String(mi).padStart(2, '0')}`; })()}</td>
-                                  <td className="p-2">{(() => { const totalKm = dados.registos.reduce((sum, r) => sum + (Number(r.km) || 0), 0); return totalKm > 0 ? `${totalKm} km` : '-'; })()}</td>
-                                </tr>
-                              </tfoot>
                             </table>
                           </div>
                         )}
