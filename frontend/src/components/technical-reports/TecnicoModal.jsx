@@ -110,7 +110,8 @@ const TecnicoModal = ({
       setTecnicoFormData({
         ...tecnicoFormData,
         tecnico_id: user.id,
-        tecnico_nome: user.full_name || user.username
+        tecnico_nome: user.full_name || user.username,
+        funcao_ot: user.tipo_colaborador || tecnicoFormData.funcao_ot || 'tecnico'
       });
     }
   };

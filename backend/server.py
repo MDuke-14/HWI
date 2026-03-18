@@ -425,6 +425,7 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = None
     is_admin: Optional[bool] = None
+    tipo_colaborador: Optional[str] = None  # "junior", "tecnico", "senior"
 
 class UserLogin(BaseModel):
     username: str
@@ -9071,6 +9072,10 @@ async def admin_update_user(
     
     if update_data.is_admin is not None:
         update_dict["is_admin"] = update_data.is_admin
+    
+    if update_data.tipo_colaborador is not None:
+        if update_data.tipo_colaborador in ("junior", "tecnico", "senior", ""):
+            update_dict["tipo_colaborador"] = update_data.tipo_colaborador if update_data.tipo_colaborador else None
     
     if update_dict:
         await db.users.update_one({"id": user_id}, {"$set": update_dict})

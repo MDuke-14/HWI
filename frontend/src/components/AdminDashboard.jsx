@@ -498,7 +498,8 @@ const AdminDashboard = ({ user, onLogout }) => {
       phone: user.phone || '',
       full_name: user.full_name || '',
       password: '',
-      is_admin: user.is_admin || false
+      is_admin: user.is_admin || false,
+      tipo_colaborador: user.tipo_colaborador || ''
     });
     setShowEditDialog(true);
   };
@@ -1157,6 +1158,15 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} truncate`}>{u.email}</div>
                         {!isMobile && u.phone && <div className="text-gray-500 text-xs">📞 {u.phone}</div>}
                         {!isMobile && u.full_name && <div className="text-gray-500 text-xs">{u.full_name}</div>}
+                        {u.tipo_colaborador && (
+                          <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded ${
+                            u.tipo_colaborador === 'senior' ? 'bg-purple-600/30 text-purple-300' :
+                            u.tipo_colaborador === 'tecnico' ? 'bg-cyan-600/30 text-cyan-300' :
+                            'bg-yellow-600/30 text-yellow-300'
+                          }`} data-testid="user-tipo-colaborador-badge">
+                            {u.tipo_colaborador === 'junior' ? 'Téc. Júnior' : u.tipo_colaborador === 'tecnico' ? 'Técnico' : 'Téc. Sénior'}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className={`flex gap-2 ${isMobile ? 'mt-2' : 'mt-2'}`}>
@@ -1412,6 +1422,21 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <div>
                       <Label>Nova Password (deixar vazio para não alterar)</Label>
                       <Input type="password" value={editForm.password} onChange={(e) => setEditForm({...editForm, password: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" placeholder="Deixar vazio para não alterar" />
+                    </div>
+                    <div>
+                      <Label>Tipo de Colaborador (para FS's)</Label>
+                      <select
+                        value={editForm.tipo_colaborador || ''}
+                        onChange={(e) => setEditForm({...editForm, tipo_colaborador: e.target.value})}
+                        className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md px-3 py-2 mt-1"
+                        data-testid="edit-user-tipo-colaborador"
+                      >
+                        <option value="">Sem tipo definido</option>
+                        <option value="junior">Téc. Júnior</option>
+                        <option value="tecnico">Técnico</option>
+                        <option value="senior">Téc. Sénior</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Define automaticamente a função ao adicionar este utilizador a uma FS</p>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg">
                       <Label className="cursor-pointer">Privilégios de Admin</Label>
