@@ -289,6 +289,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Despesas OT
   const [despesas, setDespesas] = useState([]);
+  const [despesaToDelete, setDespesaToDelete] = useState(null);
   // Relatórios de Assistência
   const [relatoriosAssistencia, setRelatoriosAssistencia] = useState([]);
   const [showAddRelAssistModal, setShowAddRelAssistModal] = useState(false);
@@ -2151,19 +2152,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const handleDeleteDespesa = async (despesaId) => {
-    console.log('handleDeleteDespesa chamado com ID:', despesaId);
-    
     if (!despesaId) {
       toast.error('ID da despesa não encontrado');
       return;
     }
-    
-    if (!window.confirm('Tem certeza que deseja eliminar esta despesa?')) return;
-    
     try {
-      console.log('Enviando DELETE para:', `${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${despesaId}`);
       await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${despesaId}`);
       toast.success('Despesa eliminada!');
+      setDespesaToDelete(null);
       fetchDespesas(selectedRelatorio.id);
     } catch (error) {
       console.error('Erro ao eliminar despesa:', error);
@@ -5724,15 +5720,18 @@ const TechnicalReports = ({ user, onLogout }) => {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button
-                            type="button"
-                            onClick={() => handleDeleteDespesa(despesa.id)}
-                            size="sm"
-                            variant="outline"
-                            className="border-red-500 text-red-500 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {user?.is_admin && (
+                            <Button
+                              type="button"
+                              onClick={() => setDespesaToDelete(despesa)}
+                              size="sm"
+                              variant="outline"
+                              className="border-red-500 text-red-500 hover:bg-red-500/10"
+                              data-testid="btn-delete-despesa"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -10516,6 +10515,33 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal Confirmação Apagar Despesa */}
+      <AlertDialog open={!!despesaToDelete} onOpenChange={(open) => { if (!open) setDespesaToDelete(null); }}>
+        <AlertDialogContent className="bg-[#1a1a1a] border-gray-700 text-white" data-testid="modal-delete-despesa">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Apagar Despesa</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Tem a certeza que deseja apagar esta despesa?
+              {despesaToDelete && (
+                <span className="block mt-2 text-white font-medium">
+                  {despesaToDelete.descricao} — {despesaToDelete.valor?.toFixed(2)}€
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => handleDeleteDespesa(despesaToDelete?.id)}
+              data-testid="btn-confirm-delete-despesa"
+            >
+              Apagar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal Referência Interna do Cliente */}
       <Dialog open={showReferenciaInternaModal} onOpenChange={(open) => {
