@@ -2610,11 +2610,13 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Abrir popup de função antes de iniciar cronómetro para técnico individual
   const openCronometroFuncaoPopup = (tecnico, tipo) => {
+    const userId = tecnico.tecnico_id || tecnico.id;
+    const userObj = allSystemUsers.find(u => u.id === userId);
     setCronometroFuncaoData({
       tecnicos: [{
-        id: tecnico.tecnico_id || tecnico.id,
+        id: userId,
         nome: tecnico.tecnico_nome || tecnico.nome,
-        funcao_ot: 'tecnico'
+        funcao_ot: userObj?.tipo_colaborador || 'tecnico'
       }],
       tipo,
       context: 'existing_ot'
@@ -2682,11 +2684,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
     
     setCronometroFuncaoData({
-      tecnicos: cronoTecnicosSelecionados.map(tec => ({
-        id: tec.id,
-        nome: tec.nome,
-        funcao_ot: 'tecnico'
-      })),
+      tecnicos: cronoTecnicosSelecionados.map(tec => {
+        const userObj = allSystemUsers.find(u => u.id === tec.id);
+        return {
+          id: tec.id,
+          nome: tec.nome,
+          funcao_ot: userObj?.tipo_colaborador || 'tecnico'
+        };
+      }),
       tipo: cronoTipo,
       context: 'nova_ot'
     });
@@ -4690,7 +4695,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   tecnicos: usersToStart.map(u => ({
                                     id: u.id,
                                     nome: u.full_name || u.username,
-                                    funcao_ot: 'tecnico'
+                                    funcao_ot: u.tipo_colaborador || 'tecnico'
                                   })),
                                   tipo: 'trabalho',
                                   context: 'existing_ot'
@@ -4755,7 +4760,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   tecnicos: usersToStart.map(u => ({
                                     id: u.id,
                                     nome: u.full_name || u.username,
-                                    funcao_ot: 'tecnico'
+                                    funcao_ot: u.tipo_colaborador || 'tecnico'
                                   })),
                                   tipo: 'viagem',
                                   context: 'existing_ot'
@@ -4808,7 +4813,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   tecnicos: usersToStart.map(u => ({
                                     id: u.id,
                                     nome: u.full_name || u.username,
-                                    funcao_ot: 'tecnico'
+                                    funcao_ot: u.tipo_colaborador || 'tecnico'
                                   })),
                                   tipo: 'oficina',
                                   context: 'existing_ot'
@@ -10019,7 +10024,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <UserCheck className="w-5 h-5 text-blue-400" />
-              Definir Função na OT
+              Definir Função na FS
             </DialogTitle>
             <p className="text-sm text-gray-400 mt-1">
               Defina a função de cada técnico antes de iniciar o cronómetro de {cronometroFuncaoData.tipo === 'trabalho' ? 'Trabalho' : cronometroFuncaoData.tipo === 'viagem' ? 'Viagem' : 'Oficina'}.

@@ -131,6 +131,7 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Pending Issues (Prioritized)
 ### P0
+- Bug: Wrong modal opens when editing a client to enable "Referência Interna" feature (blocks entire Internal Reference flow)
 - PDF Generation Fails for Large Reports (Flowable too large - use OT#358 to test)
 
 ### P1
@@ -144,7 +145,24 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - Unresolved "Edit OT Equipment" Test Failure
 - Refactor window.location.reload() hack in mobile
 
+## Recent Implementations (March 2026 - Session 4)
+
+### Tipo de Colaborador por Utilizador (18 Mar 2026)
+- Added `tipo_colaborador` field to User model (values: junior, tecnico, senior)
+- Admin > Utilizadores > Editar modal now has "Tipo de Colaborador (para FS's)" dropdown
+- User cards show color-coded badges (yellow=Júnior, cyan=Técnico, purple=Sénior)
+- Cronometer "Definir Função na FS" popup auto-fills funcao_ot from user's tipo_colaborador
+- TecnicoModal (manual record) also auto-fills funcao_ot when selecting a user
+- Fixed "Definir Função na OT" text to "Definir Função na FS"
+- Fixed missing AlertDialogCancel/AlertDialogAction imports in TechnicalReports.jsx (was causing crash)
+- Modified files: server.py (UserUpdate model, admin_update_user), AdminDashboard.jsx, TechnicalReports.jsx, TecnicoModal.jsx
+
+### Delete Expense UI (18 Mar 2026)  
+- Fixed AlertDialog import crash that was breaking the entire /technical-reports page
+- Delete expense feature (button + confirmation dialog) was already implemented but crashed due to missing imports
+
 ## Future Tasks
+- P0: Fix Internal Reference client edit modal bug
 - P0: Refactor monolithic files (server.py, TechnicalReports.jsx)
 - P1: OneDrive Integration for file storage
 - P1: Adapt remaining pages for mobile
