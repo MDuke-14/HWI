@@ -9223,6 +9223,7 @@ async def get_all_reports(
     
     # Group by user
     user_stats = {}
+    user_dates = {}  # Track unique dates per user
     
     # Pre-fetch user info for entries without username
     users_cache = {}
@@ -9249,10 +9250,21 @@ async def get_all_reports(
                 "overtime_hours": 0,
                 "days_worked": 0
             }
+            user_dates[user_id] = set()
         user_stats[user_id]["total_hours"] += entry.get("total_hours", 0)
         user_stats[user_id]["regular_hours"] += entry.get("regular_hours", 0)
         user_stats[user_id]["overtime_hours"] += entry.get("overtime_hours", 0)
-        user_stats[user_id]["days_worked"] += 1
+        # Track unique dates
+        entry_date = entry.get("date")
+        if entry_date:
+            user_dates[user_id].add(entry_date)
+    
+    # Apply truncar_horas_para_minutos (same as /reports) and count unique days
+    for user_id, stats in user_stats.items():
+        stats["regular_hours"] = round(truncar_horas_para_minutos(stats["regular_hours"]), 2)
+        stats["overtime_hours"] = round(truncar_horas_para_minutos(stats["overtime_hours"]), 2)
+        stats["total_hours"] = round(stats["total_hours"], 2)
+        stats["days_worked"] = len(user_dates.get(user_id, set()))
     
     return {
         "period": period,
