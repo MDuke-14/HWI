@@ -208,6 +208,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   
   // Intervenções
   const [intervencoes, setIntervencoes] = useState([]);
+  const [activeIntervencaoId, setActiveIntervencaoId] = useState(null);
+  const [uploadIntervencaoId, setUploadIntervencaoId] = useState(null);
+  const [addMaterialIntervencaoId, setAddMaterialIntervencaoId] = useState(null);
   const [showAddIntervencaoModal, setShowAddIntervencaoModal] = useState(false);
   const [showEditIntervencaoModal, setShowEditIntervencaoModal] = useState(false);
   const [selectedIntervencao, setSelectedIntervencao] = useState(null);
@@ -1137,6 +1140,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const openViewRelatorioModal = async (relatorio) => {
     setSelectedRelatorio(relatorio);
     setShowViewRelatorioModal(true);
+    setActiveIntervencaoId(null);
     // Buscar técnicos, intervenções, fotografias, assinatura, equipamentos, materiais, despesas, PCs, cronómetros e registos
     await fetchTecnicosRelatorio(relatorio.id);
     await fetchIntervencoesRelatorio(relatorio.id);
@@ -1274,7 +1278,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const fetchIntervencoesRelatorio = async (relatorioId) => {
     try {
       const response = await axios.get(`${API}/relatorios-tecnicos/${relatorioId}/intervencoes`);
-      setIntervencoes(response.data);
+      const data = response.data;
+      setIntervencoes(data);
+      // Auto-select first intervention
+      if (data.length > 0 && !activeIntervencaoId) {
+        setActiveIntervencaoId(data[0].id);
+      }
     } catch (error) {
       console.error('Erro ao carregar intervenções:', error);
       setIntervencoes([]);
@@ -1286,7 +1295,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     if (!selectedRelatorio) return;
 
     try {
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes`, {
+      const res = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes`, {
         ...intervencaoFormData,
         relatorio_id: selectedRelatorio.id,
         ordem: intervencoes.length
@@ -1298,7 +1307,9 @@ const TechnicalReports = ({ user, onLogout }) => {
         data_intervencao: new Date().toISOString().split('T')[0],
         motivo_assistencia: '',
       });
-      fetchIntervencoesRelatorio(selectedRelatorio.id);
+      await fetchIntervencoesRelatorio(selectedRelatorio.id);
+      // Select the new intervention tab
+      if (res.data?.id) setActiveIntervencaoId(res.data.id);
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
@@ -1939,7 +1950,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     e.preventDefault();
     
     try {
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, materialFormData);
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, {
+        ...materialFormData,
+        intervencao_id: addMaterialIntervencaoId || null
+      });
       toast.success('Material adicionado!');
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
@@ -5215,424 +5229,288 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
-              {/* Equipamentos */}
+              {/* ═══════════════ INTERVENÇÕES (TABS) ═══════════════ */}
               <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
-                <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-3'}`}>
-                  <h4 className={`text-blue-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
-                    Equipamentos
-                    {!isMobile && <HelpTooltip section="equipamentos" />}
-                  </h4>
-                  <Button
-                    onClick={openAddEquipamentoModal}
-                    size="sm"
-                    className={`bg-blue-500 hover:bg-blue-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
-                  >
-                    <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
-                    {isMobile ? 'Adicionar' : 'Adicionar Equipamento'}
-                  </Button>
-                </div>
-                
-                {/* Lista de Equipamentos - Campos Estruturados */}
-                <div className="space-y-3">
-                  {/* Equipamento principal (da OT) - só mostra se tiver dados */}
-                  {(selectedRelatorio.equipamento_marca || selectedRelatorio.equipamento_tipologia || selectedRelatorio.equipamento_modelo) && (
-                    <div className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} ${isMobile ? 'p-2' : 'p-3'} rounded border ${borderColor}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className={`${isMobile ? 'text-[10px] px-1 py-0.5' : 'text-xs px-2 py-1'} text-gray-500 bg-gray-700 rounded`}>Principal</span>
-                        <div className={`flex items-center gap-1`}>
-                          <Button
-                            onClick={openEditEquipamentoPrincipalModal}
-                            size="sm"
-                            variant="outline"
-                            className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
-                          >
-                            <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-                          </Button>
-                          <Button
-                            onClick={async () => {
-                              if (window.confirm('Tem certeza que deseja remover o equipamento principal?')) {
-                                try {
-                                  await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}`, {
-                                    equipamento_tipologia: '',
-                                    equipamento_marca: '',
-                                    equipamento_modelo: '',
-                                    equipamento_numero_serie: '',
-                                    equipamento_ano_fabrico: ''
-                                  });
-                                  setSelectedRelatorio({
-                                    ...selectedRelatorio,
-                                    equipamento_tipologia: '',
-                                    equipamento_marca: '',
-                                    equipamento_modelo: '',
-                                    equipamento_numero_serie: '',
-                                    equipamento_ano_fabrico: ''
-                                  });
-                                  toast.success('Equipamento principal removido');
-                                } catch (error) {
-                                  toast.error('Erro ao remover equipamento');
-                                }
-                              }
-                            }}
-                            size="sm"
-                            variant="outline"
-                            className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
-                          >
-                            <Trash2 className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-                          </Button>
-                        </div>
-                      </div>
-                      {/* Campos estruturados */}
-                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'} ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                        {selectedRelatorio.equipamento_tipologia && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>TIPOLOGIA:</span>
-                            <span className={textPrimary}>{selectedRelatorio.equipamento_tipologia}</span>
-                          </div>
-                        )}
-                        {selectedRelatorio.equipamento_numero_serie && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>Nº SÉRIE:</span>
-                            <span className={textPrimary}>{selectedRelatorio.equipamento_numero_serie}</span>
-                          </div>
-                        )}
-                        {selectedRelatorio.equipamento_marca && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MARCA:</span>
-                            <span className={textPrimary}>{selectedRelatorio.equipamento_marca}</span>
-                          </div>
-                        )}
-                        {selectedRelatorio.equipamento_modelo && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MODELO:</span>
-                            <span className={textPrimary}>{selectedRelatorio.equipamento_modelo}</span>
-                          </div>
-                        )}
-                        {selectedRelatorio.equipamento_ano_fabrico && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>ANO FABRICO:</span>
-                            <span className={textPrimary}>{selectedRelatorio.equipamento_ano_fabrico}</span>
-                          </div>
-                        )}
-                        {selectedRelatorio.equipamento_horas_funcionamento && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>HORAS:</span>
-                            <span className={textPrimary}>{selectedRelatorio.equipamento_horas_funcionamento}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Equipamentos adicionais */}
-                  {equipamentosOT.map((equip) => (
-                    <div key={equip.id} className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} ${isMobile ? 'p-2' : 'p-3'} rounded border border-blue-500/30`}>
-                      <div className="flex items-center justify-end mb-2 gap-1">
-                        <Button
-                          onClick={() => openEditEquipamentoModal(equip)}
-                          size="sm"
-                          variant="outline"
-                          className={`border-blue-500 text-blue-500 hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
-                        >
-                          <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteEquipamento(equip.id)}
-                          size="sm"
-                          variant="outline"
-                          className={`border-red-500 text-red-500 hover:bg-red-500/10 ${isMobile ? 'p-1 h-6 w-6' : ''}`}
-                        >
-                          <Trash2 className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-                        </Button>
-                      </div>
-                      {/* Campos estruturados */}
-                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-1' : 'grid-cols-2 gap-2'} ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                        {equip.tipologia && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>TIPOLOGIA:</span>
-                            <span className={textPrimary}>{equip.tipologia}</span>
-                          </div>
-                        )}
-                        {equip.numero_serie && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>Nº SÉRIE:</span>
-                            <span className={textPrimary}>{equip.numero_serie}</span>
-                          </div>
-                        )}
-                        {equip.marca && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MARCA:</span>
-                            <span className={textPrimary}>{equip.marca}</span>
-                          </div>
-                        )}
-                        {equip.modelo && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>MODELO:</span>
-                            <span className={textPrimary}>{equip.modelo}</span>
-                          </div>
-                        )}
-                        {equip.ano_fabrico && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>ANO FABRICO:</span>
-                            <span className={textPrimary}>{equip.ano_fabrico}</span>
-                          </div>
-                        )}
-                        {equip.horas_funcionamento && (
-                          <div className="flex">
-                            <span className={`font-semibold ${textSecondary} min-w-[100px]`}>HORAS:</span>
-                            <span className={textPrimary}>{equip.horas_funcionamento}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Intervenções */}
-              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
+                {/* Tab Header */}
                 <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
                   <h4 className={`text-blue-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
                     <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                    {isMobile ? 'Intervenções' : 'Intervenções / Assistências'}
-                    {!isMobile && <HelpTooltip section="intervencoes" />}
+                    Intervenções ({intervencoes.length})
                   </h4>
                   <Button
                     onClick={() => setShowAddIntervencaoModal(true)}
                     size="sm"
                     className={`bg-green-500 hover:bg-green-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
+                    data-testid="btn-add-intervencao"
                   >
                     <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
-                    {isMobile ? 'Adicionar' : 'Adicionar Intervenção'}
+                    {isMobile ? 'Nova' : 'Adicionar Intervenção'}
                   </Button>
                 </div>
 
+                {/* Tab Bar */}
                 {intervencoes.length > 0 ? (
-                  <div className={`space-y-2 ${isMobile ? '' : 'space-y-3'}`}>
-                    {intervencoes.map((intervencao) => (
-                      <div key={intervencao.id} className={`${bgCard} ${isMobile ? 'p-2' : 'p-4'} rounded border ${borderColor}`}>
-                        <div className={`flex items-start justify-between ${isMobile ? 'mb-1' : 'mb-2'}`}>
-                          <div className="flex items-center gap-2">
-                            <Clock className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-blue-400`} />
-                            <span className={`${textPrimary} font-semibold ${isMobile ? 'text-xs' : ''}`}>
-                              {new Date(intervencao.data_intervencao).toLocaleDateString('pt-PT')}
-                            </span>
+                  <>
+                    <div className={`flex gap-1 overflow-x-auto pb-2 mb-3 border-b ${borderColor}`}>
+                      {intervencoes.map((interv, idx) => {
+                        const isActive = activeIntervencaoId === interv.id;
+                        const eqInterv = equipamentosOT.find(e => e.id === interv.equipamento_id);
+                        return (
+                          <button
+                            key={interv.id}
+                            onClick={() => setActiveIntervencaoId(interv.id)}
+                            data-testid={`tab-intervencao-${idx}`}
+                            className={`flex-shrink-0 px-3 py-2 rounded-t-lg text-xs font-medium transition-colors ${
+                              isActive
+                                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                                : `${isDark ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(interv.data_intervencao).toLocaleDateString('pt-PT')}
+                            </div>
+                            {eqInterv && (
+                              <div className="text-[10px] mt-0.5 opacity-70 truncate max-w-[120px]">
+                                {eqInterv.tipologia || eqInterv.marca}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Tab Content */}
+                    {(() => {
+                      const activeInterv = intervencoes.find(i => i.id === activeIntervencaoId);
+                      if (!activeInterv) return (
+                        <p className="text-gray-500 text-sm text-center py-4">Selecione uma intervenção acima</p>
+                      );
+
+                      const activeEq = equipamentosOT.find(e => e.id === activeInterv.equipamento_id);
+                      // Filter data for this intervention
+                      const intervFotos = fotografias.filter(f => f.intervencao_id === activeInterv.id || (!f.intervencao_id && intervencoes.length === 1));
+                      const intervMateriais = materiais.filter(m => m.intervencao_id === activeInterv.id || (!m.intervencao_id && intervencoes.length === 1));
+                      const intervRelAssist = relatoriosAssistencia.filter(r => {
+                        if (r.data_intervencao === activeInterv.data_intervencao?.split('T')[0]) return true;
+                        return false;
+                      });
+                      const intervDate = activeInterv.data_intervencao?.split('T')[0];
+                      const intervAssinaturas = assinaturas.filter(a => {
+                        const aDate = a.data_assinatura?.split('T')[0];
+                        return aDate === intervDate;
+                      });
+
+                      return (
+                        <div className="space-y-4">
+                          {/* Header da intervenção ativa com ações */}
+                          <div className={`flex items-center justify-between p-2 ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'} rounded border ${isDark ? 'border-blue-800/30' : 'border-blue-200'}`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`${textPrimary} font-semibold ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                {new Date(activeInterv.data_intervencao).toLocaleDateString('pt-PT')}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button onClick={() => openEditIntervencaoModal(activeInterv)} variant="outline" size="sm" className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}>
+                                <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
+                              </Button>
+                              <Button onClick={() => handleDeleteIntervencao(activeInterv.id)} variant="outline" size="sm" className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button
-                              onClick={() => openEditIntervencaoModal(intervencao)}
-                              variant="outline"
-                              size="sm"
-                              className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300 hover:border-blue-500'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}
-                            >
-                              <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteIntervencao(intervencao.id)}
-                              variant="outline"
-                              size="sm"
-                              className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Equipamento Relacionado */}
-                        {intervencao.equipamento_id && (
-                          <div className="mb-3 p-2 bg-purple-500/10 border border-purple-500/30 rounded">
-                            <p className="text-xs text-purple-400 flex items-center gap-1">
-                              <Settings className="w-3 h-3" />
-                              Equipamento: {(() => {
-                                const eq = equipamentosOT.find(e => e.id === intervencao.equipamento_id);
-                                return eq ? `${eq.tipologia} - ${eq.marca} ${eq.modelo}` : 'N/A';
-                              })()}
-                            </p>
-                          </div>
-                        )}
-                        
-                        <div className="space-y-2">
+
+                          {/* 1. Motivo */}
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Motivo:</p>
-                            <p className="text-gray-300 text-sm">{intervencao.motivo_assistencia}</p>
+                            <p className="text-xs text-gray-500 mb-1 font-medium">Motivo da Assistência</p>
+                            <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'}`}>{activeInterv.motivo_assistencia || <span className="text-gray-500 italic">Sem motivo definido</span>}</p>
+                          </div>
+
+                          {/* 2. Equipamento */}
+                          {activeEq && (
+                            <div className="p-2 bg-purple-500/10 border border-purple-500/30 rounded">
+                              <p className="text-xs text-purple-400 flex items-center gap-1 font-medium mb-1">
+                                <Settings className="w-3 h-3" /> Equipamento
+                              </p>
+                              <p className="text-sm text-purple-300">
+                                {activeEq.tipologia && `${activeEq.tipologia} - `}{activeEq.marca} {activeEq.modelo}
+                                {activeEq.numero_serie && <span className="text-purple-400/60 ml-2 text-xs">S/N: {activeEq.numero_serie}</span>}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* 3. Relatório de Assistência */}
+                          <div className={`${bgCard} p-3 rounded border ${borderColor}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-orange-400 font-medium flex items-center gap-1">
+                                <FileText className="w-3 h-3" /> Relatório de Assistência ({intervRelAssist.length})
+                              </p>
+                              <Button
+                                onClick={() => {
+                                  setRelAssistFormData({ texto: '', equipamento_ids: activeInterv.equipamento_id ? [activeInterv.equipamento_id] : [], data_intervencao: intervDate || new Date().toISOString().split('T')[0] });
+                                  setShowAddRelAssistModal(true);
+                                }}
+                                size="sm" variant="ghost" className="text-orange-400 hover:text-orange-300 h-6 text-xs px-2"
+                              >
+                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                              </Button>
+                            </div>
+                            {intervRelAssist.length > 0 ? intervRelAssist.map(item => (
+                              <div key={item.id} className={`${bgCardAlt} p-2 rounded border ${borderColor} mb-2`}>
+                                <div className="flex justify-between items-start">
+                                  <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap flex-1`}>{item.texto}</p>
+                                  <div className="flex gap-1 ml-2 shrink-0">
+                                    <Button onClick={() => openEditRelAssist(item)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                    <Button onClick={() => handleDeleteRelAssist(item.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )) : <p className="text-gray-500 text-xs text-center py-2">Sem relatório</p>}
+                          </div>
+
+                          {/* 4. Fotografias */}
+                          <div className={`${bgCard} p-3 rounded border ${borderColor}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
+                                <Camera className="w-3 h-3" /> Fotografias ({intervFotos.length})
+                              </p>
+                              <Button
+                                onClick={() => {
+                                  setUploadIntervencaoId(activeInterv.id);
+                                  document.getElementById('foto-upload-input')?.click();
+                                }}
+                                size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                              >
+                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                              </Button>
+                            </div>
+                            {intervFotos.length > 0 ? (
+                              <div className="grid grid-cols-3 gap-2">
+                                {intervFotos.map(foto => (
+                                  <div key={foto.id} className="relative group">
+                                    <img
+                                      src={`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${foto.id}/image`}
+                                      alt={foto.descricao || 'Foto'}
+                                      className="w-full h-20 object-cover rounded cursor-pointer"
+                                      onClick={() => {
+                                        setSelectedFotoUrl(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${foto.id}/image`);
+                                        setShowFotoPreviewModal(true);
+                                      }}
+                                    />
+                                    <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                                      <Button onClick={() => handleDeleteFotografia(foto.id)} size="sm" className="bg-red-600/80 hover:bg-red-700 p-0.5 h-5 w-5"><Trash2 className="w-3 h-3" /></Button>
+                                    </div>
+                                    {foto.descricao && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{foto.descricao}</p>}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : <p className="text-gray-500 text-xs text-center py-2">Sem fotografias</p>}
+                          </div>
+
+                          {/* 5. Material */}
+                          <div className={`${bgCard} p-3 rounded border ${borderColor}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
+                                <Package className="w-3 h-3" /> Material ({intervMateriais.length})
+                              </p>
+                              <Button
+                                onClick={() => {
+                                  setAddMaterialIntervencaoId(activeInterv.id);
+                                  setShowAddMaterialModal(true);
+                                }}
+                                size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                              >
+                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                              </Button>
+                            </div>
+                            {intervMateriais.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {intervMateriais.map(material => (
+                                  <div key={material.id} className="flex items-center justify-between p-2 bg-gray-800 rounded border border-gray-700">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-white text-sm font-medium truncate">{material.descricao}</p>
+                                      <div className="flex gap-2 mt-0.5 text-xs text-gray-400">
+                                        <span>Qtd: {material.quantidade} {material.unidade || 'Un'}</span>
+                                        <span className={`px-1.5 py-0 rounded ${material.fornecido_por === 'Cliente' ? 'bg-green-600/20 text-green-400' : material.fornecido_por === 'HWI' ? 'bg-blue-600/20 text-blue-400' : 'bg-yellow-600/20 text-yellow-400'}`}>{material.fornecido_por}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-1 ml-2">
+                                      <Button onClick={() => openEditMaterialModal(material)} size="sm" variant="ghost" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                      <Button onClick={() => handleDeleteMaterial(material.id)} size="sm" variant="ghost" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : <p className="text-gray-500 text-xs text-center py-2">Sem material</p>}
+                          </div>
+
+                          {/* 6. Assinaturas (por data) */}
+                          <div className={`${bgCard} p-3 rounded border ${borderColor}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
+                                <PenTool className="w-3 h-3" /> Assinaturas ({intervAssinaturas.length})
+                              </p>
+                              <Button
+                                onClick={() => setShowAssinaturaModal(true)}
+                                size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                              >
+                                <Plus className="w-3 h-3 mr-0.5" /> Assinar
+                              </Button>
+                            </div>
+                            {intervAssinaturas.length > 0 ? (
+                              <div className="space-y-2">
+                                {intervAssinaturas.map(assinatura => (
+                                  <div key={assinatura.id} className="flex items-center gap-3 p-2 bg-gray-800 rounded border border-gray-700">
+                                    {assinatura.assinatura_base64 && (
+                                      <img src={`data:image/png;base64,${assinatura.assinatura_base64}`} alt="Assinatura" className="h-10 w-20 object-contain bg-white rounded" />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-white text-sm font-medium truncate">{assinatura.assinado_por}</p>
+                                      <p className="text-gray-400 text-xs">{new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}</p>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button onClick={() => handleEditAssinatura(assinatura)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                      <Button onClick={() => handleDeleteAssinatura(assinatura.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : <p className="text-gray-500 text-xs text-center py-2">Sem assinaturas nesta data</p>}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      );
+                    })()}
+                  </>
                 ) : (
                   <div className="text-center py-8">
                     <FileText className="w-12 h-12 text-gray-600 mx-auto mb-2" />
                     <p className="text-gray-400 text-sm">Nenhuma intervenção registada</p>
+                    <p className="text-gray-500 text-xs mt-1">Clique "Adicionar Intervenção" para começar</p>
                   </div>
                 )}
               </div>
 
-              {/* Fotografias */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" />
-                    Fotografias
-                    <HelpTooltip section="fotografias" />
-                  </h4>
-                  <Button
-                    onClick={() => openAddFotoModal()}
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Componentes
-                  </Button>
-                </div>
-
-                {/* Galeria de Fotografias */}
-                {fotografias.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {fotografias.map((foto) => (
-                      <div key={foto.id} className="bg-black/30 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500/50 transition">
-                        {/* Imagem */}
-                        <div className="relative aspect-video bg-gray-800">
-                          <img
-                            src={`${API}${foto.foto_url}`}
-                            alt={foto.descricao || 'Fotografia'}
-                            className="w-full h-full object-cover cursor-pointer"
-                            onClick={() => window.open(`${API}${foto.foto_url}`, '_blank')}
-                            onError={(e) => {
-                              console.log('Erro ao carregar imagem:', `${API}${foto.foto_url}`);
-                              console.log('Foto objeto:', foto);
-                              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23333" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ESem Imagem%3C/text%3E%3C/svg%3E';
-                            }}
-                            onLoad={() => console.log('Imagem carregada com sucesso:', foto.foto_url)}
-                            title="Clique para ampliar"
-                          />
-                          {/* Botões de ação */}
-                          <div className="absolute top-2 right-2 flex gap-1">
-                            {/* Botão de editar */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditFotoModal(foto);
-                              }}
-                              className="bg-blue-500/80 hover:bg-blue-600 text-white p-1.5 rounded-full transition"
-                              title="Editar descrição"
-                              data-testid={`edit-foto-${foto.id}`}
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                            {/* Botão de remover */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteFoto(foto.id);
-                              }}
-                              className="bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full transition"
-                              title="Remover fotografia"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        {/* Descrição */}
-                        <div className="p-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm text-gray-300 flex-1">
-                              {foto.descricao || 'Sem descrição'}
-                            </p>
-                            <button
-                              onClick={() => openEditFotoModal(foto)}
-                              className="text-gray-500 hover:text-blue-400 transition"
-                              title="Editar descrição"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-2">
-                            {new Date(foto.uploaded_at).toLocaleString('pt-PT')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <ImageIcon className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">Nenhuma fotografia adicionada</p>
-                    <p className="text-gray-500 text-xs mt-1">Clique em "Adicionar Componentes" para começar</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Material */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
-                    <Package className="w-4 h-4" />
-                    Material
-                    <HelpTooltip section="materiais" />
-                  </h4>
-                  <Button
-                    onClick={() => setShowAddMaterialModal(true)}
-                    size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar Material
-                  </Button>
-                </div>
-
-                {materiais.length > 0 ? (
-                  <div className="space-y-2">
-                    {materiais.map((material) => (
-                      <div
-                        key={material.id}
-                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700"
-                      >
-                        <div className="flex-1">
-                          <p className="text-white font-medium">{material.descricao}</p>
-                          <div className="flex flex-wrap gap-4 mt-1 text-sm text-gray-400">
-                            <span>Qtd: {material.quantidade} {material.unidade || 'Un'}</span>
-                            <span className={`px-2 py-0.5 rounded ${
-                              material.fornecido_por === 'Cliente' ? 'bg-green-600/20 text-green-400' :
-                              material.fornecido_por === 'HWI' ? 'bg-blue-600/20 text-blue-400' :
-                              'bg-yellow-600/20 text-yellow-400'
-                            }`}>
-                              {material.fornecido_por}
-                            </span>
-                            {material.data_utilizacao && (
-                              <span className="flex items-center gap-1 text-purple-400">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(material.data_utilizacao).toLocaleDateString('pt-PT')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => openEditMaterialModal(material)}
-                            size="sm"
-                            variant="outline"
-                            className="border-blue-500 text-blue-500"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteMaterial(material.id)}
-                            size="sm"
-                            variant="outline"
-                            className="border-red-500 text-red-500"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm text-center py-4">
-                    Nenhum material adicionado
-                  </p>
-                )}
-              </div>
+              {/* Hidden file input for photo upload */}
+              <input
+                id="foto-upload-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !selectedRelatorio) return;
+                  try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('descricao', '');
+                    formData.append('intervencao_id', uploadIntervencaoId || '');
+                    await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    toast.success('Fotografia adicionada!');
+                    fetchFotografiasRelatorio(selectedRelatorio.id);
+                  } catch (err) { toast.error('Erro ao fazer upload'); }
+                  e.target.value = '';
+                }}
+              />
 
               {/* Despesas */}
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-emerald-700">
@@ -5782,343 +5660,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               )}
 
-              {/* Relatório de Assistência */}
-              <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border ${borderColor}`}>
-                <div className={`flex items-center justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
-                  <h4 className={`text-orange-400 font-semibold flex items-center gap-2 ${isMobile ? 'text-sm' : ''}`}>
-                    <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                    Relatório de Assistência ({relatoriosAssistencia.length})
-                  </h4>
-                  <Button
-                    onClick={() => {
-                      setRelAssistFormData({ texto: '', equipamento_ids: [], data_intervencao: new Date().toISOString().split('T')[0] });
-                      setShowAddRelAssistModal(true);
-                    }}
-                    size="sm"
-                    className={`bg-orange-500 hover:bg-orange-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
-                    data-testid="btn-add-rel-assist"
-                  >
-                    <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
-                    {isMobile ? 'Adicionar' : 'Adicionar'}
-                  </Button>
-                </div>
-
-                {relatoriosAssistencia.length > 0 ? (
-                  <div className={`space-y-2 ${isMobile ? '' : 'space-y-3'}`}>
-                    {relatoriosAssistencia.map((item) => (
-                      <div key={item.id} className={`${bgCard} ${isMobile ? 'p-2' : 'p-4'} rounded border ${borderColor}`}>
-                        <div className={`flex items-start justify-between ${isMobile ? 'mb-1' : 'mb-2'}`}>
-                          <div className="flex-1">
-                            {/* Data da Intervenção */}
-                            {item.data_intervencao && (
-                              <div className="flex items-center gap-1 mb-2">
-                                <Calendar className="w-3 h-3 text-orange-400" />
-                                <span className="text-xs text-orange-400 font-medium">
-                                  {new Date(item.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT')}
-                                </span>
-                              </div>
-                            )}
-                            {/* Equipamentos Relacionados */}
-                            {item.equipamento_ids && item.equipamento_ids.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {item.equipamento_ids.map(eqId => {
-                                  const eq = equipamentosOT.find(e => e.id === eqId);
-                                  const eqPrincipal = selectedRelatorio && eqId === 'principal' ? {
-                                    tipologia: selectedRelatorio.equipamento_tipologia,
-                                    marca: selectedRelatorio.equipamento_marca,
-                                    modelo: selectedRelatorio.equipamento_modelo
-                                  } : null;
-                                  const eqData = eq || eqPrincipal;
-                                  if (!eqData) return null;
-                                  return (
-                                    <span key={eqId} className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 flex items-center gap-1">
-                                      <Settings className="w-3 h-3" />
-                                      {eqData.tipologia ? `${eqData.tipologia} - ` : ''}{eqData.marca} {eqData.modelo}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-1 shrink-0 ml-2">
-                            <Button
-                              onClick={() => openEditRelAssist(item)}
-                              variant="outline"
-                              size="sm"
-                              className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300 hover:border-blue-500'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}
-                              data-testid={`btn-edit-rel-assist-${item.id}`}
-                            >
-                              <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteRelAssist(item.id)}
-                              variant="outline"
-                              size="sm"
-                              className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2"
-                              data-testid={`btn-delete-rel-assist-${item.id}`}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                        <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap`}>{item.texto}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <FileText className="w-10 h-10 text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">Nenhum relatório de assistência registado</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Assinaturas */}
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-blue-400 font-semibold flex items-center gap-2">
-                    <PenTool className="w-4 h-4" />
-                    Assinaturas do Cliente ({assinaturas.length})
-                    <HelpTooltip section="assinaturas" />
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={async () => {
-                        try {
-                          toast.loading('A sincronizar assinaturas...', { id: 'refresh-assinaturas' });
-                          await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/refresh-assinaturas`);
-                          await fetchAssinaturas(selectedRelatorio.id);
-                          toast.success('Assinaturas sincronizadas!', { id: 'refresh-assinaturas' });
-                        } catch (error) {
-                          toast.error('Erro ao sincronizar assinaturas', { id: 'refresh-assinaturas' });
-                        }
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                      title="Sincronizar assinaturas (corrige problemas no PDF)"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => openAssinaturaModal()}
-                      size="sm"
-                      className="bg-green-500 hover:bg-green-600"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Nova Assinatura
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-gray-400 text-sm mb-4">
-                  Declaro que aceito os trabalhos acima descritos e que tudo foi efetuado de acordo com a folha de assistência.
-                </p>
-
-                {assinaturas.length > 0 ? (
-                  <div className="space-y-3">
-                    {assinaturas.map((assinatura, index) => (
-                      <div key={assinatura.id} className="bg-black/30 rounded-lg p-4 border border-gray-700">
-                        <div className="flex items-start justify-between mb-2">
-                          <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                            Assinatura #{index + 1}
-                          </span>
-                          <Button
-                            onClick={() => handleDeleteAssinatura(assinatura.id)}
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-500 hover:bg-red-500/10 h-6 w-6 p-0"
-                            title="Eliminar assinatura"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="flex items-start gap-4">
-                          {/* Assinatura Digital - Sempre mostrar se tiver URL ou base64 */}
-                          {(assinatura.assinatura_url || assinatura.assinatura_base64) && (
-                            <div className="flex-1">
-                              <p className="text-xs text-gray-500 mb-2">
-                                {assinatura.tipo === 'digital' ? 'Assinatura Digital:' : 'Assinatura:'}
-                              </p>
-                              <div className="bg-white p-3 rounded border-2 border-gray-300">
-                                <img
-                                  src={assinatura.assinatura_base64 
-                                    ? (assinatura.assinatura_base64.startsWith('data:') 
-                                        ? assinatura.assinatura_base64 
-                                        : `data:image/png;base64,${assinatura.assinatura_base64}`)
-                                    : `${API}/relatorios-tecnicos/${selectedRelatorio?.id}/assinaturas/${assinatura.id}/imagem?t=${assinatura.data_assinatura || Date.now()}`
-                                  }
-                                  alt="Assinatura"
-                                  className="max-h-32 w-full object-contain"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.parentElement.innerHTML = '<p class="text-gray-600 text-sm text-center py-4">Erro ao carregar</p>';
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Informações */}
-                          <div className={assinatura.assinatura_url ? 'flex-1' : 'w-full'}>
-                            <div className="space-y-2">
-                              {assinatura.data_intervencao && (
-                                <div>
-                                  <p className="text-xs text-gray-500">Data da Intervenção:</p>
-                                  <p className="text-orange-400 font-semibold">
-                                    {assinatura.data_intervencao.includes('T') 
-                                      ? new Date(assinatura.data_intervencao).toLocaleDateString('pt-PT')
-                                      : assinatura.data_intervencao}
-                                  </p>
-                                </div>
-                              )}
-                              <div>
-                                <p className="text-xs text-gray-500 flex items-center gap-1">
-                                  Nome:
-                                  {editingAssinaturaNome !== assinatura.id && (
-                                    <button
-                                      onClick={() => {
-                                        setEditingAssinaturaNome(assinatura.id);
-                                        setEditingNomeData({
-                                          primeiro_nome: assinatura.primeiro_nome || '',
-                                          ultimo_nome: assinatura.ultimo_nome || ''
-                                        });
-                                      }}
-                                      className="text-blue-400 hover:text-blue-300"
-                                      title="Editar nome"
-                                    >
-                                      <Edit className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </p>
-                                {editingAssinaturaNome === assinatura.id ? (
-                                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                                    <Input
-                                      type="text"
-                                      placeholder="Primeiro nome"
-                                      value={editingNomeData.primeiro_nome}
-                                      onChange={(e) => setEditingNomeData(prev => ({ ...prev, primeiro_nome: e.target.value }))}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-28 text-sm"
-                                    />
-                                    <Input
-                                      type="text"
-                                      placeholder="Último nome"
-                                      value={editingNomeData.ultimo_nome}
-                                      onChange={(e) => setEditingNomeData(prev => ({ ...prev, ultimo_nome: e.target.value }))}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-28 text-sm"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleUpdateAssinaturaNome(assinatura.id)}
-                                      className="h-7 px-2 bg-green-600 hover:bg-green-700"
-                                    >
-                                      <Check className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => setEditingAssinaturaNome(null)}
-                                      className="h-7 px-2 text-gray-400 hover:text-white"
-                                    >
-                                      <X className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <p className="text-white font-semibold">
-                                    {assinatura.assinado_por || `${assinatura.primeiro_nome || ''} ${assinatura.ultimo_nome || ''}`.trim() || 'Sem nome'}
-                                  </p>
-                                )}
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 flex items-center gap-1">
-                                  Data de Assinatura:
-                                  {editingAssinaturaDesktop !== assinatura.id && (
-                                    <button
-                                      onClick={() => {
-                                        const dateObj = new Date(assinatura.data_assinatura);
-                                        setEditingAssinaturaDesktop(assinatura.id);
-                                        setEditingAssinaturaData({
-                                          date: dateObj.toISOString().split('T')[0],
-                                          time: dateObj.toTimeString().substring(0,5)
-                                        });
-                                      }}
-                                      className="text-blue-400 hover:text-blue-300"
-                                      title="Editar data de assinatura"
-                                    >
-                                      <Edit className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </p>
-                                {editingAssinaturaDesktop === assinatura.id ? (
-                                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                                    <Input
-                                      type="date"
-                                      value={editingAssinaturaData.date}
-                                      onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, date: e.target.value }))}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-32 text-sm"
-                                    />
-                                    <Input
-                                      type="time"
-                                      step="1"
-                                      value={editingAssinaturaData.time}
-                                      onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, time: e.target.value }))}
-                                      className="bg-[#1a1a1a] border-gray-700 text-white h-7 w-24 text-sm"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={async () => {
-                                        try {
-                                          const newDateTime = `${editingAssinaturaData.date}T${editingAssinaturaData.time}`;
-                                          await axios.patch(
-                                            `${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinatura.id}`,
-                                            { data_assinatura: newDateTime }
-                                          );
-                                          toast.success('Data de assinatura atualizada!');
-                                          setEditingAssinaturaDesktop(null);
-                                          fetchAssinaturas(selectedRelatorio.id);
-                                        } catch (error) {
-                                          toast.error('Erro ao atualizar');
-                                        }
-                                      }}
-                                      className="bg-green-600 hover:bg-green-700 h-7 text-xs"
-                                    >
-                                      Guardar
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => setEditingAssinaturaDesktop(null)}
-                                      className="text-gray-400 h-7 text-xs"
-                                    >
-                                      Cancelar
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <p className="text-gray-300 text-sm">
-                                    {new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}
-                                  </p>
-                                )}
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500">Tipo:</p>
-                                <p className="text-gray-400 text-sm">
-                                  {assinatura.tipo === 'digital' ? '✏️ Digital' : '📝 Manual'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <PenTool className="w-12 h-12 text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">FS ainda não assinada</p>
-                    <p className="text-gray-500 text-xs mt-1">Clique em "Nova Assinatura" para o cliente assinar</p>
-                  </div>
-                )}
-              </div>
 
 
               {/* Botões de Ação */}

@@ -660,6 +660,7 @@ class MaterialRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
+    intervencao_id: Optional[str] = None
     designacao: str
     quantidade: float
     tipo: str  # "usado" ou "para_orcamento"
@@ -669,6 +670,7 @@ class FotoRelatorio(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
+    intervencao_id: Optional[str] = None
     foto_path: str
     foto_url: Optional[str] = None
     descricao: Optional[str] = None
@@ -3432,6 +3434,7 @@ async def upload_fotografia(
     relatorio_id: str,
     file: UploadFile = File(...),
     descricao: str = Form(""),
+    intervencao_id: str = Form(""),
     current_user: dict = Depends(get_current_user)
 ):
     """Upload de fotografia para um relatório técnico"""
@@ -3462,6 +3465,7 @@ async def upload_fotografia(
         foto_doc = {
             "id": foto_id,
             "relatorio_id": relatorio_id,
+            "intervencao_id": intervencao_id if intervencao_id else None,
             "foto_base64": foto_base64,
             "descricao": descricao,
             "filename": file.filename,
@@ -10744,6 +10748,7 @@ async def add_material_ot(
     
     material_dict = material.dict()
     material_dict["created_at"] = material_dict["created_at"].isoformat()
+    material_dict["intervencao_id"] = material_data.get("intervencao_id")
     
     # Se fornecido_por = "Cotação", criar/atualizar PC automaticamente
     if material_data["fornecido_por"] == "Cotação":

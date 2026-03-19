@@ -147,6 +147,17 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026 - Session 4)
 
+### Reestruturação da Vista de Detalhe da FS (19 Mar 2026)
+- **Intervenções como Tabs**: Cada intervenção é agora uma aba independente com data e equipamento
+- Tab content: Motivo → Equipamento → Relatório → Fotos → Material → Assinaturas (filtrado por intervenção)
+- **Mão de Obra Global**: Registos de cronómetros e manuais ficam antes das tabs (ao nível da FS)
+- **Despesas e Pedidos de Cotação** mantêm-se ao nível global da FS
+- Fotos e Materiais agora têm campo `intervencao_id` (backend) para associação à intervenção activa
+- Assinaturas filtradas por data da intervenção
+- Botão "Adicionar Intervenção" permite criar múltiplas intervenções na mesma data
+- Dropdown manual "FS Relacionada" removido do formulário de criação
+- Modified files: server.py (MaterialRelatorio, FotoRelatorio models + upload endpoint), TechnicalReports.jsx (vista de detalhe completa)
+
 ### Lógica de FS Relacionadas (19 Mar 2026)
 - Removido dropdown manual "FS Relacionada" do formulário de criação de FS
 - Novo botão "Atribuição de Nova FS" no topo de qualquer FS (visível para admins)
