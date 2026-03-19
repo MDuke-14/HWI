@@ -1162,9 +1162,10 @@ const AdminDashboard = ({ user, onLogout }) => {
                           <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded ${
                             u.tipo_colaborador === 'senior' ? 'bg-purple-600/30 text-purple-300' :
                             u.tipo_colaborador === 'tecnico' ? 'bg-cyan-600/30 text-cyan-300' :
+                            u.tipo_colaborador === 'ajudante' ? 'bg-emerald-600/30 text-emerald-300' :
                             'bg-yellow-600/30 text-yellow-300'
                           }`} data-testid="user-tipo-colaborador-badge">
-                            {u.tipo_colaborador === 'junior' ? 'Téc. Júnior' : u.tipo_colaborador === 'tecnico' ? 'Técnico' : 'Téc. Sénior'}
+                            {u.tipo_colaborador === 'junior' ? 'Téc. Júnior' : u.tipo_colaborador === 'tecnico' ? 'Técnico' : u.tipo_colaborador === 'ajudante' ? 'Ajudante' : 'Téc. Sénior'}
                           </span>
                         )}
                       </div>
@@ -1435,6 +1436,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <option value="junior">Téc. Júnior</option>
                         <option value="tecnico">Técnico</option>
                         <option value="senior">Téc. Sénior</option>
+                        <option value="ajudante">Ajudante</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Define automaticamente a função ao adicionar este utilizador a uma FS</p>
                     </div>

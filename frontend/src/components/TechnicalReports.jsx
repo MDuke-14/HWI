@@ -2830,7 +2830,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       hora_inicio: horaInicio,
       hora_fim: horaFim,
       incluir_pausa: registo.incluir_pausa || false,
-      funcao_ot: registo.funcao_ot || 'tecnico'
+      funcao_ot: registo.funcao_ot || 'tecnico',
+      entry_type: registo.tipo || registo._tipo_registo || 'trabalho'
     });
     setShowEditRegistoModal(true);
   };
@@ -2851,7 +2852,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_inicial_volta: parseFloat(editRegistoForm.kms_inicial_volta || 0),
       kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0),
       incluir_pausa: editRegistoForm.incluir_pausa,
-      funcao_ot: editRegistoForm.funcao_ot
+      funcao_ot: editRegistoForm.funcao_ot,
+      tipo: editRegistoForm.entry_type
     };
     
     // Se temos hora início e fim, enviar para recalcular duração e código
@@ -4948,7 +4950,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
                               <div className="flex items-center justify-between mb-1">
                                 <span className={`${textPrimary} text-xs font-medium truncate flex-1 mr-2`}>
-                                  {item.tecnico_nome} <span className={item.funcao_ot === 'senior' ? 'text-purple-400' : item.funcao_ot === 'junior' ? 'text-yellow-400' : 'text-cyan-400'}>({item.funcao_ot === 'senior' ? 'Téc. Sénior' : item.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'})</span>
+                                  {item.tecnico_nome} <span className={item.funcao_ot === 'senior' ? 'text-purple-400' : item.funcao_ot === 'junior' ? 'text-yellow-400' : item.funcao_ot === 'ajudante' ? 'text-emerald-400' : 'text-cyan-400'}>({item.funcao_ot === 'senior' ? 'Téc. Sénior' : item.funcao_ot === 'junior' ? 'Téc. Júnior' : item.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})</span>
                                 </span>
                                 <span 
                                   className={`px-1.5 py-0.5 rounded text-[10px] flex-shrink-0 ${
@@ -5072,9 +5074,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <td className="py-2 px-2 text-center">
                                 <span className={`px-2 py-1 rounded text-xs ${
                                   item.funcao_ot === 'senior' ? 'bg-purple-600/20 text-purple-400' :
-                                  item.funcao_ot === 'junior' ? 'bg-yellow-600/20 text-yellow-400' : 'bg-cyan-600/20 text-cyan-400'
+                                  item.funcao_ot === 'junior' ? 'bg-yellow-600/20 text-yellow-400' : item.funcao_ot === 'ajudante' ? 'bg-emerald-600/20 text-emerald-400' : 'bg-cyan-600/20 text-cyan-400'
                                 }`}>
-                                  {item.funcao_ot === 'senior' ? 'Téc. Sénior' : item.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'}
+                                  {item.funcao_ot === 'senior' ? 'Téc. Sénior' : item.funcao_ot === 'junior' ? 'Téc. Júnior' : item.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'}
                                 </span>
                               </td>
                               <td className="py-2 px-2 text-center">
@@ -8116,8 +8118,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                                     <td className="p-2">
                                       {reg.tecnico_nome}
-                                      <span className={`ml-1 text-xs ${reg.funcao_ot === 'senior' ? 'text-purple-600' : reg.funcao_ot === 'junior' ? 'text-yellow-600' : 'text-cyan-600'}`}>
-                                        ({reg.funcao_ot === 'senior' ? 'Téc. Sénior' : reg.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'})
+                                      <span className={`ml-1 text-xs ${reg.funcao_ot === 'senior' ? 'text-purple-600' : reg.funcao_ot === 'junior' ? 'text-yellow-600' : reg.funcao_ot === 'ajudante' ? 'text-emerald-600' : 'text-cyan-600'}`}>
+                                        ({reg.funcao_ot === 'senior' ? 'Téc. Sénior' : reg.funcao_ot === 'junior' ? 'Téc. Júnior' : reg.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})
                                       </span>
                                     </td>
                                     <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
@@ -9873,6 +9875,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
                   <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
                   <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
+                  <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -10045,6 +10048,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
                     <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
                     <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
+                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -10215,12 +10219,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <span className="text-white ml-2">{editingRegisto.tecnico_nome}</span>
                   </div>
                   <div>
-                    <span className="text-gray-400">Tipo:</span>
-                    <span className={`ml-2 ${editingRegisto.tipo === 'trabalho' ? 'text-green-400' : editingRegisto.tipo === 'oficina' ? 'text-orange-400' : 'text-blue-400'}`}>
-                      {editingRegisto.tipo === 'trabalho' ? 'Trabalho' : editingRegisto.tipo === 'oficina' ? 'Oficina' : 'Viagem'}
-                    </span>
-                  </div>
-                  <div>
                     <span className="text-gray-400">Data:</span>
                     <span className="text-white ml-2">
                       {new Date(editingRegisto.data).toLocaleDateString('pt-PT')}
@@ -10229,9 +10227,27 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </div>
               </div>
 
-              {/* Função na FS */}
+              {/* Tipo de Registo */}
               <div>
-                <Label className="text-gray-300">Função na FS</Label>
+                <Label className="text-gray-300">Tipo de Registo</Label>
+                <Select
+                  value={editRegistoForm.entry_type}
+                  onValueChange={(val) => setEditRegistoForm(prev => ({ ...prev, entry_type: val }))}
+                >
+                  <SelectTrigger data-testid="edit-entry-type-select" className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="trabalho" className="text-green-400">Trabalho</SelectItem>
+                    <SelectItem value="viagem" className="text-blue-400">Viagem</SelectItem>
+                    <SelectItem value="oficina" className="text-orange-400">Oficina</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tipo de Técnico */}
+              <div>
+                <Label className="text-gray-300">Tipo de Técnico</Label>
                 <Select
                   value={editRegistoForm.funcao_ot}
                   onValueChange={(val) => setEditRegistoForm(prev => ({ ...prev, funcao_ot: val }))}
@@ -10243,6 +10259,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
                     <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
                     <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
+                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

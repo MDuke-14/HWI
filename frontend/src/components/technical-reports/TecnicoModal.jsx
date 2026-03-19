@@ -189,6 +189,7 @@ const TecnicoModal = ({
               <option value="junior">Téc. Júnior</option>
               <option value="tecnico">Técnico</option>
               <option value="senior">Téc. Sénior</option>
+              <option value="ajudante">Ajudante</option>
             </select>
           </div>
 

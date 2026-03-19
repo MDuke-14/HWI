@@ -9074,7 +9074,7 @@ async def admin_update_user(
         update_dict["is_admin"] = update_data.is_admin
     
     if update_data.tipo_colaborador is not None:
-        if update_data.tipo_colaborador in ("junior", "tecnico", "senior", ""):
+        if update_data.tipo_colaborador in ("junior", "tecnico", "senior", "ajudante", ""):
             update_dict["tipo_colaborador"] = update_data.tipo_colaborador if update_data.tipo_colaborador else None
     
     if update_dict:
@@ -10548,6 +10548,12 @@ async def update_registo_tecnico(
         update_data["codigo"] = registo_data["codigo"]
     if "tipo" in registo_data:
         update_data["tipo"] = registo_data["tipo"]
+        # When entry_type changes, recalculate horas_arredondadas
+        new_tipo = registo_data["tipo"]
+        old_tipo = existing.get("tipo", "trabalho")
+        if new_tipo != old_tipo:
+            mins = update_data.get("minutos_trabalhados", existing.get("minutos_trabalhados", 0))
+            update_data["horas_arredondadas"] = mins / 60 if new_tipo == "viagem" else arredondar_horas(mins)
     if "funcao_ot" in registo_data:
         update_data["funcao_ot"] = registo_data["funcao_ot"]
     
@@ -10581,16 +10587,35 @@ async def update_registo_tecnico(
             update_data["horas_arredondadas"] = new_mins / 60 if tipo_reg == "viagem" else arredondar_horas(new_mins)
     
     # Salvaguarda: garantir que horas_arredondadas está consistente com o arredondamento
-    # Mesmo quando só se editam km's ou outros campos, verificar consistência
     if update_data and "horas_arredondadas" not in update_data:
         mins_existentes = existing.get("minutos_trabalhados", 0)
         horas_arred_existentes = existing.get("horas_arredondadas", 0)
-        tipo_reg = existing.get("tipo", "trabalho")
+        tipo_reg = update_data.get("tipo", existing.get("tipo", "trabalho"))
         horas_arred_correctas = mins_existentes / 60 if tipo_reg == "viagem" else arredondar_horas(mins_existentes)
         if abs(horas_arred_existentes - horas_arred_correctas) > 0.01:
             update_data["horas_arredondadas"] = horas_arred_correctas
     
     if update_data:
+        # Audit log for admin changes
+        audit_changes = []
+        if "tipo" in update_data and update_data["tipo"] != existing.get("tipo"):
+            audit_changes.append(f"tipo: {existing.get('tipo','?')} → {update_data['tipo']}")
+        if "funcao_ot" in update_data and update_data["funcao_ot"] != existing.get("funcao_ot"):
+            audit_changes.append(f"funcao_ot: {existing.get('funcao_ot','?')} → {update_data['funcao_ot']}")
+        if audit_changes:
+            audit_entry = {
+                "id": str(uuid.uuid4()),
+                "registo_id": registo_id,
+                "relatorio_id": relatorio_id,
+                "user_id": current_user["sub"],
+                "username": current_user.get("username", ""),
+                "action": "update_registo",
+                "changes": audit_changes,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            await db.audit_log.insert_one(audit_entry)
+            logging.info(f"AUDIT: User {current_user.get('username')} updated registo {registo_id}: {', '.join(audit_changes)}")
+        
         await db.registos_tecnico_ot.update_one(
             {"id": registo_id, "relatorio_id": relatorio_id},
             {"$set": update_data}

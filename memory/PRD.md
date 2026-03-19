@@ -147,6 +147,15 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026 - Session 4)
 
+### Edição de Registos de Mão de Obra (19 Mar 2026)
+- Admin pode agora alterar o **Tipo de Registo** (Trabalho/Viagem/Oficina) via dropdown editável
+- Admin pode alterar o **Tipo de Técnico** (Téc. Júnior/Técnico/Téc. Sénior/Ajudante)
+- Adicionada opção "Ajudante" a todos os dropdowns de funcao_ot (cronómetro, TecnicoModal, edição, admin)
+- Horas recalculadas automaticamente quando o tipo muda (viagem = min/60, trabalho/oficina = arredondar_horas)
+- Audit log registado em `audit_log` collection: user, alteração, timestamp
+- Backend valida e aceita "ajudante" como tipo_colaborador
+- Modified files: server.py (update_registo_tecnico, audit_log), TechnicalReports.jsx (edit modal), TecnicoModal.jsx, AdminDashboard.jsx
+
 ### Tipo de Colaborador por Utilizador (18 Mar 2026)
 - Added `tipo_colaborador` field to User model (values: junior, tecnico, senior)
 - Admin > Utilizadores > Editar modal now has "Tipo de Colaborador (para FS's)" dropdown
