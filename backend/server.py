@@ -702,8 +702,9 @@ class AssinaturaRelatorio(BaseModel):
 class EnviarEmailRequest(BaseModel):
     emails: List[str]
     incluir_folha_horas: bool = False
-    documentos: Optional[List[str]] = None  # ["relatorio", "folha_horas", "pc:<id>", ...]
-    hide_client_pcs: bool = False  # Ocultar cliente nos PCs
+    documentos: Optional[List[str]] = None
+    hide_client_pcs: bool = False
+    idioma: str = "pt"  # pt, es, en
 
 
 class Notification(BaseModel):
@@ -4472,23 +4473,17 @@ async def enviar_pdf_ot(
         local_intervencao = relatorio.get('local_intervencao', '')
         subject = f"Folha de Serviço #{numero_ot} - {cliente.get('nome', '')}"
         
-        body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif;">
-            <h2 style="color: #1e40af;">Folha de Serviço #{numero_ot} - {status}</h2>
-            <p>Exmo(a) Sr(a),</p>
-            <p>Segue em anexo a Folha de Serviço #{numero_ot} referente ao serviço realizado.</p>
-            <p><strong>Cliente:</strong> {cliente.get('nome', 'N/A')}</p>
-            <p><strong>Data de Serviço:</strong> {relatorio.get('data_servico', 'N/A')}</p>
-            <p><strong>Local:</strong> {local_intervencao if local_intervencao else 'N/A'}</p>
-            {"<p><strong>FS Relacionada:</strong> FS #" + str(relatorio.get('ot_relacionada_numero')) + "</p>" if relatorio.get('ot_relacionada_numero') else ""}
-            {"<p><strong>Ref. Interna:</strong> " + relatorio.get('referencia_interna_cliente') + "</p>" if relatorio.get('referencia_interna_cliente') else ""}
-            <br>
-            <p>Com os melhores cumprimentos,</p>
-            <p><strong>HWI Unipessoal, Lda</strong></p>
-        </body>
-        </html>
-        """
+        from email_templates import get_fs_email_body
+        body = get_fs_email_body(
+            idioma=request.idioma,
+            numero_ot=numero_ot,
+            status=status,
+            cliente_nome=cliente.get('nome', 'N/A'),
+            data_servico=relatorio.get('data_servico', 'N/A'),
+            local_intervencao=local_intervencao,
+            ot_relacionada_numero=relatorio.get('ot_relacionada_numero'),
+            referencia_interna=relatorio.get('referencia_interna_cliente')
+        )
         
         # Enviar email para cada destinatário
         emails_enviados = []
@@ -11673,6 +11668,7 @@ async def send_email_pc(
     pc_id: str,
     email_destinatario: str,
     hide_client: bool = False,
+    idioma: str = "pt",
     current_user: dict = Depends(get_current_user)
 ):
     """Enviar PDF do PC por email"""
@@ -11738,31 +11734,16 @@ async def send_email_pc(
         frontend_url = os.environ.get('FRONTEND_URL', '')
         pc_status_link = f"{frontend_url}/pc/{pc_id}/status"
         
-        body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; color: #333;">
-            <h2 style="color: #111;">Pedido de Cotação</h2>
-            <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Folha de Serviço <b>#{ot.get('numero_assistencia', 'N/A')}</b>.</p>
-            <p><b>Cliente:</b> {'<span style="background-color: #000; color: #000; padding: 2px 8px;">CONFIDENCIAL</span>' if hide_client else ot.get('cliente_nome', 'N/A')}</p>
-            <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
-            <br>
-            <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-              <tr>
-                <td align="center" bgcolor="#111" style="border-radius: 6px;">
-                  <a href="{pc_status_link}" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 14px; color: #fff; text-decoration: none; font-weight: bold;">
-                    Gerir Estado da Proposta
-                  </a>
-                </td>
-              </tr>
-            </table>
-            <p style="color: #888; font-size: 11px; margin-top: 16px; text-align: center; line-height: 1.5;">
-              Este acesso é exclusivo para uso interno da HWI Unipessoal LDA, com o objetivo de gerir e controlar os estados das propostas. Não se destina a utilização por clientes.
-            </p>
-            <hr style="border: none; border-top: 1px solid #ddd; margin-top: 24px;">
-            <p style="color: #666; font-size: 12px;">HWI Unipessoal, Lda.</p>
-        </body>
-        </html>
-        """
+        from email_templates import get_pc_email_body
+        body = get_pc_email_body(
+            idioma=idioma,
+            numero_pc=pc['numero_pc'],
+            numero_fs=ot.get('numero_assistencia', 'N/A'),
+            cliente_nome=ot.get('cliente_nome', 'N/A'),
+            status=pc.get('status', 'Em Espera'),
+            hide_client=hide_client,
+            pc_status_link=pc_status_link
+        )
         
         msg.attach(MIMEText(body, 'html'))
         

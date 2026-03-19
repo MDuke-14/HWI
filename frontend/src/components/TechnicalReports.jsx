@@ -236,6 +236,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showFolhaHorasConfirm, setShowFolhaHorasConfirm] = useState(false);
   const [emailsPendentes, setEmailsPendentes] = useState([]);
   const [docsSelecionados, setDocsSelecionados] = useState({});
+  const [idiomaEmail, setIdiomaEmail] = useState('pt');
   const [emailsCliente, setEmailsCliente] = useState([]);
   const [emailsAdicionais, setEmailsAdicionais] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -2503,7 +2504,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleSendEmailPC = async (email, hideClient = false) => {
     setSendingEmailPC(true);
     try {
-      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/send-email?email_destinatario=${email}&hide_client=${hideClient}`);
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/send-email?email_destinatario=${email}&hide_client=${hideClient}&idioma=${idiomaEmail}`);
       toast.success(`Email enviado para ${email}`);
       setShowEmailPCModal(false);
     } catch (error) {
@@ -3591,7 +3592,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         { 
           emails: emailsPendentes,
           documentos: documentos,
-          hide_client_pcs: false
+          hide_client_pcs: false,
+          idioma: idiomaEmail
         }
       );
       
@@ -6109,6 +6111,33 @@ const TechnicalReports = ({ user, onLogout }) => {
             )}
           </div>
 
+
+          {/* Seleção de Idioma do Email */}
+          <div className="border-t border-gray-800 pt-3 mt-1">
+            <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Idioma do Email</p>
+            <div className="flex gap-2">
+              {[
+                { value: 'pt', label: 'Português', flag: '🇵🇹' },
+                { value: 'es', label: 'Español', flag: '🇪🇸' },
+                { value: 'en', label: 'English', flag: '🇬🇧' },
+              ].map((lang) => (
+                <button
+                  key={lang.value}
+                  onClick={() => setIdiomaEmail(lang.value)}
+                  data-testid={`lang-select-${lang.value}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm transition-all ${
+                    idiomaEmail === lang.value
+                      ? 'border-green-500 bg-green-600/10 text-white font-medium'
+                      : 'border-gray-700 bg-[#0f0f0f] text-gray-400 hover:border-gray-500'
+                  }`}
+                >
+                  <span>{lang.flag}</span>
+                  <span>{lang.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-4">
             <Button
               onClick={() => setShowFolhaHorasConfirm(false)}
@@ -7480,6 +7509,35 @@ const TechnicalReports = ({ user, onLogout }) => {
           <p className="text-gray-500 text-xs mt-1">
             O nome será substituído por uma barra preta de confidencialidade.
           </p>
+
+          {/* Idioma do Email (só aparece para envio de email, não download) */}
+          {hideClientAction?.type === 'email' && (
+            <div className="border-t border-gray-800 pt-3 mt-3">
+              <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Idioma do Email</p>
+              <div className="flex gap-2">
+                {[
+                  { value: 'pt', label: 'PT', flag: '🇵🇹' },
+                  { value: 'es', label: 'ES', flag: '🇪🇸' },
+                  { value: 'en', label: 'EN', flag: '🇬🇧' },
+                ].map((lang) => (
+                  <button
+                    key={lang.value}
+                    onClick={() => setIdiomaEmail(lang.value)}
+                    data-testid={`pc-lang-${lang.value}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm transition-all ${
+                      idiomaEmail === lang.value
+                        ? 'border-green-500 bg-green-600/10 text-white font-medium'
+                        : 'border-gray-700 bg-[#0f0f0f] text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3 mt-4">
             <Button
               onClick={() => executeHideClientAction(false)}
