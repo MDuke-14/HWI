@@ -2738,6 +2738,23 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleCriarFsRelacionada = async () => {
+    if (!selectedRelatorio) return;
+    try {
+      const res = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/criar-fs-relacionada`);
+      const novaFs = res.data;
+      toast.success(`FS #${novaFs.numero_assistencia} criada com sucesso!`);
+      // Refresh list and open the new FS
+      await fetchRelatorios();
+      setSelectedRelatorio(novaFs);
+      setShowViewRelatorioModal(true);
+    } catch (err) {
+      toast.error('Erro ao criar FS relacionada');
+      console.error(err);
+    }
+  };
+
+
   const handleDeleteRegisto = async (registoId) => {
     try {
       await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos/${registoId}`);
@@ -4409,37 +4426,6 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </div>
 
-            {/* FS Relacionada (opcional) */}
-            <div>
-              <Label className="text-gray-300">
-                FS Relacionada <span className="text-gray-500">(opcional)</span>
-              </Label>
-              <div className="relative">
-                <select
-                  data-testid="ot-relacionada-select"
-                  value={relatorioFormData.ot_relacionada_id}
-                  onChange={(e) => setRelatorioFormData({ ...relatorioFormData, ot_relacionada_id: e.target.value })}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 pr-8 appearance-none"
-                >
-                  <option value="">Nenhuma</option>
-                  {relatorios
-                    .filter(r => r.numero_assistencia)
-                    .sort((a, b) => b.numero_assistencia - a.numero_assistencia)
-                    .map(r => (
-                      <option key={r.id} value={r.id}>
-                        FS #{r.numero_assistencia} - {r.cliente_nome} ({r.data_servico ? new Date(r.data_servico + 'T00:00:00').toLocaleDateString('pt-PT') : '-'})
-                      </option>
-                    ))}
-                </select>
-                <Link2 className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-              </div>
-              {relatorioFormData.ot_relacionada_id && (
-                <p className="text-blue-400/70 text-xs mt-1">
-                  Esta FS será associada como continuação da FS selecionada.
-                </p>
-              )}
-            </div>
-
             {/* Intervenções / Assistências */}
             <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
@@ -4547,7 +4533,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   size="sm"
                 >
                   <Edit className="w-4 h-4 mr-2" />
-                  Editar OT
+                  Editar FS
                 </Button>
               )}
             </div>
@@ -4557,9 +4543,22 @@ const TechnicalReports = ({ user, onLogout }) => {
             <div className={`${isMobile ? 'space-y-3 mt-2' : 'space-y-6 mt-4'} overflow-x-hidden`}>
               {/* Status e Data + Botão Editar mobile */}
               <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center justify-between'}`}>
-                <span className={`${isMobile ? 'px-2 py-0.5 text-xs self-start' : 'px-3 py-1 text-sm'} rounded ${getStatusColor(selectedRelatorio.status)}`}>
-                  {getStatusLabel(selectedRelatorio.status)}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`${isMobile ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'} rounded ${getStatusColor(selectedRelatorio.status)}`}>
+                    {getStatusLabel(selectedRelatorio.status)}
+                  </span>
+                  {user?.is_admin && (
+                    <Button
+                      onClick={handleCriarFsRelacionada}
+                      data-testid="btn-criar-fs-relacionada"
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                      size="sm"
+                    >
+                      <Link2 className="w-3 h-3 mr-1" />
+                      {isMobile ? 'Nova FS' : 'Atribuição de Nova FS'}
+                    </Button>
+                  )}
+                </div>
                 <div className={`flex items-center ${isMobile ? 'justify-between' : 'gap-2'}`}>
                   <span className={`${textSecondary} ${isMobile ? 'text-xs' : ''}`}>
                     {new Date(selectedRelatorio.data_servico).toLocaleDateString('pt-PT')}

@@ -2713,6 +2713,88 @@ async def create_relatorio(
     logging.info(f"Relatório técnico criado: {numero_assistencia} por {current_user['sub']}")
     return relatorio
 
+
+@api_router.post("/relatorios-tecnicos/{relatorio_id}/criar-fs-relacionada")
+async def criar_fs_relacionada(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Criar nova FS automaticamente ligada a uma FS existente (concluída)"""
+    original = await db.relatorios_tecnicos.find_one(
+        {"id": relatorio_id}, {"_id": 0}
+    )
+    if not original:
+        raise HTTPException(status_code=404, detail="FS original não encontrada")
+    
+    # Gerar número de assistência
+    last_relatorio = await db.relatorios_tecnicos.find_one(
+        {}, sort=[("numero_assistencia", -1)]
+    )
+    last_numero = last_relatorio.get("numero_assistencia", 0) if last_relatorio else 0
+    numero_assistencia = max(last_numero + 1, 354)
+    
+    # Criar nova FS copiando dados relevantes da original
+    nova_fs = {
+        "id": str(uuid.uuid4()),
+        "numero_assistencia": numero_assistencia,
+        "status": "em_execucao",
+        "data_criacao": datetime.now(timezone.utc).isoformat(),
+        "data_servico": date.today().isoformat(),
+        "data_fim": None,
+        "data_conclusao": None,
+        "cliente_id": original["cliente_id"],
+        "created_by_id": current_user["sub"],
+        "cliente_nome": original.get("cliente_nome", ""),
+        "local_intervencao": original.get("local_intervencao", ""),
+        "pedido_por": original.get("pedido_por", ""),
+        "contacto_pedido": original.get("contacto_pedido"),
+        "equipamento_tipologia": original.get("equipamento_tipologia"),
+        "equipamento_marca": original.get("equipamento_marca"),
+        "equipamento_modelo": original.get("equipamento_modelo"),
+        "equipamento_numero_serie": original.get("equipamento_numero_serie"),
+        "equipamento_ano_fabrico": original.get("equipamento_ano_fabrico"),
+        "equipamento_horas_funcionamento": original.get("equipamento_horas_funcionamento"),
+        "motivo_assistencia": original.get("motivo_assistencia", ""),
+        "referencia_interna_cliente": original.get("referencia_interna_cliente"),
+        "km_inicial": None,
+        "ot_relacionada_id": relatorio_id,
+        "diagnostico": None,
+        "acoes_realizadas": None,
+        "resolucao": None,
+        "problema_resolvido": False,
+        "relatorio_assistencia": None
+    }
+    
+    await db.relatorios_tecnicos.insert_one(nova_fs)
+    
+    # Copiar equipamentos associados
+    equipamentos_orig = await db.equipamentos_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(100)
+    for eq in equipamentos_orig:
+        novo_eq = {**eq, "id": str(uuid.uuid4()), "relatorio_id": nova_fs["id"]}
+        await db.equipamentos_relatorio.insert_one(novo_eq)
+    
+    # Audit log
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "action": "criar_fs_relacionada",
+        "user_id": current_user["sub"],
+        "username": current_user.get("username", ""),
+        "original_fs_id": relatorio_id,
+        "original_fs_numero": original.get("numero_assistencia"),
+        "nova_fs_id": nova_fs["id"],
+        "nova_fs_numero": numero_assistencia,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    logging.info(f"FS #{numero_assistencia} criada como relacionada da FS #{original.get('numero_assistencia')} por {current_user['sub']}")
+    
+    # Remove _id if present
+    nova_fs.pop("_id", None)
+    nova_fs["ot_relacionada_numero"] = original.get("numero_assistencia")
+    return nova_fs
+
 @api_router.get("/relatorios-tecnicos")
 async def get_relatorios(
     status: Optional[str] = None,

@@ -147,6 +147,15 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026 - Session 4)
 
+### Lógica de FS Relacionadas (19 Mar 2026)
+- Removido dropdown manual "FS Relacionada" do formulário de criação de FS
+- Novo botão "Atribuição de Nova FS" no topo de qualquer FS (visível para admins)
+- Ao clicar, cria automaticamente uma nova FS ligada à original, copiando: cliente, local, equipamentos, motivo, ref. interna
+- Nova FS nasce com status "em_execucao" e data de hoje
+- Endpoint: POST /api/relatorios-tecnicos/{id}/criar-fs-relacionada
+- Audit log registado com FS original e nova FS
+- Modified files: server.py (novo endpoint), TechnicalReports.jsx (botão + handler, removido dropdown manual)
+
 ### Edição de Registos de Mão de Obra (19 Mar 2026)
 - Admin pode agora alterar o **Tipo de Registo** (Trabalho/Viagem/Oficina) via dropdown editável
 - Admin pode alterar o **Tipo de Técnico** (Téc. Júnior/Técnico/Téc. Sénior/Ajudante)
