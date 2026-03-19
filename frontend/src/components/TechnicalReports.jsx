@@ -5289,12 +5289,9 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                       const activeEq = equipamentosOT.find(e => e.id === activeInterv.equipamento_id);
                       // Filter data for this intervention
-                      const intervFotos = fotografias.filter(f => f.intervencao_id === activeInterv.id || (!f.intervencao_id && intervencoes.length === 1));
-                      const intervMateriais = materiais.filter(m => m.intervencao_id === activeInterv.id || (!m.intervencao_id && intervencoes.length === 1));
-                      const intervRelAssist = relatoriosAssistencia.filter(r => {
-                        if (r.data_intervencao === activeInterv.data_intervencao?.split('T')[0]) return true;
-                        return false;
-                      });
+                      const intervFotos = fotografias.filter(f => f.intervencao_id === activeInterv.id);
+                      const intervMateriais = materiais.filter(m => m.intervencao_id === activeInterv.id);
+                      const intervRelAssist = relatoriosAssistencia.filter(r => r.intervencao_id === activeInterv.id);
                       const intervDate = activeInterv.data_intervencao?.split('T')[0];
                       const intervAssinaturas = assinaturas.filter(a => {
                         const aDate = a.data_assinatura?.split('T')[0];
@@ -5347,7 +5344,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </p>
                               <Button
                                 onClick={() => {
-                                  setRelAssistFormData({ texto: '', equipamento_ids: activeInterv.equipamento_id ? [activeInterv.equipamento_id] : [], data_intervencao: intervDate || new Date().toISOString().split('T')[0] });
+                                  setRelAssistFormData({ texto: '', intervencao_id: activeInterv.id, equipamento_ids: activeInterv.equipamento_id ? [activeInterv.equipamento_id] : [], data_intervencao: intervDate || new Date().toISOString().split('T')[0] });
                                   setShowAddRelAssistModal(true);
                                 }}
                                 size="sm" variant="ghost" className="text-orange-400 hover:text-orange-300 h-6 text-xs px-2"

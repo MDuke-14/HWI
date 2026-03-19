@@ -652,8 +652,9 @@ class RelatorioAssistencia(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
     texto: str
-    equipamento_ids: list = Field(default_factory=list)  # IDs dos equipamentos da OT relacionados
-    data_intervencao: Optional[str] = None  # Data da intervenção para agrupar no relatório
+    intervencao_id: Optional[str] = None
+    equipamento_ids: list = Field(default_factory=list)
+    data_intervencao: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MaterialRelatorio(BaseModel):
@@ -10913,6 +10914,7 @@ async def create_relatorio_assistencia(
     item = RelatorioAssistencia(
         relatorio_id=relatorio_id,
         texto=data["texto"],
+        intervencao_id=data.get("intervencao_id"),
         equipamento_ids=data.get("equipamento_ids", []),
         data_intervencao=data.get("data_intervencao")
     )
