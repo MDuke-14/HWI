@@ -13,6 +13,7 @@ import AdminTimeEntries from '@/components/AdminTimeEntries';
 import Calendar from '@/components/Calendar';
 import TechnicalReports from '@/components/TechnicalReports';
 import OvertimeAuthorization from '@/components/OvertimeAuthorization';
+import PCStatusPage from '@/components/PCStatusPage';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MobileProvider } from '@/contexts/MobileContext';
@@ -22,6 +23,16 @@ import MobileProfile from '@/components/mobile/MobileProfile';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
+
+// Redirect after login (supports redirect_after_login from PC status page)
+function LoginRedirect() {
+  const redirect = localStorage.getItem('redirect_after_login');
+  if (redirect) {
+    localStorage.removeItem('redirect_after_login');
+    return <Navigate to={redirect} replace />;
+  }
+  return <Navigate to="/" replace />;
+}
 
 // Axios interceptor for adding auth token
 axios.interceptors.request.use(
@@ -60,6 +71,16 @@ function App() {
     setIsAuthenticated(true);
     setUser(userData);
     setMustChangePassword(userData.must_change_password || false);
+    
+    // Check for pending redirect (e.g., from PC status page)
+    const pendingRedirect = localStorage.getItem('redirect_after_login');
+    if (pendingRedirect) {
+      localStorage.removeItem('redirect_after_login');
+      // Use timeout to ensure state is set before navigation
+      setTimeout(() => {
+        window.location.href = pendingRedirect;
+      }, 100);
+    }
   };
 
   const handlePasswordChanged = () => {
@@ -106,7 +127,7 @@ function App() {
                 path="/login"
                 element={
                   isAuthenticated ? (
-                    <Navigate to="/" replace />
+                    <LoginRedirect />
                   ) : (
                     <Login onLogin={handleLogin} />
                   )
@@ -248,6 +269,11 @@ function App() {
               <Route
                 path="/authorize/:token"
                 element={<OvertimeAuthorization />}
+              />
+              {/* Gestão de estado de PC via link direto (requer login admin) */}
+              <Route
+                path="/pc/:pcId/status"
+                element={<PCStatusPage />}
               />
             </Routes>
           </BrowserRouter>

@@ -11679,14 +11679,31 @@ async def send_email_pc(
         msg['To'] = email_destinatario
         msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - FS #{ot.get('numero_assistencia', 'N/A')}"
         
+        # URL do frontend para link direto
+        frontend_url = os.environ.get('FRONTEND_URL', '')
+        pc_status_link = f"{frontend_url}/pc/{pc_id}/status"
+        
         body = f"""
         <html>
-        <body style="font-family: Arial, sans-serif;">
-            <h2>Pedido de Cotação</h2>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #111;">Pedido de Cotação</h2>
             <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Folha de Serviço <b>#{ot.get('numero_assistencia', 'N/A')}</b>.</p>
             <p><b>Cliente:</b> {'<span style="background-color: #000; color: #000; padding: 2px 8px;">CONFIDENCIAL</span>' if hide_client else ot.get('cliente_nome', 'N/A')}</p>
             <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
-            <hr>
+            <br>
+            <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+              <tr>
+                <td align="center" bgcolor="#111" style="border-radius: 6px;">
+                  <a href="{pc_status_link}" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 14px; color: #fff; text-decoration: none; font-weight: bold;">
+                    Gerir Estado da Proposta
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="color: #888; font-size: 11px; margin-top: 16px; text-align: center; line-height: 1.5;">
+              Este acesso é exclusivo para uso interno da HWI Unipessoal LDA, com o objetivo de gerir e controlar os estados das propostas. Não se destina a utilização por clientes.
+            </p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin-top: 24px;">
             <p style="color: #666; font-size: 12px;">HWI Unipessoal, Lda.</p>
         </body>
         </html>
