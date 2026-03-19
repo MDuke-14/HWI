@@ -83,12 +83,14 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     # Informações da FS
     elements.append(Paragraph("INFORMAÇÕES DA FOLHA DE SERVIÇO", heading_style))
     
+    cell_style = ParagraphStyle('CellStyle', fontSize=9, leading=11)
+    
     ot_data = [
         ['Número FS:', f"#{ot.get('numero_assistencia', 'N/A')}", 'Data:', ot.get('data_servico', 'N/A')],
-        ['Cliente:', ot.get('cliente_nome', 'N/A'), 'Status PC:', pc.get('status', 'Em Espera')]
+        ['Cliente:', Paragraph(ot.get('cliente_nome', 'N/A'), cell_style), 'Status PC:', pc.get('status', 'Em Espera')]
     ]
     
-    ot_table = Table(ot_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])
+    ot_table = Table(ot_data, colWidths=[3*cm, 7.5*cm, 3*cm, 4.5*cm])
     ot_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
         ('BACKGROUND', (2, 0), (2, -1), colors.HexColor('#f3f4f6')),
