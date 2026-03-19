@@ -346,6 +346,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEmailPCModal, setShowEmailPCModal] = useState(false);
   const [sendingEmailPC, setSendingEmailPC] = useState(false);
   
+  // Popup confidencialidade do cliente (antes de download/email PC)
+  const [showHideClientPopup, setShowHideClientPopup] = useState(false);
+  const [hideClientAction, setHideClientAction] = useState(null); // { type: 'download' | 'email', pcId, email? }
+  
   // Editar Material PC
   const [showEditMaterialPCModal, setShowEditMaterialPCModal] = useState(false);
   const [editMaterialPC, setEditMaterialPC] = useState(null);
@@ -2450,13 +2454,37 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleDownloadPDFPC = async (pcId) => {
+  // Trigger popup antes de download/email PC
+  const triggerPCDownload = (pcId) => {
+    setHideClientAction({ type: 'download', pcId });
+    setShowHideClientPopup(true);
+  };
+  
+  const triggerPCEmail = (email) => {
+    setHideClientAction({ type: 'email', pcId: selectedPC?.id, email });
+    setShowHideClientPopup(true);
+  };
+  
+  const executeHideClientAction = async (hideClient) => {
+    setShowHideClientPopup(false);
+    const action = hideClientAction;
+    setHideClientAction(null);
+    if (!action) return;
+    
+    if (action.type === 'download') {
+      await handleDownloadPDFPC(action.pcId, hideClient);
+    } else if (action.type === 'email') {
+      await handleSendEmailPC(action.email, hideClient);
+    }
+  };
+
+  const handleDownloadPDFPC = async (pcId, hideClient = false) => {
     try {
-      const response = await axios.get(`${API}/pedidos-cotacao/${pcId}/preview-pdf`, {
+      const response = await axios.get(`${API}/pedidos-cotacao/${pcId}/preview-pdf?hide_client=${hideClient}`, {
         responseType: 'blob'
       });
       
-      const pc = pedidosCotacao.find(p => p.id === pcId);
+      const pc = pedidosCotacao.find(p => p.id === pcId) || allPCs.find(p => p.id === pcId);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -2471,10 +2499,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleSendEmailPC = async (email) => {
+  const handleSendEmailPC = async (email, hideClient = false) => {
     setSendingEmailPC(true);
     try {
-      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/send-email?email_destinatario=${email}`);
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/send-email?email_destinatario=${email}&hide_client=${hideClient}`);
       toast.success(`Email enviado para ${email}`);
       setShowEmailPCModal(false);
     } catch (error) {
@@ -4310,7 +4338,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownloadPDFPC(pc.id);
+                          triggerPCDownload(pc.id);
                         }}
                         className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition`}
                       >
@@ -7003,7 +7031,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               </span>
               <div className="flex gap-2">
                 <Button
-                  onClick={handleDownloadPDFPC.bind(null, selectedPC?.id)}
+                  onClick={() => triggerPCDownload(selectedPC?.id)}
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -7347,7 +7375,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               {['geral@hwi.pt', 'pedro.duarte@hwi.pt', 'miguel.moreira@hwi.pt'].map((email) => (
                 <Button
                   key={email}
-                  onClick={() => handleSendEmailPC(email)}
+                  onClick={() => triggerPCEmail(email)}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   disabled={sendingEmailPC}
                 >
@@ -7359,6 +7387,38 @@ const TechnicalReports = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Popup: Esconder nome do cliente no PC */}
+      <Dialog open={showHideClientPopup} onOpenChange={setShowHideClientPopup}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white">Dados do Cliente</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-300 text-sm">
+            Deseja ocultar o nome do cliente no documento?
+          </p>
+          <p className="text-gray-500 text-xs mt-1">
+            O nome será substituído por uma barra preta de confidencialidade.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <Button
+              onClick={() => executeHideClientAction(false)}
+              className="flex-1 bg-gray-600 hover:bg-gray-700"
+              data-testid="pc-client-show"
+            >
+              Mostrar Cliente
+            </Button>
+            <Button
+              onClick={() => executeHideClientAction(true)}
+              className="flex-1 bg-gray-900 hover:bg-black border border-gray-600"
+              data-testid="pc-client-hide"
+            >
+              Ocultar Cliente
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Edit Material PC Modal */}
       <Dialog open={showEditMaterialPCModal} onOpenChange={setShowEditMaterialPCModal}>

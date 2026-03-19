@@ -11567,6 +11567,7 @@ async def delete_fatura_pc(
 @api_router.get("/pedidos-cotacao/{pc_id}/preview-pdf")
 async def preview_pdf_pc(
     pc_id: str,
+    hide_client: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
     """Gerar preview do PDF do PC"""
@@ -11604,7 +11605,7 @@ async def preview_pdf_pc(
     ).to_list(length=None)
     
     # Gerar PDF
-    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias)
+    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client)
     
     return StreamingResponse(
         pdf_buffer,
@@ -11616,6 +11617,7 @@ async def preview_pdf_pc(
 async def send_email_pc(
     pc_id: str,
     email_destinatario: str,
+    hide_client: bool = False,
     current_user: dict = Depends(get_current_user)
 ):
     """Enviar PDF do PC por email"""
@@ -11656,7 +11658,7 @@ async def send_email_pc(
     ).to_list(length=None)
     
     # Gerar PDF
-    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias)
+    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client)
     
     # Enviar email
     try:
@@ -11682,7 +11684,7 @@ async def send_email_pc(
         <body style="font-family: Arial, sans-serif;">
             <h2>Pedido de Cotação</h2>
             <p>Segue em anexo o Pedido de Cotação <b>{pc['numero_pc']}</b> referente à Folha de Serviço <b>#{ot.get('numero_assistencia', 'N/A')}</b>.</p>
-            <p><b>Cliente:</b> {ot.get('cliente_nome', 'N/A')}</p>
+            <p><b>Cliente:</b> {'<span style="background-color: #000; color: #000; padding: 2px 8px;">CONFIDENCIAL</span>' if hide_client else ot.get('cliente_nome', 'N/A')}</p>
             <p><b>Status:</b> {pc.get('status', 'Em Espera')}</p>
             <hr>
             <p style="color: #666; font-size: 12px;">HWI Unipessoal, Lda.</p>

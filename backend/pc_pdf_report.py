@@ -8,7 +8,7 @@ from io import BytesIO
 from pathlib import Path
 from datetime import datetime
 
-def generate_pc_pdf(pc, ot, materiais, fotografias):
+def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False):
     """
     Gera PDF do Pedido de Cotação
     
@@ -17,6 +17,7 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
         ot: Folha de Serviço associada
         materiais: Lista de materiais para cotação
         fotografias: Lista de fotografias anexadas ao PC
+        hide_client: Se True, oculta o nome do cliente com barra preta
     """
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -92,9 +93,16 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     # Informações da FS
     elements.append(Paragraph("INFORMAÇÕES DA FOLHA DE SERVIÇO", heading_style))
     
+    # Nome do cliente (normal ou redactado)
+    if hide_client:
+        redacted_style = ParagraphStyle('Redacted', fontSize=9, leading=11, backColor=BLACK, textColor=BLACK)
+        client_cell = Paragraph("CONFIDENCIAL", redacted_style)
+    else:
+        client_cell = Paragraph(ot.get('cliente_nome', 'N/A'), cell_style)
+    
     ot_data = [
         ['Número FS:', f"#{ot.get('numero_assistencia', 'N/A')}", 'Data:', ot.get('data_servico', 'N/A')],
-        ['Cliente:', Paragraph(ot.get('cliente_nome', 'N/A'), cell_style), 'Status PC:', pc.get('status', 'Em Espera')]
+        ['Cliente:', client_cell, 'Status PC:', pc.get('status', 'Em Espera')]
     ]
     
     ot_table = Table(ot_data, colWidths=[3*cm, 7.5*cm, 3*cm, 4.5*cm])
