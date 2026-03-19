@@ -31,12 +31,20 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     elements = []
     styles = getSampleStyleSheet()
     
+    # Cores neutras
+    BLACK = colors.black
+    DARK_GREY = colors.HexColor('#333333')
+    MID_GREY = colors.HexColor('#6b7280')
+    LIGHT_GREY = colors.HexColor('#e5e7eb')
+    BG_GREY = colors.HexColor('#f3f4f6')
+    ZEBRA_GREY = colors.HexColor('#f9fafb')
+    
     # Estilos customizados
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
         fontSize=12,
-        textColor=colors.HexColor('#1e40af'),
+        textColor=DARK_GREY,
         spaceAfter=6,
         alignment=TA_LEFT,
         fontName='Helvetica-Bold'
@@ -49,16 +57,17 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
         leading=12
     )
     
+    cell_style = ParagraphStyle('CellStyle', fontSize=9, leading=11)
+    
     # Logo e Cabeçalho
     logo_path = Path("/app/backend/assets/hwi_logo.png")
     if logo_path.exists():
         try:
             logo = RLImage(str(logo_path), width=3*cm, height=3*cm, kind='proportional')
             
-            # Tabela de cabeçalho com logo e info
             header_data = [
                 [logo, Paragraph(f"<b>PEDIDO DE COTAÇÃO</b><br/>{pc['numero_pc']}", 
-                                ParagraphStyle('HeaderRight', fontSize=14, alignment=TA_CENTER, textColor=colors.HexColor('#1e40af'), fontName='Helvetica-Bold'))]
+                                ParagraphStyle('HeaderRight', fontSize=14, alignment=TA_CENTER, textColor=BLACK, fontName='Helvetica-Bold'))]
             ]
             
             header_table = Table(header_data, colWidths=[4*cm, 14*cm])
@@ -75,15 +84,13 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     # Linha separadora
     line_table = Table([['']], colWidths=[18*cm])
     line_table.setStyle(TableStyle([
-        ('LINEABOVE', (0, 0), (-1, 0), 2, colors.HexColor('#1e40af')),
+        ('LINEABOVE', (0, 0), (-1, 0), 2, BLACK),
     ]))
     elements.append(line_table)
     elements.append(Spacer(1, 0.3*cm))
     
     # Informações da FS
     elements.append(Paragraph("INFORMAÇÕES DA FOLHA DE SERVIÇO", heading_style))
-    
-    cell_style = ParagraphStyle('CellStyle', fontSize=9, leading=11)
     
     ot_data = [
         ['Número FS:', f"#{ot.get('numero_assistencia', 'N/A')}", 'Data:', ot.get('data_servico', 'N/A')],
@@ -92,9 +99,9 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     
     ot_table = Table(ot_data, colWidths=[3*cm, 7.5*cm, 3*cm, 4.5*cm])
     ot_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
-        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor('#f3f4f6')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('BACKGROUND', (0, 0), (0, -1), BG_GREY),
+        ('BACKGROUND', (2, 0), (2, -1), BG_GREY),
+        ('TEXTCOLOR', (0, 0), (-1, -1), BLACK),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
         ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
@@ -118,9 +125,9 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     
     maquina_table = Table(maquina_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])
     maquina_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
-        ('BACKGROUND', (2, 0), (2, -1), colors.HexColor('#f3f4f6')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('BACKGROUND', (0, 0), (0, -1), BG_GREY),
+        ('BACKGROUND', (2, 0), (2, -1), BG_GREY),
+        ('TEXTCOLOR', (0, 0), (-1, -1), BLACK),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
         ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
@@ -147,8 +154,8 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     
     material_table = Table(material_rows, colWidths=[1.5*cm, 14*cm, 2.5*cm])
     material_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('BACKGROUND', (0, 0), (-1, 0), DARK_GREY),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('ALIGN', (1, 1), (1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -157,7 +164,7 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, ZEBRA_GREY]),
     ]))
     elements.append(material_table)
     elements.append(Spacer(1, 0.4*cm))
@@ -180,7 +187,6 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
             
             row_content = []
             
-            # Célula da foto 1
             cell1 = []
             if foto1.get('foto_base64'):
                 try:
@@ -196,7 +202,6 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
             cell1.append(Paragraph(f"<b>#{i+1}:</b> {foto1.get('descricao', '')[:100]}", desc_style))
             row_content.append(cell1)
             
-            # Célula da foto 2
             if foto2:
                 cell2 = []
                 if foto2.get('foto_base64'):
