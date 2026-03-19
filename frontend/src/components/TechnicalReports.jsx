@@ -4244,7 +4244,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
               <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhum PC encontrado</p>
               <p className={`${textSecondary} ${isMobile ? 'text-xs' : 'text-sm'} mt-2`}>
-                PCs são criados quando adiciona material com "Cotação" a uma OT
+                PCs são criados quando adiciona material com "Cotação" a uma FS
               </p>
             </div>
           ) : (
@@ -7061,7 +7061,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <h4 className="text-blue-400 font-semibold mb-3">Informações da Folha de Serviço</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-400">Número OT:</span>
+                    <span className="text-gray-400">Número FS:</span>
                     <span className="text-white ml-2 font-medium">#{selectedPC.numero_ot || selectedPC.ot_numero || 'N/A'}</span>
                   </div>
                   <div>

@@ -14,7 +14,7 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     
     Args:
         pc: Pedido de Cotação
-        ot: Ordem de Trabalho associada
+        ot: Folha de Serviço associada
         materiais: Lista de materiais para cotação
         fotografias: Lista de fotografias anexadas ao PC
     """
@@ -80,11 +80,11 @@ def generate_pc_pdf(pc, ot, materiais, fotografias):
     elements.append(line_table)
     elements.append(Spacer(1, 0.3*cm))
     
-    # Informações da OT
-    elements.append(Paragraph("INFORMAÇÕES DA ORDEM DE TRABALHO", heading_style))
+    # Informações da FS
+    elements.append(Paragraph("INFORMAÇÕES DA FOLHA DE SERVIÇO", heading_style))
     
     ot_data = [
-        ['Número OT:', f"#{ot.get('numero_assistencia', 'N/A')}", 'Data:', ot.get('data_servico', 'N/A')],
+        ['Número FS:', f"#{ot.get('numero_assistencia', 'N/A')}", 'Data:', ot.get('data_servico', 'N/A')],
         ['Cliente:', ot.get('cliente_nome', 'N/A'), 'Status PC:', pc.get('status', 'Em Espera')]
     ]
     
