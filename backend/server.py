@@ -702,6 +702,8 @@ class AssinaturaRelatorio(BaseModel):
 class EnviarEmailRequest(BaseModel):
     emails: List[str]
     incluir_folha_horas: bool = False
+    documentos: Optional[List[str]] = None  # ["relatorio", "folha_horas", "pc:<id>", ...]
+    hide_client_pcs: bool = False  # Ocultar cliente nos PCs
 
 
 class Notification(BaseModel):
@@ -4214,8 +4216,15 @@ async def enviar_pdf_ot(
     request: EnviarEmailRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Gerar PDF da OT e enviar por email"""
+    """Gerar PDFs selecionados da FS e enviar por email"""
     try:
+        # Determinar documentos a enviar
+        docs_selecionados = request.documentos or []
+        # Retrocompatibilidade: se documentos não fornecido, usar lógica antiga
+        if not docs_selecionados:
+            docs_selecionados = ["relatorio"]
+            if request.incluir_folha_horas:
+                docs_selecionados.append("folha_horas")
         # Buscar dados do relatório
         relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
         if not relatorio:
@@ -4284,18 +4293,20 @@ async def enviar_pdf_ot(
             {"relatorio_id": relatorio_id}, {"_id": 0}
         ).sort("created_at", 1).to_list(length=None)
         
-        # Gerar PDF com tratamento de erros
-        try:
-            pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia)
-        except Exception as e:
-            logging.error(f"Erro ao gerar PDF para envio - OT {relatorio_id}: {str(e)}")
-            import traceback
-            logging.error(f"Traceback: {traceback.format_exc()}")
-            raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
+        # Gerar PDF do Relatório se selecionado
+        pdf_buffer = None
+        if "relatorio" in docs_selecionados:
+            try:
+                pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia)
+            except Exception as e:
+                logging.error(f"Erro ao gerar PDF para envio - OT {relatorio_id}: {str(e)}")
+                import traceback
+                logging.error(f"Traceback: {traceback.format_exc()}")
+                raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
         
-        # Gerar Folha de Horas se solicitado
+        # Gerar Folha de Horas se selecionado
         folha_horas_buffer = None
-        if request.incluir_folha_horas:
+        if "folha_horas" in docs_selecionados:
             try:
                 # Buscar registos manuais (tecnicos_relatorio)
                 tecnicos_manuais = await db.tecnicos_relatorio.find(
@@ -4405,6 +4416,38 @@ async def enviar_pdf_ot(
                 import traceback
                 logging.error(f"Traceback FH: {traceback.format_exc()}")
         
+        # Gerar PDFs de PCs selecionados
+        pc_buffers = []
+        pc_ids_selecionados = [d.replace("pc:", "") for d in docs_selecionados if d.startswith("pc:")]
+        if pc_ids_selecionados:
+            from pc_pdf_report import generate_pc_pdf
+            for pc_id_sel in pc_ids_selecionados:
+                try:
+                    pc_doc = await db.pedidos_cotacao.find_one({"id": pc_id_sel}, {"_id": 0})
+                    if not pc_doc:
+                        continue
+                    pc_materiais = await db.materiais_ot.find({"pc_id": pc_id_sel}, {"_id": 0}).to_list(100)
+                    pc_fotos = await db.fotografias_pc.find({"pc_id": pc_id_sel}, {"_id": 0}).to_list(100)
+                    
+                    ot_para_pc = {
+                        "numero_assistencia": relatorio.get("numero_assistencia"),
+                        "data_servico": relatorio.get("data_servico"),
+                        "cliente_nome": cliente.get("nome", "N/A"),
+                    }
+                    # Buscar equipamento
+                    equip = await db.equipamentos_ot.find_one({"relatorio_id": relatorio_id}, {"_id": 0})
+                    if equip:
+                        ot_para_pc["equipamento_tipologia"] = equip.get("tipologia", "")
+                        ot_para_pc["equipamento_marca"] = equip.get("marca", "")
+                        ot_para_pc["equipamento_modelo"] = equip.get("modelo", "")
+                        ot_para_pc["equipamento_numero_serie"] = equip.get("numero_serie", "")
+                        ot_para_pc["equipamento_ano_fabrico"] = equip.get("ano_fabrico", "")
+                    
+                    pc_buf = generate_pc_pdf(pc_doc, ot_para_pc, pc_materiais, pc_fotos, hide_client=request.hide_client_pcs)
+                    pc_buffers.append({"buffer": pc_buf, "numero_pc": pc_doc.get("numero_pc", pc_id_sel)})
+                except Exception as e:
+                    logging.error(f"Erro ao gerar PDF do PC {pc_id_sel}: {e}")
+        
         # Configuração SMTP
         smtp_host = os.environ.get('SMTP_HOST', 'smtp.office365.com')
         smtp_port = int(os.environ.get('SMTP_PORT', '587'))
@@ -4460,14 +4503,16 @@ async def enviar_pdf_ot(
                 
                 message.attach(MIMEText(body, 'html'))
                 
-                # Anexar PDF da OT
-                pdf_attachment = MIMEBase('application', 'pdf')
-                pdf_attachment.set_payload(pdf_buffer.getvalue())
-                encoders.encode_base64(pdf_attachment)
-                pdf_attachment.add_header('Content-Disposition', f'attachment; filename="FS_{numero_ot}.pdf"')
-                message.attach(pdf_attachment)
+                # Anexar PDF do Relatório se selecionado
+                if pdf_buffer:
+                    pdf_attachment = MIMEBase('application', 'pdf')
+                    pdf_attachment.set_payload(pdf_buffer.getvalue())
+                    encoders.encode_base64(pdf_attachment)
+                    pdf_attachment.add_header('Content-Disposition', f'attachment; filename="FS_{numero_ot}.pdf"')
+                    message.attach(pdf_attachment)
+                    pdf_buffer.seek(0)
                 
-                # Anexar Folha de Horas se disponível
+                # Anexar Folha de Horas se selecionada
                 if folha_horas_buffer:
                     fh_attachment = MIMEBase('application', 'pdf')
                     fh_attachment.set_payload(folha_horas_buffer.getvalue())
@@ -4476,8 +4521,18 @@ async def enviar_pdf_ot(
                     message.attach(fh_attachment)
                     folha_horas_buffer.seek(0)
                 
+                # Anexar PDFs de PCs selecionados
+                for pc_info in pc_buffers:
+                    pc_attach = MIMEBase('application', 'pdf')
+                    pc_attach.set_payload(pc_info["buffer"].getvalue())
+                    encoders.encode_base64(pc_attach)
+                    pc_attach.add_header('Content-Disposition', f'attachment; filename="{pc_info["numero_pc"]}.pdf"')
+                    message.attach(pc_attach)
+                    pc_info["buffer"].seek(0)
+                
                 # Resetar buffer para próximo email
-                pdf_buffer.seek(0)
+                if pdf_buffer:
+                    pdf_buffer.seek(0)
                 
                 # Enviar email
                 await aiosmtplib.send(

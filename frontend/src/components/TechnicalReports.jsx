@@ -235,6 +235,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showFolhaHorasConfirm, setShowFolhaHorasConfirm] = useState(false);
   const [emailsPendentes, setEmailsPendentes] = useState([]);
+  const [docsSelecionados, setDocsSelecionados] = useState({});
   const [emailsCliente, setEmailsCliente] = useState([]);
   const [emailsAdicionais, setEmailsAdicionais] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -3554,33 +3555,52 @@ const TechnicalReports = ({ user, onLogout }) => {
       return;
     }
     
-    // Guardar emails e abrir popup de confirmação da Folha de Horas
+    // Guardar emails e preparar seleção de documentos
     setEmailsPendentes(emailsSelecionados);
+    
+    // Pré-selecionar relatório e construir lista de docs disponíveis
+    const docsIniciais = { relatorio: true, folha_horas: false };
+    // Adicionar PCs disponíveis
+    if (pedidosCotacao && pedidosCotacao.length > 0) {
+      pedidosCotacao.forEach(pc => {
+        docsIniciais[`pc:${pc.id}`] = false;
+      });
+    }
+    setDocsSelecionados(docsIniciais);
     setShowFolhaHorasConfirm(true);
   };
 
-  const handleConfirmSendEmail = async (incluirFolhaHoras) => {
+  const handleConfirmSendEmail = async () => {
     setShowFolhaHorasConfirm(false);
     setSendingEmail(true);
     
     try {
+      // Construir lista de documentos selecionados
+      const documentos = Object.entries(docsSelecionados)
+        .filter(([, selected]) => selected)
+        .map(([key]) => key);
+      
+      if (documentos.length === 0) {
+        toast.error('Selecione pelo menos um documento');
+        setSendingEmail(false);
+        return;
+      }
+      
       const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/enviar-pdf`,
         { 
           emails: emailsPendentes,
-          incluir_folha_horas: incluirFolhaHoras
+          documentos: documentos,
+          hide_client_pcs: false
         }
       );
       
       const { emails_enviados, emails_falhados } = response.data;
       
       if (emails_falhados && emails_falhados.length > 0) {
-        toast.warning(`PDF enviado para ${emails_enviados.length} email(s). ${emails_falhados.length} falharam.`);
+        toast.warning(`Documentos enviados para ${emails_enviados.length} email(s). ${emails_falhados.length} falharam.`);
       } else {
-        const msg = incluirFolhaHoras 
-          ? `PDF da FS + Folha de Horas enviados com sucesso para ${emails_enviados.length} email(s)!`
-          : `PDF da FS enviado com sucesso para ${emails_enviados.length} email(s)!`;
-        toast.success(msg);
+        toast.success(`${documentos.length} documento(s) enviado(s) para ${emails_enviados.length} email(s)!`);
       }
       
       setShowEmailModal(false);
@@ -6000,56 +6020,116 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Popup 2 — Confirmação Folha de Horas */}
-      <AlertDialog open={showFolhaHorasConfirm} onOpenChange={(open) => {
+      {/* Popup 2 — Seleção de Documentos a Enviar */}
+      <Dialog open={showFolhaHorasConfirm} onOpenChange={(open) => {
         if (!open) setShowFolhaHorasConfirm(false);
       }}>
-        <AlertDialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-white">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
               <FileText className="w-5 h-5 text-amber-400" />
-              Anexar Folha de Horas?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Deseja anexar a Folha de Horas ao email juntamente com o PDF da OT?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+              Documentos a Enviar
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-400 text-sm">Selecione os documentos que pretende anexar ao email:</p>
 
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mt-2">
-            <div className="space-y-1 text-sm text-amber-300">
-              <p><strong>SIM</strong> — PDF da FS + Folha de Horas</p>
-              <p><strong>NÃO</strong> — Apenas PDF da OT</p>
-            </div>
+          <div className="space-y-2 mt-3">
+            {/* Relatório PDF */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                docsSelecionados.relatorio ? 'border-blue-500 bg-blue-600/10' : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+              }`}
+              data-testid="doc-select-relatorio"
+            >
+              <input
+                type="checkbox"
+                checked={docsSelecionados.relatorio || false}
+                onChange={(e) => setDocsSelecionados({ ...docsSelecionados, relatorio: e.target.checked })}
+                className="accent-blue-500 w-4 h-4"
+              />
+              <div>
+                <span className="text-white text-sm font-medium">PDF do Relatório</span>
+                <p className="text-gray-500 text-xs">Relatório técnico da FS</p>
+              </div>
+            </label>
+
+            {/* Folha de Horas */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                docsSelecionados.folha_horas ? 'border-amber-500 bg-amber-600/10' : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+              }`}
+              data-testid="doc-select-folha-horas"
+            >
+              <input
+                type="checkbox"
+                checked={docsSelecionados.folha_horas || false}
+                onChange={(e) => setDocsSelecionados({ ...docsSelecionados, folha_horas: e.target.checked })}
+                className="accent-amber-500 w-4 h-4"
+              />
+              <div>
+                <span className="text-white text-sm font-medium">Folha de Horas</span>
+                <p className="text-gray-500 text-xs">Registo de mão de obra e custos</p>
+              </div>
+            </label>
+
+            {/* PCs */}
+            {pedidosCotacao && pedidosCotacao.length > 0 && (
+              <>
+                <div className="border-t border-gray-800 pt-2 mt-2">
+                  <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Pedidos de Cotação</p>
+                </div>
+                {pedidosCotacao.map((pc) => (
+                  <label
+                    key={pc.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      docsSelecionados[`pc:${pc.id}`] ? 'border-yellow-500 bg-yellow-600/10' : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+                    }`}
+                    data-testid={`doc-select-pc-${pc.id}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={docsSelecionados[`pc:${pc.id}`] || false}
+                      onChange={(e) => setDocsSelecionados({ ...docsSelecionados, [`pc:${pc.id}`]: e.target.checked })}
+                      className="accent-yellow-500 w-4 h-4"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-white text-sm font-medium">{pc.numero_pc}</span>
+                      {pc.primeiro_material && (
+                        <p className="text-gray-500 text-xs truncate">{pc.primeiro_material}</p>
+                      )}
+                    </div>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                      pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                      'bg-blue-600/20 text-blue-400'
+                    }`}>{pc.status}</span>
+                  </label>
+                ))}
+              </>
+            )}
           </div>
 
-          <AlertDialogFooter className="flex gap-3 pt-4 sm:flex-row">
+          <div className="flex gap-3 pt-4">
             <Button
               onClick={() => setShowFolhaHorasConfirm(false)}
               variant="outline"
               className="flex-1 border-gray-600 text-gray-300 hover:text-white"
-              data-testid="folha-horas-cancelar"
+              data-testid="doc-select-cancelar"
             >
               Cancelar
             </Button>
             <Button
-              onClick={() => handleConfirmSendEmail(false)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-              data-testid="folha-horas-nao"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Não
-            </Button>
-            <Button
-              onClick={() => handleConfirmSendEmail(true)}
+              onClick={handleConfirmSendEmail}
+              disabled={!Object.values(docsSelecionados).some(v => v)}
               className="flex-1 bg-green-600 hover:bg-green-700"
-              data-testid="folha-horas-sim"
+              data-testid="doc-select-enviar"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Sim
+              <Send className="w-4 h-4 mr-2" />
+              Enviar ({Object.values(docsSelecionados).filter(v => v).length} doc{Object.values(docsSelecionados).filter(v => v).length !== 1 ? 's' : ''})
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Intervenção Modal */}
       <Dialog open={showAddIntervencaoModal} onOpenChange={setShowAddIntervencaoModal}>
