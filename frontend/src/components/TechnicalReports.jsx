@@ -5289,10 +5289,26 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                       const activeEq = equipamentosOT.find(e => e.id === activeInterv.equipamento_id);
                       // Filter data for this intervention
-                      const intervFotos = fotografias.filter(f => f.intervencao_id === activeInterv.id);
-                      const intervMateriais = materiais.filter(m => m.intervencao_id === activeInterv.id);
-                      const intervRelAssist = relatoriosAssistencia.filter(r => r.intervencao_id === activeInterv.id);
+                      // Dados sem intervencao_id (legados) aparecem na primeira intervenção da mesma data
+                      // ou na primeira intervenção global se não houver correspondência por data
+                      const isFirstIntervOnDate = intervencoes.findIndex(i => i.data_intervencao?.split('T')[0] === activeInterv.data_intervencao?.split('T')[0]) === intervencoes.indexOf(activeInterv);
+                      const isFirstInterv = intervencoes[0]?.id === activeInterv.id;
                       const intervDate = activeInterv.data_intervencao?.split('T')[0];
+
+                      const intervFotos = fotografias.filter(f => {
+                        if (f.intervencao_id) return f.intervencao_id === activeInterv.id;
+                        return isFirstIntervOnDate || (isFirstInterv && !intervencoes.some(i => i.data_intervencao?.split('T')[0] === f.data_intervencao?.split('T')[0]));
+                      });
+                      const intervMateriais = materiais.filter(m => {
+                        if (m.intervencao_id) return m.intervencao_id === activeInterv.id;
+                        return isFirstInterv;
+                      });
+                      const intervRelAssist = relatoriosAssistencia.filter(r => {
+                        if (r.intervencao_id) return r.intervencao_id === activeInterv.id;
+                        // Legado: associar por data à primeira intervenção dessa data
+                        if (r.data_intervencao === intervDate) return isFirstIntervOnDate;
+                        return isFirstInterv && !intervencoes.some(i => i.data_intervencao?.split('T')[0] === r.data_intervencao);
+                      });
                       const intervAssinaturas = assinaturas.filter(a => {
                         const aDate = a.data_assinatura?.split('T')[0];
                         return aDate === intervDate;
