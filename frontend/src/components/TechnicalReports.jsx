@@ -5690,69 +5690,37 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-yellow-400 font-semibold flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      Pedidos de Cotação ({pedidosCotacao.length}{pedidosCotacao.reduce((sum, pc) => sum + (pc.sub_pcs?.length || 0), 0) > 0 ? ` + ${pedidosCotacao.reduce((sum, pc) => sum + (pc.sub_pcs?.length || 0), 0)} sub` : ''})
+                      Pedidos de Cotação ({pedidosCotacao.length})
                       <HelpTooltip section="pedidos_cotacao" />
                     </h4>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {pedidosCotacao.map((pc) => (
-                      <div key={pc.id} className="space-y-1">
-                        {/* Parent PC */}
-                        <div
-                          onClick={() => {
-                            fetchPCDetalhes(pc.id);
-                            setShowPCModal(true);
-                          }}
-                          className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-yellow-600 cursor-pointer transition-colors"
-                          data-testid={`pc-item-${pc.id}`}
-                        >
-                          <div className="flex-1">
+                      <div
+                        key={pc.id}
+                        onClick={() => {
+                          fetchPCDetalhes(pc.id);
+                          setShowPCModal(true);
+                        }}
+                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-yellow-600 cursor-pointer transition-colors"
+                        data-testid={`pc-item-${pc.id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
                             <p className="text-white font-medium">{pc.numero_pc}</p>
-                            <div className="flex items-center gap-3 mt-1">
-                              <span className={`text-xs px-2 py-0.5 rounded ${
-                                pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
-                                pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
-                                pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
-                                pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
-                                'bg-purple-600/20 text-purple-400'
-                              }`}>{pc.status}</span>
-                              <span className="text-xs text-gray-500">{pc.materiais_count || 0} materiais</span>
-                            </div>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                              pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                              pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                              pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
+                              'bg-purple-600/20 text-purple-400'
+                            }`}>{pc.status}</span>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                          {pc.primeiro_material && (
+                            <p className="text-gray-400 text-sm mt-1 truncate">{pc.primeiro_material}</p>
+                          )}
                         </div>
-                        
-                        {/* Sub-PCs */}
-                        {pc.sub_pcs && pc.sub_pcs.length > 0 && (
-                          <div className="ml-6 space-y-1">
-                            {pc.sub_pcs.map((sub) => (
-                              <div
-                                key={sub.id}
-                                onClick={() => {
-                                  fetchPCDetalhes(sub.id);
-                                  setShowPCModal(true);
-                                }}
-                                className="flex items-center justify-between p-2.5 bg-gray-800/60 rounded-lg border border-gray-700/50 hover:border-yellow-600/50 cursor-pointer transition-colors"
-                                data-testid={`pc-sub-item-${sub.id}`}
-                              >
-                                <div className="flex-1">
-                                  <p className="text-white text-sm font-medium">{sub.numero_pc}</p>
-                                  <div className="flex items-center gap-3 mt-0.5">
-                                    <span className={`text-xs px-2 py-0.5 rounded ${
-                                      sub.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
-                                      sub.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
-                                      sub.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
-                                      sub.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
-                                      'bg-purple-600/20 text-purple-400'
-                                    }`}>{sub.status}</span>
-                                    <span className="text-xs text-gray-500">{sub.materiais_count || 0} materiais</span>
-                                  </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-gray-500" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
                       </div>
                     ))}
                   </div>

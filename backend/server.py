@@ -11238,27 +11238,19 @@ async def get_pedidos_cotacao_ot(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar PCs de uma OT com sub-PCs agrupados"""
+    """Listar PCs de uma FS - lista plana com descrição do primeiro material"""
     pcs = await db.pedidos_cotacao.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
     ).sort("created_at", 1).to_list(length=None)
     
-    # Enriquecer com contagem de materiais e agrupar sub-PCs
+    # Enriquecer cada PC com contagem de materiais e descrição do primeiro
     for pc in pcs:
         materiais_count = await db.materiais_ot.count_documents({"pc_id": pc["id"]})
         pc["materiais_count"] = materiais_count
         
-        if not pc.get("parent_pc_id"):
-            sub_pcs = await db.pedidos_cotacao.find(
-                {"parent_pc_id": pc["id"]}, {"_id": 0}
-            ).sort("sub_numero", 1).to_list(100)
-            for sub in sub_pcs:
-                sub["materiais_count"] = await db.materiais_ot.count_documents({"pc_id": sub["id"]})
-            pc["sub_pcs"] = sub_pcs
-    
-    # Retornar apenas PCs principais
-    pcs = [pc for pc in pcs if not pc.get("parent_pc_id")]
+        primeiro = await db.materiais_ot.find_one({"pc_id": pc["id"]}, {"_id": 0, "descricao": 1})
+        pc["primeiro_material"] = primeiro["descricao"] if primeiro else None
     
     return pcs
 
