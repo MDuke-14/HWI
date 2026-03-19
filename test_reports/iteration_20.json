@@ -1,0 +1,71 @@
+{
+  "summary": "Tested PC (Pedido de Cotação) management system for Service Sheets. Backend: 8/8 tests passed - PC creation, sub-PC creation, material aggregation, and grouping endpoints all working. Frontend: Global PC tab shows PCs with sub-PC count badges, FS detail view shows PCs with sub-PCs indented. MaterialModal has PC choice UI (new/existing) with proper data-testid attributes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pc_management.py",
+    "/app/test_reports/pytest/pytest_pc_management.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_pc_management.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% - All PC features verified"
+  },
+  "test_credentials": {
+    "admin": { "username": "pedro", "password": "password" }
+  },
+  "seed_data_creation": "Created and cleaned up TEST_PC_* materials during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "PC management system is fully implemented. Key IDs: FS #363 (ID: b5f7c19a-5b3d-43b2-9783-af090df28f8f) has PCs: PC_001#363 (parent) and PC_001.2 (sub-PC). The MaterialModal component accepts existingPCs prop and shows PC choice UI when fornecido_por='Cotação'. Backend endpoints: POST /api/relatorios-tecnicos/{id}/materiais creates/aggregates PCs, GET /api/relatorios-tecnicos/{id}/pedidos-cotacao and GET /api/pedidos-cotacao return grouped PCs with sub_pcs arrays.",
+  "features_tested": {
+    "backend_pc_creation": {
+      "status": "PASS",
+      "tests": [
+        "POST material with fornecido_por='Cotação' creates PC_XXX#YYY when no PCs exist",
+        "POST material with fornecido_por='Cotação' creates sub-PC (PC_001.2) when PCs exist",
+        "POST material with pc_id aggregates to existing PC",
+        "GET /api/relatorios-tecnicos/{id}/pedidos-cotacao returns grouped PCs with sub_pcs array",
+        "GET /api/pedidos-cotacao returns all system PCs with grouping"
+      ]
+    },
+    "frontend_fs_detail_pc_display": {
+      "status": "PASS",
+      "verified": [
+        "Pedidos de Cotação section shows '(1 + 1 sub)' count",
+        "PC_001#363 displayed as parent with status and materials count",
+        "PC_001.2 displayed indented below parent"
+      ]
+    },
+    "frontend_global_pc_tab": {
+      "status": "PASS",
+      "verified": [
+        "Tab 'Pedidos de Cotação' accessible in navigation",
+        "PC_001#363 shows badge '+1 sub' indicating sub-PCs",
+        "Sub-PC PC_001.2 displayed below parent with proper styling",
+        "PDF and Email buttons available for each PC"
+      ]
+    },
+    "frontend_material_modal_pc_choice": {
+      "status": "PASS (code review)",
+      "component": "/app/frontend/src/components/technical-reports/MaterialModal.jsx",
+      "features": [
+        "data-testid='pc-choice-new' - Radio for 'Criar novo PC'",
+        "data-testid='pc-choice-existing' - Radio for 'Agregar a PC existente'",
+        "data-testid='pc-select-existing' - Dropdown to select existing PC",
+        "Auto-creation message when no PCs exist"
+      ]
+    }
+  }
+}

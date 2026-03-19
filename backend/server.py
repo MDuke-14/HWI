@@ -10832,7 +10832,9 @@ async def add_material_ot(
     
     await db.materiais_ot.insert_one(material_dict)
     
-    return material
+    # Return full dict (material model doesn't have pc_id set by the PC logic above)
+    response_dict = {k: v for k, v in material_dict.items() if k != '_id'}
+    return response_dict
 
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/materiais")
 async def get_materiais_ot(
@@ -10865,36 +10867,55 @@ async def update_material_ot(
     
     # Se mudou para "Cotação", associar ou criar PC
     if material_data.get("fornecido_por") == "Cotação" and material.get("fornecido_por") != "Cotação":
-        pc_existente = await db.pedidos_cotacao.find_one({
-            "relatorio_id": relatorio_id,
-            "status": "Em Espera"
-        }, {"_id": 0})
+        pc_id_escolhido = material_data.get("pc_id")
+        ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+        fs_numero = ot.get("numero_assistencia", "000") if ot else "000"
         
-        if pc_existente:
-            material_data["pc_id"] = pc_existente["id"]
+        if pc_id_escolhido:
+            # Agregar a PC existente
+            pc_existente = await db.pedidos_cotacao.find_one({"id": pc_id_escolhido}, {"_id": 0})
+            if pc_existente:
+                material_data["pc_id"] = pc_id_escolhido
         else:
-            # Criar novo PC
-            last_pc = await db.pedidos_cotacao.find_one({}, {"_id": 0}, sort=[("numero_pc", -1)])
-            if last_pc and last_pc.get("numero_pc"):
-                ultimo_num = int(last_pc["numero_pc"].split("-")[1])
-                novo_num = ultimo_num + 1
-            else:
+            # Criar novo PC com naming convention PC_XXX#YYY
+            pcs_desta_fs = await db.pedidos_cotacao.find(
+                {"relatorio_id": relatorio_id, "parent_pc_id": None}
+            ).to_list(100)
+            
+            if len(pcs_desta_fs) == 0:
                 novo_num = 1
-            
-            numero_pc = f"PC-{novo_num:03d}"
-            
-            novo_pc = PedidoCotacao(
-                numero_pc=numero_pc,
-                relatorio_id=relatorio_id,
-                status="Em Espera",
-                created_by=current_user["sub"]
-            )
-            
-            pc_dict = novo_pc.dict()
-            pc_dict["created_at"] = pc_dict["created_at"].isoformat()
-            await db.pedidos_cotacao.insert_one(pc_dict)
-            
-            material_data["pc_id"] = novo_pc.id
+                numero_pc = f"PC_{novo_num:03d}#{fs_numero}"
+                novo_pc = PedidoCotacao(
+                    numero_pc=numero_pc,
+                    relatorio_id=relatorio_id,
+                    parent_pc_id=None,
+                    sub_numero=None,
+                    status="Em Espera",
+                    created_by=current_user["sub"]
+                )
+                pc_dict = novo_pc.dict()
+                pc_dict["created_at"] = pc_dict["created_at"].isoformat()
+                await db.pedidos_cotacao.insert_one(pc_dict)
+                material_data["pc_id"] = novo_pc.id
+            else:
+                parent_pc = pcs_desta_fs[0]
+                parent_id = parent_pc["id"]
+                sub_pcs = await db.pedidos_cotacao.count_documents({"parent_pc_id": parent_id})
+                sub_num = sub_pcs + 2 if sub_pcs == 0 and len(pcs_desta_fs) == 1 else sub_pcs + 1
+                pc_base = parent_pc["numero_pc"].split("#")[0]
+                numero_pc = f"{pc_base}.{sub_num}"
+                novo_pc = PedidoCotacao(
+                    numero_pc=numero_pc,
+                    relatorio_id=relatorio_id,
+                    parent_pc_id=parent_id,
+                    sub_numero=sub_num,
+                    status="Em Espera",
+                    created_by=current_user["sub"]
+                )
+                pc_dict = novo_pc.dict()
+                pc_dict["created_at"] = pc_dict["created_at"].isoformat()
+                await db.pedidos_cotacao.insert_one(pc_dict)
+                material_data["pc_id"] = novo_pc.id
     
     await db.materiais_ot.update_one(
         {"id": material_id},
@@ -11211,11 +11232,27 @@ async def get_pedidos_cotacao_ot(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar PCs de uma OT"""
+    """Listar PCs de uma OT com sub-PCs agrupados"""
     pcs = await db.pedidos_cotacao.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("created_at", -1).to_list(length=None)
+    ).sort("created_at", 1).to_list(length=None)
+    
+    # Enriquecer com contagem de materiais e agrupar sub-PCs
+    for pc in pcs:
+        materiais_count = await db.materiais_ot.count_documents({"pc_id": pc["id"]})
+        pc["materiais_count"] = materiais_count
+        
+        if not pc.get("parent_pc_id"):
+            sub_pcs = await db.pedidos_cotacao.find(
+                {"parent_pc_id": pc["id"]}, {"_id": 0}
+            ).sort("sub_numero", 1).to_list(100)
+            for sub in sub_pcs:
+                sub["materiais_count"] = await db.materiais_ot.count_documents({"pc_id": sub["id"]})
+            pc["sub_pcs"] = sub_pcs
+    
+    # Retornar apenas PCs principais
+    pcs = [pc for pc in pcs if not pc.get("parent_pc_id")]
     
     return pcs
 

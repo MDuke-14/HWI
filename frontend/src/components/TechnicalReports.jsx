@@ -291,6 +291,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     fornecido_por: 'Cliente',
     data_utilizacao: ''
   });
+  const [selectedPCIdForMaterial, setSelectedPCIdForMaterial] = useState(null);
 
   // Despesas OT
   const [despesas, setDespesas] = useState([]);
@@ -1950,14 +1951,22 @@ const TechnicalReports = ({ user, onLogout }) => {
     e.preventDefault();
     
     try {
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, {
+      const payload = {
         ...materialFormData,
         intervencao_id: addMaterialIntervencaoId || null
-      });
+      };
+      
+      // If "Cotação" and user chose existing PC, pass pc_id
+      if (materialFormData.fornecido_por === 'Cotação' && selectedPCIdForMaterial) {
+        payload.pc_id = selectedPCIdForMaterial;
+      }
+      
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, payload);
       toast.success('Material adicionado!');
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
       setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
+      setSelectedPCIdForMaterial(null);
       
       // Se foi marcado como "Cotação", atualizar lista de PCs
       if (materialFormData.fornecido_por === 'Cotação') {
@@ -4241,89 +4250,128 @@ const TechnicalReports = ({ user, onLogout }) => {
           ) : (
             <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
               {allPCs.map((pc) => (
-                <div
-                  key={pc.id}
-                  className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-5'} hover:border-yellow-500 transition cursor-pointer`}
-                  onClick={() => openPCFromList(pc)}
-                  data-testid={`pc-card-${pc.id}`}
-                >
-                  {/* Header */}
-                  <div className={`flex items-start justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
-                        <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-yellow-400 flex-shrink-0`} />
-                        <span className={`text-yellow-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
-                          {pc.numero_pc}
+                <div key={pc.id} className="space-y-2">
+                  <div
+                    className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-5'} hover:border-yellow-500 transition cursor-pointer`}
+                    onClick={() => openPCFromList(pc)}
+                    data-testid={`pc-card-${pc.id}`}
+                  >
+                    {/* Header */}
+                    <div className={`flex items-start justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+                          <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-yellow-400 flex-shrink-0`} />
+                          <span className={`text-yellow-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
+                            {pc.numero_pc}
+                          </span>
+                          {pc.sub_pcs && pc.sub_pcs.length > 0 && (
+                            <span className="text-xs bg-yellow-600/20 text-yellow-400 px-1.5 py-0.5 rounded">
+                              +{pc.sub_pcs.length} sub
+                            </span>
+                          )}
+                        </div>
+                        <span 
+                          className={`text-xs px-2 py-0.5 rounded inline-block ${
+                            pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                            pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                            pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                            pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
+                            'bg-purple-600/20 text-purple-400'
+                          }`}
+                        >
+                          {pc.status}
                         </span>
                       </div>
-                      <span 
-                        className={`text-xs px-2 py-0.5 rounded inline-block ${
-                          pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
-                          pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
-                          pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
-                          pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
-                          'bg-purple-600/20 text-purple-400'
-                        }`}
+                      <ChevronRight className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${textSecondary} flex-shrink-0`} />
+                    </div>
+
+                    {/* Info */}
+                    <div className={`space-y-1.5 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
+                        <span className={textSecondary}>FS:</span>
+                        <span className={`${textPrimary} font-medium`}>{pc.ot_numero}</span>
+                      </div>
+                      
+                      <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
+                        <span className={`${textPrimary} truncate`}>{pc.cliente_nome}</span>
+                      </div>
+
+                      <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <Package className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
+                        <span className={textSecondary}>Materiais:</span>
+                        <span className={`${textPrimary} font-medium`}>{pc.materiais_count || 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions Preview */}
+                    <div className={`flex gap-2 ${isMobile ? 'mt-2 pt-2' : 'mt-4 pt-3'} border-t ${borderColor}`}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadPDFPC(pc.id);
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition`}
                       >
-                        {pc.status}
-                      </span>
+                        <Download className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        PDF
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fetchPCDetalhes(pc.id);
+                          setShowEmailPCModal(true);
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition`}
+                      >
+                        <Send className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        Email
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePC(pc.id, pc.numero_pc);
+                        }}
+                        className={`flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition ${isMobile ? 'text-xs' : 'text-sm'}`}
+                      >
+                        <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                      </button>
                     </div>
-                    <ChevronRight className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${textSecondary} flex-shrink-0`} />
                   </div>
 
-                  {/* Info */}
-                  <div className={`space-y-1.5 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
-                      <span className={textSecondary}>OT:</span>
-                      <span className={`${textPrimary} font-medium`}>{pc.ot_numero}</span>
+                  {/* Sub-PCs */}
+                  {pc.sub_pcs && pc.sub_pcs.length > 0 && (
+                    <div className={`${isMobile ? 'ml-3' : 'ml-4'} space-y-2`}>
+                      {pc.sub_pcs.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-2.5' : 'p-3'} hover:border-yellow-500/50 transition cursor-pointer opacity-90`}
+                          onClick={() => openPCFromList(sub)}
+                          data-testid={`pc-sub-card-${sub.id}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className={`text-yellow-400 font-medium ${isMobile ? 'text-sm' : ''}`}>
+                                {sub.numero_pc}
+                              </span>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                  sub.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                                  sub.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                                  sub.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                                  sub.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
+                                  'bg-purple-600/20 text-purple-400'
+                                }`}>{sub.status}</span>
+                                <span className={`text-xs ${textSecondary}`}>{sub.materiais_count || 0} materiais</span>
+                              </div>
+                            </div>
+                            <ChevronRight className={`w-4 h-4 ${textSecondary}`} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    
-                    <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
-                      <span className={`${textPrimary} truncate`}>{pc.cliente_nome}</span>
-                    </div>
-
-                    <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      <Package className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
-                      <span className={textSecondary}>Materiais:</span>
-                      <span className={`${textPrimary} font-medium`}>{pc.materiais_count || 0}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions Preview */}
-                  <div className={`flex gap-2 ${isMobile ? 'mt-2 pt-2' : 'mt-4 pt-3'} border-t ${borderColor}`}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadPDFPC(pc.id);
-                      }}
-                      className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition`}
-                    >
-                      <Download className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                      PDF
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fetchPCDetalhes(pc.id);
-                        setShowEmailPCModal(true);
-                      }}
-                      className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition`}
-                    >
-                      <Send className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                      Email
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeletePC(pc.id, pc.numero_pc);
-                      }}
-                      className={`flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition ${isMobile ? 'text-xs' : 'text-sm'}`}
-                    >
-                      <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -5429,6 +5477,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <Button
                                 onClick={() => {
                                   setAddMaterialIntervencaoId(activeInterv.id);
+                                  setSelectedPCIdForMaterial(null);
+                                  if (selectedRelatorio) fetchPedidosCotacao(selectedRelatorio.id);
                                   setShowAddMaterialModal(true);
                                 }}
                                 size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
@@ -5640,33 +5690,69 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-yellow-400 font-semibold flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      Pedidos de Cotação ({pedidosCotacao.length})
+                      Pedidos de Cotação ({pedidosCotacao.length}{pedidosCotacao.reduce((sum, pc) => sum + (pc.sub_pcs?.length || 0), 0) > 0 ? ` + ${pedidosCotacao.reduce((sum, pc) => sum + (pc.sub_pcs?.length || 0), 0)} sub` : ''})
                       <HelpTooltip section="pedidos_cotacao" />
                     </h4>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {pedidosCotacao.map((pc) => (
-                      <div
-                        key={pc.id}
-                        onClick={() => {
-                          fetchPCDetalhes(pc.id);
-                          setShowPCModal(true);
-                        }}
-                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-yellow-600 cursor-pointer transition-colors"
-                      >
-                        <div>
-                          <p className="text-white font-medium">{pc.numero_pc}</p>
-                          <p className="text-sm text-gray-400">
-                            Status: <span className={`px-2 py-0.5 rounded ${
-                              pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
-                              pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
-                              pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
-                              pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
-                              'bg-purple-600/20 text-purple-400'
-                            }`}>{pc.status}</span>
-                          </p>
+                      <div key={pc.id} className="space-y-1">
+                        {/* Parent PC */}
+                        <div
+                          onClick={() => {
+                            fetchPCDetalhes(pc.id);
+                            setShowPCModal(true);
+                          }}
+                          className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-yellow-600 cursor-pointer transition-colors"
+                          data-testid={`pc-item-${pc.id}`}
+                        >
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{pc.numero_pc}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                                pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                                pc.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                                pc.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
+                                'bg-purple-600/20 text-purple-400'
+                              }`}>{pc.status}</span>
+                              <span className="text-xs text-gray-500">{pc.materiais_count || 0} materiais</span>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        
+                        {/* Sub-PCs */}
+                        {pc.sub_pcs && pc.sub_pcs.length > 0 && (
+                          <div className="ml-6 space-y-1">
+                            {pc.sub_pcs.map((sub) => (
+                              <div
+                                key={sub.id}
+                                onClick={() => {
+                                  fetchPCDetalhes(sub.id);
+                                  setShowPCModal(true);
+                                }}
+                                className="flex items-center justify-between p-2.5 bg-gray-800/60 rounded-lg border border-gray-700/50 hover:border-yellow-600/50 cursor-pointer transition-colors"
+                                data-testid={`pc-sub-item-${sub.id}`}
+                              >
+                                <div className="flex-1">
+                                  <p className="text-white text-sm font-medium">{sub.numero_pc}</p>
+                                  <div className="flex items-center gap-3 mt-0.5">
+                                    <span className={`text-xs px-2 py-0.5 rounded ${
+                                      sub.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                                      sub.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                                      sub.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
+                                      sub.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
+                                      'bg-purple-600/20 text-purple-400'
+                                    }`}>{sub.status}</span>
+                                    <span className="text-xs text-gray-500">{sub.materiais_count || 0} materiais</span>
+                                  </div>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-500" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -6344,7 +6430,11 @@ const TechnicalReports = ({ user, onLogout }) => {
         onCancel={() => {
           setShowAddMaterialModal(false);
           setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
+          setSelectedPCIdForMaterial(null);
         }}
+        existingPCs={pedidosCotacao}
+        selectedPCId={selectedPCIdForMaterial}
+        onPCIdChange={setSelectedPCIdForMaterial}
       />
 
       {/* Edit Material Modal - Componente Extraído */}
