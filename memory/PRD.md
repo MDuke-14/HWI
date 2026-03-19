@@ -1,7 +1,7 @@
-# HWI Unipessoal - Time Tracking & OT Management System
+# HWI Unipessoal - Time Tracking & FS Management System
 
 ## Original Problem Statement
-Full-stack time-tracking and work-order (OT) management application for HWI Unipessoal, Lda.
+Full-stack time-tracking and work-order (FS - Folha de Serviço) management application for HWI Unipessoal, Lda.
 
 ## Architecture
 - **Frontend**: React + Tailwind + Shadcn/UI (port 3000)
@@ -10,196 +10,88 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 - **PDF Generation**: ReportLab
 
 ## Core Features Implemented
-- OT creation, management, and lifecycle (status: em execução → concluído → faturado)
+- FS creation, management, and lifecycle (status: em execução → concluído → faturado)
 - Time tracking with chronometer (clock in/out)
 - Client management with NIF/email
-- Equipment tracking per OT
-- Intervention management with dates and descriptions
+- Equipment tracking per FS
+- Intervention management with dates and descriptions (tab-based UI)
 - Signature management (add, edit, delete)
-- Photo uploads for OT reports
-- Material tracking per OT
+- Photo uploads for FS reports
+- Material tracking per FS with PC (Pedido de Cotação) integration
 - Expense management (despesas) with receipt scanning
-- PDF report generation (OT Report + Folha de Horas)
-- Calendar integration showing OTs
+- PDF report generation (FS Report + Folha de Horas)
+- Calendar integration showing FSs
 - Mobile-optimized dashboard
 - Admin panel with user management, price tables, notifications
 - Push notifications (VAPID)
-- Search by OT number, client, location
-- **OT Relacionada**: Link OTs to previous OTs for traceability
-- **Ver Intervenções**: View equipment intervention history across all OTs
+- Search by FS number, client, location, status
+- FS Relacionada: Link FSs to previous FSs for traceability
+- Ver Intervenções: View equipment intervention history across all FSs
+- Tipo de Colaborador: Employee type auto-populates role
+- Travel time billing logic (0-15min=free, 16-29min=km only, 30+min=full)
+- Labor record editing with audit logging
+- Automatic related FS creation via button
 
-## Recent Implementations (March 2026)
+## Recent Implementations (March 2026 - Session 5)
 
-### OT → FS Rename (7 Mar 2026)
-- Global rename: "OT (Ordem de Trabalho)" → "FS (Folha de Serviço)" across entire application
-- Updated: all frontend components (TechnicalReports, Calendar, Dashboard, HelpTooltip, MobileMenu, MobileBottomNav, FolhaHorasModal, AssinaturaModal, TecnicoModal, EquipamentoModal)
-- Updated: both PDF generators (folha_horas_pdf.py, ot_pdf_report.py)
-- Updated: backend server.py (email subjects, error messages, notifications)
-- Note: Variable names, DB fields, and API routes kept as-is for compatibility
-
-### 3-Role Function System (7 Mar 2026)
-- Replaced 2-role system (Técnico/Ajudante) with 3 roles: **Téc. Júnior** (`junior`), **Técnico** (`tecnico`), **Téc. Sénior** (`senior`)
-- Migrated all existing 'ajudante' records in DB to 'junior'
-- Updated all frontend dropdowns (TecnicoModal, TechnicalReports, AdminDashboard, FolhaHorasModal)
-- Updated both PDF generators (folha_horas_pdf.py, ot_pdf_report.py) with new labels
-- Each role supports independent tariffs (tipo_colaborador: junior/tecnico/senior)
-- Color coding: Junior=yellow, Técnico=cyan, Sénior=purple
-
-### Folha de Horas PDF - Restructure v2 (7 Mar 2026)
-- Removed TOTAIS rows from general and per-collaborator tables
-- Removed "Total Geral (Horas + KM + Dietas)" line
-- Renamed "RESUMO FINANCEIRO" to "RESUMO"
-- Summary now shows 2 rows: hours per code (1st) + euros per code (2nd/TOTAL €)
-- Added DIETAS column to collaborator summary
-- Separated final subtotals: Subtotal Horas | Subtotal KM | Subtotal Dietas | Subtotal Despesas | TOTAL GERAL
-
-### Folha de Horas PDF - Complete Restructure (7 Mar 2026)
-- **Section 1 - REGISTOS GERAIS**: Single table with ALL records, sorted by Date > Start Time > Collaborator Name. Columns: Data | Colaborador | Função | Registo | Horas | Tarifa | Total Valor | KM's | Preço/KM | Total KM | Início | Fim | Dieta | Observações
-- **Section 2 - Per Collaborator**: Individual record tables + RESUMO FINANCEIRO summary table per collaborator showing total euros per code (Cód.1, Cód.2, Cód.S, Cód.D, Cód.V1-VD, KM, TOTAL)
-- **Section 3 - DESPESAS**: Existing expenses table (excluding combustivel/fuel)
-- **Section 4 - NOTA LEGAL**: "Este documento é apenas informativo..." after each summary and after expenses
-- **Section 5 - TABELA DE PREÇOS IMAGE**: Last page, maximized, centered
-- **Layout**: Professional neutral colors (black, grey, white) - no strong colors
-- **New endpoints**: POST/GET/DELETE /api/tabelas-preco/{table_id}/imagem for price table image management
-- **Admin UI**: Added image upload in price table configuration dialog
-
-### Material Units in PDF (7 Mar 2026)
-- Added unit display (L, Un, M) next to quantity in OT PDF report
-- Fixed bug: material creation failing with "erro ao processar solicitação" due to `quantidade` arriving as string from frontend (TypeError: '<=' not supported between str and int)
-- Fix: Backend now converts `quantidade` to float before validation
-- Units displayed in all views: OT detail, report preview, and PDF
-
-### Dieta (Meal Allowance) Business Rules
-- Rule: ≤4h work/day = 0€, 4h-6h = 50%, >6h = 100% of base valor_dieta
-- Base valor_dieta stored in tabelas_preco collection
-- Applied automatically in PDF generator with fallback (valor_dieta_default parameter)
-- Works in both direct PDF download and email sending
-
-### OT Relacionada (Related OT)
-- Optional field when creating a new OT to link to a previous OT
-- Forward reference: new OT shows "OT Relacionada: OT #XXX"
-- Reverse reference: original OT shows "OT Posterior: OT #YYY"
-- Visible in: OT list cards, OT detail modal, OT PDF report, Folha de Horas PDF
-- DB field: ot_relacionada_id (string, optional) on relatorios_tecnicos collection
-
-### Ver Intervenções do Equipamento
-- Replaced "Ver OTs deste Equipamento" with "Ver Intervenções" button
-- New backend endpoint: GET /api/equipamentos/{id}/intervencoes
-- Shows intervention cards: "Intervenção — OT #XXX — Data DD/MM/YYYY"
-- Expandable cards showing Motivo and Relatório fields
-- Matches equipment via: equipamento_cliente_id, marca/modelo in equipamentos_ot, marca/modelo in relatorios_tecnicos
-
-### Folha de Horas PDF Restructuring
-- Expenses moved to separate DESPESAS table at end of document
-- PAUSA and DIETA columns correctly populated
-- Tariff calculation fixed (uses work/technician type correctly)
-
-### iOS Receipt Scanner Fix
-- FaturaScanner.jsx simplified to direct file upload (removed problematic cropper)
+### Purchase Order (PC) Management System (19 Mar 2026)
+- **New naming convention**: PCs use `PC_XXX#YYY` format where YYY = FS number
+- **Sub-PCs**: Multiple PCs for same FS create sub-PCs (PC_001.2, PC_001.3, etc.) grouped under parent
+- **Material Modal PC Choice**: When adding material with "Cotação":
+  - If no PCs exist: auto-creates new PC
+  - If PCs exist: user can choose "Criar novo PC" or "Agregar a PC existente"
+  - Dropdown shows existing PCs with status and material count
+- **Backend**: Updated `add_material_ot` endpoint to accept optional `pc_id`, updated `update_material_ot` to use new naming convention, updated `get_pedidos_cotacao_ot` to group sub-PCs
+- **Frontend**: Updated MaterialModal component with PC choice UI, updated FS detail view and global PC tab to show sub-PCs indented under parents
+- **Testing**: 8/8 backend tests passed, frontend verified
+- Modified files: server.py (endpoints + model), MaterialModal.jsx (complete rewrite), TechnicalReports.jsx (PC display + handleAddMaterial)
 
 ## Key API Endpoints
-- POST /api/relatorios-tecnicos - Create OT (accepts ot_relacionada_id)
-- GET /api/relatorios-tecnicos - List OTs (includes ot_relacionada_numero, ots_posteriores)
-- GET /api/equipamentos/{id}/intervencoes - Get equipment intervention history
+- POST /api/relatorios-tecnicos - Create FS
+- GET /api/relatorios-tecnicos - List FSs
+- POST /api/relatorios-tecnicos/{id}/materiais - Add material (accepts optional pc_id for PC aggregation)
+- GET /api/relatorios-tecnicos/{id}/pedidos-cotacao - List PCs for FS (grouped with sub_pcs)
+- GET /api/pedidos-cotacao - List all PCs system-wide (grouped with sub_pcs)
+- GET /api/pedidos-cotacao/{id} - PC details with materials and photos
+- PUT /api/pedidos-cotacao/{id} - Update PC status
+- DELETE /api/pedidos-cotacao/{id} - Delete PC
 - POST /api/relatorios-tecnicos/{id}/folha-horas-pdf - Generate timesheet PDF
-- GET /api/relatorios-tecnicos/{id}/preview-pdf - Preview OT PDF
-- POST /api/relatorios-tecnicos/{id}/send-email - Email OT report
-- PUT /api/tabelas-preco/{id} - Update price table (includes valor_dieta)
+- GET /api/relatorios-tecnicos/{id}/preview-pdf - Preview FS PDF
+- POST /api/relatorios-tecnicos/{id}/send-email - Email FS report
+- PUT /api/tabelas-preco/{id} - Update price table
+- POST /api/relatorios-tecnicos/{id}/criar-fs-relacionada - Create related FS
+- PUT /api/relatorios-tecnicos/{id}/registos/{registo_id} - Edit labor record with audit
 
 ## Key DB Collections
-- relatorios_tecnicos: ot_relacionada_id (optional string)
+- relatorios_tecnicos: ot_relacionada_id (optional), km_inicial (optional)
 - tabelas_preco: valor_dieta (optional float)
-- intervencoes_relatorio: equipamento_id (optional, links to equipamentos_ot)
+- intervencoes_relatorio: equipamento_id (optional)
 - equipamentos_ot: marca, modelo, numero_serie, equipamento_cliente_id
+- materiais_ot: pc_id (optional - links material to a Pedido de Cotação), intervencao_id (optional)
+- pedidos_cotacao: numero_pc, relatorio_id, parent_pc_id (optional - for sub-PCs), sub_numero, status, created_by
+- audit_logs: registo_id, user_id, user_name, changes, timestamp
+- users: tipo_colaborador (optional - junior/tecnico/senior)
 
 ## Credentials
 - Admin: pedro / password
 - Non-admin: teste@email.com / teste
 
-## Recent Implementations (March 2026 - Session 2)
-
-### FS PDF Layout Improvements (7 Mar 2026)
-- **KeepTogether**: MÃO DE OBRA / DESLOCAÇÃO, MATERIAIS UTILIZADOS, and ASSINATURAS sections now use ReportLab `KeepTogether` to prevent splitting across pages
-- **Relatório de Assistência integrated**: Report text now appears within DETALHES DA INTERVENÇÃO section, grouped by intervention date (removed standalone section)
-- Tested with FS#358 (3 pages), FS#356 (5 pages with photos/signatures), FS#360 (2 pages with rel. assistência)
-
-### Logo Update (7 Mar 2026)
-- Updated company logo to "HARDWORK INDUSTRY" across all PDF documents
-- FS PDF: White logo integrated into dark header (#333333) with title and status
-- Folha de Horas PDF: Dark logo version on white background (auto-inverted from white original)
-- Logo files: `/app/backend/assets/hwi_logo.png` (white), `/app/backend/assets/hwi_logo_dark.png` (dark)
-
 ## Pending Issues (Prioritized)
 ### P0
-- Bug: Wrong modal opens when editing a client to enable "Referência Interna" feature (blocks entire Internal Reference flow)
-- PDF Generation Fails for Large Reports (Flowable too large - use OT#358 to test)
+- Bug: Wrong modal opens when editing a client to enable "Referência Interna" feature (needs verification - may already be fixed)
 
 ### P1
+- PDF Generation Fails for Large Reports (Flowable too large - use FS#358 to test)
 - Complete and Test Dynamic Price Table Creation
-- Signature editing may not save correctly (needs verification)
-- Refactor server.py (12000+ lines) into separate routers
-- Refactor TechnicalReports.jsx (10000+ lines) into smaller components
+- Refactor server.py (12500+ lines) into separate routers
+- Refactor TechnicalReports.jsx (10400+ lines) into smaller components
 
 ### P2
 - Recurring VAPID Key Mismatch
 - Unresolved "Edit OT Equipment" Test Failure
 - Refactor window.location.reload() hack in mobile
 
-## Recent Implementations (March 2026 - Session 4)
-
-### Lógica de Faturação de Viagem na Folha de Horas (19 Mar 2026)
-- 0-15 min: não cobra hora nem km (não faturável, obs "N/F")
-- 16-29 min: não cobra hora, cobra apenas km (obs "Só KM")
-- 30+ min: cobra hora e km (totalmente faturável)
-- Resumo por colaborador reflete a mesma lógica (horas viagem <30min = 0)
-- KMs no resumo só contabilizados quando km_valor > 0
-- Modified: folha_horas_pdf.py (cálculo valores + resumo + obs)
-
-### Reestruturação da Vista de Detalhe da FS (19 Mar 2026)
-- **Intervenções como Tabs**: Cada intervenção é agora uma aba independente com data e equipamento
-- Tab content: Motivo → Equipamento → Relatório → Fotos → Material → Assinaturas (filtrado por intervenção)
-- **Mão de Obra Global**: Registos de cronómetros e manuais ficam antes das tabs (ao nível da FS)
-- **Despesas e Pedidos de Cotação** mantêm-se ao nível global da FS
-- Fotos e Materiais agora têm campo `intervencao_id` (backend) para associação à intervenção activa
-- Assinaturas filtradas por data da intervenção
-- Botão "Adicionar Intervenção" permite criar múltiplas intervenções na mesma data
-- Dropdown manual "FS Relacionada" removido do formulário de criação
-- Modified files: server.py (MaterialRelatorio, FotoRelatorio models + upload endpoint), TechnicalReports.jsx (vista de detalhe completa)
-
-### Lógica de FS Relacionadas (19 Mar 2026)
-- Removido dropdown manual "FS Relacionada" do formulário de criação de FS
-- Novo botão "Atribuição de Nova FS" no topo de qualquer FS (visível para admins)
-- Ao clicar, cria automaticamente uma nova FS ligada à original, copiando: cliente, local, equipamentos, motivo, ref. interna
-- Nova FS nasce com status "em_execucao" e data de hoje
-- Endpoint: POST /api/relatorios-tecnicos/{id}/criar-fs-relacionada
-- Audit log registado com FS original e nova FS
-- Modified files: server.py (novo endpoint), TechnicalReports.jsx (botão + handler, removido dropdown manual)
-
-### Edição de Registos de Mão de Obra (19 Mar 2026)
-- Admin pode agora alterar o **Tipo de Registo** (Trabalho/Viagem/Oficina) via dropdown editável
-- Admin pode alterar o **Tipo de Técnico** (Téc. Júnior/Técnico/Téc. Sénior/Ajudante)
-- Adicionada opção "Ajudante" a todos os dropdowns de funcao_ot (cronómetro, TecnicoModal, edição, admin)
-- Horas recalculadas automaticamente quando o tipo muda (viagem = min/60, trabalho/oficina = arredondar_horas)
-- Audit log registado em `audit_log` collection: user, alteração, timestamp
-- Backend valida e aceita "ajudante" como tipo_colaborador
-- Modified files: server.py (update_registo_tecnico, audit_log), TechnicalReports.jsx (edit modal), TecnicoModal.jsx, AdminDashboard.jsx
-
-### Tipo de Colaborador por Utilizador (18 Mar 2026)
-- Added `tipo_colaborador` field to User model (values: junior, tecnico, senior)
-- Admin > Utilizadores > Editar modal now has "Tipo de Colaborador (para FS's)" dropdown
-- User cards show color-coded badges (yellow=Júnior, cyan=Técnico, purple=Sénior)
-- Cronometer "Definir Função na FS" popup auto-fills funcao_ot from user's tipo_colaborador
-- TecnicoModal (manual record) also auto-fills funcao_ot when selecting a user
-- Fixed "Definir Função na OT" text to "Definir Função na FS"
-- Fixed missing AlertDialogCancel/AlertDialogAction imports in TechnicalReports.jsx (was causing crash)
-- Modified files: server.py (UserUpdate model, admin_update_user), AdminDashboard.jsx, TechnicalReports.jsx, TecnicoModal.jsx
-
-### Delete Expense UI (18 Mar 2026)  
-- Fixed AlertDialog import crash that was breaking the entire /technical-reports page
-- Delete expense feature (button + confirmation dialog) was already implemented but crashed due to missing imports
-
 ## Future Tasks
-- P0: Fix Internal Reference client edit modal bug
 - P0: Refactor monolithic files (server.py, TechnicalReports.jsx)
 - P1: OneDrive Integration for file storage
 - P1: Adapt remaining pages for mobile
