@@ -4997,9 +4997,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   const kmVal = item._source === 'tecnico'
                                     ? (item.kms_deslocacao || Math.max(0, (item.kms_final || 0) - (item.kms_inicial || 0)) + Math.max(0, (item.kms_final_volta || 0) - (item.kms_inicial_volta || 0)))
                                     : (item.km || 0);
-                                  return kmVal > 0 ? (
-                                    <span className="text-blue-400 font-medium">{kmVal} km</span>
-                                  ) : null;
+                                  return (
+                                    <span className={`${kmVal > 0 ? 'text-blue-400' : 'text-gray-500'} font-medium`}>{kmVal} km</span>
+                                  );
                                 })()}
                                 <span className={`${textPrimary} font-medium`}>
                                   {(() => {
