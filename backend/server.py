@@ -10796,14 +10796,15 @@ async def add_material_ot(
                 parent_pc = pcs_desta_fs[0]
                 parent_id = parent_pc["id"]
                 
-                # Contar sub-PCs existentes
-                sub_pcs = await db.pedidos_cotacao.count_documents({"parent_pc_id": parent_id})
-                # Se o principal não tem sub-PCs ainda, o principal em si conta como .1
-                if sub_pcs == 0 and len(pcs_desta_fs) == 1:
-                    # Converter PC principal existente para sub-PC .1 (implicitamente, via numeração)
-                    pass
+                # Buscar maior sub_numero existente para evitar duplicações
+                max_sub = await db.pedidos_cotacao.find_one(
+                    {"parent_pc_id": parent_id},
+                    {"_id": 0, "sub_numero": 1},
+                    sort=[("sub_numero", -1)]
+                )
+                max_sub_num = max_sub["sub_numero"] if max_sub and max_sub.get("sub_numero") else 1
+                sub_num = max_sub_num + 1
                 
-                sub_num = sub_pcs + 2 if sub_pcs == 0 and len(pcs_desta_fs) == 1 else sub_pcs + 1
                 pc_base = parent_pc["numero_pc"].split("#")[0]  # PC_001
                 numero_pc = f"{pc_base}.{sub_num}"
                 
@@ -10900,8 +10901,13 @@ async def update_material_ot(
             else:
                 parent_pc = pcs_desta_fs[0]
                 parent_id = parent_pc["id"]
-                sub_pcs = await db.pedidos_cotacao.count_documents({"parent_pc_id": parent_id})
-                sub_num = sub_pcs + 2 if sub_pcs == 0 and len(pcs_desta_fs) == 1 else sub_pcs + 1
+                max_sub = await db.pedidos_cotacao.find_one(
+                    {"parent_pc_id": parent_id},
+                    {"_id": 0, "sub_numero": 1},
+                    sort=[("sub_numero", -1)]
+                )
+                max_sub_num = max_sub["sub_numero"] if max_sub and max_sub.get("sub_numero") else 1
+                sub_num = max_sub_num + 1
                 pc_base = parent_pc["numero_pc"].split("#")[0]
                 numero_pc = f"{pc_base}.{sub_num}"
                 novo_pc = PedidoCotacao(
