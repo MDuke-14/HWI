@@ -147,6 +147,14 @@ Full-stack time-tracking and work-order (OT) management application for HWI Unip
 
 ## Recent Implementations (March 2026 - Session 4)
 
+### Lógica de Faturação de Viagem na Folha de Horas (19 Mar 2026)
+- 0-15 min: não cobra hora nem km (não faturável, obs "N/F")
+- 16-29 min: não cobra hora, cobra apenas km (obs "Só KM")
+- 30+ min: cobra hora e km (totalmente faturável)
+- Resumo por colaborador reflete a mesma lógica (horas viagem <30min = 0)
+- KMs no resumo só contabilizados quando km_valor > 0
+- Modified: folha_horas_pdf.py (cálculo valores + resumo + obs)
+
 ### Reestruturação da Vista de Detalhe da FS (19 Mar 2026)
 - **Intervenções como Tabs**: Cada intervenção é agora uma aba independente com data e equipamento
 - Tab content: Motivo → Equipamento → Relatório → Fotos → Material → Assinaturas (filtrado por intervenção)

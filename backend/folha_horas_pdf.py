@@ -324,8 +324,24 @@ def generate_folha_horas_pdf(
         if tarifa_valor == 0 and codigo:
             tarifa_valor = tarifas_por_codigo.get(codigo, 0)
 
-        total_valor = (total_minutos / 60) * tarifa_valor
-        total_km_valor = total_km * PRECO_KM
+        # Cálculo de valores com lógica especial para Viagem
+        if tipo_registo == 'viagem':
+            # Nova lógica de faturação de Viagem baseada na duração:
+            # 0-15 min: não cobra hora nem km
+            # 16-29 min: não cobra hora, cobra apenas km
+            # 30+ min: cobra hora e km
+            if total_minutos <= 15:
+                total_valor = 0
+                total_km_valor = 0
+            elif total_minutos <= 29:
+                total_valor = 0
+                total_km_valor = total_km * PRECO_KM
+            else:
+                total_valor = (total_minutos / 60) * tarifa_valor
+                total_km_valor = total_km * PRECO_KM
+        else:
+            total_valor = (total_minutos / 60) * tarifa_valor
+            total_km_valor = total_km * PRECO_KM
 
         # Dieta
         chave_dieta = f"{tecnico_id}_{dia}"
@@ -351,7 +367,15 @@ def generate_folha_horas_pdf(
                 dietas_aplicadas.add(chave_dieta_nome)
 
         # Observações: justificar kms em registos de trabalho
-        obs = reg.get('observacoes', '') or ''
+        # Observação para viagens não faturáveis
+        obs_parts = []
+        if tipo_registo == 'viagem' and total_minutos <= 15:
+            obs_parts.append('N/F (<=15min)')
+        elif tipo_registo == 'viagem' and total_minutos <= 29:
+            obs_parts.append('Só KM (<=29min)')
+        if reg.get('observacoes'):
+            obs_parts.append(reg['observacoes'])
+        obs = ' | '.join(obs_parts) if obs_parts else (reg.get('observacoes') or '')
         if total_km > 0 and tipo_registo in ('trabalho', 'oficina', 'manual') and not obs:
             obs = ''
 
@@ -511,10 +535,13 @@ def generate_folha_horas_pdf(
 
         for reg in regs:
             cod = reg['codigo']
-            horas = reg.get('minutos', 0) / 60
+            minutos = reg.get('minutos', 0)
+            horas = minutos / 60
             tipo_norm = 'trabalho' if reg['tipo_registo'] in ('trabalho', 'oficina', 'manual') else reg['tipo_registo']
             if tipo_norm == 'viagem':
-                viagem_horas_cod[cod] += horas
+                # Usar a mesma lógica de faturação para horas no resumo
+                horas_fatur = horas if minutos >= 30 else 0
+                viagem_horas_cod[cod] += horas_fatur
                 viagem_euros_cod[cod] += reg['total_valor']
                 if cod not in tarifa_por_cod_viag:
                     tarifa_por_cod_viag[cod] = reg['tarifa_valor']
@@ -524,7 +551,7 @@ def generate_folha_horas_pdf(
                 if cod not in tarifa_por_cod_trab:
                     tarifa_por_cod_trab[cod] = reg['tarifa_valor']
             km_total_euros += reg['total_km_valor']
-            km_total_val += (reg.get('total_km', 0) or 0)
+            km_total_val += (reg.get('total_km', 0) or 0) if reg['total_km_valor'] > 0 else 0
 
         codigos = ['1', '2', 'S', 'D']
 
