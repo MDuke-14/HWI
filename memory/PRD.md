@@ -3,20 +3,24 @@
 ## Original Problem Statement
 Full-stack time-tracking and work-order (FS - Folha de Servico) management application for HWI Unipessoal, Lda.
 
-## Code Architecture (after refactoring)
+## Code Architecture (after refactoring Phase 1+2)
 ```
 /app/backend/
-  database.py          # (NEW) MongoDB connection singleton
-  models.py            # (NEW) All Pydantic models (625 lines)
-  auth_utils.py        # (NEW) Auth helpers (verify_password, create_token, get_current_user)
+  database.py          # MongoDB connection singleton (14 lines)
+  models.py            # All Pydantic models (625 lines)
+  auth_utils.py        # Auth helpers (51 lines)
+  helpers.py           # Shared helpers - email, notifications, vacation calc (122 lines)
   email_templates.py   # Multilingual email templates
-  server.py            # Main app (11,771 lines - reduced from 12,975)
+  server.py            # Main app (10,097 lines - reduced from 12,975, -22%)
   routes/
-    __init__.py
-    clientes.py        # (NEW) Client CRUD + PDF export (270 lines)
-    references.py      # (NEW) Internal reference system (243 lines)
-    dependencies.py    # Legacy (unused)
-    auth.py            # Legacy (unused)
+    auth_routes.py     # Login, register, forgot-password (177 lines)
+    clientes.py        # Client CRUD + PDF export (270 lines)
+    equipamentos.py    # Equipment CRUD + history (211 lines)
+    notifications.py   # Notifications + push (319 lines)
+    pedidos_cotacao.py # PC management + invoices (545 lines)
+    company_info.py    # Company info (94 lines)
+    tabelas_tarifas.py # Price tables + tariffs (333 lines)
+    references.py      # Internal reference system (243 lines)
 ```
 
 ## Core Features Implemented
