@@ -3,11 +3,21 @@
 ## Original Problem Statement
 Full-stack time-tracking and work-order (FS - Folha de Servico) management application for HWI Unipessoal, Lda.
 
-## Architecture
-- **Frontend**: React + Tailwind + Shadcn/UI (port 3000)
-- **Backend**: FastAPI + Motor (MongoDB async) (port 8001)
-- **Database**: MongoDB
-- **PDF Generation**: ReportLab
+## Code Architecture (after refactoring)
+```
+/app/backend/
+  database.py          # (NEW) MongoDB connection singleton
+  models.py            # (NEW) All Pydantic models (625 lines)
+  auth_utils.py        # (NEW) Auth helpers (verify_password, create_token, get_current_user)
+  email_templates.py   # Multilingual email templates
+  server.py            # Main app (11,771 lines - reduced from 12,975)
+  routes/
+    __init__.py
+    clientes.py        # (NEW) Client CRUD + PDF export (270 lines)
+    references.py      # (NEW) Internal reference system (243 lines)
+    dependencies.py    # Legacy (unused)
+    auth.py            # Legacy (unused)
+```
 
 ## Core Features Implemented
 - FS creation, management, and lifecycle (status: em execucao -> concluido -> faturado)
