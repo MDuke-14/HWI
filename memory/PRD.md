@@ -41,7 +41,8 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - **Reference submission**: Updates FS `referencia_interna_cliente` field, marks token as used
 - **Admin notifications**: Creates notification for all admins when client submits reference
 - **NotificationBell integration**: referencia_interna type shows in existing notification system
-- **Testing**: 14/14 backend tests passed, 100% frontend verified
+- **Admin panel**: New "Ref. Internas" tab (admin-only) with full management of reference tokens - filter by status (Pendente/Submetido/Expirado) and client, resend emails, delete tokens
+- **Testing**: 30/30 backend tests passed (14 token + 16 admin panel), 100% frontend verified
 
 ### Purchase Order (PC) Management System (19 Mar 2026)
 - PC creation, sub-PCs, aggregation, status management
@@ -55,6 +56,9 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - GET /api/relatorios-tecnicos - List FSs
 - GET /api/referencia/{token} - Public: Get FS data for reference page
 - POST /api/referencia/{token} - Public: Submit client reference
+- GET /api/admin/reference-tokens - Admin: List all reference tokens with filters
+- DELETE /api/admin/reference-tokens/{id} - Admin: Delete a reference token
+- POST /api/admin/resend-reference-email/{id} - Admin: Resend reference email
 - GET /api/admin/reference-alerts - Admin: Get unread reference alerts
 - PUT /api/admin/reference-alerts/{alert_id}/read - Admin: Mark alert as read
 - POST /api/relatorios-tecnicos/{id}/materiais - Add material
