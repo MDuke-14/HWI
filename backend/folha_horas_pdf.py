@@ -424,7 +424,7 @@ def generate_folha_horas_pdf(
             minutes_to_hhmm(reg.get('minutos', 0)),
             f"Cód.{codigo} - {tarifa_valor:.2f}€/h" if tarifa_valor else f"Cód.{codigo}",
             f"{reg['total_valor']:.2f}€",
-            f"{reg['total_km']:.1f}" if reg['total_km'] else '-',
+            f"{reg['total_km']:.2f}" if reg['total_km'] else '-',
             f"{PRECO_KM:.2f}€" if reg['total_km'] else '-',
             f"{reg['total_km_valor']:.2f}€" if reg['total_km'] else '-',
             format_time_hhmm(reg.get('hora_inicio')),
@@ -503,7 +503,7 @@ def generate_folha_horas_pdf(
                 minutes_to_hhmm(reg.get('minutos', 0)),
                 f"Cód.{cod} - {tv:.2f}€/h" if tv else f"Cód.{cod}",
                 f"{reg['total_valor']:.2f}€",
-                f"{reg['total_km']:.1f}" if reg['total_km'] else '-',
+                f"{reg['total_km']:.2f}" if reg['total_km'] else '-',
                 f"{PRECO_KM:.2f}€" if reg['total_km'] else '-',
                 f"{reg['total_km_valor']:.2f}€" if reg['total_km'] else '-',
                 format_time_hhmm(reg.get('hora_inicio')),
@@ -569,15 +569,15 @@ def generate_folha_horas_pdf(
         resumo_row_horas = [nome, funcao_label]
         for c in codigos:
             h = trabalho_horas_cod.get(c, 0)
-            resumo_row_horas.append(f"{h:.1f}h" if h > 0 else '-')
+            resumo_row_horas.append(f"{h:.2f}h" if h > 0 else '-')
             total_horas_colab += h
         for c in codigos:
             h = viagem_horas_cod.get(c, 0)
-            resumo_row_horas.append(f"{h:.1f}h" if h > 0 else '-')
+            resumo_row_horas.append(f"{h:.2f}h" if h > 0 else '-')
             total_horas_colab += h
-        resumo_row_horas.append(f"{km_total_val:.1f}" if km_total_val > 0 else '-')
+        resumo_row_horas.append(f"{km_total_val:.2f}" if km_total_val > 0 else '-')
         resumo_row_horas.append(f"{colab_total_dieta:.2f}€" if colab_total_dieta > 0 else '-')
-        resumo_row_horas.append(f"{total_horas_colab:.1f}h")
+        resumo_row_horas.append(f"{total_horas_colab:.2f}h")
 
         # --- Linha 2: TOTAL € POR CÓDIGO ---
         resumo_row_euros = ['', 'TOTAL €']
