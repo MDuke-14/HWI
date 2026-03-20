@@ -367,6 +367,12 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [allPCs, setAllPCs] = useState([]);
   const [loadingPCs, setLoadingPCs] = useState(false);
 
+  // Referências Internas (admin panel)
+  const [refTokens, setRefTokens] = useState([]);
+  const [loadingRefs, setLoadingRefs] = useState(false);
+  const [refFilterStatus, setRefFilterStatus] = useState('todos');
+  const [refFilterCliente, setRefFilterCliente] = useState('');
+
   // Cronómetros
   const [cronometrosAtivos, setCronometrosAtivos] = useState([]);
   const [registosTecnicos, setRegistosTecnicos] = useState([]);
@@ -2531,6 +2537,41 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const fetchRefTokens = async () => {
+    setLoadingRefs(true);
+    try {
+      const params = new URLSearchParams();
+      if (refFilterStatus !== 'todos') params.append('status', refFilterStatus);
+      if (refFilterCliente.trim()) params.append('cliente_filter', refFilterCliente.trim());
+      const response = await axios.get(`${API}/admin/reference-tokens?${params.toString()}`);
+      setRefTokens(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar referências:', error);
+    } finally {
+      setLoadingRefs(false);
+    }
+  };
+
+  const handleResendRefEmail = async (tokenId) => {
+    try {
+      const res = await axios.post(`${API}/admin/resend-reference-email/${tokenId}`);
+      toast.success(res.data.message);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao reenviar email');
+    }
+  };
+
+  const handleDeleteRefToken = async (tokenId) => {
+    if (!window.confirm('Tem certeza que deseja remover este pedido de referência?')) return;
+    try {
+      await axios.delete(`${API}/admin/reference-tokens/${tokenId}`);
+      toast.success('Referência removida');
+      fetchRefTokens();
+    } catch (error) {
+      toast.error('Erro ao remover');
+    }
+  };
+
   const handleDeletePC = async (pcId, pcNumero) => {
     if (!window.confirm(`Tem certeza que deseja eliminar o PC ${pcNumero}? Esta ação não pode ser desfeita.`)) {
       return;
@@ -3778,6 +3819,23 @@ const TechnicalReports = ({ user, onLogout }) => {
               <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
               {isMobile ? 'PCs' : 'Pedidos de Cotação'}
             </button>
+            {user?.is_admin && (
+            <button
+              onClick={() => {
+                setActiveTab('referencias');
+                fetchRefTokens();
+              }}
+              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
+                activeTab === 'referencias'
+                  ? 'text-indigo-400 border-b-2 border-indigo-400'
+                  : `${textSecondary} hover:${textPrimary}`
+              }`}
+              data-testid="tab-referencias"
+            >
+              <Link2 className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
+              {isMobile ? 'Refs' : 'Ref. Internas'}
+            </button>
+            )}
           </div>
         </div>
 
@@ -4428,6 +4486,136 @@ const TechnicalReports = ({ user, onLogout }) => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+        )}
+
+        {/* Referências Internas Section (Admin only) */}
+        {activeTab === 'referencias' && user?.is_admin && (
+        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+          <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold ${textPrimary} ${isMobile ? 'mb-4' : 'mb-6'} flex items-center gap-2`}>
+            <Link2 className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-indigo-400`} />
+            Referências Internas
+          </h2>
+
+          <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-3 items-center'} mb-4`}>
+            <select
+              value={refFilterStatus}
+              onChange={(e) => setRefFilterStatus(e.target.value)}
+              className={`${isMobile ? 'w-full' : 'w-44'} bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 text-sm`}
+              data-testid="ref-filter-status"
+            >
+              <option value="todos">Todos</option>
+              <option value="pendente">Pendentes</option>
+              <option value="submetido">Submetidos</option>
+            </select>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                value={refFilterCliente}
+                onChange={(e) => setRefFilterCliente(e.target.value)}
+                placeholder="Filtrar por cliente..."
+                className="bg-[#0f0f0f] border-gray-700 text-white pl-9 text-sm"
+                data-testid="ref-filter-cliente"
+              />
+            </div>
+            <Button
+              onClick={fetchRefTokens}
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700"
+              data-testid="ref-filter-apply"
+            >
+              <Search className="w-4 h-4 mr-1" />
+              Filtrar
+            </Button>
+          </div>
+
+          {loadingRefs ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400 mx-auto"></div>
+              <p className={`${textSecondary} mt-4 text-sm`}>Carregando...</p>
+            </div>
+          ) : refTokens.length === 0 ? (
+            <div className="text-center py-8">
+              <Link2 className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <p className={`${textSecondary} text-base`}>Nenhuma referência encontrada</p>
+              <p className={`${textSecondary} text-xs mt-1`}>
+                Referências são criadas automaticamente ao criar FS para clientes com esta opção ativa
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {refTokens.map((ref) => {
+                const isPending = !ref.used && !ref.expired;
+                const isSubmitted = ref.used;
+                const isExpired = ref.expired && !ref.used;
+
+                return (
+                  <div
+                    key={ref.id}
+                    className={`${isDark ? 'bg-[#111]' : 'bg-gray-50'} border ${
+                      isSubmitted ? 'border-green-600/40' : isExpired ? 'border-red-600/30' : 'border-amber-500/30'
+                    } rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}
+                    data-testid={`ref-item-${ref.id}`}
+                  >
+                    <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center justify-between'}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`font-bold ${textPrimary} text-sm`}>
+                            FS#{ref.numero_assistencia || '?'}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            isSubmitted ? 'bg-green-600/20 text-green-400' :
+                            isExpired ? 'bg-red-600/20 text-red-400' :
+                            'bg-amber-500/20 text-amber-400'
+                          }`}>
+                            {isSubmitted ? 'Submetido' : isExpired ? 'Expirado' : 'Pendente'}
+                          </span>
+                        </div>
+                        <p className={`${textSecondary} text-sm mt-1 truncate`}>{ref.cliente_nome}</p>
+                        {ref.local_intervencao && (
+                          <p className={`${textSecondary} text-xs mt-0.5`}>
+                            <MapPin className="w-3 h-3 inline mr-1" />{ref.local_intervencao}
+                          </p>
+                        )}
+                        {isSubmitted && ref.referencia && (
+                          <p className="text-green-400 text-sm mt-1 font-medium">
+                            Ref: {ref.referencia}
+                          </p>
+                        )}
+                        <p className={`${textSecondary} text-xs mt-1`}>
+                          {ref.created_at ? new Date(ref.created_at).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                        </p>
+                      </div>
+
+                      <div className={`flex ${isMobile ? 'justify-end' : ''} gap-1`}>
+                        {isPending && (
+                          <Button
+                            onClick={() => handleResendRefEmail(ref.id)}
+                            size="sm"
+                            variant="outline"
+                            className="border-indigo-600 text-indigo-400 hover:bg-indigo-600/10 text-xs"
+                            data-testid={`ref-resend-${ref.id}`}
+                          >
+                            <Send className="w-3 h-3 mr-1" />
+                            Reenviar
+                          </Button>
+                        )}
+                        <Button
+                          onClick={() => handleDeleteRefToken(ref.id)}
+                          size="sm"
+                          variant="outline"
+                          className="border-red-600/50 text-red-400 hover:bg-red-600/10 text-xs"
+                          data-testid={`ref-delete-${ref.id}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

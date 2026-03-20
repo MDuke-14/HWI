@@ -12849,6 +12849,107 @@ async def mark_reference_alert_read(alert_id: str, current_user: dict = Depends(
     return {"message": "Alerta marcado como lido"}
 
 
+@api_router.get("/admin/reference-tokens")
+async def get_all_reference_tokens(
+    status: Optional[str] = None,
+    cliente_filter: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista todos os tokens de referência interna (admin only)"""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    query = {}
+    if status == "pendente":
+        query["used"] = False
+    elif status == "submetido":
+        query["used"] = True
+    
+    tokens = await db.reference_tokens.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    
+    result = []
+    for t in tokens:
+        rel = await db.relatorios_tecnicos.find_one(
+            {"id": t.get("relatorio_id")}, {"_id": 0, "numero_assistencia": 1, "cliente_nome": 1, "local_intervencao": 1}
+        )
+        
+        is_expired = False
+        exp = t.get("expires_at")
+        if exp:
+            if isinstance(exp, str):
+                try:
+                    exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00"))
+                    is_expired = datetime.now(timezone.utc) > exp_dt
+                except Exception:
+                    pass
+        
+        entry = {
+            "id": t.get("id"),
+            "token": t.get("token"),
+            "relatorio_id": t.get("relatorio_id"),
+            "cliente_id": t.get("cliente_id"),
+            "used": t.get("used", False),
+            "referencia": t.get("referencia"),
+            "expires_at": t.get("expires_at"),
+            "created_at": t.get("created_at"),
+            "expired": is_expired,
+            "numero_assistencia": rel.get("numero_assistencia") if rel else None,
+            "cliente_nome": rel.get("cliente_nome", "") if rel else "",
+            "local_intervencao": rel.get("local_intervencao", "") if rel else "",
+        }
+        
+        if cliente_filter and cliente_filter.lower() not in entry["cliente_nome"].lower():
+            continue
+        
+        result.append(entry)
+    
+    return result
+
+
+@api_router.delete("/admin/reference-tokens/{token_id}")
+async def delete_reference_token(token_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove um token de referência (admin only)"""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    r = await db.reference_tokens.delete_one({"id": token_id})
+    if r.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Token não encontrado")
+    return {"message": "Token removido"}
+
+
+@api_router.post("/admin/resend-reference-email/{token_id}")
+async def resend_reference_email(token_id: str, current_user: dict = Depends(get_current_user)):
+    """Reenvia email de referência interna (admin only)"""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    ref_token = await db.reference_tokens.find_one({"id": token_id}, {"_id": 0})
+    if not ref_token:
+        raise HTTPException(status_code=404, detail="Token não encontrado")
+    if ref_token.get("used"):
+        raise HTTPException(status_code=400, detail="Esta referência já foi submetida")
+    
+    rel = await db.relatorios_tecnicos.find_one({"id": ref_token["relatorio_id"]}, {"_id": 0})
+    if not rel:
+        raise HTTPException(status_code=404, detail="FS não encontrada")
+    
+    cliente = await db.clientes.find_one({"id": ref_token["cliente_id"]}, {"_id": 0})
+    if not cliente or not cliente.get("email"):
+        raise HTTPException(status_code=400, detail="Cliente sem email configurado")
+    
+    frontend_url = os.environ.get('FRONTEND_URL', '').rstrip('/')
+    link = f"{frontend_url}/reference/{ref_token['token']}"
+    
+    await send_reference_link_email(
+        client_email=cliente["email"],
+        client_name=cliente.get("nome", ""),
+        fs_number=rel.get("numero_assistencia", 0),
+        reference_link=link
+    )
+    
+    return {"message": f"Email reenviado para {cliente['email']}"}
+
+
 # ============ Include Router ============
 
 app.include_router(api_router)

@@ -1,0 +1,118 @@
+{
+  "summary": "Tested Admin Reference Tokens Panel feature. Backend: 16/16 tests passed - all admin endpoints work correctly (GET/DELETE/POST resend). Frontend: Admin panel visible only for admin users, shows FS#, client name, status badges (Pendente/Submetido/Expirado), location, date. Filters work correctly. Reenviar button only for pending tokens. Submitted references show green reference value.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_admin_reference_tokens.py",
+    "/app/test_reports/pytest/pytest_admin_ref_tokens.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_admin_reference_tokens.py"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% - All admin panel features verified"
+  },
+  "test_credentials": {
+    "admin": { "username": "pedro", "password": "password" },
+    "non_admin": { "username": "Nuno", "password": "password" }
+  },
+  "seed_data_creation": "Used existing reference tokens in DB (FS#364 pending, FS#356 submitted)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Admin Reference Tokens Panel is fully implemented. Key endpoints: GET/DELETE /api/admin/reference-tokens, POST /api/admin/resend-reference-email/{id}. All require admin auth. Frontend tab 'Ref. Internas' visible only for admin users in TechnicalReports.jsx. Filters: status (todos/pendente/submetido), cliente_filter (text search). Status badges: Pendente (amber), Submetido (green), Expirado (red). Reenviar button only for pending. Submitted refs show green 'Ref: value'.",
+  "features_tested": {
+    "backend_get_all_tokens": {
+      "status": "PASS",
+      "tests": [
+        "GET /api/admin/reference-tokens returns all tokens with FS info",
+        "Non-admin access returns 403",
+        "No auth returns 403"
+      ]
+    },
+    "backend_filter_by_status": {
+      "status": "PASS",
+      "tests": [
+        "status=pendente returns only pending tokens (used=False)",
+        "status=submetido returns only submitted tokens (used=True)"
+      ]
+    },
+    "backend_filter_by_client": {
+      "status": "PASS",
+      "tests": [
+        "cliente_filter=560 returns only tokens with '560' in client name",
+        "Combined filters (status + cliente_filter) work correctly"
+      ]
+    },
+    "backend_delete_token": {
+      "status": "PASS",
+      "tests": [
+        "DELETE /api/admin/reference-tokens/{id} - Non-admin denied (403)",
+        "DELETE non-existent token returns 404"
+      ]
+    },
+    "backend_resend_email": {
+      "status": "PASS",
+      "tests": [
+        "POST /api/admin/resend-reference-email/{id} - Non-admin denied (403)",
+        "Resend for non-existent token returns 404",
+        "Resend for already submitted token returns 400",
+        "Resend for pending token succeeds (or SMTP error in preview env)"
+      ]
+    },
+    "backend_data_validation": {
+      "status": "PASS",
+      "tests": [
+        "Token data includes numero_assistencia, cliente_nome, local_intervencao",
+        "Status flags (used, expired) correctly determine badge type",
+        "Submitted tokens have non-empty referencia value"
+      ]
+    },
+    "frontend_admin_tab_visibility": {
+      "status": "PASS",
+      "verified": [
+        "'Ref. Internas' tab visible for admin user (pedro)",
+        "'Ref. Internas' tab HIDDEN for non-admin user (Nuno)",
+        "Admin sees 5 tabs, non-admin sees 4 tabs"
+      ]
+    },
+    "frontend_panel_display": {
+      "status": "PASS",
+      "verified": [
+        "Panel shows 'Referências Internas' title with link icon",
+        "Status filter dropdown (Todos/Pendentes/Submetidos)",
+        "Client filter input with placeholder 'Filtrar por cliente...'",
+        "Filter button ('Filtrar')"
+      ]
+    },
+    "frontend_reference_items": {
+      "status": "PASS",
+      "verified": [
+        "FS# displayed (e.g., FS#364, FS#356)",
+        "Client name displayed",
+        "Location displayed with map pin icon",
+        "Date/time displayed",
+        "Status badges: Pendente (amber), Submetido (green)",
+        "Reenviar button only for pending tokens",
+        "Delete button (trash icon) for all tokens",
+        "Submitted references show green 'Ref: value'"
+      ]
+    },
+    "frontend_filters": {
+      "status": "PASS",
+      "verified": [
+        "Filter by status=pendente shows only pending items",
+        "Filter by client name works"
+      ]
+    }
+  }
+}
