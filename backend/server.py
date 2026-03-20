@@ -707,6 +707,18 @@ class EnviarEmailRequest(BaseModel):
     idioma: str = "pt"  # pt, es, en
 
 
+class ReferenceToken(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    token: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    cliente_id: str
+    used: bool = False
+    referencia: Optional[str] = None
+    expires_at: datetime = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class Notification(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -12644,6 +12656,135 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+# ===== REFERÊNCIA INTERNA DO CLIENTE (Endpoints Públicos) =====
+
+@api_router.get("/referencia/{token}")
+async def get_reference_page_data(token: str):
+    """Endpoint público — retorna dados da FS para a página de referência do cliente"""
+    ref_token = await db.reference_tokens.find_one({"token": token}, {"_id": 0})
+    if not ref_token:
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado")
+    
+    if ref_token.get("used"):
+        raise HTTPException(status_code=410, detail="Esta referência já foi submetida")
+    
+    expires_at = ref_token.get("expires_at")
+    if expires_at:
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) > expires_at:
+            raise HTTPException(status_code=410, detail="Este link expirou")
+    
+    relatorio = await db.relatorios_tecnicos.find_one(
+        {"id": ref_token["relatorio_id"]}, {"_id": 0}
+    )
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Folha de Serviço não encontrada")
+    
+    # Buscar equipamento
+    equip = await db.equipamentos_ot.find_one(
+        {"relatorio_id": ref_token["relatorio_id"]}, {"_id": 0}
+    )
+    
+    return {
+        "numero_assistencia": relatorio.get("numero_assistencia"),
+        "local_intervencao": relatorio.get("local_intervencao", ""),
+        "cliente_nome": relatorio.get("cliente_nome", ""),
+        "data_servico": relatorio.get("data_servico", ""),
+        "equipamento": {
+            "tipologia": equip.get("tipologia", "") if equip else relatorio.get("equipamento_tipologia", ""),
+            "marca": equip.get("marca", "") if equip else relatorio.get("equipamento_marca", ""),
+            "modelo": equip.get("modelo", "") if equip else relatorio.get("equipamento_modelo", ""),
+            "numero_serie": equip.get("numero_serie", "") if equip else relatorio.get("equipamento_numero_serie", ""),
+        },
+        "expires_at": ref_token.get("expires_at"),
+    }
+
+
+@api_router.post("/referencia/{token}")
+async def submit_reference(token: str, body: dict = Body(...)):
+    """Endpoint público — cliente submete a referência interna"""
+    ref_token = await db.reference_tokens.find_one({"token": token}, {"_id": 0})
+    if not ref_token:
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado")
+    
+    if ref_token.get("used"):
+        raise HTTPException(status_code=410, detail="Esta referência já foi submetida")
+    
+    expires_at = ref_token.get("expires_at")
+    if expires_at:
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) > expires_at:
+            raise HTTPException(status_code=410, detail="Este link expirou")
+    
+    referencia = body.get("referencia", "").strip()
+    if not referencia:
+        raise HTTPException(status_code=400, detail="Referência não pode estar vazia")
+    
+    # Atualizar FS com a referência
+    await db.relatorios_tecnicos.update_one(
+        {"id": ref_token["relatorio_id"]},
+        {"$set": {"referencia_interna_cliente": referencia}}
+    )
+    
+    # Marcar token como usado
+    await db.reference_tokens.update_one(
+        {"token": token},
+        {"$set": {"used": True, "referencia": referencia}}
+    )
+    
+    # Buscar FS para o número
+    relatorio = await db.relatorios_tecnicos.find_one(
+        {"id": ref_token["relatorio_id"]}, {"_id": 0, "numero_assistencia": 1, "cliente_nome": 1}
+    )
+    numero = relatorio.get("numero_assistencia", "?") if relatorio else "?"
+    cliente = relatorio.get("cliente_nome", "?") if relatorio else "?"
+    
+    # Criar notificação para todos os admins
+    admins = await db.users.find({"is_admin": True}, {"_id": 0}).to_list(100)
+    for admin in admins:
+        notif = {
+            "id": str(uuid.uuid4()),
+            "user_id": admin["id"],
+            "username": admin.get("username", ""),
+            "type": "referencia_interna",
+            "title": "Referência Interna Inserida",
+            "message": f"O cliente {cliente} inseriu a referência interna \"{referencia}\" na FS#{numero}.",
+            "priority": "high",
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.notifications.insert_one(notif)
+    
+    return {"message": "Referência submetida com sucesso", "referencia": referencia}
+
+
+@api_router.get("/admin/reference-alerts")
+async def get_reference_alerts(current_user: dict = Depends(get_current_user)):
+    """Retorna notificações de referências internas não lidas para o admin"""
+    if not current_user.get("is_admin"):
+        return []
+    
+    alerts = await db.notifications.find(
+        {"user_id": current_user["sub"], "type": "referencia_interna", "read": False},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return alerts
+
+
+@api_router.put("/admin/reference-alerts/{alert_id}/read")
+async def mark_reference_alert_read(alert_id: str, current_user: dict = Depends(get_current_user)):
+    """Marca alerta de referência como lido"""
+    await db.notifications.update_one(
+        {"id": alert_id, "user_id": current_user["sub"]},
+        {"$set": {"read": True}}
+    )
+    return {"message": "Alerta marcado como lido"}
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
