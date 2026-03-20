@@ -14,6 +14,7 @@ import Calendar from '@/components/Calendar';
 import TechnicalReports from '@/components/TechnicalReports';
 import OvertimeAuthorization from '@/components/OvertimeAuthorization';
 import PCStatusPage from '@/components/PCStatusPage';
+import PublicReferencePage from '@/components/PublicReferencePage';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MobileProvider } from '@/contexts/MobileContext';
@@ -274,6 +275,11 @@ function App() {
               <Route
                 path="/pc/:pcId/status"
                 element={<PCStatusPage />}
+              />
+              {/* Página pública para cliente inserir referência interna */}
+              <Route
+                path="/reference/:token"
+                element={<PublicReferencePage />}
               />
             </Routes>
           </BrowserRouter>

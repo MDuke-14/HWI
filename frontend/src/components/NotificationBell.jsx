@@ -224,6 +224,9 @@ const NotificationBell = ({ user }) => {
       // Pedidos de Cotação
       'pc_created': { title: '📋 Novo Pedido de Cotação', color: 'border-yellow-500/50' },
       
+      // Referência Interna
+      'referencia_interna': { title: '📌 Referência Interna Inserida', color: 'border-indigo-500/50' },
+      
       // Despesas
       'despesa_created': { title: '💰 Nova Despesa', color: 'border-emerald-500/50' },
       
@@ -255,6 +258,9 @@ const NotificationBell = ({ user }) => {
 
     // Pedidos de Cotação
     if (type === 'pc_created') return '/technical-reports';
+
+    // Referência Interna
+    if (type === 'referencia_interna') return '/technical-reports';
 
     // Serviços
     if (type === 'service_assigned' || type === 'service_reminder') return '/calendar';

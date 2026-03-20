@@ -1,0 +1,82 @@
+{
+  "summary": "Tested Client Internal Reference Token System. Backend: 14/14 tests passed - GET/POST /api/referencia/{token} endpoints work correctly with valid/invalid/used/expired tokens. Frontend: Public reference page loads correctly, shows FS info, accepts input, submits successfully, and displays appropriate error states (410 for used, 404 for invalid). Admin NotificationBell shows referencia_interna notifications with correct styling.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_referencia_token.py",
+    "/app/test_reports/pytest/pytest_referencia_token.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_referencia_token.py"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% - All public reference page features verified"
+  },
+  "test_credentials": {
+    "admin": { "username": "pedro", "password": "password" }
+  },
+  "seed_data_creation": "Created and cleaned up TEST_* tokens during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Client Internal Reference Token System is fully implemented. Key endpoints: GET/POST /api/referencia/{token} (public, no auth required). Token structure in MongoDB collection 'reference_tokens': {id, token, relatorio_id, cliente_id, used, referencia, expires_at, created_at}. Frontend route: /reference/:token renders PublicReferencePage.jsx. NotificationBell.jsx handles 'referencia_interna' notification type with indigo styling. Auto-email trigger in create_relatorio when client has incluir_referencia_interna=true and email set.",
+  "features_tested": {
+    "backend_get_reference": {
+      "status": "PASS",
+      "tests": [
+        "GET /api/referencia/{token} with valid token returns FS data (numero_assistencia, cliente_nome, local_intervencao, data_servico, equipamento, expires_at)",
+        "GET /api/referencia/{token} with invalid token returns 404",
+        "GET /api/referencia/{token} with used token returns 410",
+        "GET /api/referencia/{token} with expired token returns 410"
+      ]
+    },
+    "backend_submit_reference": {
+      "status": "PASS",
+      "tests": [
+        "POST /api/referencia/{token} successfully submits reference and marks token as used",
+        "POST /api/referencia/{token} updates FS with referencia_interna_cliente",
+        "POST /api/referencia/{token} creates admin notification with type='referencia_interna'",
+        "POST /api/referencia/{token} with empty reference returns 400",
+        "POST /api/referencia/{token} with whitespace reference returns 400",
+        "POST /api/referencia/{token} with invalid token returns 404",
+        "POST /api/referencia/{token} with used token returns 410",
+        "POST /api/referencia/{token} with expired token returns 410"
+      ]
+    },
+    "backend_admin_alerts": {
+      "status": "PASS",
+      "tests": [
+        "GET /api/admin/reference-alerts returns alerts for admin",
+        "GET /api/admin/reference-alerts without auth returns 403"
+      ]
+    },
+    "frontend_public_reference_page": {
+      "status": "PASS",
+      "verified": [
+        "Page loads with valid token showing FS info (numero_assistencia, cliente, local, data, equipamento)",
+        "Reference input field present with data-testid='ref-input'",
+        "Submit button disabled when input empty, enabled when filled",
+        "Submission shows success screen with submitted reference",
+        "Used token shows 'Referencia Ja Submetida' error (410)",
+        "Invalid token shows 'Link Invalido' error (404)"
+      ]
+    },
+    "frontend_notification_bell": {
+      "status": "PASS",
+      "verified": [
+        "NotificationBell shows referencia_interna notifications",
+        "Notifications display with correct title 'Referência Interna Inserida'",
+        "Notifications show client name and reference value in message"
+      ]
+    }
+  }
+}

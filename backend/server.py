@@ -1237,6 +1237,65 @@ async def send_service_email(technician_emails: List[str], service_data: dict, a
         logging.error(f"Failed to send service email: {str(e)}")
         # Don't raise exception, just log - email failure shouldn't break service creation
 
+
+async def send_reference_link_email(client_email: str, client_name: str, fs_number: int, reference_link: str):
+    """Envia email ao cliente com link para inserir referência interna"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST')
+        smtp_port = int(os.environ.get('SMTP_PORT', 587))
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+        smtp_from = os.environ.get('SMTP_FROM')
+
+        subject = f"HWI - Referência Interna para Folha de Serviço #{fs_number}"
+
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+            <div style="background: #1e40af; color: white; padding: 20px; text-align: center;">
+                <h2 style="margin: 0;">HWI Unipessoal, Lda</h2>
+                <p style="margin: 5px 0 0; opacity: 0.9;">Referência Interna</p>
+            </div>
+            <div style="padding: 30px 20px;">
+                <p>Exmo(a) Sr(a),</p>
+                <p>Foi criada a <strong>Folha de Serviço #{fs_number}</strong> associada à vossa empresa <strong>{client_name}</strong>.</p>
+                <p>Solicitamos que insira a vossa referência interna (nº encomenda, ordem de compra, etc.) através do link abaixo:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{reference_link}" style="background: #1e40af; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                        Inserir Referência Interna
+                    </a>
+                </div>
+                <p style="color: #666; font-size: 13px;">Este link é de utilização única e expira em 30 dias.</p>
+                <p style="color: #666; font-size: 13px;">Se não conseguir clicar no botão, copie e cole este link no seu navegador:<br/>
+                <a href="{reference_link}" style="color: #1e40af; word-break: break-all;">{reference_link}</a></p>
+            </div>
+            <div style="background: #f5f5f5; padding: 15px 20px; text-align: center; font-size: 12px; color: #999;">
+                <p style="margin: 0;">Esta é uma mensagem automática. Por favor não responda a este email.</p>
+                <p style="margin: 5px 0 0;">HWI Unipessoal, Lda</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = smtp_from
+        message['To'] = client_email
+        message.attach(MIMEText(html_body, 'html'))
+
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True
+        )
+        logging.info(f"Reference link email sent to {client_email}")
+    except Exception as e:
+        logging.error(f"Failed to send reference link email: {e}")
+
+
 async def send_vacation_request_email(user_name: str, user_email: str, start_date: str, end_date: str, days_requested: int):
     """Send email to team when vacation is requested"""
     try:
@@ -2731,6 +2790,35 @@ async def create_relatorio(
             logging.info(f"Equipamento criado automaticamente: {novo_equipamento.marca} {novo_equipamento.modelo}")
     
     logging.info(f"Relatório técnico criado: {numero_assistencia} por {current_user['sub']}")
+    
+    # Enviar email de referência interna automaticamente se cliente tiver flag ativa
+    if cliente.get("incluir_referencia_interna") and cliente.get("email"):
+        try:
+            token_str = str(uuid.uuid4())
+            ref_token_doc = {
+                "id": str(uuid.uuid4()),
+                "token": token_str,
+                "relatorio_id": relatorio.id,
+                "cliente_id": relatorio_data.cliente_id,
+                "used": False,
+                "referencia": None,
+                "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.reference_tokens.insert_one(ref_token_doc)
+            
+            frontend_url = os.environ.get('FRONTEND_URL', '').rstrip('/')
+            link = f"{frontend_url}/reference/{token_str}"
+            await send_reference_link_email(
+                client_email=cliente["email"],
+                client_name=cliente["nome"],
+                fs_number=numero_assistencia,
+                reference_link=link
+            )
+            logging.info(f"Email de referência interna enviado para {cliente['email']} (FS#{numero_assistencia})")
+        except Exception as e:
+            logging.error(f"Erro ao enviar email de referência interna: {e}")
+    
     return relatorio
 
 
@@ -12638,26 +12726,6 @@ async def get_notification_logs(
     return logs
 
 
-# ============ Include Router ============
-
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-
 # ===== REFERÊNCIA INTERNA DO CLIENTE (Endpoints Públicos) =====
 
 @api_router.get("/referencia/{token}")
@@ -12683,7 +12751,6 @@ async def get_reference_page_data(token: str):
     if not relatorio:
         raise HTTPException(status_code=404, detail="Folha de Serviço não encontrada")
     
-    # Buscar equipamento
     equip = await db.equipamentos_ot.find_one(
         {"relatorio_id": ref_token["relatorio_id"]}, {"_id": 0}
     )
@@ -12724,26 +12791,22 @@ async def submit_reference(token: str, body: dict = Body(...)):
     if not referencia:
         raise HTTPException(status_code=400, detail="Referência não pode estar vazia")
     
-    # Atualizar FS com a referência
     await db.relatorios_tecnicos.update_one(
         {"id": ref_token["relatorio_id"]},
         {"$set": {"referencia_interna_cliente": referencia}}
     )
     
-    # Marcar token como usado
     await db.reference_tokens.update_one(
         {"token": token},
         {"$set": {"used": True, "referencia": referencia}}
     )
     
-    # Buscar FS para o número
     relatorio = await db.relatorios_tecnicos.find_one(
         {"id": ref_token["relatorio_id"]}, {"_id": 0, "numero_assistencia": 1, "cliente_nome": 1}
     )
     numero = relatorio.get("numero_assistencia", "?") if relatorio else "?"
     cliente = relatorio.get("cliente_nome", "?") if relatorio else "?"
     
-    # Criar notificação para todos os admins
     admins = await db.users.find({"is_admin": True}, {"_id": 0}).to_list(100)
     for admin in admins:
         notif = {
@@ -12751,8 +12814,8 @@ async def submit_reference(token: str, body: dict = Body(...)):
             "user_id": admin["id"],
             "username": admin.get("username", ""),
             "type": "referencia_interna",
-            "title": "Referência Interna Inserida",
-            "message": f"O cliente {cliente} inseriu a referência interna \"{referencia}\" na FS#{numero}.",
+            "title": "Referencia Interna Inserida",
+            "message": f"O cliente {cliente} inseriu a referencia interna \"{referencia}\" na FS#{numero}.",
             "priority": "high",
             "read": False,
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -12784,6 +12847,25 @@ async def mark_reference_alert_read(alert_id: str, current_user: dict = Depends(
         {"$set": {"read": True}}
     )
     return {"message": "Alerta marcado como lido"}
+
+
+# ============ Include Router ============
+
+app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 @app.on_event("shutdown")

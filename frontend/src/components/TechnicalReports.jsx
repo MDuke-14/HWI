@@ -1120,6 +1120,10 @@ const TechnicalReports = ({ user, onLogout }) => {
       // Verificar se cliente tem referência interna ativa
       const clienteDoRelatorio = clientes.find(c => c.id === relatorioFormData.cliente_id);
       if (clienteDoRelatorio?.incluir_referencia_interna) {
+        // Notificar que email foi enviado automaticamente ao cliente
+        if (clienteDoRelatorio.email) {
+          toast.info(`Email enviado a ${clienteDoRelatorio.email} para referencia interna`);
+        }
         // Guardar dados para o cronómetro (será aberto depois do modal de referência)
         setReferenciaInternaFSId(relatorioId);
         setReferenciaInternaValue('');
