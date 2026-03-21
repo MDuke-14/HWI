@@ -2254,7 +2254,7 @@ async def update_equipamento_ot(
     
     # Campos permitidos para atualização
     update_fields = {}
-    allowed_fields = ["tipologia", "marca", "modelo", "numero_serie", "ano_fabrico", "horas_funcionamento"]
+    allowed_fields = ["tipologia", "marca", "modelo", "numero_serie", "ano_fabrico", "horas_funcionamento", "intervencao_id"]
     
     for field in allowed_fields:
         if field in equipamento_data:
@@ -2419,6 +2419,9 @@ async def update_fotografia(
     
     if "uploaded_at" in data and data["uploaded_at"]:
         update_data["uploaded_at"] = data["uploaded_at"]
+    
+    if "intervencao_id" in data:
+        update_data["intervencao_id"] = data["intervencao_id"]
     
     if not update_data:
         raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")

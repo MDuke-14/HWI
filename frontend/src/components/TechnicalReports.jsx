@@ -2668,7 +2668,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       const endpoint = type === 'foto'
         ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${itemId}`
         : type === 'material'
-        ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais-relatorio/${itemId}`
+        ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais/${itemId}`
         : type === 'equipamento'
         ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos/${itemId}`
         : null;
@@ -5743,7 +5743,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     />
                                     <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
                                       <Button onClick={() => openEditFotoModal(foto)} size="sm" className="bg-blue-600/80 hover:bg-blue-700 p-0.5 h-5 w-5" data-testid={`edit-foto-${foto.id}`}><Edit className="w-3 h-3" /></Button>
-                                      {intervencoesRelatorio.length > 1 && (
+                                      {intervencoes.length > 1 && (
                                         <select
                                           className="bg-gray-800/90 text-white text-[9px] h-5 rounded border border-gray-600 px-0.5 cursor-pointer"
                                           value=""
@@ -5754,7 +5754,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                           data-testid={`move-foto-${foto.id}`}
                                         >
                                           <option value="">↔</option>
-                                          {intervencoesRelatorio.filter(i => i.id !== activeInterv.id).map(i => (
+                                          {intervencoes.filter(i => i.id !== activeInterv.id).map(i => (
                                             <option key={i.id} value={i.id}>
                                               {new Date(i.data_intervencao).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'})}
                                             </option>
@@ -5801,7 +5801,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     </div>
                                     <div className="flex gap-1 ml-2">
                                       <Button onClick={() => openEditMaterialModal(material)} size="sm" variant="ghost" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
-                                      {intervencoesRelatorio.length > 1 && (
+                                      {intervencoes.length > 1 && (
                                         <select
                                           className="bg-gray-800 text-white text-[9px] h-6 rounded border border-gray-600 px-0.5 cursor-pointer"
                                           value=""
@@ -5812,7 +5812,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                           data-testid={`move-material-${material.id}`}
                                         >
                                           <option value="">↔</option>
-                                          {intervencoesRelatorio.filter(i => i.id !== activeInterv.id).map(i => (
+                                          {intervencoes.filter(i => i.id !== activeInterv.id).map(i => (
                                             <option key={i.id} value={i.id}>
                                               {new Date(i.data_intervencao).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'})}
                                             </option>
