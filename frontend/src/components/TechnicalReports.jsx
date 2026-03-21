@@ -230,6 +230,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEditFotoModal, setShowEditFotoModal] = useState(false);
   const [editFotoDescricao, setEditFotoDescricao] = useState('');
   const [editFotoData, setEditFotoData] = useState('');
+  const [selectedFotoUrl, setSelectedFotoUrl] = useState(null);
+  const [showFotoPreviewModal, setShowFotoPreviewModal] = useState(false);
 
   // Email OT
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -6858,6 +6860,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Preview Modal */}
+      <Dialog open={showFotoPreviewModal} onOpenChange={(open) => {
+        setShowFotoPreviewModal(open);
+        if (!open) setSelectedFotoUrl(null);
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl p-2">
+          {selectedFotoUrl && (
+            <img
+              src={selectedFotoUrl}
+              alt="Fotografia"
+              className="w-full max-h-[70vh] object-contain rounded"
+              data-testid="foto-preview-image"
+            />
           )}
         </DialogContent>
       </Dialog>
