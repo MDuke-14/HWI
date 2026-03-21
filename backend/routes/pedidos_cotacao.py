@@ -13,6 +13,7 @@ import logging
 from database import db
 from auth_utils import get_current_user
 from models import PedidoCotacao
+from pc_pdf_report import generate_pc_pdf
 
 router = APIRouter(tags=["Pedidos de Cotacao"])
 
