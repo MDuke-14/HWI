@@ -2646,6 +2646,47 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  const handleEditAssinatura = (assinatura) => {
+    setEditingAssinaturaNome(assinatura.id);
+    setEditingNomeData({
+      primeiro_nome: assinatura.primeiro_nome || (assinatura.assinado_por ? assinatura.assinado_por.split(' ')[0] : ''),
+      ultimo_nome: assinatura.ultimo_nome || (assinatura.assinado_por ? assinatura.assinado_por.split(' ').slice(1).join(' ') : ''),
+    });
+    setEditingAssinaturaDesktop(assinatura.id);
+    if (assinatura.data_assinatura) {
+      const d = new Date(assinatura.data_assinatura);
+      setEditingAssinaturaData({
+        date: d.toISOString().slice(0, 10),
+        time: d.toTimeString().slice(0, 5),
+      });
+    }
+  };
+
+  const handleMoveItemToIntervention = async (type, itemId, targetIntervencaoId) => {
+    if (!selectedRelatorio) return;
+    try {
+      const endpoint = type === 'foto'
+        ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${itemId}`
+        : type === 'material'
+        ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais-relatorio/${itemId}`
+        : type === 'equipamento'
+        ? `${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos/${itemId}`
+        : null;
+
+      if (!endpoint) return;
+
+      await axios.put(endpoint, { intervencao_id: targetIntervencaoId });
+      toast.success('Movido com sucesso!');
+
+      if (type === 'foto') fetchFotografiasRelatorio(selectedRelatorio.id);
+      else if (type === 'material') fetchMateriaisRelatorio(selectedRelatorio.id);
+      else if (type === 'equipamento') fetchEquipamentosOT(selectedRelatorio.id);
+    } catch (error) {
+      console.error('Erro ao mover:', error);
+      toast.error('Erro ao mover item');
+    }
+  };
+
   // ========== Fetch All System Users (para Cronómetros) ==========
   
   const fetchAllSystemUsers = async () => {
@@ -5701,6 +5742,25 @@ const TechnicalReports = ({ user, onLogout }) => {
                                       }}
                                     />
                                     <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                                      <Button onClick={() => openEditFotoModal(foto)} size="sm" className="bg-blue-600/80 hover:bg-blue-700 p-0.5 h-5 w-5" data-testid={`edit-foto-${foto.id}`}><Edit className="w-3 h-3" /></Button>
+                                      {intervencoesRelatorio.length > 1 && (
+                                        <select
+                                          className="bg-gray-800/90 text-white text-[9px] h-5 rounded border border-gray-600 px-0.5 cursor-pointer"
+                                          value=""
+                                          onChange={(e) => {
+                                            if (e.target.value) handleMoveItemToIntervention('foto', foto.id, e.target.value);
+                                          }}
+                                          title="Mover para outra intervenção"
+                                          data-testid={`move-foto-${foto.id}`}
+                                        >
+                                          <option value="">↔</option>
+                                          {intervencoesRelatorio.filter(i => i.id !== activeInterv.id).map(i => (
+                                            <option key={i.id} value={i.id}>
+                                              {new Date(i.data_intervencao).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'})}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      )}
                                       <Button onClick={() => handleDeleteFotografia(foto.id)} size="sm" className="bg-red-600/80 hover:bg-red-700 p-0.5 h-5 w-5"><Trash2 className="w-3 h-3" /></Button>
                                     </div>
                                     {foto.descricao && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{foto.descricao}</p>}
@@ -5741,6 +5801,24 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     </div>
                                     <div className="flex gap-1 ml-2">
                                       <Button onClick={() => openEditMaterialModal(material)} size="sm" variant="ghost" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                      {intervencoesRelatorio.length > 1 && (
+                                        <select
+                                          className="bg-gray-800 text-white text-[9px] h-6 rounded border border-gray-600 px-0.5 cursor-pointer"
+                                          value=""
+                                          onChange={(e) => {
+                                            if (e.target.value) handleMoveItemToIntervention('material', material.id, e.target.value);
+                                          }}
+                                          title="Mover para outra intervenção"
+                                          data-testid={`move-material-${material.id}`}
+                                        >
+                                          <option value="">↔</option>
+                                          {intervencoesRelatorio.filter(i => i.id !== activeInterv.id).map(i => (
+                                            <option key={i.id} value={i.id}>
+                                              {new Date(i.data_intervencao).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'})}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      )}
                                       <Button onClick={() => handleDeleteMaterial(material.id)} size="sm" variant="ghost" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
                                     </div>
                                   </div>
@@ -5765,18 +5843,86 @@ const TechnicalReports = ({ user, onLogout }) => {
                             {intervAssinaturas.length > 0 ? (
                               <div className="space-y-2">
                                 {intervAssinaturas.map(assinatura => (
-                                  <div key={assinatura.id} className="flex items-center gap-3 p-2 bg-gray-800 rounded border border-gray-700">
-                                    {assinatura.assinatura_base64 && (
-                                      <img src={`data:image/png;base64,${assinatura.assinatura_base64}`} alt="Assinatura" className="h-10 w-20 object-contain bg-white rounded" />
+                                  <div key={assinatura.id} className="p-2 bg-gray-800 rounded border border-gray-700">
+                                    {editingAssinaturaNome === assinatura.id ? (
+                                      <div className="space-y-2">
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <Input
+                                            value={editingNomeData.primeiro_nome}
+                                            onChange={(e) => setEditingNomeData(prev => ({ ...prev, primeiro_nome: e.target.value }))}
+                                            placeholder="Primeiro Nome"
+                                            className="bg-gray-900 border-gray-600 text-white text-xs h-7"
+                                            data-testid="edit-sig-first-name"
+                                          />
+                                          <Input
+                                            value={editingNomeData.ultimo_nome}
+                                            onChange={(e) => setEditingNomeData(prev => ({ ...prev, ultimo_nome: e.target.value }))}
+                                            placeholder="Apelido"
+                                            className="bg-gray-900 border-gray-600 text-white text-xs h-7"
+                                            data-testid="edit-sig-last-name"
+                                          />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <Input
+                                            type="date"
+                                            value={editingAssinaturaData.date}
+                                            onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, date: e.target.value }))}
+                                            className="bg-gray-900 border-gray-600 text-white text-xs h-7"
+                                            data-testid="edit-sig-date"
+                                          />
+                                          <Input
+                                            type="time"
+                                            value={editingAssinaturaData.time}
+                                            onChange={(e) => setEditingAssinaturaData(prev => ({ ...prev, time: e.target.value }))}
+                                            className="bg-gray-900 border-gray-600 text-white text-xs h-7"
+                                            data-testid="edit-sig-time"
+                                          />
+                                        </div>
+                                        <div className="flex gap-1 justify-end">
+                                          <Button onClick={() => { setEditingAssinaturaNome(null); setEditingAssinaturaDesktop(null); }} size="sm" variant="ghost" className="text-gray-400 h-6 text-xs">Cancelar</Button>
+                                          <Button
+                                            onClick={async () => {
+                                              const nomeCompleto = `${editingNomeData.primeiro_nome} ${editingNomeData.ultimo_nome}`.trim();
+                                              const updateData = {
+                                                primeiro_nome: editingNomeData.primeiro_nome,
+                                                ultimo_nome: editingNomeData.ultimo_nome,
+                                                assinado_por: nomeCompleto,
+                                              };
+                                              if (editingAssinaturaData.date && editingAssinaturaData.time) {
+                                                updateData.data_assinatura = new Date(`${editingAssinaturaData.date}T${editingAssinaturaData.time}`).toISOString();
+                                              } else if (editingAssinaturaData.date) {
+                                                updateData.data_assinatura = new Date(`${editingAssinaturaData.date}T00:00`).toISOString();
+                                              }
+                                              try {
+                                                await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas/${assinatura.id}`, updateData);
+                                                toast.success('Assinatura atualizada!');
+                                                setEditingAssinaturaNome(null);
+                                                setEditingAssinaturaDesktop(null);
+                                                await fetchAssinaturas(selectedRelatorio.id);
+                                              } catch (err) { toast.error('Erro ao atualizar'); }
+                                            }}
+                                            size="sm" className="bg-blue-600 hover:bg-blue-700 h-6 text-xs"
+                                            data-testid="save-sig-edit"
+                                          >
+                                            Guardar
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-3">
+                                        {assinatura.assinatura_base64 && (
+                                          <img src={`data:image/png;base64,${assinatura.assinatura_base64}`} alt="Assinatura" className="h-10 w-20 object-contain bg-white rounded" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-white text-sm font-medium truncate">{assinatura.assinado_por}</p>
+                                          <p className="text-gray-400 text-xs">{new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}</p>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <Button onClick={() => handleEditAssinatura(assinatura)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6" data-testid={`edit-sig-${assinatura.id}`}><Edit className="w-3 h-3" /></Button>
+                                          <Button onClick={() => handleDeleteAssinatura(assinatura.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                        </div>
+                                      </div>
                                     )}
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-white text-sm font-medium truncate">{assinatura.assinado_por}</p>
-                                      <p className="text-gray-400 text-xs">{new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}</p>
-                                    </div>
-                                    <div className="flex gap-1">
-                                      <Button onClick={() => handleEditAssinatura(assinatura)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
-                                      <Button onClick={() => handleDeleteAssinatura(assinatura.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
-                                    </div>
                                   </div>
                                 ))}
                               </div>
