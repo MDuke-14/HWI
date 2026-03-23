@@ -410,7 +410,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     tipo: '',      // 'trabalho', 'viagem', 'oficina'
   });
   const [showStopCronoPopup, setShowStopCronoPopup] = useState(false);
-  const [stopCronoData, setStopCronoData] = useState({ tecnico: null, tipo: '', km_inicial: 0, km_final: '' });
+  const [stopCronoData, setStopCronoData] = useState({ tecnicos: [], tipo: '', km_final: '' });
   const [showWorkKmPopup, setShowWorkKmPopup] = useState(false);
   const [workKmData, setWorkKmData] = useState({ km_inicial: '', km_final: '' });
   const [addRegistoManualForm, setAddRegistoManualForm] = useState({
@@ -2839,15 +2839,18 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowCronometroFuncaoPopup(true);
   };
 
-  const openStopCronoPopup = (tecnico, tipo, cronometros) => {
-    // Find the active chronometer to get km_inicial
-    const crono = cronometros?.find(c => 
-      (c.tecnico_id === (tecnico.tecnico_id || tecnico.id)) && c.tipo === tipo && c.ativo
-    );
+  const openStopCronoPopup = (tecnicos, tipo, cronometros) => {
+    // Accept array of technicians or a single one
+    const tecList = Array.isArray(tecnicos) ? tecnicos : [tecnicos];
+    const tecnicosComKm = tecList.map(tec => {
+      const crono = cronometros?.find(c => 
+        (c.tecnico_id === (tec.tecnico_id || tec.id)) && c.tipo === tipo && c.ativo
+      );
+      return { ...tec, km_inicial: crono?.km_inicial || 0 };
+    });
     setStopCronoData({
-      tecnico,
+      tecnicos: tecnicosComKm,
       tipo,
-      km_inicial: crono?.km_inicial || 0,
       km_final: ''
     });
     setShowStopCronoPopup(true);
@@ -5075,25 +5078,22 @@ const TechnicalReports = ({ user, onLogout }) => {
                               toast.error('Selecione pelo menos um técnico');
                               return;
                             }
-                            for (const user of selectedUsers) {
-                              const hasActive = getCronometroStatus(user, 'viagem');
-                              if (hasAnyActiveViagem) {
-                                if (hasActive) {
-                                  openStopCronoPopup({
-                                    id: user.id,
-                                    tecnico_id: user.id,
-                                    tecnico_nome: user.full_name || user.username
-                                  }, 'viagem', cronometrosAtivos);
-                                  return; // Handle one at a time via popup
-                                }
-                              } else {
-                                if (!hasActive) {
-                                  // Collect users to start - will open popup
-                                }
+                            if (hasAnyActiveViagem) {
+                              // Collect ALL users with active travel and open popup once
+                              const usersToStop = selectedUsers.filter(u => getCronometroStatus(u, 'viagem'));
+                              if (usersToStop.length > 0) {
+                                openStopCronoPopup(
+                                  usersToStop.map(u => ({
+                                    id: u.id,
+                                    tecnico_id: u.id,
+                                    tecnico_nome: u.full_name || u.username
+                                  })),
+                                  'viagem',
+                                  cronometrosAtivos
+                                );
                               }
-                            }
-                            // For start: open function popup
-                            if (!hasAnyActiveViagem) {
+                            } else {
+                              // Start: open function popup for all selected users
                               const usersToStart = selectedUsers.filter(u => !getCronometroStatus(u, 'viagem'));
                               if (usersToStart.length > 0) {
                                 setCronometroFuncaoData({
@@ -10266,20 +10266,41 @@ const TechnicalReports = ({ user, onLogout }) => {
               <MapPin className="w-5 h-5 text-blue-400" />
               Parar Cronómetro
             </DialogTitle>
-            <p className="text-sm text-gray-400 mt-1">
-              {stopCronoData.tecnico?.tecnico_nome || 'Técnico'} — {stopCronoData.tipo === 'viagem' ? 'Viagem' : stopCronoData.tipo === 'trabalho' ? 'Trabalho' : 'Oficina'}
-            </p>
+            <div className="text-sm text-gray-400 mt-1">
+              {stopCronoData.tecnicos?.length > 1 ? (
+                <div className="space-y-0.5">
+                  {stopCronoData.tecnicos.map((t, i) => (
+                    <span key={i} className="block">{t.tecnico_nome} — {stopCronoData.tipo === 'viagem' ? 'Viagem' : stopCronoData.tipo === 'trabalho' ? 'Trabalho' : 'Oficina'}</span>
+                  ))}
+                </div>
+              ) : (
+                <span>{stopCronoData.tecnicos?.[0]?.tecnico_nome || 'Técnico'} — {stopCronoData.tipo === 'viagem' ? 'Viagem' : stopCronoData.tipo === 'trabalho' ? 'Trabalho' : 'Oficina'}</span>
+              )}
+            </div>
           </DialogHeader>
           <div className="space-y-4 mt-3">
-            <div>
-              <Label className="text-gray-400 text-xs">KMs Iniciais</Label>
-              <Input
-                value={stopCronoData.km_inicial || 0}
-                readOnly
-                className="bg-[#0a0a0a] border-gray-700 text-gray-400 cursor-default mt-1"
-                data-testid="stop-crono-km-inicial"
-              />
-            </div>
+            {stopCronoData.tecnicos?.length === 1 && (
+              <div>
+                <Label className="text-gray-400 text-xs">KMs Iniciais</Label>
+                <Input
+                  value={stopCronoData.tecnicos[0]?.km_inicial || 0}
+                  readOnly
+                  className="bg-[#0a0a0a] border-gray-700 text-gray-400 cursor-default mt-1"
+                  data-testid="stop-crono-km-inicial"
+                />
+              </div>
+            )}
+            {stopCronoData.tecnicos?.length > 1 && (
+              <div className="space-y-1">
+                <Label className="text-gray-400 text-xs">KMs Iniciais por técnico</Label>
+                {stopCronoData.tecnicos.map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className="text-gray-300 flex-1 truncate">{t.tecnico_nome}</span>
+                    <span className="text-gray-500">{t.km_inicial || 0} km</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div>
               <Label className="text-gray-400 text-xs">KMs Finais</Label>
               <Input
@@ -10296,13 +10317,15 @@ const TechnicalReports = ({ user, onLogout }) => {
             <Button
               onClick={async () => {
                 const kmFinal = stopCronoData.km_final ? parseFloat(stopCronoData.km_final) : 0;
-                await handlePararCronometro(stopCronoData.tecnico, stopCronoData.tipo, kmFinal);
+                for (const tec of (stopCronoData.tecnicos || [])) {
+                  await handlePararCronometro(tec, stopCronoData.tipo, kmFinal);
+                }
                 setShowStopCronoPopup(false);
               }}
               className="w-full bg-red-600 hover:bg-red-700 text-white"
               data-testid="confirm-stop-crono-btn"
             >
-              Parar Cronómetro
+              Parar {stopCronoData.tecnicos?.length > 1 ? `${stopCronoData.tecnicos.length} Cronómetros` : 'Cronómetro'}
             </Button>
           </div>
         </DialogContent>
