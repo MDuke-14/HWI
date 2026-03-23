@@ -5633,6 +5633,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                       );
 
                       const activeEq = equipamentosOT.find(e => e.id === activeInterv.equipamento_id);
+                      // Equipamentos não associados a nenhuma intervenção
+                      const assignedEqIds = new Set(intervencoes.map(i => i.equipamento_id).filter(Boolean));
+                      const unassignedEqs = equipamentosOT.filter(e => !assignedEqIds.has(e.id));
                       // Filter data for this intervention
                       // Dados sem intervencao_id (legados) aparecem na primeira intervenção da mesma data
                       // ou na primeira intervenção global se não houver correspondência por data
@@ -5686,10 +5689,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
 
                           {/* 2. Equipamento */}
-                          <div className={`p-2 ${activeEq ? 'bg-purple-500/10 border border-purple-500/30' : `${bgCard} border ${borderColor}`} rounded`}>
+                          <div className={`p-2 ${activeEq || unassignedEqs.length > 0 ? 'bg-purple-500/10 border border-purple-500/30' : `${bgCard} border ${borderColor}`} rounded`}>
                             <div className="flex items-center justify-between mb-1">
                               <p className="text-xs text-purple-400 flex items-center gap-1 font-medium">
-                                <Settings className="w-3 h-3" /> Equipamento {activeEq ? '' : '(Nenhum)'}
+                                <Settings className="w-3 h-3" /> Equipamento {!activeEq && unassignedEqs.length === 0 ? '(Nenhum)' : ''}
                               </p>
                               <Button
                                 onClick={openAddEquipamentoModal}
@@ -5705,6 +5708,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {activeEq.numero_serie && <span className="text-purple-400/60 ml-2 text-xs">S/N: {activeEq.numero_serie}</span>}
                               </p>
                             )}
+                            {isFirstInterv && unassignedEqs.map(eq => (
+                              <div key={eq.id} className="flex items-center justify-between mt-1">
+                                <p className="text-sm text-purple-300">
+                                  {eq.tipologia && `${eq.tipologia} - `}{eq.marca} {eq.modelo}
+                                  {eq.numero_serie && <span className="text-purple-400/60 ml-2 text-xs">S/N: {eq.numero_serie}</span>}
+                                </p>
+                                <Button onClick={() => handleDeleteEquipamento(eq.id)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300 h-5 w-5 p-0">
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
                           </div>
 
                           {/* 3. Relatório de Assistência */}
