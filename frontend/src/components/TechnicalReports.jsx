@@ -1689,7 +1689,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       formData.append('file', fotoFile);
       formData.append('descricao', descricao || ''); // Enviar string vazia se não houver descrição
       
-      await axios.post(
+      const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
         formData,
         {
@@ -1699,11 +1699,19 @@ const TechnicalReports = ({ user, onLogout }) => {
         }
       );
       
+      const newFoto = response.data;
       toast.success('Fotografia adicionada com sucesso!');
       setShowAddFotoModal(false);
       setFotoFile(null);
       setFotoDescricao('');
-      fetchFotografiasRelatorio(selectedRelatorio.id);
+      await fetchFotografiasRelatorio(selectedRelatorio.id);
+      
+      // Abrir modal de edição automaticamente para adicionar observações
+      openEditFotoModal({
+        id: newFoto.id,
+        descricao: newFoto.descricao || '',
+        uploaded_at: newFoto.uploaded_at
+      });
     } catch (error) {
       toast.error(formatErrorMessage(error));
     } finally {
@@ -5630,7 +5638,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                       const intervFotos = fotografias.filter(f => {
                         if (f.intervencao_id) return f.intervencao_id === activeInterv.id;
-                        return isFirstIntervOnDate || (isFirstInterv && !intervencoes.some(i => i.data_intervencao?.split('T')[0] === f.data_intervencao?.split('T')[0]));
+                        // Fotos sem intervencao_id (legadas) aparecem APENAS na primeira intervenção
+                        return isFirstInterv;
                       });
                       const intervMateriais = materiais.filter(m => {
                         if (m.intervencao_id) return m.intervencao_id === activeInterv.id;
@@ -5735,9 +5744,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {intervFotos.map(foto => (
                                   <div key={foto.id} className="relative group">
                                     <img
-                                      src={`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${foto.id}/image`}
+                                      src={`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${foto.id}/image?thumb=true`}
                                       alt={foto.descricao || 'Foto'}
                                       className="w-full h-20 object-cover rounded cursor-pointer"
+                                      loading="lazy"
                                       onClick={() => {
                                         setSelectedFotoUrl(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${foto.id}/image`);
                                         setShowFotoPreviewModal(true);
@@ -5763,7 +5773,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                           ))}
                                         </select>
                                       )}
-                                      <Button onClick={() => handleDeleteFotografia(foto.id)} size="sm" className="bg-red-600/80 hover:bg-red-700 p-0.5 h-5 w-5"><Trash2 className="w-3 h-3" /></Button>
+                                      <Button onClick={() => handleDeleteFoto(foto.id)} size="sm" className="bg-red-600/80 hover:bg-red-700 p-0.5 h-5 w-5" data-testid={`delete-foto-${foto.id}`}><Trash2 className="w-3 h-3" /></Button>
                                     </div>
                                     {foto.descricao && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{foto.descricao}</p>}
                                   </div>
@@ -5957,9 +5967,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                     formData.append('file', file);
                     formData.append('descricao', '');
                     formData.append('intervencao_id', uploadIntervencaoId || '');
-                    await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const newFoto = response.data;
                     toast.success('Fotografia adicionada!');
-                    fetchFotografiasRelatorio(selectedRelatorio.id);
+                    await fetchFotografiasRelatorio(selectedRelatorio.id);
+                    // Abrir modal de edição para adicionar observações
+                    openEditFotoModal({
+                      id: newFoto.id,
+                      descricao: newFoto.descricao || '',
+                      uploaded_at: newFoto.uploaded_at
+                    });
                   } catch (err) { toast.error('Erro ao fazer upload'); }
                   e.target.value = '';
                 }}

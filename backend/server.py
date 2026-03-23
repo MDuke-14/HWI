@@ -2088,9 +2088,53 @@ async def upload_fotografia(
         # Ler o conteúdo do arquivo
         contents = await file.read()
         
-        # Converter para base64
+        # Comprimir imagem para reduzir tamanho e melhorar performance
         import base64
-        foto_base64 = base64.b64encode(contents).decode('utf-8')
+        from io import BytesIO
+        try:
+            from PIL import Image
+            img = Image.open(BytesIO(contents))
+            # Corrigir orientação EXIF
+            try:
+                from PIL import ExifTags
+                for orientation in ExifTags.TAGS.keys():
+                    if ExifTags.TAGS[orientation] == 'Orientation':
+                        break
+                exif = img._getexif()
+                if exif and orientation in exif:
+                    if exif[orientation] == 3:
+                        img = img.rotate(180, expand=True)
+                    elif exif[orientation] == 6:
+                        img = img.rotate(270, expand=True)
+                    elif exif[orientation] == 8:
+                        img = img.rotate(90, expand=True)
+            except Exception:
+                pass
+            # Redimensionar se muito grande (max 1920px no lado maior)
+            max_dim = 1920
+            if max(img.size) > max_dim:
+                img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+            # Converter para RGB se necessário (RGBA/P → JPEG)
+            if img.mode in ('RGBA', 'P', 'LA'):
+                img = img.convert('RGB')
+            # Salvar como JPEG com qualidade 80%
+            buffer = BytesIO()
+            img.save(buffer, format='JPEG', quality=80, optimize=True)
+            compressed = buffer.getvalue()
+            foto_base64 = base64.b64encode(compressed).decode('utf-8')
+            content_type = 'image/jpeg'
+            # Gerar thumbnail (300px) para listagem rápida
+            thumb = img.copy()
+            thumb.thumbnail((300, 300), Image.LANCZOS)
+            thumb_buffer = BytesIO()
+            thumb.save(thumb_buffer, format='JPEG', quality=60, optimize=True)
+            thumb_base64 = base64.b64encode(thumb_buffer.getvalue()).decode('utf-8')
+            logging.info(f"Imagem comprimida: {len(contents)} -> {len(compressed)} bytes ({int(len(compressed)/len(contents)*100)}%)")
+        except Exception as e:
+            logging.warning(f"Não foi possível comprimir imagem, usando original: {e}")
+            foto_base64 = base64.b64encode(contents).decode('utf-8')
+            thumb_base64 = None
+            content_type = file.content_type
         
         # Criar documento da foto
         foto_id = str(uuid.uuid4())
@@ -2099,9 +2143,10 @@ async def upload_fotografia(
             "relatorio_id": relatorio_id,
             "intervencao_id": intervencao_id if intervencao_id else None,
             "foto_base64": foto_base64,
+            "thumb_base64": thumb_base64,
             "descricao": descricao,
             "filename": file.filename,
-            "content_type": file.content_type,
+            "content_type": content_type,
             "uploaded_at": datetime.now(timezone.utc),
             "uploaded_by": current_user["sub"]
         }
@@ -2325,29 +2370,48 @@ async def get_fotografias(
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}/image")
 async def get_fotografia_image(
     relatorio_id: str,
-    foto_id: str
+    foto_id: str,
+    thumb: bool = False
 ):
     """Obter imagem da fotografia - endpoint público para servir imagens"""
-    # Buscar foto no MongoDB
+    # Buscar foto no MongoDB - apenas campos necessários
+    projection = {"_id": 0, "content_type": 1}
+    if thumb:
+        projection["thumb_base64"] = 1
+        projection["foto_base64"] = 1  # fallback se não houver thumbnail
+    else:
+        projection["foto_base64"] = 1
+    
     foto = await db.fotos_relatorio.find_one({
         "id": foto_id,
         "relatorio_id": relatorio_id
-    }, {"_id": 0})
+    }, projection)
     
     if not foto:
         raise HTTPException(status_code=404, detail="Fotografia não encontrada")
     
-    if not foto.get("foto_base64"):
+    # Usar thumbnail se disponível e solicitado
+    image_data = None
+    if thumb and foto.get("thumb_base64"):
+        image_data = foto["thumb_base64"]
+    elif foto.get("foto_base64"):
+        image_data = foto["foto_base64"]
+    
+    if not image_data:
         raise HTTPException(status_code=404, detail="Imagem não disponível")
     
-    # Decodificar base64 e retornar
+    # Decodificar base64 e retornar com cache headers
     import base64
-    foto_bytes = base64.b64decode(foto["foto_base64"])
+    foto_bytes = base64.b64decode(image_data)
     
     from fastapi.responses import Response
     return Response(
         content=foto_bytes,
-        media_type=foto.get("content_type", "image/jpeg")
+        media_type=foto.get("content_type", "image/jpeg"),
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "ETag": f'"{foto_id}"'
+        }
     )
 
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/fotografias/{filename}")
