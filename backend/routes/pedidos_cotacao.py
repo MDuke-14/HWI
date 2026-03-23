@@ -49,6 +49,11 @@ async def get_all_pedidos_cotacao(
         materiais_count = await db.materiais_ot.count_documents({"pc_id": pc["id"]})
         pc["materiais_count"] = materiais_count
         
+        primeiro = await db.materiais_ot.find_one({"pc_id": pc["id"]}, {"_id": 0, "descricao": 1, "posicao": 1, "codigo": 1})
+        pc["primeiro_material"] = primeiro["descricao"] if primeiro else None
+        pc["primeiro_material_posicao"] = primeiro.get("posicao") if primeiro else None
+        pc["primeiro_material_codigo"] = primeiro.get("codigo") if primeiro else None
+        
         # Listar sub-PCs se for um PC principal
         if not pc.get("parent_pc_id"):
             sub_pcs = await db.pedidos_cotacao.find(
@@ -79,8 +84,10 @@ async def get_pedidos_cotacao_ot(
         materiais_count = await db.materiais_ot.count_documents({"pc_id": pc["id"]})
         pc["materiais_count"] = materiais_count
         
-        primeiro = await db.materiais_ot.find_one({"pc_id": pc["id"]}, {"_id": 0, "descricao": 1})
+        primeiro = await db.materiais_ot.find_one({"pc_id": pc["id"]}, {"_id": 0, "descricao": 1, "posicao": 1, "codigo": 1})
         pc["primeiro_material"] = primeiro["descricao"] if primeiro else None
+        pc["primeiro_material_posicao"] = primeiro.get("posicao") if primeiro else None
+        pc["primeiro_material_codigo"] = primeiro.get("codigo") if primeiro else None
     
     return pcs
 

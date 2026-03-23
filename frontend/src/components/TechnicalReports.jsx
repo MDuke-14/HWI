@@ -5819,9 +5819,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   <div key={material.id} className="flex items-center justify-between p-2 bg-gray-800 rounded border border-gray-700">
                                     <div className="flex-1 min-w-0">
                                       <p className="text-white text-sm font-medium truncate">{material.descricao}</p>
-                                      <div className="flex gap-2 mt-0.5 text-xs text-gray-400">
+                                      <div className="flex gap-2 mt-0.5 text-xs text-gray-400 flex-wrap">
                                         <span>Qtd: {material.quantidade} {material.unidade || 'Un'}</span>
                                         <span className={`px-1.5 py-0 rounded ${material.fornecido_por === 'Cliente' ? 'bg-green-600/20 text-green-400' : material.fornecido_por === 'HWI' ? 'bg-blue-600/20 text-blue-400' : 'bg-yellow-600/20 text-yellow-400'}`}>{material.fornecido_por}</span>
+                                        {material.posicao && <span className="text-yellow-400">Posição: {material.posicao}</span>}
+                                        {material.codigo && <span className="text-yellow-400">Código: {material.codigo}</span>}
                                       </div>
                                     </div>
                                     <div className="flex gap-1 ml-2">
@@ -6138,6 +6140,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                           {pc.primeiro_material && (
                             <p className="text-gray-400 text-sm mt-1 truncate">{pc.primeiro_material}</p>
+                          )}
+                          {(pc.primeiro_material_posicao || pc.primeiro_material_codigo) && (
+                            <div className="flex gap-3 mt-0.5 text-xs">
+                              {pc.primeiro_material_posicao && <span className="text-yellow-400">Posição: {pc.primeiro_material_posicao}</span>}
+                              {pc.primeiro_material_codigo && <span className="text-yellow-400">Código: {pc.primeiro_material_codigo}</span>}
+                            </div>
                           )}
                         </div>
                         <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
