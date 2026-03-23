@@ -5682,17 +5682,26 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
 
                           {/* 2. Equipamento */}
-                          {activeEq && (
-                            <div className="p-2 bg-purple-500/10 border border-purple-500/30 rounded">
-                              <p className="text-xs text-purple-400 flex items-center gap-1 font-medium mb-1">
-                                <Settings className="w-3 h-3" /> Equipamento
+                          <div className={`p-2 ${activeEq ? 'bg-purple-500/10 border border-purple-500/30' : `${bgCard} border ${borderColor}`} rounded`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs text-purple-400 flex items-center gap-1 font-medium">
+                                <Settings className="w-3 h-3" /> Equipamento {activeEq ? '' : '(Nenhum)'}
                               </p>
+                              <Button
+                                onClick={openAddEquipamentoModal}
+                                size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
+                                data-testid="btn-add-equipamento"
+                              >
+                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                              </Button>
+                            </div>
+                            {activeEq && (
                               <p className="text-sm text-purple-300">
                                 {activeEq.tipologia && `${activeEq.tipologia} - `}{activeEq.marca} {activeEq.modelo}
                                 {activeEq.numero_serie && <span className="text-purple-400/60 ml-2 text-xs">S/N: {activeEq.numero_serie}</span>}
                               </p>
-                            </div>
-                          )}
+                            )}
+                          </div>
 
                           {/* 3. Relatório de Assistência */}
                           <div className={`${bgCard} p-3 rounded border ${borderColor}`}>
