@@ -300,6 +300,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Despesas OT
   const [despesas, setDespesas] = useState([]);
   const [despesaToDelete, setDespesaToDelete] = useState(null);
+  const [intervencaoToDelete, setIntervencaoToDelete] = useState(null);
   // Relatórios de Assistência
   const [relatoriosAssistencia, setRelatoriosAssistencia] = useState([]);
   const [showAddRelAssistModal, setShowAddRelAssistModal] = useState(false);
@@ -1364,11 +1365,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const handleDeleteIntervencao = async (intervencaoId) => {
-    if (!window.confirm('Tem certeza que deseja remover esta intervenção?')) return;
-
     try {
       await axios.delete(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/${intervencaoId}`);
       toast.success('Intervenção removida com sucesso!');
+      setIntervencaoToDelete(null);
       fetchIntervencoesRelatorio(selectedRelatorio.id);
     } catch (error) {
       toast.error('Erro ao remover intervenção');
@@ -5669,7 +5669,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <Button onClick={() => openEditIntervencaoModal(activeInterv)} variant="outline" size="sm" className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}>
                                 <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
                               </Button>
-                              <Button onClick={() => handleDeleteIntervencao(activeInterv.id)} variant="outline" size="sm" className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2">
+                              <Button onClick={() => setIntervencaoToDelete(activeInterv)} variant="outline" size="sm" className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2" data-testid="btn-delete-intervencao">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                             </div>
@@ -10767,6 +10767,33 @@ const TechnicalReports = ({ user, onLogout }) => {
               className="bg-red-600 hover:bg-red-700"
               onClick={() => handleDeleteDespesa(despesaToDelete?.id)}
               data-testid="btn-confirm-delete-despesa"
+            >
+              Apagar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal Confirmar Apagar Intervenção */}
+      <AlertDialog open={!!intervencaoToDelete} onOpenChange={(open) => { if (!open) setIntervencaoToDelete(null); }}>
+        <AlertDialogContent className="bg-[#1a1a1a] border-gray-700 text-white" data-testid="modal-delete-intervencao">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Apagar Intervenção</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Tem a certeza que deseja apagar esta intervenção? Todos os dados associados (relatórios, fotografias, materiais) serão removidos.
+              {intervencaoToDelete && (
+                <span className="block mt-2 text-white font-medium">
+                  {new Date(intervencaoToDelete.data_intervencao).toLocaleDateString('pt-PT')}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => handleDeleteIntervencao(intervencaoToDelete?.id)}
+              data-testid="btn-confirm-delete-intervencao"
             >
               Apagar
             </AlertDialogAction>
