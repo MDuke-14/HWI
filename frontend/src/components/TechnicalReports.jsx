@@ -7622,8 +7622,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <span className="text-gray-400 ml-3">Qtd: {mat.quantidade} {mat.unidade || 'Un'}</span>
                           {(mat.posicao || mat.codigo) && (
                             <div className="flex gap-3 mt-0.5">
-                              {mat.posicao && <span className="text-yellow-400/80 text-xs">Pos: {mat.posicao}</span>}
-                              {mat.codigo && <span className="text-yellow-400/80 text-xs">Cód: {mat.codigo}</span>}
+                              {mat.posicao && <span className="text-white text-sm">Posição: {mat.posicao}</span>}
+                              {mat.codigo && <span className="text-white text-sm">Código: {mat.codigo}</span>}
                             </div>
                           )}
                         </div>

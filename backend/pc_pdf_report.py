@@ -162,14 +162,14 @@ def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False):
     
     for idx, mat in enumerate(materiais, 1):
         desc_text = mat.get('descricao', '')
-        # Adicionar Posição e Código se existirem
+        # Adicionar Posição e Código se existirem (mesmo tamanho da descrição)
         extra_info = []
         if mat.get('posicao'):
-            extra_info.append(f"Pos: {mat['posicao']}")
+            extra_info.append(f"Posição: {mat['posicao']}")
         if mat.get('codigo'):
-            extra_info.append(f"Cód: {mat['codigo']}")
+            extra_info.append(f"Código: {mat['codigo']}")
         if extra_info:
-            desc_text += f"\n<font size='7' color='#6b7280'>{' | '.join(extra_info)}</font>"
+            desc_text += "<br/>" + " | ".join(extra_info)
         
         material_rows.append([
             str(idx),
