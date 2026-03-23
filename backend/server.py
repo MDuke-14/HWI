@@ -9314,8 +9314,13 @@ async def update_material_ot(
 ):
     """Atualizar material de uma OT"""
     # Validar quantidade
-    if "quantidade" in material_data and material_data["quantidade"] <= 0:
-        raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
+    if "quantidade" in material_data:
+        try:
+            material_data["quantidade"] = float(material_data["quantidade"])
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Quantidade inválida")
+        if material_data["quantidade"] <= 0:
+            raise HTTPException(status_code=400, detail="Quantidade deve ser maior que zero")
     
     material = await db.materiais_ot.find_one({"id": material_id, "relatorio_id": relatorio_id})
     if not material:
