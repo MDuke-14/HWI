@@ -6022,12 +6022,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                     {despesas.map((despesa) => (
                       <div
                         key={despesa.id}
-                        className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700"
+                        className="flex flex-col gap-2 p-3 bg-gray-800 rounded-lg border border-gray-700"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-white font-medium">{despesa.descricao}</p>
-                            <span className={`text-xs px-2 py-0.5 rounded ${
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white font-medium text-sm truncate">{despesa.descricao}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${
                               despesa.tipo === 'portagens' ? 'bg-orange-600/20 text-orange-400' :
                               despesa.tipo === 'combustivel' ? 'bg-red-600/20 text-red-400' :
                               despesa.tipo === 'ferramentas' ? 'bg-blue-600/20 text-blue-400' :
@@ -6036,10 +6036,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                               {tiposDespesa.find(t => t.value === despesa.tipo)?.label || 'Outras'}
                             </span>
                             {despesa.factura_data && (
-                              <span className="text-emerald-400 text-xs">📎 Factura</span>
+                              <span className="text-emerald-400 text-xs flex-shrink-0">📎 Factura</span>
                             )}
                           </div>
-                          <div className="flex gap-4 mt-1 text-sm text-gray-400">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-400">
                             <span className="text-emerald-400 font-semibold">{despesa.valor?.toFixed(2)}€</span>
                             {despesa.numero_fatura && (
                               <span>Fatura: {despesa.numero_fatura}</span>
@@ -6048,7 +6048,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <span>{new Date(despesa.data).toLocaleDateString('pt-PT')}</span>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 justify-end">
                           {despesa.factura_data && (
                             <Button
                               onClick={() => downloadFactura(despesa)}
