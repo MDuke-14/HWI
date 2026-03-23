@@ -293,7 +293,9 @@ const TechnicalReports = ({ user, onLogout }) => {
     quantidade: '',
     unidade: 'Un',
     fornecido_por: 'Cliente',
-    data_utilizacao: ''
+    data_utilizacao: '',
+    posicao: '',
+    codigo: ''
   });
   const [selectedPCIdForMaterial, setSelectedPCIdForMaterial] = useState(null);
 
@@ -2041,7 +2043,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       quantidade: material.quantidade,
       unidade: material.unidade || 'Un',
       fornecido_por: material.fornecido_por,
-      data_utilizacao: material.data_utilizacao || ''
+      data_utilizacao: material.data_utilizacao || '',
+      posicao: material.posicao || '',
+      codigo: material.codigo || ''
     });
     setShowEditMaterialModal(true);
   };
@@ -7616,6 +7620,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <div className="flex-1">
                           <span className="text-white">{mat.descricao}</span>
                           <span className="text-gray-400 ml-3">Qtd: {mat.quantidade} {mat.unidade || 'Un'}</span>
+                          {(mat.posicao || mat.codigo) && (
+                            <div className="flex gap-3 mt-0.5">
+                              {mat.posicao && <span className="text-yellow-400/80 text-xs">Pos: {mat.posicao}</span>}
+                              {mat.codigo && <span className="text-yellow-400/80 text-xs">Cód: {mat.codigo}</span>}
+                            </div>
+                          )}
                         </div>
                         <Button
                           onClick={() => openEditMaterialPCModal(mat)}

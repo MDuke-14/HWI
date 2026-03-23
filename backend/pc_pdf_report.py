@@ -153,10 +153,27 @@ def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False):
     
     material_rows = [['#', 'Descrição', 'Qtd.']]
     
+    desc_cell_style = ParagraphStyle(
+        'MatDescStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=DARK_GREY,
+    )
+    
     for idx, mat in enumerate(materiais, 1):
+        desc_text = mat.get('descricao', '')
+        # Adicionar Posição e Código se existirem
+        extra_info = []
+        if mat.get('posicao'):
+            extra_info.append(f"Pos: {mat['posicao']}")
+        if mat.get('codigo'):
+            extra_info.append(f"Cód: {mat['codigo']}")
+        if extra_info:
+            desc_text += f"\n<font size='7' color='#6b7280'>{' | '.join(extra_info)}</font>"
+        
         material_rows.append([
             str(idx),
-            mat.get('descricao', ''),
+            Paragraph(desc_text, desc_cell_style),
             str(mat.get('quantidade', 0))
         ])
     

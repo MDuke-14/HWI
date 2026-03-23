@@ -202,6 +202,38 @@ const MaterialModal = ({
             </div>
           )}
 
+          {/* Campos Posição e Código - apenas quando Cotação selecionado */}
+          {isCotacao && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="posicao" className="text-gray-300 text-sm">
+                  Posição
+                </Label>
+                <Input
+                  id="posicao"
+                  data-testid="material-posicao-input"
+                  value={materialFormData.posicao || ''}
+                  onChange={(e) => setMaterialFormData({ ...materialFormData, posicao: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: A1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="codigo" className="text-gray-300 text-sm">
+                  Código
+                </Label>
+                <Input
+                  id="codigo"
+                  data-testid="material-codigo-input"
+                  value={materialFormData.codigo || ''}
+                  onChange={(e) => setMaterialFormData({ ...materialFormData, codigo: e.target.value })}
+                  className="bg-[#0f0f0f] border-gray-700 text-white"
+                  placeholder="Ex: REF-001"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="data_utilizacao" className="text-gray-300 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
