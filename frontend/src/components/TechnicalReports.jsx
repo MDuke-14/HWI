@@ -490,6 +490,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Equipamentos da OT
   const [equipamentosOT, setEquipamentosOT] = useState([]);
   const [showAddEquipamentoModal, setShowAddEquipamentoModal] = useState(false);
+  const [addEquipIntervencaoId, setAddEquipIntervencaoId] = useState(null);
   const [equipamentoFormData, setEquipamentoFormData] = useState({
     tipologia: '',
     marca: '',
@@ -1830,11 +1831,12 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const openAddEquipamentoModal = () => {
+  const openAddEquipamentoModal = (intervencaoId) => {
     // Buscar equipamentos do cliente da OT
     if (selectedRelatorio?.cliente_id) {
       fetchEquipamentosClienteParaOT(selectedRelatorio.cliente_id);
     }
+    setAddEquipIntervencaoId(intervencaoId || null);
     // Reset do form
     setEquipamentoOTSelecionado('novo');
     setEquipamentoFormData({
@@ -1856,7 +1858,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       const dataToSend = {
         ...equipamentoFormData,
         criar_na_base_cliente: equipamentoOTSelecionado === 'novo',
-        equipamento_cliente_id: (equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot') ? equipamentoOTSelecionado : undefined
+        equipamento_cliente_id: (equipamentoOTSelecionado !== 'novo' && equipamentoOTSelecionado !== 'apenas_ot') ? equipamentoOTSelecionado : undefined,
+        intervencao_id: addEquipIntervencaoId || undefined
       };
       
       await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`, dataToSend);
@@ -5633,9 +5636,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                       );
 
                       const activeEq = equipamentosOT.find(e => e.id === activeInterv.equipamento_id);
-                      // Equipamentos não associados a nenhuma intervenção
+                      // Equipamentos associados a esta intervenção via intervencao_id
+                      const intervEqs = equipamentosOT.filter(e => e.intervencao_id === activeInterv.id && e.id !== activeInterv.equipamento_id);
+                      // Equipamentos não associados a nenhuma intervenção (mostrar na primeira aba)
                       const assignedEqIds = new Set(intervencoes.map(i => i.equipamento_id).filter(Boolean));
-                      const unassignedEqs = equipamentosOT.filter(e => !assignedEqIds.has(e.id));
+                      const allIntervEqIds = new Set(equipamentosOT.filter(e => e.intervencao_id).map(e => e.id));
+                      const unassignedEqs = isFirstInterv ? equipamentosOT.filter(e => !assignedEqIds.has(e.id) && !allIntervEqIds.has(e.id)) : [];
                       // Filter data for this intervention
                       // Dados sem intervencao_id (legados) aparecem na primeira intervenção da mesma data
                       // ou na primeira intervenção global se não houver correspondência por data
@@ -5689,13 +5695,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
 
                           {/* 2. Equipamento */}
-                          <div className={`p-2 ${activeEq || unassignedEqs.length > 0 ? 'bg-purple-500/10 border border-purple-500/30' : `${bgCard} border ${borderColor}`} rounded`}>
+                          <div className={`p-2 ${activeEq || intervEqs.length > 0 || unassignedEqs.length > 0 ? 'bg-purple-500/10 border border-purple-500/30' : `${bgCard} border ${borderColor}`} rounded`}>
                             <div className="flex items-center justify-between mb-1">
                               <p className="text-xs text-purple-400 flex items-center gap-1 font-medium">
-                                <Settings className="w-3 h-3" /> Equipamento {!activeEq && unassignedEqs.length === 0 ? '(Nenhum)' : ''}
+                                <Settings className="w-3 h-3" /> Equipamento {!activeEq && intervEqs.length === 0 && unassignedEqs.length === 0 ? '(Nenhum)' : ''}
                               </p>
                               <Button
-                                onClick={openAddEquipamentoModal}
+                                onClick={() => openAddEquipamentoModal(activeInterv.id)}
                                 size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
                                 data-testid="btn-add-equipamento"
                               >
@@ -5708,7 +5714,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {activeEq.numero_serie && <span className="text-purple-400/60 ml-2 text-xs">S/N: {activeEq.numero_serie}</span>}
                               </p>
                             )}
-                            {isFirstInterv && unassignedEqs.map(eq => (
+                            {[...intervEqs, ...unassignedEqs].map(eq => (
                               <div key={eq.id} className="flex items-center justify-between mt-1">
                                 <p className="text-sm text-purple-300">
                                   {eq.tipologia && `${eq.tipologia} - `}{eq.marca} {eq.modelo}

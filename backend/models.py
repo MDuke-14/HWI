@@ -203,6 +203,7 @@ class EquipamentoOT(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
     equipamento_cliente_id: Optional[str] = None
+    intervencao_id: Optional[str] = None
     tipologia: str
     marca: str
     modelo: str

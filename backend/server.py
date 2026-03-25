@@ -2232,6 +2232,7 @@ async def add_equipamento_ot(
     equipamento = EquipamentoOT(
         relatorio_id=relatorio_id,
         equipamento_cliente_id=equipamento_data.get("equipamento_cliente_id"),
+        intervencao_id=equipamento_data.get("intervencao_id"),
         tipologia=equipamento_data["tipologia"],
         marca=equipamento_data["marca"],
         modelo=equipamento_data["modelo"],
