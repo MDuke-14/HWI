@@ -39,6 +39,16 @@ def format_time_hhmm(dt):
     return dt.strftime('%H:%M') if dt else '-'
 
 
+def format_decimal_hours_hhmm(decimal_hours):
+    """Converte horas decimais para formato H:MM. Ex: 1.1667 -> '1:10'"""
+    if not decimal_hours or decimal_hours <= 0:
+        return '-'
+    total_minutes = round(decimal_hours * 60)
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    return f"{hours}:{minutes:02d}"
+
+
 def format_date_pt(date_obj):
     if isinstance(date_obj, str):
         try:
@@ -569,15 +579,15 @@ def generate_folha_horas_pdf(
         resumo_row_horas = [nome, funcao_label]
         for c in codigos:
             h = trabalho_horas_cod.get(c, 0)
-            resumo_row_horas.append(f"{h:.2f}h" if h > 0 else '-')
+            resumo_row_horas.append(format_decimal_hours_hhmm(h) if h > 0 else '-')
             total_horas_colab += h
         for c in codigos:
             h = viagem_horas_cod.get(c, 0)
-            resumo_row_horas.append(f"{h:.2f}h" if h > 0 else '-')
+            resumo_row_horas.append(format_decimal_hours_hhmm(h) if h > 0 else '-')
             total_horas_colab += h
         resumo_row_horas.append(f"{km_total_val:.2f}" if km_total_val > 0 else '-')
         resumo_row_horas.append(f"{colab_total_dieta:.2f}€" if colab_total_dieta > 0 else '-')
-        resumo_row_horas.append(f"{total_horas_colab:.2f}h")
+        resumo_row_horas.append(format_decimal_hours_hhmm(total_horas_colab))
 
         # --- Linha 2: TOTAL € POR CÓDIGO ---
         resumo_row_euros = ['', 'TOTAL €']
