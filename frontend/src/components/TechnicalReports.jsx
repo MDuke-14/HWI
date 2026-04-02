@@ -2788,14 +2788,17 @@ const TechnicalReports = ({ user, onLogout }) => {
       // Iniciar cronómetros para nova OT
       let successCount = 0;
       let errorCount = 0;
+      const km_inicial = cronometroFuncaoData.km_inicial ? parseFloat(cronometroFuncaoData.km_inicial) : 0;
       
-      for (const tec of tecnicos) {
+      for (let i = 0; i < tecnicos.length; i++) {
+        const tec = tecnicos[i];
         try {
           await axios.post(`${API}/relatorios-tecnicos/${novaOTParaCrono.id}/cronometro/iniciar`, {
             tipo,
             tecnico_id: tec.id,
             tecnico_nome: tec.nome,
-            funcao_ot: tec.funcao_ot
+            funcao_ot: tec.funcao_ot,
+            km_inicial: i === 0 ? km_inicial : 0
           });
           successCount++;
         } catch (error) {
