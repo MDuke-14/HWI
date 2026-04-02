@@ -5639,14 +5639,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                       // Equipamentos associados a esta intervenção via intervencao_id
                       const intervEqs = equipamentosOT.filter(e => e.intervencao_id === activeInterv.id && e.id !== activeInterv.equipamento_id);
                       // Equipamentos não associados a nenhuma intervenção (mostrar na primeira aba)
+                      const isFirstInterv = intervencoes[0]?.id === activeInterv.id;
+                      const isFirstIntervOnDate = intervencoes.findIndex(i => i.data_intervencao?.split('T')[0] === activeInterv.data_intervencao?.split('T')[0]) === intervencoes.indexOf(activeInterv);
                       const assignedEqIds = new Set(intervencoes.map(i => i.equipamento_id).filter(Boolean));
                       const allIntervEqIds = new Set(equipamentosOT.filter(e => e.intervencao_id).map(e => e.id));
                       const unassignedEqs = isFirstInterv ? equipamentosOT.filter(e => !assignedEqIds.has(e.id) && !allIntervEqIds.has(e.id)) : [];
-                      // Filter data for this intervention
-                      // Dados sem intervencao_id (legados) aparecem na primeira intervenção da mesma data
-                      // ou na primeira intervenção global se não houver correspondência por data
-                      const isFirstIntervOnDate = intervencoes.findIndex(i => i.data_intervencao?.split('T')[0] === activeInterv.data_intervencao?.split('T')[0]) === intervencoes.indexOf(activeInterv);
-                      const isFirstInterv = intervencoes[0]?.id === activeInterv.id;
                       const intervDate = activeInterv.data_intervencao?.split('T')[0];
 
                       const intervFotos = fotografias.filter(f => {
