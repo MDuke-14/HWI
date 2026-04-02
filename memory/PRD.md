@@ -11,6 +11,7 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
   auth_utils.py        # Auth helpers
   helpers.py           # Shared helpers - email, notifications, vacation calc
   email_templates.py   # Multilingual email templates
+  cronometro_logic.py  # Segmentation, rounding, holiday logic
   server.py            # Main app (~10,100 lines)
   routes/
     auth_routes.py     # Login, register, forgot-password
@@ -23,7 +24,7 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
     references.py      # Internal reference system
 /app/frontend/src/
   components/
-    TechnicalReports.jsx  # Main FS component (~10,900 lines)
+    TechnicalReports.jsx  # Main FS component (~11,000 lines)
 ```
 
 ## Core Features Implemented
@@ -35,7 +36,7 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - Signature management (add, edit, delete) with inline editing
 - Photo management: upload (with auto-compression + thumbnail), edit, delete, move between interventions
 - Auto-open edit modal after photo upload for observations
-- Material tracking with PC integration
+- Material tracking with PC integration (Posicao/Codigo fields)
 - Move items (photos, materials, equipment) between interventions
 - PDF report generation (FS Report + Folha de Horas)
 - Calendar integration
@@ -45,12 +46,15 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - Purchase Order (PC) Management System
 
 ## Credentials
-- Admin: pedro / password
-- Non-admin: teste@email.com / teste
+- Admin: pedro / teste (password reset in this session)
+- Non-admin users exist in the DB
+
+## Bug Fixes Applied (2026-04-02)
+- **P0 FIXED: Travel Chronometer Auto-Calculation** - Root cause: `parar_cronometro` endpoint did not store `minutos_trabalhados` in records. Additionally, a startup migration was corrupting `horas_arredondadas` to 0.0 for records missing `minutos_trabalhados`. Fix: Added `minutos_trabalhados` and `origem` fields to `registo_dict` in `parar_cronometro`, and rewrote migration to only process records with `minutos_trabalhados=None`, computing values from timestamps. All 10 backend tests passed.
 
 ## Pending Issues (Prioritized)
 ### P0
-- Refactor TechnicalReports.jsx (10,900+ lines) into smaller components (USER APPROVED)
+- Refactor TechnicalReports.jsx (11,000+ lines) into smaller components (USER APPROVED)
 
 ### P1
 - Complete and Test Dynamic Price Table Creation
