@@ -4241,6 +4241,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <span className="text-gray-500 italic">Não especificado</span>
                       )}
                     </p>
+                    {relatorio.motivo_assistencia && (
+                      <>
+                        <p className={`text-xs ${textSecondary} mb-1 mt-2`}>Motivo</p>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>{relatorio.motivo_assistencia}</p>
+                      </>
+                    )}
                   </div>
 
                   {/* Footer - Cliente icon */}
@@ -4365,6 +4371,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} truncate`}>
                       {relatorio.equipamento_display || relatorio.equipamento_tipologia || <span className="text-gray-500 italic">Não especificado</span>}
                     </p>
+                    {relatorio.motivo_assistencia && (
+                      <>
+                        <p className={`text-xs ${textSecondary} mb-1 mt-2`}>Motivo</p>
+                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>{relatorio.motivo_assistencia}</p>
+                      </>
+                    )}
                   </div>
                   <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
                     <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
