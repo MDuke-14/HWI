@@ -1342,7 +1342,8 @@ async def create_relatorio(
     logging.info(f"Relatório técnico criado: {numero_assistencia} por {current_user['sub']}")
     
     # Enviar email de referência interna automaticamente se cliente tiver flag ativa
-    if cliente.get("incluir_referencia_interna") and cliente.get("email"):
+    ref_email = cliente.get("email_referencia_interna") or cliente.get("email")
+    if cliente.get("incluir_referencia_interna") and ref_email:
         try:
             token_str = str(uuid.uuid4())
             ref_token_doc = {
@@ -1360,12 +1361,12 @@ async def create_relatorio(
             frontend_url = os.environ.get('FRONTEND_URL', '').rstrip('/')
             link = f"{frontend_url}/reference/{token_str}"
             await send_reference_link_email(
-                client_email=cliente["email"],
+                client_email=ref_email,
                 client_name=cliente["nome"],
                 fs_number=numero_assistencia,
                 reference_link=link
             )
-            logging.info(f"Email de referência interna enviado para {cliente['email']} (FS#{numero_assistencia})")
+            logging.info(f"Email de referência interna enviado para {ref_email} (FS#{numero_assistencia})")
         except Exception as e:
             logging.error(f"Erro ao enviar email de referência interna: {e}")
     

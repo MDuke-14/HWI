@@ -225,7 +225,8 @@ async def resend_reference_email(token_id: str, current_user: dict = Depends(get
         raise HTTPException(status_code=404, detail="FS não encontrada")
     
     cliente = await db.clientes.find_one({"id": ref_token["cliente_id"]}, {"_id": 0})
-    if not cliente or not cliente.get("email"):
+    ref_email = cliente.get("email_referencia_interna") or cliente.get("email") if cliente else None
+    if not cliente or not ref_email:
         raise HTTPException(status_code=400, detail="Cliente sem email configurado")
     
     frontend_url = os.environ.get('FRONTEND_URL', '').rstrip('/')
@@ -234,10 +235,10 @@ async def resend_reference_email(token_id: str, current_user: dict = Depends(get
     # Import here to avoid circular dependency
     from server import send_reference_link_email
     await send_reference_link_email(
-        client_email=cliente["email"],
+        client_email=ref_email,
         client_name=cliente.get("nome", ""),
         fs_number=rel.get("numero_assistencia", 0),
         reference_link=link
     )
     
-    return {"message": f"Email reenviado para {cliente['email']}"}
+    return {"message": f"Email reenviado para {ref_email}"}

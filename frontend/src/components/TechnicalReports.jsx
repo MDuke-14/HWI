@@ -459,7 +459,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     morada: '',
     nif: '',
     emails_adicionais: [],
-    incluir_referencia_interna: false
+    incluir_referencia_interna: false,
+    email_referencia_interna: ''
   });
   
   const [relatorioFormData, setRelatorioFormData] = useState({
@@ -743,7 +744,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       morada: cliente.morada || '',
       nif: cliente.nif || '',
       emails_adicionais: emailsArray,
-      incluir_referencia_interna: cliente.incluir_referencia_interna || false
+      incluir_referencia_interna: cliente.incluir_referencia_interna || false,
+      email_referencia_interna: cliente.email_referencia_interna || ''
     });
     setShowEditModal(true);
   };
@@ -978,7 +980,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       morada: '',
       nif: '',
       emails_adicionais: [],
-      incluir_referencia_interna: false
+      incluir_referencia_interna: false,
+      email_referencia_interna: ''
     });
     setSelectedCliente(null);
   };
@@ -1133,8 +1136,9 @@ const TechnicalReports = ({ user, onLogout }) => {
       const clienteDoRelatorio = clientes.find(c => c.id === relatorioFormData.cliente_id);
       if (clienteDoRelatorio?.incluir_referencia_interna) {
         // Notificar que email foi enviado automaticamente ao cliente
-        if (clienteDoRelatorio.email) {
-          toast.info(`Email enviado a ${clienteDoRelatorio.email} para referencia interna`);
+        const refEmail = clienteDoRelatorio.email_referencia_interna || clienteDoRelatorio.email;
+        if (refEmail) {
+          toast.info(`Email enviado a ${refEmail} para referencia interna`);
         }
         // Guardar dados para o cronómetro (será aberto depois do modal de referência)
         setReferenciaInternaFSId(relatorioId);
@@ -9216,6 +9220,37 @@ const TechnicalReports = ({ user, onLogout }) => {
               )}
             </div>
 
+            <div className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-lg border border-gray-700">
+              <input
+                type="checkbox"
+                id="add-ref-interna"
+                checked={formData.incluir_referencia_interna}
+                onChange={(e) => setFormData({ ...formData, incluir_referencia_interna: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                data-testid="add-checkbox-ref-interna"
+              />
+              <Label htmlFor="add-ref-interna" className="text-gray-300 cursor-pointer text-sm">
+                Incluir Referência Interna na FS
+              </Label>
+            </div>
+
+            {formData.incluir_referencia_interna && (
+              <div>
+                <Label htmlFor="add-email-ref-interna" className="text-gray-300 text-sm">
+                  Email para Referência Interna <span className="text-gray-500 text-xs">(opcional - se vazio usa o email principal)</span>
+                </Label>
+                <Input
+                  id="add-email-ref-interna"
+                  type="email"
+                  value={formData.email_referencia_interna || ''}
+                  onChange={(e) => setFormData({ ...formData, email_referencia_interna: e.target.value })}
+                  placeholder="email@especifico.com"
+                  className="bg-gray-800 border-gray-700 text-white mt-1"
+                  data-testid="add-input-email-ref-interna"
+                />
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -9370,6 +9405,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                 Incluir Referência Interna na FS
               </Label>
             </div>
+
+            {formData.incluir_referencia_interna && (
+              <div>
+                <Label htmlFor="edit-email-ref-interna" className="text-gray-300 text-sm">
+                  Email para Referência Interna <span className="text-gray-500 text-xs">(opcional - se vazio usa o email principal)</span>
+                </Label>
+                <Input
+                  id="edit-email-ref-interna"
+                  type="email"
+                  value={formData.email_referencia_interna || ''}
+                  onChange={(e) => setFormData({ ...formData, email_referencia_interna: e.target.value })}
+                  placeholder="email@especifico.com"
+                  className="bg-gray-800 border-gray-700 text-white mt-1"
+                  data-testid="input-email-ref-interna"
+                />
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
