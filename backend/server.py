@@ -218,21 +218,45 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro ao executar migrações: {str(e)}")
     
-    # Migração: Recalcular horas de viagem sem arredondamento
+    # Migração: Garantir que todos os registos têm minutos_trabalhados e horas_arredondadas consistentes
     try:
-        viagem_registos = await db.registos_tecnico_ot.find({"tipo": "viagem"}, {"_id": 0, "id": 1, "minutos_trabalhados": 1, "horas_arredondadas": 1}).to_list(None)
+        from cronometro_logic import arredondar_horas as _arredondar_horas
+        all_registos = await db.registos_tecnico_ot.find(
+            {"minutos_trabalhados": None}, 
+            {"_id": 0, "id": 1, "tipo": 1, "minutos_trabalhados": 1, "horas_arredondadas": 1, "hora_inicio_segmento": 1, "hora_fim_segmento": 1}
+        ).to_list(None)
         updated = 0
-        for r in viagem_registos:
-            mins = r.get("minutos_trabalhados", 0)
-            correcto = round(mins / 60, 4)
-            actual = r.get("horas_arredondadas", 0)
-            if abs(actual - correcto) > 0.001:
-                await db.registos_tecnico_ot.update_one({"id": r["id"]}, {"$set": {"horas_arredondadas": correcto}})
+        for r in all_registos:
+            update_fields = {}
+            tipo = r.get("tipo", "trabalho")
+            hi = r.get("hora_inicio_segmento")
+            hf = r.get("hora_fim_segmento")
+            horas = r.get("horas_arredondadas", 0)
+            
+            if hi and hf:
+                if isinstance(hi, str):
+                    hi = datetime.fromisoformat(hi.replace('Z', '+00:00'))
+                if isinstance(hf, str):
+                    hf = datetime.fromisoformat(hf.replace('Z', '+00:00'))
+                calc_mins = (hf - hi).total_seconds() / 60
+                if calc_mins > 0:
+                    update_fields["minutos_trabalhados"] = int(calc_mins)
+                    if tipo == "viagem":
+                        update_fields["horas_arredondadas"] = round(calc_mins / 60, 4)
+                    else:
+                        update_fields["horas_arredondadas"] = _arredondar_horas(calc_mins)
+                else:
+                    update_fields["minutos_trabalhados"] = 0
+            elif horas > 0:
+                update_fields["minutos_trabalhados"] = int(horas * 60)
+            else:
+                update_fields["minutos_trabalhados"] = 0
+            
+            if update_fields:
+                await db.registos_tecnico_ot.update_one({"id": r["id"]}, {"$set": update_fields})
                 updated += 1
         if updated > 0:
-            logging.info(f"✅ Migração viagem: {updated} registos corrigidos (sem arredondamento)")
-        else:
-            logging.info("✅ Migração viagem: todos os registos já correctos")
+            logging.info(f"Migração registos: {updated} registos corrigidos (minutos + horas)")
     except Exception as e:
         logging.error(f"❌ Erro na migração de viagem: {str(e)}")
     
@@ -8761,6 +8785,9 @@ async def parar_cronometro(
         )
         
         registo_dict = registo.model_dump()
+        # Guardar minutos_trabalhados (campo não está no modelo mas é necessário)
+        registo_dict["minutos_trabalhados"] = int(seg["duracao_minutos"])
+        registo_dict["origem"] = "cronometro"
         # Guardar km_inicial no primeiro registo de viagem
         if i == 0 and tipo == "viagem" and km_inicial_crono > 0:
             registo_dict["kms_inicial"] = km_inicial_crono
