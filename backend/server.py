@@ -10029,20 +10029,26 @@ async def generate_folha_horas(
         import base64
         tabela_preco_image = base64.b64decode(tabela_config["imagem_data"])
     
-    pdf_buffer = generate_folha_horas_pdf(
-        relatorio=relatorio,
-        cliente=cliente,
-        registos_mao_obra=registos_mao_obra,
-        tecnicos_manuais=tecnicos_manuais,
-        tarifas_por_tecnico=request.tarifas_por_tecnico,
-        dados_extras=dados_extras_final,
-        tarifas_por_codigo=tarifas_por_codigo,
-        valor_km=valor_km,
-        tarifas_detalhadas=tarifas_detalhadas,
-        despesas_ajustadas=despesas_ajustadas,
-        valor_dieta_default=valor_dieta_tabela,
-        tabela_preco_image=tabela_preco_image,
-    )
+    try:
+        pdf_buffer = generate_folha_horas_pdf(
+            relatorio=relatorio,
+            cliente=cliente,
+            registos_mao_obra=registos_mao_obra,
+            tecnicos_manuais=tecnicos_manuais,
+            tarifas_por_tecnico=request.tarifas_por_tecnico,
+            dados_extras=dados_extras_final,
+            tarifas_por_codigo=tarifas_por_codigo,
+            valor_km=valor_km,
+            tarifas_detalhadas=tarifas_detalhadas,
+            despesas_ajustadas=despesas_ajustadas,
+            valor_dieta_default=valor_dieta_tabela,
+            tabela_preco_image=tabela_preco_image,
+        )
+    except Exception as e:
+        logging.error(f"Erro ao gerar Folha de Horas para OT {relatorio_id}: {str(e)}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar Folha de Horas: {str(e)}")
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
     cliente_nome = cliente.get('nome', 'Cliente').replace(' ', '_')
