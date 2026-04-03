@@ -120,6 +120,35 @@ const formatErrorMessage = (error) => {
   return 'Erro ao processar solicitação';
 };
 
+// Extrair mensagem de erro de respostas blob (usado em endpoints PDF)
+const extractBlobError = async (error) => {
+  if (!error.response) return 'Erro de conexão com o servidor';
+  
+  const status = error.response.status;
+  const data = error.response.data;
+  
+  // Se a resposta é um Blob, converter para texto/JSON
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      try {
+        const json = JSON.parse(text);
+        return json.detail || json.message || json.error || text;
+      } catch {
+        return text || `Erro ${status} ao gerar PDF`;
+      }
+    } catch {
+      return `Erro ${status} ao gerar PDF`;
+    }
+  }
+  
+  // Resposta normal (não-blob)
+  if (typeof data?.detail === 'string') return data.detail;
+  if (typeof data?.message === 'string') return data.message;
+  
+  return `Erro ${status} ao gerar PDF`;
+};
+
 const TechnicalReports = ({ user, onLogout }) => {
   // Mobile e Theme hooks
   const { isMobile, isTablet } = useMobile();
@@ -890,6 +919,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
           console.error(`Erro ao gerar PDF para OT #${relatorio.numero_assistencia}:`, error);
+          const msg = await extractBlobError(error);
+          toast.error(`FS #${relatorio.numero_assistencia}: ${msg}`, { duration: 8000 });
           errorCount++;
         }
       }
@@ -2528,7 +2559,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       
       toast.success('PDF baixado com sucesso!');
     } catch (error) {
-      toast.error('Erro ao baixar PDF');
+      const msg = await extractBlobError(error);
+      toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
     }
   };
 
@@ -3245,7 +3277,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       setShowFolhaHorasModal(false);
     } catch (error) {
       console.error('Erro ao gerar Folha de Horas:', error);
-      toast.error('Erro ao gerar Folha de Horas');
+      const msg = await extractBlobError(error);
+      toast.error(`Erro ao gerar Folha de Horas: ${msg}`, { duration: 8000 });
     } finally {
       setGeneratingFolhaHoras(false);
     }
@@ -3288,7 +3321,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       setShowPDFPreviewModal(true);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      toast.error('Erro ao gerar PDF para visualização');
+      const msg = await extractBlobError(error);
+      toast.error(`Erro ao gerar PDF: ${msg}`, { duration: 8000 });
     } finally {
       setLoadingPDFPreview(false);
     }
@@ -3327,7 +3361,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       
     } catch (error) {
       console.error('Erro ao carregar PDF:', error);
-      toast.error('Erro ao carregar PDF para visualização');
+      const msg = await extractBlobError(error);
+      toast.error(`Erro ao carregar PDF: ${msg}`, { duration: 8000 });
     } finally {
       setLoadingPDFViewer(false);
     }
@@ -6341,7 +6376,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                       
                       toast.success('PDF baixado com sucesso!');
                     } catch (error) {
-                      toast.error('Erro ao baixar PDF');
+                      const msg = await extractBlobError(error);
+                      toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
                     }
                   }}
                   className={`bg-red-600 hover:bg-red-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
@@ -8665,7 +8701,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                       
                       toast.success('PDF baixado com sucesso!');
                     } catch (error) {
-                      toast.error('Erro ao baixar PDF');
+                      const msg = await extractBlobError(error);
+                      toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
                     }
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white"
@@ -10061,7 +10098,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                               
                               toast.success('PDF baixado com sucesso!');
                             } catch (error) {
-                              toast.error('Erro ao baixar PDF');
+                              const msg = await extractBlobError(error);
+                              toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
                             }
                           }}
                           size="sm"
