@@ -313,6 +313,14 @@ async def startup_event():
         await db.registos_tecnico_ot.create_index("relatorio_id")
         await db.registos_tecnico_ot.create_index("tecnico_id")
         
+        # Índices para fotos, intervenções, assinaturas, cronómetros, materiais, despesas
+        await db.fotos_ot.create_index("relatorio_id")
+        await db.intervencoes.create_index("relatorio_id")
+        await db.assinaturas.create_index("relatorio_id")
+        await db.cronometros.create_index("relatorio_id")
+        await db.materiais_ot.create_index("relatorio_id")
+        await db.despesas_ot.create_index("relatorio_id")
+        
         # Índices para users
         await db.users.create_index("username", unique=True)
         

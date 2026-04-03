@@ -1202,19 +1202,21 @@ const TechnicalReports = ({ user, onLogout }) => {
     setSelectedRelatorio(relatorio);
     setShowViewRelatorioModal(true);
     setActiveIntervencaoId(null);
-    // Buscar técnicos, intervenções, fotografias, assinatura, equipamentos, materiais, despesas, PCs, cronómetros e registos
-    await fetchTecnicosRelatorio(relatorio.id);
-    await fetchIntervencoesRelatorio(relatorio.id);
-    await fetchFotografiasRelatorio(relatorio.id);
-    await fetchAssinaturas(relatorio.id);
-    await fetchEquipamentosOT(relatorio.id);
-    await fetchMateriais(relatorio.id);
-    await fetchDespesas(relatorio.id);
-    await fetchRelatoriosAssistencia(relatorio.id);
-    await fetchPedidosCotacao(relatorio.id);
-    await fetchCronometros(relatorio.id);
-    await fetchRegistosTecnicos(relatorio.id);
-    await fetchAllSystemUsers(); // Buscar todos os utilizadores do sistema para cronómetros
+    // Buscar todos os dados em paralelo
+    await Promise.all([
+      fetchTecnicosRelatorio(relatorio.id),
+      fetchIntervencoesRelatorio(relatorio.id),
+      fetchFotografiasRelatorio(relatorio.id),
+      fetchAssinaturas(relatorio.id),
+      fetchEquipamentosOT(relatorio.id),
+      fetchMateriais(relatorio.id),
+      fetchDespesas(relatorio.id),
+      fetchRelatoriosAssistencia(relatorio.id),
+      fetchPedidosCotacao(relatorio.id),
+      fetchCronometros(relatorio.id),
+      fetchRegistosTecnicos(relatorio.id),
+      fetchAllSystemUsers(),
+    ]);
   };
 
   const openEditRelatorioModal = async (relatorio, e) => {
