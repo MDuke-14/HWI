@@ -41,6 +41,19 @@ const TechnicalReportsTabs = ({
           {isMobile ? "FS's" : 'Folhas de Servico'}
         </button>
 
+        {user?.is_admin && (
+          <button
+            onClick={() => setActiveTab('facturados')}
+            className={`${baseTabClass} font-semibold transition ${
+              activeTab === 'facturados' ? 'text-purple-400 border-b-2 border-purple-400' : `${textSecondary} hover:${textPrimary}`
+            }`}
+            data-testid="tab-facturados"
+          >
+            <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
+            Facturados
+          </button>
+        )}
+
         <button
           onClick={() => setActiveTab('pesquisa')}
           className={`${baseTabClass} font-semibold transition ${

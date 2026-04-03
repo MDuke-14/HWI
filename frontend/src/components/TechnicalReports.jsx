@@ -91,7 +91,10 @@ import {
   TecnicoModal,
   EquipamentoModal,
   MaterialModal,
-  CronometroStartModal
+  CronometroStartModal,
+  TechnicalReportsTabs,
+  ReportsSection,
+  FacturadosSection,
 } from './technical-reports';
 import FaturaScanner from './technical-reports/FaturaScanner';
 
@@ -3868,93 +3871,18 @@ const TechnicalReports = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Tabs/Sections - Mobile: Horizontal Scroll */}
-        <div className={`${isMobile ? 'mb-4' : 'mb-6'}`}>
-          <div className={`flex ${isMobile ? 'gap-1 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide' : 'gap-4'} border-b ${borderColor}`}>
-            <button
-              onClick={() => setActiveTab('clientes')}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
-                activeTab === 'clientes'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : `${textSecondary} hover:${textPrimary}`
-              }`}
-              data-testid="tab-clientes"
-            >
-              <Building2 className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              Clientes
-            </button>
-            <button
-              onClick={() => setActiveTab('relatorios')}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
-                activeTab === 'relatorios'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : `${textSecondary} hover:${textPrimary}`
-              }`}
-              data-testid="tab-ots"
-            >
-              <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              {isMobile ? "FS's" : "Folhas de Serviço"}
-            </button>
-            <button
-              onClick={() => setActiveTab('pesquisa')}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
-                activeTab === 'pesquisa'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : `${textSecondary} hover:${textPrimary}`
-              }`}
-              data-testid="tab-pesquisa"
-            >
-              <Search className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              {isMobile ? 'Estados' : 'Pesquisa por Estado'}
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('pedidos-cotacao');
-                fetchAllPCs();
-              }}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
-                activeTab === 'pedidos-cotacao'
-                  ? 'text-yellow-400 border-b-2 border-yellow-400'
-                  : `${textSecondary} hover:${textPrimary}`
-              }`}
-              data-testid="tab-pcs"
-            >
-              <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              {isMobile ? 'PCs' : 'Pedidos de Cotação'}
-            </button>
-            {user?.is_admin && (
-            <button
-              onClick={() => setActiveTab('facturados')}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
-                activeTab === 'facturados'
-                  ? 'text-purple-400 border-b-2 border-purple-400'
-                  : `${textSecondary} hover:${textPrimary}`
-              }`}
-              data-testid="tab-facturados"
-            >
-              <FileText className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              Facturados
-            </button>
-            )}
-            {user?.is_admin && (
-            <button
-              onClick={() => {
-                setActiveTab('referencias');
-                fetchRefTokens();
-              }}
-              className={`${isMobile ? 'px-3 py-2 text-sm whitespace-nowrap flex-shrink-0' : 'px-4 py-3'} font-semibold transition ${
-                activeTab === 'referencias'
-                  ? 'text-indigo-400 border-b-2 border-indigo-400'
-                  : `${textSecondary} hover:${textPrimary}`
-              }`}
-              data-testid="tab-referencias"
-            >
-              <Link2 className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} inline mr-1.5`} />
-              {isMobile ? 'Refs' : 'Ref. Internas'}
-            </button>
-            )}
-          </div>
-        </div>
+        {/* Tabs/Sections */}
+        <TechnicalReportsTabs
+          activeTab={activeTab}
+          isMobile={isMobile}
+          user={user}
+          borderColor={borderColor}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          setActiveTab={setActiveTab}
+          fetchAllPCs={fetchAllPCs}
+          fetchRefTokens={fetchRefTokens}
+        />
 
         {/* Clientes Section */}
         {activeTab === 'clientes' && (
@@ -4130,306 +4058,49 @@ const TechnicalReports = ({ user, onLogout }) => {
         )}
 
         {/* Relatórios Section */}
-        {activeTab === 'relatorios' && (
-        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
-          {/* Search and Add */}
-          <div className="flex flex-col gap-3 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder={isMobile ? "Buscar OT..." : "Buscar por número, cliente ou local de intervenção..."}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`pl-10 ${bgCard} ${borderColor} ${textPrimary} ${isMobile ? 'text-sm' : ''}`}
-              />
-            </div>
-            <Button
-              onClick={() => setShowAddRelatorioModal(true)}
-              className={`bg-blue-500 hover:bg-blue-600 text-white ${isMobile ? 'w-full' : ''}`}
-              data-testid="add-ot-btn"
-            >
-              <Plus className={`${isMobile ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'}`} />
-              Nova FS
-            </Button>
-          </div>
-
-          {/* Relatórios List */}
-          {loading ? (
-            <div className="text-center py-8">
-              <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-4 border-blue-500 border-t-transparent`}></div>
-              <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar OTs...</p>
-            </div>
-          ) : relatorios.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
-              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma FS criada</p>
-              <Button
-                onClick={() => setShowAddRelatorioModal(true)}
-                className="mt-4 bg-blue-500 hover:bg-blue-600"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Criar Primeira OT
-              </Button>
-            </div>
-          ) : (
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
-              {relatorios
-                .filter((relatorio) => {
-                  // Excluir facturados da aba principal
-                  if (relatorio.status === 'facturado') return false;
-                  if (!searchTerm.trim()) return true;
-                  const search = searchTerm.toLowerCase().trim();
-                  const matchNumero = relatorio.numero_assistencia?.toString().includes(search);
-                  const matchCliente = relatorio.cliente_nome?.toLowerCase().includes(search);
-                  const matchLocalIntervencao = relatorio.local_intervencao?.toLowerCase().includes(search);
-                  const matchLocalCliente = relatorio.cliente_local?.toLowerCase().includes(search);
-                  return matchNumero || matchCliente || matchLocalIntervencao || matchLocalCliente;
-                })
-                .sort((a, b) => {
-                  // Ordenar: Em Execução primeiro, depois Concluídos, depois restantes
-                  const statusOrder = { 'em_execucao': 0, 'em_andamento': 0, 'orcamento': 1, 'agendado': 2, 'concluido': 3 };
-                  const orderA = statusOrder[a.status] ?? 4;
-                  const orderB = statusOrder[b.status] ?? 4;
-                  if (orderA !== orderB) return orderA - orderB;
-                  // Dentro do mesmo estado, ordenar por número descendente (mais recente primeiro)
-                  return (b.numero_assistencia || 0) - (a.numero_assistencia || 0);
-                })
-                .map((relatorio) => (
-                <div
-                  key={relatorio.id}
-                  className={`${bgCard} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-4'} hover:border-blue-500 transition`}
-                  data-testid={`ot-card-${relatorio.id}`}
-                >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="cursor-pointer flex-1 min-w-0" onClick={() => openViewRelatorioModal(relatorio)}>
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-blue-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
-                          #{relatorio.numero_assistencia}
-                        </span>
-                        <span 
-                          className={`text-xs px-2 py-0.5 rounded cursor-pointer hover:opacity-80 transition ${getStatusColor(relatorio.status)}`}
-                          onClick={(e) => openStatusModal(relatorio, e)}
-                          title="Clique para alterar status"
-                        >
-                          {getStatusLabel(relatorio.status)}
-                        </span>
-                      </div>
-                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`}>
-                        {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
-                      </p>
-                    </div>
-                    
-                    {/* Action buttons */}
-                    <div className="flex gap-1 ml-2 flex-shrink-0">
-                      <Button
-                        onClick={(e) => openEditRelatorioModal(relatorio, e)}
-                        variant="outline"
-                        size="sm"
-                        className={`${isDark ? 'border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'} ${isMobile ? 'p-1.5' : 'p-2'}`}
-                      >
-                        <Edit className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-                      </Button>
-                      
-                      {user?.is_admin && (
-                        <Button
-                          onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
-                          variant="outline"
-                          size="sm"
-                          className={`${isDark ? 'border-gray-600' : 'border-gray-300'} hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 ${isMobile ? 'p-1.5' : 'p-2'}`}
-                        >
-                          <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Cliente */}
-                  <div className={`${isMobile ? 'mb-2' : 'mb-3'} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
-                    <p className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''} truncate`}>{relatorio.cliente_nome}</p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
-                    {relatorio.ot_relacionada_id && (
-                      <p className="text-blue-400 text-xs mt-0.5 flex items-center gap-1">
-                        <Link2 className="w-3 h-3" /> FS #{relatorio.ot_relacionada_numero}
-                      </p>
-                    )}
-                    {relatorio.ots_posteriores?.length > 0 && (
-                      <p className="text-amber-400 text-xs mt-0.5 flex items-center gap-1">
-                        <Link2 className="w-3 h-3" /> Posterior: {relatorio.ots_posteriores.map(ot => `#${ot.numero_assistencia}`).join(', ')}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Equipamento */}
-                  <div className={`${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b ${borderColor} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
-                    <p className={`text-xs ${textSecondary} mb-1`}>Equipamento</p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} truncate`}>
-                      {relatorio.equipamento_display ? (
-                        relatorio.equipamento_display === 'Não especificado' ? (
-                          <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
-                        ) : relatorio.equipamento_display === 'Vários' ? (
-                          <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
-                        ) : (
-                          <span>{relatorio.equipamento_display}</span>
-                        )
-                      ) : relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
-                        <>
-                          {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
-                          {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
-                          {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
-                        </>
-                      ) : (
-                        <span className="text-gray-500 italic">Não especificado</span>
-                      )}
-                    </p>
-                    {relatorio.motivo_assistencia && (
-                      <>
-                        <p className={`text-xs ${textSecondary} mb-1 mt-2`}>Motivo</p>
-                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>{relatorio.motivo_assistencia}</p>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Footer - Cliente icon */}
-                  <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
-                    <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                    <span className="truncate">{relatorio.cliente_nome}</span>
-                  </div>
-                </div>
-              ))}
-              {/* Mensagem quando não há resultados da pesquisa */}
-              {searchTerm.trim() && relatorios.filter((r) => {
-                if (r.status === 'facturado') return false;
-                const search = searchTerm.toLowerCase().trim();
-                return r.numero_assistencia?.toString().includes(search) ||
-                  r.cliente_nome?.toLowerCase().includes(search) ||
-                  r.local_intervencao?.toLowerCase().includes(search) ||
-                  r.cliente_local?.toLowerCase().includes(search);
-              }).length === 0 && (
-                <div className="col-span-full text-center py-8">
-                  <Search className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
-                  <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>
-                    Nenhuma FS encontrada para "{searchTerm}"
-                  </p>
-                  <p className={`${textSecondary} text-sm mt-2`}>
-                    Tente pesquisar por número da OT, nome do cliente ou local de intervenção
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        )}
+        <ReportsSection
+          activeTab={activeTab}
+          isDark={isDark}
+          isMobile={isMobile}
+          user={user}
+          borderColor={borderColor}
+          bgCard={bgCard}
+          loading={loading}
+          relatorios={relatorios}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          setShowAddRelatorioModal={setShowAddRelatorioModal}
+          openViewRelatorioModal={openViewRelatorioModal}
+          openEditRelatorioModal={openEditRelatorioModal}
+          openDeleteRelatorioModal={openDeleteRelatorioModal}
+          getStatusColor={getStatusColor}
+          getStatusLabel={getStatusLabel}
+          openStatusModal={openStatusModal}
+        />
 
         {/* Facturados Section */}
-        {activeTab === 'facturados' && user?.is_admin && (
-        <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
-          <div className="flex flex-col gap-3 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder={isMobile ? "Buscar facturado..." : "Buscar por número, cliente ou local..."}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`pl-10 ${bgCard} ${borderColor} ${textPrimary} ${isMobile ? 'text-sm' : ''}`}
-                data-testid="search-facturados"
-              />
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="text-center py-8">
-              <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-4 border-purple-500 border-t-transparent`}></div>
-              <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar...</p>
-            </div>
-          ) : relatorios.filter(r => r.status === 'facturado').length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
-              <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma FS facturada</p>
-            </div>
-          ) : (
-            <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
-              {relatorios
-                .filter((relatorio) => {
-                  if (relatorio.status !== 'facturado') return false;
-                  if (!searchTerm.trim()) return true;
-                  const search = searchTerm.toLowerCase().trim();
-                  const matchNumero = relatorio.numero_assistencia?.toString().includes(search);
-                  const matchCliente = relatorio.cliente_nome?.toLowerCase().includes(search);
-                  const matchLocalIntervencao = relatorio.local_intervencao?.toLowerCase().includes(search);
-                  const matchLocalCliente = relatorio.cliente_local?.toLowerCase().includes(search);
-                  return matchNumero || matchCliente || matchLocalIntervencao || matchLocalCliente;
-                })
-                .sort((a, b) => (b.numero_assistencia || 0) - (a.numero_assistencia || 0))
-                .map((relatorio) => (
-                <div
-                  key={relatorio.id}
-                  className={`${bgCard} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-4'} hover:border-purple-500 transition`}
-                  data-testid={`facturado-card-${relatorio.id}`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="cursor-pointer flex-1 min-w-0" onClick={() => openViewRelatorioModal(relatorio)}>
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-purple-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
-                          #{relatorio.numero_assistencia}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded ${getStatusColor(relatorio.status)}`}>
-                          {getStatusLabel(relatorio.status)}
-                        </span>
-                      </div>
-                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary}`}>
-                        {new Date(relatorio.data_servico).toLocaleDateString('pt-PT')}
-                      </p>
-                    </div>
-                    <div className="flex gap-1 ml-2 flex-shrink-0">
-                      <Button
-                        onClick={(e) => openEditRelatorioModal(relatorio, e)}
-                        variant="outline"
-                        size="sm"
-                        className={`${isDark ? 'border-gray-600 hover:border-purple-500 hover:bg-purple-500/10' : 'border-gray-300 hover:border-purple-500 hover:bg-purple-50'} ${isMobile ? 'p-1.5' : 'p-2'}`}
-                      >
-                        <Edit className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-                      </Button>
-                      {user?.is_admin && (
-                        <Button
-                          onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
-                          variant="outline"
-                          size="sm"
-                          className={`${isDark ? 'border-gray-600' : 'border-gray-300'} hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 ${isMobile ? 'p-1.5' : 'p-2'}`}
-                        >
-                          <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  <div className={`${isMobile ? 'mb-2' : 'mb-3'} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
-                    <p className={`${textPrimary} font-semibold ${isMobile ? 'text-sm' : ''} truncate`}>{relatorio.cliente_nome}</p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} truncate`}>{relatorio.local_intervencao}</p>
-                  </div>
-                  <div className={`${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b ${borderColor} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
-                    <p className={`text-xs ${textSecondary} mb-1`}>Equipamento</p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} truncate`}>
-                      {relatorio.equipamento_display || relatorio.equipamento_tipologia || <span className="text-gray-500 italic">Não especificado</span>}
-                    </p>
-                    {relatorio.motivo_assistencia && (
-                      <>
-                        <p className={`text-xs ${textSecondary} mb-1 mt-2`}>Motivo</p>
-                        <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>{relatorio.motivo_assistencia}</p>
-                      </>
-                    )}
-                  </div>
-                  <div className={`flex items-center gap-2 ${isMobile ? 'text-xs' : 'text-sm'} ${textSecondary} cursor-pointer`} onClick={() => openViewRelatorioModal(relatorio)}>
-                    <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                    <span className="truncate">{relatorio.cliente_nome}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        )}
+        <FacturadosSection
+          activeTab={activeTab}
+          isDark={isDark}
+          isMobile={isMobile}
+          user={user}
+          borderColor={borderColor}
+          bgCard={bgCard}
+          loading={loading}
+          relatorios={relatorios}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          openViewRelatorioModal={openViewRelatorioModal}
+          openEditRelatorioModal={openEditRelatorioModal}
+          openDeleteRelatorioModal={openDeleteRelatorioModal}
+          getStatusColor={getStatusColor}
+          getStatusLabel={getStatusLabel}
+          openStatusModal={openStatusModal}
+        />
 
         {/* Pesquisa por Estado Section */}
         {activeTab === 'pesquisa' && (

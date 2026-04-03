@@ -20,9 +20,8 @@ const ReportCard = ({
   openStatusModal,
   showRelatedReports = true,
   footerLabel = true,
-  equipmentTextClassName,
 }) => {
-  const equipmentTextClass = equipmentTextClassName || `${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} truncate`;
+  const equipmentTextClass = `${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} truncate`;
 
   return (
     <div
@@ -51,7 +50,7 @@ const ReportCard = ({
 
         <div className="flex gap-1 ml-2 flex-shrink-0">
           <Button
-            onClick={(e) => openEditRelatorioModal(relatorio, e)}
+            onClick={(e) => { e.stopPropagation(); openEditRelatorioModal(relatorio, e); }}
             variant="outline"
             size="sm"
             className={`${isDark ? 'border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'} ${isMobile ? 'p-1.5' : 'p-2'}`}
@@ -61,7 +60,7 @@ const ReportCard = ({
 
           {user?.is_admin && (
             <Button
-              onClick={(e) => openDeleteRelatorioModal(relatorio, e)}
+              onClick={(e) => { e.stopPropagation(); openDeleteRelatorioModal(relatorio, e); }}
               variant="outline"
               size="sm"
               className={`${isDark ? 'border-gray-600' : 'border-gray-300'} hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 ${isMobile ? 'p-1.5' : 'p-2'}`}
@@ -87,27 +86,34 @@ const ReportCard = ({
         )}
       </div>
 
+      {/* Equipamento + Motivo */}
       <div className={`${isMobile ? 'mb-2 pb-2' : 'mb-3 pb-3'} border-b ${borderColor} cursor-pointer`}>
         <p className={`text-xs ${textSecondary} mb-1`}>Equipamento</p>
         <p className={equipmentTextClass}>
           {relatorio.equipamento_display ? (
-            relatorio.equipamento_display === 'NÃ£o especificado' ? (
+            relatorio.equipamento_display === 'Nao especificado' ? (
               <span className="text-gray-500 italic">{relatorio.equipamento_display}</span>
-            ) : relatorio.equipamento_display === 'VÃ¡rios' ? (
+            ) : relatorio.equipamento_display === 'Varios' ? (
               <span className="text-blue-400">{relatorio.equipamento_display} ({relatorio.equipamentos_count})</span>
             ) : (
-              <span className={equipmentTextClassName ? textPrimary : undefined}>{relatorio.equipamento_display}</span>
+              <span>{relatorio.equipamento_display}</span>
             )
           ) : relatorio.equipamento_tipologia || relatorio.equipamento_marca || relatorio.equipamento_modelo ? (
             <>
               {relatorio.equipamento_tipologia && <span>{relatorio.equipamento_tipologia}</span>}
-              {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> • </span>}
+              {relatorio.equipamento_tipologia && relatorio.equipamento_marca && <span className="text-gray-500"> - </span>}
               {relatorio.equipamento_marca && <span>{relatorio.equipamento_marca}</span>}
             </>
           ) : (
-            <span className="text-gray-500 italic">NÃ£o especificado</span>
+            <span className="text-gray-500 italic">Nao especificado</span>
           )}
         </p>
+        {relatorio.motivo_assistencia && (
+          <>
+            <p className={`text-xs ${textSecondary} mb-1 mt-2`}>Motivo</p>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-300' : 'text-gray-700'} line-clamp-2`}>{relatorio.motivo_assistencia}</p>
+          </>
+        )}
       </div>
 
       {footerLabel && (

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import ReportCard from './ReportCard';
-import { matchesReportSearch } from './utils/reports';
+import { matchesReportSearch, sortReportsByStatus } from './utils/reports';
 
 const ReportsSection = ({
   activeTab,
@@ -32,7 +32,12 @@ const ReportsSection = ({
     return null;
   }
 
-  const filteredRelatorios = relatorios.filter((relatorio) => matchesReportSearch(relatorio, searchTerm));
+  // Excluir facturados e aplicar pesquisa + ordenar por estado
+  const filteredRelatorios = sortReportsByStatus(
+    relatorios
+      .filter((r) => r.status !== 'facturado')
+      .filter((r) => matchesReportSearch(r, searchTerm))
+  );
 
   return (
     <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
@@ -41,7 +46,7 @@ const ReportsSection = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
             type="text"
-            placeholder={isMobile ? 'Buscar OT...' : 'Buscar por numero, cliente ou local de intervencao...'}
+            placeholder={isMobile ? 'Buscar FS...' : 'Buscar por numero, cliente ou local de intervencao...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={`pl-10 ${bgCard} ${borderColor} ${textPrimary} ${isMobile ? 'text-sm' : ''}`}
@@ -60,9 +65,9 @@ const ReportsSection = ({
       {loading ? (
         <div className="text-center py-8">
           <div className={`inline-block animate-spin rounded-full ${isMobile ? 'h-8 w-8' : 'h-12 w-12'} border-4 border-blue-500 border-t-transparent`}></div>
-          <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar OTs...</p>
+          <p className={`${textSecondary} mt-4 ${isMobile ? 'text-sm' : ''}`}>A carregar FS's...</p>
         </div>
-      ) : relatorios.length === 0 ? (
+      ) : relatorios.filter((r) => r.status !== 'facturado').length === 0 ? (
         <div className="text-center py-8">
           <FileText className={`${isMobile ? 'w-12 h-12' : 'w-16 h-16'} text-gray-600 mx-auto mb-4`} />
           <p className={`${textSecondary} ${isMobile ? 'text-base' : 'text-lg'}`}>Nenhuma FS criada</p>
@@ -71,7 +76,7 @@ const ReportsSection = ({
             className="mt-4 bg-blue-500 hover:bg-blue-600"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Criar Primeira OT
+            Criar Primeira FS
           </Button>
         </div>
       ) : (
@@ -103,7 +108,7 @@ const ReportsSection = ({
                 Nenhuma FS encontrada para "{searchTerm}"
               </p>
               <p className={`${textSecondary} text-sm mt-2`}>
-                Tente pesquisar por numero da OT, nome do cliente ou local de intervencao
+                Tente pesquisar por numero da FS, nome do cliente ou local de intervencao
               </p>
             </div>
           )}
