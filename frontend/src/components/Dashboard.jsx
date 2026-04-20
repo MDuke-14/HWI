@@ -1519,4 +1519,4 @@ const Dashboard = ({ user, onLogout }) => {
   );
 };
 
-export default Dashboard;ard;
+export default Dashboard;
