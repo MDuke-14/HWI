@@ -61,13 +61,27 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - ADDED: Motivo field in FS cards
 - REFACTORED: Tabs, ReportsSection, FacturadosSection, ReportCard extracted from monolith
 
+## Timezone/DST Fix (2026-04-20)
+- P0 FIXED: System used datetime.now(timezone.utc) everywhere, causing 1-hour offset during Portuguese summer time (DST)
+- Architecture: Frontend sends `client_time` (ISO with offset e.g. `2024-03-31T09:00:00+01:00`) on time-entry start/end
+- Backend parses client_time for accurate local storage; falls back to `Europe/Lisbon` timezone via pytz
+- New utility functions: `get_now_local()`, `get_today_local()`, `format_time_from_iso()` in server.py
+- All HH:MM display formatting uses `format_time_from_iso()` which converts to Lisbon timezone
+- Frontend `toLocaleTimeString` calls hardened with `{ timeZone: 'Europe/Lisbon' }` option
+- Fixed missing route decorator for `/api/time-entries/my-realtime-status`
+- Fixed login auth to handle both `password` and `hashed_password` DB fields
+- Backend tests: 10/10 passing (/app/backend/tests/test_timezone_dst_fix.py)
+
 ## Credentials
 - Admin: pedro / teste
 
 ## Pending Issues (Prioritized)
+### P0
+- None (Timezone/DST fix completed)
+
 ### P1
 - Continue refactoring: integrate ClientsSection, StatusSearchSection, Header
-- Complete and Test Dynamic Price Table Creation
+- Complete and Test Dynamic Price Table Creation (delayed 4+ forks)
 - Continue backend refactoring (server.py still ~10,200 lines)
 
 ### P2

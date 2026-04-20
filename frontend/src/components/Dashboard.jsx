@@ -859,7 +859,7 @@ const Dashboard = ({ user, onLogout }) => {
                             : isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'
                         }`}
                       >
-                        {new Date(e.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })} - {formatHours(e.total_hours)}
+                        {new Date(e.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon' })} - {formatHours(e.total_hours)}
                       </div>
                     ))}
                     {todayEntries.length > 3 && (
@@ -1150,8 +1150,8 @@ const Dashboard = ({ user, onLogout }) => {
                     <div className="flex justify-between items-center">
                       <div className="text-gray-300">
                         <div className="text-sm">
-                          {e.start_time ? new Date(e.start_time).toLocaleTimeString('pt-PT') : '-'} → {' '}
-                          {e.end_time ? new Date(e.end_time).toLocaleTimeString('pt-PT') : '-'}
+                          {e.start_time ? new Date(e.start_time).toLocaleTimeString('pt-PT', { timeZone: 'Europe/Lisbon' }) : '-'} → {' '}
+                          {e.end_time ? new Date(e.end_time).toLocaleTimeString('pt-PT', { timeZone: 'Europe/Lisbon' }) : '-'}
                         </div>
                         {e.is_overtime_day && (
                           <div className="text-xs text-amber-400 mt-1">{e.overtime_reason}</div>
@@ -1519,4 +1519,4 @@ const Dashboard = ({ user, onLogout }) => {
   );
 };
 
-export default Dashboard;
+export default Dashboard;ard;

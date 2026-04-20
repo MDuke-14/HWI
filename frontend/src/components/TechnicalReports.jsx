@@ -8203,8 +8203,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                                       </span>
                                     </td>
                                     <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
-                                    <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
-                                    <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'}) : '-'}</td>
+                                    <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon'}) : '-'}</td>
+                                    <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon'}) : '-'}</td>
                                     <td className="p-2">{(() => { const h = reg.horas_arredondadas || 0; const hi = Math.floor(h); const mi = Math.round((h - hi) * 60); return `${hi}h${String(mi).padStart(2, '0')}`; })()}</td>
                                     <td className="p-2">{reg.km != null && reg.km > 0 ? reg.km : '-'}</td>
                                   </tr>
