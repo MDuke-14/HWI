@@ -20,3 +20,17 @@ export const decimalToHoursMinutes = (decimalHours) => {
   const minutes = Math.round((decimalHours - hours) * 60);
   return { hours, minutes };
 };
+
+/**
+ * Get current local time as ISO string with timezone offset.
+ * Example: "2024-03-31T09:00:00+01:00"
+ * This preserves the user's device timezone for backend storage.
+ */
+export const getLocalISOString = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const offset = -d.getTimezoneOffset(); // minutes east of UTC
+  const sign = offset >= 0 ? '+' : '-';
+  const absOffset = Math.abs(offset);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${pad(Math.floor(absOffset/60))}:${pad(absOffset%60)}`;
+};

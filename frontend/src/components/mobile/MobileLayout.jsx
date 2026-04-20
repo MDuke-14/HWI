@@ -9,6 +9,7 @@ import { useMobile } from '@/contexts/MobileContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import { API } from '@/App';
+import { getLocalISOString } from '@/utils/timeUtils';
 import MobileBottomNav from './MobileBottomNav';
 import MobileMenu from './MobileMenu';
 import { cn } from '@/lib/utils';
@@ -82,7 +83,8 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
 
         const response = await axios.post(`${API}/time-entries/start`, {
           observations: 'Entrada via mobile',
-          geo_location: locationData
+          geo_location: locationData,
+          client_time: getLocalISOString()
         });
         
         toast.success('Entrada registada!');
@@ -126,7 +128,8 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
         
         const response = await axios.post(`${API}/time-entries/end/${timerToEnd.id}`, {
           observations: 'Saída via mobile',
-          end_geo_location: endLocationData
+          end_geo_location: endLocationData,
+          client_time: getLocalISOString()
         });
         
         toast.success(`Saída registada! Total: ${response.data.total_hours || '0'}h`);

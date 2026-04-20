@@ -483,6 +483,54 @@ async def get_current_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return current_user
 
+import pytz
+
+LISBON_TZ = pytz.timezone('Europe/Lisbon')
+
+
+def get_now_local(client_time_str: str = None) -> datetime:
+    """
+    Returns current local datetime (offset-aware).
+    If client_time is provided (ISO with offset), parse and use it.
+    Otherwise, convert UTC now to Europe/Lisbon.
+    """
+    if client_time_str:
+        try:
+            dt = datetime.fromisoformat(client_time_str)
+            if dt.tzinfo is None:
+                # Naive datetime - assume Europe/Lisbon
+                dt = LISBON_TZ.localize(dt)
+            return dt
+        except (ValueError, TypeError):
+            pass
+    # Fallback: use Europe/Lisbon timezone
+    return datetime.now(LISBON_TZ)
+
+
+def get_today_local(client_time_str: str = None) -> tuple:
+    """
+    Returns (today_str 'YYYY-MM-DD', today_date) in local timezone.
+    """
+    now = get_now_local(client_time_str)
+    return now.strftime("%Y-%m-%d"), now.date()
+
+
+def format_time_from_iso(iso_str: str) -> str:
+    """
+    Format a stored ISO datetime string to HH:MM preserving its timezone offset.
+    If stored as '2024-03-31T09:00:00+01:00' → returns '09:00'
+    If stored as '2024-03-31T08:00:00+00:00' → converts to Lisbon time first.
+    """
+    try:
+        dt = datetime.fromisoformat(str(iso_str).replace('Z', '+00:00'))
+        # Convert to Lisbon timezone for display
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(LISBON_TZ)
+        return dt.strftime("%H:%M")
+    except (ValueError, TypeError):
+        return "00:00"
+
+
 def normalizar_tempo(dt: datetime) -> datetime:
     """
     Remove segundos e microsegundos de um datetime.
@@ -1840,7 +1888,7 @@ async def add_tecnico_relatorio(
         tipo_horario=tecnico_data.get("tipo_horario", "diurno"),
         tipo_registo=tipo_registo,
         funcao_ot=funcao_ot,
-        data_trabalho=data_trabalho_str if data_trabalho_str else datetime.now(timezone.utc).date(),
+        data_trabalho=data_trabalho_str if data_trabalho_str else get_now_local().date(),
         hora_inicio=hora_inicio_str,
         hora_fim=hora_fim_str,
         incluir_pausa=tecnico_data.get("incluir_pausa", False),
@@ -3635,9 +3683,10 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
     - Uma autorização desbloqueia o dia inteiro
     - Uma rejeição bloqueia todas as picagens desse dia
     """
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    today_date = datetime.now(timezone.utc).date()
-    current_time_str = datetime.now(timezone.utc).strftime("%H:%M")
+    now_local = get_now_local(entry_data.client_time)
+    today = now_local.strftime("%Y-%m-%d")
+    today_date = now_local.date()
+    current_time_str = now_local.strftime("%H:%M")
     
     # Check if there's already an active (not completed) entry for this user
     existing_active = await db.time_entries.find_one({
@@ -3702,7 +3751,7 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         user_id=current_user["sub"],
         username=current_user["username"],
         date=today,
-        start_time=normalizar_tempo(datetime.now(timezone.utc)),
+        start_time=normalizar_tempo(now_local),
         status="active",
         observations=entry_data.observations,
         is_overtime_day=is_ot,
@@ -3816,8 +3865,8 @@ async def end_time_entry(
     if entry["status"] == "completed":
         raise HTTPException(status_code=400, detail="O registo já foi finalizado")
     
-    end_time = normalizar_tempo(datetime.now(timezone.utc))
-    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
+    end_time = normalizar_tempo(get_now_local(end_data.client_time))
+    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
     
     # Merge observations - keep start observations and add end observations if provided
     final_observations = entry.get("observations", "")
@@ -3837,8 +3886,9 @@ async def end_time_entry(
         current_start = start_time
         
         while current_start.date() < end_date:
-            # Calculate end of current day (midnight)
-            midnight = datetime.combine(current_start.date() + timedelta(days=1), datetime.min.time(), timezone.utc)
+            # Calculate end of current day (midnight) in the same timezone as the entry
+            tz_info = current_start.tzinfo or LISBON_TZ
+            midnight = datetime.combine(current_start.date() + timedelta(days=1), datetime.min.time(), tz_info)
             day_seconds = (midnight - current_start).total_seconds()
             
             # Calcular minutos (timestamps já normalizados, sem segundos)
@@ -3985,7 +4035,7 @@ async def end_time_entry(
 
 @api_router.get("/time-entries/today")
 async def get_today_entry(current_user: dict = Depends(get_current_user)):
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today, _ = get_today_local()
     
     # Verificar se já existe entrada hoje com "Fora de Zona de Residência" ativo
     has_outside_zone_today = await db.time_entries.find_one({
@@ -4029,8 +4079,7 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
     if not current_user.get("is_admin", False):
         raise HTTPException(status_code=403, detail="Apenas administradores")
     
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    today_date = datetime.now(timezone.utc).date()
+    today, today_date = get_today_local()
     
     # Get all users
     users = await db.users.find({}, {"_id": 0, "id": 1, "username": 1, "full_name": 1}).to_list(1000)
@@ -4071,8 +4120,8 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
                 for idx, e in enumerate(entry_db["entries"]):
                     entradas_lista.append({
                         "id": f"{entry_db['id']}_{idx}",
-                        "inicio": datetime.fromisoformat(e["start_time"]).strftime("%H:%M") if e.get("start_time") else None,
-                        "fim": datetime.fromisoformat(e["end_time"]).strftime("%H:%M") if e.get("end_time") else None,
+                        "inicio": format_time_from_iso(e["start_time"]) if e.get("start_time") else None,
+                        "fim": format_time_from_iso(e["end_time"]) if e.get("end_time") else None,
                         "start_time": e.get("start_time"),
                         "end_time": e.get("end_time"),
                         "estado": "terminada" if e.get("end_time") else "ativa",
@@ -4083,8 +4132,8 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
                 # Formato antigo - entrada única
                 entradas_lista.append({
                     "id": entry_db["id"],
-                    "inicio": datetime.fromisoformat(entry_db["start_time"]).strftime("%H:%M") if entry_db.get("start_time") else None,
-                    "fim": datetime.fromisoformat(entry_db["end_time"]).strftime("%H:%M") if entry_db.get("end_time") else None,
+                    "inicio": format_time_from_iso(entry_db["start_time"]) if entry_db.get("start_time") else None,
+                    "fim": format_time_from_iso(entry_db["end_time"]) if entry_db.get("end_time") else None,
                     "start_time": entry_db.get("start_time"),
                     "end_time": entry_db.get("end_time"),
                     "estado": "ativa" if entry_db["status"] == "active" else "terminada",
@@ -4106,10 +4155,11 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
         
         if active_entry:
             # Currently working - SOMAR todas as entradas
-            start_time_active = datetime.fromisoformat(active_entry["start_time"])
+            start_time_active = datetime.fromisoformat(active_entry["start_time"].replace('Z', '+00:00'))
             
-            # Tempo da entrada ativa (em segundos)
-            elapsed_active = (datetime.now(timezone.utc) - start_time_active).total_seconds()
+            # Tempo da entrada ativa (em segundos) - use aware datetime for comparison
+            now_utc = datetime.now(timezone.utc)
+            elapsed_active = (now_utc - start_time_active.astimezone(timezone.utc)).total_seconds()
             
             # Tempo das entradas completadas (converter horas para segundos)
             total_completed = sum(e.get("total_hours", 0) for e in completed_entries) * 3600
@@ -4122,7 +4172,7 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             
             status_info["status"] = "TRABALHANDO"
             status_info["status_color"] = "green"
-            status_info["clock_in_time"] = start_time_active.strftime("%H:%M")
+            status_info["clock_in_time"] = format_time_from_iso(active_entry["start_time"])
             status_info["elapsed_hours"] = round(elapsed_hours, 2)  # SOMA de tudo
             status_info["outside_residence_zone"] = active_entry.get("outside_residence_zone", False)
             status_info["location"] = active_entry.get("location_description")
@@ -4145,8 +4195,8 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             
             status_info["status"] = "TRABALHOU"
             status_info["status_color"] = "blue"
-            status_info["clock_in_time"] = datetime.fromisoformat(first_entry["start_time"]).strftime("%H:%M")
-            status_info["clock_out_time"] = datetime.fromisoformat(last_entry["end_time"]).strftime("%H:%M")
+            status_info["clock_in_time"] = format_time_from_iso(first_entry["start_time"])
+            status_info["clock_out_time"] = format_time_from_iso(last_entry["end_time"])
             status_info["total_hours"] = round(truncar_horas_para_minutos(total_hours), 2)
             status_info["outside_residence_zone"] = any(e.get("outside_residence_zone", False) for e in completed_entries)
             
@@ -4202,9 +4252,9 @@ async def get_user_location_history(
     
     # Definir datas
     if not start_date:
-        start_date = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+        start_date = (get_now_local() - timedelta(days=30)).strftime("%Y-%m-%d")
     if not end_date:
-        end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        end_date = get_now_local().strftime("%Y-%m-%d")
     
     # Buscar entradas com geolocalização
     entries = await db.time_entries.find({
@@ -4253,7 +4303,7 @@ async def get_all_current_locations(current_user: dict = Depends(get_current_use
     if not current_user.get("is_admin", False):
         raise HTTPException(status_code=403, detail="Apenas administradores")
     
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today, _ = get_today_local()
     
     # Buscar todas as entradas de hoje com geolocalização
     entries = await db.time_entries.find({
@@ -4299,11 +4349,12 @@ async def get_all_current_locations(current_user: dict = Depends(get_current_use
         "locations": list(user_locations.values()),
         "total_users": len(user_locations)
     }
+
+@api_router.get("/time-entries/my-realtime-status")
 async def get_my_realtime_status(current_user: dict = Depends(get_current_user)):
     """Get user's own real-time status for today with entry details"""
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    today_date = datetime.now(timezone.utc).date()
-    hora_servidor = datetime.now(timezone.utc).strftime("%H:%M")
+    today, today_date = get_today_local()
+    hora_servidor = get_now_local().strftime("%H:%M")
     user_id = current_user["sub"]
     
     # Get user's today entries
@@ -4320,8 +4371,8 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
             for idx, e in enumerate(entry_db["entries"]):
                 entrada = {
                     "id": f"{entry_db['id']}_{idx}",
-                    "inicio": datetime.fromisoformat(e["start_time"]).strftime("%H:%M") if e.get("start_time") else None,
-                    "fim": datetime.fromisoformat(e["end_time"]).strftime("%H:%M") if e.get("end_time") else None,
+                    "inicio": format_time_from_iso(e["start_time"]) if e.get("start_time") else None,
+                    "fim": format_time_from_iso(e["end_time"]) if e.get("end_time") else None,
                     "estado": "terminada" if e.get("end_time") else "ativa"
                 }
                 entradas.append(entrada)
@@ -4329,8 +4380,8 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
             # Formato antigo
             entrada = {
                 "id": entry_db["id"],
-                "inicio": datetime.fromisoformat(entry_db["start_time"]).strftime("%H:%M") if entry_db.get("start_time") else None,
-                "fim": datetime.fromisoformat(entry_db["end_time"]).strftime("%H:%M") if entry_db.get("end_time") else None,
+                "inicio": format_time_from_iso(entry_db["start_time"]) if entry_db.get("start_time") else None,
+                "fim": format_time_from_iso(entry_db["end_time"]) if entry_db.get("end_time") else None,
                 "estado": "ativa" if entry_db["status"] == "active" else "terminada"
             }
             entradas.append(entrada)
@@ -4517,7 +4568,7 @@ async def get_reports(
     period: str = "billing",  # billing, week, month
     current_user: dict = Depends(get_current_user)
 ):
-    now = datetime.now(timezone.utc)
+    now = get_now_local()
     
     if period == "billing":
         # Período de faturação: 26 a 25
@@ -4814,7 +4865,7 @@ async def get_monthly_detailed_report(
     Relatório mensal detalhado para contabilidade (26 do mês anterior até 25)
     Admin can pass user_id to view other users' reports
     """
-    now = datetime.now(timezone.utc)
+    now = get_now_local()
     
     # Use current month/year if not provided
     if not month or not year:
@@ -5055,7 +5106,7 @@ async def download_monthly_pdf_report(
     Generate and download PDF monthly detailed report for accounting
     Admin can pass user_id to download other users' reports
     """
-    now = datetime.now(timezone.utc)
+    now = get_now_local()
     
     # Use current month/year if not provided
     if not month or not year:
@@ -5407,8 +5458,8 @@ async def adjust_entry_to_8hours(
                 continue  # Pular a entrada que vamos ajustar
             
             if e.get("start_time") and e.get("end_time"):
-                start = normalizar_tempo(datetime.fromisoformat(e["start_time"]))
-                end = normalizar_tempo(datetime.fromisoformat(e["end_time"]))
+                start = normalizar_tempo(datetime.fromisoformat(e["start_time"].replace('Z', '+00:00')))
+                end = normalizar_tempo(datetime.fromisoformat(e["end_time"].replace('Z', '+00:00')))
                 total_seconds_other += (end - start).total_seconds()
         
         # Converter para horas
@@ -5427,13 +5478,12 @@ async def adjust_entry_to_8hours(
             )
         
         # Calcular nova hora de saída
-        start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
+        start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
         minutes_needed = round(hours_needed * 60)
         new_end_time = start_time + timedelta(minutes=minutes_needed)
         
         # Guardar hora original em observations
-        original_end = datetime.fromisoformat(entry["end_time"])
-        original_end_str = original_end.strftime("%H:%M")
+        original_end_str = format_time_from_iso(entry["end_time"])
         
         new_observations = entry.get("observations", "")
         adjustment_note = f"[Ajustado para 8h - Original: {original_end_str}]"
@@ -5500,7 +5550,7 @@ async def register_admin_observation(user_id: str, date: str, observation: str, 
             "year": year
         })
         
-        timestamp = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
+        timestamp = get_now_local().strftime("%d/%m/%Y %H:%M")
         full_observation = f"[{timestamp}] {observation}"
         
         if existing_report:
@@ -5776,7 +5826,7 @@ async def download_excel_report(
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     
     # Determine date range
-    now = datetime.now(timezone.utc)
+    now = get_now_local()
     if not start_date or not end_date:
         # Use current billing period
         start_dt, end_dt = get_billing_period_dates(now.date())
@@ -6136,15 +6186,15 @@ async def recalculate_user_hours(
                 has_time_data = True
                 for e in entry["entries"]:
                     if e.get("start_time") and e.get("end_time"):
-                        start = normalizar_tempo(datetime.fromisoformat(e["start_time"]))
-                        end = normalizar_tempo(datetime.fromisoformat(e["end_time"]))
+                        start = normalizar_tempo(datetime.fromisoformat(e["start_time"].replace('Z', '+00:00')))
+                        end = normalizar_tempo(datetime.fromisoformat(e["end_time"].replace('Z', '+00:00')))
                         total_seconds += (end - start).total_seconds()
             
             # FORMATO ANTIGO: start_time e end_time diretos
             elif entry.get("start_time") and entry.get("end_time"):
                 has_time_data = True
-                start = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
-                end = normalizar_tempo(datetime.fromisoformat(entry["end_time"]))
+                start = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
+                end = normalizar_tempo(datetime.fromisoformat(entry["end_time"].replace('Z', '+00:00')))
                 total_seconds = (end - start).total_seconds()
             
             if not has_time_data:
@@ -6158,11 +6208,11 @@ async def recalculate_user_hours(
             
             # Usar start_time para calcular breakdown (precisa de datetime)
             if entry.get("entries") and len(entry["entries"]) > 0:
-                first_start = normalizar_tempo(datetime.fromisoformat(entry["entries"][0]["start_time"]))
-                last_end = normalizar_tempo(datetime.fromisoformat(entry["entries"][-1]["end_time"]))
+                first_start = normalizar_tempo(datetime.fromisoformat(entry["entries"][0]["start_time"].replace('Z', '+00:00')))
+                last_end = normalizar_tempo(datetime.fromisoformat(entry["entries"][-1]["end_time"].replace('Z', '+00:00')))
             else:
-                first_start = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
-                last_end = normalizar_tempo(datetime.fromisoformat(entry["end_time"]))
+                first_start = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
+                last_end = normalizar_tempo(datetime.fromisoformat(entry["end_time"].replace('Z', '+00:00')))
             
             # Usar a NOVA LÓGICA do script fornecido
             date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
@@ -6529,7 +6579,8 @@ async def admin_start_clock(
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now_local = get_now_local()
+    today = now_local.strftime("%Y-%m-%d")
     
     # Verificar se já existe uma entrada ativa
     existing_active = await db.time_entries.find_one({
@@ -6541,14 +6592,14 @@ async def admin_start_clock(
         raise HTTPException(status_code=400, detail="Este utilizador já tem um relógio ativo")
     
     # Verificar se é dia de horas extras
-    today_date = datetime.now(timezone.utc).date()
+    today_date = now_local.date()
     is_ot, ot_reason = is_overtime_day(today_date)
     
     entry = TimeEntry(
         user_id=user_id,
         username=user.get("username", ""),
         date=today,
-        start_time=normalizar_tempo(datetime.now(timezone.utc)),
+        start_time=normalizar_tempo(now_local),
         status="active",
         observations=f"[Iniciado por admin: {current_user['username']}]",
         is_overtime_day=is_ot,
@@ -6585,8 +6636,8 @@ async def admin_end_clock(
     if not entry:
         raise HTTPException(status_code=404, detail="Nenhum relógio ativo encontrado para este utilizador")
     
-    end_time = normalizar_tempo(datetime.now(timezone.utc))
-    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"]))
+    end_time = normalizar_tempo(get_now_local())
+    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
     
     # Calcular horas (timestamps normalizados)
     total_seconds = (end_time - start_time).total_seconds()
@@ -7305,7 +7356,7 @@ async def get_my_day_authorization_status(
         date: Data no formato YYYY-MM-DD (default: hoje)
     """
     if not date:
-        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date = get_now_local().strftime("%Y-%m-%d")
     
     # Verificar se é dia especial
     check_date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -7487,8 +7538,8 @@ async def admin_update_time_entry(
     
     # Calculate total hours if times are provided
     if "start_time" in update_data and "end_time" in update_data:
-        start = normalizar_tempo(datetime.fromisoformat(update_data["start_time"].replace("Z", "")))
-        end = normalizar_tempo(datetime.fromisoformat(update_data["end_time"].replace("Z", "")))
+        start = normalizar_tempo(datetime.fromisoformat(update_data["start_time"].replace("Z", "+00:00")))
+        end = normalizar_tempo(datetime.fromisoformat(update_data["end_time"].replace("Z", "+00:00")))
         total_minutes = int((end - start).total_seconds() / 60)
         update_data["total_hours"] = total_minutes / 60
     
@@ -7536,8 +7587,8 @@ async def admin_create_time_entry(
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     
     # Parse times
-    start_time = normalizar_tempo(datetime.fromisoformat(entry_data["start_time"].replace("Z", "")))
-    end_time = normalizar_tempo(datetime.fromisoformat(entry_data["end_time"].replace("Z", "")))
+    start_time = normalizar_tempo(datetime.fromisoformat(entry_data["start_time"].replace("Z", "+00:00")))
+    end_time = normalizar_tempo(datetime.fromisoformat(entry_data["end_time"].replace("Z", "+00:00")))
     
     # Calculate total hours (sem segundos)
     total_minutes = int((end_time - start_time).total_seconds() / 60)
@@ -7766,7 +7817,7 @@ async def get_all_reports(
     current_user: dict = Depends(get_current_admin)
 ):
     """Get consolidated reports for all users (admin only)"""
-    now = datetime.now(timezone.utc)
+    now = get_now_local()
     
     # Se mês e ano foram especificados, usar esses valores
     # Período: dia 26 do mês anterior até dia 25 do mês selecionado
@@ -8017,7 +8068,7 @@ async def get_my_absences(current_user: dict = Depends(get_current_user)):
 @api_router.get("/absences/check-late")
 async def check_late_arrival(current_user: dict = Depends(get_current_user)):
     """Check if user is late (after 9am on weekday) and send notification"""
-    now = datetime.now(timezone.utc)
+    now = get_now_local()
     today = now.strftime("%Y-%m-%d")
     current_time = now.time()
     
@@ -8711,7 +8762,7 @@ async def iniciar_cronometro(
         tipo=tipo,
         funcao_ot=funcao_ot,
         km_inicial=km_inicial,
-        hora_inicio=datetime.now(timezone.utc),
+        hora_inicio=get_now_local(),
         ativo=True
     )
     
@@ -8752,8 +8803,8 @@ async def parar_cronometro(
         raise HTTPException(status_code=404, detail="Cronómetro não encontrado ou já parado")
     
     # Hora de fim
-    hora_fim = datetime.now(timezone.utc)
-    hora_inicio = datetime.fromisoformat(cronometro["hora_inicio"])
+    hora_fim = get_now_local()
+    hora_inicio = datetime.fromisoformat(cronometro["hora_inicio"].replace('Z', '+00:00'))
     
     # Buscar OT para pegar os KM
     ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})

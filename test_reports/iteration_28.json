@@ -1,0 +1,48 @@
+{
+  "summary": "Timezone/DST fix (client_time + Europe/Lisbon fallback) verified end-to-end. 10/10 backend pytest tests pass. Frontend correctly sends client_time ISO string with offset on both start and end calls. Also discovered & fixed a missing route decorator for /api/time-entries/my-realtime-status.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/time-entries/my-realtime-status", "issue": "Missing @api_router.get decorator caused endpoint to return 404 (FIXED by adding decorator at server.py line ~4351)"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard – Registos de Hoje", "issues": ["Times rendered via new Date(iso).toLocaleTimeString('pt-PT') use BROWSER timezone, not forced Europe/Lisbon. For Portuguese users on correct device TZ this is fine, but displaying +01:00 ISO times in a UTC-browser (e.g., test env) shows 08:00 instead of 09:00. Consider passing { timeZone: 'Europe/Lisbon' } to toLocaleTimeString to ensure display correctness across devices."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_timezone_dst_fix.py",
+    "/app/test_reports/pytest/pytest_timezone.xml"
+  ],
+  "action_items": [
+    "[OPTIONAL] Harden display: pass { timeZone: 'Europe/Lisbon' } to all toLocaleTimeString calls in Dashboard.jsx / mobile views to render HH:MM consistently in Lisbon time regardless of device timezone.",
+    "[INFO] The missing decorator for /api/time-entries/my-realtime-status was fixed by the test agent."
+  ],
+  "critical_code_review_comments": [
+    "server.py line 4351-4352: get_my_realtime_status was defined without @api_router.get('/time-entries/my-realtime-status'). Fixed during this run. Indicates a prior copy-paste error.",
+    "get_now_local/get_today_local/format_time_from_iso helpers (lines 486-540) are correctly implemented and used consistently in start/end/today/realtime-status endpoints.",
+    "models.py: TimeEntryStart and TimeEntryEnd correctly declare Optional[str] client_time field.",
+    "Frontend utils/timeUtils.js getLocalISOString() produces correct ISO with offset (verified: browser sent '2026-04-20T09:32:22+00:00' in UTC env, would send +01:00 in Portugal summer).",
+    "Backend start endpoint stores start_time EXACTLY as '2026-04-20T09:00:00+01:00' when client sends +01:00 offset (no UTC conversion) and derives date='2026-04-20' from local time (verified via GET)."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (added missing @api_router.get decorator for /time-entries/my-realtime-status)",
+    "/app/backend/tests/test_timezone_dst_fix.py (new pytest file with 10 tests)"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests pass)",
+    "frontend": "100% (login + start/end flows emit client_time correctly)"
+  },
+  "test_credentials": {
+    "test_user": {"username": "teste@email.com", "password": "teste"},
+    "admin_user": {"username": "pedro", "password": "teste"}
+  },
+  "seed_data_creation": "Created several time_entries for user teste@email.com (observations prefixed TEST_*). Most were ended during tests; a couple completed entries remain in DB for date 2026-04-20.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Timezone fix is working. Key validation: POST /api/time-entries/start with client_time='2026-04-20T09:00:00+01:00' stores start_time='2026-04-20T09:00:00+01:00' (NOT UTC 08:00) and date='2026-04-20'. End endpoint computes total_hours correctly across timezone offsets (e.g., 09:00+01:00 → 17:00+01:00 = 8.0h). /api/time-entries/today filters by LOCAL date, not UTC. /api/admin/realtime-status and /api/time-entries/my-realtime-status use format_time_from_iso which converts stored ISO to Europe/Lisbon for HH:MM display. Fallback (no client_time) correctly uses Europe/Lisbon now(). NOTE: One issue was discovered and fixed by the test agent: get_my_realtime_status had no route decorator (returned 404); added @api_router.get('/time-entries/my-realtime-status').",
+  "rca of the issue": "Original bug: all time-entry code used datetime.now(timezone.utc) → during Portugal summer (UTC+1) a 09:00 local event was stored as 08:00 UTC and its 'date' was derived from UTC (could even be previous day near midnight). Fix: introduced get_now_local(client_time_str) which parses ISO with offset from client or falls back to Europe/Lisbon. All start/end/today/realtime endpoints use these helpers; format_time_from_iso converts stored ISO to Lisbon TZ for HH:MM display. Secondary bug found by tests: the my-realtime-status function lacked a route decorator (404). Fixed by adding @api_router.get('/time-entries/my-realtime-status')."
+}

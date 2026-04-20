@@ -70,7 +70,7 @@ async def login(user_login: UserLogin):
     if not user:
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     
-    if not verify_password(user_login.password, user["hashed_password"]):
+    if not verify_password(user_login.password, user.get("hashed_password") or user.get("password", "")):
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
     
     token_data = {

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Clock, Play, Square, Coffee, MapPin, Clipboard, Users, RefreshCw, BookOpen, Download, Map, Monitor, Smartphone } from 'lucide-react';
-import { formatHours } from '@/utils/timeUtils';
+import { formatHours, getLocalISOString } from '@/utils/timeUtils';
 import {
   Dialog,
   DialogContent,
@@ -606,7 +606,8 @@ const Dashboard = ({ user, onLogout }) => {
         observations,
         outside_residence_zone: autoOutsideZone,
         location_description: autoOutsideZone ? autoLocationDesc : null,
-        geo_location: location
+        geo_location: location,
+        client_time: getLocalISOString()
       });
       toast.success('Relógio iniciado!');
       
@@ -671,7 +672,8 @@ const Dashboard = ({ user, onLogout }) => {
       
       const response = await axios.post(`${API}/time-entries/end/${entry.id}`, {
         observations: endObservations,
-        end_geo_location: endLocation
+        end_geo_location: endLocation,
+        client_time: getLocalISOString()
       });
       toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
       

@@ -385,10 +385,12 @@ class TimeEntryStart(BaseModel):
     outside_residence_zone: Optional[bool] = False
     location_description: Optional[str] = None
     geo_location: Optional[dict] = None
+    client_time: Optional[str] = None  # ISO local time with offset (e.g. 2024-03-31T09:00:00+01:00)
 
 class TimeEntryEnd(BaseModel):
     observations: Optional[str] = None
     end_geo_location: Optional[dict] = None
+    client_time: Optional[str] = None  # ISO local time with offset
 
 class TimeEntryUpdate(BaseModel):
     start_time: Optional[datetime] = None
