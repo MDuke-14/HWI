@@ -718,12 +718,24 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     # ========== FOTOGRAFIAS NÃO ASSOCIADAS A DATAS (FALLBACK) ==========
     # Se houver fotografias que não foram incluídas nos blocos de data, mostrar aqui
     if fotografias:
-        # Verificar quais fotografias não foram incluídas
+        # Verificar quais fotografias não foram incluídas nos blocos de intervenção
+        interv_dates = set()
+        for interv in (intervencoes or []):
+            d = normalize_date(interv.get('data_intervencao'))
+            if d:
+                interv_dates.add(d)
+        
         fotos_incluidas = set()
-        for date in sorted_dates:
+        for d in interv_dates:
             for foto in fotografias:
                 foto_date = normalize_date(foto.get('uploaded_at'))
-                if foto_date == date or (date is None and not foto_date):
+                if foto_date == d:
+                    fotos_incluidas.add(foto.get('id') or id(foto))
+        # Also include photos with no date that were assigned to first intervention
+        if interv_dates:
+            for foto in fotografias:
+                foto_date = normalize_date(foto.get('uploaded_at'))
+                if not foto_date:
                     fotos_incluidas.add(foto.get('id') or id(foto))
         
         fotos_nao_incluidas = [f for f in fotografias if (f.get('id') or id(f)) not in fotos_incluidas]
