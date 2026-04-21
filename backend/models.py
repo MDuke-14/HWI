@@ -433,10 +433,11 @@ class VacationRequestCreate(BaseModel):
 class VacationBalance(BaseModel):
     model_config = ConfigDict(extra="ignore")
     user_id: str
+    year: int = Field(default_factory=lambda: datetime.now().year)
     company_start_date: str
-    days_earned: float
-    days_taken: int
-    days_available: float
+    days_earned: float = 22
+    days_taken: int = 0
+    days_available: float = 22
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Absence(BaseModel):

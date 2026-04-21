@@ -205,6 +205,61 @@ async def root_health_check():
         "service": "hwi-ponto-backend"
     }
 
+
+async def check_annual_vacation_reset(database):
+    """
+    Verificação anual de férias no startup/deploy.
+    Para cada vacation_balance existente:
+    - Se não tem 'year' ou é de um ano anterior ao corrente:
+      - Soma 22 dias ao saldo existente (ex: 5 → 27, -10 → 12)
+      - Reseta days_taken para 0
+      - Atualiza year para o ano corrente
+    """
+    from datetime import date
+    current_year = date.today().year
+    
+    # Iterar pelos balances existentes (cada técnico com férias configuradas)
+    balances = await database.vacation_balances.find({}, {"_id": 0}).to_list(None)
+    
+    # Mapear usernames para logs
+    users_map = {}
+    users = await database.users.find({}, {"_id": 0, "id": 1, "username": 1}).to_list(None)
+    for u in users:
+        users_map[u["id"]] = u.get("username", u["id"][:8])
+    
+    updated_count = 0
+    
+    for balance in balances:
+        user_id = balance["user_id"]
+        balance_year = balance.get("year", 0)
+        
+        if balance_year >= current_year:
+            continue
+        
+        # Ano anterior — transitar saldo + 22 novos dias
+        old_available = balance.get("days_available", 0)
+        new_available = old_available + 22
+        username = users_map.get(user_id, user_id[:8])
+        
+        await database.vacation_balances.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "year": current_year,
+                "days_earned": 22,
+                "days_taken": 0,
+                "days_available": new_available,
+                "updated_at": get_now_local().isoformat()
+            }}
+        )
+        updated_count += 1
+        logging.info(f"  Férias {current_year}: {username} — saldo anterior: {old_available}, novo: {new_available}")
+    
+    if updated_count > 0:
+        logging.info(f"✅ Férias anuais: {updated_count} utilizador(es) atualizados para {current_year}")
+    else:
+        logging.info(f"✅ Férias anuais: todos já atualizados para {current_year}")
+
+
 # ============ Startup Event ============
 
 @app.on_event("startup")
@@ -359,6 +414,9 @@ async def startup_event():
     # Iniciar sistema de notificações
     asyncio.create_task(notification_loop(db))
     logging.info("Sistema de notificações iniciado (verificação a cada 15 minutos)")
+    
+    # ========== Verificação anual de férias ==========
+    await check_annual_vacation_reset(db)
     
     # Iniciar scheduler para verificações de ponto
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -6907,22 +6965,15 @@ async def get_vacation_balance(current_user: dict = Depends(get_current_user)):
     balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]}, {"_id": 0})
     
     if not balance:
-        return {"days_earned": 0, "days_taken": 0, "days_available": 0, "message": "Configure a data de início na empresa"}
+        return {"days_earned": 0, "days_taken": 0, "days_available": 0, "year": date.today().year, "message": "Configure a data de início na empresa"}
     
-    # Recalculate based on current date
-    calc = calculate_vacation_days(balance["company_start_date"], balance.get("days_taken", 0))
-    
-    # Update in database
-    await db.vacation_balances.update_one(
-        {"user_id": current_user["sub"]},
-        {"$set": {
-            "days_earned": calc["days_earned"],
-            "days_available": calc["days_available"],
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }}
-    )
-    
-    return {**balance, **calc}
+    return {
+        "days_earned": balance.get("days_earned", 22),
+        "days_taken": balance.get("days_taken", 0),
+        "days_available": balance.get("days_available", 0),
+        "year": balance.get("year", date.today().year),
+        "company_start_date": balance.get("company_start_date", "")
+    }
 
 @api_router.post("/vacations/request")
 async def request_vacation(request_data: VacationRequestCreate, current_user: dict = Depends(get_current_user)):
@@ -7097,21 +7148,11 @@ async def cancel_vacation_days(
     days_refunded = len(valid_dates)
     await db.vacation_balances.update_one(
         {"user_id": current_user["sub"]},
-        {"$inc": {"days_taken": -days_refunded}}
+        {"$inc": {
+            "days_taken": -days_refunded,
+            "days_available": days_refunded
+        }}
     )
-    
-    # Recalculate balance
-    balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]}, {"_id": 0})
-    if balance:
-        calc = calculate_vacation_days(balance["company_start_date"], balance.get("days_taken", 0))
-        await db.vacation_balances.update_one(
-            {"user_id": current_user["sub"]},
-            {"$set": {
-                "days_earned": calc["days_earned"],
-                "days_available": calc["days_available"],
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
     
     # Notify admins
     await create_notification(
@@ -7141,6 +7182,7 @@ async def update_company_start_date(
             {"user_id": current_user["sub"]},
             {"$set": {
                 "company_start_date": company_start_date,
+                "year": date.today().year,
                 "days_taken": vacation_days_taken,
                 "days_earned": calc["days_earned"],
                 "days_available": calc["days_available"],
@@ -7150,6 +7192,7 @@ async def update_company_start_date(
     else:
         balance = VacationBalance(
             user_id=current_user["sub"],
+            year=date.today().year,
             company_start_date=company_start_date,
             days_earned=calc["days_earned"],
             days_taken=vacation_days_taken,
@@ -7763,11 +7806,14 @@ async def approve_vacation(
         }}
     )
     
-    # If approved, update days taken
+    # If approved, update days taken and days available
     if approved:
         await db.vacation_balances.update_one(
             {"user_id": vac_request["user_id"]},
-            {"$inc": {"days_taken": vac_request["days_requested"]}}
+            {"$inc": {
+                "days_taken": vac_request["days_requested"],
+                "days_available": -vac_request["days_requested"]
+            }}
         )
     
     # Get user details for email
