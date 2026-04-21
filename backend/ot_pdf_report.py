@@ -383,42 +383,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         add_section_to_elements(elements, equip_section)
         elements.append(Spacer(1, 0.3*cm))
     
-    # ========== ORGANIZAR DADOS POR DATA DE INTERVENÇÃO ==========
+    # ========== PREPARAR DADOS AUXILIARES ==========
     
-    all_dates = set()
-    
-    # Recolher todas as datas
-    if intervencoes:
-        for interv in intervencoes:
-            date = normalize_date(interv.get('data_intervencao'))
-            if date:
-                all_dates.add(date)
-    
-    if registos_mao_obra:
-        for reg in registos_mao_obra:
-            date = normalize_date(reg.get('data'))
-            if date:
-                all_dates.add(date)
-    
-    if tecnicos:
-        for tec in tecnicos:
-            date = normalize_date(tec.get('data_trabalho'))
-            if date:
-                all_dates.add(date)
-    
-    if fotografias:
-        for foto in fotografias:
-            date = normalize_date(foto.get('uploaded_at'))
-            if date:
-                all_dates.add(date)
-    
-    if materiais:
-        for mat in materiais:
-            date = normalize_date(mat.get('data_utilizacao'))
-            if date:
-                all_dates.add(date)
-    
-    # Assinaturas por data de assinatura
     assinaturas_list = []
     if assinaturas:
         if isinstance(assinaturas, dict):
@@ -426,34 +392,22 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         else:
             assinaturas_list = assinaturas if assinaturas else []
     
-    for assin in assinaturas_list:
-        date = normalize_date(assin.get('data_assinatura'))
-        if date:
-            all_dates.add(date)
+    # ========== GERAR BLOCOS POR INTERVENÇÃO (ABA) ==========
     
-    sorted_dates = sorted(all_dates) if all_dates else [None]
+    # Se não houver intervenções, criar uma intervenção genérica
+    if not intervencoes:
+        intervencoes = [{"data_intervencao": relatorio.get("data_servico"), "motivo_assistencia": relatorio.get("motivo_assistencia", "")}]
     
-    # Códigos
-    codigos_map = {
-        'diurno': '1',
-        'noturno': '2',
-        'sabado': 'S',
-        'domingo_feriado': 'D'
-    }
-    
-    # ========== GERAR BLOCOS POR DATA ==========
-    
-    for intervention_num, date in enumerate(sorted_dates, 1):
-        # Cabeçalho da intervenção (fundo azul)
-        if date:
-            date_display = format_date_display(date)
-            date_header_text = f"INTERVENÇÃO #{intervention_num} - {date_display}"
-        else:
-            date_header_text = f"INTERVENÇÃO #{intervention_num} - Sem Data Específica"
+    for intervention_num, interv in enumerate(intervencoes, 1):
+        interv_date = normalize_date(interv.get('data_intervencao'))
+        date_display = format_date_display(interv_date) if interv_date else 'Sem Data'
+        
+        # Cabeçalho da intervenção (fundo cinza escuro)
+        date_header_text = f"INTERVENÇÃO #{intervention_num} - {date_display}"
         
         date_header = Table([[Paragraph(date_header_text, intervention_title_style)]], colWidths=[18.4*cm])
         date_header.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#555555')),  # blue-600
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#555555')),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('LEFTPADDING', (0, 0), (-1, -1), 12),
@@ -462,170 +416,36 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(date_header)
         elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Intervenções desta data ----
-        date_intervencoes = []
-        if intervencoes:
-            for interv in intervencoes:
-                interv_date = normalize_date(interv.get('data_intervencao'))
-                if interv_date == date or (date is None and not interv_date):
-                    date_intervencoes.append(interv)
+        # ---- Detalhes da intervenção ----
+        interv_content = []
         
-        if date_intervencoes:
-            interv_content = []
-            for interv in date_intervencoes:
-                interv_content_items = []
-                
-                # Equipamento relacionado
-                if interv.get('equipamento_id') and equipamentos_adicionais:
-                    equip_rel = next((e for e in equipamentos_adicionais if e.get('id') == interv.get('equipamento_id')), None)
-                    if equip_rel:
-                        equip_desc = f"{equip_rel.get('tipologia', '')} - {equip_rel.get('marca', '')} {equip_rel.get('modelo', '')}"
-                        interv_content_items.append(Paragraph(f"<b>Equipamento:</b> {equip_desc}", normal_style))
-                
-                if interv.get('motivo_assistencia'):
-                    motivo_text = interv.get('motivo_assistencia', '').replace('\n', '<br/>')
-                    interv_content_items.append(Paragraph(f"<b>Motivo:</b> {motivo_text}", normal_style))
-                
-                if interv_content_items:
-                    for item in interv_content_items:
-                        interv_content.append(item)
-                    interv_content.append(Spacer(1, 0.2*cm))
-            
-            if interv_content:
-                interv_section = create_section_box(interv_content, "DETALHES DA INTERVENÇÃO")
-                add_section_to_elements(elements, interv_section)
-                elements.append(Spacer(1, 0.2*cm))
+        # Equipamento relacionado
+        if interv.get('equipamento_id') and equipamentos_adicionais:
+            equip_rel = next((e for e in equipamentos_adicionais if e.get('id') == interv.get('equipamento_id')), None)
+            if equip_rel:
+                equip_desc = f"{equip_rel.get('tipologia', '')} - {equip_rel.get('marca', '')} {equip_rel.get('modelo', '')}"
+                if equip_rel.get('numero_serie'):
+                    equip_desc += f" (S/N: {equip_rel.get('numero_serie')})"
+                interv_content.append(Paragraph(f"<b>Equipamento:</b> {equip_desc}", normal_style))
         
-        # ---- Mão de Obra / Registos desta data ----
-        date_mao_obra = []
+        if interv.get('motivo_assistencia'):
+            motivo_text = interv.get('motivo_assistencia', '').replace('\n', '<br/>')
+            interv_content.append(Paragraph(f"<b>Motivo:</b> {motivo_text}", normal_style))
         
-        if tecnicos:
-            for tec in tecnicos:
-                tec_date = normalize_date(tec.get('data_trabalho'))
-                if tec_date == date or (date is None and not tec_date):
-                    date_mao_obra.append({
-                        'tecnico_nome': tec.get('tecnico_nome', 'N/A'),
-                        'funcao_ot': tec.get('funcao_ot', 'tecnico'),
-                        'hora_inicio': tec.get('hora_inicio', ''),
-                        'hora_fim': tec.get('hora_fim', ''),
-                        'minutos': tec.get('minutos_cliente', 0),
-                        'km': tec.get('kms_deslocacao', 0) or (max(0, (tec.get('kms_final', 0) or 0) - (tec.get('kms_inicial', 0) or 0))),
-                        'tipo': tec.get('tipo_registo', 'trabalho'),
-                        'codigo': codigos_map.get(tec.get('tipo_horario', ''), '-'),
-                    })
-        
-        if registos_mao_obra:
-            for reg in registos_mao_obra:
-                reg_date = normalize_date(reg.get('data'))
-                if reg_date == date or (date is None and not reg_date):
-                    minutos_total = reg.get('minutos_trabalhados') or int((reg.get('horas_arredondadas', 0) or 0) * 60)
-                    
-                    hora_inicio_str = ''
-                    hora_fim_str = ''
-                    
-                    if reg.get('hora_inicio_segmento'):
-                        try:
-                            dt = datetime.fromisoformat(str(reg['hora_inicio_segmento']).replace('Z', '+00:00'))
-                            hora_inicio_str = dt.strftime('%H:%M')
-                        except:
-                            pass
-                    
-                    if reg.get('hora_fim_segmento'):
-                        try:
-                            dt = datetime.fromisoformat(str(reg['hora_fim_segmento']).replace('Z', '+00:00'))
-                            hora_fim_str = dt.strftime('%H:%M')
-                        except:
-                            pass
-                    
-                    date_mao_obra.append({
-                        'tecnico_nome': reg.get('tecnico_nome', 'N/A'),
-                        'funcao_ot': reg.get('funcao_ot', 'tecnico'),
-                        'hora_inicio': hora_inicio_str,
-                        'hora_fim': hora_fim_str,
-                        'minutos': minutos_total,
-                        'km': reg.get('km', 0) or 0,
-                        'tipo': reg.get('tipo', 'trabalho'),
-                        'codigo': reg.get('codigo', '-'),
-                    })
-        
-        if date_mao_obra:
-            # Ordenar registos por hora de início (cronologicamente)
-            date_mao_obra.sort(key=lambda x: (x.get('hora_inicio', '') or '99:99', x.get('tecnico_nome', '')))
-            
-            # Cabeçalho da tabela
-            mao_obra_header = [['Colaborador', 'Tipo', 'Cód.', 'Início', 'Fim', 'Horas', 'KM']]
-            
-            for reg in date_mao_obra:
-                minutos_total = reg.get('minutos', 0)
-                horas = minutos_total // 60
-                mins = minutos_total % 60
-                tempo_formatado = f"{horas}h{mins:02d}"
-                
-                km_value = reg.get('km', 0)
-                km_formatado = f"{km_value} km" if km_value else "-"
-                
-                # Tipo: T (Trabalho) ou V (Viagem)
-                tipo_raw = reg.get('tipo', '-')
-                if tipo_raw == 'trabalho':
-                    tipo_display = 'T'
-                elif tipo_raw == 'viagem':
-                    tipo_display = 'V'
-                elif tipo_raw == 'oficina':
-                    tipo_display = 'O'
-                else:
-                    tipo_display = tipo_raw[:1].upper() if tipo_raw else '-'
-                
-                # Função: Júnior, Técnico ou Sénior
-                funcao = reg.get('funcao_ot', 'tecnico')
-                funcao_labels = {'junior': 'Téc. Júnior', 'tecnico': 'Técnico', 'senior': 'Téc. Sénior'}
-                funcao_label = funcao_labels.get(funcao, 'Técnico')
-                nome_display = f"{reg.get('tecnico_nome', 'N/A')} ({funcao_label})"
-                
-                mao_obra_header.append([
-                    nome_display,
-                    tipo_display,
-                    reg.get('codigo', '-'),
-                    reg.get('hora_inicio', '') or '-',
-                    reg.get('hora_fim', '') or '-',
-                    tempo_formatado,
-                    km_formatado
-                ])
-            
-            mao_obra_table = Table(mao_obra_header, colWidths=[5*cm, 1.5*cm, 1.5*cm, 2*cm, 2*cm, 1.5*cm, 2.5*cm])
-            mao_obra_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#333333')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('ALIGN', (0, 1), (0, -1), 'LEFT'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 5),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-                # Linhas alternadas
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f7f7f7'), colors.white]),
-            ]))
-            
-            mao_obra_keep = [
-                Paragraph("MÃO DE OBRA / DESLOCAÇÃO", section_title_style),
-                HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6),
-                mao_obra_table,
-                Spacer(1, 0.3*cm),
-            ]
-            elements.append(KeepTogether(mao_obra_keep))
+        if interv_content:
+            interv_section = create_section_box(interv_content, "DETALHES DA INTERVENÇÃO")
+            add_section_to_elements(elements, interv_section)
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Materiais desta data ----
+        # ---- Materiais desta intervenção (pela mesma data) ----
         date_materiais = []
         if materiais:
-            first_date = sorted_dates[0] if sorted_dates else None
+            first_interv_date = normalize_date(intervencoes[0].get('data_intervencao')) if intervencoes else None
             for mat in materiais:
                 mat_date = normalize_date(mat.get('data_utilizacao'))
-                if mat_date == date:
+                if mat_date == interv_date:
                     date_materiais.append(mat)
-                elif not mat_date and (date == first_date):
-                    # Materiais sem data aparecem na primeira data
+                elif not mat_date and (interv_date == first_interv_date) and intervention_num == 1:
                     date_materiais.append(mat)
         
         if date_materiais:
@@ -664,10 +484,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             elements.append(KeepTogether(mat_keep))
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Relatório de Assistência desta data (após Materiais) ----
+        # ---- Relatório de Assistência desta intervenção ----
         date_rel_assist = []
         if relatorios_assistencia:
-            date_rel_assist = [ra for ra in relatorios_assistencia if normalize_date(ra.get('data_intervencao')) == date]
+            date_rel_assist = [ra for ra in relatorios_assistencia if normalize_date(ra.get('data_intervencao')) == interv_date]
         if date_rel_assist:
             ra_content = []
             for ra in date_rel_assist:
@@ -692,12 +512,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 add_section_to_elements(elements, ra_section)
                 elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Fotografias desta data ----
+        # ---- Fotografias desta intervenção ----
         date_fotografias = []
         if fotografias:
             for foto in fotografias:
                 foto_date = normalize_date(foto.get('uploaded_at'))
-                if foto_date == date or (date is None and not foto_date):
+                if foto_date == interv_date or (interv_date is None and not foto_date):
                     date_fotografias.append(foto)
         
         if date_fotografias:
@@ -790,11 +610,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             add_section_to_elements(elements, foto_section)
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Assinaturas desta data (por data_assinatura) ----
+        # ---- Assinaturas desta intervenção ----
         date_assinaturas = []
         for assin in assinaturas_list:
             assin_date = normalize_date(assin.get('data_assinatura'))
-            if assin_date == date or (date is None and not assin_date):
+            if assin_date == interv_date or (interv_date is None and not assin_date):
                 date_assinaturas.append(assin)
         
         if date_assinaturas:
