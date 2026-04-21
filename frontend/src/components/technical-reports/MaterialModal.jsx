@@ -16,7 +16,10 @@ const MaterialModal = ({
   loading = false,
   existingPCs = [],
   selectedPCId,
-  onPCIdChange
+  onPCIdChange,
+  equipamentosOT = [],
+  selectedEquipOTIds = [],
+  onEquipOTIdsChange
 }) => {
   const [pcChoice, setPcChoice] = useState('new'); // 'new' or 'existing'
 
@@ -199,6 +202,48 @@ const MaterialModal = ({
               <p className="text-yellow-400 text-sm">
                 Este material está associado a um Pedido de Cotação
               </p>
+            </div>
+          )}
+
+          {/* Equipment selection for PC - only when Cotação */}
+          {isCotacao && !isEditing && equipamentosOT.length > 0 && (
+            <div className="bg-amber-900/20 border border-amber-600/50 rounded-lg p-3 space-y-2">
+              <p className="text-amber-400 text-sm font-medium flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Equipamentos da FS para esta PC
+              </p>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                {equipamentosOT.map((eq) => (
+                  <label
+                    key={eq.id}
+                    className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all text-sm ${
+                      selectedEquipOTIds.includes(eq.id)
+                        ? 'border-amber-500 bg-amber-600/10'
+                        : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedEquipOTIds.includes(eq.id)}
+                      onChange={(e) => {
+                        if (onEquipOTIdsChange) {
+                          if (e.target.checked) {
+                            onEquipOTIdsChange([...selectedEquipOTIds, eq.id]);
+                          } else {
+                            onEquipOTIdsChange(selectedEquipOTIds.filter(id => id !== eq.id));
+                          }
+                        }
+                      }}
+                      className="accent-amber-500"
+                    />
+                    <span className="text-white">
+                      {eq.marca} {eq.modelo}
+                      {eq.numero_serie ? <span className="text-gray-400 ml-1">(S/N: {eq.numero_serie})</span> : ''}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-gray-500 text-xs">Selecione os equipamentos relevantes para esta cotação</p>
             </div>
           )}
 

@@ -252,6 +252,7 @@ class PedidoCotacao(BaseModel):
     sub_numero: Optional[int] = None
     status: str = "Em Espera"
     observacoes: Optional[str] = None
+    equipamento_ot_ids: list = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
     created_by: str

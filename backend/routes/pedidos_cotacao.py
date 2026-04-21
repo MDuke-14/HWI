@@ -61,6 +61,9 @@ async def get_all_pedidos_cotacao(
             ).sort("sub_numero", 1).to_list(100)
             for sub in sub_pcs:
                 sub["materiais_count"] = await db.materiais_ot.count_documents({"pc_id": sub["id"]})
+                # Enriquecer sub-PCs com mesmas infos da OT
+                sub["ot_numero"] = pc.get("ot_numero", "N/A")
+                sub["cliente_nome"] = pc.get("cliente_nome", "N/A")
             pc["sub_pcs"] = sub_pcs
     
     # Filtrar apenas PCs principais (sem parent) para a lista
@@ -108,25 +111,45 @@ async def get_pedido_cotacao(
         pc["numero_ot"] = ot.get("numero_assistencia", "N/A")
         pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
         
-        # Verificar se dados do equipamento existem na OT directamente
-        equip_marca = ot.get("equipamento_marca")
-        equip_tipologia = ot.get("equipamento_tipologia")
+        # Buscar equipamentos associados à PC via equipamento_ot_ids
+        eq_ot_ids = pc.get("equipamento_ot_ids", [])
+        equipamentos_pc = []
         
-        # Se não, buscar da coleção equipamentos_ot
-        if not equip_marca and not equip_tipologia:
-            equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc.get("relatorio_id")}, {"_id": 0})
-            if equip_ot:
-                equip_tipologia = equip_ot.get("tipologia", "")
-                equip_marca = equip_ot.get("marca", "")
-                ot["equipamento_modelo"] = equip_ot.get("modelo", "")
-                ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
-                ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
+        if eq_ot_ids:
+            for eq_id in eq_ot_ids:
+                equip_ot = await db.equipamentos_ot.find_one({"id": eq_id}, {"_id": 0})
+                if equip_ot:
+                    equipamentos_pc.append(equip_ot)
         
-        pc["equipamento_tipologia"] = equip_tipologia
-        pc["equipamento_marca"] = equip_marca
-        pc["equipamento_modelo"] = ot.get("equipamento_modelo")
-        pc["equipamento_numero_serie"] = ot.get("equipamento_numero_serie")
-        pc["equipamento_ano_fabrico"] = ot.get("equipamento_ano_fabrico", "")
+        if not equipamentos_pc:
+            # Fallback: buscar da OT directamente ou primeiro equipamento
+            equip_marca = ot.get("equipamento_marca")
+            equip_tipologia = ot.get("equipamento_tipologia")
+            
+            if not equip_marca and not equip_tipologia:
+                equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc.get("relatorio_id")}, {"_id": 0})
+                if equip_ot:
+                    equip_tipologia = equip_ot.get("tipologia", "")
+                    equip_marca = equip_ot.get("marca", "")
+                    ot["equipamento_modelo"] = equip_ot.get("modelo", "")
+                    ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
+                    ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
+            
+            pc["equipamento_tipologia"] = equip_tipologia
+            pc["equipamento_marca"] = equip_marca
+            pc["equipamento_modelo"] = ot.get("equipamento_modelo")
+            pc["equipamento_numero_serie"] = ot.get("equipamento_numero_serie")
+            pc["equipamento_ano_fabrico"] = ot.get("equipamento_ano_fabrico", "")
+        else:
+            # Usar dados dos equipamentos selecionados
+            primeiro = equipamentos_pc[0]
+            pc["equipamento_tipologia"] = primeiro.get("tipologia", "")
+            pc["equipamento_marca"] = primeiro.get("marca", "")
+            pc["equipamento_modelo"] = primeiro.get("modelo", "")
+            pc["equipamento_numero_serie"] = primeiro.get("numero_serie", "")
+            pc["equipamento_ano_fabrico"] = primeiro.get("ano_fabrico", "")
+        
+        pc["equipamentos_pc"] = equipamentos_pc
     
     # Buscar materiais associados
     materiais = await db.materiais_ot.find(

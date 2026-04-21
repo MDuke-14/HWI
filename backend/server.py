@@ -9299,6 +9299,7 @@ async def add_material_ot(
     # Se fornecido_por = "Cotação", criar/atualizar PC
     if material_data["fornecido_por"] == "Cotação":
         pc_id_escolhido = material_data.get("pc_id")
+        equipamento_ot_ids = material_data.get("equipamento_ot_ids", [])
         
         # Buscar número da FS
         fs_numero = ot.get("numero_assistencia", "000")
@@ -9308,6 +9309,14 @@ async def add_material_ot(
             pc_existente = await db.pedidos_cotacao.find_one({"id": pc_id_escolhido}, {"_id": 0})
             if pc_existente:
                 material_dict["pc_id"] = pc_id_escolhido
+                # Atualizar equipamento_ot_ids se fornecidos
+                if equipamento_ot_ids:
+                    existing_eq_ids = pc_existente.get("equipamento_ot_ids", [])
+                    merged = list(set(existing_eq_ids + equipamento_ot_ids))
+                    await db.pedidos_cotacao.update_one(
+                        {"id": pc_id_escolhido},
+                        {"$set": {"equipamento_ot_ids": merged}}
+                    )
                 logging.info(f"Material agregado ao PC existente {pc_existente['numero_pc']}")
         else:
             # Criar novo PC
@@ -9327,6 +9336,7 @@ async def add_material_ot(
                     parent_pc_id=None,
                     sub_numero=None,
                     status="Em Espera",
+                    equipamento_ot_ids=equipamento_ot_ids,
                     created_by=current_user["sub"]
                 )
                 pc_dict = novo_pc.dict()
@@ -9357,6 +9367,7 @@ async def add_material_ot(
                     parent_pc_id=parent_id,
                     sub_numero=sub_num,
                     status="Em Espera",
+                    equipamento_ot_ids=equipamento_ot_ids,
                     created_by=current_user["sub"]
                 )
                 pc_dict = novo_pc.dict()
