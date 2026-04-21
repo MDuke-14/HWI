@@ -304,9 +304,9 @@ async def startup_event():
             
             if hi and hf:
                 if isinstance(hi, str):
-                    hi = datetime.fromisoformat(hi.replace('Z', '+00:00'))
+                    hi = parse_stored_datetime(hi)
                 if isinstance(hf, str):
-                    hf = datetime.fromisoformat(hf.replace('Z', '+00:00'))
+                    hf = parse_stored_datetime(hf)
                 calc_mins = (hf - hi).total_seconds() / 60
                 if calc_mins > 0:
                     update_fields["minutos_trabalhados"] = int(calc_mins)
@@ -589,18 +589,36 @@ def get_today_local(client_time_str: str = None) -> tuple:
 
 def format_time_from_iso(iso_str: str) -> str:
     """
-    Format a stored ISO datetime string to HH:MM preserving its timezone offset.
-    If stored as '2024-03-31T09:00:00+01:00' → returns '09:00'
-    If stored as '2024-03-31T08:00:00+00:00' → converts to Lisbon time first.
+    Format a stored ISO datetime string to HH:MM in Lisbon timezone.
+    Handles all legacy formats:
+    - Naive (no TZ): treated as Europe/Lisbon local time
+    - UTC (+00:00/Z): converted to Lisbon time
+    - Local (+01:00 etc): converted to Lisbon time
     """
     try:
         dt = datetime.fromisoformat(str(iso_str).replace('Z', '+00:00'))
-        # Convert to Lisbon timezone for display
-        if dt.tzinfo is not None:
-            dt = dt.astimezone(LISBON_TZ)
+        if dt.tzinfo is None:
+            # Naive datetime — assume it was already local Portuguese time
+            dt = LISBON_TZ.localize(dt)
+        dt = dt.astimezone(LISBON_TZ)
         return dt.strftime("%H:%M")
     except (ValueError, TypeError):
         return "00:00"
+
+
+def parse_stored_datetime(iso_str: str) -> datetime:
+    """
+    Parse a stored datetime string and ensure it's timezone-aware.
+    Handles all legacy formats:
+    - Naive (no TZ): localized to Europe/Lisbon
+    - UTC (+00:00/Z): kept as-is (aware)
+    - Local (+01:00 etc): kept as-is (aware)
+    Always returns an offset-aware datetime safe for subtraction.
+    """
+    dt = datetime.fromisoformat(str(iso_str).replace('Z', '+00:00'))
+    if dt.tzinfo is None:
+        dt = LISBON_TZ.localize(dt)
+    return dt
 
 
 def normalizar_tempo(dt: datetime) -> datetime:
@@ -633,8 +651,8 @@ def calcular_minutos_de_entradas(entries: list) -> int:
     total_minutos = 0
     for e in entries:
         if e.get("start_time") and e.get("end_time"):
-            start = datetime.fromisoformat(str(e["start_time"]).replace('Z', '+00:00'))
-            end = datetime.fromisoformat(str(e["end_time"]).replace('Z', '+00:00'))
+            start = parse_stored_datetime(str(e["start_time"]))
+            end = parse_stored_datetime(str(e["end_time"]))
             start = normalizar_tempo(start)
             end = normalizar_tempo(end)
             diff = (end - start).total_seconds()
@@ -1043,8 +1061,8 @@ async def send_time_entry_edit_notification_email(
             if not time_str:
                 return "N/A"
             try:
-                dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
-                return dt.strftime('%H:%M')
+                dt = parse_stored_datetime(time_str)
+                return dt.astimezone(LISBON_TZ).strftime('%H:%M')
             except:
                 return time_str
         
@@ -3938,7 +3956,7 @@ async def end_time_entry(
         raise HTTPException(status_code=400, detail="O registo já foi finalizado")
     
     end_time = normalizar_tempo(get_now_local(end_data.client_time))
-    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
+    start_time = normalizar_tempo(parse_stored_datetime(entry["start_time"]))
     
     # Merge observations - keep start observations and add end observations if provided
     final_observations = entry.get("observations", "")
@@ -4227,7 +4245,7 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
         
         if active_entry:
             # Currently working - SOMAR todas as entradas
-            start_time_active = datetime.fromisoformat(active_entry["start_time"].replace('Z', '+00:00'))
+            start_time_active = parse_stored_datetime(active_entry["start_time"])
             
             # Tempo da entrada ativa (em segundos) - use aware datetime for comparison
             now_utc = datetime.now(timezone.utc)
@@ -5530,8 +5548,8 @@ async def adjust_entry_to_8hours(
                 continue  # Pular a entrada que vamos ajustar
             
             if e.get("start_time") and e.get("end_time"):
-                start = normalizar_tempo(datetime.fromisoformat(e["start_time"].replace('Z', '+00:00')))
-                end = normalizar_tempo(datetime.fromisoformat(e["end_time"].replace('Z', '+00:00')))
+                start = normalizar_tempo(parse_stored_datetime(e["start_time"]))
+                end = normalizar_tempo(parse_stored_datetime(e["end_time"]))
                 total_seconds_other += (end - start).total_seconds()
         
         # Converter para horas
@@ -5550,7 +5568,7 @@ async def adjust_entry_to_8hours(
             )
         
         # Calcular nova hora de saída
-        start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
+        start_time = normalizar_tempo(parse_stored_datetime(entry["start_time"]))
         minutes_needed = round(hours_needed * 60)
         new_end_time = start_time + timedelta(minutes=minutes_needed)
         
@@ -5987,8 +6005,8 @@ async def update_time_entry(
         
         if start_time_str and end_time_str:
             # Parse times
-            start_time = normalizar_tempo(datetime.fromisoformat(start_time_str.replace('Z', '+00:00')))
-            end_time = normalizar_tempo(datetime.fromisoformat(end_time_str.replace('Z', '+00:00')))
+            start_time = normalizar_tempo(parse_stored_datetime(start_time_str))
+            end_time = normalizar_tempo(parse_stored_datetime(end_time_str))
             
             # Calculate total hours (timestamps normalizados, sem segundos)
             total_seconds = (end_time - start_time).total_seconds()
@@ -6258,15 +6276,15 @@ async def recalculate_user_hours(
                 has_time_data = True
                 for e in entry["entries"]:
                     if e.get("start_time") and e.get("end_time"):
-                        start = normalizar_tempo(datetime.fromisoformat(e["start_time"].replace('Z', '+00:00')))
-                        end = normalizar_tempo(datetime.fromisoformat(e["end_time"].replace('Z', '+00:00')))
+                        start = normalizar_tempo(parse_stored_datetime(e["start_time"]))
+                        end = normalizar_tempo(parse_stored_datetime(e["end_time"]))
                         total_seconds += (end - start).total_seconds()
             
             # FORMATO ANTIGO: start_time e end_time diretos
             elif entry.get("start_time") and entry.get("end_time"):
                 has_time_data = True
-                start = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
-                end = normalizar_tempo(datetime.fromisoformat(entry["end_time"].replace('Z', '+00:00')))
+                start = normalizar_tempo(parse_stored_datetime(entry["start_time"]))
+                end = normalizar_tempo(parse_stored_datetime(entry["end_time"]))
                 total_seconds = (end - start).total_seconds()
             
             if not has_time_data:
@@ -6280,11 +6298,11 @@ async def recalculate_user_hours(
             
             # Usar start_time para calcular breakdown (precisa de datetime)
             if entry.get("entries") and len(entry["entries"]) > 0:
-                first_start = normalizar_tempo(datetime.fromisoformat(entry["entries"][0]["start_time"].replace('Z', '+00:00')))
-                last_end = normalizar_tempo(datetime.fromisoformat(entry["entries"][-1]["end_time"].replace('Z', '+00:00')))
+                first_start = normalizar_tempo(parse_stored_datetime(entry["entries"][0]["start_time"]))
+                last_end = normalizar_tempo(parse_stored_datetime(entry["entries"][-1]["end_time"]))
             else:
-                first_start = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
-                last_end = normalizar_tempo(datetime.fromisoformat(entry["end_time"].replace('Z', '+00:00')))
+                first_start = normalizar_tempo(parse_stored_datetime(entry["start_time"]))
+                last_end = normalizar_tempo(parse_stored_datetime(entry["end_time"]))
             
             # Usar a NOVA LÓGICA do script fornecido
             date_obj = datetime.strptime(entry["date"], "%Y-%m-%d").date()
@@ -6709,7 +6727,7 @@ async def admin_end_clock(
         raise HTTPException(status_code=404, detail="Nenhum relógio ativo encontrado para este utilizador")
     
     end_time = normalizar_tempo(get_now_local())
-    start_time = normalizar_tempo(datetime.fromisoformat(entry["start_time"].replace('Z', '+00:00')))
+    start_time = normalizar_tempo(parse_stored_datetime(entry["start_time"]))
     
     # Calcular horas (timestamps normalizados)
     total_seconds = (end_time - start_time).total_seconds()
@@ -7595,8 +7613,8 @@ async def admin_update_time_entry(
     
     # Calculate total hours if times are provided
     if "start_time" in update_data and "end_time" in update_data:
-        start = normalizar_tempo(datetime.fromisoformat(update_data["start_time"].replace("Z", "+00:00")))
-        end = normalizar_tempo(datetime.fromisoformat(update_data["end_time"].replace("Z", "+00:00")))
+        start = normalizar_tempo(parse_stored_datetime(update_data["start_time"]))
+        end = normalizar_tempo(parse_stored_datetime(update_data["end_time"]))
         total_minutes = int((end - start).total_seconds() / 60)
         update_data["total_hours"] = total_minutes / 60
     
@@ -7644,8 +7662,8 @@ async def admin_create_time_entry(
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
     
     # Parse times
-    start_time = normalizar_tempo(datetime.fromisoformat(entry_data["start_time"].replace("Z", "+00:00")))
-    end_time = normalizar_tempo(datetime.fromisoformat(entry_data["end_time"].replace("Z", "+00:00")))
+    start_time = normalizar_tempo(parse_stored_datetime(entry_data["start_time"]))
+    end_time = normalizar_tempo(parse_stored_datetime(entry_data["end_time"]))
     
     # Calculate total hours (sem segundos)
     total_minutes = int((end_time - start_time).total_seconds() / 60)
@@ -8922,7 +8940,7 @@ async def parar_cronometro(
     
     # Hora de fim
     hora_fim = get_now_local()
-    hora_inicio = datetime.fromisoformat(cronometro["hora_inicio"].replace('Z', '+00:00'))
+    hora_inicio = parse_stored_datetime(cronometro["hora_inicio"])
     
     # Buscar OT para pegar os KM
     ot = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})

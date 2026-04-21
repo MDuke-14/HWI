@@ -4,6 +4,16 @@ Lógica de segmentação de cronómetros para OTs
 from datetime import datetime, timedelta, time, date
 import math
 import logging
+import pytz
+
+LISBON_TZ = pytz.timezone('Europe/Lisbon')
+
+def _parse_dt(s):
+    """Parse datetime string handling naive, UTC and offset-aware formats."""
+    dt = datetime.fromisoformat(str(s).replace('Z', '+00:00'))
+    if dt.tzinfo is None:
+        dt = LISBON_TZ.localize(dt)
+    return dt
 
 # Feriados portugueses (fixos e móveis para 2025-2027)
 FERIADOS_PORTUGAL = {
@@ -274,9 +284,9 @@ def verificar_sobreposicao(registos_existentes, novo_inicio, novo_fim, tecnico_i
         reg_fim = reg.get("hora_fim_segmento")
         
         if isinstance(reg_inicio, str):
-            reg_inicio = datetime.fromisoformat(reg_inicio.replace('Z', '+00:00'))
+            reg_inicio = _parse_dt(reg_inicio)
         if isinstance(reg_fim, str):
-            reg_fim = datetime.fromisoformat(reg_fim.replace('Z', '+00:00'))
+            reg_fim = _parse_dt(reg_fim)
         
         if reg_inicio is None or reg_fim is None:
             continue
@@ -314,9 +324,9 @@ def ordenar_registos_cronologicamente(registos):
         if isinstance(data, str):
             data = datetime.fromisoformat(data).date() if 'T' in data else datetime.strptime(data, "%Y-%m-%d").date()
         if isinstance(hora_inicio, str):
-            hora_inicio = datetime.fromisoformat(hora_inicio.replace('Z', '+00:00'))
+            hora_inicio = _parse_dt(hora_inicio)
         if isinstance(hora_fim, str):
-            hora_fim = datetime.fromisoformat(hora_fim.replace('Z', '+00:00'))
+            hora_fim = _parse_dt(hora_fim)
         
         # Criar chave de ordenação
         if isinstance(data, date):
