@@ -1240,7 +1240,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       equipamento_modelo: relatorio.equipamento_modelo,
       equipamento_numero_serie: relatorio.equipamento_numero_serie || '',
       equipamento_ano_fabrico: relatorio.equipamento_ano_fabrico || '',
-      referencia_interna_cliente: relatorio.referencia_interna_cliente || ''
+      referencia_interna_cliente: relatorio.referencia_interna_cliente || '',
+      motivo_assistencia: relatorio.motivo_assistencia || ''
     });
     setShowEditRelatorioModal(true);
   };
@@ -8512,6 +8513,20 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
 
             {/* Referência Interna do Cliente */}
+            <div>
+              <Label htmlFor="edit_motivo_assistencia" className="text-gray-300">
+                Motivo da Assistência
+              </Label>
+              <textarea
+                id="edit_motivo_assistencia"
+                value={relatorioFormData.motivo_assistencia || ''}
+                onChange={(e) => setRelatorioFormData({ ...relatorioFormData, motivo_assistencia: e.target.value })}
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 min-h-[80px]"
+                placeholder="Motivo da assistência..."
+                data-testid="edit-motivo-input"
+              />
+            </div>
+
             <div>
               <Label htmlFor="edit_referencia_interna" className="text-gray-300">
                 Referência Interna do Cliente
