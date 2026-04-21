@@ -45,16 +45,25 @@ const EquipamentoModal = ({
                 onChange={(e) => handleEquipamentoOTChange(e.target.value)}
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2"
               >
-                <option value="novo">➕ Criar novo equipamento (guardar na BD do cliente)</option>
-                <option value="apenas_ot">📋 Adicionar apenas à OT (sem guardar na BD)</option>
-                {equipamentosClienteOT.length > 0 && (
-                  <option disabled className="text-gray-500">────── Equipamentos do Cliente ──────</option>
-                )}
-                {equipamentosClienteOT.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
-                  </option>
-                ))}
+                <option value="novo">+ Criar novo equipamento (guardar na BD do cliente)</option>
+                <option value="apenas_ot">Adicionar apenas a esta OT (sem guardar na BD)</option>
+                {(() => {
+                  const grouped = equipamentosClienteOT.reduce((groups, eq) => {
+                    const marca = eq.marca || 'Sem Marca';
+                    if (!groups[marca]) groups[marca] = [];
+                    groups[marca].push(eq);
+                    return groups;
+                  }, {});
+                  return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([marca, equips]) => (
+                    <optgroup key={marca} label={`--- ${marca} ---`}>
+                      {equips.map((eq) => (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''} {eq.tipologia ? `[${eq.tipologia}]` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ));
+                })()}
               </select>
               {equipamentoOTSelecionado === 'novo' && (
                 <p className="text-sm text-green-400 mt-1">

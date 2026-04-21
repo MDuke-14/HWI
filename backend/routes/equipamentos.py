@@ -17,7 +17,7 @@ async def get_equipamentos(
     cliente_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar equipamentos - pode filtrar por cliente"""
+    """Listar equipamentos - pode filtrar por cliente. Ordenados por marca."""
     query = {"ativo": True}
     if cliente_id:
         query["cliente_id"] = cliente_id
@@ -25,7 +25,7 @@ async def get_equipamentos(
     equipamentos = await db.equipamentos.find(
         query,
         {"_id": 0}
-    ).sort("last_used", -1).to_list(length=None)
+    ).sort([("marca", 1), ("modelo", 1)]).to_list(length=None)
     
     return equipamentos
 
@@ -56,18 +56,25 @@ async def create_equipamento(
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    # Verificar se equipamento já existe (mesmo marca, modelo e número de série)
-    existing = await db.equipamentos.find_one({
-        "cliente_id": equipamento.cliente_id,
-        "marca": equipamento.marca,
-        "modelo": equipamento.modelo,
-        "numero_serie": equipamento.numero_serie,
-        "ativo": True
-    })
-    
-    if existing:
-        # Retornar o existente ao invés de criar duplicado
-        return existing
+    # Bloquear duplicação de número de série (global, entre todos os clientes)
+    if equipamento.numero_serie and equipamento.numero_serie.strip():
+        serie_normalizado = equipamento.numero_serie.strip()
+        existing_serie = await db.equipamentos.find_one({
+            "numero_serie": serie_normalizado,
+            "ativo": True
+        }, {"_id": 0, "marca": 1, "modelo": 1, "cliente_id": 1})
+        
+        if existing_serie:
+            # Buscar nome do cliente dono do equipamento existente
+            cliente_dono = await db.clientes.find_one(
+                {"id": existing_serie["cliente_id"]}, {"_id": 0, "nome": 1}
+            )
+            nome_cliente = cliente_dono.get("nome", "desconhecido") if cliente_dono else "desconhecido"
+            raise HTTPException(
+                status_code=409,
+                detail=f"Já existe um equipamento com o N. Série '{serie_normalizado}' "
+                       f"({existing_serie.get('marca', '')} {existing_serie.get('modelo', '')} - Cliente: {nome_cliente})"
+            )
     
     equipamento_dict = equipamento.dict()
     equipamento_dict["created_at"] = equipamento_dict["created_at"].isoformat()
@@ -96,6 +103,27 @@ async def update_equipamento(
     equipamento_data.pop("id", None)
     equipamento_data.pop("created_at", None)
     equipamento_data.pop("cliente_id", None)  # Cliente não pode ser mudado
+    
+    # Verificar duplicação de número de série ao atualizar
+    new_serie = equipamento_data.get("numero_serie", "")
+    if new_serie and new_serie.strip():
+        serie_normalizado = new_serie.strip()
+        existing_serie = await db.equipamentos.find_one({
+            "numero_serie": serie_normalizado,
+            "ativo": True,
+            "id": {"$ne": equipamento_id}
+        }, {"_id": 0, "marca": 1, "modelo": 1, "cliente_id": 1})
+        
+        if existing_serie:
+            cliente_dono = await db.clientes.find_one(
+                {"id": existing_serie["cliente_id"]}, {"_id": 0, "nome": 1}
+            )
+            nome_cliente = cliente_dono.get("nome", "desconhecido") if cliente_dono else "desconhecido"
+            raise HTTPException(
+                status_code=409,
+                detail=f"Já existe um equipamento com o N. Série '{serie_normalizado}' "
+                       f"({existing_serie.get('marca', '')} {existing_serie.get('modelo', '')} - Cliente: {nome_cliente})"
+            )
     
     await db.equipamentos.update_one(
         {"id": equipamento_id},

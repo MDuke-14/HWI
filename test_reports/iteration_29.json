@@ -1,0 +1,41 @@
+{
+  "summary": "Equipment brand-grouping + duplicate-serial enforcement fully verified. 9/9 backend pytest tests pass. Frontend client-equipment modal confirmed visually: brands grouped with amber headers, sorted alphabetically, count badge shown. Code review of EquipamentoModal.jsx and intervention selects confirms <optgroup> by marca is implemented correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_equipamento_marca_grouping.py",
+    "/app/test_reports/pytest/pytest_equipamento_marca.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/equipamentos.py L28: GET sorts by (marca asc, modelo asc) — correct.",
+    "routes/equipamentos.py L60-77: POST checks duplicate numero_serie globally (all clients, ativo=true) with .strip() normalization; returns HTTP 409 with marca+modelo+cliente-name — correct.",
+    "routes/equipamentos.py L109-126: PUT duplicate check excludes current equipment id via $ne — correct.",
+    "TechnicalReports.jsx L9402-9416: Client-equipment modal groups by marca using Object.entries+reduce+localeCompare sort; each group has amber Package-icon header + count — verified visually.",
+    "technical-reports/EquipamentoModal.jsx L50-66: Dropdown uses <optgroup label=\"--- ${marca} ---\"> grouped by marca (alphabetical). Handles 'Sem Marca' fallback — correct.",
+    "TechnicalReports.jsx L6441-6465: Intervention equipment selects also use <optgroup> by marca — code review confirms same pattern."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_equipamento_marca_grouping.py (new pytest, 9 tests)"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 tests pass)",
+    "frontend": "100% (visual verification of marca grouping in client equipment modal; code review confirmed optgroup in EquipamentoModal and intervention selects)"
+  },
+  "test_credentials": {
+    "admin_user": {"username": "pedro", "password": "teste"},
+    "test_user": {"username": "teste@email.com", "password": "teste"}
+  },
+  "seed_data_creation": "Created ~15 test equipments with prefix TEST_MARCA_<hex> on clients 560Lab and Albano R.N.Alves (client_ids[0] and [1]). All created equipments are cleaned up via DELETE in the session-scoped teardown fixture (soft-delete sets ativo=false). One leftover 'TEST_DuplicateBrand' equipment predates this iteration and remains on 560Lab.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Equipment endpoints verified: (1) GET /api/equipamentos?cliente_id=X returns list sorted by (marca asc, modelo asc). (2) POST /api/equipamentos with duplicate numero_serie returns 409 — uniqueness is GLOBAL across clients, whitespace-trimmed; error detail string includes serial, marca, modelo, and owner client name ('Cliente: <nome>'). (3) PUT /api/equipamentos/{id} with duplicate numero_serie returns 409 (current id excluded). (4) Empty or omitted numero_serie is allowed (multiple equipments can coexist without serial). (5) Frontend Equipamentos do Cliente modal groups by marca with amber h3 headers + Package icon + count; sort is alphabetical. (6) EquipamentoModal dropdown and intervention selects use <optgroup label=\"--- ${marca} ---\">. No regressions found.",
+  "rca of the issue": "Not applicable — feature addition verified end-to-end. Backend implementation in /app/backend/routes/equipamentos.py is idiomatic (async motor, soft-delete, strip normalization, $ne for self-exclusion on PUT). Frontend implementation uses Object.entries/reduce + sort by localeCompare which guarantees stable grouping + alphabetical display."
+}

@@ -6444,11 +6444,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3"
               >
                 <option value="">-- Selecionar Equipamento (opcional) --</option>
-                {equipamentosOT.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.tipologia} - {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
-                  </option>
-                ))}
+                {(() => {
+                  const grouped = equipamentosOT.reduce((groups, eq) => {
+                    const marca = eq.marca || 'Sem Marca';
+                    if (!groups[marca]) groups[marca] = [];
+                    groups[marca].push(eq);
+                    return groups;
+                  }, {});
+                  return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([marca, equips]) => (
+                    <optgroup key={marca} label={`--- ${marca} ---`}>
+                      {equips.map((eq) => (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''} {eq.tipologia ? `[${eq.tipologia}]` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ));
+                })()}
               </select>
               <p className="text-xs text-gray-500 mt-1">
                 Selecione o equipamento ao qual esta intervenção se refere
@@ -6530,11 +6542,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3"
               >
                 <option value="">-- Selecionar Equipamento (opcional) --</option>
-                {equipamentosOT.map((eq) => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.tipologia} - {eq.marca} {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''}
-                  </option>
-                ))}
+                {(() => {
+                  const grouped = equipamentosOT.reduce((groups, eq) => {
+                    const marca = eq.marca || 'Sem Marca';
+                    if (!groups[marca]) groups[marca] = [];
+                    groups[marca].push(eq);
+                    return groups;
+                  }, {});
+                  return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([marca, equips]) => (
+                    <optgroup key={marca} label={`--- ${marca} ---`}>
+                      {equips.map((eq) => (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''} {eq.tipologia ? `[${eq.tipologia}]` : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ));
+                })()}
               </select>
             </div>
 
@@ -9375,8 +9399,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                   Total: {clienteEquipamentos.length} equipamento(s)
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {clienteEquipamentos.map((equipamento) => (
+                {/* Agrupar por marca */}
+                {Object.entries(
+                  clienteEquipamentos.reduce((groups, eq) => {
+                    const marca = eq.marca || 'Sem Marca';
+                    if (!groups[marca]) groups[marca] = [];
+                    groups[marca].push(eq);
+                    return groups;
+                  }, {})
+                ).sort(([a], [b]) => a.localeCompare(b)).map(([marca, equips]) => (
+                  <div key={marca} className="mb-6">
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700">
+                      <Package className="w-4 h-4 text-amber-400" />
+                      <h3 className="text-amber-400 font-semibold text-base">{marca}</h3>
+                      <span className="text-gray-500 text-xs">({equips.length})</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {equips.map((equipamento) => (
                     <div
                       key={equipamento.id}
                       className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4 hover:border-amber-500 transition"
@@ -9478,7 +9517,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                       </Button>
                     </div>
                   ))}
-                </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
