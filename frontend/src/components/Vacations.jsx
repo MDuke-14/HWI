@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw } from 'lucide-react';
+import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import VacationReviewModal from './VacationReviewModal';
 
 const Vacations = ({ user, onLogout }) => {
@@ -22,10 +22,16 @@ const Vacations = ({ user, onLogout }) => {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [requestForm, setRequestForm] = useState({ start_date: '', end_date: '', reason: '' });
   const [setupForm, setSetupForm] = useState({ company_start_date: '', vacation_days_taken: 0 });
+  const [activeTab, setActiveTab] = useState('my');
+  const [allBalances, setAllBalances] = useState([]);
+  const [expandedUser, setExpandedUser] = useState(null);
 
   useEffect(() => {
     fetchBalance();
     fetchRequests();
+    if (user?.is_admin) {
+      fetchAllBalances();
+    }
   }, []);
 
   const fetchBalance = async () => {
@@ -43,6 +49,15 @@ const Vacations = ({ user, onLogout }) => {
       setRequests(response.data);
     } catch (error) {
       toast.error('Erro ao carregar pedidos');
+    }
+  };
+
+  const fetchAllBalances = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/vacations/all-balances`);
+      setAllBalances(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar balances admin');
     }
   };
 
@@ -154,6 +169,150 @@ const Vacations = ({ user, onLogout }) => {
           </div>
         </div>
 
+        {/* Tabs for admin */}
+        {user?.is_admin && (
+          <div className="flex gap-2 mb-6">
+            <Button
+              size="sm"
+              onClick={() => setActiveTab('my')}
+              className={`rounded-full text-xs md:text-sm ${activeTab === 'my' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+            >
+              As Minhas Férias
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setActiveTab('admin')}
+              className={`rounded-full text-xs md:text-sm ${activeTab === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+              data-testid="admin-vacations-tab"
+            >
+              <Users className="w-3.5 h-3.5 mr-1" />
+              Todos os Colaboradores
+            </Button>
+          </div>
+        )}
+
+        {/* Admin: All balances */}
+        {user?.is_admin && activeTab === 'admin' && (
+          <div className="space-y-4">
+            <h2 className="text-lg md:text-2xl font-semibold text-white flex items-center gap-2">
+              <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+              Férias por Colaborador
+            </h2>
+
+            {allBalances.length === 0 ? (
+              <div className="glass-effect p-6 rounded-xl text-center text-gray-400">
+                Nenhum colaborador com férias configuradas
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allBalances.map((ub) => {
+                  const isExpanded = expandedUser === ub.user_id;
+                  return (
+                    <div key={ub.user_id} className="glass-effect rounded-xl overflow-hidden">
+                      {/* Header row */}
+                      <button
+                        onClick={() => setExpandedUser(isExpanded ? null : ub.user_id)}
+                        className="w-full flex items-center justify-between p-4 md:p-5 text-left hover:bg-white/5 transition"
+                        data-testid={`vacation-user-${ub.user_id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-semibold text-sm md:text-base">{ub.full_name || ub.username}</span>
+                            {!ub.is_active && <span className="text-xs bg-red-600/20 text-red-400 px-1.5 py-0.5 rounded">Inativo</span>}
+                          </div>
+                          <div className="text-gray-500 text-xs">
+                            Ano {ub.year} | Entrada: {ub.company_start_date ? new Date(ub.company_start_date + 'T00:00:00').toLocaleDateString('pt-PT') : 'N/D'}
+                          </div>
+                        </div>
+
+                        {/* Quick stats */}
+                        <div className="flex items-center gap-3 md:gap-6 mr-2">
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Acumulados</div>
+                            <div className="text-blue-400 font-bold text-sm md:text-lg">{ub.days_earned}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Gozados</div>
+                            <div className="text-amber-400 font-bold text-sm md:text-lg">{ub.days_taken}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Disponíveis</div>
+                            <div className={`font-bold text-sm md:text-lg ${ub.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>{ub.days_available}</div>
+                          </div>
+                        </div>
+
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0" />}
+                      </button>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="border-t border-gray-800 p-4 md:p-5 space-y-4">
+                          {/* Annual transitions */}
+                          {ub.annual_transitions && ub.annual_transitions.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-1">
+                                <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                                Transições Anuais
+                              </h4>
+                              <div className="space-y-2">
+                                {ub.annual_transitions.map((t, i) => (
+                                  <div key={i} className="bg-[#0f0f0f] rounded-lg p-3 text-sm">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-gray-400">{t.from_year} → {t.to_year}</span>
+                                      <span className="text-gray-500 text-xs">
+                                        {t.transition_date ? new Date(t.transition_date).toLocaleDateString('pt-PT') : ''}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-4 text-xs">
+                                      <span className="text-gray-500">Saldo anterior: <span className={`font-medium ${t.previous_available < 0 ? 'text-red-400' : 'text-amber-400'}`}>{t.previous_available} dias</span></span>
+                                      <span className="text-gray-500">Gozados: <span className="text-amber-400 font-medium">{t.previous_taken}</span></span>
+                                      <span className="text-gray-500">Novo saldo: <span className="text-green-400 font-medium">{t.new_available} dias</span></span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Approved requests */}
+                          {ub.approved_requests && ub.approved_requests.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-1">
+                                <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                                Férias Aprovadas
+                              </h4>
+                              <div className="space-y-1.5">
+                                {ub.approved_requests.map((req) => (
+                                  <div key={req.id} className="bg-[#0f0f0f] rounded-lg p-2.5 flex items-center justify-between text-sm">
+                                    <div>
+                                      <span className="text-white">{new Date(req.start_date + 'T00:00:00').toLocaleDateString('pt-PT')}</span>
+                                      <span className="text-gray-500 mx-1">→</span>
+                                      <span className="text-white">{new Date(req.end_date + 'T00:00:00').toLocaleDateString('pt-PT')}</span>
+                                      {req.reason && <span className="text-gray-500 ml-2 text-xs">({req.reason})</span>}
+                                    </div>
+                                    <span className="text-green-400 font-medium text-xs">{req.days_requested} dias</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {(!ub.annual_transitions || ub.annual_transitions.length === 0) && (!ub.approved_requests || ub.approved_requests.length === 0) && (
+                            <p className="text-gray-500 text-sm text-center py-2">Sem histórico de transições ou férias aprovadas</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* User's own section */}
+        {(activeTab === 'my' || !user?.is_admin) && (
+        <>
         {balance ? (
           <div className="grid grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
             <div className="glass-effect p-4 md:p-6 rounded-xl">
@@ -203,6 +362,8 @@ const Vacations = ({ user, onLogout }) => {
             <div className="text-center text-gray-400 py-8 md:py-12 text-sm">Ainda não fez pedidos de férias</div>
           )}
         </div>
+        </>
+        )}
       </div>
       <VacationReviewModal
         open={showReviewDialog}

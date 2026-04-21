@@ -251,6 +251,20 @@ async def check_annual_vacation_reset(database):
                 "updated_at": get_now_local().isoformat()
             }}
         )
+        
+        # Guardar log da transição para histórico
+        await database.vacation_annual_log.insert_one({
+            "user_id": user_id,
+            "username": username,
+            "from_year": balance_year if balance_year else current_year - 1,
+            "to_year": current_year,
+            "previous_available": old_available,
+            "previous_taken": balance.get("days_taken", 0),
+            "previous_earned": balance.get("days_earned", 0),
+            "new_available": new_available,
+            "transition_date": get_now_local().isoformat()
+        })
+        
         updated_count += 1
         logging.info(f"  Férias {current_year}: {username} — saldo anterior: {old_available}, novo: {new_available}")
     
@@ -7779,6 +7793,64 @@ async def get_pending_vacation_requests(current_user: dict = Depends(get_current
     """Get all pending vacation requests (admin only)"""
     requests = await db.vacation_requests.find({"status": "pending"}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return requests
+
+@api_router.get("/admin/vacations/all-balances")
+async def get_all_vacation_balances(current_user: dict = Depends(get_current_admin)):
+    """Get vacation balances for all users with transition history (admin only)"""
+    balances = await db.vacation_balances.find({}, {"_id": 0}).to_list(None)
+    
+    # Mapear dados dos users
+    users = await db.users.find({}, {"_id": 0, "id": 1, "username": 1, "full_name": 1, "is_active": 1}).to_list(None)
+    users_map = {u["id"]: u for u in users}
+    
+    # Buscar logs de transição anual
+    logs = await db.vacation_annual_log.find({}, {"_id": 0}).sort("transition_date", -1).to_list(None)
+    logs_by_user = {}
+    for log in logs:
+        uid = log["user_id"]
+        if uid not in logs_by_user:
+            logs_by_user[uid] = []
+        logs_by_user[uid].append(log)
+    
+    # Buscar pedidos aprovados por user (do ano corrente)
+    current_year = date.today().year
+    approved_requests = await db.vacation_requests.find(
+        {"status": "approved"},
+        {"_id": 0}
+    ).sort("start_date", -1).to_list(None)
+    
+    requests_by_user = {}
+    for req in approved_requests:
+        uid = req["user_id"]
+        if uid not in requests_by_user:
+            requests_by_user[uid] = []
+        requests_by_user[uid].append(req)
+    
+    result = []
+    for balance in balances:
+        uid = balance["user_id"]
+        user_info = users_map.get(uid, {})
+        
+        result.append({
+            "user_id": uid,
+            "username": user_info.get("username", "?"),
+            "full_name": user_info.get("full_name", user_info.get("username", "?")),
+            "is_active": user_info.get("is_active", True),
+            "year": balance.get("year", current_year),
+            "days_earned": balance.get("days_earned", 0),
+            "days_taken": balance.get("days_taken", 0),
+            "days_available": balance.get("days_available", 0),
+            "company_start_date": balance.get("company_start_date", ""),
+            "annual_transitions": logs_by_user.get(uid, []),
+            "approved_requests": requests_by_user.get(uid, [])
+        })
+    
+    # Ordenar por nome
+    result.sort(key=lambda x: (x.get("full_name") or x.get("username", "")).lower())
+    
+    return result
+
+
 
 @api_router.post("/admin/vacations/{request_id}/approve")
 async def approve_vacation(
