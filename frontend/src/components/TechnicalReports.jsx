@@ -101,8 +101,6 @@ import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
-import PCModalsSection from './technical-reports/PCModalsSection';
-import EmailFSModal from './technical-reports/EmailFSModal';
 
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
@@ -280,6 +278,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [emailsCliente, setEmailsCliente] = useState([]);
   const [emailsAdicionais, setEmailsAdicionais] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailDestinatario, setEmailDestinatario] = useState('');
+  const [emailCC, setEmailCC] = useState('');
 
   // Assinaturas (múltiplas)
   const [assinaturas, setAssinaturas] = useState([]);
@@ -391,6 +391,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [uploadingFotoPC, setUploadingFotoPC] = useState(false);
   const [showEmailPCModal, setShowEmailPCModal] = useState(false);
   const [sendingEmailPC, setSendingEmailPC] = useState(false);
+  const [emailPCDestinatario, setEmailPCDestinatario] = useState('');
+  const [emailPCCC, setEmailPCCC] = useState('');
   
   // Popup confidencialidade do cliente (antes de download/email PC)
   const [showHideClientPopup, setShowHideClientPopup] = useState(false);
@@ -6162,19 +6164,233 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Email FS Modal - Componente Extraído */}
-      <EmailFSModal
-        open={showEmailModal} onOpenChange={setShowEmailModal}
-        selectedRelatorio={selectedRelatorio}
-        emailDestinatario={emailDestinatario} setEmailDestinatario={setEmailDestinatario}
-        emailCC={emailCC} setEmailCC={setEmailCC}
-        idiomaEmail={idiomaEmail} setIdiomaEmail={setIdiomaEmail}
-        docsSelecionados={docsSelecionados} setDocsSelecionados={setDocsSelecionados}
-        handleEnviarEmail={handleEnviarEmail} handleSendEmail={handleSendEmail}
-        handleConfirmSendEmail={handleConfirmSendEmail} sendingEmail={sendingEmail}
-        relatoriosAssistencia={relatoriosAssistencia} equipamentosOT={equipamentosOT}
-        showFolhaHorasConfirm={showFolhaHorasConfirm} setShowFolhaHorasConfirm={setShowFolhaHorasConfirm}
-        emailsAdicionais={emailsAdicionais} setEmailsAdicionais={setEmailsAdicionais}
+    <>
+      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Mail className="w-5 h-5 text-purple-400" />
+              Enviar FS Por Email
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {/* Emails do Cliente */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">Emails do Cliente</Label>
+              {emailsCliente.length === 0 ? (
+                <p className="text-gray-500 text-sm italic">Nenhum email registado para este cliente</p>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {emailsCliente.map((item, index) => (
+                    <label
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-[#0f0f0f] border border-gray-700 rounded-lg cursor-pointer hover:border-purple-500/50 transition"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.selected}
+                        onChange={() => toggleEmailSelection(index)}
+                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
+                      />
+                      <span className="text-white">{item.email}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Emails Adicionais */}
+            <div>
+              <Label className="text-gray-300 mb-2 block">
+                Emails Adicionais <span className="text-gray-500 text-xs">(separados por vírgula)</span>
+              </Label>
+              <Input
+                value={emailsAdicionais}
+                onChange={(e) => setEmailsAdicionais(e.target.value)}
+                placeholder="email1@exemplo.com, email2@exemplo.com"
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+              />
+            </div>
+
+            {/* Resumo */}
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+              <p className="text-sm text-purple-300">
+                <strong>FS #{selectedRelatorio?.numero_assistencia}</strong> será enviada para {emailsCliente.filter(e => e.selected).length + (emailsAdicionais.trim() ? emailsAdicionais.split(/[;,]/).filter(e => e.trim()).length : 0)} email(s)
+              </p>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => setShowEmailModal(false)}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={sendingEmail}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                disabled={sendingEmail || (emailsCliente.filter(e => e.selected).length === 0 && !emailsAdicionais.trim())}
+                data-testid="confirmar-enviar-email"
+              >
+                {sendingEmail ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                    A enviar...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Popup 2 — Seleção de Documentos a Enviar */}
+      <Dialog open={showFolhaHorasConfirm} onOpenChange={(open) => {
+        if (!open) setShowFolhaHorasConfirm(false);
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <FileText className="w-5 h-5 text-amber-400" />
+              Documentos a Enviar
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-400 text-sm">Selecione os documentos que pretende anexar ao email:</p>
+
+          <div className="space-y-2 mt-3">
+            {/* Relatório PDF */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                docsSelecionados.relatorio ? 'border-blue-500 bg-blue-600/10' : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+              }`}
+              data-testid="doc-select-relatorio"
+            >
+              <input
+                type="checkbox"
+                checked={docsSelecionados.relatorio || false}
+                onChange={(e) => setDocsSelecionados({ ...docsSelecionados, relatorio: e.target.checked })}
+                className="accent-blue-500 w-4 h-4"
+              />
+              <div>
+                <span className="text-white text-sm font-medium">PDF do Relatório</span>
+                <p className="text-gray-500 text-xs">Relatório técnico da FS</p>
+              </div>
+            </label>
+
+            {/* Folha de Horas */}
+            <label
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                docsSelecionados.folha_horas ? 'border-amber-500 bg-amber-600/10' : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+              }`}
+              data-testid="doc-select-folha-horas"
+            >
+              <input
+                type="checkbox"
+                checked={docsSelecionados.folha_horas || false}
+                onChange={(e) => setDocsSelecionados({ ...docsSelecionados, folha_horas: e.target.checked })}
+                className="accent-amber-500 w-4 h-4"
+              />
+              <div>
+                <span className="text-white text-sm font-medium">Folha de Horas</span>
+                <p className="text-gray-500 text-xs">Registo de mão de obra e custos</p>
+              </div>
+            </label>
+
+            {/* PCs */}
+            {pedidosCotacao && pedidosCotacao.length > 0 && (
+              <>
+                <div className="border-t border-gray-800 pt-2 mt-2">
+                  <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Pedidos de Cotação</p>
+                </div>
+                {pedidosCotacao.map((pc) => (
+                  <label
+                    key={pc.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      docsSelecionados[`pc:${pc.id}`] ? 'border-yellow-500 bg-yellow-600/10' : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
+                    }`}
+                    data-testid={`doc-select-pc-${pc.id}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={docsSelecionados[`pc:${pc.id}`] || false}
+                      onChange={(e) => setDocsSelecionados({ ...docsSelecionados, [`pc:${pc.id}`]: e.target.checked })}
+                      className="accent-yellow-500 w-4 h-4"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-white text-sm font-medium">{pc.numero_pc}</span>
+                      {pc.primeiro_material && (
+                        <p className="text-gray-500 text-xs truncate">{pc.primeiro_material}</p>
+                      )}
+                    </div>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      pc.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
+                      pc.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
+                      'bg-blue-600/20 text-blue-400'
+                    }`}>{pc.status}</span>
+                  </label>
+                ))}
+              </>
+            )}
+          </div>
+
+
+          {/* Seleção de Idioma do Email */}
+          <div className="border-t border-gray-800 pt-3 mt-1">
+            <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Idioma do Email</p>
+            <div className="flex gap-2">
+              {[
+                { value: 'pt', label: 'Português', flag: '🇵🇹' },
+                { value: 'es', label: 'Español', flag: '🇪🇸' },
+                { value: 'en', label: 'English', flag: '🇬🇧' },
+              ].map((lang) => (
+                <button
+                  key={lang.value}
+                  onClick={() => setIdiomaEmail(lang.value)}
+                  data-testid={`lang-select-${lang.value}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm transition-all ${
+                    idiomaEmail === lang.value
+                      ? 'border-green-500 bg-green-600/10 text-white font-medium'
+                      : 'border-gray-700 bg-[#0f0f0f] text-gray-400 hover:border-gray-500'
+                  }`}
+                >
+                  <span>{lang.flag}</span>
+                  <span>{lang.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={() => setShowFolhaHorasConfirm(false)}
+              variant="outline"
+              className="flex-1 border-gray-600 text-gray-300 hover:text-white"
+              data-testid="doc-select-cancelar"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmSendEmail}
+              disabled={!Object.values(docsSelecionados).some(v => v)}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              data-testid="doc-select-enviar"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Enviar ({Object.values(docsSelecionados).filter(v => v).length} doc{Object.values(docsSelecionados).filter(v => v).length !== 1 ? 's' : ''})
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
       />
 
 
@@ -6325,33 +6541,495 @@ const TechnicalReports = ({ user, onLogout }) => {
         handleFacturaUpload={handleFacturaUpload} uploadingFactura={uploadingFactura}
       />
 
-      {/* PC Modals Section - Componente Extraído */}
-      <PCModalsSection
-        showPCModal={showPCModal} setShowPCModal={setShowPCModal}
-        selectedPC={selectedPC} setSelectedPC={setSelectedPC}
-        fotografiasPC={fotografiasPC} setFotografiasPC={setFotografiasPC}
-        handleUpdatePC={handleUpdatePC} setPCFormData={setPCFormData}
-        triggerPCDownload={triggerPCDownload}
-        showAddFotoPCModal={showAddFotoPCModal} setShowAddFotoPCModal={setShowAddFotoPCModal}
-        fotoPCFile={fotoPCFile} setFotoPCFile={setFotoPCFile}
-        fotoPCDescricao={fotoPCDescricao} setFotoPCDescricao={setFotoPCDescricao}
-        handleFotoPCFileChange={handleFotoPCFileChange} handleUploadFotoPC={handleUploadFotoPC}
-        handleDeleteFotoPC={handleDeleteFotoPC}
-        showEmailPCModal={showEmailPCModal} setShowEmailPCModal={setShowEmailPCModal}
-        triggerPCEmail={triggerPCEmail}
-        setIdiomaEmail={setIdiomaEmail}
-        emailPCDestinatario={emailPCDestinatario} setEmailPCDestinatario={setEmailPCDestinatario}
-        emailPCCC={emailPCCC} setEmailPCCC={setEmailPCCC}
-        showEditMaterialPCModal={showEditMaterialPCModal} setShowEditMaterialPCModal={setShowEditMaterialPCModal}
-        editMaterialPCForm={editMaterialPCForm} setEditMaterialPCForm={setEditMaterialPCForm}
-        handleUpdateMaterialPC={handleUpdateMaterialPC}
-        handleDeleteFatura={handleDeleteFatura} handleUploadFatura={handleUploadFatura}
-        handleViewFatura={handleViewFatura}
-        faturaFile={faturaFile} setFaturaFile={setFaturaFile}
-        faturaDescricao={faturaDescricao} setFaturaDescricao={setFaturaDescricao}
-        showHideClientPopup={showHideClientPopup} setShowHideClientPopup={setShowHideClientPopup}
-        API={API}
-      />
+    <>
+      {/* PC Modal */}
+      <Dialog open={showPCModal} onOpenChange={(open) => {
+        setShowPCModal(open);
+        if (!open) {
+          setSelectedPC(null);
+          setFotografiasPC([]);
+        }
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between text-white">
+              <span className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-yellow-400" />
+                {selectedPC?.numero_pc} - Pedido de Cotação
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => triggerPCDownload(selectedPC?.id)}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Download PDF
+                </Button>
+                <Button
+                  onClick={() => setShowEmailPCModal(true)}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  Enviar Email
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPC && (
+            <div className="space-y-4 mt-4">
+              {/* Informações da FS */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-blue-700">
+                <h4 className="text-blue-400 font-semibold mb-3">Informações da Folha de Serviço</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">Número FS:</span>
+                    <span className="text-white ml-2 font-medium">#{selectedPC.numero_ot || selectedPC.ot_numero || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Cliente:</span>
+                    <span className="text-white ml-2">{selectedPC.cliente_nome || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados da Máquina */}
+              {(selectedPC.equipamento_tipologia || selectedPC.equipamento_marca || selectedPC.equipamento_modelo) && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                  <h4 className="text-yellow-400 font-semibold mb-3">Dados da Máquina</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Tipologia:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_tipologia || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Marca:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_marca || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Modelo:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_modelo || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Nº Série:</span>
+                      <span className="text-white ml-2">{selectedPC.equipamento_numero_serie || 'N/A'}</span>
+                    </div>
+                    {selectedPC.equipamento_ano_fabrico && (
+                      <div>
+                        <span className="text-gray-400">Ano:</span>
+                        <span className="text-white ml-2">{selectedPC.equipamento_ano_fabrico}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Status */}
+              <div>
+                <Label className="text-gray-300">Status do PC</Label>
+                <select
+                  value={pcFormData.status}
+                  onChange={(e) => setPCFormData({ ...pcFormData, status: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1"
+                >
+                  <option value="Em Espera">Em Espera</option>
+                  <option value="Cotação Pedida">Cotação Pedida</option>
+                  <option value="A Caminho">A Caminho</option>
+                  <option value="Em Armazém">Em Armazém</option>
+                  <option value="Terminado">Terminado</option>
+                </select>
+              </div>
+
+              {/* Materiais */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <h4 className="text-blue-400 font-semibold mb-3">Material para Cotação</h4>
+                {selectedPC.materiais?.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedPC.materiais.map((mat) => (
+                      <div key={mat.id} className="flex justify-between items-center p-2 bg-gray-800 rounded">
+                        <div className="flex-1">
+                          <span className="text-white">{mat.descricao}</span>
+                          <span className="text-gray-400 ml-3">Qtd: {mat.quantidade} {mat.unidade || 'Un'}</span>
+                          {(mat.posicao || mat.codigo) && (
+                            <div className="flex gap-3 mt-0.5">
+                              {mat.posicao && <span className="text-white text-sm">Posição: {mat.posicao}</span>}
+                              {mat.codigo && <span className="text-white text-sm">Código: {mat.codigo}</span>}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          onClick={() => openEditMaterialPCModal(mat)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">Nenhum material associado</p>
+                )}
+              </div>
+
+              {/* Fotografias */}
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-blue-400 font-semibold">Fotografias</h4>
+                  <Button
+                    onClick={() => setShowAddFotoPCModal(true)}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Foto
+                  </Button>
+                </div>
+
+                {fotografiasPC.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {fotografiasPC.map((foto) => (
+                      <div key={foto.id} className="relative group">
+                        <img
+                          src={`${API}${foto.foto_url}`}
+                          alt={foto.descricao}
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <Button
+                            onClick={() => handleDeleteFotoPC(foto.id)}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-gray-300 text-sm mt-1">{foto.descricao}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">Nenhuma fotografia</p>
+                )}
+              </div>
+
+              {/* Observações */}
+              <div>
+                <Label className="text-gray-300">Observações</Label>
+                <textarea
+                  value={pcFormData.observacoes}
+                  onChange={(e) => setPCFormData({ ...pcFormData, observacoes: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1 min-h-[100px]"
+                  placeholder="Adicione observações sobre este pedido de cotação..."
+                />
+              </div>
+
+              {/* Faturas */}
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-amber-400 font-semibold flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Faturas de Peças
+                  </h4>
+                </div>
+
+                {/* Upload Form */}
+                <form onSubmit={handleUploadFatura} className="mb-4 p-3 bg-[#0a0a0a] rounded-lg border border-gray-700">
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <Label className="text-gray-300 text-sm">Ficheiro (PDF, Imagem)</Label>
+                      <Input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+                        onChange={(e) => setFaturaFile(e.target.files[0])}
+                        className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-sm">Descrição (opcional)</Label>
+                      <Input
+                        value={faturaDescricao}
+                        onChange={(e) => setFaturaDescricao(e.target.value)}
+                        className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                        placeholder="Ex: Fatura peça X, Orçamento fornecedor Y"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!faturaFile || uploadingFatura}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploadingFatura ? 'A carregar...' : 'Carregar Fatura'}
+                    </Button>
+                  </div>
+                </form>
+
+                {/* Lista de Faturas */}
+                {faturasPC.length > 0 ? (
+                  <div className="space-y-2">
+                    {faturasPC.map((fatura) => (
+                      <div 
+                        key={fatura.id} 
+                        className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg border border-gray-700 hover:border-amber-500/50 transition"
+                      >
+                        <div 
+                          className="flex-1 cursor-pointer hover:text-amber-400 transition"
+                          onClick={() => handleViewFatura(fatura)}
+                          title="Clique para ver"
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-amber-400" />
+                            <span className="text-white font-medium">{fatura.nome_ficheiro}</span>
+                          </div>
+                          {fatura.descricao && (
+                            <p className="text-gray-400 text-sm mt-1 ml-6">{fatura.descricao}</p>
+                          )}
+                          <p className="text-gray-500 text-xs mt-1 ml-6">
+                            {fatura.uploaded_by && `Por ${fatura.uploaded_by} • `}
+                            {fatura.uploaded_at && new Date(fatura.uploaded_at).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => handleViewFatura(fatura)}
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-600 text-gray-300 hover:text-white"
+                            title="Ver fatura"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteFatura(fatura.id)}
+                            size="sm"
+                            variant="destructive"
+                            title="Remover fatura"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm text-center py-4">Nenhuma fatura carregada</p>
+                )}
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setShowPCModal(false)}
+                  variant="outline"
+                  className="flex-1 border-gray-600"
+                >
+                  Fechar
+                </Button>
+                <Button
+                  onClick={handleUpdatePC}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  Guardar Alterações
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Foto PC Modal */}
+      <Dialog open={showAddFotoPCModal} onOpenChange={setShowAddFotoPCModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Adicionar Fotografia ao PC</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUploadFotoPC} className="space-y-4">
+            <div>
+              <Label htmlFor="foto_pc_file" className="text-gray-300">Selecionar Imagem</Label>
+              <Input
+                id="foto_pc_file"
+                type="file"
+                accept="image/*"
+                onChange={handleFotoPCFileChange}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="foto_pc_descricao" className="text-gray-300">Descrição</Label>
+              <Input
+                id="foto_pc_descricao"
+                defaultValue={fotoPCDescricao}
+                onBlur={(e) => setFotoPCDescricao(e.target.value)}
+                className="bg-[#0f0f0f] border-gray-700 text-white"
+                placeholder="Ex: Vista frontal do equipamento"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowAddFotoPCModal(false);
+                  setFotoPCFile(null);
+                  setFotoPCDescricao('');
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600"
+                disabled={uploadingFotoPC}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+                disabled={uploadingFotoPC}
+              >
+                {uploadingFotoPC ? 'Enviando...' : 'Adicionar'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email PC Modal */}
+      <Dialog open={showEmailPCModal} onOpenChange={setShowEmailPCModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Enviar PDF por Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-300">Selecione o email de destino:</p>
+            <div className="space-y-2">
+              {['geral@hwi.pt', 'pedro.duarte@hwi.pt', 'miguel.moreira@hwi.pt'].map((email) => (
+                <Button
+                  key={email}
+                  onClick={() => triggerPCEmail(email)}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={sendingEmailPC}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  {email}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Popup: Esconder nome do cliente no PC */}
+      <Dialog open={showHideClientPopup} onOpenChange={setShowHideClientPopup}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white">Dados do Cliente</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-300 text-sm">
+            Deseja ocultar o nome do cliente no documento?
+          </p>
+          <p className="text-gray-500 text-xs mt-1">
+            O nome será substituído por uma barra preta de confidencialidade.
+          </p>
+
+          {/* Idioma do Email (só aparece para envio de email, não download) */}
+          {hideClientAction?.type === 'email' && (
+            <div className="border-t border-gray-800 pt-3 mt-3">
+              <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Idioma do Email</p>
+              <div className="flex gap-2">
+                {[
+                  { value: 'pt', label: 'PT', flag: '🇵🇹' },
+                  { value: 'es', label: 'ES', flag: '🇪🇸' },
+                  { value: 'en', label: 'EN', flag: '🇬🇧' },
+                ].map((lang) => (
+                  <button
+                    key={lang.value}
+                    onClick={() => setIdiomaEmail(lang.value)}
+                    data-testid={`pc-lang-${lang.value}`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm transition-all ${
+                      idiomaEmail === lang.value
+                        ? 'border-green-500 bg-green-600/10 text-white font-medium'
+                        : 'border-gray-700 bg-[#0f0f0f] text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-4">
+            <Button
+              onClick={() => executeHideClientAction(false)}
+              className="flex-1 bg-gray-600 hover:bg-gray-700"
+              data-testid="pc-client-show"
+            >
+              Mostrar Cliente
+            </Button>
+            <Button
+              onClick={() => executeHideClientAction(true)}
+              className="flex-1 bg-gray-900 hover:bg-black border border-gray-600"
+              data-testid="pc-client-hide"
+            >
+              Ocultar Cliente
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Edit Material PC Modal */}
+      <Dialog open={showEditMaterialPCModal} onOpenChange={setShowEditMaterialPCModal}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Editar Material</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-gray-300">Descrição</Label>
+              <Input
+                value={editMaterialPCForm.descricao}
+                onChange={(e) => setEditMaterialPCForm({ ...editMaterialPCForm, descricao: e.target.value })}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                placeholder="Descrição do material"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300">Quantidade</Label>
+              <Input
+                type="number"
+                min="1"
+                value={editMaterialPCForm.quantidade}
+                onChange={(e) => setEditMaterialPCForm({ ...editMaterialPCForm, quantidade: parseInt(e.target.value) || 1 })}
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={() => setShowEditMaterialPCModal(false)}
+                variant="outline"
+                className="flex-1 border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpdateMaterialPC}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                Guardar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+    </>
 
       {/* Assinatura Modal - Componente Extraído */}
       <AssinaturaModal
