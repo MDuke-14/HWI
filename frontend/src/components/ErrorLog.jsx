@@ -166,18 +166,20 @@ const ErrorLog = ({ user, onLogout }) => {
           <div className="space-y-2">
             {errors.map((err) => {
               const isExpanded = expandedError === err.id;
+              const details = err.details || {};
+              const detailKeys = Object.keys(details).filter(k => details[k] !== null && details[k] !== undefined && details[k] !== '');
+              
               return (
                 <div key={err.id} className={`glass-effect rounded-lg overflow-hidden border ${err.resolved ? 'border-green-900/30' : 'border-red-900/30'}`}>
-                  <button
+                  {/* Header - always visible */}
+                  <div
+                    className="p-3 md:p-4 hover:bg-white/5 transition cursor-pointer"
                     onClick={() => setExpandedError(isExpanded ? null : err.id)}
-                    className="w-full text-left p-3 md:p-4 hover:bg-white/5 transition"
                     data-testid={`error-row-${err.id}`}
                   >
                     <div className="flex items-start gap-3">
-                      {/* Status indicator */}
                       <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${err.resolved ? 'bg-green-500' : 'bg-red-500'}`} />
                       
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded ${getContextBg(err.context)} ${getContextColor(err.context)}`}>
@@ -190,53 +192,111 @@ const ErrorLog = ({ user, onLogout }) => {
                         {err.username && <span className="text-gray-600 text-xs">por {err.username}</span>}
                       </div>
 
-                      {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {!err.resolved && (
-                          <Button
-                            size="sm"
+                          <button
                             onClick={(e) => { e.stopPropagation(); handleResolve(err.id); }}
-                            className="bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs px-2 py-1 h-auto"
+                            className="bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs px-2 py-1 rounded"
                             data-testid={`resolve-btn-${err.id}`}
                           >
-                            <CheckCircle className="w-3 h-3" />
-                          </Button>
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          </button>
                         )}
                         {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-600" /> : <ChevronDown className="w-4 h-4 text-gray-600" />}
                       </div>
                     </div>
-                  </button>
+                  </div>
 
                   {/* Expanded details */}
                   {isExpanded && (
-                    <div className="border-t border-gray-800 p-3 md:p-4 bg-[#0a0a0a]">
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Mensagem Completa</h4>
-                          <p className="text-sm text-gray-300 whitespace-pre-wrap break-all">{err.error_message}</p>
+                    <div className="border-t border-gray-800 p-4 md:p-5 bg-[#060606] space-y-4">
+                      {/* Mensagem completa */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Mensagem do Erro</h4>
+                        <div className="bg-red-950/30 border border-red-900/40 rounded-lg p-3">
+                          <p className="text-sm text-red-300 whitespace-pre-wrap break-words leading-relaxed">{err.error_message}</p>
                         </div>
-                        {err.details && Object.keys(err.details).length > 0 && (
-                          <div>
-                            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Detalhes</h4>
-                            {err.details.traceback && (
-                              <pre className="text-xs text-red-400/80 bg-red-900/10 rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">
-                                {err.details.traceback}
-                              </pre>
-                            )}
-                            {err.details.path && (
-                              <p className="text-xs text-gray-500 mt-1">Endpoint: <span className="text-gray-400">{err.details.method} {err.details.path}</span></p>
-                            )}
-                            {err.details.relatorio_id && (
-                              <p className="text-xs text-gray-500 mt-1">Relatório ID: <span className="text-gray-400">{err.details.relatorio_id}</span></p>
-                            )}
-                          </div>
-                        )}
-                        {err.resolved && (
-                          <div className="text-xs text-green-500">
-                            Resolvido por {err.resolved_by} em {formatTimestamp(err.resolved_at)}
-                          </div>
-                        )}
                       </div>
+
+                      {/* Diagnóstico rápido */}
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Diagnóstico</h4>
+                        <div className="bg-amber-950/20 border border-amber-900/30 rounded-lg p-3">
+                          <p className="text-sm text-amber-300">
+                            {err.error_message?.toLowerCase().includes('flowable too large') && 'O PDF tem conteúdo demasiado grande para caber numa página. Verificar textos longos em descrições, observações ou intervenções.'}
+                            {err.error_message?.toLowerCase().includes('not found') && 'Recurso não encontrado na base de dados. Pode ter sido eliminado ou o ID está incorrecto.'}
+                            {err.error_message?.toLowerCase().includes('timeout') && 'O servidor demorou demasiado a responder. Pode ser sobrecarga ou dados muito pesados.'}
+                            {err.error_message?.toLowerCase().includes('connection') && 'Problema de conexão com o servidor ou base de dados.'}
+                            {err.error_message?.toLowerCase().includes('permission') && 'O utilizador não tem permissão para esta acção.'}
+                            {err.error_message?.toLowerCase().includes('codec') && 'Erro de codificação de caracteres. Verificar caracteres especiais nos dados.'}
+                            {err.error_message?.toLowerCase().includes('key') && err.error_message?.toLowerCase().includes('error') && 'Campo em falta na base de dados. Um registo pode estar incompleto.'}
+                            {err.error_message?.toLowerCase().includes('type') && err.error_message?.toLowerCase().includes('error') && 'Tipo de dados inesperado. Um campo pode estar vazio ou com formato errado.'}
+                            {err.error_message?.toLowerCase().includes('image') && 'Erro ao processar imagem. A fotografia pode estar corrompida ou em formato não suportado.'}
+                            {err.error_message?.toLowerCase().includes('smtp') && 'Falha ao enviar email. Verificar configurações do servidor de email.'}
+                            {err.error_message?.toLowerCase().includes('naive') && 'Erro de timezone em datas. Um registo antigo pode não ter informação de fuso horário.'}
+                            {!['flowable', 'not found', 'timeout', 'connection', 'permission', 'codec', 'key', 'type', 'image', 'smtp', 'naive'].some(k => err.error_message?.toLowerCase().includes(k)) && 'Erro interno do sistema. Verificar os detalhes técnicos abaixo.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Detalhes técnicos - todas as chaves */}
+                      {detailKeys.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Detalhes Técnicos</h4>
+                          <div className="bg-[#0f0f0f] border border-gray-800 rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                              <tbody>
+                                {detailKeys.map((key) => {
+                                  const val = details[key];
+                                  const isLong = typeof val === 'string' && val.length > 100;
+                                  return (
+                                    <tr key={key} className="border-b border-gray-800/50 last:border-0">
+                                      <td className="px-3 py-2 text-gray-500 text-xs font-medium whitespace-nowrap align-top w-32 bg-[#0a0a0a]">
+                                        {key === 'traceback' ? 'Stack Trace' :
+                                         key === 'path' ? 'Endpoint' :
+                                         key === 'method' ? 'Método HTTP' :
+                                         key === 'status' ? 'Código HTTP' :
+                                         key === 'relatorio_id' ? 'ID do Relatório' :
+                                         key === 'url' ? 'URL' :
+                                         key}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-300">
+                                        {key === 'traceback' ? (
+                                          <pre className="text-xs text-red-400/80 bg-red-900/10 rounded p-2 overflow-x-auto max-h-52 overflow-y-auto whitespace-pre-wrap break-all font-mono">
+                                            {val}
+                                          </pre>
+                                        ) : key === 'status' ? (
+                                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${val >= 500 ? 'bg-red-600/20 text-red-400' : val >= 400 ? 'bg-amber-600/20 text-amber-400' : 'bg-gray-600/20 text-gray-400'}`}>
+                                            {val}
+                                          </span>
+                                        ) : typeof val === 'object' ? (
+                                          <pre className="text-xs text-gray-400 whitespace-pre-wrap break-all font-mono">
+                                            {JSON.stringify(val, null, 2)}
+                                          </pre>
+                                        ) : isLong ? (
+                                          <p className="text-xs text-gray-400 whitespace-pre-wrap break-all">{val}</p>
+                                        ) : (
+                                          <span className="text-xs text-gray-300">{String(val)}</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Info de resolução */}
+                      {err.resolved && (
+                        <div className="bg-green-950/20 border border-green-900/30 rounded-lg p-3 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-xs text-green-400">
+                            Resolvido por <strong>{err.resolved_by}</strong> em {formatTimestamp(err.resolved_at)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
