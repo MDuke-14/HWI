@@ -225,12 +225,38 @@ const Vacations = ({ user, onLogout }) => {
                           </div>
                         </div>
 
-                        {/* Quick stats */}
+                        {/* Quick stats — year breakdown */}
                         <div className="flex items-center gap-3 md:gap-6 mr-2">
-                          <div className="text-center">
-                            <div className="text-xs text-gray-500">Acumulados</div>
-                            <div className="text-blue-400 font-bold text-sm md:text-lg">{ub.days_earned}</div>
-                          </div>
+                          {(() => {
+                            // Calcular carryover: total_base = available + taken, carryover = total_base - 22
+                            const totalBase = ub.days_available + ub.days_taken;
+                            const carryover = Math.round((totalBase - 22) * 100) / 100;
+                            const hasCarryover = carryover !== 0;
+                            const prevYear = ub.year - 1;
+                            
+                            if (hasCarryover) {
+                              return (
+                                <>
+                                  <div className="text-center">
+                                    <div className="text-xs text-gray-500">{prevYear}</div>
+                                    <div className={`font-bold text-sm md:text-lg ${carryover < 0 ? 'text-red-400' : 'text-purple-400'}`}>{carryover}</div>
+                                  </div>
+                                  <div className="text-gray-600 text-xs">+</div>
+                                  <div className="text-center">
+                                    <div className="text-xs text-gray-500">{ub.year}</div>
+                                    <div className="text-blue-400 font-bold text-sm md:text-lg">22</div>
+                                  </div>
+                                </>
+                              );
+                            }
+                            return (
+                              <div className="text-center">
+                                <div className="text-xs text-gray-500">{ub.year}</div>
+                                <div className="text-blue-400 font-bold text-sm md:text-lg">{ub.days_earned}</div>
+                              </div>
+                            );
+                          })()}
+                          <div className="text-gray-700 font-light">|</div>
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Gozados</div>
                             <div className="text-amber-400 font-bold text-sm md:text-lg">{ub.days_taken}</div>
