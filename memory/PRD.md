@@ -72,6 +72,14 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - Fixed login auth to handle both `password` and `hashed_password` DB fields
 - Backend tests: 10/10 passing (/app/backend/tests/test_timezone_dst_fix.py)
 
+## Equipment Management Improvements (2026-04-21)
+- Equipment database view per client now grouped by brand (marca) with amber headers and count badges
+- Equipment selection in FS interventions (add/edit) uses `<optgroup>` to group by brand
+- Backend blocks duplicate serial numbers (numero_serie) globally across all clients — returns HTTP 409 with descriptive error
+- PUT endpoint also validates serial uniqueness (excluding current equipment)
+- GET endpoint sorts by (marca ASC, modelo ASC) instead of last_used
+- Backend tests: 9/9 passing (/app/backend/tests/test_equipamento_marca_grouping.py)
+
 ## Credentials
 - Admin: pedro / teste
 
