@@ -98,6 +98,8 @@ import {
 } from './technical-reports';
 import FaturaScanner from './technical-reports/FaturaScanner';
 import IntervencaoModal from './technical-reports/IntervencaoModal';
+import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
+import RelAssistModal from './technical-reports/RelAssistModal';
 
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
@@ -6436,200 +6438,29 @@ const TechnicalReports = ({ user, onLogout }) => {
         onSubmit={handleEditTecnico}
       />
 
-      {/* Add Fotografia Modal */}
-      <Dialog open={showAddFotoModal} onOpenChange={setShowAddFotoModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <ImageIcon className="w-5 h-5 text-blue-400" />
-              Adicionar Fotografia
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleUploadFoto} className="space-y-4 mt-4">
-            {/* Upload de arquivo */}
-            <div>
-              <Label htmlFor="foto_file" className="text-gray-300">
-                Selecionar Fotografia *
-              </Label>
-              <Input
-                id="foto_file"
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif"
-                onChange={handleFotoFileChange}
-                className="bg-[#0f0f0f] border-gray-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Formatos aceitos: JPG, PNG, GIF, WEBP, HEIC, HEIF (máximo 10MB)
-              </p>
-              {fotoFile && (
-                <p className="text-sm text-green-400 mt-2">
-                  ✓ {fotoFile.name} ({(fotoFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-              )}
-            </div>
-
-            {/* Preview da imagem */}
-            {fotoFile && (
-              <div className="bg-black/30 rounded-lg p-4">
-                <p className="text-xs text-gray-400 mb-2">Pré-visualização:</p>
-                <img
-                  src={URL.createObjectURL(fotoFile)}
-                  alt="Preview"
-                  className="w-full max-h-64 object-contain rounded"
-                />
-              </div>
-            )}
-
-            {/* Descrição - usando ref para evitar re-renders em mobile */}
-            <div>
-              <Label htmlFor="foto_descricao" className="text-gray-300">
-                Descrição / Observações <span className="text-gray-500 text-xs">(opcional)</span>
-              </Label>
-              <textarea
-                id="foto_descricao"
-                defaultValue={fotoDescricao}
-                onBlur={(e) => setFotoDescricao(e.target.value)}
-                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px]"
-                placeholder="Descreva o componente ou situação na fotografia..."
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowAddFotoModal(false);
-                  setFotoFile(null);
-                  setFotoDescricao('');
-                }}
-                variant="outline"
-                className="flex-1 border-gray-600"
-                disabled={uploadingFoto}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                disabled={uploadingFoto}
-              >
-                {uploadingFoto ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Adicionar
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Editar Descrição da Foto */}
-      <Dialog open={showEditFotoModal} onOpenChange={(open) => {
-        setShowEditFotoModal(open);
-        if (!open) {
-          setSelectedFoto(null);
-          setEditFotoDescricao('');
-          setEditFotoData('');
-        }
-      }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Edit className="w-5 h-5 text-blue-400" />
-              Editar Fotografia
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedFoto && (
-            <div className="space-y-4 mt-4">
-              {/* Preview da imagem */}
-              <div className="bg-black/30 rounded-lg p-3">
-                <img
-                  src={`${API}${selectedFoto.foto_url}`}
-                  alt={selectedFoto.descricao || 'Fotografia'}
-                  className="w-full max-h-48 object-contain rounded"
-                />
-              </div>
-
-              {/* Campo de data */}
-              <div>
-                <Label className="text-gray-300 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Data da Fotografia
-                </Label>
-                <Input
-                  type="datetime-local"
-                  value={editFotoData}
-                  onChange={(e) => setEditFotoData(e.target.value)}
-                  className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                  data-testid="edit-foto-data"
-                />
-              </div>
-
-              {/* Campo de descrição */}
-              <div>
-                <Label className="text-gray-300">Descrição / Observações</Label>
-                <textarea
-                  value={editFotoDescricao}
-                  onChange={(e) => setEditFotoDescricao(e.target.value)}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3 min-h-[100px] mt-1"
-                  placeholder="Descreva o componente ou situação na fotografia..."
-                  data-testid="edit-foto-descricao"
-                />
-              </div>
-
-              {/* Botões */}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={() => {
-                    setShowEditFotoModal(false);
-                    setSelectedFoto(null);
-                    setEditFotoDescricao('');
-                    setEditFotoData('');
-                  }}
-                  variant="outline"
-                  className="flex-1 border-gray-600"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleUpdateFotoDescricao}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600"
-                  data-testid="save-foto-descricao"
-                >
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Photo Preview Modal */}
-      <Dialog open={showFotoPreviewModal} onOpenChange={(open) => {
-        setShowFotoPreviewModal(open);
-        if (!open) setSelectedFotoUrl(null);
-      }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl p-2">
-          {selectedFotoUrl && (
-            <img
-              src={selectedFotoUrl}
-              alt="Fotografia"
-              className="w-full max-h-[70vh] object-contain rounded"
-              data-testid="foto-preview-image"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Fotografia Modals - Componentes Extraídos */}
+      <FotoUploadModal
+        open={showAddFotoModal} onOpenChange={setShowAddFotoModal}
+        onSubmit={handleUploadFoto}
+        onCancel={() => { setShowAddFotoModal(false); setFotoFile(null); setFotoDescricao(''); }}
+        fotoFile={fotoFile} onFotoFileChange={handleFotoFileChange}
+        fotoDescricao={fotoDescricao} setFotoDescricao={setFotoDescricao}
+        uploadingFoto={uploadingFoto}
+      />
+      <FotoEditModal
+        open={showEditFotoModal}
+        onOpenChange={(open) => { setShowEditFotoModal(open); if (!open) { setSelectedFoto(null); setEditFotoDescricao(''); setEditFotoData(''); } }}
+        selectedFoto={selectedFoto} editFotoDescricao={editFotoDescricao} setEditFotoDescricao={setEditFotoDescricao}
+        editFotoData={editFotoData} setEditFotoData={setEditFotoData}
+        onSave={handleUpdateFotoDescricao}
+        onCancel={() => { setShowEditFotoModal(false); setSelectedFoto(null); setEditFotoDescricao(''); setEditFotoData(''); }}
+        apiUrl={API}
+      />
+      <FotoPreviewModal
+        open={showFotoPreviewModal}
+        onOpenChange={(open) => { setShowFotoPreviewModal(open); if (!open) setSelectedFotoUrl(null); }}
+        selectedFotoUrl={selectedFotoUrl}
+      />
 
       {/* Add Material Modal - Componente Extraído */}
       <MaterialModal
@@ -6667,176 +6498,21 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
-      {/* Add Relatório de Assistência Modal */}
-      <Dialog open={showAddRelAssistModal} onOpenChange={setShowAddRelAssistModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-orange-400" />
-              Adicionar Relatório de Assistência
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddRelAssist} className="space-y-4 mt-4">
-            <div>
-              <Label className="text-gray-300">Data da Intervenção *</Label>
-              <Input
-                type="date"
-                value={relAssistFormData.data_intervencao}
-                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, data_intervencao: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300">Texto *</Label>
-              <textarea
-                value={relAssistFormData.texto}
-                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, texto: e.target.value }))}
-                className="w-full mt-1 bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 min-h-[120px] text-sm"
-                placeholder="Descreva o trabalho realizado..."
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300 mb-2 block">Equipamentos Relacionados</Label>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {selectedRelatorio?.equipamento_marca && (
-                  <label className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
-                    <Checkbox
-                      checked={relAssistFormData.equipamento_ids.includes('principal')}
-                      onCheckedChange={(checked) => {
-                        setRelAssistFormData(prev => ({
-                          ...prev,
-                          equipamento_ids: checked
-                            ? [...prev.equipamento_ids, 'principal']
-                            : prev.equipamento_ids.filter(id => id !== 'principal')
-                        }));
-                      }}
-                      className="border-purple-500 data-[state=checked]:bg-purple-600"
-                    />
-                    <span className="text-sm text-gray-300">
-                      <span className="text-purple-400 text-xs mr-1">(Principal)</span>
-                      {selectedRelatorio.equipamento_tipologia ? `${selectedRelatorio.equipamento_tipologia} - ` : ''}
-                      {selectedRelatorio.equipamento_marca} {selectedRelatorio.equipamento_modelo}
-                    </span>
-                  </label>
-                )}
-                {equipamentosOT.map(eq => (
-                  <label key={eq.id} className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
-                    <Checkbox
-                      checked={relAssistFormData.equipamento_ids.includes(eq.id)}
-                      onCheckedChange={(checked) => {
-                        setRelAssistFormData(prev => ({
-                          ...prev,
-                          equipamento_ids: checked
-                            ? [...prev.equipamento_ids, eq.id]
-                            : prev.equipamento_ids.filter(id => id !== eq.id)
-                        }));
-                      }}
-                      className="border-purple-500 data-[state=checked]:bg-purple-600"
-                    />
-                    <span className="text-sm text-gray-300">
-                      {eq.tipologia ? `${eq.tipologia} - ` : ''}{eq.marca} {eq.modelo}
-                      {eq.numero_serie && <span className="text-gray-500 ml-1">(SN: {eq.numero_serie})</span>}
-                    </span>
-                  </label>
-                ))}
-                {!selectedRelatorio?.equipamento_marca && equipamentosOT.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-2">Nenhum equipamento nesta OT</p>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowAddRelAssistModal(false)} className="border-gray-600">Cancelar</Button>
-              <Button type="submit" className="bg-orange-500 hover:bg-orange-600">Adicionar</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Relatório de Assistência Modal */}
-      <Dialog open={showEditRelAssistModal} onOpenChange={setShowEditRelAssistModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-orange-400" />
-              Editar Relatório de Assistência
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUpdateRelAssist} className="space-y-4 mt-4">
-            <div>
-              <Label className="text-gray-300">Data da Intervenção *</Label>
-              <Input
-                type="date"
-                value={relAssistFormData.data_intervencao}
-                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, data_intervencao: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300">Texto *</Label>
-              <textarea
-                value={relAssistFormData.texto}
-                onChange={(e) => setRelAssistFormData(prev => ({ ...prev, texto: e.target.value }))}
-                className="w-full mt-1 bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 min-h-[120px] text-sm"
-                placeholder="Descreva o trabalho realizado..."
-                required
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300 mb-2 block">Equipamentos Relacionados</Label>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {selectedRelatorio?.equipamento_marca && (
-                  <label className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
-                    <Checkbox
-                      checked={relAssistFormData.equipamento_ids.includes('principal')}
-                      onCheckedChange={(checked) => {
-                        setRelAssistFormData(prev => ({
-                          ...prev,
-                          equipamento_ids: checked
-                            ? [...prev.equipamento_ids, 'principal']
-                            : prev.equipamento_ids.filter(id => id !== 'principal')
-                        }));
-                      }}
-                      className="border-purple-500 data-[state=checked]:bg-purple-600"
-                    />
-                    <span className="text-sm text-gray-300">
-                      <span className="text-purple-400 text-xs mr-1">(Principal)</span>
-                      {selectedRelatorio.equipamento_tipologia ? `${selectedRelatorio.equipamento_tipologia} - ` : ''}
-                      {selectedRelatorio.equipamento_marca} {selectedRelatorio.equipamento_modelo}
-                    </span>
-                  </label>
-                )}
-                {equipamentosOT.map(eq => (
-                  <label key={eq.id} className="flex items-center gap-2 p-2 bg-[#0f0f0f] rounded border border-gray-700 cursor-pointer hover:border-purple-500/50">
-                    <Checkbox
-                      checked={relAssistFormData.equipamento_ids.includes(eq.id)}
-                      onCheckedChange={(checked) => {
-                        setRelAssistFormData(prev => ({
-                          ...prev,
-                          equipamento_ids: checked
-                            ? [...prev.equipamento_ids, eq.id]
-                            : prev.equipamento_ids.filter(id => id !== eq.id)
-                        }));
-                      }}
-                      className="border-purple-500 data-[state=checked]:bg-purple-600"
-                    />
-                    <span className="text-sm text-gray-300">
-                      {eq.tipologia ? `${eq.tipologia} - ` : ''}{eq.marca} {eq.modelo}
-                      {eq.numero_serie && <span className="text-gray-500 ml-1">(SN: {eq.numero_serie})</span>}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => { setShowEditRelAssistModal(false); setSelectedRelAssist(null); }} className="border-gray-600">Cancelar</Button>
-              <Button type="submit" className="bg-orange-500 hover:bg-orange-600">Guardar</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Relatório de Assistência Modals - Componentes Extraídos */}
+      <RelAssistModal
+        open={showAddRelAssistModal} onOpenChange={setShowAddRelAssistModal}
+        isEditing={false} formData={relAssistFormData} setFormData={setRelAssistFormData}
+        onSubmit={handleAddRelAssist}
+        onCancel={() => setShowAddRelAssistModal(false)}
+        selectedRelatorio={selectedRelatorio} equipamentosOT={equipamentosOT}
+      />
+      <RelAssistModal
+        open={showEditRelAssistModal} onOpenChange={setShowEditRelAssistModal}
+        isEditing={true} formData={relAssistFormData} setFormData={setRelAssistFormData}
+        onSubmit={handleUpdateRelAssist}
+        onCancel={() => { setShowEditRelAssistModal(false); setSelectedRelAssist(null); }}
+        selectedRelatorio={selectedRelatorio} equipamentosOT={equipamentosOT}
+      />
 
       {/* Add Despesa Modal */}
       <Dialog open={showAddDespesaModal} onOpenChange={(open) => {
