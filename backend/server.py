@@ -9327,12 +9327,24 @@ async def add_material_ot(
                     )
                 logging.info(f"Material agregado ao PC existente {pc_existente['numero_pc']}")
         else:
-            # Criar novo PC — sempre independente, numeração sequencial
-            pcs_desta_fs = await db.pedidos_cotacao.find(
-                {"relatorio_id": relatorio_id}
-            ).to_list(100)
+            # Criar novo PC — numeração global sequencial
+            # Buscar o maior número de PC existente globalmente
+            last_pc = await db.pedidos_cotacao.find_one(
+                {},
+                {"_id": 0, "numero_pc": 1},
+                sort=[("created_at", -1)]
+            )
+            novo_num = 1
+            if last_pc and last_pc.get("numero_pc"):
+                # Extrair número do formato "PC_XXX#YYY" ou "PC_XXX.N"
+                try:
+                    num_part = last_pc["numero_pc"].split("#")[0].replace("PC_", "").split(".")[0]
+                    novo_num = int(num_part) + 1
+                except (ValueError, IndexError):
+                    # Fallback: contar total de PCs
+                    total_pcs = await db.pedidos_cotacao.count_documents({})
+                    novo_num = total_pcs + 1
             
-            novo_num = len(pcs_desta_fs) + 1
             numero_pc = f"PC_{novo_num:03d}#{fs_numero}"
             
             novo_pc = PedidoCotacao(
@@ -9411,12 +9423,21 @@ async def update_material_ot(
             if pc_existente:
                 material_data["pc_id"] = pc_id_escolhido
         else:
-            # Criar novo PC — independente, numeração sequencial
-            pcs_desta_fs = await db.pedidos_cotacao.find(
-                {"relatorio_id": relatorio_id}
-            ).to_list(100)
+            # Criar novo PC — numeração global sequencial
+            last_pc = await db.pedidos_cotacao.find_one(
+                {},
+                {"_id": 0, "numero_pc": 1},
+                sort=[("created_at", -1)]
+            )
+            novo_num = 1
+            if last_pc and last_pc.get("numero_pc"):
+                try:
+                    num_part = last_pc["numero_pc"].split("#")[0].replace("PC_", "").split(".")[0]
+                    novo_num = int(num_part) + 1
+                except (ValueError, IndexError):
+                    total_pcs = await db.pedidos_cotacao.count_documents({})
+                    novo_num = total_pcs + 1
             
-            novo_num = len(pcs_desta_fs) + 1
             numero_pc = f"PC_{novo_num:03d}#{fs_numero}"
             novo_pc = PedidoCotacao(
                 numero_pc=numero_pc,
