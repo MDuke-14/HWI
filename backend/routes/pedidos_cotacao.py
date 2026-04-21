@@ -197,11 +197,8 @@ async def delete_pedido_cotacao(
     # Eliminar faturas do PC
     await db.faturas_pc.delete_many({"pc_id": pc_id})
     
-    # Atualizar materiais para remover referência ao PC
-    await db.materiais_ot.update_many(
-        {"pc_id": pc_id},
-        {"$unset": {"pc_id": ""}}
-    )
+    # Eliminar materiais associados ao PC
+    await db.materiais_ot.delete_many({"pc_id": pc_id})
     
     # Eliminar o PC
     await db.pedidos_cotacao.delete_one({"id": pc_id})

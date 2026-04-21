@@ -2647,6 +2647,11 @@ const TechnicalReports = ({ user, onLogout }) => {
       await axios.delete(`${API}/pedidos-cotacao/${pcId}`);
       toast.success(`PC ${pcNumero} eliminado com sucesso!`);
       fetchAllPCs();
+      // Atualizar materiais e PCs da FS aberta (os materiais da PC foram eliminados)
+      if (selectedRelatorio?.id) {
+        fetchMateriais(selectedRelatorio.id);
+        fetchPedidosCotacao(selectedRelatorio.id);
+      }
       // Se estava visualizando, fechar o modal
       if (selectedPC?.id === pcId) {
         setShowPCModal(false);
