@@ -61,7 +61,15 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - ADDED: Motivo field in FS cards
 - REFACTORED: Tabs, ReportsSection, FacturadosSection, ReportCard extracted from monolith
 
-## Timezone/DST Fix (2026-04-20)
+## Refactoring (2026-04-21)
+### Backend
+- Extracted `routes/time_entries.py` (~3,460 lines) from server.py
+  - All time-entry endpoints: start, end, today, list, reports, PDF, Excel
+  - Admin time entries: realtime-status, locations, manual entries, import, CRUD
+  - server.py reduced from ~10,550 to ~7,126 lines (-32%)
+### Frontend
+- Extracted `IntervencaoModal.jsx` from TechnicalReports.jsx (reused for add + edit)
+- TechnicalReports.jsx reduced from ~10,977 to ~10,820 lines
 - P0 FIXED: System used datetime.now(timezone.utc) everywhere, causing 1-hour offset during Portuguese summer time (DST)
 - Architecture: Frontend sends `client_time` (ISO with offset e.g. `2024-03-31T09:00:00+01:00`) on time-entry start/end
 - Backend parses client_time for accurate local storage; falls back to `Europe/Lisbon` timezone via pytz
