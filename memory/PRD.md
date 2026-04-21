@@ -80,6 +80,15 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - GET endpoint sorts by (marca ASC, modelo ASC) instead of last_used
 - Backend tests: 9/9 passing (/app/backend/tests/test_equipamento_marca_grouping.py)
 
+## PC Architecture Rewrite (2026-04-21)
+- **Flat PC structure**: Removed parent/sub-PC hierarchy. All PCs are independent and at the same level.
+- **Sequential naming**: Each new PC in a FS gets `PC_001#FS`, `PC_002#FS`, `PC_003#FS`, etc.
+- **Equipment enforcement**: When aggregating material to existing PC, validates equipment matches. If different equipment is selected, returns error "Para adicionar material com equipamento diferente, crie uma nova PC".
+- **Equipment selection**: MaterialModal shows checkboxes to select which FS equipment(s) to associate with the PC.
+- **Uniform cards**: All PC cards in the listing have identical layout (FS number, client, materials, status, PDF/Email/Delete buttons).
+- **Backend**: get_all_pedidos_cotacao returns flat list enriched with ot_numero and cliente_nome.
+- **Backend**: get_pedido_cotacao uses equipamento_ot_ids for equipment lookup with fallback.
+
 ## Credentials
 - Admin: pedro / teste
 

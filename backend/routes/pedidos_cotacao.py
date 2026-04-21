@@ -38,7 +38,7 @@ async def get_all_pedidos_cotacao(
         {"_id": 0}
     ).sort("created_at", -1).to_list(length=None)
     
-    # Enriquecer com informações da OT e sub-PCs
+    # Enriquecer com informações da OT
     for pc in pcs:
         ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
         if ot:
@@ -53,21 +53,6 @@ async def get_all_pedidos_cotacao(
         pc["primeiro_material"] = primeiro["descricao"] if primeiro else None
         pc["primeiro_material_posicao"] = primeiro.get("posicao") if primeiro else None
         pc["primeiro_material_codigo"] = primeiro.get("codigo") if primeiro else None
-        
-        # Listar sub-PCs se for um PC principal
-        if not pc.get("parent_pc_id"):
-            sub_pcs = await db.pedidos_cotacao.find(
-                {"parent_pc_id": pc["id"]}, {"_id": 0}
-            ).sort("sub_numero", 1).to_list(100)
-            for sub in sub_pcs:
-                sub["materiais_count"] = await db.materiais_ot.count_documents({"pc_id": sub["id"]})
-                # Enriquecer sub-PCs com mesmas infos da OT
-                sub["ot_numero"] = pc.get("ot_numero", "N/A")
-                sub["cliente_nome"] = pc.get("cliente_nome", "N/A")
-            pc["sub_pcs"] = sub_pcs
-    
-    # Filtrar apenas PCs principais (sem parent) para a lista
-    pcs = [pc for pc in pcs if not pc.get("parent_pc_id")]
     
     return pcs
 

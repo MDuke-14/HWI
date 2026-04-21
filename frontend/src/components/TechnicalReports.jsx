@@ -4282,7 +4282,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           ) : (
             <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
               {allPCs.map((pc) => (
-                <div key={pc.id} className="space-y-2">
+                <div key={pc.id}>
                   <div
                     className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-5'} hover:border-yellow-500 transition cursor-pointer`}
                     onClick={() => openPCFromList(pc)}
@@ -4296,11 +4296,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <span className={`text-yellow-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
                             {pc.numero_pc}
                           </span>
-                          {pc.sub_pcs && pc.sub_pcs.length > 0 && (
-                            <span className="text-xs bg-yellow-600/20 text-yellow-400 px-1.5 py-0.5 rounded">
-                              +{pc.sub_pcs.length} sub
-                            </span>
-                          )}
                         </div>
                         <span 
                           className={`text-xs px-2 py-0.5 rounded inline-block ${
@@ -4337,7 +4332,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       </div>
                     </div>
 
-                    {/* Actions Preview */}
+                    {/* Actions */}
                     <div className={`flex gap-2 ${isMobile ? 'mt-2 pt-2' : 'mt-4 pt-3'} border-t ${borderColor}`}>
                       <button
                         onClick={(e) => {
@@ -4371,98 +4366,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                       </button>
                     </div>
                   </div>
-
-                  {/* Sub-PCs */}
-                  {pc.sub_pcs && pc.sub_pcs.length > 0 && (
-                    <div className={`${isMobile ? 'ml-3' : 'ml-4'} space-y-2`}>
-                      {pc.sub_pcs.map((sub) => (
-                        <div
-                          key={sub.id}
-                          className={`${bgCardAlt} border ${borderColor} rounded-lg ${isMobile ? 'p-3' : 'p-5'} hover:border-yellow-500/50 transition cursor-pointer`}
-                          onClick={() => openPCFromList(sub)}
-                          data-testid={`pc-sub-card-${sub.id}`}
-                        >
-                          {/* Header */}
-                          <div className={`flex items-start justify-between ${isMobile ? 'mb-2' : 'mb-4'}`}>
-                            <div className="flex-1 min-w-0">
-                              <div className={`flex items-center gap-2 ${isMobile ? 'mb-1' : 'mb-2'}`}>
-                                <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-yellow-400 flex-shrink-0`} />
-                                <span className={`text-yellow-400 font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>
-                                  {sub.numero_pc}
-                                </span>
-                              </div>
-                              <span 
-                                className={`text-xs px-2 py-0.5 rounded inline-block ${
-                                  sub.status === 'Em Espera' ? 'bg-gray-600/20 text-gray-400' :
-                                  sub.status === 'Cotação Pedida' ? 'bg-yellow-600/20 text-yellow-400' :
-                                  sub.status === 'A Caminho' ? 'bg-blue-600/20 text-blue-400' :
-                                  sub.status === 'Terminado' ? 'bg-green-600/20 text-green-400' :
-                                  'bg-purple-600/20 text-purple-400'
-                                }`}
-                              >
-                                {sub.status}
-                              </span>
-                            </div>
-                            <ChevronRight className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} ${textSecondary} flex-shrink-0`} />
-                          </div>
-
-                          {/* Info */}
-                          <div className={`space-y-1.5 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                            <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                              <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
-                              <span className={textSecondary}>FS:</span>
-                              <span className={`${textPrimary} font-medium`}>{sub.ot_numero || pc.ot_numero}</span>
-                            </div>
-                            
-                            <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                              <User className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
-                              <span className={`${textPrimary} truncate`}>{sub.cliente_nome || pc.cliente_nome}</span>
-                            </div>
-
-                            <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                              <Package className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
-                              <span className={textSecondary}>Materiais:</span>
-                              <span className={`${textPrimary} font-medium`}>{sub.materiais_count || 0}</span>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className={`flex gap-2 ${isMobile ? 'mt-2 pt-2' : 'mt-4 pt-3'} border-t ${borderColor}`}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                triggerPCDownload(sub.id);
-                              }}
-                              className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded transition`}
-                            >
-                              <Download className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                              PDF
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                fetchPCDetalhes(sub.id);
-                                setShowEmailPCModal(true);
-                              }}
-                              className={`flex-1 flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'} bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded transition`}
-                            >
-                              <Send className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                              Email
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePC(sub.id, sub.numero_pc);
-                              }}
-                              className={`flex items-center justify-center gap-1 ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition ${isMobile ? 'text-xs' : 'text-sm'}`}
-                            >
-                              <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
