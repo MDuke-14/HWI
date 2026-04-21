@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Clock, TrendingUp, LogOut, User, Palmtree, Shield, FileText, CalendarDays, Menu, ChevronDown } from 'lucide-react';
+import { Clock, TrendingUp, LogOut, User, Palmtree, Shield, FileText, CalendarDays, Menu, ChevronDown, AlertTriangle } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import CompanyInfoCard from './CompanyInfoCard';
 
@@ -18,8 +18,9 @@ const Navigation = ({ user, onLogout, activePage }) => {
   ];
   
   const adminNavItem = { name: 'Admin', path: '/admin', icon: Shield, key: 'admin' };
+  const errorLogItem = { name: 'Erros', path: '/admin/errors', icon: AlertTriangle, key: 'errors' };
   
-  const navItems = user?.is_admin ? [...baseNavItems, adminNavItem] : baseNavItems;
+  const navItems = user?.is_admin ? [...baseNavItems, adminNavItem, errorLogItem] : baseNavItems;
 
   // Get current page name
   const currentPage = navItems.find(item => item.path === location.pathname);

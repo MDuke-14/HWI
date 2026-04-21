@@ -554,5 +554,14 @@ async def send_email_pc(
         
     except Exception as e:
         logging.error(f"Erro ao enviar email: {str(e)}")
+        from server import log_app_error
+        import asyncio
+        await log_app_error(
+            context=f"PC {pc.get('numero_pc', '?')}" if 'pc' in dir() else "PC",
+            action="Enviar Email PC",
+            error_message=str(e),
+            user_id=current_user.get("sub"),
+            username=current_user.get("username")
+        )
         raise HTTPException(status_code=500, detail=f"Erro ao enviar email: {str(e)}")
 

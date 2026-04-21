@@ -71,6 +71,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'hwi-timeclock-secret-key-2025')
 ALGORITHM = "HS256"
 
 
+
 # ============ Reverse Geocoding ============
 
 async def reverse_geocode(latitude: float, longitude: float) -> dict:
@@ -183,6 +184,55 @@ async def reverse_geocode(latitude: float, longitude: float) -> dict:
 
 # Create the main app without a prefix
 app = FastAPI()
+
+
+@app.middleware("http")
+async def error_logging_middleware(request, call_next):
+    """Captura erros 500 e regista-os automaticamente na base de dados."""
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        path = str(request.url.path)
+        context = "Sistema"
+        action = f"{request.method} {path}"
+        if "relatorios-tecnicos" in path:
+            parts = path.split("/")
+            for i, p in enumerate(parts):
+                if p == "relatorios-tecnicos" and i + 1 < len(parts):
+                    context = f"FS (id:{parts[i+1][:8]}...)"
+                    break
+            if "pdf" in path.lower():
+                action = "Gerar/Download PDF"
+            elif "cronometro" in path.lower():
+                action = "Cronometro"
+        elif "time-entries" in path:
+            context = "Ponto"
+        elif "pedidos-cotacao" in path:
+            context = "Pedido de Cotacao"
+        elif "equipamentos" in path:
+            context = "Equipamentos"
+        try:
+            error_doc = {
+                "id": str(uuid.uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "context": context,
+                "action": action,
+                "error_message": str(e)[:2000],
+                "details": {"traceback": tb[:1500], "path": path, "method": request.method},
+                "user_id": None,
+                "username": None,
+                "resolved": False
+            }
+            await db.app_errors.insert_one(error_doc)
+        except Exception:
+            pass
+        logging.error(f"[MIDDLEWARE ERROR] {context} | {action} | {e}")
+        raise
+
+
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -628,6 +678,41 @@ def normalizar_tempo(dt: datetime) -> datetime:
     Deve ser aplicado a start_time e end_time ANTES de calcular diferenças.
     """
     return dt.replace(second=0, microsecond=0)
+
+
+async def log_app_error(
+    context: str,
+    action: str,
+    error_message: str,
+    details: dict = None,
+    user_id: str = None,
+    username: str = None
+):
+    """
+    Regista um erro na base de dados para análise no admin dashboard.
+    
+    context: Onde ocorreu (ex: "FS#356", "Ponto", "Cronómetro", "PC_001#356")
+    action: O que tentava fazer (ex: "Download PDF", "Gerar PDF", "Iniciar Cronómetro")
+    error_message: Mensagem de erro resumida
+    details: Detalhes adicionais (traceback, dados, etc.)
+    """
+    try:
+        error_doc = {
+            "id": str(uuid.uuid4()),
+            "timestamp": get_now_local().isoformat(),
+            "context": context,
+            "action": action,
+            "error_message": str(error_message)[:2000],
+            "details": details or {},
+            "user_id": user_id,
+            "username": username,
+            "resolved": False
+        }
+        await db.app_errors.insert_one(error_doc)
+        logging.error(f"[APP ERROR] {context} | {action} | {error_message}")
+    except Exception as log_err:
+        logging.error(f"Falha ao registar erro: {log_err}")
+
 
 def truncar_horas_para_minutos(horas: float) -> float:
     """
@@ -3421,6 +3506,14 @@ async def enviar_pdf_ot(
         raise
     except Exception as e:
         logging.error(f"Erro ao enviar PDF: {e}")
+        await log_app_error(
+            context=f"FS#{numero_ot}" if 'numero_ot' in dir() else "FS",
+            action="Enviar PDF por Email",
+            error_message=str(e),
+            details={"relatorio_id": relatorio_id if 'relatorio_id' in dir() else "?"},
+            user_id=current_user.get("sub"),
+            username=current_user.get("username")
+        )
         raise HTTPException(status_code=500, detail=f"Erro ao enviar PDF: {str(e)}")
 
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/preview-pdf")
@@ -3503,7 +3596,17 @@ async def preview_pdf_ot(
     except Exception as e:
         logging.error(f"Erro ao gerar PDF para OT {relatorio_id}: {str(e)}")
         import traceback
-        logging.error(f"Traceback: {traceback.format_exc()}")
+        tb = traceback.format_exc()
+        logging.error(f"Traceback: {tb}")
+        numero_ot = relatorio.get('numero_assistencia', 'N/A')
+        await log_app_error(
+            context=f"FS#{numero_ot}",
+            action="Gerar PDF",
+            error_message=str(e),
+            details={"relatorio_id": relatorio_id, "traceback": tb[:1500]},
+            user_id=current_user.get("sub"),
+            username=current_user.get("username")
+        )
         raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
     
     # Retornar como download
@@ -10357,6 +10460,72 @@ api_router.include_router(notifications_router)
 api_router.include_router(pedidos_cotacao_router)
 api_router.include_router(company_info_router)
 api_router.include_router(tabelas_tarifas_router)
+
+# ============ Admin Error Log Endpoints ============
+
+@api_router.get("/admin/errors")
+async def get_app_errors(
+    limit: int = 100,
+    resolved: Optional[bool] = None,
+    context_filter: Optional[str] = None,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Lista erros da aplicação para o admin dashboard"""
+    query = {}
+    if resolved is not None:
+        query["resolved"] = resolved
+    if context_filter:
+        query["context"] = {"$regex": context_filter, "$options": "i"}
+    
+    errors = await db.app_errors.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
+    
+    # Stats
+    total = await db.app_errors.count_documents({})
+    unresolved = await db.app_errors.count_documents({"resolved": False})
+    
+    return {
+        "errors": errors,
+        "stats": {
+            "total": total,
+            "unresolved": unresolved,
+            "resolved": total - unresolved
+        }
+    }
+
+
+@api_router.put("/admin/errors/{error_id}/resolve")
+async def resolve_app_error(error_id: str, current_user: dict = Depends(get_current_admin)):
+    """Marcar erro como resolvido"""
+    result = await db.app_errors.update_one(
+        {"id": error_id},
+        {"$set": {"resolved": True, "resolved_by": current_user["username"], "resolved_at": get_now_local().isoformat()}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Erro não encontrado")
+    return {"message": "Erro marcado como resolvido"}
+
+
+@api_router.delete("/admin/errors/resolved")
+async def clear_resolved_errors(current_user: dict = Depends(get_current_admin)):
+    """Limpar todos os erros resolvidos"""
+    result = await db.app_errors.delete_many({"resolved": True})
+    return {"message": f"{result.deleted_count} erros resolvidos eliminados"}
+
+
+@api_router.post("/errors/log")
+async def log_frontend_error(error_data: dict, current_user: dict = Depends(get_current_user)):
+    """Endpoint para o frontend reportar erros"""
+    await log_app_error(
+        context=error_data.get("context", "Frontend"),
+        action=error_data.get("action", "Desconhecido"),
+        error_message=error_data.get("error_message", "Erro desconhecido"),
+        details=error_data.get("details", {}),
+        user_id=current_user.get("sub"),
+        username=current_user.get("username")
+    )
+    return {"message": "Erro registado"}
+
+
 
 app.include_router(api_router)
 

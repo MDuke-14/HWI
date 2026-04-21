@@ -15,6 +15,7 @@ import TechnicalReports from '@/components/TechnicalReports';
 import OvertimeAuthorization from '@/components/OvertimeAuthorization';
 import PCStatusPage from '@/components/PCStatusPage';
 import PublicReferencePage from '@/components/PublicReferencePage';
+import ErrorLog from '@/components/ErrorLog';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MobileProvider } from '@/contexts/MobileContext';
@@ -45,6 +46,39 @@ axios.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Axios response interceptor for error logging
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    // Log 500 errors to the error database (except the error log endpoint itself)
+    if (status >= 500 && !url.includes('/errors/log') && !url.includes('/admin/errors')) {
+      try {
+        const detail = error.response?.data?.detail || error.message;
+        let context = 'Sistema';
+        let action = `${error.config?.method?.toUpperCase()} ${url.split('/api/')[1] || url}`;
+        
+        if (url.includes('relatorios-tecnicos')) {
+          const match = url.match(/relatorios-tecnicos\/([^/]+)/);
+          context = match ? `FS (id:${match[1].substring(0, 8)}...)` : 'FS';
+          if (url.includes('pdf')) action = 'Download/Gerar PDF';
+          else if (url.includes('cronometro')) action = 'Cronómetro';
+        } else if (url.includes('time-entries')) {
+          context = 'Ponto';
+        } else if (url.includes('pedidos-cotacao')) {
+          context = 'Pedido de Cotação';
+        } else if (url.includes('equipamentos')) {
+          context = 'Equipamentos';
+        }
+        
+        await axios.post(`${API}/errors/log`, { context, action, error_message: String(detail).substring(0, 1000), details: { status, url } });
+      } catch (_) { /* ignore logging failures */ }
+    }
+    return Promise.reject(error);
+  }
 );
 
 function App() {
@@ -260,6 +294,18 @@ function App() {
                   isAuthenticated && user?.is_admin ? (
                     <MobileLayout user={user} onLogout={handleLogout}>
                       <AdminTimeEntries user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route
+                path="/admin/errors"
+                element={
+                  isAuthenticated && user?.is_admin ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <ErrorLog user={user} onLogout={handleLogout} />
                     </MobileLayout>
                   ) : (
                     <Navigate to="/" replace />
