@@ -4,7 +4,7 @@ Extracted from server.py
 """
 import logging
 import uuid
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -14,6 +14,7 @@ from server import (
     get_current_user, get_current_admin, get_now_local,
     calculate_vacation_days, send_vacation_request_email,
     send_vacation_decision_email, log_app_error,
+    create_notification,
 )
 from notifications_scheduler import send_push_to_admins, send_push_notification
 
