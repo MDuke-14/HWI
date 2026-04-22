@@ -513,12 +513,20 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 elements.append(Spacer(1, 0.2*cm))
         
         # ---- Fotografias desta intervenção ----
+        interv_id = interv.get('id')
         date_fotografias = []
         if fotografias:
             for foto in fotografias:
-                foto_date = normalize_date(foto.get('uploaded_at'))
-                if foto_date == interv_date or (interv_date is None and not foto_date):
-                    date_fotografias.append(foto)
+                foto_interv_id = foto.get('intervencao_id')
+                if foto_interv_id and interv_id:
+                    # Match directo por intervencao_id
+                    if foto_interv_id == interv_id:
+                        date_fotografias.append(foto)
+                elif not foto_interv_id:
+                    # Foto antiga sem intervencao_id — fallback por data
+                    foto_date = normalize_date(foto.get('uploaded_at'))
+                    if foto_date == interv_date or (interv_date is None and not foto_date):
+                        date_fotografias.append(foto)
         
         if date_fotografias:
             foto_content = []
@@ -719,24 +727,20 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     # Se houver fotografias que não foram incluídas nos blocos de data, mostrar aqui
     if fotografias:
         # Verificar quais fotografias não foram incluídas nos blocos de intervenção
-        interv_dates = set()
-        for interv in (intervencoes or []):
-            d = normalize_date(interv.get('data_intervencao'))
-            if d:
-                interv_dates.add(d)
-        
         fotos_incluidas = set()
-        for d in interv_dates:
+        
+        for interv in (intervencoes or []):
+            interv_id = interv.get('id')
+            interv_d = normalize_date(interv.get('data_intervencao'))
             for foto in fotografias:
-                foto_date = normalize_date(foto.get('uploaded_at'))
-                if foto_date == d:
-                    fotos_incluidas.add(foto.get('id') or id(foto))
-        # Also include photos with no date that were assigned to first intervention
-        if interv_dates:
-            for foto in fotografias:
-                foto_date = normalize_date(foto.get('uploaded_at'))
-                if not foto_date:
-                    fotos_incluidas.add(foto.get('id') or id(foto))
+                foto_key = foto.get('id') or id(foto)
+                foto_interv_id = foto.get('intervencao_id')
+                if foto_interv_id and interv_id and foto_interv_id == interv_id:
+                    fotos_incluidas.add(foto_key)
+                elif not foto_interv_id:
+                    foto_date = normalize_date(foto.get('uploaded_at'))
+                    if foto_date == interv_d or (interv_d is None and not foto_date):
+                        fotos_incluidas.add(foto_key)
         
         fotos_nao_incluidas = [f for f in fotografias if (f.get('id') or id(f)) not in fotos_incluidas]
         

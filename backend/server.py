@@ -256,6 +256,93 @@ async def root_health_check():
     }
 
 
+
+async def migrate_fotos_intervencao_ids(database):
+    """
+    Migração: associar fotos antigas (sem intervencao_id) à intervenção correcta.
+    Critério: match pela data (uploaded_at date == data_intervencao).
+    Se a FS só tem 1 intervenção, todas as fotos vão para essa.
+    Idempotente — só toca em fotos sem intervencao_id.
+    """
+    fotos_sem_interv = await database.fotos_relatorio.find(
+        {"$or": [
+            {"intervencao_id": None},
+            {"intervencao_id": ""},
+            {"intervencao_id": {"$exists": False}},
+            {"intervencao_id": "None"}
+        ]},
+        {"_id": 0, "id": 1, "relatorio_id": 1, "uploaded_at": 1}
+    ).to_list(None)
+    
+    if not fotos_sem_interv:
+        logging.info("✅ Migração fotos→intervenções: nenhuma foto por migrar")
+        return
+    
+    # Agrupar por relatorio_id
+    fotos_by_rel = {}
+    for foto in fotos_sem_interv:
+        rid = foto.get("relatorio_id")
+        if rid:
+            fotos_by_rel.setdefault(rid, []).append(foto)
+    
+    updated = 0
+    for rel_id, fotos in fotos_by_rel.items():
+        intervencoes = await database.intervencoes_relatorio.find(
+            {"relatorio_id": rel_id}, {"_id": 0, "id": 1, "data_intervencao": 1}
+        ).sort("data_intervencao", 1).to_list(None)
+        
+        if not intervencoes:
+            continue
+        
+        if len(intervencoes) == 1:
+            # FS com 1 intervenção: todas as fotos para essa
+            for foto in fotos:
+                await database.fotos_relatorio.update_one(
+                    {"id": foto["id"]},
+                    {"$set": {"intervencao_id": intervencoes[0]["id"]}}
+                )
+                updated += 1
+        else:
+            # Múltiplas intervenções: associar por data
+            for foto in fotos:
+                foto_date = None
+                if foto.get("uploaded_at"):
+                    try:
+                        from datetime import datetime
+                        dt_str = str(foto["uploaded_at"])
+                        if "T" in dt_str:
+                            foto_date = dt_str.split("T")[0]
+                        else:
+                            foto_date = dt_str[:10]
+                    except:
+                        pass
+                
+                matched = False
+                for interv in intervencoes:
+                    interv_date = str(interv.get("data_intervencao", ""))[:10]
+                    if foto_date and foto_date == interv_date:
+                        await database.fotos_relatorio.update_one(
+                            {"id": foto["id"]},
+                            {"$set": {"intervencao_id": interv["id"]}}
+                        )
+                        updated += 1
+                        matched = True
+                        break
+                
+                if not matched:
+                    # Sem match de data: atribuir à primeira intervenção
+                    await database.fotos_relatorio.update_one(
+                        {"id": foto["id"]},
+                        {"$set": {"intervencao_id": intervencoes[0]["id"]}}
+                    )
+                    updated += 1
+    
+    if updated > 0:
+        logging.info(f"✅ Migração fotos→intervenções: {updated} fotos atualizadas")
+    else:
+        logging.info("✅ Migração fotos→intervenções: nenhuma foto por migrar")
+
+
 async def check_annual_vacation_reset(database):
     """
     Verificação anual de férias no startup/deploy.
@@ -481,6 +568,9 @@ async def startup_event():
     
     # ========== Verificação anual de férias ==========
     await check_annual_vacation_reset(db)
+    
+    # ========== Migração: associar fotos antigas a intervenções ==========
+    await migrate_fotos_intervencao_ids(db)
     
     # Iniciar scheduler para verificações de ponto
     from apscheduler.schedulers.asyncio import AsyncIOScheduler

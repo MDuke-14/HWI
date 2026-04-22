@@ -1740,7 +1740,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       const formData = new FormData();
       formData.append('file', fotoFile);
-      formData.append('descricao', descricao || ''); // Enviar string vazia se não houver descrição
+      formData.append('descricao', descricao || '');
+      formData.append('intervencao_id', activeIntervencaoId || '');
       
       const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
