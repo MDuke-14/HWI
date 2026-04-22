@@ -88,6 +88,13 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - GET endpoint sorts by (marca ASC, modelo ASC) instead of last_used
 - Backend tests: 9/9 passing (/app/backend/tests/test_equipamento_marca_grouping.py)
 
+## PDF Materials & Assist Reports Isolation by Intervention (2026-02 fork)
+- P0 FIXED: Materiais e Relatórios de Assistência eram duplicados no PDF quando múltiplas intervenções ocorriam na mesma data.
+- Models `MaterialOT` e `RelatorioAssistencia` ganharam campo `intervencao_id`.
+- `ot_pdf_report.py` filtra agora por `intervencao_id` (com fallback por data para registos antigos sem ID).
+- Migração de arranque `migrate_items_intervencao_ids` em `server.py` atribuiu retroativamente `intervencao_id` aos registos existentes (10 materiais + 10 relatórios migrados).
+- Validado via PDF de 3 FSs: FS com 3 intervenções na mesma data mostra cada material só 1x, na intervenção correcta.
+
 ## PC Architecture Rewrite (2026-04-21)
 - **Flat PC structure**: Removed parent/sub-PC hierarchy. All PCs are independent and at the same level.
 - **Sequential naming**: Each new PC in a FS gets `PC_001#FS`, `PC_002#FS`, `PC_003#FS`, etc.
@@ -98,16 +105,16 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - **Backend**: get_pedido_cotacao uses equipamento_ot_ids for equipment lookup with fallback.
 
 ## Credentials
-- Admin: pedro / teste
+- Admin: teste@email.com / teste
 
 ## Pending Issues (Prioritized)
 ### P0
-- None (Timezone/DST fix completed)
+- None (PDF Materials/Reports isolation by intervencao_id fixed 2026-02)
 
 ### P1
-- Continue refactoring: integrate ClientsSection, StatusSearchSection, Header
-- Complete and Test Dynamic Price Table Creation (delayed 4+ forks)
-- Continue backend refactoring (server.py still ~10,200 lines)
+- Complete and Test Dynamic Price Table Creation (delayed 5+ forks)
+- Continue refactoring TechnicalReports.jsx (still ~10.1k lines — EmailFSModal, PCModalsSection pending with prop-drilling care)
+- Continue backend modular router extraction
 
 ### P2
 - Recurring VAPID Key Mismatch
