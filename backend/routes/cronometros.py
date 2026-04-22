@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from database import db
-from models import CronometroOT
+from models import CronometroOT, RegistoTecnicoOT
 from server import get_current_user, get_now_local, parse_stored_datetime, log_app_error
 from cronometro_logic import segmentar_periodo
 
