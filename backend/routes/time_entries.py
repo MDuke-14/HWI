@@ -6,7 +6,9 @@ import logging
 import math
 import uuid
 import os
+import shutil
 from io import BytesIO
+from pathlib import Path
 from datetime import datetime, timezone, timedelta, date, time
 from typing import Optional, List
 
@@ -16,6 +18,10 @@ from fastapi.responses import StreamingResponse
 from database import db
 from models import TimeEntry, TimeEntryStart, TimeEntryEnd, TimeEntryUpdate, ManualTimeEntryCreate
 from holidays import is_overtime_day, get_billing_period_dates
+from hours_calculator import calcular_breakdown_completo
+from excel_report import generate_monthly_report
+from pdf_report import generate_monthly_pdf_report
+from import_pdf import parse_pdf_timesheet
 
 import pytz
 LISBON_TZ = pytz.timezone('Europe/Lisbon')
@@ -29,6 +35,8 @@ from server import (
     calcular_minutos_de_entradas, calculate_hours_breakdown,
     get_special_day_info, log_app_error,
     send_time_entry_edit_notification_email,
+    get_day_authorization, create_day_authorization_request,
+    reverse_geocode, calculate_vacation_days,
 )
 from notifications_scheduler import send_push_to_admins, send_push_notification
 
