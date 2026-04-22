@@ -6,6 +6,7 @@ import logging
 import math
 import uuid
 import os
+from io import BytesIO
 from datetime import datetime, timezone, timedelta, date, time
 from typing import Optional, List
 

@@ -8,14 +8,23 @@ import uuid
 import base64
 import io
 import os
+from io import BytesIO
+from pathlib import Path
 from datetime import datetime, timezone, date
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import Response, StreamingResponse, FileResponse
 from typing import Optional
 
 from database import db
-from models import RelatorioTecnico, RelatorioTecnicoCreate, IntervencaoRelatorio, EquipamentoOT, EnviarEmailRequest
+from models import (
+    RelatorioTecnico, RelatorioTecnicoCreate, IntervencaoRelatorio,
+    EquipamentoOT, EnviarEmailRequest, Equipamento,
+    TecnicoRelatorio, AssinaturaRelatorio,
+)
 from server import (
     get_current_user, get_now_local, log_app_error,
     send_reference_link_email,

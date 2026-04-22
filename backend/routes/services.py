@@ -10,7 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from database import db
-from models import ServiceAppointmentCreate, ServiceAppointmentUpdate, ServiceWithOTCreate
+from models import ServiceAppointmentCreate, ServiceAppointmentUpdate, ServiceWithOTCreate, RelatorioTecnico
 from server import get_current_user, get_current_admin
 
 router = APIRouter()
