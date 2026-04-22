@@ -437,16 +437,23 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             add_section_to_elements(elements, interv_section)
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Materiais desta intervenção (pela mesma data) ----
+        # ---- Materiais desta intervenção ----
+        interv_id = interv.get('id')
         date_materiais = []
         if materiais:
-            first_interv_date = normalize_date(intervencoes[0].get('data_intervencao')) if intervencoes else None
             for mat in materiais:
-                mat_date = normalize_date(mat.get('data_utilizacao'))
-                if mat_date == interv_date:
-                    date_materiais.append(mat)
-                elif not mat_date and (interv_date == first_interv_date) and intervention_num == 1:
-                    date_materiais.append(mat)
+                mat_interv_id = mat.get('intervencao_id')
+                if mat_interv_id and interv_id:
+                    if mat_interv_id == interv_id:
+                        date_materiais.append(mat)
+                elif not mat_interv_id:
+                    # Fallback por data para materiais antigos
+                    mat_date = normalize_date(mat.get('data_utilizacao'))
+                    first_interv_date = normalize_date(intervencoes[0].get('data_intervencao')) if intervencoes else None
+                    if mat_date == interv_date:
+                        date_materiais.append(mat)
+                    elif not mat_date and (interv_date == first_interv_date) and intervention_num == 1:
+                        date_materiais.append(mat)
         
         if date_materiais:
             mat_header = [['Descrição', 'Quantidade', 'Fornecido por']]
@@ -487,7 +494,15 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         # ---- Relatório de Assistência desta intervenção ----
         date_rel_assist = []
         if relatorios_assistencia:
-            date_rel_assist = [ra for ra in relatorios_assistencia if normalize_date(ra.get('data_intervencao')) == interv_date]
+            for ra in relatorios_assistencia:
+                ra_interv_id = ra.get('intervencao_id')
+                if ra_interv_id and interv_id:
+                    if ra_interv_id == interv_id:
+                        date_rel_assist.append(ra)
+                elif not ra_interv_id:
+                    # Fallback por data para relatórios antigos
+                    if normalize_date(ra.get('data_intervencao')) == interv_date:
+                        date_rel_assist.append(ra)
         if date_rel_assist:
             ra_content = []
             for ra in date_rel_assist:
@@ -618,7 +633,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             add_section_to_elements(elements, foto_section)
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Assinaturas desta intervenção ----
+        # ---- Assinaturas desta intervenção (por data) ----
         date_assinaturas = []
         for assin in assinaturas_list:
             assin_date = normalize_date(assin.get('data_assinatura'))

@@ -217,6 +217,7 @@ class MaterialOT(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     relatorio_id: str
+    intervencao_id: Optional[str] = None
     descricao: str
     quantidade: int
     unidade: Optional[str] = "Un"
@@ -312,6 +313,7 @@ class AssinaturaRelatorio(BaseModel):
     assinado_por: Optional[str] = None
     data_assinatura: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_intervencao: Optional[str] = None
+    intervencao_id: Optional[str] = None
 
 class EnviarEmailRequest(BaseModel):
     emails: List[str]

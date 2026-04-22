@@ -343,6 +343,89 @@ async def migrate_fotos_intervencao_ids(database):
         logging.info("✅ Migração fotos→intervenções: nenhuma foto por migrar")
 
 
+async def migrate_items_intervencao_ids(database):
+    """
+    Migração: associar materiais e relatórios de assistência antigos à intervenção correcta.
+    Critério: match por relatorio_id + data. Se FS tem 1 intervenção, tudo para essa.
+    Idempotente.
+    """
+    updated_mat = 0
+    updated_ra = 0
+    
+    # --- Materiais ---
+    mats_sem = await database.materiais_ot.find(
+        {"$or": [{"intervencao_id": {"$exists": False}}, {"intervencao_id": None}, {"intervencao_id": ""}]},
+        {"_id": 0, "id": 1, "relatorio_id": 1, "data_utilizacao": 1}
+    ).to_list(None)
+    
+    if mats_sem:
+        mats_by_rel = {}
+        for m in mats_sem:
+            rid = m.get("relatorio_id")
+            if rid:
+                mats_by_rel.setdefault(rid, []).append(m)
+        
+        for rel_id, mats in mats_by_rel.items():
+            intervs = await database.intervencoes_relatorio.find(
+                {"relatorio_id": rel_id}, {"_id": 0, "id": 1, "data_intervencao": 1}
+            ).sort("data_intervencao", 1).to_list(None)
+            if not intervs:
+                continue
+            
+            for mat in mats:
+                target_id = intervs[0]["id"]  # default: primeira intervenção
+                if len(intervs) > 1:
+                    mat_date = str(mat.get("data_utilizacao", ""))[:10]
+                    for iv in intervs:
+                        if str(iv.get("data_intervencao", ""))[:10] == mat_date:
+                            target_id = iv["id"]
+                            break
+                await database.materiais_ot.update_one(
+                    {"id": mat["id"]}, {"$set": {"intervencao_id": target_id}}
+                )
+                updated_mat += 1
+    
+    # --- Relatórios de Assistência ---
+    ras_sem = await database.relatorios_assistencia.find(
+        {"$or": [{"intervencao_id": {"$exists": False}}, {"intervencao_id": None}, {"intervencao_id": ""}]},
+        {"_id": 0, "id": 1, "relatorio_id": 1, "data_intervencao": 1}
+    ).to_list(None)
+    
+    if ras_sem:
+        ras_by_rel = {}
+        for ra in ras_sem:
+            rid = ra.get("relatorio_id")
+            if rid:
+                ras_by_rel.setdefault(rid, []).append(ra)
+        
+        for rel_id, ras in ras_by_rel.items():
+            intervs = await database.intervencoes_relatorio.find(
+                {"relatorio_id": rel_id}, {"_id": 0, "id": 1, "data_intervencao": 1}
+            ).sort("data_intervencao", 1).to_list(None)
+            if not intervs:
+                continue
+            
+            for ra in ras:
+                target_id = intervs[0]["id"]
+                if len(intervs) > 1:
+                    ra_date = str(ra.get("data_intervencao", ""))[:10]
+                    for iv in intervs:
+                        if str(iv.get("data_intervencao", ""))[:10] == ra_date:
+                            target_id = iv["id"]
+                            break
+                await database.relatorios_assistencia.update_one(
+                    {"id": ra["id"]}, {"$set": {"intervencao_id": target_id}}
+                )
+                updated_ra += 1
+    
+    total = updated_mat + updated_ra
+    if total > 0:
+        logging.info(f"✅ Migração items→intervenções: {updated_mat} materiais, {updated_ra} rel. assistência")
+    else:
+        logging.info("✅ Migração items→intervenções: nada por migrar")
+
+
+
 async def check_annual_vacation_reset(database):
     """
     Verificação anual de férias no startup/deploy.
@@ -571,6 +654,9 @@ async def startup_event():
     
     # ========== Migração: associar fotos antigas a intervenções ==========
     await migrate_fotos_intervencao_ids(db)
+    
+    # ========== Migração: associar materiais e rel. assistência a intervenções ==========
+    await migrate_items_intervencao_ids(db)
     
     # Iniciar scheduler para verificações de ponto
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -2993,6 +3079,7 @@ async def add_material_ot(
     # Criar material
     material = MaterialOT(
         relatorio_id=relatorio_id,
+        intervencao_id=material_data.get("intervencao_id"),
         descricao=material_data["descricao"],
         quantidade=quantidade,
         unidade=material_data.get("unidade", "Un"),
@@ -3002,7 +3089,6 @@ async def add_material_ot(
     
     material_dict = material.dict()
     material_dict["created_at"] = material_dict["created_at"].isoformat()
-    material_dict["intervencao_id"] = material_data.get("intervencao_id")
     
     # Se fornecido_por = "Cotação", criar/atualizar PC
     if material_data["fornecido_por"] == "Cotação":
