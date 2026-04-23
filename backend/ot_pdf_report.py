@@ -342,47 +342,6 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         
         return eq_table
     
-    todos_equipamentos = []
-    
-    # Equipamento principal
-    if relatorio.get('equipamento_tipologia') or relatorio.get('equipamento_marca') or relatorio.get('equipamento_modelo') or relatorio.get('equipamento_numero_serie'):
-        equip_card = create_equipment_card(
-            tipologia=relatorio.get('equipamento_tipologia'),
-            marca=relatorio.get('equipamento_marca'),
-            modelo=relatorio.get('equipamento_modelo'),
-            numero_serie=relatorio.get('equipamento_numero_serie'),
-            ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
-            horas_funcionamento=relatorio.get('equipamento_horas_funcionamento'),
-            is_principal=True
-        )
-        if equip_card:
-            todos_equipamentos.append(equip_card)
-    
-    # Equipamentos adicionais
-    if equipamentos_adicionais:
-        for equip in equipamentos_adicionais:
-            equip_card = create_equipment_card(
-                tipologia=equip.get('tipologia'),
-                marca=equip.get('marca'),
-                modelo=equip.get('modelo'),
-                numero_serie=equip.get('numero_serie'),
-                ano_fabrico=equip.get('ano_fabrico'),
-                horas_funcionamento=equip.get('horas_funcionamento'),
-                is_principal=False
-            )
-            if equip_card:
-                todos_equipamentos.append(equip_card)
-    
-    if todos_equipamentos:
-        equip_content = []
-        for eq_table in todos_equipamentos:
-            equip_content.append(eq_table)
-            equip_content.append(Spacer(1, 0.2*cm))
-        
-        equip_section = create_section_box(equip_content, "EQUIPAMENTOS")
-        add_section_to_elements(elements, equip_section)
-        elements.append(Spacer(1, 0.3*cm))
-    
     # ========== PREPARAR DADOS AUXILIARES ==========
     
     assinaturas_list = []
@@ -506,19 +465,40 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         if date_rel_assist:
             ra_content = []
             for ra in date_rel_assist:
-                equip_names = []
+                equip_cards = []
                 for eq_id in (ra.get('equipamento_ids') or []):
                     if eq_id == 'principal':
-                        name = f"{relatorio.get('equipamento_tipologia', '')} {relatorio.get('equipamento_marca', '')} {relatorio.get('equipamento_modelo', '')}".strip()
-                        if name:
-                            equip_names.append(name)
+                        card = create_equipment_card(
+                            tipologia=relatorio.get('equipamento_tipologia'),
+                            marca=relatorio.get('equipamento_marca'),
+                            modelo=relatorio.get('equipamento_modelo'),
+                            numero_serie=relatorio.get('equipamento_numero_serie'),
+                            ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
+                            horas_funcionamento=relatorio.get('equipamento_horas_funcionamento'),
+                            is_principal=True,
+                        )
+                        if card:
+                            equip_cards.append(card)
                     else:
                         eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
                         if eq:
-                            name = f"{eq.get('tipologia', '')} {eq.get('marca', '')} {eq.get('modelo', '')}".strip()
-                            equip_names.append(name)
-                if equip_names:
-                    ra_content.append(Paragraph(f"<b>Equipamento(s):</b> {', '.join(equip_names)}", normal_style))
+                            card = create_equipment_card(
+                                tipologia=eq.get('tipologia'),
+                                marca=eq.get('marca'),
+                                modelo=eq.get('modelo'),
+                                numero_serie=eq.get('numero_serie'),
+                                ano_fabrico=eq.get('ano_fabrico'),
+                                horas_funcionamento=eq.get('horas_funcionamento'),
+                                is_principal=False,
+                            )
+                            if card:
+                                equip_cards.append(card)
+                if equip_cards:
+                    ra_content.append(Paragraph("<b>Equipamento(s):</b>", normal_style))
+                    ra_content.append(Spacer(1, 0.1*cm))
+                    for card in equip_cards:
+                        ra_content.append(card)
+                        ra_content.append(Spacer(1, 0.15*cm))
                 ra_text = ra.get('texto', '').replace('\n', '<br/>')
                 ra_content.append(Paragraph(ra_text, normal_style))
                 ra_content.append(Spacer(1, 0.2*cm))
