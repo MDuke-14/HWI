@@ -375,6 +375,64 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         elements.append(date_header)
         elements.append(Spacer(1, 0.2*cm))
         
+        # ---- Calcular Relatórios de Assistência desta intervenção (usados para equipamentos e texto) ----
+        interv_id = interv.get('id')
+        date_rel_assist = []
+        if relatorios_assistencia:
+            for ra in relatorios_assistencia:
+                ra_interv_id = ra.get('intervencao_id')
+                if ra_interv_id and interv_id:
+                    if ra_interv_id == interv_id:
+                        date_rel_assist.append(ra)
+                elif not ra_interv_id:
+                    # Fallback por data para relatórios antigos
+                    if normalize_date(ra.get('data_intervencao')) == interv_date:
+                        date_rel_assist.append(ra)
+        
+        # ---- Equipamentos desta intervenção (antes de Motivo e Relatório de Assistência) ----
+        interv_equip_cards = []
+        seen_equip_keys = set()
+        for ra in date_rel_assist:
+            for eq_id in (ra.get('equipamento_ids') or []):
+                if eq_id in seen_equip_keys:
+                    continue
+                seen_equip_keys.add(eq_id)
+                if eq_id == 'principal':
+                    card = create_equipment_card(
+                        tipologia=relatorio.get('equipamento_tipologia'),
+                        marca=relatorio.get('equipamento_marca'),
+                        modelo=relatorio.get('equipamento_modelo'),
+                        numero_serie=relatorio.get('equipamento_numero_serie'),
+                        ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
+                        horas_funcionamento=relatorio.get('equipamento_horas_funcionamento'),
+                        is_principal=True,
+                    )
+                    if card:
+                        interv_equip_cards.append(card)
+                else:
+                    eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
+                    if eq:
+                        card = create_equipment_card(
+                            tipologia=eq.get('tipologia'),
+                            marca=eq.get('marca'),
+                            modelo=eq.get('modelo'),
+                            numero_serie=eq.get('numero_serie'),
+                            ano_fabrico=eq.get('ano_fabrico'),
+                            horas_funcionamento=eq.get('horas_funcionamento'),
+                            is_principal=False,
+                        )
+                        if card:
+                            interv_equip_cards.append(card)
+        
+        if interv_equip_cards:
+            equip_block = []
+            for card in interv_equip_cards:
+                equip_block.append(card)
+                equip_block.append(Spacer(1, 0.15*cm))
+            equip_section = create_section_box(equip_block, "EQUIPAMENTO(S)")
+            add_section_to_elements(elements, equip_section)
+            elements.append(Spacer(1, 0.2*cm))
+        
         # ---- Detalhes da intervenção ----
         interv_content = []
         
@@ -450,55 +508,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             elements.append(KeepTogether(mat_keep))
             elements.append(Spacer(1, 0.2*cm))
         
-        # ---- Relatório de Assistência desta intervenção ----
-        date_rel_assist = []
-        if relatorios_assistencia:
-            for ra in relatorios_assistencia:
-                ra_interv_id = ra.get('intervencao_id')
-                if ra_interv_id and interv_id:
-                    if ra_interv_id == interv_id:
-                        date_rel_assist.append(ra)
-                elif not ra_interv_id:
-                    # Fallback por data para relatórios antigos
-                    if normalize_date(ra.get('data_intervencao')) == interv_date:
-                        date_rel_assist.append(ra)
+        # ---- Relatório de Assistência desta intervenção (texto) ----
+        # Nota: date_rel_assist já foi calculado acima, no início desta intervenção.
         if date_rel_assist:
             ra_content = []
             for ra in date_rel_assist:
-                equip_cards = []
-                for eq_id in (ra.get('equipamento_ids') or []):
-                    if eq_id == 'principal':
-                        card = create_equipment_card(
-                            tipologia=relatorio.get('equipamento_tipologia'),
-                            marca=relatorio.get('equipamento_marca'),
-                            modelo=relatorio.get('equipamento_modelo'),
-                            numero_serie=relatorio.get('equipamento_numero_serie'),
-                            ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
-                            horas_funcionamento=relatorio.get('equipamento_horas_funcionamento'),
-                            is_principal=True,
-                        )
-                        if card:
-                            equip_cards.append(card)
-                    else:
-                        eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
-                        if eq:
-                            card = create_equipment_card(
-                                tipologia=eq.get('tipologia'),
-                                marca=eq.get('marca'),
-                                modelo=eq.get('modelo'),
-                                numero_serie=eq.get('numero_serie'),
-                                ano_fabrico=eq.get('ano_fabrico'),
-                                horas_funcionamento=eq.get('horas_funcionamento'),
-                                is_principal=False,
-                            )
-                            if card:
-                                equip_cards.append(card)
-                if equip_cards:
-                    ra_content.append(Paragraph("<b>Equipamento(s):</b>", normal_style))
-                    ra_content.append(Spacer(1, 0.1*cm))
-                    for card in equip_cards:
-                        ra_content.append(card)
-                        ra_content.append(Spacer(1, 0.15*cm))
                 ra_text = ra.get('texto', '').replace('\n', '<br/>')
                 ra_content.append(Paragraph(ra_text, normal_style))
                 ra_content.append(Spacer(1, 0.2*cm))
