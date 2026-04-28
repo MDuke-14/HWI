@@ -16,6 +16,7 @@ import OvertimeAuthorization from '@/components/OvertimeAuthorization';
 import PCStatusPage from '@/components/PCStatusPage';
 import PublicReferencePage from '@/components/PublicReferencePage';
 import ErrorLog from '@/components/ErrorLog';
+import DespesasInternas from '@/components/DespesasInternas';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MobileProvider } from '@/contexts/MobileContext';
@@ -306,6 +307,18 @@ function App() {
                   isAuthenticated && user?.is_admin ? (
                     <MobileLayout user={user} onLogout={handleLogout}>
                       <ErrorLog user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route
+                path="/admin/despesas-internas"
+                element={
+                  isAuthenticated && user?.is_admin ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <DespesasInternas user={user} onLogout={handleLogout} />
                     </MobileLayout>
                   ) : (
                     <Navigate to="/" replace />

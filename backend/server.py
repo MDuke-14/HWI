@@ -718,7 +718,72 @@ async def startup_event():
         id='service_reminder_check',
         replace_existing=True
     )
-    
+
+    # Aviso diário de despesas internas (envia às 08:00)
+    async def scheduled_despesas_internas_aviso():
+        logging.info("💸 Verificando despesas internas a avisar...")
+        try:
+            from routes.despesas_internas import _generate_occurrences
+            from notifications_scheduler import send_notification_email
+            today = date.today()
+            despesas = await db.despesas_internas.find(
+                {"ativo": True}, {"_id": 0}
+            ).to_list(length=None)
+            sent = 0
+            for d in despesas:
+                aviso_dias = int(d.get("aviso_dias_antes", 3))
+                target_date = today + timedelta(days=aviso_dias)
+                ocs = _generate_occurrences(d, target_date, target_date)
+                if not ocs:
+                    continue
+                # Não enviar duas vezes por dia para a mesma despesa+data_prevista
+                key = f"despesa-aviso:{d['id']}:{target_date.isoformat()}"
+                already = await db.email_notification_log.find_one({"key": key})
+                if already:
+                    continue
+                # Verificar se já está pago
+                pago = await db.despesas_internas_pagamentos.find_one({
+                    "despesa_id": d["id"], "data_prevista": target_date.isoformat()
+                })
+                if pago:
+                    continue
+                to_email = (d.get("aviso_email") or "geral@hwi.pt").strip()
+                subject = f"[HWI Despesas] Aviso: {d['descricao']} em {target_date.strftime('%d/%m/%Y')} ({aviso_dias}d)"
+                html = f"""
+                <html><body style="font-family: Arial, sans-serif; color:#222">
+                <h2 style="color:#b91c1c">Despesa Interna a Vencer</h2>
+                <p>Olá,</p>
+                <p>A despesa <strong>{d['descricao']}</strong> tem ocorrência prevista em
+                <strong>{target_date.strftime('%d/%m/%Y')}</strong> ({aviso_dias} dias).</p>
+                <table cellpadding="6" cellspacing="0" style="border-collapse: collapse; border:1px solid #ddd">
+                  <tr><td><b>Descrição</b></td><td>{d['descricao']}</td></tr>
+                  <tr><td><b>Valor</b></td><td>{float(d.get('valor',0)):.2f} €</td></tr>
+                  <tr><td><b>Data prevista</b></td><td>{target_date.strftime('%d/%m/%Y')}</td></tr>
+                  <tr><td><b>Tipo</b></td><td>{d.get('tipo_pagamento','pontual')}{(' / ' + d.get('recorrencia')) if d.get('recorrencia') else ''}</td></tr>
+                </table>
+                <p style="margin-top:16px;color:#666;font-size:12px">Aviso automático do sistema HWI.</p>
+                </body></html>
+                """
+                ok = await send_notification_email(to_email, subject, html)
+                if ok:
+                    await db.email_notification_log.insert_one({
+                        "key": key,
+                        "despesa_id": d["id"],
+                        "data_prevista": target_date.isoformat(),
+                        "sent_at": datetime.now(timezone.utc).isoformat(),
+                    })
+                    sent += 1
+            logging.info(f"💸 Despesas: {sent} avisos enviados")
+        except Exception as e:
+            logging.error(f"Erro no aviso diário de despesas: {e}")
+
+    scheduler.add_job(
+        scheduled_despesas_internas_aviso,
+        CronTrigger(hour=8, minute=0),
+        id='despesas_internas_aviso',
+        replace_existing=True
+    )
+
     scheduler.start()
     logging.info("📅 Scheduler de verificações de ponto iniciado (09:30 e 18:15)")
     logging.info(f"   + Lembretes de serviço a cada 15 min (07:00-20:00)")
@@ -4005,6 +4070,7 @@ from routes.cronometros import router as cronometros_router
 from routes.relatorios import router as relatorios_router
 from routes.services import router as services_router
 from routes.overtime import router as overtime_router
+from routes.despesas_internas import router as despesas_internas_router
 api_router.include_router(references_router)
 api_router.include_router(clientes_router)
 api_router.include_router(auth_router)
@@ -4019,6 +4085,7 @@ api_router.include_router(cronometros_router)
 api_router.include_router(relatorios_router)
 api_router.include_router(services_router)
 api_router.include_router(overtime_router)
+api_router.include_router(despesas_internas_router)
 
 # ============ Admin Error Log Endpoints ============
 

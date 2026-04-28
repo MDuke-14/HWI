@@ -679,3 +679,68 @@ class DayAuthorization(BaseModel):
 
 class OvertimeDecision(BaseModel):
     action: str
+
+
+# ============== DESPESAS INTERNAS ==============
+
+class DespesaInterna(BaseModel):
+    """Template de uma despesa interna (pontual ou recorrente)."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    descricao: str
+    valor: float
+    data_inicial: date  # data da primeira ocorrência (ou única, se pontual)
+    tipo_pagamento: str  # 'pontual' | 'recorrente'
+    recorrencia: Optional[str] = None  # 'semanal' | 'mensal' | 'anual' | None
+    dia_mes: Optional[int] = None  # para mensal: dia do mês (1-31). Default: dia de data_inicial
+    aviso_dias_antes: int = 3  # quantos dias antes envia email
+    aviso_email: str = "geral@hwi.pt"
+    ativo: bool = True
+    data_fim: Optional[date] = None  # opcional: termo da recorrência
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+
+
+class DespesaInternaCreate(BaseModel):
+    descricao: str
+    valor: float
+    data_inicial: date
+    tipo_pagamento: str
+    recorrencia: Optional[str] = None
+    dia_mes: Optional[int] = None
+    aviso_dias_antes: int = 3
+    aviso_email: str = "geral@hwi.pt"
+    data_fim: Optional[date] = None
+
+
+class DespesaInternaUpdate(BaseModel):
+    descricao: Optional[str] = None
+    valor: Optional[float] = None
+    data_inicial: Optional[date] = None
+    tipo_pagamento: Optional[str] = None
+    recorrencia: Optional[str] = None
+    dia_mes: Optional[int] = None
+    aviso_dias_antes: Optional[int] = None
+    aviso_email: Optional[str] = None
+    ativo: Optional[bool] = None
+    data_fim: Optional[date] = None
+
+
+class DespesaInternaPagamento(BaseModel):
+    """Registo de uma ocorrência efectivamente paga."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    despesa_id: str
+    data_prevista: date
+    data_pagamento: date
+    valor_pago: float
+    notas: Optional[str] = None
+    paid_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class MarcarPagoRequest(BaseModel):
+    data_prevista: date
+    data_pagamento: Optional[date] = None
+    valor_pago: Optional[float] = None
+    notas: Optional[str] = None

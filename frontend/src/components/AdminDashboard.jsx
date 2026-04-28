@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map } from 'lucide-react';
+import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map, Receipt } from 'lucide-react';
 import HelpTooltip from '@/components/HelpTooltip';
 import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
@@ -688,14 +688,24 @@ const AdminDashboard = ({ user, onLogout }) => {
             </h1>
           </div>
           
-          {/* Quick Access Button */}
-          <Button
-            onClick={() => window.location.href = '/admin/time-entries'}
-            className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full py-2.5' : ''}`}
-          >
-            <Clock className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5 mr-2'}`} />
-            {isMobile ? 'Gestão Entradas' : 'Gestão de Entradas'}
-          </Button>
+          {/* Quick Access Buttons */}
+          <div className={`flex gap-2 ${isMobile ? 'flex-col' : ''}`}>
+            <Button
+              onClick={() => window.location.href = '/admin/time-entries'}
+              className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full py-2.5' : ''}`}
+            >
+              <Clock className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5 mr-2'}`} />
+              {isMobile ? 'Gestão Entradas' : 'Gestão de Entradas'}
+            </Button>
+            <Button
+              onClick={() => window.location.href = '/admin/despesas-internas'}
+              className={`bg-rose-600 hover:bg-rose-700 text-white ${isMobile ? 'w-full py-2.5' : ''}`}
+              data-testid="btn-despesas-internas"
+            >
+              <Receipt className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-5 h-5 mr-2'}`} />
+              {isMobile ? 'Despesas' : 'Despesas Internas'}
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="vacations" className="w-full">
