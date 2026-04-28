@@ -174,23 +174,7 @@ const FolhaHorasModal = ({
   };
 
   const getRegistosOrdenados = () => {
-    const funcaoOrdem = { 'senior': 0, 'tecnico': 1, 'junior': 2, 'ajudante': 3 };
-    const sortByFunctionAndName = (list) =>
-      [...list].sort((a, b) => {
-        const fa = funcaoOrdem[a.funcao_ot] ?? 99;
-        const fb = funcaoOrdem[b.funcao_ot] ?? 99;
-        if (fa !== fb) return fa - fb;
-        const nomeCompare = (a.tecnico_nome || '').localeCompare(b.tecnico_nome || '', 'pt');
-        if (nomeCompare !== 0) return nomeCompare;
-        const dateCompare = new Date(a.data) - new Date(b.data);
-        if (dateCompare !== 0) return dateCompare;
-        const tipoOrdem = { 'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3 };
-        return (tipoOrdem[a.tipo] || 99) - (tipoOrdem[b.tipo] || 99);
-      });
-
-    if (folhaHorasData?.registos_individuais) {
-      return sortByFunctionAndName(folhaHorasData.registos_individuais);
-    }
+    if (folhaHorasData?.registos_individuais) return folhaHorasData.registos_individuais;
     if (!folhaHorasData?.tecnicos) return [];
     const registos = folhaHorasData.registos || [];
     const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
@@ -215,7 +199,12 @@ const FolhaHorasModal = ({
         codigo: codigosMap[tec.tipo_horario] || '-', source: 'manual', registo_id: tec.id
       });
     });
-    return sortByFunctionAndName(todosRegistos);
+    return todosRegistos.sort((a, b) => {
+      const dateCompare = new Date(a.data) - new Date(b.data);
+      if (dateCompare !== 0) return dateCompare;
+      const tipoOrdem = { 'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3 };
+      return (tipoOrdem[a.tipo] || 99) - (tipoOrdem[b.tipo] || 99);
+    });
   };
 
   // Despesas helpers
@@ -445,11 +434,35 @@ const FolhaHorasModal = ({
                               className="flex-1 bg-[#1a1a1a] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
                             >
                               <option value="">Sem tarifa</option>
-                              {folhaHorasData.tarifas.map(tarifa => (
-                                <option key={tarifa.id} value={tarifa.id}>
-                                  {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h)
-                                </option>
-                              ))}
+                              {(() => {
+                                const ordemColab = { senior: 0, tecnico: 1, junior: 2, ajudante: 3 };
+                                const ordemTipoReg = { trabalho: 0, viagem: 1 };
+                                const tarifasOrdenadas = [...folhaHorasData.tarifas]
+                                  .filter(t => !registo.codigo || registo.codigo === '-' || t.codigo === registo.codigo)
+                                  .sort((a, b) => {
+                                    const ca = ordemColab[a.tipo_colaborador] ?? 99;
+                                    const cb = ordemColab[b.tipo_colaborador] ?? 99;
+                                    if (ca !== cb) return ca - cb;
+                                    const ra = ordemTipoReg[a.tipo_registo] ?? 99;
+                                    const rb = ordemTipoReg[b.tipo_registo] ?? 99;
+                                    if (ra !== rb) return ra - rb;
+                                    return (a.nome || '').localeCompare(b.nome || '', 'pt');
+                                  });
+                                return tarifasOrdenadas.map(tarifa => {
+                                  const labelColab = tarifa.tipo_colaborador
+                                    ? ({ senior: 'Sénior', tecnico: 'Técnico', junior: 'Júnior', ajudante: 'Ajudante' }[tarifa.tipo_colaborador] || tarifa.tipo_colaborador)
+                                    : null;
+                                  const labelTipo = tarifa.tipo_registo
+                                    ? (tarifa.tipo_registo === 'viagem' ? 'Viagem' : 'Trabalho')
+                                    : null;
+                                  const tags = [labelColab, labelTipo].filter(Boolean).join(' · ');
+                                  return (
+                                    <option key={tarifa.id} value={tarifa.id}>
+                                      {tarifa.nome} ({tarifa.valor_por_hora.toFixed(2)}€/h){tags ? ` — ${tags}` : ''}
+                                    </option>
+                                  );
+                                });
+                              })()}
                             </select>
                           ) : (
                             <Input
