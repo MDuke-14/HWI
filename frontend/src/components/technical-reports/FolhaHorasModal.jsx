@@ -140,6 +140,11 @@ const FolhaHorasModal = ({
         if (t.tipo_colaborador === funcaoOt) score += 4;
         if (score > bestScore) { bestScore = score; bestMatch = t; }
       }
+      // Fallback: se não houve match exacto, devolve a primeira tarifa com esse código
+      if (!bestMatch) {
+        const fallback = tarifaMap.find(t => t.codigo === codigo);
+        if (fallback) return fallback.id;
+      }
       return bestMatch?.id || null;
     };
     
@@ -169,7 +174,23 @@ const FolhaHorasModal = ({
   };
 
   const getRegistosOrdenados = () => {
-    if (folhaHorasData?.registos_individuais) return folhaHorasData.registos_individuais;
+    const funcaoOrdem = { 'senior': 0, 'tecnico': 1, 'junior': 2, 'ajudante': 3 };
+    const sortByFunctionAndName = (list) =>
+      [...list].sort((a, b) => {
+        const fa = funcaoOrdem[a.funcao_ot] ?? 99;
+        const fb = funcaoOrdem[b.funcao_ot] ?? 99;
+        if (fa !== fb) return fa - fb;
+        const nomeCompare = (a.tecnico_nome || '').localeCompare(b.tecnico_nome || '', 'pt');
+        if (nomeCompare !== 0) return nomeCompare;
+        const dateCompare = new Date(a.data) - new Date(b.data);
+        if (dateCompare !== 0) return dateCompare;
+        const tipoOrdem = { 'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3 };
+        return (tipoOrdem[a.tipo] || 99) - (tipoOrdem[b.tipo] || 99);
+      });
+
+    if (folhaHorasData?.registos_individuais) {
+      return sortByFunctionAndName(folhaHorasData.registos_individuais);
+    }
     if (!folhaHorasData?.tecnicos) return [];
     const registos = folhaHorasData.registos || [];
     const tecnicosManuais = folhaHorasData.tecnicos_manuais || [];
@@ -194,12 +215,7 @@ const FolhaHorasModal = ({
         codigo: codigosMap[tec.tipo_horario] || '-', source: 'manual', registo_id: tec.id
       });
     });
-    return todosRegistos.sort((a, b) => {
-      const dateCompare = new Date(a.data) - new Date(b.data);
-      if (dateCompare !== 0) return dateCompare;
-      const tipoOrdem = { 'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3 };
-      return (tipoOrdem[a.tipo] || 99) - (tipoOrdem[b.tipo] || 99);
-    });
+    return sortByFunctionAndName(todosRegistos);
   };
 
   // Despesas helpers
@@ -391,8 +407,18 @@ const FolhaHorasModal = ({
                             <User className="w-4 h-4 text-blue-400" />
                             <span className="text-white font-medium">
                               {registo.tecnico_nome}
-                              <span className={`ml-1 text-xs ${registo.funcao_ot === 'senior' ? 'text-purple-400' : registo.funcao_ot === 'junior' ? 'text-yellow-400' : 'text-cyan-400'}`}>
-                                ({registo.funcao_ot === 'senior' ? 'Téc. Sénior' : registo.funcao_ot === 'junior' ? 'Téc. Júnior' : 'Técnico'})
+                              <span className={`ml-1 text-xs ${
+                                registo.funcao_ot === 'senior' ? 'text-purple-400' :
+                                registo.funcao_ot === 'junior' ? 'text-yellow-400' :
+                                registo.funcao_ot === 'ajudante' ? 'text-orange-400' :
+                                'text-cyan-400'
+                              }`}>
+                                ({
+                                  registo.funcao_ot === 'senior' ? 'Téc. Sénior' :
+                                  registo.funcao_ot === 'junior' ? 'Téc. Júnior' :
+                                  registo.funcao_ot === 'ajudante' ? 'Ajudante' :
+                                  'Técnico'
+                                })
                               </span>
                             </span>
                           </div>
