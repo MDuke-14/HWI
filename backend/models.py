@@ -197,6 +197,11 @@ class RegistoTecnicoOT(BaseModel):
     horas_arredondadas: float
     km: float
     codigo: str
+    intervencao_id: Optional[str] = None
+    # Histórico — registo herdado de uma FS anterior (já facturado lá)
+    facturado_em_origem: bool = False
+    fs_origem_id: Optional[str] = None
+    fs_origem_numero: Optional[int] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class EquipamentoOT(BaseModel):

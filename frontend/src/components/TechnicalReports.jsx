@@ -3193,13 +3193,33 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowContinuidadeModal(true);
   };
 
+  // Carrega TODOS os dados auxiliares de uma FS (usado tanto ao clicar num card como ao
+  // saltar pelo breadcrumb / criar continuidade).
+  const loadAllRelatorioData = async (relatorioId) => {
+    if (!relatorioId) return;
+    await Promise.all([
+      fetchTecnicosRelatorio(relatorioId),
+      fetchIntervencoesRelatorio(relatorioId),
+      fetchFotografiasRelatorio(relatorioId),
+      fetchAssinaturas(relatorioId),
+      fetchEquipamentosOT(relatorioId),
+      fetchMateriais(relatorioId),
+      fetchDespesas(relatorioId),
+      fetchRelatoriosAssistencia(relatorioId),
+      fetchPedidosCotacao(relatorioId),
+      fetchCronometros(relatorioId),
+      fetchRegistosTecnicos(relatorioId),
+    ]);
+  };
+
   const handleJumpToFS = async (fsId) => {
     if (!fsId || fsId === selectedRelatorio?.id) return;
     try {
       const resp = await axios.get(`${API}/relatorios-tecnicos/${fsId}`);
       if (resp.data) {
         setSelectedRelatorio(resp.data);
-        await fetchIntervencoesRelatorio(fsId);
+        setActiveIntervencaoId(null);
+        await loadAllRelatorioData(fsId);
       }
     } catch (e) {
       toast.error('Não foi possível abrir essa FS');
@@ -3220,12 +3240,13 @@ const TechnicalReports = ({ user, onLogout }) => {
       setContinuidadeIds([]);
       // Refresh listagem
       await fetchRelatorios();
-      // Abrir a nova FS
+      // Abrir a nova FS com TODOS os dados
       if (new_fs_id) {
         const novaFS = await axios.get(`${API}/relatorios-tecnicos/${new_fs_id}`);
         if (novaFS.data) {
           setSelectedRelatorio(novaFS.data);
-          await fetchIntervencoesRelatorio(new_fs_id);
+          setActiveIntervencaoId(null);
+          await loadAllRelatorioData(new_fs_id);
         }
       }
     } catch (e) {
