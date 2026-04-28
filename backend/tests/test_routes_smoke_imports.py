@@ -99,7 +99,13 @@ def test_router_has_no_unresolved_names(fname):
     # (capitalized identifiers and well-known stdlib names).
     suspects = sorted(
         n for n in unresolved
-        if n and (n[0].isupper() or n in {"shutil", "Path", "BytesIO", "pytz"})
+        if n and (
+            n[0].isupper()
+            or n in {
+                "shutil", "Path", "BytesIO", "pytz",
+                "aiosmtplib", "encoders", "asyncio", "json", "re",
+            }
+        )
     )
     assert not suspects, (
         f"{fname}: nomes não importados detectados: {suspects}. "

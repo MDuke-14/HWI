@@ -8,12 +8,14 @@ import uuid
 import base64
 import io
 import os
+import aiosmtplib
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timezone, date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
+from email import encoders
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from fastapi.responses import Response, StreamingResponse, FileResponse
