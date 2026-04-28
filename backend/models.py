@@ -270,6 +270,10 @@ class IntervencaoRelatorio(BaseModel):
     facturada: bool = False
     facturada_at: Optional[datetime] = None
     facturada_by: Optional[str] = None
+    # Continuidade — herança a partir de outra FS/intervenção
+    herdada_de_intervencao_id: Optional[str] = None
+    herdada_de_fs_id: Optional[str] = None
+    herdada_de_fs_numero: Optional[int] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -300,6 +304,11 @@ class FaturacaoIntervencao(BaseModel):
 class FaturacaoIntervencaoRequest(BaseModel):
     """Body do POST /api/relatorios-tecnicos/{id}/intervencoes/{intervencao_id}/facturar"""
     alocacoes: List[FaturacaoAlocacao] = Field(default_factory=list)
+
+
+class CriarContinuidadeRequest(BaseModel):
+    """Body do POST /api/relatorios-tecnicos/{id}/criar-continuidade"""
+    intervencao_ids: List[str]
 
 
 class RelatorioAssistencia(BaseModel):

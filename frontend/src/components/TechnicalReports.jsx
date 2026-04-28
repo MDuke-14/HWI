@@ -53,7 +53,8 @@ import {
   ScanLine,
   Pencil,
   Link2,
-  Banknote
+  Banknote,
+  ArrowRightCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,6 +99,7 @@ import {
   FacturadosSection,
 } from './technical-reports';
 import FacturarIntervencaoModal from './technical-reports/FacturarIntervencaoModal';
+import CriarContinuidadeModal from './technical-reports/CriarContinuidadeModal';
 import FaturaScanner from './technical-reports/FaturaScanner';
 import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
@@ -330,6 +332,11 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [facturarAlocacoes, setFacturarAlocacoes] = useState({});  // {key: {trabalho, viagem, oficina, km}}
   const [loadingFacturar, setLoadingFacturar] = useState(false);
   const [savingFacturar, setSavingFacturar] = useState(false);
+
+  // Continuidade (FS herdada)
+  const [showContinuidadeModal, setShowContinuidadeModal] = useState(false);
+  const [continuidadeIds, setContinuidadeIds] = useState([]);
+  const [savingContinuidade, setSavingContinuidade] = useState(false);
 
   // Material OT
   const [materiais, setMateriais] = useState([]);
@@ -3290,6 +3297,45 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   }, [facturarIntervencao?.id]); // eslint-disable-line
 
+  const handleAbrirContinuidade = (intervencaoId = null) => {
+    if (intervencaoId) {
+      setContinuidadeIds([intervencaoId]);
+    } else {
+      setContinuidadeIds([]);
+    }
+    setShowContinuidadeModal(true);
+  };
+
+  const handleConfirmarContinuidade = async () => {
+    if (!selectedRelatorio || continuidadeIds.length === 0) return;
+    setSavingContinuidade(true);
+    try {
+      const resp = await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/criar-continuidade`,
+        { intervencao_ids: continuidadeIds }
+      );
+      const { new_fs_id, new_fs_numero, intervencoes_herdadas } = resp.data || {};
+      toast.success(`FS #${new_fs_numero} criada com ${intervencoes_herdadas} intervenção(ões) herdadas`);
+      setShowContinuidadeModal(false);
+      setContinuidadeIds([]);
+      // Refresh listagem
+      await fetchRelatorios();
+      // Abrir a nova FS
+      if (new_fs_id) {
+        const novaFS = await axios.get(`${API}/relatorios-tecnicos/${new_fs_id}`);
+        if (novaFS.data) {
+          setSelectedRelatorio(novaFS.data);
+          await fetchIntervencoesRelatorio(new_fs_id);
+        }
+      }
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e.message || 'Erro';
+      toast.error(`Falha ao criar continuidade: ${msg}`, { duration: 8000 });
+    } finally {
+      setSavingContinuidade(false);
+    }
+  };
+
   const handleOpenFolhaHoras = async () => {
     if (!selectedRelatorio) return;
     
@@ -5557,19 +5603,23 @@ const TechnicalReports = ({ user, onLogout }) => {
                         const isActive = activeIntervencaoId === interv.id;
                         const eqInterv = equipamentosOT.find(e => e.id === interv.equipamento_id);
                         const isFact = !!interv.facturada;
+                        const isHerdada = !!interv.herdada_de_intervencao_id;
+                        const tabBg = isHerdada
+                          ? (isActive
+                              ? 'bg-red-600 text-white ring-2 ring-red-300'
+                              : 'bg-red-600 text-white hover:bg-red-500')
+                          : isFact
+                            ? (isActive
+                                ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                                : 'bg-emerald-500 text-white hover:bg-emerald-400')
+                            : isActive
+                              ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                              : `${isDark ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
                         return (
                           <div
                             key={interv.id}
                             data-testid={`tab-intervencao-${idx}`}
-                            className={`flex-shrink-0 rounded-t-lg text-xs font-medium transition-colors flex items-stretch ${
-                              isFact
-                                ? (isActive
-                                    ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
-                                    : 'bg-emerald-500 text-white hover:bg-emerald-400')
-                                : isActive
-                                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                                  : `${isDark ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
-                            }`}
+                            className={`flex-shrink-0 rounded-t-lg text-xs font-medium transition-colors flex items-stretch ${tabBg}`}
                           >
                             <button
                               type="button"
@@ -5580,7 +5630,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <div className="flex items-center gap-1.5">
                                 <Calendar className="w-3 h-3" />
                                 {new Date(interv.data_intervencao).toLocaleDateString('pt-PT')}
-                                {isFact && <span className="text-[10px] uppercase font-bold ml-1">facturada</span>}
+                                {isHerdada && (
+                                  <span className="text-[10px] uppercase font-bold ml-1">
+                                    herdada{interv.herdada_de_fs_numero ? ` #${interv.herdada_de_fs_numero}` : ''}
+                                  </span>
+                                )}
+                                {!isHerdada && isFact && (
+                                  <span className="text-[10px] uppercase font-bold ml-1">facturada</span>
+                                )}
                               </div>
                               {eqInterv && (
                                 <div className="text-[10px] mt-0.5 opacity-70 truncate max-w-[120px]">
@@ -5588,25 +5645,48 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </div>
                               )}
                             </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveIntervencaoId(interv.id);
-                                setFacturarIntervencao(interv);
-                              }}
-                              title={isFact ? 'Editar facturação' : 'Facturar esta intervenção'}
-                              data-testid={`btn-facturar-tab-${idx}`}
-                              className={`px-2 flex items-center justify-center transition-colors rounded-tr-lg ${
-                                isFact
-                                  ? 'hover:bg-emerald-600'
-                                  : isActive
-                                    ? 'hover:bg-blue-700'
-                                    : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')
-                              }`}
-                            >
-                              <Banknote className="w-4 h-4" />
-                            </button>
+                            {!isHerdada && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveIntervencaoId(interv.id);
+                                  setFacturarIntervencao(interv);
+                                }}
+                                title={isFact ? 'Editar facturação' : 'Facturar esta intervenção'}
+                                data-testid={`btn-facturar-tab-${idx}`}
+                                className={`px-2 flex items-center justify-center transition-colors ${
+                                  isFact
+                                    ? 'hover:bg-emerald-600'
+                                    : isActive
+                                      ? 'hover:bg-blue-700'
+                                      : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')
+                                }`}
+                              >
+                                <Banknote className="w-4 h-4" />
+                              </button>
+                            )}
+                            {!isHerdada && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveIntervencaoId(interv.id);
+                                  handleAbrirContinuidade(interv.id);
+                                }}
+                                title="Criar FS de continuidade desta intervenção"
+                                data-testid={`btn-continuidade-tab-${idx}`}
+                                className={`px-2 flex items-center justify-center transition-colors rounded-tr-lg ${
+                                  isFact
+                                    ? 'hover:bg-emerald-600'
+                                    : isActive
+                                      ? 'hover:bg-blue-700'
+                                      : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')
+                                }`}
+                              >
+                                <ArrowRightCircle className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         );
                       })}
@@ -10287,6 +10367,17 @@ const TechnicalReports = ({ user, onLogout }) => {
         onDesfacturar={handleDesfacturar}
         loading={loadingFacturar}
         saving={savingFacturar}
+      />
+
+      {/* Modal de Criar FS de Continuidade */}
+      <CriarContinuidadeModal
+        open={showContinuidadeModal}
+        onOpenChange={setShowContinuidadeModal}
+        intervencoes={intervencoes}
+        selectedIds={continuidadeIds}
+        setSelectedIds={setContinuidadeIds}
+        onConfirmar={handleConfirmarContinuidade}
+        saving={savingContinuidade}
       />
     </div>
   );

@@ -1,0 +1,45 @@
+{
+  "summary": "Tested FS de Continuidade feature end-to-end (backend + frontend). All 6 backend pytest tests passed (validations, happy-path full duplication, bloqueio desfacturar, PDF preview). Frontend: /technical-reports loads OK, FS opens with 5 intervention tabs each showing 2 icons (Banknote + ArrowRightCircle), continuidade modal opens with checkboxes for all eligible intervencoes. PDF header for inherited intervention correctly shows 'HERDADA DE FS #356' banner. Cleanup of leftover continuity FS (#366) and origem facturada flags performed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "CriarContinuidadeModal",
+        "issues": [
+          "Hydration warning: <ul> nested inside <p> (DialogDescription contains a <ul> list). React/HTML invalid nesting. Move the <ul> outside the <p> wrapper to fix.",
+          "Missing aria-describedby on DialogContent (a11y warning) — already has DialogDescription so check that 'aria-describedby' is wired correctly via Radix props."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_fs_continuidade.py",
+    "/app/test_reports/pytest/fs_continuidade.xml",
+    "/app/test_reports/continuidade_preview.pdf"
+  ],
+  "action_items": [
+    "Fix CriarContinuidadeModal DialogDescription: replace <ul> inside <p> with <div>+<ul> structure to remove hydration warning",
+    "Optional: add data-testid to Cancelar/Confirmar buttons inside CriarContinuidadeModal for easier automation"
+  ],
+  "critical_code_review_comments": [
+    "TechnicalReports.jsx is ~10387 lines — should be split into smaller focused components for maintainability (well over the 700-line guideline).",
+    "criar_fs_continuidade in routes/relatorios.py distributes ALL disponivel hours to the FIRST selected intervencao only (loop sets disponivel=0 after first iteration). If admin selects multiple intervencoes intending to split mão-de-obra, all hours go to the first one. This matches the 'simple strategy' comment in code, but consider documenting this more clearly in API response or UI.",
+    "criar_fs_continuidade does NOT validate that the chosen intervencoes are not already 'herdada' (could create chain of continuity from a continuity FS). Add explicit check.",
+    "criar_fs_continuidade also does NOT validate that chosen intervencoes are not already facturada with continuity (would silently re-facturate and re-create). Worth adding explicit guard."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_fs_continuidade.py (created)"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (load + tabs + modal)"},
+  "test_credentials": "teste@email.com / teste (admin)",
+  "seed_data_creation": "None — used existing FS 8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85 (#356, 5 intervencoes). Cleanup performed at end: deleted continuity FS #366 (8e693386-131c-4841-bc04-38151ebf7d95), reset 3 facturada flags + 1 faturacao_intervencoes doc on origem.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend test suite at /app/backend/tests/test_fs_continuidade.py is reusable. The DELETE /api/relatorios-tecnicos/{id} endpoint correctly cascades (cleanup worked). After running these tests, use direct mongo to reset 'facturada' flags on origem FS intervs and clear faturacao_intervencoes if needed. PDF correctly renders 'HERDADA DE FS #N' header (verified via pdfplumber).",
+  "rca of the issue": "N/A — no bugs found. All requested behaviors verified: (1) materiais duplicados sem PC fields; (2) bloqueio desfacturar com mensagem mencionando #X (testado via assert); (3) assinaturas duplicadas; (4) mão-de-obra fica só na origem; (5) intervs herdadas com herdada_de_* fields preenchidos; (6) PDF mostra header herdada."
+}

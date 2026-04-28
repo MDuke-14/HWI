@@ -27,6 +27,7 @@ from models import (
     EquipamentoOT, EnviarEmailRequest, Equipamento,
     TecnicoRelatorio, AssinaturaRelatorio,
     FaturacaoAlocacao, FaturacaoIntervencao, FaturacaoIntervencaoRequest,
+    CriarContinuidadeRequest,
 )
 from server import (
     get_current_user, get_now_local, log_app_error,
@@ -2485,6 +2486,20 @@ async def desfacturar_intervencao(
     if not interv:
         raise HTTPException(status_code=404, detail="Intervenção não encontrada")
 
+    # Bloquear se já existir continuidade gerada a partir desta intervenção
+    continuidade = await db.intervencoes_relatorio.find_one(
+        {"herdada_de_intervencao_id": intervencao_id}, {"_id": 0, "id": 1, "relatorio_id": 1}
+    )
+    if continuidade:
+        fs_continuidade = await db.relatorios_tecnicos.find_one(
+            {"id": continuidade.get("relatorio_id")}, {"_id": 0, "numero_assistencia": 1}
+        )
+        fs_num = fs_continuidade.get("numero_assistencia") if fs_continuidade else "?"
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível desfacturar: esta intervenção já gerou continuidade na FS #{fs_num}. Apaga primeiro a FS de continuidade ou a intervenção herdada.",
+        )
+
     await db.faturacao_intervencoes.delete_many(
         {"relatorio_id": relatorio_id, "intervencao_id": intervencao_id}
     )
@@ -2508,5 +2523,265 @@ async def listar_faturacao(
         {"relatorio_id": relatorio_id}, {"_id": 0}
     ).to_list(length=None)
     return docs
+
+
+@router.post("/relatorios-tecnicos/{relatorio_id}/criar-continuidade")
+async def criar_fs_continuidade(
+    relatorio_id: str,
+    request: CriarContinuidadeRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Cria uma nova FS herdada da actual.
+
+    Para cada intervenção selecionada na FS origem:
+      1. Aloca todo o saldo disponível (registado − já facturado noutras
+         intervenções) à intervenção, marcando-a como facturada.
+      2. Duplica para a nova FS:
+         - Intervenção (com herdada_de_*)
+         - Equipamentos OT relacionados
+         - Materiais
+         - Relatórios de assistência
+         - Fotografias (mantendo binário)
+         - Assinaturas
+    Os registos de mão-de-obra ficam só na FS origem.
+    """
+    if not request.intervencao_ids:
+        raise HTTPException(status_code=400, detail="Indica pelo menos uma intervenção a transitar.")
+
+    # Validar FS origem
+    origem = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not origem:
+        raise HTTPException(status_code=404, detail="FS origem não encontrada")
+
+    # Validar intervenções
+    intervs_origem = await db.intervencoes_relatorio.find(
+        {"id": {"$in": request.intervencao_ids}, "relatorio_id": relatorio_id},
+        {"_id": 0},
+    ).to_list(length=None)
+    if len(intervs_origem) != len(request.intervencao_ids):
+        raise HTTPException(status_code=400, detail="Algumas intervenções não pertencem a esta FS.")
+
+    # 1) Facturar todo o disponível nas intervenções selecionadas
+    disp = await _build_disponibilidade(relatorio_id)
+    by_key = {(d["tecnico_id"], d["codigo"]): d for d in disp}
+
+    # Obter qualquer facturação anterior nas intervenções alvo, para "devolver" ao saldo
+    facturas_anteriores = await db.faturacao_intervencoes.find(
+        {"relatorio_id": relatorio_id, "intervencao_id": {"$in": request.intervencao_ids}},
+        {"_id": 0},
+    ).to_list(length=None)
+    for fa in facturas_anteriores:
+        for a in fa.get("alocacoes", []) or []:
+            k = (a.get("tecnico_id") or "", _norm_codigo(a.get("codigo")))
+            if k in by_key:
+                by_key[k]["disponivel_trabalho"] += float(a.get("horas_trabalho") or 0)
+                by_key[k]["disponivel_viagem"] += float(a.get("horas_viagem") or 0)
+                by_key[k]["disponivel_oficina"] += float(a.get("horas_oficina") or 0)
+                by_key[k]["disponivel_km"] += float(a.get("km") or 0)
+
+    # Distribuir disponível pelas intervenções: começa pela primeira selecionada,
+    # vai consumindo até zerar. (Estratégia simples — reproduz o que o admin faria.)
+    saldos = {k: dict(v) for k, v in by_key.items()}
+    alocacoes_por_interv = {iid: [] for iid in request.intervencao_ids}
+    for iid in request.intervencao_ids:
+        for k, s in saldos.items():
+            ht = round(max(0.0, s["disponivel_trabalho"]), 2)
+            hv = round(max(0.0, s["disponivel_viagem"]), 2)
+            ho = round(max(0.0, s["disponivel_oficina"]), 2)
+            km = round(max(0.0, s["disponivel_km"]), 2)
+            if ht + hv + ho + km <= 0:
+                continue
+            alocacoes_por_interv[iid].append({
+                "tecnico_id": s["tecnico_id"],
+                "tecnico_nome": s["tecnico_nome"],
+                "funcao_ot": s.get("funcao_ot") or "tecnico",
+                "codigo": s["codigo"],
+                "horas_trabalho": ht,
+                "horas_viagem": hv,
+                "horas_oficina": ho,
+                "km": km,
+            })
+            s["disponivel_trabalho"] = 0
+            s["disponivel_viagem"] = 0
+            s["disponivel_oficina"] = 0
+            s["disponivel_km"] = 0
+        # Após primeira intervenção consumir tudo, as restantes recebem alocações vazias.
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # Substituir facturações anteriores e marcar as intervenções origem como facturadas
+    for iid in request.intervencao_ids:
+        await db.faturacao_intervencoes.delete_many(
+            {"relatorio_id": relatorio_id, "intervencao_id": iid}
+        )
+        if alocacoes_por_interv[iid]:
+            fat = FaturacaoIntervencao(
+                relatorio_id=relatorio_id,
+                intervencao_id=iid,
+                alocacoes=[FaturacaoAlocacao(**a) for a in alocacoes_por_interv[iid]],
+                created_by=current_user.get("sub"),
+                created_by_name=current_user.get("username"),
+            )
+            d = fat.model_dump()
+            d["created_at"] = d["created_at"].isoformat()
+            await db.faturacao_intervencoes.insert_one(d)
+        await db.intervencoes_relatorio.update_one(
+            {"id": iid, "relatorio_id": relatorio_id},
+            {"$set": {
+                "facturada": True,
+                "facturada_at": now_iso,
+                "facturada_by": current_user.get("username"),
+            }},
+        )
+
+    # 2) Criar nova FS herdada
+    last_relatorio = await db.relatorios_tecnicos.find_one(
+        {}, sort=[("numero_assistencia", -1)]
+    )
+    last_numero = last_relatorio.get("numero_assistencia", 0) if last_relatorio else 0
+    novo_numero = max(last_numero + 1, 354)
+
+    nova = RelatorioTecnico(
+        numero_assistencia=novo_numero,
+        cliente_id=origem["cliente_id"],
+        created_by_id=current_user["sub"],
+        cliente_nome=origem.get("cliente_nome", ""),
+        data_servico=date.today(),
+        local_intervencao=origem.get("local_intervencao", ""),
+        pedido_por=origem.get("pedido_por", ""),
+        contacto_pedido=origem.get("contacto_pedido"),
+        ot_relacionada_id=origem["id"],
+        equipamento_tipologia=origem.get("equipamento_tipologia"),
+        equipamento_marca=origem.get("equipamento_marca"),
+        equipamento_modelo=origem.get("equipamento_modelo"),
+        equipamento_numero_serie=origem.get("equipamento_numero_serie"),
+        equipamento_ano_fabrico=origem.get("equipamento_ano_fabrico"),
+        equipamento_horas_funcionamento=origem.get("equipamento_horas_funcionamento"),
+        motivo_assistencia=origem.get("motivo_assistencia", ""),
+        referencia_interna_cliente=origem.get("referencia_interna_cliente"),
+    )
+    nova_dict = nova.dict()
+    nova_dict["data_criacao"] = nova_dict["data_criacao"].isoformat()
+    nova_dict["data_servico"] = nova_dict["data_servico"].isoformat()
+    if nova_dict.get("data_fim"):
+        nova_dict["data_fim"] = nova_dict["data_fim"].isoformat()
+    await db.relatorios_tecnicos.insert_one(nova_dict)
+    nova_id = nova.id
+
+    # 3) Para cada intervenção origem: duplicar tudo (sem registos de mão-de-obra)
+    novo_intervs_count = 0
+    origem_numero = origem.get("numero_assistencia")
+    # Mapa intervencao origem -> nova intervencao
+    map_intervs = {}
+    for io in intervs_origem:
+        nova_interv_id = str(uuid.uuid4())
+        map_intervs[io["id"]] = nova_interv_id
+        novo_intervs_count += 1
+        ni = {
+            "id": nova_interv_id,
+            "relatorio_id": nova_id,
+            "data_intervencao": io.get("data_intervencao"),
+            "motivo_assistencia": io.get("motivo_assistencia", ""),
+            "relatorio_assistencia": io.get("relatorio_assistencia"),
+            "equipamento_id": io.get("equipamento_id"),
+            "ordem": io.get("ordem", 0),
+            "facturada": False,
+            "facturada_at": None,
+            "facturada_by": None,
+            "herdada_de_intervencao_id": io["id"],
+            "herdada_de_fs_id": origem["id"],
+            "herdada_de_fs_numero": origem_numero,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.intervencoes_relatorio.insert_one(ni)
+
+    # 4) Duplicar Equipamentos OT relacionados
+    eqs_origem = await db.equipamentos_ot.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+    map_eqs = {}
+    for eq in eqs_origem:
+        # Só replicar equipamentos referenciados pelas intervenções transitadas, ou globais
+        eq_iid = eq.get("intervencao_id")
+        if eq_iid and eq_iid not in map_intervs:
+            continue
+        novo_eq_id = str(uuid.uuid4())
+        map_eqs[eq.get("id")] = novo_eq_id
+        novo = {**eq, "id": novo_eq_id, "relatorio_id": nova_id}
+        if eq_iid and eq_iid in map_intervs:
+            novo["intervencao_id"] = map_intervs[eq_iid]
+        novo.pop("_id", None)
+        await db.equipamentos_ot.insert_one(novo)
+
+    # 5) Duplicar Materiais (apenas das intervenções transitadas)
+    mats = await db.materiais_ot.find(
+        {"relatorio_id": relatorio_id, "intervencao_id": {"$in": list(map_intervs.keys())}},
+        {"_id": 0},
+    ).to_list(length=None)
+    for m in mats:
+        novo = {**m, "id": str(uuid.uuid4()), "relatorio_id": nova_id}
+        if m.get("intervencao_id") in map_intervs:
+            novo["intervencao_id"] = map_intervs[m["intervencao_id"]]
+        novo.pop("_id", None)
+        # Limpar PC/Cotação para que fique limpa na nova FS
+        novo.pop("pedido_cotacao_id", None)
+        novo.pop("pc_numero", None)
+        novo.pop("posicao", None)
+        novo.pop("codigo", None)
+        await db.materiais_ot.insert_one(novo)
+
+    # 6) Duplicar Relatórios de Assistência
+    ras = await db.relatorios_assistencia.find(
+        {"relatorio_id": relatorio_id, "intervencao_id": {"$in": list(map_intervs.keys())}},
+        {"_id": 0},
+    ).to_list(length=None)
+    for ra in ras:
+        novo = {**ra, "id": str(uuid.uuid4()), "relatorio_id": nova_id}
+        if ra.get("intervencao_id") in map_intervs:
+            novo["intervencao_id"] = map_intervs[ra["intervencao_id"]]
+        novo.pop("_id", None)
+        # Atualizar equipamento_ids para os novos IDs duplicados (quando aplicável)
+        eq_ids = ra.get("equipamento_ids") or []
+        novo["equipamento_ids"] = [map_eqs.get(e, e) for e in eq_ids]
+        await db.relatorios_assistencia.insert_one(novo)
+
+    # 7) Duplicar Fotografias
+    fotos = await db.fotos_relatorio.find(
+        {"relatorio_id": relatorio_id, "intervencao_id": {"$in": list(map_intervs.keys())}},
+        {"_id": 0},
+    ).to_list(length=None)
+    for f in fotos:
+        novo = {**f, "id": str(uuid.uuid4()), "relatorio_id": nova_id}
+        if f.get("intervencao_id") in map_intervs:
+            novo["intervencao_id"] = map_intervs[f["intervencao_id"]]
+        novo.pop("_id", None)
+        await db.fotos_relatorio.insert_one(novo)
+
+    # 8) Duplicar Assinaturas associadas às intervenções
+    assins = await db.assinaturas_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+    for a in assins:
+        a_iid = a.get("intervencao_id")
+        # Só duplicar assinaturas globais ou das intervenções transitadas
+        if a_iid and a_iid not in map_intervs:
+            continue
+        novo = {**a, "id": str(uuid.uuid4()), "relatorio_id": nova_id}
+        if a_iid and a_iid in map_intervs:
+            novo["intervencao_id"] = map_intervs[a_iid]
+        novo.pop("_id", None)
+        await db.assinaturas_relatorio.insert_one(novo)
+
+    logging.info(
+        f"FS de continuidade criada: #{novo_numero} (origem #{origem_numero}) "
+        f"com {novo_intervs_count} intervenções herdadas, por {current_user.get('username')}"
+    )
+
+    return {
+        "message": "FS de continuidade criada com sucesso",
+        "new_fs_id": nova_id,
+        "new_fs_numero": novo_numero,
+        "intervencoes_herdadas": novo_intervs_count,
+    }
 
 
