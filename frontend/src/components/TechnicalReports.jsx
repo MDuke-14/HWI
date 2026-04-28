@@ -3789,6 +3789,13 @@ const TechnicalReports = ({ user, onLogout }) => {
         });
       }
       
+      // Garantir que geral@hwi.pt está sempre presente (não selecionado por defeito)
+      const HWI_EMAIL = 'geral@hwi.pt';
+      const jaExiste = emails.some(e => (e.email || '').trim().toLowerCase() === HWI_EMAIL);
+      if (!jaExiste) {
+        emails.push({ email: HWI_EMAIL, selected: false, is_hwi: true });
+      }
+      
       setEmailsCliente(emails);
       setEmailsAdicionais('');
       setShowEmailModal(true);
@@ -6299,7 +6306,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           <div className="space-y-4 mt-4">
             {/* Emails do Cliente */}
             <div>
-              <Label className="text-gray-300 mb-2 block">Emails do Cliente</Label>
+              <Label className="text-gray-300 mb-2 block">Destinatários</Label>
               {emailsCliente.length === 0 ? (
                 <p className="text-gray-500 text-sm italic">Nenhum email registado para este cliente</p>
               ) : (
@@ -6307,7 +6314,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                   {emailsCliente.map((item, index) => (
                     <label
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-[#0f0f0f] border border-gray-700 rounded-lg cursor-pointer hover:border-purple-500/50 transition"
+                      data-testid={`email-option-${index}`}
+                      className={`flex items-center gap-3 p-3 bg-[#0f0f0f] border rounded-lg cursor-pointer transition ${
+                        item.is_hwi
+                          ? 'border-amber-600/50 hover:border-amber-400/70'
+                          : 'border-gray-700 hover:border-purple-500/50'
+                      }`}
                     >
                       <input
                         type="checkbox"
@@ -6316,6 +6328,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                         className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
                       />
                       <span className="text-white">{item.email}</span>
+                      {item.is_hwi && (
+                        <span className="ml-auto text-[10px] uppercase font-bold bg-amber-600 text-white px-1.5 py-0.5 rounded">
+                          HWI · Teste
+                        </span>
+                      )}
                     </label>
                   ))}
                 </div>
