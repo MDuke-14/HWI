@@ -410,6 +410,8 @@ def generate_folha_horas_pdf(
     table_data = [header_row]
 
     total_valor_geral = 0
+    total_valor_trabalho = 0
+    total_valor_viagem = 0
     total_km_valor_geral = 0
     total_dieta_geral = 0
 
@@ -445,6 +447,10 @@ def generate_folha_horas_pdf(
         table_data.append(row)
 
         total_valor_geral += reg['total_valor']
+        if reg['tipo_registo'] == 'viagem':
+            total_valor_viagem += reg['total_valor']
+        else:
+            total_valor_trabalho += reg['total_valor']
         total_km_valor_geral += reg['total_km_valor']
         total_dieta_geral += reg['dieta']
 
@@ -701,11 +707,12 @@ def generate_folha_horas_pdf(
     elements.append(Spacer(1, 0.4*cm))
     grande_total = total_valor_geral + total_km_valor_geral + total_dieta_geral + total_despesas
     gt_data = [
-        ['Subtotal Horas:', f'{total_valor_geral:.2f}€',
-         'Subtotal KM:', f'{total_km_valor_geral:.2f}€'],
-        ['Subtotal Dietas:', f'{total_dieta_geral:.2f}€',
-         'Subtotal Despesas:', f'{total_despesas:.2f}€'],
-        ['', '', 'TOTAL GERAL:', f'{grande_total:.2f}€'],
+        ['Subtotal Trabalho:', f'{total_valor_trabalho:.2f}€',
+         'Subtotal Viagem:', f'{total_valor_viagem:.2f}€'],
+        ['Subtotal KM:', f'{total_km_valor_geral:.2f}€',
+         'Subtotal Dietas:', f'{total_dieta_geral:.2f}€'],
+        ['Subtotal Despesas:', f'{total_despesas:.2f}€',
+         'TOTAL GERAL:', f'{grande_total:.2f}€'],
     ]
     gt_widths = [4.0*cm, 3.0*cm, 4.0*cm, 3.0*cm]
     gt_table = Table(gt_data, colWidths=gt_widths)
