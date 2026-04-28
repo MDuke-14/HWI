@@ -26,6 +26,7 @@ from models import (
     RelatorioTecnico, RelatorioTecnicoCreate, IntervencaoRelatorio,
     EquipamentoOT, EnviarEmailRequest, Equipamento,
     TecnicoRelatorio, AssinaturaRelatorio,
+    FaturacaoAlocacao, FaturacaoIntervencao, FaturacaoIntervencaoRequest,
 )
 from server import (
     get_current_user, get_now_local, log_app_error,
@@ -2176,4 +2177,336 @@ async def preview_pdf_ot(
 # ============ Notifications Routes (movido para routes/) ============
 
 # ============ Holidays Routes ============
+
+
+# ============ Faturação de Intervenções (Tabs) ============
+
+def _norm_codigo(c) -> str:
+    """Normaliza código horário para chave consistente."""
+    if c is None:
+        return ""
+    return str(c).strip().upper()
+
+
+async def _build_disponibilidade(relatorio_id: str):
+    """
+    Calcula totais registados (de cronómetros + manuais) e o que já foi
+    facturado em outras intervenções, retornando o saldo disponível por
+    técnico × código.
+    """
+    # Registos de cronómetros
+    registos = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+
+    # Registos manuais
+    tecnicos_manuais = await db.tecnicos_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+
+    # Estrutura: chave = (tecnico_id, codigo) → totais
+    totais = {}
+
+    def _key(tid, codigo):
+        return (tid or "", _norm_codigo(codigo))
+
+    def _ensure(tid, nome, funcao, codigo):
+        k = _key(tid, codigo)
+        if k not in totais:
+            totais[k] = {
+                "tecnico_id": tid or "",
+                "tecnico_nome": nome or "",
+                "funcao_ot": funcao or "tecnico",
+                "codigo": _norm_codigo(codigo),
+                "registado_trabalho": 0.0,
+                "registado_viagem": 0.0,
+                "registado_oficina": 0.0,
+                "registado_km": 0.0,
+                "ja_facturado_trabalho": 0.0,
+                "ja_facturado_viagem": 0.0,
+                "ja_facturado_oficina": 0.0,
+                "ja_facturado_km": 0.0,
+            }
+        return totais[k]
+
+    for r in registos:
+        tid = r.get("tecnico_id") or ""
+        nome = r.get("tecnico_nome") or ""
+        funcao = r.get("funcao_ot") or "tecnico"
+        codigo = r.get("codigo")
+        tipo = (r.get("tipo") or "").lower()
+        horas = float(r.get("horas_arredondadas") or 0)
+        km = float(r.get("km") or 0)
+        item = _ensure(tid, nome, funcao, codigo)
+        if tipo == "trabalho":
+            item["registado_trabalho"] += horas
+        elif tipo == "viagem":
+            item["registado_viagem"] += horas
+        elif tipo == "oficina":
+            item["registado_oficina"] += horas
+        item["registado_km"] += km
+
+    for t in tecnicos_manuais:
+        tid = t.get("tecnico_id") or ""
+        nome = t.get("tecnico_nome") or ""
+        funcao = t.get("funcao_ot") or "tecnico"
+        codigo = t.get("codigo")
+        tipo = (t.get("tipo") or "trabalho").lower()
+        horas = float(t.get("horas_arredondadas") or t.get("horas") or 0)
+        km = float(t.get("kms_deslocacao") or t.get("km") or 0)
+        item = _ensure(tid, nome, funcao, codigo)
+        if tipo == "trabalho":
+            item["registado_trabalho"] += horas
+        elif tipo == "viagem":
+            item["registado_viagem"] += horas
+        elif tipo == "oficina":
+            item["registado_oficina"] += horas
+        item["registado_km"] += km
+
+    # Já facturado em qualquer intervenção desta FS
+    facturadas = await db.faturacao_intervencoes.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+    for f in facturadas:
+        for a in f.get("alocacoes", []) or []:
+            tid = a.get("tecnico_id") or ""
+            nome = a.get("tecnico_nome") or ""
+            funcao = a.get("funcao_ot") or "tecnico"
+            codigo = a.get("codigo")
+            item = _ensure(tid, nome, funcao, codigo)
+            item["ja_facturado_trabalho"] += float(a.get("horas_trabalho") or 0)
+            item["ja_facturado_viagem"] += float(a.get("horas_viagem") or 0)
+            item["ja_facturado_oficina"] += float(a.get("horas_oficina") or 0)
+            item["ja_facturado_km"] += float(a.get("km") or 0)
+
+    # Calcular disponível e arredondar para 2 casas
+    out = []
+    for v in totais.values():
+        v["disponivel_trabalho"] = round(
+            max(0.0, v["registado_trabalho"] - v["ja_facturado_trabalho"]), 2
+        )
+        v["disponivel_viagem"] = round(
+            max(0.0, v["registado_viagem"] - v["ja_facturado_viagem"]), 2
+        )
+        v["disponivel_oficina"] = round(
+            max(0.0, v["registado_oficina"] - v["ja_facturado_oficina"]), 2
+        )
+        v["disponivel_km"] = round(
+            max(0.0, v["registado_km"] - v["ja_facturado_km"]), 2
+        )
+        for k_round in (
+            "registado_trabalho", "registado_viagem", "registado_oficina", "registado_km",
+            "ja_facturado_trabalho", "ja_facturado_viagem", "ja_facturado_oficina", "ja_facturado_km",
+        ):
+            v[k_round] = round(v[k_round], 2)
+        # Esconder linhas todas a zero
+        if any([
+            v["registado_trabalho"], v["registado_viagem"], v["registado_oficina"], v["registado_km"],
+        ]):
+            out.append(v)
+
+    # Ordenar por nome técnico, depois código
+    out.sort(key=lambda x: (x["tecnico_nome"], x["codigo"]))
+    return out
+
+
+@router.get("/relatorios-tecnicos/{relatorio_id}/faturacao/disponibilidade")
+async def get_faturacao_disponibilidade(
+    relatorio_id: str,
+    intervencao_id: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Retorna por técnico × código: registado, já facturado, disponível e km.
+
+    Se `intervencao_id` for fornecido, soma de volta os valores que JÁ estão
+    nessa intervenção (para o admin poder editar a facturação existente sem
+    perder o saldo dela própria).
+    """
+    rel = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0, "id": 1})
+    if not rel:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+    disp = await _build_disponibilidade(relatorio_id)
+
+    # Se já existir facturação para esta intervenção, devolver para edição e
+    # somar essas horas ao "disponível" (são reversíveis).
+    existente = None
+    if intervencao_id:
+        existente = await db.faturacao_intervencoes.find_one(
+            {"relatorio_id": relatorio_id, "intervencao_id": intervencao_id},
+            {"_id": 0},
+        )
+        if existente:
+            for a in existente.get("alocacoes", []) or []:
+                tid = a.get("tecnico_id") or ""
+                cod = _norm_codigo(a.get("codigo"))
+                for item in disp:
+                    if item["tecnico_id"] == tid and item["codigo"] == cod:
+                        item["disponivel_trabalho"] = round(
+                            item["disponivel_trabalho"] + float(a.get("horas_trabalho") or 0), 2)
+                        item["disponivel_viagem"] = round(
+                            item["disponivel_viagem"] + float(a.get("horas_viagem") or 0), 2)
+                        item["disponivel_oficina"] = round(
+                            item["disponivel_oficina"] + float(a.get("horas_oficina") or 0), 2)
+                        item["disponivel_km"] = round(
+                            item["disponivel_km"] + float(a.get("km") or 0), 2)
+                        break
+
+    return {
+        "linhas": disp,
+        "alocacao_existente": existente,
+    }
+
+
+@router.post("/relatorios-tecnicos/{relatorio_id}/intervencoes/{intervencao_id}/facturar")
+async def facturar_intervencao(
+    relatorio_id: str,
+    intervencao_id: str,
+    request: FaturacaoIntervencaoRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Marca uma intervenção como facturada com as alocações fornecidas."""
+    interv = await db.intervencoes_relatorio.find_one(
+        {"id": intervencao_id, "relatorio_id": relatorio_id}, {"_id": 0}
+    )
+    if not interv:
+        raise HTTPException(status_code=404, detail="Intervenção não encontrada")
+
+    # Validar saldo: somar alocações já existentes em OUTRAS intervenções +
+    # as novas, e exigir que não excedam o registado.
+    disp = await _build_disponibilidade(relatorio_id)
+    by_key = {(d["tecnico_id"], d["codigo"]): d for d in disp}
+
+    # Subtrair facturação ANTERIOR desta mesma intervenção (se existir),
+    # porque vai ser substituída.
+    anterior = await db.faturacao_intervencoes.find_one(
+        {"relatorio_id": relatorio_id, "intervencao_id": intervencao_id}, {"_id": 0}
+    )
+    if anterior:
+        for a in anterior.get("alocacoes", []) or []:
+            k = (a.get("tecnico_id") or "", _norm_codigo(a.get("codigo")))
+            if k in by_key:
+                by_key[k]["disponivel_trabalho"] = round(
+                    by_key[k]["disponivel_trabalho"] + float(a.get("horas_trabalho") or 0), 2)
+                by_key[k]["disponivel_viagem"] = round(
+                    by_key[k]["disponivel_viagem"] + float(a.get("horas_viagem") or 0), 2)
+                by_key[k]["disponivel_oficina"] = round(
+                    by_key[k]["disponivel_oficina"] + float(a.get("horas_oficina") or 0), 2)
+                by_key[k]["disponivel_km"] = round(
+                    by_key[k]["disponivel_km"] + float(a.get("km") or 0), 2)
+
+    # Validar pedido
+    erros = []
+    for a in request.alocacoes:
+        k = (a.tecnico_id or "", _norm_codigo(a.codigo))
+        d = by_key.get(k)
+        if not d:
+            erros.append(
+                f"{a.tecnico_nome} (código {a.codigo}): sem registos disponíveis nesta FS."
+            )
+            continue
+        if a.horas_trabalho < 0 or a.horas_viagem < 0 or a.horas_oficina < 0 or a.km < 0:
+            erros.append(f"{a.tecnico_nome}: valores negativos não permitidos.")
+            continue
+        # Tolerância de 0.01h para arredondamentos
+        tol = 0.011
+        if a.horas_trabalho > d["disponivel_trabalho"] + tol:
+            erros.append(
+                f"{a.tecnico_nome} ({a.codigo}): horas de trabalho a facturar ({a.horas_trabalho}h) excedem disponível ({d['disponivel_trabalho']}h)."
+            )
+        if a.horas_viagem > d["disponivel_viagem"] + tol:
+            erros.append(
+                f"{a.tecnico_nome} ({a.codigo}): horas de viagem a facturar ({a.horas_viagem}h) excedem disponível ({d['disponivel_viagem']}h)."
+            )
+        if a.horas_oficina > d["disponivel_oficina"] + tol:
+            erros.append(
+                f"{a.tecnico_nome} ({a.codigo}): horas de oficina a facturar ({a.horas_oficina}h) excedem disponível ({d['disponivel_oficina']}h)."
+            )
+        if a.km > d["disponivel_km"] + tol:
+            erros.append(
+                f"{a.tecnico_nome} ({a.codigo}): km a facturar ({a.km}) excedem disponível ({d['disponivel_km']})."
+            )
+
+    if erros:
+        raise HTTPException(status_code=400, detail=" | ".join(erros))
+
+    # Filtrar alocações vazias (todas a zero)
+    alocacoes_finais = [
+        a.model_dump() for a in request.alocacoes
+        if (a.horas_trabalho + a.horas_viagem + a.horas_oficina + a.km) > 0
+    ]
+
+    fat = FaturacaoIntervencao(
+        relatorio_id=relatorio_id,
+        intervencao_id=intervencao_id,
+        alocacoes=[FaturacaoAlocacao(**a) for a in alocacoes_finais],
+        created_by=current_user.get("sub"),
+        created_by_name=current_user.get("username"),
+    )
+    fat_dict = fat.model_dump()
+    fat_dict["created_at"] = fat_dict["created_at"].isoformat()
+
+    # Upsert: substitui o documento desta intervenção
+    await db.faturacao_intervencoes.delete_many(
+        {"relatorio_id": relatorio_id, "intervencao_id": intervencao_id}
+    )
+    await db.faturacao_intervencoes.insert_one(fat_dict)
+
+    # Marcar a intervenção como facturada
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.intervencoes_relatorio.update_one(
+        {"id": intervencao_id, "relatorio_id": relatorio_id},
+        {"$set": {
+            "facturada": True,
+            "facturada_at": now_iso,
+            "facturada_by": current_user.get("username"),
+        }},
+    )
+
+    fat_dict.pop("_id", None)
+    logging.info(
+        f"Intervenção {intervencao_id} facturada por {current_user.get('username')} "
+        f"({len(alocacoes_finais)} alocações)"
+    )
+    return {"message": "Intervenção marcada como facturada", "faturacao": fat_dict}
+
+
+@router.delete("/relatorios-tecnicos/{relatorio_id}/intervencoes/{intervencao_id}/facturar")
+async def desfacturar_intervencao(
+    relatorio_id: str,
+    intervencao_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Remove a marcação 'facturada' e liberta as horas alocadas."""
+    interv = await db.intervencoes_relatorio.find_one(
+        {"id": intervencao_id, "relatorio_id": relatorio_id}, {"_id": 0}
+    )
+    if not interv:
+        raise HTTPException(status_code=404, detail="Intervenção não encontrada")
+
+    await db.faturacao_intervencoes.delete_many(
+        {"relatorio_id": relatorio_id, "intervencao_id": intervencao_id}
+    )
+    await db.intervencoes_relatorio.update_one(
+        {"id": intervencao_id, "relatorio_id": relatorio_id},
+        {"$set": {"facturada": False, "facturada_at": None, "facturada_by": None}},
+    )
+    logging.info(
+        f"Intervenção {intervencao_id} desfacturada por {current_user.get('username')}"
+    )
+    return {"message": "Facturação removida", "intervencao_id": intervencao_id}
+
+
+@router.get("/relatorios-tecnicos/{relatorio_id}/faturacao")
+async def listar_faturacao(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Lista todas as facturações de uma FS, agrupadas por intervenção."""
+    docs = await db.faturacao_intervencoes.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+    return docs
+
 

@@ -361,12 +361,14 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         interv_date = normalize_date(interv.get('data_intervencao'))
         date_display = format_date_display(interv_date) if interv_date else 'Sem Data'
         
-        # Cabeçalho da intervenção (fundo cinza escuro)
-        date_header_text = f"INTERVENÇÃO #{intervention_num} - {date_display}"
+        # Cabeçalho da intervenção (fundo cinza escuro, ou verde se facturada)
+        is_facturada = bool(interv.get('facturada'))
+        suffix = ' &nbsp;|&nbsp; <font color="#FFFFFF">FACTURADA</font>' if is_facturada else ''
+        date_header_text = f"INTERVENÇÃO #{intervention_num} - {date_display}{suffix}"
         
         date_header = Table([[Paragraph(date_header_text, intervention_title_style)]], colWidths=[18.4*cm])
         date_header.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#555555')),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#10b981' if is_facturada else '#555555')),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('LEFTPADDING', (0, 0), (-1, -1), 12),

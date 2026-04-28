@@ -3769,6 +3769,60 @@ async def generate_folha_horas(
         {"_id": 0}
     ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
     
+    # Modo "facturar intervenções selecionadas":
+    # Se o admin escolheu intervenções, substituir registos/técnicos por
+    # registos sintéticos derivados das alocações de facturação dessas
+    # intervenções, garantindo que só são facturadas as horas alocadas.
+    intervencao_ids_sel = getattr(request, 'intervencao_ids', None) or []
+    if intervencao_ids_sel:
+        fat_docs = await db.faturacao_intervencoes.find(
+            {"relatorio_id": relatorio_id, "intervencao_id": {"$in": intervencao_ids_sel}},
+            {"_id": 0}
+        ).to_list(length=None)
+        registos_mao_obra = []
+        tecnicos_manuais = []
+        for fd in fat_docs:
+            interv_id = fd.get("intervencao_id")
+            interv = await db.intervencoes_relatorio.find_one(
+                {"id": interv_id}, {"_id": 0, "data_intervencao": 1}
+            )
+            data_str = ""
+            if interv and interv.get("data_intervencao"):
+                d = interv["data_intervencao"]
+                if hasattr(d, 'isoformat'):
+                    data_str = d.isoformat()
+                else:
+                    data_str = str(d).split('T')[0]
+            for a in fd.get("alocacoes", []) or []:
+                tid = a.get("tecnico_id") or ""
+                tnome = a.get("tecnico_nome") or ""
+                funcao = a.get("funcao_ot") or "tecnico"
+                codigo = a.get("codigo") or "1"
+                ht = float(a.get("horas_trabalho") or 0)
+                hv = float(a.get("horas_viagem") or 0)
+                ho = float(a.get("horas_oficina") or 0)
+                km = float(a.get("km") or 0)
+                base = {
+                    "relatorio_id": relatorio_id,
+                    "tecnico_id": tid,
+                    "tecnico_nome": tnome,
+                    "funcao_ot": funcao,
+                    "codigo": codigo,
+                    "data": data_str,
+                    "data_trabalho": data_str,
+                    "origem": "faturacao",
+                    "intervencao_id": interv_id,
+                }
+                if ht > 0:
+                    registos_mao_obra.append({**base, "tipo": "trabalho", "horas_arredondadas": ht, "km": 0})
+                if hv > 0:
+                    registos_mao_obra.append({**base, "tipo": "viagem", "horas_arredondadas": hv, "km": km})
+                elif km > 0:
+                    # Km sem horas de viagem: associar a um registo "viagem" zero-horas
+                    registos_mao_obra.append({**base, "tipo": "viagem", "horas_arredondadas": 0, "km": km})
+                if ho > 0:
+                    registos_mao_obra.append({**base, "tipo": "oficina", "horas_arredondadas": ho, "km": 0})
+    
     # Obter o table_id do request (default: 1)
     table_id = request.table_id if hasattr(request, 'table_id') else 1
     

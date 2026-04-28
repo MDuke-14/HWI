@@ -267,7 +267,40 @@ class IntervencaoRelatorio(BaseModel):
     relatorio_assistencia: Optional[str] = None
     equipamento_id: Optional[str] = None
     ordem: int = 0
+    facturada: bool = False
+    facturada_at: Optional[datetime] = None
+    facturada_by: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class FaturacaoAlocacao(BaseModel):
+    """Alocação de horas/km de um técnico a uma intervenção facturada."""
+    tecnico_id: str
+    tecnico_nome: str
+    funcao_ot: Optional[str] = None  # junior|tecnico|senior
+    codigo: str  # 1, 2, S, D
+    horas_trabalho: float = 0.0
+    horas_viagem: float = 0.0
+    horas_oficina: float = 0.0
+    km: float = 0.0
+
+
+class FaturacaoIntervencao(BaseModel):
+    """Documento que regista o que foi facturado para uma intervenção (aba)."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str
+    intervencao_id: str
+    alocacoes: List[FaturacaoAlocacao] = Field(default_factory=list)
+    created_by: Optional[str] = None
+    created_by_name: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class FaturacaoIntervencaoRequest(BaseModel):
+    """Body do POST /api/relatorios-tecnicos/{id}/intervencoes/{intervencao_id}/facturar"""
+    alocacoes: List[FaturacaoAlocacao] = Field(default_factory=list)
+
 
 class RelatorioAssistencia(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -589,6 +622,7 @@ class FolhaHorasRequest(BaseModel):
     dados_extras: dict
     table_id: int = 1
     despesa_adjustments: Optional[dict] = None
+    intervencao_ids: Optional[List[str]] = None  # se preenchido, gera FH só com horas facturadas dessas intervenções
 
 
 # ============ Horas Extra ============

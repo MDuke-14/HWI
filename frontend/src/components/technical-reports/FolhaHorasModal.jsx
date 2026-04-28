@@ -16,7 +16,10 @@ const FolhaHorasModal = ({
   updateFolhaHorasTarifa,
   onGeneratePDF,
   generatingFolhaHoras,
-  despesas = []
+  despesas = [],
+  intervencoes = [],
+  intervencaoIds = [],
+  setIntervencaoIds = () => {},
 }) => {
   const [tabelasPreco, setTabelasPreco] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(1);
@@ -312,6 +315,83 @@ const FolhaHorasModal = ({
                 <p className="text-gray-500 text-sm">A carregar tabelas de preço...</p>
               )}
             </div>
+
+            {/* Selecção de Intervenções Facturadas */}
+            {intervencoes && intervencoes.length > 0 && (
+              <div className="bg-gradient-to-r from-emerald-900/30 to-green-900/30 p-4 rounded-lg border border-emerald-500/30">
+                <h3 className="text-lg font-semibold text-emerald-400 mb-2 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Intervenções a incluir
+                </h3>
+                <p className="text-gray-400 text-sm mb-3">
+                  Por defeito, a Folha de Horas usa <strong>todas as horas registadas</strong> da FS.
+                  Selecciona as intervenções <strong className="text-emerald-300">facturadas</strong> para gerar
+                  a folha apenas com as horas alocadas a essas abas.
+                </p>
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIntervencaoIds([])}
+                    data-testid="btn-fh-todas-horas"
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      intervencaoIds.length === 0
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#252525] border border-gray-700'
+                    }`}
+                  >
+                    Todas as horas (sem filtro)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIntervencaoIds(intervencoes.filter(i => i.facturada).map(i => i.id))}
+                    data-testid="btn-fh-todas-facturadas"
+                    className="px-3 py-1.5 rounded text-xs font-medium bg-[#1a1a1a] text-gray-400 hover:bg-[#252525] border border-gray-700"
+                  >
+                    Selecionar todas as facturadas
+                  </button>
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {intervencoes.map((interv, idx) => {
+                    const isSel = intervencaoIds.includes(interv.id);
+                    const dataStr = interv.data_intervencao
+                      ? new Date(interv.data_intervencao).toLocaleDateString('pt-PT')
+                      : '';
+                    const isFact = !!interv.facturada;
+                    return (
+                      <label
+                        key={interv.id}
+                        className={`flex items-center gap-2 p-2 rounded border cursor-pointer text-xs ${
+                          isSel ? 'bg-emerald-900/40 border-emerald-500' : 'bg-[#1a1a1a] border-gray-700 hover:bg-[#252525]'
+                        } ${!isFact ? 'opacity-50' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSel}
+                          disabled={!isFact}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setIntervencaoIds([...intervencaoIds, interv.id]);
+                            } else {
+                              setIntervencaoIds(intervencaoIds.filter(id => id !== interv.id));
+                            }
+                          }}
+                          data-testid={`fh-check-interv-${idx}`}
+                          className="cursor-pointer"
+                        />
+                        <span className="font-medium">Intervenção #{idx + 1}</span>
+                        <span className="text-gray-400">{dataStr}</span>
+                        <span className="flex-1 truncate text-gray-400">{interv.motivo_assistencia || '—'}</span>
+                        {isFact ? (
+                          <span className="text-[10px] uppercase font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded">facturada</span>
+                        ) : (
+                          <span className="text-[10px] uppercase text-gray-500">não facturada</span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Card de Despesas */}
             <div className="bg-gradient-to-r from-emerald-900/30 to-teal-900/30 p-4 rounded-lg border border-emerald-500/30">

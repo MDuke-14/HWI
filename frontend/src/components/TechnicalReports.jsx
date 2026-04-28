@@ -52,7 +52,8 @@ import {
   Camera,
   ScanLine,
   Pencil,
-  Link2
+  Link2,
+  Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,6 +97,7 @@ import {
   ReportsSection,
   FacturadosSection,
 } from './technical-reports';
+import FacturarIntervencaoModal from './technical-reports/FacturarIntervencaoModal';
 import FaturaScanner from './technical-reports/FaturaScanner';
 import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
@@ -320,6 +322,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [folhaHorasTarifas, setFolhaHorasTarifas] = useState({});  // {tecnico_id: tarifa_valor}
   const [folhaHorasExtras, setFolhaHorasExtras] = useState({});    // {"tecnico_id_data": {dieta, portagens, despesas}}
   const [generatingFolhaHoras, setGeneratingFolhaHoras] = useState(false);
+  const [folhaHorasIntervencaoIds, setFolhaHorasIntervencaoIds] = useState([]);  // intervenções facturadas escolhidas
+
+  // Facturação por Intervenção (Aba)
+  const [facturarIntervencao, setFacturarIntervencao] = useState(null);  // intervenção a facturar
+  const [facturarLinhas, setFacturarLinhas] = useState([]);  // disponibilidade carregada
+  const [facturarAlocacoes, setFacturarAlocacoes] = useState({});  // {key: {trabalho, viagem, oficina, km}}
+  const [loadingFacturar, setLoadingFacturar] = useState(false);
+  const [savingFacturar, setSavingFacturar] = useState(false);
 
   // Material OT
   const [materiais, setMateriais] = useState([]);
@@ -3176,6 +3186,110 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // ========== Folha de Horas Functions ==========
 
+  // ---- Facturação por Intervenção ----
+  const loadFacturarDisponibilidade = async (intervencao) => {
+    if (!selectedRelatorio || !intervencao) return;
+    setLoadingFacturar(true);
+    try {
+      const resp = await axios.get(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/faturacao/disponibilidade`,
+        { params: { intervencao_id: intervencao.id } }
+      );
+      setFacturarLinhas(resp.data.linhas || []);
+      // Pré-popular alocações com facturação existente, se houver
+      const aloc = {};
+      const existente = resp.data.alocacao_existente;
+      if (existente && existente.alocacoes) {
+        existente.alocacoes.forEach((a) => {
+          aloc[`${a.tecnico_id}|${a.codigo}`] = {
+            trabalho: a.horas_trabalho || 0,
+            viagem: a.horas_viagem || 0,
+            oficina: a.horas_oficina || 0,
+            km: a.km || 0,
+          };
+        });
+      }
+      setFacturarAlocacoes(aloc);
+    } catch (e) {
+      toast.error('Erro ao carregar disponibilidade de facturação');
+    } finally {
+      setLoadingFacturar(false);
+    }
+  };
+
+  const handleConfirmarFacturar = async () => {
+    if (!selectedRelatorio || !facturarIntervencao) return;
+    const alocacoes = facturarLinhas.map((l) => {
+      const k = `${l.tecnico_id}|${l.codigo}`;
+      const a = facturarAlocacoes[k] || {};
+      return {
+        tecnico_id: l.tecnico_id,
+        tecnico_nome: l.tecnico_nome,
+        funcao_ot: l.funcao_ot,
+        codigo: l.codigo,
+        horas_trabalho: parseFloat(a.trabalho) || 0,
+        horas_viagem: parseFloat(a.viagem) || 0,
+        horas_oficina: parseFloat(a.oficina) || 0,
+        km: parseFloat(a.km) || 0,
+      };
+    }).filter(a => a.horas_trabalho + a.horas_viagem + a.horas_oficina + a.km > 0);
+
+    if (alocacoes.length === 0) {
+      toast.error('Indica pelo menos uma alocação com horas ou km > 0');
+      return;
+    }
+
+    setSavingFacturar(true);
+    try {
+      await axios.post(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/${facturarIntervencao.id}/facturar`,
+        { alocacoes }
+      );
+      toast.success('Intervenção facturada com sucesso');
+      setFacturarIntervencao(null);
+      setFacturarAlocacoes({});
+      setFacturarLinhas([]);
+      // Refresh intervenções
+      await fetchIntervencoesRelatorio(selectedRelatorio.id);
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e.message || 'Erro';
+      toast.error(`Falha a facturar: ${msg}`, { duration: 8000 });
+    } finally {
+      setSavingFacturar(false);
+    }
+  };
+
+  const handleDesfacturar = async () => {
+    if (!selectedRelatorio || !facturarIntervencao) return;
+    if (!window.confirm('Remover marcação de facturada e libertar as horas alocadas?')) return;
+    setSavingFacturar(true);
+    try {
+      await axios.delete(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/${facturarIntervencao.id}/facturar`
+      );
+      toast.success('Facturação removida');
+      setFacturarIntervencao(null);
+      setFacturarAlocacoes({});
+      setFacturarLinhas([]);
+      await fetchIntervencoesRelatorio(selectedRelatorio.id);
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e.message || 'Erro';
+      toast.error(`Falha a desfacturar: ${msg}`);
+    } finally {
+      setSavingFacturar(false);
+    }
+  };
+
+  // Auto-carregar disponibilidade ao abrir o modal de facturação
+  useEffect(() => {
+    if (facturarIntervencao && selectedRelatorio) {
+      loadFacturarDisponibilidade(facturarIntervencao);
+    } else {
+      setFacturarLinhas([]);
+      setFacturarAlocacoes({});
+    }
+  }, [facturarIntervencao?.id]); // eslint-disable-line
+
   const handleOpenFolhaHoras = async () => {
     if (!selectedRelatorio) return;
     
@@ -3284,7 +3398,10 @@ const TechnicalReports = ({ user, onLogout }) => {
           tarifas_por_tecnico: tarifasPorTecnico,
           dados_extras: dadosExtras,
           table_id: tableId,
-          despesa_adjustments: despesaAdjustments
+          despesa_adjustments: despesaAdjustments,
+          intervencao_ids: folhaHorasIntervencaoIds && folhaHorasIntervencaoIds.length > 0
+            ? folhaHorasIntervencaoIds
+            : null
         },
         { responseType: 'blob' }
       );
@@ -5439,27 +5556,58 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {intervencoes.map((interv, idx) => {
                         const isActive = activeIntervencaoId === interv.id;
                         const eqInterv = equipamentosOT.find(e => e.id === interv.equipamento_id);
+                        const isFact = !!interv.facturada;
                         return (
-                          <button
+                          <div
                             key={interv.id}
-                            onClick={() => setActiveIntervencaoId(interv.id)}
                             data-testid={`tab-intervencao-${idx}`}
-                            className={`flex-shrink-0 px-3 py-2 rounded-t-lg text-xs font-medium transition-colors ${
-                              isActive
-                                ? 'bg-blue-600 text-white border-b-2 border-blue-400'
-                                : `${isDark ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
+                            className={`flex-shrink-0 rounded-t-lg text-xs font-medium transition-colors flex items-stretch ${
+                              isFact
+                                ? (isActive
+                                    ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                                    : 'bg-emerald-500 text-white hover:bg-emerald-400')
+                                : isActive
+                                  ? 'bg-blue-600 text-white border-b-2 border-blue-400'
+                                  : `${isDark ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`
                             }`}
                           >
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(interv.data_intervencao).toLocaleDateString('pt-PT')}
-                            </div>
-                            {eqInterv && (
-                              <div className="text-[10px] mt-0.5 opacity-70 truncate max-w-[120px]">
-                                {eqInterv.tipologia || eqInterv.marca}
+                            <button
+                              type="button"
+                              onClick={() => setActiveIntervencaoId(interv.id)}
+                              className="px-3 py-2 text-left"
+                              data-testid={`tab-intervencao-btn-${idx}`}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(interv.data_intervencao).toLocaleDateString('pt-PT')}
+                                {isFact && <span className="text-[10px] uppercase font-bold ml-1">facturada</span>}
                               </div>
-                            )}
-                          </button>
+                              {eqInterv && (
+                                <div className="text-[10px] mt-0.5 opacity-70 truncate max-w-[120px]">
+                                  {eqInterv.tipologia || eqInterv.marca}
+                                </div>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveIntervencaoId(interv.id);
+                                setFacturarIntervencao(interv);
+                              }}
+                              title={isFact ? 'Editar facturação' : 'Facturar esta intervenção'}
+                              data-testid={`btn-facturar-tab-${idx}`}
+                              className={`px-2 flex items-center justify-center transition-colors rounded-tr-lg ${
+                                isFact
+                                  ? 'hover:bg-emerald-600'
+                                  : isActive
+                                    ? 'hover:bg-blue-700'
+                                    : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')
+                              }`}
+                            >
+                              <Banknote className="w-4 h-4" />
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
@@ -6392,7 +6540,6 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
     </>
-      />
 
 
       {/* Add Intervenção Modal - Componente Extraído */}
@@ -10123,6 +10270,23 @@ const TechnicalReports = ({ user, onLogout }) => {
         onGeneratePDF={handleGenerateFolhaHoras}
         generatingFolhaHoras={generatingFolhaHoras}
         despesas={despesas}
+        intervencoes={intervencoes}
+        intervencaoIds={folhaHorasIntervencaoIds}
+        setIntervencaoIds={setFolhaHorasIntervencaoIds}
+      />
+
+      {/* Modal de Facturação de Intervenção */}
+      <FacturarIntervencaoModal
+        open={!!facturarIntervencao}
+        onOpenChange={(open) => { if (!open) setFacturarIntervencao(null); }}
+        intervencao={facturarIntervencao}
+        linhas={facturarLinhas}
+        alocacoes={facturarAlocacoes}
+        setAlocacoes={setFacturarAlocacoes}
+        onConfirmar={handleConfirmarFacturar}
+        onDesfacturar={handleDesfacturar}
+        loading={loadingFacturar}
+        saving={savingFacturar}
       />
     </div>
   );
