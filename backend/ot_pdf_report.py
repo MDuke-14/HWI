@@ -361,24 +361,16 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         interv_date = normalize_date(interv.get('data_intervencao'))
         date_display = format_date_display(interv_date) if interv_date else 'Sem Data'
         
-        # Cabeçalho da intervenção (fundo cinza escuro, ou verde se facturada, ou vermelho se herdada)
-        is_facturada = bool(interv.get('facturada'))
+        # Cabeçalho da intervenção (fundo cinza escuro, ou vermelho se herdada)
         is_herdada = bool(interv.get('herdada_de_intervencao_id'))
         herdada_fs = interv.get('herdada_de_fs_numero')
         if is_herdada:
             extra = f' &nbsp;|&nbsp; <font color="#FFFFFF">HERDADA DE FS #{herdada_fs}</font>' if herdada_fs else ' &nbsp;|&nbsp; <font color="#FFFFFF">HERDADA</font>'
-        elif is_facturada:
-            extra = ' &nbsp;|&nbsp; <font color="#FFFFFF">FACTURADA</font>'
         else:
             extra = ''
         date_header_text = f"INTERVENÇÃO #{intervention_num} - {date_display}{extra}"
         
-        if is_herdada:
-            bg_color = '#dc2626'   # vermelho vivo
-        elif is_facturada:
-            bg_color = '#10b981'   # verde
-        else:
-            bg_color = '#555555'
+        bg_color = '#dc2626' if is_herdada else '#555555'
         date_header = Table([[Paragraph(date_header_text, intervention_title_style)]], colWidths=[18.4*cm])
         date_header.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor(bg_color)),
