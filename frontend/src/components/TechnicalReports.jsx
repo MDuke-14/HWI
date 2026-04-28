@@ -100,6 +100,7 @@ import {
 } from './technical-reports';
 import FacturarIntervencaoModal from './technical-reports/FacturarIntervencaoModal';
 import CriarContinuidadeModal from './technical-reports/CriarContinuidadeModal';
+import FSChainBreadcrumb from './technical-reports/FSChainBreadcrumb';
 import FaturaScanner from './technical-reports/FaturaScanner';
 import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
@@ -3306,6 +3307,19 @@ const TechnicalReports = ({ user, onLogout }) => {
     setShowContinuidadeModal(true);
   };
 
+  const handleJumpToFS = async (fsId) => {
+    if (!fsId || fsId === selectedRelatorio?.id) return;
+    try {
+      const resp = await axios.get(`${API}/relatorios-tecnicos/${fsId}`);
+      if (resp.data) {
+        setSelectedRelatorio(resp.data);
+        await fetchIntervencoesRelatorio(fsId);
+      }
+    } catch (e) {
+      toast.error('Não foi possível abrir essa FS');
+    }
+  };
+
   const handleConfirmarContinuidade = async () => {
     if (!selectedRelatorio || continuidadeIds.length === 0) return;
     setSavingContinuidade(true);
@@ -4975,6 +4989,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </p>
                 )}
               </div>
+
+              {/* Breadcrumb da cadeia de FSs relacionadas (qualquer FS ligada por ot_relacionada_id) */}
+              <FSChainBreadcrumb
+                relatorioId={selectedRelatorio.id}
+                onJumpTo={handleJumpToFS}
+              />
 
               {/* Mão de Obra / Cronómetros - Card Unificado */}
               <div className={`${bgCardAlt} ${isMobile ? 'p-3' : 'p-4'} rounded-lg border border-green-700 overflow-hidden`}>

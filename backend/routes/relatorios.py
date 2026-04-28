@@ -2525,6 +2525,86 @@ async def listar_faturacao(
     return docs
 
 
+@router.get("/relatorios-tecnicos/{relatorio_id}/cadeia")
+async def obter_cadeia_relacionadas(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Retorna a cadeia completa de FSs relacionadas à dada (via `ot_relacionada_id`).
+
+    Sobe até à raiz (FS sem ot_relacionada_id) e depois desce recursivamente
+    por todos os filhos. Devolve a lista ordenada cronologicamente, marcando
+    qual é a actual.
+    """
+    rel = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not rel:
+        raise HTTPException(status_code=404, detail="FS não encontrada")
+
+    # 1) Subir até à raiz
+    raiz_id = rel["id"]
+    visited = set()
+    while True:
+        if raiz_id in visited:
+            break
+        visited.add(raiz_id)
+        cur = await db.relatorios_tecnicos.find_one(
+            {"id": raiz_id}, {"_id": 0, "id": 1, "ot_relacionada_id": 1}
+        )
+        if not cur or not cur.get("ot_relacionada_id"):
+            break
+        raiz_id = cur["ot_relacionada_id"]
+
+    # 2) Descer recursivamente a partir da raiz
+    chain = []
+    seen = set()
+
+    async def walk(node_id):
+        if node_id in seen:
+            return
+        seen.add(node_id)
+        node = await db.relatorios_tecnicos.find_one(
+            {"id": node_id},
+            {
+                "_id": 0,
+                "id": 1,
+                "numero_assistencia": 1,
+                "data_servico": 1,
+                "data_criacao": 1,
+                "status": 1,
+                "ot_relacionada_id": 1,
+                "cliente_nome": 1,
+            },
+        )
+        if not node:
+            return
+        chain.append({
+            "id": node.get("id"),
+            "numero_assistencia": node.get("numero_assistencia"),
+            "data_servico": node.get("data_servico"),
+            "data_criacao": node.get("data_criacao"),
+            "status": node.get("status"),
+            "ot_relacionada_id": node.get("ot_relacionada_id"),
+            "cliente_nome": node.get("cliente_nome"),
+            "is_atual": node.get("id") == relatorio_id,
+        })
+        # Filhos: outras FSs cujo ot_relacionada_id == node_id
+        filhos = await db.relatorios_tecnicos.find(
+            {"ot_relacionada_id": node_id},
+            {"_id": 0, "id": 1, "numero_assistencia": 1, "data_servico": 1},
+        ).sort([("numero_assistencia", 1)]).to_list(length=None)
+        for f in filhos:
+            await walk(f["id"])
+
+    await walk(raiz_id)
+
+    return {
+        "atual_id": relatorio_id,
+        "raiz_id": raiz_id,
+        "cadeia": chain,
+        "total": len(chain),
+    }
+
 @router.post("/relatorios-tecnicos/{relatorio_id}/criar-continuidade")
 async def criar_fs_continuidade(
     relatorio_id: str,
