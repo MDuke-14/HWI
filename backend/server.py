@@ -1411,15 +1411,19 @@ async def send_time_entry_edit_notification_email(
         </html>
         """
         
-        await send_email(
-            to_email=user_email,
-            subject=subject,
-            html_body=html_body,
-            smtp_host=smtp_host,
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = smtp_from
+        message['To'] = user_email
+        message.attach(MIMEText(html_body, 'html'))
+
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
             port=smtp_port,
             username=smtp_user,
             password=smtp_password,
-            start_tls=True
+            start_tls=True,
         )
         
         logging.info(f"Time entry edit notification sent to {user_email}")

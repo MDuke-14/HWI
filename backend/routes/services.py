@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from database import db
 from models import ServiceAppointment, ServiceAppointmentCreate, ServiceAppointmentUpdate, ServiceWithOTCreate, RelatorioTecnico
-from server import get_current_user, get_current_admin
+from server import get_current_user, get_current_admin, send_service_email
 
 router = APIRouter()
 
