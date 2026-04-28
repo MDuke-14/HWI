@@ -22,6 +22,8 @@ from models import (
     DespesaInternaUpdate,
     DespesaInternaPagamento,
     MarcarPagoRequest,
+    DespesaCategoria,
+    DespesaCategoriaCreate,
 )
 
 router = APIRouter(tags=["despesas-internas"])
@@ -114,6 +116,80 @@ def _doc_to_dict(d: dict) -> dict:
     return d
 
 
+# ============== CATEGORIAS ==============
+
+DEFAULT_CATEGORIAS = [
+    {"nome": "Renda", "cor": "#a855f7"},
+    {"nome": "Eletricidade", "cor": "#eab308"},
+    {"nome": "Internet", "cor": "#3b82f6"},
+    {"nome": "Combustível", "cor": "#f97316"},
+    {"nome": "Salários", "cor": "#10b981"},
+    {"nome": "IVA / IRS", "cor": "#ef4444"},
+    {"nome": "Seguros", "cor": "#06b6d4"},
+    {"nome": "Software / SaaS", "cor": "#6366f1"},
+    {"nome": "Outros", "cor": "#6b7280"},
+]
+
+
+async def _seed_categorias_if_empty():
+    """Garante categorias predefinidas na primeira execução."""
+    count = await db.despesas_categorias.count_documents({})
+    if count == 0:
+        import uuid as _uuid
+        for c in DEFAULT_CATEGORIAS:
+            await db.despesas_categorias.insert_one({
+                "id": str(_uuid.uuid4()),
+                "nome": c["nome"],
+                "cor": c["cor"],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+
+@router.get("/despesas-internas/categorias")
+async def listar_categorias(current_user: dict = Depends(get_current_admin)):
+    await _seed_categorias_if_empty()
+    docs = await db.despesas_categorias.find({}, {"_id": 0}).sort([("nome", 1)]).to_list(length=None)
+    return docs
+
+
+@router.post("/despesas-internas/categorias")
+async def criar_categoria(
+    payload: DespesaCategoriaCreate,
+    current_user: dict = Depends(get_current_admin),
+):
+    nome = (payload.nome or "").strip()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Nome obrigatório")
+    existing = await db.despesas_categorias.find_one(
+        {"nome": {"$regex": f"^{nome}$", "$options": "i"}}, {"_id": 0, "id": 1}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Já existe uma categoria com esse nome")
+    cat = DespesaCategoria(nome=nome, cor=payload.cor)
+    doc = cat.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.despesas_categorias.insert_one(doc)
+    return _doc_to_dict(doc)
+
+
+@router.delete("/despesas-internas/categorias/{cat_id}")
+async def apagar_categoria(
+    cat_id: str,
+    current_user: dict = Depends(get_current_admin),
+):
+    existing = await db.despesas_categorias.find_one({"id": cat_id}, {"_id": 0, "id": 1, "nome": 1})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    em_uso = await db.despesas_internas.count_documents({"categoria_id": cat_id})
+    if em_uso > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível apagar: a categoria '{existing.get('nome')}' está em uso por {em_uso} despesa(s).",
+        )
+    await db.despesas_categorias.delete_one({"id": cat_id})
+    return {"message": "Categoria eliminada", "id": cat_id}
+
+
 # ============== CRUD ==============
 
 @router.post("/despesas-internas")
@@ -125,6 +201,22 @@ async def criar_despesa(
         raise HTTPException(status_code=400, detail="tipo_pagamento deve ser 'pontual' ou 'recorrente'")
     if payload.tipo_pagamento == "recorrente" and payload.recorrencia not in ("semanal", "mensal", "anual"):
         raise HTTPException(status_code=400, detail="recorrencia deve ser 'semanal', 'mensal' ou 'anual'")
+
+    # Validação anti-duplicado: mesma categoria + mesmo valor já existe (e activa)?
+    if payload.categoria_id:
+        existing = await db.despesas_internas.find_one(
+            {
+                "categoria_id": payload.categoria_id,
+                "valor": float(payload.valor),
+                "ativo": True,
+            },
+            {"_id": 0, "id": 1, "descricao": 1},
+        )
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Já existe uma despesa activa com a mesma categoria e valor: '{existing.get('descricao')}'.",
+            )
 
     despesa = DespesaInterna(
         **payload.model_dump(),
@@ -160,7 +252,29 @@ async def atualizar_despesa(
     existing = await db.despesas_internas.find_one({"id": despesa_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Despesa não encontrada")
+
     update_dict = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
+
+    # Validar duplicado se categoria_id ou valor mudaram (ou ambos)
+    new_categoria = update_dict.get("categoria_id", existing.get("categoria_id"))
+    new_valor = update_dict.get("valor", existing.get("valor"))
+    new_ativo = update_dict.get("ativo", existing.get("ativo"))
+    if new_categoria and new_ativo:
+        dup = await db.despesas_internas.find_one(
+            {
+                "id": {"$ne": despesa_id},
+                "categoria_id": new_categoria,
+                "valor": float(new_valor),
+                "ativo": True,
+            },
+            {"_id": 0, "id": 1, "descricao": 1},
+        )
+        if dup:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Já existe outra despesa activa com a mesma categoria e valor: '{dup.get('descricao')}'.",
+            )
+
     for k, v in update_dict.items():
         if isinstance(v, date) and not isinstance(v, datetime):
             update_dict[k] = v.isoformat()

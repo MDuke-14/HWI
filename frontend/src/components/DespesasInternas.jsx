@@ -32,6 +32,7 @@ function fmtDate(iso) {
 
 const DespesasInternas = ({ user, onLogout }) => {
   const [despesas, setDespesas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [ocorrencias, setOcorrencias] = useState([]);
   const [balanco, setBalanco] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,9 +57,13 @@ const DespesasInternas = ({ user, onLogout }) => {
   const [anoBalanco, setAnoBalanco] = useState(new Date().getFullYear());
   const [apenasPagas, setApenasPagas] = useState(false);
 
+  // Categorias
+  const [showCategorias, setShowCategorias] = useState(false);
+  const [novaCategoria, setNovaCategoria] = useState({ nome: '', cor: '#6366f1' });
+
   function emptyForm() {
     return {
-      descricao: '', valor: '', data_inicial: todayISO(),
+      descricao: '', valor: '', categoria_id: '', data_inicial: todayISO(),
       tipo_pagamento: 'pontual', recorrencia: 'mensal',
       dia_mes: '', aviso_dias_antes: 3, aviso_email: 'geral@hwi.pt',
       data_fim: '',

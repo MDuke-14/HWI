@@ -689,6 +689,7 @@ class DespesaInterna(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     descricao: str
     valor: float
+    categoria_id: Optional[str] = None
     data_inicial: date  # data da primeira ocorrência (ou única, se pontual)
     tipo_pagamento: str  # 'pontual' | 'recorrente'
     recorrencia: Optional[str] = None  # 'semanal' | 'mensal' | 'anual' | None
@@ -704,6 +705,7 @@ class DespesaInterna(BaseModel):
 class DespesaInternaCreate(BaseModel):
     descricao: str
     valor: float
+    categoria_id: Optional[str] = None
     data_inicial: date
     tipo_pagamento: str
     recorrencia: Optional[str] = None
@@ -716,6 +718,7 @@ class DespesaInternaCreate(BaseModel):
 class DespesaInternaUpdate(BaseModel):
     descricao: Optional[str] = None
     valor: Optional[float] = None
+    categoria_id: Optional[str] = None
     data_inicial: Optional[date] = None
     tipo_pagamento: Optional[str] = None
     recorrencia: Optional[str] = None
@@ -724,6 +727,19 @@ class DespesaInternaUpdate(BaseModel):
     aviso_email: Optional[str] = None
     ativo: Optional[bool] = None
     data_fim: Optional[date] = None
+
+
+class DespesaCategoria(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    cor: Optional[str] = None  # hex opcional para UI
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class DespesaCategoriaCreate(BaseModel):
+    nome: str
+    cor: Optional[str] = None
 
 
 class DespesaInternaPagamento(BaseModel):
