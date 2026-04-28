@@ -336,19 +336,14 @@ def generate_folha_horas_pdf(
 
         # Cálculo de valores com lógica especial para Viagem
         if tipo_registo == 'viagem':
-            # Nova lógica de faturação de Viagem baseada na duração:
-            # 0-15 min: não cobra hora nem km
-            # 16-29 min: não cobra hora, cobra apenas km
-            # 30+ min: cobra hora e km
-            if total_minutos <= 15:
+            # Regra de faturação de Viagem:
+            # < 30 min: cobra apenas km (não cobra horas)
+            # >= 30 min: cobra horas e km
+            total_km_valor = total_km * PRECO_KM
+            if total_minutos < 30:
                 total_valor = 0
-                total_km_valor = 0
-            elif total_minutos <= 29:
-                total_valor = 0
-                total_km_valor = total_km * PRECO_KM
             else:
                 total_valor = (total_minutos / 60) * tarifa_valor
-                total_km_valor = total_km * PRECO_KM
         else:
             total_valor = (total_minutos / 60) * tarifa_valor
             total_km_valor = total_km * PRECO_KM
@@ -377,12 +372,10 @@ def generate_folha_horas_pdf(
                 dietas_aplicadas.add(chave_dieta_nome)
 
         # Observações: justificar kms em registos de trabalho
-        # Observação para viagens não faturáveis
+        # Observação para viagens não faturáveis em horas
         obs_parts = []
-        if tipo_registo == 'viagem' and total_minutos <= 15:
-            obs_parts.append('N/F (<=15min)')
-        elif tipo_registo == 'viagem' and total_minutos <= 29:
-            obs_parts.append('Só KM (<=29min)')
+        if tipo_registo == 'viagem' and total_minutos < 30:
+            obs_parts.append('Só KM (<30min)')
         if reg.get('observacoes'):
             obs_parts.append(reg['observacoes'])
         obs = ' | '.join(obs_parts) if obs_parts else (reg.get('observacoes') or '')
