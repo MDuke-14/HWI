@@ -10,6 +10,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Receipt, Plus, Edit, Trash2, Calendar as CalIcon, Check, X, BarChart3, ArrowLeft, RefreshCcw, Tags } from 'lucide-react';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -61,6 +62,8 @@ const DespesasInternas = ({ user, onLogout }) => {
   // Categorias
   const [showCategorias, setShowCategorias] = useState(false);
   const [novaCategoria, setNovaCategoria] = useState({ nome: '', cor: COR_DEFAULT });
+  const [confirmDel, setConfirmDel] = useState(null); // { id, text }
+  const [confirmDelCat, setConfirmDelCat] = useState(null); // { id, nome }
 
   function emptyForm() {
     return {
@@ -170,7 +173,6 @@ const DespesasInternas = ({ user, onLogout }) => {
   };
 
   const removeDespesa = async (id) => {
-    if (!window.confirm('Eliminar esta despesa? Os pagamentos associados também serão removidos.')) return;
     try {
       await axios.delete(`${API}/despesas-internas/${id}`);
       toast.success('Despesa eliminada');
@@ -207,7 +209,6 @@ const DespesasInternas = ({ user, onLogout }) => {
   };
 
   const desmarcarPago = async (oc) => {
-    if (!window.confirm('Remover registo de pagamento desta ocorrência?')) return;
     try {
       await axios.delete(`${API}/despesas-internas/${oc.despesa_id}/marcar-pago`, {
         params: { data_prevista: oc.data_prevista },
@@ -237,7 +238,6 @@ const DespesasInternas = ({ user, onLogout }) => {
   };
 
   const removeCategoria = async (id) => {
-    if (!window.confirm('Eliminar esta categoria?')) return;
     try {
       await axios.delete(`${API}/despesas-internas/categorias/${id}`);
       toast.success('Categoria eliminada');
@@ -493,7 +493,7 @@ const DespesasInternas = ({ user, onLogout }) => {
                           </Button>
                           <Button
                             variant="ghost" size="sm"
-                            onClick={() => removeDespesa(d.id)}
+                            onClick={() => setConfirmDel({ id: d.id, descricao: d.descricao })}
                             data-testid={`btn-del-${d.id}`}
                           >
                             <Trash2 className="w-3 h-3 text-rose-400" />
@@ -842,7 +842,7 @@ const DespesasInternas = ({ user, onLogout }) => {
                 </div>
                 <Button
                   variant="ghost" size="sm"
-                  onClick={() => removeCategoria(c.id)}
+                  onClick={() => setConfirmDelCat({ id: c.id, nome: c.nome })}
                   data-testid={`cat-del-${c.id}`}
                 >
                   <Trash2 className="w-3 h-3 text-rose-400" />
@@ -855,6 +855,32 @@ const DespesasInternas = ({ user, onLogout }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmDel}
+        onOpenChange={(o) => { if (!o) setConfirmDel(null); }}
+        title="Eliminar despesa?"
+        description={confirmDel?.descricao ? `"${confirmDel.descricao}" — os pagamentos associados também serão removidos. Esta ação não pode ser desfeita.` : 'Os pagamentos associados também serão removidos.'}
+        confirmText="Eliminar"
+        destructive
+        onConfirm={async () => {
+          if (confirmDel?.id) await removeDespesa(confirmDel.id);
+          setConfirmDel(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDelCat}
+        onOpenChange={(o) => { if (!o) setConfirmDelCat(null); }}
+        title="Eliminar categoria?"
+        description={confirmDelCat?.nome ? `A categoria "${confirmDelCat.nome}" será eliminada.` : ''}
+        confirmText="Eliminar"
+        destructive
+        onConfirm={async () => {
+          if (confirmDelCat?.id) await removeCategoria(confirmDelCat.id);
+          setConfirmDelCat(null);
+        }}
+      />
     </div>
   );
 };

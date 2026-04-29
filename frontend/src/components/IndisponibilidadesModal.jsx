@@ -12,6 +12,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, Edit2, AlertCircle, Clock, History } from 'lucide-react';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const TIPO_LABEL = {
   entrada_tardia: 'Entrada Tardia',
@@ -55,6 +56,7 @@ const IndisponibilidadesModal = ({ open, onOpenChange, user, onChanged }) => {
   // Admin filter por user
   const [userFilter, setUserFilter] = useState('');
   const [allUsers, setAllUsers] = useState([]);
+  const [confirmDel, setConfirmDel] = useState(null); // { id }
 
   const isAdmin = !!user?.is_admin;
 
@@ -133,7 +135,6 @@ const IndisponibilidadesModal = ({ open, onOpenChange, user, onChanged }) => {
   };
 
   const removeOne = async (id) => {
-    if (!window.confirm('Eliminar esta indisponibilidade?')) return;
     try {
       await axios.delete(`${API}/indisponibilidades/${id}`);
       toast.success('Eliminada');
@@ -203,7 +204,7 @@ const IndisponibilidadesModal = ({ open, onOpenChange, user, onChanged }) => {
           )}
 
           {!isAdmin && list.map((i) => (
-            <ItemRow key={i.id} i={i} onEdit={startEdit} onDel={removeOne} canEdit />
+            <ItemRow key={i.id} i={i} onEdit={startEdit} onDel={(id) => setConfirmDel({ id })} canEdit />
           ))}
 
           {isAdmin && groupedByUser && Object.entries(groupedByUser).map(([uid, g]) => (
@@ -215,7 +216,7 @@ const IndisponibilidadesModal = ({ open, onOpenChange, user, onChanged }) => {
               </div>
               <div className="space-y-1">
                 {g.items.map((i) => (
-                  <ItemRow key={i.id} i={i} onEdit={startEdit} onDel={removeOne} canEdit />
+                  <ItemRow key={i.id} i={i} onEdit={startEdit} onDel={(id) => setConfirmDel({ id })} canEdit />
                 ))}
               </div>
             </div>
@@ -309,6 +310,19 @@ const IndisponibilidadesModal = ({ open, onOpenChange, user, onChanged }) => {
           </DialogContent>
         </Dialog>
       </DialogContent>
+
+      <ConfirmDialog
+        open={!!confirmDel}
+        onOpenChange={(o) => { if (!o) setConfirmDel(null); }}
+        title="Eliminar indisponibilidade?"
+        description="Esta ação não pode ser desfeita."
+        confirmText="Eliminar"
+        destructive
+        onConfirm={async () => {
+          if (confirmDel?.id) await removeOne(confirmDel.id);
+          setConfirmDel(null);
+        }}
+      />
     </Dialog>
   );
 };
