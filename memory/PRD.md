@@ -117,13 +117,27 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - Validação de duplicado por (categoria_id, valor, ativo) confirmada via curl (HTTP 400 com mensagem clara).
 - 9 categorias seedadas automaticamente (Renda, Eletricidade, Internet, Combustível, Salários, IVA/IRS, Seguros, Software/SaaS, Outros).
 
+## Indisponibilidades — Sistema completo (2026-04-29)
+- Backend (`routes/indisponibilidades.py`):
+  - CRUD por user (POST/GET-me/PUT/DELETE) + admin (GET todas, GET historico/{user_id}, GET check)
+  - Validações: tipo ∈ {entrada_tardia, saida_antecipada}, HH:MM, hora_inicio<hora_fim, anti-sobreposição
+  - Endpoint `/indisponibilidades/check` recebe user_ids[]+data[+hora_inicio+hora_fim] → devolve conflitos
+  - `early_leave_warning` adicionado ao response de `POST /api/time-entries/start` quando há saida_antecipada hoje
+- Models (`models.py`): Indisponibilidade, IndisponibilidadeCreate, IndisponibilidadeUpdate
+- Scheduler (`server.py`): 2 jobs APScheduler — matinal 07:00 (lembrete email a quem tem indisp hoje) + pré-evento a cada 5 min (alerta X min antes do início, default 60). Usa `notificacao_matinal_enviada` e `notificacao_pre_evento_enviada` para idempotência.
+- Frontend:
+  - `IndisponibilidadesModal.jsx`: gestão com agrupamento por user (admin vê todas, user normal vê só as suas), CRUD UI, filtro por user (admin)
+  - `Calendar.jsx`: botão "Indisponibilidade" no header (visível a todos), badges rosa/amber por dia no MonthView, secção dedicada no Day Detail Modal, conflict popup ao criar Nova FS quando técnico tem indisp no dia (não bloqueia, só avisa)
+  - `Dashboard.jsx`: toast warning ao picar entrada se houver saída antecipada hoje
+- Testes: 13/13 backend (test_indisponibilidades.py) + frontend manual confirmado.
+
 ## Pending Issues (Prioritized)
 ### P0
 - None
 
 ### P1
-- Complete and Test Dynamic Price Table Creation (delayed 6+ forks)
-- Continue refactoring TechnicalReports.jsx (still ~10.1k lines — EmailFSModal, PCModalsSection pending with prop-drilling care)
+- Complete and Test Dynamic Price Table Creation (delayed 7+ forks)
+- Continue refactoring TechnicalReports.jsx (~10.1k lines) e Calendar.jsx (1250 lines)
 - Continue backend modular router extraction
 
 ### P2

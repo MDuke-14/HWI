@@ -227,6 +227,9 @@ const IndisponibilidadesModal = ({ open, onOpenChange, user, onChanged }) => {
           <DialogContent className="bg-[#0a0a0a] border border-white/10 text-white max-w-md" data-testid="ind-form">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Indisponibilidade' : 'Nova Indisponibilidade'}</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Indica o intervalo em que estarás indisponível e se regressas ao serviço depois.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={submitForm} className="space-y-3">
               <div>
