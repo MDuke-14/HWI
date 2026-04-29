@@ -333,6 +333,7 @@ async def listar_ocorrencias(
                 "despesa_id": d["id"],
                 "descricao": d["descricao"],
                 "valor": d["valor"],
+                "categoria_id": d.get("categoria_id"),
                 "data_prevista": ocd.isoformat(),
                 "tipo_pagamento": d.get("tipo_pagamento"),
                 "recorrencia": d.get("recorrencia"),

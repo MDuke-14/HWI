@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { Receipt, Plus, Edit, Trash2, Calendar as CalIcon, Check, X, BarChart3, ArrowLeft, RefreshCcw } from 'lucide-react';
+import { Receipt, Plus, Edit, Trash2, Calendar as CalIcon, Check, X, BarChart3, ArrowLeft, RefreshCcw, Tags } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const COR_DEFAULT = '#6366f1';
 
 function todayISO() {
   const d = new Date();
@@ -59,7 +60,7 @@ const DespesasInternas = ({ user, onLogout }) => {
 
   // Categorias
   const [showCategorias, setShowCategorias] = useState(false);
-  const [novaCategoria, setNovaCategoria] = useState({ nome: '', cor: '#6366f1' });
+  const [novaCategoria, setNovaCategoria] = useState({ nome: '', cor: COR_DEFAULT });
 
   function emptyForm() {
     return {
@@ -69,6 +70,19 @@ const DespesasInternas = ({ user, onLogout }) => {
       data_fim: '',
     };
   }
+
+  const catMap = useMemo(() => {
+    const m = {};
+    categorias.forEach((c) => { m[c.id] = c; });
+    return m;
+  }, [categorias]);
+
+  const loadCategorias = async () => {
+    try {
+      const r = await axios.get(`${API}/despesas-internas/categorias`);
+      setCategorias(r.data || []);
+    } catch { /* erros já são tratados pelo interceptor global */ }
+  };
 
   const loadDespesas = async () => {
     try {
@@ -100,7 +114,7 @@ const DespesasInternas = ({ user, onLogout }) => {
     } catch { /* erros já são tratados pelo interceptor global */ }
   };
 
-  useEffect(() => { loadDespesas(); }, []);
+  useEffect(() => { loadCategorias(); loadDespesas(); }, []);
   useEffect(() => { loadOcorrencias(); /* eslint-disable-line */ }, [calMonth]);
   useEffect(() => {
     if (tab === 'balanco') loadBalanco();
@@ -113,6 +127,7 @@ const DespesasInternas = ({ user, onLogout }) => {
       const payload = {
         descricao: form.descricao.trim(),
         valor: parseFloat(form.valor),
+        categoria_id: form.categoria_id || null,
         data_inicial: form.data_inicial,
         tipo_pagamento: form.tipo_pagamento,
         recorrencia: form.tipo_pagamento === 'recorrente' ? form.recorrencia : null,
@@ -142,6 +157,7 @@ const DespesasInternas = ({ user, onLogout }) => {
     setForm({
       descricao: d.descricao || '',
       valor: d.valor ?? '',
+      categoria_id: d.categoria_id || '',
       data_inicial: (d.data_inicial || '').split('T')[0],
       tipo_pagamento: d.tipo_pagamento || 'pontual',
       recorrencia: d.recorrencia || 'mensal',
@@ -203,6 +219,34 @@ const DespesasInternas = ({ user, onLogout }) => {
     }
   };
 
+  // ====== CATEGORIAS ======
+  const submitCategoria = async (e) => {
+    e.preventDefault();
+    if (!novaCategoria.nome.trim()) return;
+    try {
+      await axios.post(`${API}/despesas-internas/categorias`, {
+        nome: novaCategoria.nome.trim(),
+        cor: novaCategoria.cor || COR_DEFAULT,
+      });
+      toast.success('Categoria criada');
+      setNovaCategoria({ nome: '', cor: COR_DEFAULT });
+      await loadCategorias();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Erro a criar categoria');
+    }
+  };
+
+  const removeCategoria = async (id) => {
+    if (!window.confirm('Eliminar esta categoria?')) return;
+    try {
+      await axios.delete(`${API}/despesas-internas/categorias/${id}`);
+      toast.success('Categoria eliminada');
+      await loadCategorias();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Erro');
+    }
+  };
+
   // Indexar ocorrências por dia (YYYY-MM-DD)
   const ocorrPorDia = useMemo(() => {
     const m = {};
@@ -255,13 +299,22 @@ const DespesasInternas = ({ user, onLogout }) => {
               Despesas Internas
             </h1>
           </div>
-          <Button
-            onClick={() => { setEditingId(null); setForm(emptyForm()); setShowForm(true); }}
-            className="bg-rose-600 hover:bg-rose-700"
-            data-testid="btn-nova-despesa"
-          >
-            <Plus className="w-4 h-4 mr-1" /> Nova Despesa
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowCategorias(true)}
+              data-testid="btn-gerir-categorias"
+            >
+              <Tags className="w-4 h-4 mr-1" /> Categorias
+            </Button>
+            <Button
+              onClick={() => { setEditingId(null); setForm(emptyForm()); setShowForm(true); }}
+              className="bg-rose-600 hover:bg-rose-700"
+              data-testid="btn-nova-despesa"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Nova Despesa
+            </Button>
+          </div>
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
@@ -335,21 +388,25 @@ const DespesasInternas = ({ user, onLogout }) => {
                         )}
                       </div>
                       <div className="space-y-1">
-                        {c.ocs.slice(0, 4).map((o) => (
-                          <button
-                            key={`${o.despesa_id}-${o.data_prevista}`}
-                            onClick={() => openPay(o)}
-                            data-testid={`occ-${o.despesa_id}`}
-                            className={`w-full text-left text-[10px] px-1 py-0.5 rounded truncate ${
-                              o.pago
-                                ? 'bg-emerald-700/40 text-emerald-200 border border-emerald-600/40'
-                                : 'bg-rose-900/40 text-rose-200 border border-rose-700/40 hover:bg-rose-800/60'
-                            }`}
-                            title={`${o.descricao} — ${fmtEur(o.valor)}`}
-                          >
-                            {o.pago ? '✓ ' : ''}{o.descricao}
-                          </button>
-                        ))}
+                        {c.ocs.slice(0, 4).map((o) => {
+                          const cor = catMap[o.categoria_id]?.cor || (o.pago ? '#10b981' : '#ef4444');
+                          return (
+                            <button
+                              key={`${o.despesa_id}-${o.data_prevista}`}
+                              onClick={() => openPay(o)}
+                              data-testid={`occ-${o.despesa_id}`}
+                              className={`w-full text-left text-[10px] px-1 py-0.5 rounded truncate flex items-center gap-1 ${
+                                o.pago
+                                  ? 'bg-emerald-700/40 text-emerald-200 border border-emerald-600/40'
+                                  : 'bg-rose-900/40 text-rose-200 border border-rose-700/40 hover:bg-rose-800/60'
+                              }`}
+                              title={`${o.descricao} — ${fmtEur(o.valor)}`}
+                              style={{ borderLeft: `3px solid ${cor}` }}
+                            >
+                              {o.pago ? '✓ ' : ''}{o.descricao}
+                            </button>
+                          );
+                        })}
                         {c.ocs.length > 4 && (
                           <div className="text-[10px] text-gray-500">+{c.ocs.length - 4} mais</div>
                         )}
@@ -359,6 +416,19 @@ const DespesasInternas = ({ user, onLogout }) => {
                 </div>
               ))}
             </div>
+
+            {/* Legenda de Categorias */}
+            {categorias.length > 0 && (
+              <div className="flex items-center gap-3 flex-wrap text-xs text-gray-400 mt-2">
+                <span>Categorias:</span>
+                {categorias.map((c) => (
+                  <span key={c.id} className="flex items-center gap-1">
+                    <span className="inline-block w-3 h-3 rounded-sm" style={{ background: c.cor || COR_DEFAULT }} />
+                    {c.nome}
+                  </span>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* LISTA */}
@@ -368,6 +438,7 @@ const DespesasInternas = ({ user, onLogout }) => {
                 <thead className="bg-[#1a1a1a]">
                   <tr>
                     <th className="text-left p-2">Descrição</th>
+                    <th className="text-left p-2">Categoria</th>
                     <th className="text-right p-2">Valor</th>
                     <th className="text-left p-2">Tipo</th>
                     <th className="text-left p-2">Início</th>
@@ -379,47 +450,58 @@ const DespesasInternas = ({ user, onLogout }) => {
                 </thead>
                 <tbody>
                   {despesas.length === 0 && (
-                    <tr><td colSpan={8} className="text-center py-8 text-gray-500">
+                    <tr><td colSpan={9} className="text-center py-8 text-gray-500">
                       Sem despesas. Clica em <strong>Nova Despesa</strong> para criar.
                     </td></tr>
                   )}
-                  {despesas.map((d) => (
-                    <tr key={d.id} className="border-t border-gray-800" data-testid={`despesa-row-${d.id}`}>
-                      <td className="p-2">{d.descricao}</td>
-                      <td className="p-2 text-right">{fmtEur(d.valor)}</td>
-                      <td className="p-2">
-                        {d.tipo_pagamento === 'recorrente'
-                          ? `Recorrente · ${d.recorrencia || ''}`
-                          : 'Pontual'}
-                      </td>
-                      <td className="p-2">{fmtDate(d.data_inicial)}</td>
-                      <td className="p-2">{d.data_fim ? fmtDate(d.data_fim) : '—'}</td>
-                      <td className="p-2 text-center">{d.aviso_dias_antes}d</td>
-                      <td className="p-2 text-center">
-                        {d.ativo ? (
-                          <span className="text-[10px] uppercase font-bold bg-emerald-700 text-white px-1.5 py-0.5 rounded">activa</span>
-                        ) : (
-                          <span className="text-[10px] uppercase text-gray-400">inactiva</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-right">
-                        <Button
-                          variant="ghost" size="sm"
-                          onClick={() => startEdit(d)}
-                          data-testid={`btn-edit-${d.id}`}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="sm"
-                          onClick={() => removeDespesa(d.id)}
-                          data-testid={`btn-del-${d.id}`}
-                        >
-                          <Trash2 className="w-3 h-3 text-rose-400" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {despesas.map((d) => {
+                    const cat = catMap[d.categoria_id];
+                    return (
+                      <tr key={d.id} className="border-t border-gray-800" data-testid={`despesa-row-${d.id}`}>
+                        <td className="p-2">{d.descricao}</td>
+                        <td className="p-2">
+                          {cat ? (
+                            <span className="inline-flex items-center gap-1 text-xs">
+                              <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: cat.cor || COR_DEFAULT }} />
+                              {cat.nome}
+                            </span>
+                          ) : <span className="text-gray-500 text-xs">—</span>}
+                        </td>
+                        <td className="p-2 text-right">{fmtEur(d.valor)}</td>
+                        <td className="p-2">
+                          {d.tipo_pagamento === 'recorrente'
+                            ? `Recorrente · ${d.recorrencia || ''}`
+                            : 'Pontual'}
+                        </td>
+                        <td className="p-2">{fmtDate(d.data_inicial)}</td>
+                        <td className="p-2">{d.data_fim ? fmtDate(d.data_fim) : '—'}</td>
+                        <td className="p-2 text-center">{d.aviso_dias_antes}d</td>
+                        <td className="p-2 text-center">
+                          {d.ativo ? (
+                            <span className="text-[10px] uppercase font-bold bg-emerald-700 text-white px-1.5 py-0.5 rounded">activa</span>
+                          ) : (
+                            <span className="text-[10px] uppercase text-gray-400">inactiva</span>
+                          )}
+                        </td>
+                        <td className="p-2 text-right">
+                          <Button
+                            variant="ghost" size="sm"
+                            onClick={() => startEdit(d)}
+                            data-testid={`btn-edit-${d.id}`}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="sm"
+                            onClick={() => removeDespesa(d.id)}
+                            data-testid={`btn-del-${d.id}`}
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-400" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -539,6 +621,22 @@ const DespesasInternas = ({ user, onLogout }) => {
                 />
               </div>
               <div>
+                <Label>Categoria</Label>
+                <select
+                  value={form.categoria_id}
+                  onChange={(e) => setForm({ ...form, categoria_id: e.target.value })}
+                  className="w-full bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-sm h-10"
+                  data-testid="form-categoria"
+                >
+                  <option value="">— Sem categoria —</option>
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <Label>Data Inicial</Label>
                 <Input
                   required type="date"
@@ -547,27 +645,27 @@ const DespesasInternas = ({ user, onLogout }) => {
                   data-testid="form-data-inicial"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Tipo</Label>
                 <select
                   value={form.tipo_pagamento}
                   onChange={(e) => setForm({ ...form, tipo_pagamento: e.target.value })}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-sm"
+                  className="w-full bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-sm h-10"
                   data-testid="form-tipo"
                 >
                   <option value="pontual">Pontual</option>
                   <option value="recorrente">Recorrente</option>
                 </select>
               </div>
-              {form.tipo_pagamento === 'recorrente' && (
+            </div>
+            {form.tipo_pagamento === 'recorrente' && (
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Recorrência</Label>
                   <select
                     value={form.recorrencia}
                     onChange={(e) => setForm({ ...form, recorrencia: e.target.value })}
-                    className="w-full bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-sm"
+                    className="w-full bg-[#0f0f0f] border border-gray-700 rounded px-2 py-1 text-sm h-10"
                     data-testid="form-recorrencia"
                   >
                     <option value="semanal">Semanal</option>
@@ -575,17 +673,17 @@ const DespesasInternas = ({ user, onLogout }) => {
                     <option value="anual">Anual</option>
                   </select>
                 </div>
-              )}
-            </div>
-            {form.tipo_pagamento === 'recorrente' && form.recorrencia === 'mensal' && (
-              <div>
-                <Label>Dia do mês (1–31, opcional)</Label>
-                <Input
-                  type="number" min="1" max="31"
-                  value={form.dia_mes}
-                  onChange={(e) => setForm({ ...form, dia_mes: e.target.value })}
-                  placeholder="Por defeito usa o dia da Data Inicial"
-                />
+                {form.recorrencia === 'mensal' && (
+                  <div>
+                    <Label>Dia do mês (1–31, opcional)</Label>
+                    <Input
+                      type="number" min="1" max="31"
+                      value={form.dia_mes}
+                      onChange={(e) => setForm({ ...form, dia_mes: e.target.value })}
+                      placeholder="Por defeito: dia da Data Inicial"
+                    />
+                  </div>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -689,6 +787,72 @@ const DespesasInternas = ({ user, onLogout }) => {
               )}
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL CATEGORIAS */}
+      <Dialog open={showCategorias} onOpenChange={setShowCategorias}>
+        <DialogContent className="max-w-lg" data-testid="cat-modal">
+          <DialogHeader>
+            <DialogTitle>Gerir Categorias</DialogTitle>
+            <DialogDescription>Categorias usadas para organizar despesas e detectar duplicados.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submitCategoria} className="flex items-end gap-2">
+            <div className="flex-1">
+              <Label>Nome</Label>
+              <Input
+                required
+                value={novaCategoria.nome}
+                onChange={(e) => setNovaCategoria({ ...novaCategoria, nome: e.target.value })}
+                placeholder="Ex: Telecomunicações"
+                data-testid="cat-nome"
+              />
+            </div>
+            <div>
+              <Label>Cor</Label>
+              <Input
+                type="color"
+                value={novaCategoria.cor}
+                onChange={(e) => setNovaCategoria({ ...novaCategoria, cor: e.target.value })}
+                className="w-14 h-10 p-1 cursor-pointer"
+                data-testid="cat-cor"
+              />
+            </div>
+            <Button type="submit" className="bg-rose-600 hover:bg-rose-700" data-testid="cat-add">
+              <Plus className="w-4 h-4 mr-1" /> Adicionar
+            </Button>
+          </form>
+
+          <div className="max-h-80 overflow-y-auto space-y-1 mt-2">
+            {categorias.length === 0 && (
+              <div className="text-sm text-gray-500 text-center py-4">Sem categorias.</div>
+            )}
+            {categorias.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded"
+                data-testid={`cat-row-${c.id}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-4 h-4 rounded"
+                    style={{ background: c.cor || COR_DEFAULT }}
+                  />
+                  <span>{c.nome}</span>
+                </div>
+                <Button
+                  variant="ghost" size="sm"
+                  onClick={() => removeCategoria(c.id)}
+                  data-testid={`cat-del-${c.id}`}
+                >
+                  <Trash2 className="w-3 h-3 text-rose-400" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCategorias(false)}>Fechar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

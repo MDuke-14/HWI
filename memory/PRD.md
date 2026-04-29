@@ -107,12 +107,22 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 ## Credentials
 - Admin: teste@email.com / teste
 
+## Despesas Internas — Categorias UI (2026-04-29)
+- Backend: `listar_ocorrencias` agora devolve `categoria_id` em cada ocorrência.
+- Frontend (`DespesasInternas.jsx`):
+  - Selector de Categoria no formulário Nova/Editar Despesa.
+  - Modal "Gerir Categorias" (botão no header) com criação (nome + cor picker), listagem e delete.
+  - Cor da categoria visível: borda esquerda colorida nas células do calendário e badge na tabela Lista.
+  - Legenda de categorias por baixo do calendário.
+- Validação de duplicado por (categoria_id, valor, ativo) confirmada via curl (HTTP 400 com mensagem clara).
+- 9 categorias seedadas automaticamente (Renda, Eletricidade, Internet, Combustível, Salários, IVA/IRS, Seguros, Software/SaaS, Outros).
+
 ## Pending Issues (Prioritized)
 ### P0
-- None (PDF Materials/Reports isolation by intervencao_id fixed 2026-02)
+- None
 
 ### P1
-- Complete and Test Dynamic Price Table Creation (delayed 5+ forks)
+- Complete and Test Dynamic Price Table Creation (delayed 6+ forks)
 - Continue refactoring TechnicalReports.jsx (still ~10.1k lines — EmailFSModal, PCModalsSection pending with prop-drilling care)
 - Continue backend modular router extraction
 
