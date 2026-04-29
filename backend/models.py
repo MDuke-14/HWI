@@ -760,3 +760,44 @@ class MarcarPagoRequest(BaseModel):
     data_pagamento: Optional[date] = None
     valor_pago: Optional[float] = None
     notas: Optional[str] = None
+
+
+
+# ============ Indisponibilidades ============
+
+class Indisponibilidade(BaseModel):
+    """Período de indisponibilidade de um utilizador (entrada tardia ou saída antecipada)."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: Optional[str] = None  # snapshot para listagem rápida
+    data: date
+    hora_inicio: str  # HH:MM
+    hora_fim: str  # HH:MM
+    tipo: str  # 'entrada_tardia' | 'saida_antecipada'
+    regressa_servico: bool = False
+    observacoes: Optional[str] = None
+    aviso_minutos_antes: int = 60  # quantos min antes do horário enviar email
+    notificacao_matinal_enviada: bool = False
+    notificacao_pre_evento_enviada: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class IndisponibilidadeCreate(BaseModel):
+    data: date
+    hora_inicio: str
+    hora_fim: str
+    tipo: str
+    regressa_servico: bool = False
+    observacoes: Optional[str] = None
+    aviso_minutos_antes: int = 60
+
+
+class IndisponibilidadeUpdate(BaseModel):
+    data: Optional[date] = None
+    hora_inicio: Optional[str] = None
+    hora_fim: Optional[str] = None
+    tipo: Optional[str] = None
+    regressa_servico: Optional[bool] = None
+    observacoes: Optional[str] = None
+    aviso_minutos_antes: Optional[int] = None

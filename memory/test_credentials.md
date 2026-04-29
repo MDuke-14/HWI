@@ -1,11 +1,12 @@
 # Test Credentials
 
-## Admin (Full access)
-- Email / Username: `teste@email.com`
+## Admin (full access)
+- Username/Email: `teste@email.com`
 - Password: `teste`
-- Login endpoint: `POST /api/auth/login` with body `{"username": "...", "password": "..."}` (NOT `email`)
-- Returns: `access_token` (JWT), used as `Authorization: Bearer <token>`
+- ID: `c145d94b-bb5f-4fe1-b05d-6fa1034db968`
+- Login endpoint expects: `{"username": "teste@email.com", "password": "teste"}`
+- Returns: `access_token` (JWT, Bearer)
 
 ## Notes
-- `is_admin: true`
-- Use for all admin flows (FS management, PC, Vacations, Error Log, Equipment, PDF generation).
+- Auth endpoint: `POST /api/auth/login`
+- Field name is `username` (not `email`) — uses email value

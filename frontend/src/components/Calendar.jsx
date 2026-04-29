@@ -13,9 +13,10 @@ import { toast } from 'sonner';
 import { 
   CalendarIcon, Plus, ChevronLeft, ChevronRight, Users, MapPin, Wrench, 
   Edit2, Trash2, Search, Building2, Clock, CalendarDays, List, 
-  Sparkles, Sun, Umbrella
+  Sparkles, Sun, Umbrella, AlertCircle
 } from 'lucide-react';
 import HelpTooltip from '@/components/HelpTooltip';
+import IndisponibilidadesModal from '@/components/IndisponibilidadesModal';
 import { useMobile } from '@/contexts/MobileContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -25,6 +26,9 @@ const Calendar = ({ user, onLogout }) => {
   const [services, setServices] = useState([]);
   const [vacations, setVacations] = useState([]);
   const [ots, setOts] = useState([]);  // OTs para mostrar no calendário
+  const [indisponibilidades, setIndisponibilidades] = useState([]);
+  const [indModalOpen, setIndModalOpen] = useState(false);
+  const [conflictDialog, setConflictDialog] = useState(null); // { items, onConfirm }
   const [users, setUsers] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,7 +99,44 @@ const Calendar = ({ user, onLogout }) => {
     fetchCalendarData();
     fetchUsers();
     fetchClients();
+    fetchIndisponibilidades();
   }, [currentDate]);
+
+  const fetchIndisponibilidades = async () => {
+    try {
+      // Buscar mês visível ± 1 semana de margem
+      const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const params = {
+        inicio: start.toISOString().split('T')[0],
+        fim: end.toISOString().split('T')[0],
+      };
+      const url = user?.is_admin ? `${API}/indisponibilidades` : `${API}/indisponibilidades/me`;
+      const r = await axios.get(url, { params });
+      setIndisponibilidades(r.data || []);
+    } catch (error) {
+      // silencioso
+    }
+  };
+
+  const checkIndisponibilidadeConflicts = async (techIds, dateStr, timeSlot) => {
+    if (!techIds?.length || !dateStr) return [];
+    let hi = null; let hf = null;
+    if (timeSlot && /^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/.test(timeSlot)) {
+      const [a, b] = timeSlot.split('-').map((s) => s.trim());
+      hi = a.length === 4 ? `0${a}` : a;
+      hf = b.length === 4 ? `0${b}` : b;
+    }
+    try {
+      const params = { data: dateStr };
+      const queryUsers = techIds.map((id) => `user_ids=${encodeURIComponent(id)}`).join('&');
+      const extra = hi && hf ? `&hora_inicio=${hi}&hora_fim=${hf}` : '';
+      const r = await axios.get(`${API}/indisponibilidades/check?${queryUsers}&data=${dateStr}${extra}`, { params: {} });
+      return r.data || [];
+    } catch {
+      return [];
+    }
+  };
 
   const fetchCalendarData = async () => {
     setLoading(true);
@@ -165,21 +206,40 @@ const Calendar = ({ user, onLogout }) => {
       return;
     }
 
-    try {
-      if (editingService) {
-        await axios.put(`${API}/services/${editingService.id}`, serviceForm);
-        toast.success('Serviço atualizado com sucesso!');
-      } else {
-        // Criar serviço e OT associada
-        await axios.post(`${API}/services/with-ot`, serviceForm);
-        toast.success('Serviço e FS criados com sucesso!');
+    const proceed = async () => {
+      try {
+        if (editingService) {
+          await axios.put(`${API}/services/${editingService.id}`, serviceForm);
+          toast.success('Serviço atualizado com sucesso!');
+        } else {
+          await axios.post(`${API}/services/with-ot`, serviceForm);
+          toast.success('Serviço e FS criados com sucesso!');
+        }
+        setDialogOpen(false);
+        resetForm();
+        fetchCalendarData();
+      } catch (error) {
+        toast.error(error.response?.data?.detail || 'Erro ao salvar serviço');
       }
-      setDialogOpen(false);
-      resetForm();
-      fetchCalendarData();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao salvar serviço');
+    };
+
+    // Admin: verificar conflitos com indisponibilidades antes de criar
+    if (user?.is_admin) {
+      const conflicts = await checkIndisponibilidadeConflicts(
+        serviceForm.technician_ids, serviceForm.date, serviceForm.time_slot,
+      );
+      if (conflicts.length > 0) {
+        setConflictDialog({
+          items: conflicts,
+          onConfirm: async () => {
+            setConflictDialog(null);
+            await proceed();
+          },
+        });
+        return;
+      }
     }
+    await proceed();
   };
 
   const handleDeleteService = async (serviceId) => {
@@ -267,6 +327,11 @@ const Calendar = ({ user, onLogout }) => {
     return ots.filter(ot => ot.date === dateStr);
   };
 
+  const getIndisponibilidadesForDate = (dateStr) => {
+    if (!dateStr) return [];
+    return indisponibilidades.filter((i) => i.data === dateStr);
+  };
+
   const openDayDetail = (day) => {
     const dateStr = getDateString(day);
     setSelectedDay({
@@ -275,6 +340,7 @@ const Calendar = ({ user, onLogout }) => {
       services: getServicesForDate(dateStr),
       vacations: getVacationsForDate(dateStr),
       ots: getOtsForDate(dateStr),
+      indisponibilidades: getIndisponibilidadesForDate(dateStr),
       holiday: getHolidayForDate(dateStr)
     });
     setDayDetailOpen(true);
@@ -360,6 +426,10 @@ const Calendar = ({ user, onLogout }) => {
               <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>Feriados</span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm bg-rose-500`}></div>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>Indisponibilidades</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <div className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} rounded-full bg-emerald-500`}></div>
               <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-gray-400 whitespace-nowrap`}>Hoje</span>
             </div>
@@ -384,13 +454,14 @@ const Calendar = ({ user, onLogout }) => {
               const dateStr = getDateString(day);
               const dayVacations = getVacationsForDate(dateStr);
               const dayOts = getOtsForDate(dateStr);
+              const dayIndisp = getIndisponibilidadesForDate(dateStr);
               const holiday = getHolidayForDate(dateStr);
               const isToday = day && 
                 day === today.getDate() && 
                 currentDate.getMonth() === today.getMonth() && 
                 currentDate.getFullYear() === today.getFullYear();
               const isWeekend = index % 7 === 0 || index % 7 === 6;
-              const hasEvents = dayVacations.length > 0 || dayOts.length > 0 || holiday;
+              const hasEvents = dayVacations.length > 0 || dayOts.length > 0 || dayIndisp.length > 0 || holiday;
 
               return (
                 <div
@@ -458,11 +529,29 @@ const Calendar = ({ user, onLogout }) => {
                           {vacation.username}
                         </div>
                       ))}
+
+                      {/* Indisponibilidades */}
+                      {dayIndisp.slice(0, isMobile ? 1 : 2).map((ind) => {
+                        const isEntrada = ind.tipo === 'entrada_tardia';
+                        const cls = isEntrada
+                          ? 'bg-amber-500/10 text-amber-300 border-l-2 border-amber-500'
+                          : 'bg-rose-500/10 text-rose-300 border-l-2 border-rose-500';
+                        return (
+                          <div
+                            key={`ind-${ind.id}`}
+                            className={`${isMobile ? 'text-[8px] px-1 py-0.5' : 'text-[10px] px-1.5 py-0.5'} rounded ${cls} truncate mb-0.5`}
+                            title={`${ind.username || ''} ${isEntrada ? 'Entrada tardia' : 'Saída antecipada'} ${ind.hora_inicio}-${ind.hora_fim}`}
+                          >
+                            <AlertCircle className="w-2.5 h-2.5 inline mr-1" />
+                            {isMobile ? `${ind.hora_inicio}` : `${ind.username?.split('@')[0] || ''} ${ind.hora_inicio}`}
+                          </div>
+                        );
+                      })}
                       
                       {/* More Indicator */}
-                      {(dayOts.length > (isMobile ? 2 : 3) || dayVacations.length > (isMobile ? 0 : 1)) && (
+                      {(dayOts.length > (isMobile ? 2 : 3) || dayVacations.length > (isMobile ? 0 : 1) || dayIndisp.length > (isMobile ? 1 : 2)) && (
                         <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} text-gray-500 font-medium`}>
-                          +{Math.max(0, dayOts.length - (isMobile ? 2 : 3)) + Math.max(0, dayVacations.length - (isMobile ? 0 : 1))} mais
+                          +{Math.max(0, dayOts.length - (isMobile ? 2 : 3)) + Math.max(0, dayVacations.length - (isMobile ? 0 : 1)) + Math.max(0, dayIndisp.length - (isMobile ? 1 : 2))} mais
                         </div>
                       )}
                     </>
@@ -656,6 +745,17 @@ const Calendar = ({ user, onLogout }) => {
                 {!isMobile && <p className="text-gray-500 mt-1">Gestão de FS's e disponibilidade da equipa</p>}
               </div>
             </div>
+            <div className={`flex items-center gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
+            {/* Botão Indisponibilidade — visível a todos os utilizadores */}
+            <Button
+              variant="outline"
+              className={`border-amber-500/40 text-amber-300 hover:bg-amber-500/10 ${isMobile ? 'w-full py-2.5' : ''}`}
+              onClick={() => setIndModalOpen(true)}
+              data-testid="indisponibilidade-btn"
+            >
+              <AlertCircle className={`${isMobile ? 'w-4 h-4 mr-1.5' : 'w-4 h-4 mr-2'}`} />
+              Indisponibilidade
+            </Button>
             {user.is_admin && (
               <Dialog open={dialogOpen} onOpenChange={(open) => {
                 setDialogOpen(open);
@@ -911,6 +1011,7 @@ const Calendar = ({ user, onLogout }) => {
                 </DialogContent>
               </Dialog>
             )}
+            </div>
           </div>
 
           {/* Day Detail Modal */}
@@ -999,6 +1100,30 @@ const Calendar = ({ user, onLogout }) => {
                   </div>
                 )}
                 
+                {/* Indisponibilidades */}
+                {selectedDay?.indisponibilidades?.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className={`${isMobile ? 'text-[10px]' : 'text-xs'} uppercase tracking-widest text-gray-500 flex items-center gap-2`}>
+                      <AlertCircle className={isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
+                      Indisponibilidades ({selectedDay.indisponibilidades.length})
+                    </h4>
+                    {selectedDay.indisponibilidades.map((ind) => {
+                      const isEntrada = ind.tipo === 'entrada_tardia';
+                      const cls = isEntrada ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' : 'bg-rose-500/10 border-rose-500/30 text-rose-200';
+                      return (
+                        <div key={`day-ind-${ind.id}`} className={`border rounded-lg ${isMobile ? 'p-2.5' : 'p-3'} ${cls}`}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-semibold">{ind.username || ''}</span>
+                            <span className="font-mono">{ind.hora_inicio}–{ind.hora_fim}</span>
+                          </div>
+                          <div className="text-xs opacity-80">{isEntrada ? 'Entrada Tardia' : 'Saída Antecipada'}{ind.regressa_servico ? ' · regressa' : ''}</div>
+                          {ind.observacoes && <div className="text-xs italic mt-1 opacity-70">{ind.observacoes}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* Vacations */}
                 {selectedDay?.vacations.length > 0 && (
                   <div className="space-y-2">
@@ -1018,7 +1143,7 @@ const Calendar = ({ user, onLogout }) => {
                 )}
                 
                 {/* Empty State */}
-                {!selectedDay?.holiday && selectedDay?.services.length === 0 && selectedDay?.vacations.length === 0 && (!selectedDay?.ots || selectedDay?.ots.length === 0) && (
+                {!selectedDay?.holiday && selectedDay?.services.length === 0 && selectedDay?.vacations.length === 0 && (!selectedDay?.ots || selectedDay?.ots.length === 0) && (!selectedDay?.indisponibilidades || selectedDay?.indisponibilidades.length === 0) && (
                   <div className={`text-center ${isMobile ? 'py-6' : 'py-8'} text-gray-500`}>
                     <Sparkles className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} mx-auto mb-2 opacity-50`} />
                     <p className={isMobile ? 'text-sm' : ''}>Nenhum evento neste dia</p>
@@ -1064,6 +1189,59 @@ const Calendar = ({ user, onLogout }) => {
           )}
         </div>
       </div>
+
+      {/* Indisponibilidades Modal */}
+      <IndisponibilidadesModal
+        open={indModalOpen}
+        onOpenChange={setIndModalOpen}
+        user={user}
+        onChanged={fetchIndisponibilidades}
+      />
+
+      {/* Conflict Dialog (aviso ao criar/editar serviço com técnico indisponível) */}
+      <Dialog open={!!conflictDialog} onOpenChange={(o) => { if (!o) setConflictDialog(null); }}>
+        <DialogContent className="bg-[#0a0a0a] border border-amber-500/40 text-white max-w-md" data-testid="conflict-dialog">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-300">
+              <AlertCircle className="w-5 h-5" />
+              Técnico(s) com indisponibilidade
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 my-2 text-sm">
+            <p className="text-gray-300">
+              Os seguintes técnicos têm indisponibilidades registadas neste dia:
+            </p>
+            <div className="space-y-1">
+              {(conflictDialog?.items || []).map((c) => (
+                <div key={c.id} className={`p-2 rounded border ${c.tipo === 'entrada_tardia' ? 'border-amber-500/40 bg-amber-500/10' : 'border-rose-500/40 bg-rose-500/10'}`}>
+                  <div className="font-semibold">{c.username}</div>
+                  <div className="text-xs">
+                    {c.tipo === 'entrada_tardia' ? 'Entrada Tardia' : 'Saída Antecipada'} ·{' '}
+                    <span className="font-mono">{c.hora_inicio}–{c.hora_fim}</span>
+                    {c.regressa_servico && ' · regressa'}
+                  </div>
+                  {c.observacoes && <div className="text-xs italic opacity-80">{c.observacoes}</div>}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Podes prosseguir mesmo assim — o sistema apenas avisa.
+            </p>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setConflictDialog(null)} data-testid="conflict-cancel">
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => conflictDialog?.onConfirm?.()}
+              className="bg-amber-600 hover:bg-amber-700"
+              data-testid="conflict-proceed"
+            >
+              Prosseguir mesmo assim
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

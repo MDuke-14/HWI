@@ -1,0 +1,44 @@
+{
+  "summary": "Tested Indisponibilidades feature end-to-end (backend + frontend). Backend pytest 13/14 passed (1 skipped: secondary user creation requires field name not exposed in /api/auth/register). All validations, overlap detection, /me, admin list with filters, /check (with/without horario), historico desc, update reset notif flags, delete owner permissions, and POST /api/time-entries/start early_leave_warning behaviour all PASS. Routes smoke import test (16 routers) passes including indisponibilidades.py. Frontend: /calendar loads OK, indisponibilidade-btn → modal → ind-add-btn → form (tipo/data/hora-inicio/hora-fim/regressa/aviso/observacoes) → ind-submit creates and shows toast 'Indisponibilidade registada'. Calendar day badge ('teste 09:00') visible on day-15 May (verified visually in screenshot). Day-detail modal shows 'INDISPONIBILIDADES (1)' section. APScheduler jobs scheduled_indisponibilidades_matinal (cron 7:00) e scheduled_indisponibilidades_pre_evento (cron 6-22, */5) confirmed registered + executing successfully in supervisor logs. Calendar.jsx contains conflict-dialog and conflict-proceed data-testids wired to /api/indisponibilidades/check; backend /check verified to return correct conflicts.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "IndisponibilidadesModal + ind-form Dialog + Day-detail Dialog",
+        "issues": [
+          "A11y warning: 'Missing Description or aria-describedby={undefined} for {DialogContent}' on multiple Dialogs (modal + form + day-detail). Add DialogDescription or aria-describedby."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_indisponibilidades.py",
+    "/app/test_reports/pytest/pytest_indisponibilidades.xml"
+  ],
+  "action_items": [
+    "Add DialogDescription / aria-describedby to IndisponibilidadesModal, ind-form Dialog and Calendar day-detail Dialog to silence Radix a11y warnings.",
+    "Optional: expose secondary-user creation in test environment (or provide a non-admin token in test_credentials.md) so the 403-on-other-user PUT test is no longer skipped.",
+    "Optional: add data-testid to técnico select inside Nova FS modal to enable e2e automation of conflict-dialog flow (currently the multi-tech selector lacks per-option testids — backend conflict logic is verified and Calendar.jsx wiring is correct, but the UI flow ending in conflict-dialog cannot be reliably driven by Playwright without per-option testids)."
+  ],
+  "critical_code_review_comments": [
+    "routes/indisponibilidades.py — _doc_clean returns dict with 'data' converted via isoformat for the create endpoint, but list endpoints (/me, admin /, /check, /historico) return docs straight from Mongo where 'data' is already a string. Behaviour is consistent (string everywhere) but rely on the insert path keeping data as str — make sure no caller writes a date object directly.",
+    "routes/indisponibilidades.py — IndisponibilidadeUpdate is applied with model_dump(exclude_unset=True); however 'tipo' is validated only against VALID_TIPOS but the route never re-asserts the new tipo into update payload — currently fine because update dict is taken directly. Add explicit 'tipo' to update if you ever switch to model_validate.",
+    "routes/indisponibilidades.py — /check endpoint has no upper bound on user_ids list size; consider clamping (e.g. <= 200) to avoid pathological queries from admin UI.",
+    "Frontend Calendar.jsx (1250 lines) — well over the 700-line guideline; consider splitting Indisponibilidades section, Nova FS dialog and day-detail into sub-components."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_indisponibilidades.py (created)"
+  ],
+  "success_rate": {"backend": "100% (13/13 executed; 1 skipped for env reason)", "frontend": "100% on tested flows"},
+  "test_credentials": "teste@email.com / teste (admin) — already in /app/memory/test_credentials.md",
+  "seed_data_creation": "Ephemeral indisponibilidades created during tests; all cleaned up via fixture teardown and explicit DELETE pass. Verified GET /me has 0 TEST_ entries at end. Pre-existing 'Miguel Moreira · Saída Antecipada · 29/04/2026 14:00-17:30' was already in the DB — left untouched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Reusable backend suite at /app/backend/tests/test_indisponibilidades.py covers all 9 endpoints + early_leave_warning. Conflict-dialog UI flow couldn't be fully driven via Playwright because Nova FS técnico selector lacks per-option testids; backend /api/indisponibilidades/check is fully tested instead and Calendar.jsx code wiring (data-testid='conflict-dialog' + 'conflict-proceed') is confirmed by grep. APScheduler logs confirm both jobs are running on schedule.",
+  "rca of the issue": "N/A — no functional bugs found. Only minor a11y warnings (DialogContent missing aria-describedby) and one skipped test due to test environment limitation (no easy way to create a non-admin user via public API)."
+}

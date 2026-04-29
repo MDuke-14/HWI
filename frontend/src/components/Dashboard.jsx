@@ -602,7 +602,7 @@ const Dashboard = ({ user, onLogout }) => {
         // Continua sem localização
       }
       
-      await axios.post(`${API}/time-entries/start`, { 
+      const startResp = await axios.post(`${API}/time-entries/start`, { 
         observations,
         outside_residence_zone: autoOutsideZone,
         location_description: autoOutsideZone ? autoLocationDesc : null,
@@ -610,9 +610,18 @@ const Dashboard = ({ user, onLogout }) => {
         client_time: getLocalISOString()
       });
       toast.success('Relógio iniciado!');
-      
-      // Forçar reload imediato da página
-      window.location.href = window.location.href;
+
+      // Aviso de saída antecipada (indisponibilidade registada para hoje)
+      const warn = startResp?.data?.early_leave_warning;
+      if (warn) {
+        toast.warning(
+          `Lembrete: tens saída antecipada hoje às ${warn.hora_inicio} (${warn.hora_inicio}–${warn.hora_fim})${warn.regressa_servico ? ' · regressas depois' : ''}`,
+          { duration: 8000 },
+        );
+      }
+
+      // Forçar reload imediato da página (com pequeno delay para o toast aparecer)
+      setTimeout(() => { window.location.href = window.location.href; }, warn ? 1500 : 0);
       return;
     } catch (error) {
       // Verificar se foi guardado offline

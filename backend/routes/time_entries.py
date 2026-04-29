@@ -200,6 +200,22 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
         "message": "Relógio iniciado",
         "entry": {k: v for k, v in entry_dict.items() if k != '_id'}
     }
+
+    # Aviso de saída antecipada hoje (se existir indisponibilidade)
+    try:
+        sa = await db.indisponibilidades.find_one(
+            {"user_id": current_user["sub"], "data": today, "tipo": "saida_antecipada"},
+            {"_id": 0, "hora_inicio": 1, "hora_fim": 1, "regressa_servico": 1, "observacoes": 1},
+        )
+        if sa:
+            response["early_leave_warning"] = {
+                "hora_inicio": sa["hora_inicio"],
+                "hora_fim": sa["hora_fim"],
+                "regressa_servico": bool(sa.get("regressa_servico")),
+                "observacoes": sa.get("observacoes"),
+            }
+    except Exception as e:
+        logging.error(f"Erro ao verificar indisponibilidade saída antecipada: {e}")
     
     if day_info["is_special"]:
         response["special_day"] = {

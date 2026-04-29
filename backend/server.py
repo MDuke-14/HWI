@@ -784,6 +784,112 @@ async def startup_event():
         replace_existing=True
     )
 
+    # ============ Indisponibilidades: lembrete matinal + alerta pré-evento ============
+    async def scheduled_indisponibilidades_matinal():
+        """07:00 — envia 1 email de lembrete a quem tem indisponibilidade hoje."""
+        try:
+            from notifications_scheduler import send_notification_email
+            today_iso = date.today().isoformat()
+            inds = await db.indisponibilidades.find(
+                {"data": today_iso, "notificacao_matinal_enviada": {"$ne": True}},
+                {"_id": 0},
+            ).to_list(length=None)
+            sent = 0
+            for ind in inds:
+                user = await db.users.find_one({"id": ind["user_id"]}, {"_id": 0, "email": 1, "username": 1, "full_name": 1})
+                if not user or not user.get("email"):
+                    continue
+                tipo_label = "Entrada Tardia" if ind["tipo"] == "entrada_tardia" else "Saída Antecipada"
+                regressa = "Sim" if ind.get("regressa_servico") else "Não"
+                obs = ind.get("observacoes") or "—"
+                subject = f"[HWI] Lembrete: {tipo_label} hoje ({ind['hora_inicio']}–{ind['hora_fim']})"
+                html = f"""
+                <html><body style='font-family:Arial,sans-serif;color:#222'>
+                <h2 style='color:#0369a1'>Lembrete de Indisponibilidade</h2>
+                <p>Olá {user.get('full_name') or user.get('username')},</p>
+                <p>Recordamos que tens hoje uma indisponibilidade registada:</p>
+                <table cellpadding='6' cellspacing='0' style='border-collapse:collapse;border:1px solid #ddd'>
+                  <tr><td><b>Tipo</b></td><td>{tipo_label}</td></tr>
+                  <tr><td><b>Horário</b></td><td>{ind['hora_inicio']} – {ind['hora_fim']}</td></tr>
+                  <tr><td><b>Regressa ao serviço</b></td><td>{regressa}</td></tr>
+                  <tr><td><b>Observações</b></td><td>{obs}</td></tr>
+                </table>
+                <p style='color:#666;font-size:12px;margin-top:16px'>Aviso automático do sistema HWI.</p>
+                </body></html>
+                """
+                ok = await send_notification_email(user["email"], subject, html)
+                if ok:
+                    await db.indisponibilidades.update_one(
+                        {"id": ind["id"]},
+                        {"$set": {"notificacao_matinal_enviada": True}},
+                    )
+                    sent += 1
+            if sent:
+                logging.info(f"📨 Indisponibilidades: {sent} lembretes matinais enviados")
+        except Exception as e:
+            logging.error(f"Erro no lembrete matinal de indisponibilidades: {e}")
+
+    async def scheduled_indisponibilidades_pre_evento():
+        """A cada 5 min — envia alerta X min antes do início da indisponibilidade."""
+        try:
+            from notifications_scheduler import send_notification_email
+            import pytz as _pytz
+            now_lx = datetime.now(_pytz.timezone('Europe/Lisbon'))
+            today_iso = now_lx.date().isoformat()
+            now_minutes = now_lx.hour * 60 + now_lx.minute
+            inds = await db.indisponibilidades.find(
+                {"data": today_iso, "notificacao_pre_evento_enviada": {"$ne": True}},
+                {"_id": 0},
+            ).to_list(length=None)
+            sent = 0
+            for ind in inds:
+                hi = ind["hora_inicio"]
+                start_minutes = int(hi.split(":")[0]) * 60 + int(hi.split(":")[1])
+                aviso = int(ind.get("aviso_minutos_antes", 60) or 60)
+                trigger_at = start_minutes - aviso
+                # Disparar quando entramos na janela (entre trigger_at e start_minutes)
+                if not (trigger_at <= now_minutes < start_minutes):
+                    continue
+                user = await db.users.find_one({"id": ind["user_id"]}, {"_id": 0, "email": 1, "username": 1, "full_name": 1})
+                if not user or not user.get("email"):
+                    continue
+                tipo_label = "Entrada Tardia" if ind["tipo"] == "entrada_tardia" else "Saída Antecipada"
+                subject = f"[HWI] Aviso: {tipo_label} em {aviso} min ({hi})"
+                html = f"""
+                <html><body style='font-family:Arial,sans-serif;color:#222'>
+                <h2 style='color:#b45309'>Indisponibilidade Iminente</h2>
+                <p>Olá {user.get('full_name') or user.get('username')},</p>
+                <p>A tua indisponibilidade <b>{tipo_label}</b> começa às <b>{hi}</b>
+                ({aviso} min a partir de agora).</p>
+                <p>Horário: <b>{ind['hora_inicio']} – {ind['hora_fim']}</b></p>
+                <p style='color:#666;font-size:12px;margin-top:16px'>Aviso automático do sistema HWI.</p>
+                </body></html>
+                """
+                ok = await send_notification_email(user["email"], subject, html)
+                if ok:
+                    await db.indisponibilidades.update_one(
+                        {"id": ind["id"]},
+                        {"$set": {"notificacao_pre_evento_enviada": True}},
+                    )
+                    sent += 1
+            if sent:
+                logging.info(f"⏰ Indisponibilidades: {sent} alertas pré-evento enviados")
+        except Exception as e:
+            logging.error(f"Erro no alerta pré-evento de indisponibilidades: {e}")
+
+    scheduler.add_job(
+        scheduled_indisponibilidades_matinal,
+        CronTrigger(hour=7, minute=0),
+        id='indisponibilidades_matinal',
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        scheduled_indisponibilidades_pre_evento,
+        CronTrigger(minute='*/5', hour='6-22'),
+        id='indisponibilidades_pre_evento',
+        replace_existing=True,
+    )
+
     scheduler.start()
     logging.info("📅 Scheduler de verificações de ponto iniciado (09:30 e 18:15)")
     logging.info(f"   + Lembretes de serviço a cada 15 min (07:00-20:00)")
@@ -4071,6 +4177,7 @@ from routes.relatorios import router as relatorios_router
 from routes.services import router as services_router
 from routes.overtime import router as overtime_router
 from routes.despesas_internas import router as despesas_internas_router
+from routes.indisponibilidades import router as indisponibilidades_router
 api_router.include_router(references_router)
 api_router.include_router(clientes_router)
 api_router.include_router(auth_router)
@@ -4086,6 +4193,7 @@ api_router.include_router(relatorios_router)
 api_router.include_router(services_router)
 api_router.include_router(overtime_router)
 api_router.include_router(despesas_internas_router)
+api_router.include_router(indisponibilidades_router)
 
 # ============ Admin Error Log Endpoints ============
 
