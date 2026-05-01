@@ -2045,11 +2045,43 @@ async def enviar_pdf_ot(
                 logging.info(f"PDF da OT {numero_ot} enviado para {email_dest}")
                 
             except Exception as e:
+                import traceback as _tb
+                tb_str = _tb.format_exc()
                 logging.error(f"Erro ao enviar email para {email_dest}: {e}")
-                emails_falhados.append(email_dest)
+                emails_falhados.append({"email": email_dest, "error": str(e)[:500]})
+                await log_app_error(
+                    context=f"FS#{numero_ot}",
+                    action="Enviar PDF por Email (SMTP)",
+                    error_message=f"{type(e).__name__}: {e}",
+                    details={
+                        "destinatario": email_dest,
+                        "smtp_host": smtp_host,
+                        "smtp_port": smtp_port,
+                        "smtp_user_present": bool(smtp_user),
+                        "smtp_password_present": bool(smtp_password),
+                        "relatorio_id": relatorio_id,
+                        "documentos": docs_selecionados,
+                        "traceback": tb_str[:1500],
+                    },
+                    user_id=current_user.get("sub"),
+                    username=current_user.get("username"),
+                )
         
+        # Se TODOS falharam, devolver 502 para que o frontend trate como erro
+        if request.emails and not emails_enviados:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Não foi possível enviar o PDF para nenhum dos {len(request.emails)} destinatário(s). "
+                    f"Verifica as configurações SMTP em /admin/company-info. "
+                    f"Detalhe: {emails_falhados[0].get('error') if emails_falhados else 'sem detalhes'}"
+                ),
+            )
+
         return {
-            "message": f"PDF enviado para {len(emails_enviados)} email(s)",
+            "message": f"PDF enviado para {len(emails_enviados)} email(s)" + (
+                f" — {len(emails_falhados)} falhado(s)" if emails_falhados else ""
+            ),
             "emails_enviados": emails_enviados,
             "emails_falhados": emails_falhados
         }

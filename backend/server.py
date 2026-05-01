@@ -1033,32 +1033,116 @@ async def log_app_error(
     error_message: str,
     details: dict = None,
     user_id: str = None,
-    username: str = None
+    username: str = None,
+    solucao: str = None,
+    severity: str = "error"
 ):
     """
-    Regista um erro na base de dados para análise no admin dashboard.
-    
+    Regista um erro/aviso na base de dados para análise no admin dashboard.
+
     context: Onde ocorreu (ex: "FS#356", "Ponto", "Cronómetro", "PC_001#356")
     action: O que tentava fazer (ex: "Download PDF", "Gerar PDF", "Iniciar Cronómetro")
     error_message: Mensagem de erro resumida
     details: Detalhes adicionais (traceback, dados, etc.)
+    solucao: Sugestão de resolução (auto-gerada se não fornecida)
+    severity: 'error' | 'warning' | 'info'
     """
     try:
+        msg_lower = (error_message or "").lower()
+        ctx_lower = (context or "").lower()
+        action_lower = (action or "").lower()
+
+        if not solucao:
+            solucao = _suggest_solution(msg_lower, ctx_lower, action_lower, details or {})
+
         error_doc = {
             "id": str(uuid.uuid4()),
             "timestamp": get_now_local().isoformat(),
             "context": context,
             "action": action,
             "error_message": str(error_message)[:2000],
+            "solucao": solucao,
+            "severity": severity,
             "details": details or {},
             "user_id": user_id,
             "username": username,
             "resolved": False
         }
         await db.app_errors.insert_one(error_doc)
-        logging.error(f"[APP ERROR] {context} | {action} | {error_message}")
+        prefix = "[APP WARN]" if severity == "warning" else "[APP ERROR]"
+        logging.error(f"{prefix} {context} | {action} | {error_message}")
     except Exception as log_err:
         logging.error(f"Falha ao registar erro: {log_err}")
+
+
+def _suggest_solution(msg: str, context: str, action: str, details: dict) -> str:
+    """Devolve uma sugestão de resolução com base em padrões no erro/contexto."""
+    status = details.get("status") if isinstance(details, dict) else None
+
+    # SMTP / email
+    if any(k in msg for k in ("smtp", "aiosmtp", "tls", "starttls", "authentication")):
+        return ("Falha ao comunicar com o servidor de email. Verifica em /admin/company-info "
+                "as credenciais SMTP (host, porta 587/465, utilizador e password de aplicação) "
+                "e se a conta do Google/Office permite o envio. Se a password mudou recentemente, "
+                "gera uma nova App Password.")
+    if "connection refused" in msg or "name or service not known" in msg:
+        return "Servidor de email inacessível. Verifica o hostname/porta SMTP e a ligação à internet do servidor."
+    if "from" in msg and "address" in msg and "email" in msg:
+        return "Endereço de remetente inválido. Confirma o email 'From' nas configurações da empresa."
+
+    # PDF
+    if "flowable too large" in msg:
+        return ("O PDF tem um bloco demasiado grande para caber numa página. "
+                "Reduz textos longos em descrições, observações ou intervenções da FS.")
+    if "image" in msg and "pdf" in (action or ""):
+        return ("Erro ao processar uma fotografia para o PDF. Verifica que as imagens "
+                "associadas à FS estão em formato JPG/PNG válido e não estão corrompidas.")
+    if "pdf" in (action or "") and ("type" in msg or "none" in msg):
+        return "A FS pode ter campos obrigatórios em falta. Verifica cliente, intervenções e horário."
+
+    # 4xx
+    if status == 404 or "not found" in msg or "não encontrad" in msg:
+        return "O recurso não existe (pode ter sido eliminado). Recarrega a página e tenta novamente."
+    if status == 403 or "permission" in msg or "permissão" in msg or "forbidden" in msg:
+        return "Sem permissão. Pede a um administrador para te dar o acesso necessário."
+    if status == 400 or status == 422 or "validation" in msg or "validação" in msg:
+        return ("Dados inválidos no pedido. Verifica os campos obrigatórios do formulário "
+                "(datas, horários HH:MM, números) e tenta de novo.")
+    if status == 409 or "duplicate" in msg or "already exists" in msg or "duplicado" in msg or "já existe" in msg:
+        return "Já existe um registo com os mesmos dados. Altera para algo único e tenta de novo."
+    if status == 401 or "unauthorized" in msg or "expired" in msg:
+        return "Sessão expirada. Faz logout e volta a entrar."
+
+    # Conexão / DB
+    if "timeout" in msg:
+        return "O pedido demorou demasiado. Pode ser carga elevada — espera alguns segundos e tenta novamente."
+    if "connection" in msg:
+        return "Problema de ligação com o servidor ou base de dados. Verifica a tua ligação à internet."
+    if "mongo" in msg or "database" in msg:
+        return "Erro na base de dados. Se persistir, contacta a administração — pode ser preciso reiniciar o serviço."
+
+    # Codecs / encoding
+    if "codec" in msg or "encoding" in msg or "decode" in msg:
+        return "Caracteres especiais a causar problemas. Evita emojis e caracteres invulgares nos textos."
+
+    # Auth / JWT
+    if "jwt" in msg or "token" in msg or "signature" in msg:
+        return "Token de autenticação inválido. Faz logout e volta a entrar."
+
+    # Geração de PDF
+    if "ot" in context.lower() and ("pdf" in action.lower() or "pdf" in msg):
+        return "Verifica que a FS tem todos os dados (cliente, intervenções, fotos válidas) e tenta gerar o PDF de novo."
+
+    # Cronómetro
+    if "cron" in context.lower() or "cron" in action.lower():
+        return "Verifica se já tens um cronómetro ativo. Pára/finaliza o atual antes de iniciar outro."
+
+    # Picagem de ponto
+    if "ponto" in context.lower():
+        return "Confirma se já não tens uma picagem ativa e que o teu fuso horário está correcto."
+
+    return ("Erro inesperado. Vê os 'Detalhes Técnicos' em baixo ou contacta o administrador "
+            "indicando o contexto e o horário do erro.")
 
 
 def truncar_horas_para_minutos(horas: float) -> float:
@@ -4248,12 +4332,14 @@ async def clear_resolved_errors(current_user: dict = Depends(get_current_admin))
 
 @api_router.post("/errors/log")
 async def log_frontend_error(error_data: dict, current_user: dict = Depends(get_current_user)):
-    """Endpoint para o frontend reportar erros"""
+    """Endpoint para o frontend reportar erros e avisos"""
     await log_app_error(
         context=error_data.get("context", "Frontend"),
         action=error_data.get("action", "Desconhecido"),
         error_message=error_data.get("error_message", "Erro desconhecido"),
         details=error_data.get("details", {}),
+        solucao=error_data.get("solucao"),
+        severity=error_data.get("severity", "error"),
         user_id=current_user.get("sub"),
         username=current_user.get("username")
     )

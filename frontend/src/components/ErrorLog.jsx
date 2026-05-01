@@ -170,7 +170,7 @@ const ErrorLog = ({ user, onLogout }) => {
               const detailKeys = Object.keys(details).filter(k => details[k] !== null && details[k] !== undefined && details[k] !== '');
               
               return (
-                <div key={err.id} className={`glass-effect rounded-lg overflow-hidden border ${err.resolved ? 'border-green-900/30' : 'border-red-900/30'}`}>
+                <div key={err.id} className={`glass-effect rounded-lg overflow-hidden border ${err.resolved ? 'border-green-900/30' : (err.severity === 'warning' ? 'border-amber-900/30' : 'border-red-900/30')}`}>
                   {/* Header - always visible */}
                   <div
                     className="p-3 md:p-4 hover:bg-white/5 transition cursor-pointer"
@@ -178,13 +178,16 @@ const ErrorLog = ({ user, onLogout }) => {
                     data-testid={`error-row-${err.id}`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${err.resolved ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${err.resolved ? 'bg-green-500' : (err.severity === 'warning' ? 'bg-amber-500' : 'bg-red-500')}`} />
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded ${getContextBg(err.context)} ${getContextColor(err.context)}`}>
                             {err.context}
                           </span>
+                          {err.severity === 'warning' && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-600/20 text-amber-400 uppercase tracking-wide">aviso</span>
+                          )}
                           <span className="text-gray-500 text-xs">{err.action}</span>
                           <span className="text-gray-700 text-xs ml-auto">{formatTimestamp(err.timestamp)}</span>
                         </div>
@@ -218,23 +221,23 @@ const ErrorLog = ({ user, onLogout }) => {
                         </div>
                       </div>
 
-                      {/* Diagnóstico rápido */}
+                      {/* Diagnóstico / Solução sugerida */}
                       <div>
-                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Diagnóstico</h4>
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Como resolver</h4>
                         <div className="bg-amber-950/20 border border-amber-900/30 rounded-lg p-3">
-                          <p className="text-sm text-amber-300">
-                            {err.error_message?.toLowerCase().includes('flowable too large') && 'O PDF tem conteúdo demasiado grande para caber numa página. Verificar textos longos em descrições, observações ou intervenções.'}
-                            {err.error_message?.toLowerCase().includes('not found') && 'Recurso não encontrado na base de dados. Pode ter sido eliminado ou o ID está incorrecto.'}
-                            {err.error_message?.toLowerCase().includes('timeout') && 'O servidor demorou demasiado a responder. Pode ser sobrecarga ou dados muito pesados.'}
-                            {err.error_message?.toLowerCase().includes('connection') && 'Problema de conexão com o servidor ou base de dados.'}
-                            {err.error_message?.toLowerCase().includes('permission') && 'O utilizador não tem permissão para esta acção.'}
-                            {err.error_message?.toLowerCase().includes('codec') && 'Erro de codificação de caracteres. Verificar caracteres especiais nos dados.'}
-                            {err.error_message?.toLowerCase().includes('key') && err.error_message?.toLowerCase().includes('error') && 'Campo em falta na base de dados. Um registo pode estar incompleto.'}
-                            {err.error_message?.toLowerCase().includes('type') && err.error_message?.toLowerCase().includes('error') && 'Tipo de dados inesperado. Um campo pode estar vazio ou com formato errado.'}
-                            {err.error_message?.toLowerCase().includes('image') && 'Erro ao processar imagem. A fotografia pode estar corrompida ou em formato não suportado.'}
-                            {err.error_message?.toLowerCase().includes('smtp') && 'Falha ao enviar email. Verificar configurações do servidor de email.'}
-                            {err.error_message?.toLowerCase().includes('naive') && 'Erro de timezone em datas. Um registo antigo pode não ter informação de fuso horário.'}
-                            {!['flowable', 'not found', 'timeout', 'connection', 'permission', 'codec', 'key', 'type', 'image', 'smtp', 'naive'].some(k => err.error_message?.toLowerCase().includes(k)) && 'Erro interno do sistema. Verificar os detalhes técnicos abaixo.'}
+                          <p className="text-sm text-amber-300 whitespace-pre-wrap leading-relaxed">
+                            {err.solucao || (() => {
+                              const m = (err.error_message || '').toLowerCase();
+                              if (m.includes('flowable too large')) return 'O PDF tem conteúdo demasiado grande para caber numa página. Verifica textos longos em descrições, observações ou intervenções.';
+                              if (m.includes('not found') || m.includes('não encontrad')) return 'Recurso não encontrado na base de dados. Pode ter sido eliminado ou o ID está incorrecto.';
+                              if (m.includes('timeout')) return 'O servidor demorou demasiado a responder. Pode ser sobrecarga ou dados muito pesados.';
+                              if (m.includes('connection')) return 'Problema de conexão com o servidor ou base de dados.';
+                              if (m.includes('permission') || m.includes('permissão')) return 'O utilizador não tem permissão para esta acção.';
+                              if (m.includes('codec')) return 'Erro de codificação de caracteres. Verifica caracteres especiais nos dados.';
+                              if (m.includes('image')) return 'Erro ao processar imagem. A fotografia pode estar corrompida ou em formato não suportado.';
+                              if (m.includes('smtp')) return 'Falha ao enviar email. Verifica configurações SMTP em /admin/company-info.';
+                              return 'Erro interno do sistema. Verifica os Detalhes Técnicos abaixo.';
+                            })()}
                           </p>
                         </div>
                       </div>

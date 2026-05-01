@@ -55,27 +55,63 @@ axios.interceptors.response.use(
   async (error) => {
     const status = error.response?.status;
     const url = error.config?.url || '';
-    // Log 500 errors to the error database (except the error log endpoint itself)
-    if (status >= 500 && !url.includes('/errors/log') && !url.includes('/admin/errors')) {
+    const method = error.config?.method?.toUpperCase() || 'GET';
+
+    // Capturar 4xx (warning) e 5xx (error), exceto 401 e o próprio endpoint de log
+    const skipUrls = ['/errors/log', '/admin/errors', '/auth/login', '/auth/refresh'];
+    const shouldLog = status >= 400
+      && status !== 401
+      && !skipUrls.some((u) => url.includes(u));
+
+    if (shouldLog) {
       try {
-        const detail = error.response?.data?.detail || error.message;
+        const detail = error.response?.data?.detail || error.message || 'Erro';
+        const isWarning = status >= 400 && status < 500;
+        const severity = isWarning ? 'warning' : 'error';
+
+        // Derivar context legível
         let context = 'Sistema';
-        let action = `${error.config?.method?.toUpperCase()} ${url.split('/api/')[1] || url}`;
-        
+        let action = `${method} /${url.split('/api/')[1] || url}`;
+
         if (url.includes('relatorios-tecnicos')) {
-          const match = url.match(/relatorios-tecnicos\/([^/]+)/);
-          context = match ? `FS (id:${match[1].substring(0, 8)}...)` : 'FS';
-          if (url.includes('pdf')) action = 'Download/Gerar PDF';
+          context = 'FS';
+          if (url.includes('enviar-pdf')) action = 'Enviar PDF por Email';
+          else if (url.includes('preview-pdf') || url.includes('pdf')) action = 'Gerar/Download PDF';
+          else if (url.includes('criar-continuidade')) action = 'Criar Continuidade FS';
           else if (url.includes('cronometro')) action = 'Cronómetro';
+          else if (url.includes('intervencoes')) action = 'Intervenções';
         } else if (url.includes('time-entries')) {
-          context = 'Ponto';
+          context = 'Picagem de Ponto';
         } else if (url.includes('pedidos-cotacao')) {
           context = 'Pedido de Cotação';
         } else if (url.includes('equipamentos')) {
           context = 'Equipamentos';
+        } else if (url.includes('vacations')) {
+          context = 'Férias';
+        } else if (url.includes('indisponibilidades')) {
+          context = 'Indisponibilidades';
+        } else if (url.includes('despesas-internas')) {
+          context = 'Despesas Internas';
+        } else if (url.includes('services')) {
+          context = 'Serviços/Calendário';
+        } else if (url.includes('clientes')) {
+          context = 'Clientes';
+        } else if (url.includes('users') || url.includes('admin')) {
+          context = 'Admin';
         }
-        
-        await axios.post(`${API}/errors/log`, { context, action, error_message: String(detail).substring(0, 1000), details: { status, url } });
+
+        await axios.post(`${API}/errors/log`, {
+          context,
+          action,
+          error_message: String(detail).substring(0, 1500),
+          severity,
+          details: {
+            status,
+            method,
+            url,
+            response_data: typeof error.response?.data === 'object' ? error.response.data : undefined,
+          },
+        });
       } catch (_) { /* ignore logging failures */ }
     }
     return Promise.reject(error);
