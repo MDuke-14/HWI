@@ -4,7 +4,7 @@ import { API } from '@/App';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { AlertTriangle, CheckCircle, Trash2, RefreshCw, Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Trash2, RefreshCw, Filter, ChevronDown, ChevronUp, X, Sparkles, Wand2, Copy } from 'lucide-react';
 
 const ErrorLog = ({ user, onLogout }) => {
   const [errors, setErrors] = useState([]);
@@ -13,6 +13,8 @@ const ErrorLog = ({ user, onLogout }) => {
   const [filter, setFilter] = useState('unresolved'); // 'all', 'unresolved', 'resolved'
   const [contextFilter, setContextFilter] = useState('');
   const [expandedError, setExpandedError] = useState(null);
+  const [aiLoading, setAiLoading] = useState(null); // error_id em loading
+  const [aiBusy, setAiBusy] = useState(null);
 
   const fetchErrors = useCallback(async () => {
     setLoading(true);
@@ -43,6 +45,49 @@ const ErrorLog = ({ user, onLogout }) => {
     } catch (error) {
       toast.error('Erro ao resolver');
     }
+  };
+
+  const handleAiResolve = async (errorId) => {
+    setAiLoading(errorId);
+    try {
+      const res = await axios.post(`${API}/admin/errors/${errorId}/ai-resolve`, {});
+      // Actualizar localmente
+      setErrors((prev) => prev.map((e) => e.id === errorId ? { ...e, ai_analysis: res.data } : e));
+      setExpandedError(errorId);
+      toast.success('Análise da IA concluída');
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Falha ao analisar com IA');
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleAiExecute = async (errorId, accao) => {
+    if (!window) return;
+    setAiBusy(errorId);
+    try {
+      const res = await axios.post(`${API}/admin/errors/${errorId}/ai-execute`, { accao });
+      toast.success(res.data?.message || 'Acção executada');
+      await fetchErrors();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Falha a executar acção');
+    } finally {
+      setAiBusy(null);
+    }
+  };
+
+  const handleCopyDiag = (err) => {
+    const ai = err.ai_analysis || {};
+    const txt = [
+      `[${err.timestamp || ''}] ${err.context || ''} · ${err.action || ''}`,
+      `Mensagem: ${err.error_message || ''}`,
+      err.solucao ? `Solução: ${err.solucao}` : '',
+      ai.causa_provavel ? `\n— Análise IA —\nCausa: ${ai.causa_provavel}` : '',
+      ai.explicacao ? `Explicação: ${ai.explicacao}` : '',
+      ai.solucao_sugerida ? `Solução sugerida: ${ai.solucao_sugerida}` : '',
+    ].filter(Boolean).join('\n');
+    navigator.clipboard?.writeText(txt);
+    toast.success('Diagnóstico copiado');
   };
 
   const handleClearResolved = async () => {
@@ -223,7 +268,28 @@ const ErrorLog = ({ user, onLogout }) => {
 
                       {/* Diagnóstico / Solução sugerida */}
                       <div>
-                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Como resolver</h4>
+                        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Como resolver</h4>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline" size="sm"
+                              onClick={(e) => { e.stopPropagation(); handleCopyDiag(err); }}
+                              data-testid={`btn-copy-${err.id}`}
+                            >
+                              <Copy className="w-3 h-3 mr-1" /> Copiar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); handleAiResolve(err.id); }}
+                              disabled={aiLoading === err.id}
+                              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+                              data-testid={`btn-ai-resolve-${err.id}`}
+                            >
+                              <Sparkles className={`w-3 h-3 mr-1 ${aiLoading === err.id ? 'animate-spin' : ''}`} />
+                              {aiLoading === err.id ? 'A analisar…' : (err.ai_analysis ? 'Re-analisar' : 'Resolver com IA')}
+                            </Button>
+                          </div>
+                        </div>
                         <div className="bg-amber-950/20 border border-amber-900/30 rounded-lg p-3">
                           <p className="text-sm text-amber-300 whitespace-pre-wrap leading-relaxed">
                             {err.solucao || (() => {
@@ -241,6 +307,82 @@ const ErrorLog = ({ user, onLogout }) => {
                           </p>
                         </div>
                       </div>
+
+                      {/* Análise IA */}
+                      {err.ai_analysis && (
+                        <div data-testid={`ai-analysis-${err.id}`}>
+                          <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <Sparkles className="w-3 h-3" /> Análise da IA
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                              err.ai_analysis.severidade === 'alta' ? 'bg-rose-700/40 text-rose-200' :
+                              err.ai_analysis.severidade === 'baixa' ? 'bg-emerald-700/40 text-emerald-200' :
+                              'bg-amber-700/40 text-amber-200'
+                            }`}>
+                              {err.ai_analysis.severidade || 'média'}
+                            </span>
+                          </h4>
+                          <div className="bg-violet-950/20 border border-violet-900/30 rounded-lg p-3 space-y-3">
+                            {err.ai_analysis.causa_provavel && (
+                              <div>
+                                <div className="text-[10px] uppercase text-violet-500 font-semibold">Causa provável</div>
+                                <p className="text-sm text-violet-200">{err.ai_analysis.causa_provavel}</p>
+                              </div>
+                            )}
+                            {err.ai_analysis.explicacao && (
+                              <div>
+                                <div className="text-[10px] uppercase text-violet-500 font-semibold">Explicação</div>
+                                <p className="text-sm text-gray-300 whitespace-pre-wrap">{err.ai_analysis.explicacao}</p>
+                              </div>
+                            )}
+                            {err.ai_analysis.solucao_sugerida && (
+                              <div>
+                                <div className="text-[10px] uppercase text-violet-500 font-semibold">Solução sugerida</div>
+                                <p className="text-sm text-gray-200 whitespace-pre-wrap">{err.ai_analysis.solucao_sugerida}</p>
+                              </div>
+                            )}
+                            {err.ai_analysis.patch_sugerido && err.ai_analysis.patch_sugerido.snippet_proposto && (
+                              <div>
+                                <div className="text-[10px] uppercase text-violet-500 font-semibold mb-1">Patch sugerido</div>
+                                {err.ai_analysis.patch_sugerido.ficheiro && (
+                                  <div className="text-xs font-mono text-gray-400 mb-1">{err.ai_analysis.patch_sugerido.ficheiro}</div>
+                                )}
+                                <div className="grid md:grid-cols-2 gap-2">
+                                  {err.ai_analysis.patch_sugerido.snippet_atual && (
+                                    <pre className="text-[11px] bg-rose-950/30 border border-rose-900/40 rounded p-2 whitespace-pre-wrap overflow-x-auto max-h-40 overflow-y-auto"><code className="text-rose-300">{err.ai_analysis.patch_sugerido.snippet_atual}</code></pre>
+                                  )}
+                                  <pre className="text-[11px] bg-emerald-950/30 border border-emerald-900/40 rounded p-2 whitespace-pre-wrap overflow-x-auto max-h-40 overflow-y-auto"><code className="text-emerald-300">{err.ai_analysis.patch_sugerido.snippet_proposto}</code></pre>
+                                </div>
+                                {err.ai_analysis.patch_sugerido.explicacao && (
+                                  <p className="text-xs text-gray-500 mt-1">{err.ai_analysis.patch_sugerido.explicacao}</p>
+                                )}
+                                <p className="text-[10px] text-amber-500 mt-1">⚠️ Patches a código devem ser revistos manualmente — não são aplicados automaticamente.</p>
+                              </div>
+                            )}
+                            {err.ai_analysis.pode_auto_corrigir && err.ai_analysis.accao_auto_segura && !err.resolved && (
+                              <div className="pt-2 border-t border-violet-900/30">
+                                <div className="text-[10px] uppercase text-violet-500 font-semibold">Acção automática disponível</div>
+                                <p className="text-xs text-gray-400 mt-1 mb-2">{err.ai_analysis.accao_descricao || ''}</p>
+                                <Button
+                                  size="sm"
+                                  disabled={aiBusy === err.id}
+                                  onClick={(e) => { e.stopPropagation(); handleAiExecute(err.id, err.ai_analysis.accao_auto_segura); }}
+                                  className="bg-emerald-600 hover:bg-emerald-700"
+                                  data-testid={`btn-ai-execute-${err.id}`}
+                                >
+                                  <Wand2 className={`w-3 h-3 mr-1 ${aiBusy === err.id ? 'animate-spin' : ''}`} />
+                                  {aiBusy === err.id ? 'A executar…' : (
+                                    err.ai_analysis.accao_auto_segura === 'mark_resolved'
+                                      ? 'Marcar como resolvido'
+                                      : err.ai_analysis.accao_auto_segura === 'retry_email'
+                                        ? 'Testar SMTP e reactivar'
+                                        : 'Executar'
+                                  )}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Detalhes técnicos - todas as chaves */}
                       {detailKeys.length > 0 && (

@@ -131,14 +131,28 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
   - `Dashboard.jsx`: toast warning ao picar entrada se houver saída antecipada hoje
 - Testes: 13/13 backend (test_indisponibilidades.py) + frontend manual confirmado.
 
+## IA Integrada — Claude Sonnet 4.5 via Universal LLM Key (2026-05-01)
+- **Backend**: `services/ai_service.py` (analyze_error, review_fs com saída JSON estruturada)
+- **Router**: `routes/ai.py` com 4 endpoints:
+  - `POST /api/admin/errors/{id}/ai-resolve` — análise IA estruturada
+  - `POST /api/admin/errors/{id}/ai-execute` — executa acção segura (mark_resolved, retry_email com teste SMTP real)
+  - `POST /api/relatorios-tecnicos/{id}/ai-review` — analisa FS, devolve inconsistências, dados em falta, reescritas com score 0-100
+  - `POST /api/relatorios-tecnicos/{id}/ai-apply-rewrite` — aplica reescrita aceite
+- **Frontend**:
+  - `ErrorLog.jsx`: botões "Copiar diagnóstico" e "Resolver com IA" (gradiente violeta-fuchsia). Painel "Análise da IA" com causa, explicação, solução sugerida, patch sugerido (vermelho/verde lado-a-lado, NÃO auto-aplica), botão de execução automática quando aplicável. Análise persistida em `app_errors.ai_analysis`.
+  - `FSAIReviewModal.jsx`: novo componente, botão "Rever FS com IA" no header da FS. Mostra score 0-100, inconsistências, dados em falta e reescritas dos Relatórios de Assistência lado-a-lado (Original vs Proposta IA) com botões Aceitar/Rejeitar individuais.
+- Modelo: `claude-sonnet-4-5-20250929` via `EMERGENT_LLM_KEY`
+- Validado via curl + screenshot: resposta IA estruturada perfeita em PT-PT.
+
 ## Pending Issues (Prioritized)
 ### P0
 - None
 
 ### P1
 - Complete and Test Dynamic Price Table Creation (delayed 7+ forks)
-- Continue refactoring TechnicalReports.jsx (~10.1k lines) e Calendar.jsx (1250 lines)
+- Continue refactoring TechnicalReports.jsx (~10.3k lines) e Calendar.jsx (~1300 lines)
 - Continue backend modular router extraction
+- Bug detectado: `name 'create_notification' is not defined` no POST `/api/vacations/request`
 
 ### P2
 - Recurring VAPID Key Mismatch

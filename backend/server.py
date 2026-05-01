@@ -4262,6 +4262,7 @@ from routes.services import router as services_router
 from routes.overtime import router as overtime_router
 from routes.despesas_internas import router as despesas_internas_router
 from routes.indisponibilidades import router as indisponibilidades_router
+from routes.ai import router as ai_router
 api_router.include_router(references_router)
 api_router.include_router(clientes_router)
 api_router.include_router(auth_router)
@@ -4278,6 +4279,7 @@ api_router.include_router(services_router)
 api_router.include_router(overtime_router)
 api_router.include_router(despesas_internas_router)
 api_router.include_router(indisponibilidades_router)
+api_router.include_router(ai_router)
 
 # ============ Admin Error Log Endpoints ============
 

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import OfflineStatusBar from './OfflineStatusBar';
 import { useOfflineData } from '@/hooks/useOfflineData';
 import HelpTooltip from './HelpTooltip';
+import FSAIReviewModal from '@/components/FSAIReviewModal';
 import { useMobile } from '@/contexts/MobileContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
@@ -53,7 +54,8 @@ import {
   ScanLine,
   Pencil,
   Link2,
-  ArrowRightCircle
+  ArrowRightCircle,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -236,6 +238,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEditRelatorioModal, setShowEditRelatorioModal] = useState(false);
   const [showDeleteRelatorioModal, setShowDeleteRelatorioModal] = useState(false);
   const [selectedRelatorio, setSelectedRelatorio] = useState(null);
+  const [showAIReview, setShowAIReview] = useState(false);
   const [relatorioToDelete, setRelatorioToDelete] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedStatusRelatorio, setSelectedStatusRelatorio] = useState(null);
@@ -6271,6 +6274,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                     {isMobile ? 'Enviar Email' : 'Enviar Por Email'}
                   </Button>
                 )}
+
+                {/* Rever FS com IA */}
+                <Button
+                  onClick={() => setShowAIReview(true)}
+                  className={`bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
+                  data-testid="rever-ia-btn"
+                >
+                  <Sparkles className={`${isMobile ? 'w-4 h-4 mr-2' : 'w-5 h-5 mr-2'}`} />
+                  {isMobile ? 'Rever IA' : 'Rever FS com IA'}
+                </Button>
                 
                 {/* Botão FECHAR - Para fechar o painel da FS */}
                 <Button
@@ -10271,6 +10284,14 @@ const TechnicalReports = ({ user, onLogout }) => {
         setSelectedIds={setContinuidadeIds}
         onConfirmar={handleConfirmarContinuidade}
         saving={savingContinuidade}
+      />
+
+      {/* AI Review Modal */}
+      <FSAIReviewModal
+        open={showAIReview}
+        onOpenChange={setShowAIReview}
+        relatorioId={selectedRelatorio?.id}
+        onApplied={() => { if (selectedRelatorio?.id) fetchRelatoriosAssistencia(selectedRelatorio.id); }}
       />
     </div>
   );
