@@ -188,11 +188,19 @@ async def review_fs(fs_payload: Dict[str, Any]) -> Dict[str, Any]:
         '  "relatorios_melhorados": [{"id": "...", "texto_original": "...", "texto_melhorado": "...", "alteracoes_principais": "..."}],\n'
         '  "score_qualidade": 0\n'
         "}\n\n"
+        "ESTRUTURA DOS DADOS:\n"
+        "- Texto descritivo de cada intervenção está em `relatorios_assistencia[].texto` (agrupado por `intervencao_id`).\n"
+        "- Cada intervenção em `intervencoes[]` pode ter `motivo_assistencia` e `relatorio_assistencia_intervencao` próprios.\n"
+        "- Equipamento principal vem em `equipamento_principal` (campos directos). `equipamentos_adicionais` é opcional.\n"
+        "- Técnicos podem vir de `tecnicos_cronometro` (automático) OU `tecnicos_manuais`. Basta UM estar preenchido.\n"
+        "- Materiais usam `descricao` (não `designacao`). Unidade pode ser 'Un', 'm', 'kg', etc.\n\n"
         "REGRAS:\n"
-        "- Reescreve cada relatório de assistência com tom técnico-profissional, em PT-PT, claro e estruturado (problema, intervenção, resultado).\n"
+        "- IDs no array `relatorios_melhorados` DEVEM ser os `id` dos objectos em `relatorios_assistencia[]` do input — não inventes.\n"
+        "- Reescreve cada `texto` com tom técnico-profissional, em PT-PT, claro e estruturado (problema, intervenção, resultado).\n"
         "- NÃO inventes factos novos — só reorganiza/melhora redação do que já existe.\n"
-        "- Se um relatório já estiver bem, devolve-o no mesmo array com texto_melhorado IGUAL ao original e alteracoes_principais='Sem alterações necessárias'.\n"
-        "- Inconsistências: cliente/local/data ausentes; intervenção sem horário; material sem unidade; técnico sem registo de horas; relatório vazio; etc.\n"
+        "- Se um texto já estiver bem, devolve-o com texto_melhorado IGUAL ao original e alteracoes_principais='Sem alterações necessárias'.\n"
+        "- Inconsistências reais: cliente/data ausentes; intervenção sem texto/motivo; material sem descricao; 0 técnicos em AMBOS os arrays (cronometro E manuais); equipamento principal e adicionais ambos vazios.\n"
+        "- NÃO marcar como inconsistência: horários em HH:MM nos técnicos (só nos registos, não nas intervenções); equipamento por intervenção opcional.\n"
         "- score_qualidade: 0=incompleto, 100=excelente.\n\n"
         f"FS:\n{json.dumps(fs_payload, ensure_ascii=False, indent=2)[:18000]}"
     )
