@@ -49,10 +49,45 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Axios response interceptor for error logging
+// Retry automático para erros transitórios de gateway (Cloudflare 520, 502, 503, 504)
+const TRANSIENT_STATUSES = new Set([502, 503, 504, 520, 521, 522, 523, 524]);
+const MAX_RETRIES = 2;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const config = error.config || {};
+    const status = error.response?.status;
+
+    // Retry somente para status transitórios, métodos idempotentes ou endpoints seguros,
+    // e não para o próprio endpoint de logging (evita loops).
+    const url = config.url || '';
+    const method = (config.method || 'get').toLowerCase();
+    const isIdempotent = ['get', 'head', 'options', 'put', 'delete'].includes(method);
+    const isLoginOrLog = url.includes('/auth/login') || url.includes('/errors/log');
+
+    if (
+      (status === undefined || TRANSIENT_STATUSES.has(status)) &&
+      !isLoginOrLog &&
+      (isIdempotent || method === 'post')  // permitir retry em POSTs quando o status é transitório (1ª resposta falhou)
+    ) {
+      config.__retryCount = config.__retryCount || 0;
+      if (config.__retryCount < MAX_RETRIES) {
+        config.__retryCount += 1;
+        const delay = 250 * 2 ** (config.__retryCount - 1); // 250ms, 500ms
+        await sleep(delay);
+        try {
+          return await axios(config);
+        } catch (_) { /* cai para o handler abaixo */ }
+      }
+    }
+    return handleResponseError(error);
+  }
+);
+
+// Extracted so retry path can still route to error-logging after final failure
+async function handleResponseError(error) {
     const status = error.response?.status;
     const url = error.config?.url || '';
     const method = error.config?.method?.toUpperCase() || 'GET';
@@ -115,8 +150,7 @@ axios.interceptors.response.use(
       } catch (_) { /* ignore logging failures */ }
     }
     return Promise.reject(error);
-  }
-);
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
