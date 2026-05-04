@@ -1916,19 +1916,27 @@ async def enviar_pdf_ot(
                     import base64
                     tabela_preco_image_email = base64.b64decode(tabela_config["imagem_data"])
                 
-                folha_horas_buffer = generate_folha_horas_pdf(
-                    relatorio=relatorio,
-                    cliente=cliente,
-                    registos_mao_obra=registos_mao_obra,
-                    tecnicos_manuais=tecnicos_manuais,
-                    tarifas_por_tecnico=tarifas_por_tecnico,
-                    dados_extras=dados_extras,
-                    tarifas_por_codigo=tarifas_por_codigo,
-                    valor_km=valor_km,
-                    tarifas_detalhadas=tarifas_detalhadas_email,
-                    despesas_ajustadas=despesas_ajustadas_email,
-                    valor_dieta_default=valor_dieta_tabela,
-                    tabela_preco_image=tabela_preco_image_email,
+                # Geração em thread pool para não bloquear o event loop
+                import asyncio as _asyncio
+                from functools import partial as _partial
+                _loop = _asyncio.get_event_loop()
+                folha_horas_buffer = await _loop.run_in_executor(
+                    None,
+                    _partial(
+                        generate_folha_horas_pdf,
+                        relatorio=relatorio,
+                        cliente=cliente,
+                        registos_mao_obra=registos_mao_obra,
+                        tecnicos_manuais=tecnicos_manuais,
+                        tarifas_por_tecnico=tarifas_por_tecnico,
+                        dados_extras=dados_extras,
+                        tarifas_por_codigo=tarifas_por_codigo,
+                        valor_km=valor_km,
+                        tarifas_detalhadas=tarifas_detalhadas_email,
+                        despesas_ajustadas=despesas_ajustadas_email,
+                        valor_dieta_default=valor_dieta_tabela,
+                        tabela_preco_image=tabela_preco_image_email,
+                    ),
                 )
             except Exception as e:
                 logging.error(f"Erro ao gerar Folha de Horas para envio - OT {relatorio_id}: {str(e)}")
@@ -1940,6 +1948,7 @@ async def enviar_pdf_ot(
         pc_ids_selecionados = [d.replace("pc:", "") for d in docs_selecionados if d.startswith("pc:")]
         if pc_ids_selecionados:
             from pc_pdf_report import generate_pc_pdf
+            import asyncio as _asyncio
             for pc_id_sel in pc_ids_selecionados:
                 try:
                     pc_doc = await db.pedidos_cotacao.find_one({"id": pc_id_sel}, {"_id": 0})
@@ -1962,7 +1971,11 @@ async def enviar_pdf_ot(
                         ot_para_pc["equipamento_numero_serie"] = equip.get("numero_serie", "")
                         ot_para_pc["equipamento_ano_fabrico"] = equip.get("ano_fabrico", "")
                     
-                    pc_buf = generate_pc_pdf(pc_doc, ot_para_pc, pc_materiais, pc_fotos, hide_client=request.hide_client_pcs)
+                    pc_buf = await _asyncio.get_event_loop().run_in_executor(
+                        None,
+                        generate_pc_pdf,
+                        pc_doc, ot_para_pc, pc_materiais, pc_fotos, request.hide_client_pcs,
+                    )
                     pc_buffers.append({"buffer": pc_buf, "numero_pc": pc_doc.get("numero_pc", pc_id_sel)})
                 except Exception as e:
                     logging.error(f"Erro ao gerar PDF do PC {pc_id_sel}: {e}")
