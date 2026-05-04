@@ -13,7 +13,7 @@ root.render(
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('/service-worker.js', { updateViaCache: 'none' })
       .then((registration) => {
         console.log('Service Worker registered:', registration);
         // Força verificação de actualização a cada carregamento da app.
@@ -30,6 +30,20 @@ if ('serviceWorker' in navigator) {
               nw.postMessage({ type: 'SKIP_WAITING' });
             }
           });
+        });
+
+        // Verifica updates do SW a cada 60 segundos enquanto o user tiver a app aberta.
+        // Isto garante que uma nova versão deployed é detectada em ≤ 1 min,
+        // sem depender de o user ativar notificações manualmente.
+        setInterval(() => {
+          registration.update().catch(() => {});
+        }, 60 * 1000);
+
+        // Também verifica quando a app volta a ficar visível (alt+tab)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            registration.update().catch(() => {});
+          }
         });
       })
       .catch((error) => {
