@@ -61,18 +61,18 @@ axios.interceptors.response.use(
     const config = error.config || {};
     const status = error.response?.status;
 
-    // Retry somente para status transitórios, métodos idempotentes ou endpoints seguros,
-    // e não para o próprio endpoint de logging (evita loops).
-    // O login PERMITE retry porque é o caminho crítico de recuperação após o backend reiniciar.
+    // Retry somente para status transitórios, métodos idempotentes ou endpoints seguros.
+    // IMPORTANTE: NUNCA fazer retry em /errors/log — estava a entrar em loop (3 tentativas
+    // por cada erro registado durante down-time). Também /admin/errors nunca tem retry.
     const url = config.url || '';
     const method = (config.method || 'get').toLowerCase();
     const isIdempotent = ['get', 'head', 'options', 'put', 'delete'].includes(method);
     const isLoginRequest = url.includes('/auth/login');
-    const isLogEndpoint = url.includes('/errors/log');
+    const neverRetry = url.includes('/errors/log') || url.includes('/admin/errors');
 
     if (
+      !neverRetry &&
       (status === undefined || TRANSIENT_STATUSES.has(status)) &&
-      !isLogEndpoint &&
       (isIdempotent || method === 'post' || isLoginRequest)
     ) {
       config.__retryCount = config.__retryCount || 0;
@@ -99,10 +99,12 @@ async function handleResponseError(error) {
     const url = error.config?.url || '';
     const method = error.config?.method?.toUpperCase() || 'GET';
 
-    // Capturar 4xx (warning) e 5xx (error), exceto 401 e o próprio endpoint de log
+    // Capturar 4xx (warning) e 5xx (error), exceto 401 e endpoints de logging/admin.
+    // NUNCA logar falhas em /errors/log (evita loop) ou /admin/errors.
     const skipUrls = ['/errors/log', '/admin/errors', '/auth/login', '/auth/refresh'];
     const shouldLog = status >= 400
       && status !== 401
+      && status !== 520 && status !== 521 && status !== 522 && status !== 523 && status !== 524
       && !skipUrls.some((u) => url.includes(u));
 
     if (shouldLog) {

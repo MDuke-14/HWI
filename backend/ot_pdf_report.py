@@ -28,50 +28,101 @@ PHOTO_MAX_DIMENSION_PX = 1400  # lado maior após compressão
 PHOTO_JPEG_QUALITY = 82  # qualidade suficiente para impressão
 
 
-def _compress_photo_if_large(raw_bytes: bytes, context: str = "") -> bytes:
+def _safe_image_from_base64(b64_str, width_cm, height_cm, context="photo"):
     """
-    Se a imagem for maior que PHOTO_COMPRESS_THRESHOLD_BYTES, reduz o lado maior
-    para PHOTO_MAX_DIMENSION_PX e converte para JPEG quality=80. Mantém o tamanho
-    original caso já seja pequena, ou caso Pillow não esteja disponível.
-
-    Nunca rebenta: se a compressão falhar, devolve os bytes originais e faz log.
+    Cria um RLImage a partir de base64 de forma 100% segura.
+    - Valida que o base64 é decodificável
+    - Valida que os bytes são uma imagem suportada (PIL abre)
+    - Comprime se > 500KB
+    - Converte para JPEG RGB (evita bugs ReportLab com PNG/RGBA)
+    - Devolve None se qualquer coisa falhar (nunca rebenta)
     """
-    if not raw_bytes or len(raw_bytes) <= PHOTO_COMPRESS_THRESHOLD_BYTES:
-        return raw_bytes
-    if not _PIL_OK:
-        return raw_bytes
+    if not b64_str or not _PIL_OK:
+        return None
     try:
-        src = BytesIO(raw_bytes)
-        img = PILImage.open(src)
-        # Normalizar para RGB (JPEG não suporta RGBA/P)
-        if img.mode in ("RGBA", "LA", "P"):
-            img = img.convert("RGB")
-        # Aplicar exif rotation se existir
+        # 1. Decode base64 (pode ter prefixo "data:image/...;base64,")
+        if isinstance(b64_str, str) and "," in b64_str[:64] and b64_str.lstrip().startswith("data:"):
+            b64_str = b64_str.split(",", 1)[1]
+        raw = base64.b64decode(b64_str, validate=False)
+        if not raw or len(raw) < 100:
+            logging.warning(f"[PDF] Foto {context}: bytes vazios/muito pequenos ({len(raw)} bytes) — skip")
+            return None
+        # 2. Validar com PIL
+        img = PILImage.open(BytesIO(raw))
+        img.verify()  # detecta corrupção
+        # Reabrir porque verify() fecha
+        img = PILImage.open(BytesIO(raw))
         try:
-            img = PILImage.open(BytesIO(raw_bytes))
             from PIL import ImageOps
             img = ImageOps.exif_transpose(img)
-            if img.mode in ("RGBA", "LA", "P"):
-                img = img.convert("RGB")
         except Exception:
             pass
+        if img.mode in ("RGBA", "LA", "P"):
+            img = img.convert("RGB")
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+        # 3. Redimensionar se muito grande OU se ficheiro > 500KB
+        should_resize = (
+            max(img.size) > PHOTO_MAX_DIMENSION_PX
+            or len(raw) > PHOTO_COMPRESS_THRESHOLD_BYTES
+        )
+        if should_resize:
+            w, h = img.size
+            m = max(w, h)
+            if m > PHOTO_MAX_DIMENSION_PX:
+                scale = PHOTO_MAX_DIMENSION_PX / m
+                img = img.resize((max(1, int(w * scale)), max(1, int(h * scale))), PILImage.LANCZOS)
+        # 4. Re-encode sempre como JPEG optimizado
+        out = BytesIO()
+        img.save(out, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
+        out.seek(0)
+        final_bytes = out.getvalue()
+        if should_resize:
+            logging.info(
+                f"[PDF] Foto {context}: {len(raw)/1024:.0f}KB → {len(final_bytes)/1024:.0f}KB"
+            )
+        # 5. Criar RLImage
+        return RLImage(BytesIO(final_bytes), width=width_cm, height=height_cm, kind='proportional')
+    except Exception as e:
+        logging.warning(f"[PDF] Foto {context}: falhou ({type(e).__name__}: {e}) — skip")
+        return None
 
-        # Redimensionar se maior que limite
+
+def _safe_image_from_path(path, width_cm, height_cm, context="photo"):
+    """RLImage a partir de path em disco, 100% seguro."""
+    try:
+        p = Path(path) if path else None
+        if not p or not p.exists() or p.stat().st_size < 100:
+            return None
+        return RLImage(str(p), width=width_cm, height=height_cm, kind='proportional')
+    except Exception as e:
+        logging.warning(f"[PDF] Foto path {context}: falhou ({type(e).__name__}: {e}) — skip")
+        return None
+
+
+def _compress_photo_if_large(raw_bytes, context=""):
+    """Compatibilidade — delega em _safe_image_from_base64 internamente não é usado agora."""
+    if not raw_bytes or not _PIL_OK or len(raw_bytes) <= PHOTO_COMPRESS_THRESHOLD_BYTES:
+        return raw_bytes
+    try:
+        img = PILImage.open(BytesIO(raw_bytes))
+        try:
+            from PIL import ImageOps
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+        if img.mode != "RGB":
+            img = img.convert("RGB")
         w, h = img.size
         m = max(w, h)
         if m > PHOTO_MAX_DIMENSION_PX:
             scale = PHOTO_MAX_DIMENSION_PX / m
             img = img.resize((int(w * scale), int(h * scale)), PILImage.LANCZOS)
-
         out = BytesIO()
         img.save(out, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
-        compressed = out.getvalue()
-        logging.info(
-            f"[PDF] Foto comprimida {context}: {len(raw_bytes)/1024:.0f}KB → {len(compressed)/1024:.0f}KB"
-        )
-        return compressed
+        return out.getvalue()
     except Exception as e:
-        logging.warning(f"[PDF] Falha ao comprimir foto {context}: {e} — usa original")
+        logging.warning(f"[PDF] Compress fallback {context}: {e}")
         return raw_bytes
 
 
@@ -619,29 +670,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 # Foto 1
                 cell1 = []
-                img1_added = False
-                # Tentar primeiro carregar do caminho do ficheiro
-                if foto1.get('foto_path'):
-                    img_path = Path(foto1['foto_path'])
-                    if img_path.exists():
-                        try:
-                            img = RLImage(str(img_path), width=7.5*cm, height=5*cm, kind='proportional')
-                            cell1.append(img)
-                            img1_added = True
-                        except:
-                            pass
-                # Fallback para base64
-                if not img1_added and foto1.get('foto_base64'):
-                    try:
-                        foto_bytes = base64.b64decode(foto1['foto_base64'])
-                        foto_bytes = _compress_photo_if_large(foto_bytes, context=f"foto1 rel={foto1.get('relatorio_id','')[:8]}")
-                        foto_buffer = BytesIO(foto_bytes)
-                        img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
-                        cell1.append(img)
-                        img1_added = True
-                    except:
-                        cell1.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
-                if not img1_added:
+                img1_obj = _safe_image_from_path(foto1.get('foto_path'), 7.5*cm, 5*cm, f"foto1-path rel={foto1.get('relatorio_id','')[:8]}")
+                if img1_obj is None:
+                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"foto1 rel={foto1.get('relatorio_id','')[:8]}")
+                if img1_obj is not None:
+                    cell1.append(img1_obj)
+                else:
                     cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                 
                 if foto1.get('descricao'):
@@ -652,29 +686,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 # Foto 2
                 if foto2:
                     cell2 = []
-                    img2_added = False
-                    # Tentar primeiro carregar do caminho do ficheiro
-                    if foto2.get('foto_path'):
-                        img_path = Path(foto2['foto_path'])
-                        if img_path.exists():
-                            try:
-                                img = RLImage(str(img_path), width=7.5*cm, height=5*cm, kind='proportional')
-                                cell2.append(img)
-                                img2_added = True
-                            except:
-                                pass
-                    # Fallback para base64
-                    if not img2_added and foto2.get('foto_base64'):
-                        try:
-                            foto_bytes = base64.b64decode(foto2['foto_base64'])
-                            foto_bytes = _compress_photo_if_large(foto_bytes, context=f"foto2 rel={foto2.get('relatorio_id','')[:8]}")
-                            foto_buffer = BytesIO(foto_bytes)
-                            img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
-                            cell2.append(img)
-                            img2_added = True
-                        except:
-                            cell2.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
-                    if not img2_added:
+                    img2_obj = _safe_image_from_path(foto2.get('foto_path'), 7.5*cm, 5*cm, f"foto2-path rel={foto2.get('relatorio_id','')[:8]}")
+                    if img2_obj is None:
+                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"foto2 rel={foto2.get('relatorio_id','')[:8]}")
+                    if img2_obj is not None:
+                        cell2.append(img2_obj)
+                    else:
                         cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                     
                     if foto2.get('descricao'):
@@ -734,29 +751,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 assin_elements = []
                 
                 # Imagem da assinatura - AUMENTADA e CENTRADA
-                img_added = False
-                if assinatura.get('assinatura_path'):
-                    img_path = Path(assinatura['assinatura_path'])
-                    if img_path.exists():
-                        try:
-                            # Imagem maior: 8cm x 4cm
-                            img = RLImage(str(img_path), width=8*cm, height=4*cm, kind='proportional')
-                            assin_elements.append(img)
-                            img_added = True
-                        except:
-                            pass
-                
-                if not img_added and assinatura.get('assinatura_base64'):
-                    try:
-                        img_data = base64.b64decode(assinatura['assinatura_base64'])
-                        img_buffer = BytesIO(img_data)
-                        # Imagem maior: 8cm x 4cm
-                        img = RLImage(img_buffer, width=8*cm, height=4*cm, kind='proportional')
-                        assin_elements.append(img)
-                        img_added = True
-                    except:
-                        assin_elements.append(Paragraph("<i>Assinatura não disponível</i>", assin_data_style))
-                elif not img_added:
+                img_obj = _safe_image_from_path(assinatura.get('assinatura_path'), 8*cm, 4*cm, f"assin-path")
+                if img_obj is None:
+                    img_obj = _safe_image_from_base64(assinatura.get('assinatura_base64'), 8*cm, 4*cm, f"assin")
+                if img_obj is not None:
+                    assin_elements.append(img_obj)
+                else:
                     assin_elements.append(Paragraph("<i>Assinatura não disponível</i>", assin_data_style))
                 
                 # Linha separadora fina
@@ -837,26 +837,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 # Foto 1
                 cell1 = []
-                img1_added = False
-                if foto1.get('foto_path'):
-                    img_path = Path(foto1['foto_path'])
-                    if img_path.exists():
-                        try:
-                            img = RLImage(str(img_path), width=7.5*cm, height=5*cm, kind='proportional')
-                            cell1.append(img)
-                            img1_added = True
-                        except:
-                            pass
-                if not img1_added and foto1.get('foto_base64'):
-                    try:
-                        foto_bytes = base64.b64decode(foto1['foto_base64'])
-                        foto_buffer = BytesIO(foto_bytes)
-                        img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
-                        cell1.append(img)
-                        img1_added = True
-                    except:
-                        cell1.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
-                if not img1_added:
+                img1_obj = _safe_image_from_path(foto1.get('foto_path'), 7.5*cm, 5*cm, f"fotoA-path rel={foto1.get('relatorio_id','')[:8]}")
+                if img1_obj is None:
+                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"fotoA rel={foto1.get('relatorio_id','')[:8]}")
+                if img1_obj is not None:
+                    cell1.append(img1_obj)
+                else:
                     cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                 
                 if foto1.get('descricao'):
@@ -867,26 +853,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 # Foto 2
                 if foto2:
                     cell2 = []
-                    img2_added = False
-                    if foto2.get('foto_path'):
-                        img_path = Path(foto2['foto_path'])
-                        if img_path.exists():
-                            try:
-                                img = RLImage(str(img_path), width=7.5*cm, height=5*cm, kind='proportional')
-                                cell2.append(img)
-                                img2_added = True
-                            except:
-                                pass
-                    if not img2_added and foto2.get('foto_base64'):
-                        try:
-                            foto_bytes = base64.b64decode(foto2['foto_base64'])
-                            foto_buffer = BytesIO(foto_bytes)
-                            img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
-                            cell2.append(img)
-                            img2_added = True
-                        except:
-                            cell2.append(Paragraph("<i>(Erro ao carregar)</i>", foto_desc_style))
-                    if not img2_added:
+                    img2_obj = _safe_image_from_path(foto2.get('foto_path'), 7.5*cm, 5*cm, f"fotoB-path rel={foto2.get('relatorio_id','')[:8]}")
+                    if img2_obj is None:
+                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"fotoB rel={foto2.get('relatorio_id','')[:8]}")
+                    if img2_obj is not None:
+                        cell2.append(img2_obj)
+                    else:
                         cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                     
                     if foto2.get('descricao'):
@@ -962,7 +934,55 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     )
     elements.append(Paragraph(f"Documento gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}", footer_style))
     
-    # Construir PDF
-    doc.build(elements)
+    # Construir PDF — captura defensiva para que falhas de rendering (imagens,
+    # layout demasiado grande, etc.) sejam reportadas de forma clara em vez de
+    # fazerem o worker morrer. Se rebentar, faz fallback removendo todas as
+    # imagens problemáticas e tentando de novo.
+    try:
+        doc.build(elements)
+    except Exception as e:
+        logging.error(f"[PDF] doc.build() FALHOU: {type(e).__name__}: {e}")
+        # Fallback: remover todos os RLImage dos elementos e tentar de novo
+        # Isto garante que mesmo com imagens problemáticas o PDF textual é gerado.
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
+        cleaned = _strip_images_from_elements(elements)
+        try:
+            doc.build(cleaned)
+            logging.warning("[PDF] Gerado em modo fallback SEM imagens")
+        except Exception as e2:
+            logging.error(f"[PDF] Fallback também falhou: {type(e2).__name__}: {e2}")
+            raise
     buffer.seek(0)
     return buffer
+
+
+def _strip_images_from_elements(elements):
+    """Percorre a árvore de elementos e remove RLImage, substituindo por placeholder."""
+    from reportlab.platypus import Paragraph as _P
+    cleaned = []
+    for e in elements:
+        if isinstance(e, RLImage):
+            continue  # skip image
+        if isinstance(e, Table):
+            # Substituir células que sejam RLImage ou lists contendo RLImage
+            try:
+                new_data = []
+                for row in e._cellvalues:
+                    new_row = []
+                    for cell in row:
+                        if isinstance(cell, RLImage):
+                            new_row.append(_P("<i>(Imagem removida)</i>", ParagraphStyle('tmp', fontSize=7)))
+                        elif isinstance(cell, list):
+                            new_row.append([c for c in cell if not isinstance(c, RLImage)])
+                        else:
+                            new_row.append(cell)
+                    new_data.append(new_row)
+                new_table = Table(new_data, colWidths=e._colWidths)
+                new_table.setStyle(e._bkgrndcmds if hasattr(e, '_bkgrndcmds') else TableStyle([]))
+                cleaned.append(new_table)
+            except Exception:
+                cleaned.append(e)
+        else:
+            cleaned.append(e)
+    return cleaned

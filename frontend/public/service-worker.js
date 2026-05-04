@@ -34,7 +34,7 @@ const OFFLINE_QUEUE_APIS = [
 
 // ============ Install Event ============
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v2...');
+  console.log('[SW] Installing service worker v3...');
   event.waitUntil(
     Promise.all([
       caches.open(STATIC_CACHE).then((cache) => {
@@ -52,7 +52,7 @@ self.addEventListener('install', (event) => {
 
 // ============ Activate Event ============
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v2...');
+  console.log('[SW] Activating service worker v3...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -63,12 +63,22 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => {
-      // Tentar sincronizar quando ativar
-      return syncOfflineQueue();
+    }).then(() => self.clients.claim())
+    .then(() => {
+      // Avisar todos os clientes que há novo SW activo — o App.js pode mostrar toast
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED', version: 'v3' }));
+      });
     })
+    .then(() => syncOfflineQueue())
   );
-  self.clients.claim();
+});
+
+// Permitir que o app force skipWaiting via postMessage
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ============ Fetch Event ============
@@ -194,39 +204,71 @@ async function handleApiRequest(request) {
 }
 
 // ============ Offline Queue (IndexedDB) ============
+// Versão bumped para 2 → quando o user vier dum SW antigo com version 2 existente
+// e tentar abrir com version 1, o browser dava VersionError. Agora abrimos sem
+// versão (herda a existente) e tratamos o upgrade só se faltar a object store.
 function initOfflineQueue() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('HWIOfflineDB', 1);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('offlineQueue')) {
-        db.createObjectStore('offlineQueue', { keyPath: 'id', autoIncrement: true });
-      }
-    };
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.open('HWIOfflineDB');
+      request.onerror = () => {
+        // DB corrupta — apagar e recriar
+        try { indexedDB.deleteDatabase('HWIOfflineDB'); } catch (_) {}
+        const req2 = indexedDB.open('HWIOfflineDB', 1);
+        req2.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('offlineQueue')) {
+            db.createObjectStore('offlineQueue', { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        req2.onsuccess = () => resolve(req2.result);
+        req2.onerror = () => resolve(null);
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('offlineQueue')) {
+          const nextVer = db.version + 1;
+          db.close();
+          const upgradeReq = indexedDB.open('HWIOfflineDB', nextVer);
+          upgradeReq.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains('offlineQueue')) {
+              d.createObjectStore('offlineQueue', { keyPath: 'id', autoIncrement: true });
+            }
+          };
+          upgradeReq.onsuccess = () => resolve(upgradeReq.result);
+          upgradeReq.onerror = () => resolve(null);
+        } else {
+          resolve(db);
+        }
+      };
+    } catch (_) {
+      resolve(null);
+    }
   });
 }
 
 async function addToOfflineQueue(data) {
   const db = await initOfflineQueue();
+  if (!db) return;
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['offlineQueue'], 'readwrite');
-    const store = transaction.objectStore('offlineQueue');
-    const request = store.add(data);
-    
-    request.onsuccess = () => {
-      console.log('[SW] Added to offline queue:', data.url);
-      resolve();
-    };
-    request.onerror = () => reject(request.error);
+    try {
+      const transaction = db.transaction(['offlineQueue'], 'readwrite');
+      const store = transaction.objectStore('offlineQueue');
+      const request = store.add(data);
+      
+      request.onsuccess = () => {
+        console.log('[SW] Added to offline queue:', data.url);
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    } catch (e) { reject(e); }
   });
 }
 
 async function getOfflineQueue() {
   const db = await initOfflineQueue();
+  if (!db) return [];
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(['offlineQueue'], 'readonly');
     const store = transaction.objectStore('offlineQueue');
@@ -365,4 +407,4 @@ self.addEventListener('notificationclick', function(event) {
   }
 });
 
-console.log('[SW] Service Worker loaded - v2 with offline support');
+console.log('[SW] Service Worker loaded - v3 with offline support');

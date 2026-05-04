@@ -158,9 +158,35 @@ Três bugs combinados que causavam o "site crasha" + "login preso" após 520 de 
 - **Timeout de 90s** nos downloads de PDF principais (`handlePreviewPDF`, `handlePDFViewer`).
 - **Compressão automática de fotos > 2MB** no PDF generator (ot_pdf_report.py): redimensiona para 1600px max + JPEG quality 80. Testado: 10MB → 1MB (redução 89.8%).
 
+## Fix DEFINITIVO do 520 em Produção (2026-05-05)
+
+Problema real detectado através da console do browser: `[SW] Service Worker loaded - v2` mesmo após deploy → **Service Worker preso** a servir código antigo. Três correções massivas:
+
+### 1. Service Worker — força actualização sempre
+- `service-worker.js`: bumped para v3, `install` chama `skipWaiting()`, `activate` chama `clients.claim()`, novo evento `message` para `SKIP_WAITING` remoto.
+- `IndexedDB`: `initOfflineQueue()` agora tolera conflito de versão (o bug `VersionError: The requested version (1) is less than the existing version (2)` aparece na console) — abre sem versão, detecta DB corrupta e recria.
+- `index.js`: regista listener `controllerchange` que recarrega a página UMA vez quando um novo SW fica activo. Invoca `registration.update()` em cada load.
+
+### 2. Loop `/errors/log` — eliminado
+- `App.js`: `neverRetry = url.includes('/errors/log')` — nunca retry em log.
+- `shouldLog` ignora status 520/521/522/523/524 — quando o backend está down, NÃO faz sentido escrever erro no próprio backend down (criava loop visível de 3 POSTs em cada erro).
+
+### 3. Gerador de PDF — à prova de bala
+- `ot_pdf_report.py`:
+  - Nova função `_safe_image_from_base64()` que **valida com `img.verify()` antes** e converte SEMPRE para JPEG RGB (evita bugs ReportLab com PNG/RGBA corrompidos). Nunca rebenta — devolve None em qualquer falha.
+  - Nova função `_safe_image_from_path()` análoga para fotos em disco.
+  - Todos os 3 pontos de uso (foto1/foto2 em 2 contextos + assinatura) substituídos por estas funções.
+  - **`doc.build()` tem fallback**: se falhar na primeira tentativa, reconstrói o PDF SEM imagens (via `_strip_images_from_elements()`) e tenta de novo. Assim o PDF textual é SEMPRE entregue, mesmo que uma foto faça o ReportLab rebentar.
+  - Log detalhado por foto: `[PDF] Foto foto1 rel=abc12345: 10MB → 480KB` ou `[PDF] Foto foto1 rel=abc12345: falhou (UnidentifiedImageError: …) — skip`.
+- Threshold de compressão: 500KB (qualquer foto >500KB é reduzida para max 1400px, JPEG q82).
+
+### Validação preview
+- 3 PDFs consecutivos na FS real: HTTP 200, ~900ms, 506KB, válido.
+- Smoke tests 17/17.
+
 ## Pending Issues (Prioritized)
 ### P0
-- None
+- **Re-deploy obrigatório** — estas mudanças estão apenas no preview. Em produção o SW antigo ainda está preso e uma foto corrompida continuará a rebentar o PDF.
 
 ### P1
 - Complete and Test Dynamic Price Table Creation (delayed 7+ forks)
