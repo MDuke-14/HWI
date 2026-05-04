@@ -184,9 +184,19 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 - 3 PDFs consecutivos na FS real: HTTP 200, ~900ms, 506KB, válido.
 - Smoke tests 17/17.
 
+## Recent Fixes (2026-02)
+### P0 FIXED (2026-02): `/fotografias` OOM / HTTP 520 crash
+- **Root cause:** `GET /api/relatorios-tecnicos/{id}/fotografias` e `GET /api/pedidos-cotacao/{id}/fotografias` (e `GET /api/pedidos-cotacao/{id}`) retornavam todas as fotos com `foto_base64` e `thumb_base64` num único payload JSON gigante. FSs com muitas fotos causavam OOM no worker de produção e 520 no browser.
+- **Fix:** Alterado o `projection` do MongoDB para excluir `foto_base64` e `thumb_base64` na listagem. Endpoints afetados:
+  - `routes/relatorios.py::get_fotografias`
+  - `routes/pedidos_cotacao.py::get_fotografias_pc`
+  - `routes/pedidos_cotacao.py::get_pedido_cotacao` (lista embutida de fotos)
+- O frontend já usa `/image?thumb=true` (thumbnail) na grid e `/image` (full) apenas ao clicar — portanto lazy loading funciona sem alterações no frontend.
+- **Validação:** Payload com 3 fotos passou de centenas de KB para ~1.4 KB. Thumbs (~6 KB) e full (~89 KB) servidos individualmente via endpoint `/image` com `Cache-Control: public, max-age=86400`.
+
 ## Pending Issues (Prioritized)
 ### P0
-- **Re-deploy obrigatório** — estas mudanças estão apenas no preview. Em produção o SW antigo ainda está preso e uma foto corrompida continuará a rebentar o PDF.
+- **Re-deploy obrigatório** para aplicar fix do `/fotografias` em produção.
 
 ### P1
 - Complete and Test Dynamic Price Table Creation (delayed 7+ forks)

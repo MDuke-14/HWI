@@ -144,15 +144,14 @@ async def get_pedido_cotacao(
     
     pc["materiais"] = materiais
     
-    # Buscar fotografias do PC
+    # Buscar fotografias do PC (SEM foto_base64 para evitar payload gigante)
     fotos = await db.fotos_pc.find(
         {"pc_id": pc_id},
-        {"_id": 0}
+        {"_id": 0, "foto_base64": 0}
     ).sort("uploaded_at", -1).to_list(length=None)
     
     for foto in fotos:
-        if "foto_url" not in foto:
-            foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
+        foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
     
     pc["fotografias"] = fotos
     
@@ -249,15 +248,14 @@ async def get_fotografias_pc(
     pc_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar fotografias de um PC"""
+    """Listar fotografias de um PC (apenas metadados - sem base64 para evitar OOM)"""
     fotografias = await db.fotos_pc.find(
         {"pc_id": pc_id},
-        {"_id": 0}
+        {"_id": 0, "foto_base64": 0}
     ).sort("uploaded_at", -1).to_list(length=None)
     
     for foto in fotografias:
-        if "foto_url" not in foto:
-            foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
+        foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
     
     return fotografias
 

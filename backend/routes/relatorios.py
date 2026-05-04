@@ -1163,16 +1163,25 @@ async def get_fotografias(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar fotografias de um relatório técnico"""
+    """Listar fotografias de um relatório técnico.
+    
+    CRÍTICO: Retorna apenas metadados (sem `foto_base64` e `thumb_base64`) para
+    evitar OOM/timeout em produção quando há muitas fotos. O frontend deve usar
+    o endpoint `/image?thumb=true` para carregar imagens individualmente (lazy).
+    """
+    projection = {
+        "_id": 0,
+        "foto_base64": 0,
+        "thumb_base64": 0,
+    }
     fotografias = await db.fotos_relatorio.find(
         {"relatorio_id": relatorio_id},
-        {"_id": 0}
+        projection
     ).sort("uploaded_at", -1).to_list(length=None)
     
-    # Adicionar foto_url se não existir
+    # Adicionar foto_url para cada foto (usado pelo frontend para carregar a imagem sob demanda)
     for foto in fotografias:
-        if "foto_url" not in foto:
-            foto["foto_url"] = f"/relatorios-tecnicos/{relatorio_id}/fotografias/{foto['id']}/image"
+        foto["foto_url"] = f"/relatorios-tecnicos/{relatorio_id}/fotografias/{foto['id']}/image"
     
     return fotografias
 
