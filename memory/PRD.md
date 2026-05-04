@@ -144,6 +144,20 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - Modelo: `claude-sonnet-4-5-20250929` via `EMERGENT_LLM_KEY`
 - Validado via curl + screenshot: resposta IA estruturada perfeita em PT-PT.
 
+## Fix Massivo — 520 Produção + Loop de Login (2026-05-04)
+Três bugs combinados que causavam o "site crasha" + "login preso" após 520 de gerar PDF:
+
+1. **Service Worker cachava `/api/auth/me`, `/api/time-entries/today`, `/api/clientes`, `/api/relatorios-tecnicos`** → após backend 520 o SW servia cache stale com estado de autenticação incoerente, bloqueando o re-login. Removidos das CACHEABLE_APIS. **Auth endpoints (`/api/auth/*`) agora NUNCA passam por cache nem queue offline** (network-only). Bump para v3 força limpeza de caches antigos nos browsers existentes.
+
+2. **`extractBlobError` mostrava HTML completo do Cloudflare (~5KB) num único toast** → UI travava. Agora detecta HTML/Cloudflare, limita texto a 300 chars, e devolve mensagens específicas para 502/503/504/520/521/522/523/524.
+
+3. **Login estava excluído do retry automático** → 520 no login deixava o user bloqueado. Agora login tem **4 tentativas com backoff 800ms→3.2s** (tempo suficiente para backend reiniciar).
+
+**Adicionado**:
+- **ErrorBoundary global** (`components/ErrorBoundary.jsx`) envolvendo a App: captura qualquer exceção React, mostra ecrã amigável com botões "Recarregar" e "Limpar sessão + service workers + caches + ir para login".
+- **Timeout de 90s** nos downloads de PDF principais (`handlePreviewPDF`, `handlePDFViewer`).
+- **Compressão automática de fotos > 2MB** no PDF generator (ot_pdf_report.py): redimensiona para 1600px max + JPEG quality 80. Testado: 10MB → 1MB (redução 89.8%).
+
 ## Pending Issues (Prioritized)
 ### P0
 - None
@@ -152,7 +166,6 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - Complete and Test Dynamic Price Table Creation (delayed 7+ forks)
 - Continue refactoring TechnicalReports.jsx (~10.3k lines) e Calendar.jsx (~1300 lines)
 - Continue backend modular router extraction
-- Bug detectado: `name 'create_notification' is not defined` no POST `/api/vacations/request`
 
 ### P2
 - Recurring VAPID Key Mismatch

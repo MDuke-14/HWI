@@ -134,20 +134,33 @@ const formatErrorMessage = (error) => {
 
 // Extrair mensagem de erro de respostas blob (usado em endpoints PDF)
 const extractBlobError = async (error) => {
-  if (!error.response) return 'Erro de conexão com o servidor';
+  if (!error.response) return 'Erro de conexão com o servidor. Verifica a tua internet e tenta novamente.';
   
   const status = error.response.status;
   const data = error.response.data;
+  
+  // Códigos transitórios típicos de Cloudflare/proxy quando o backend está sobrecarregado ou a reiniciar
+  if (status === 520 || status === 521 || status === 522 || status === 523 || status === 524) {
+    return 'O servidor está temporariamente indisponível ou demasiado ocupado a gerar o PDF. Aguarda 15 segundos e tenta novamente. Se persistir, contacta o administrador.';
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return 'Servidor temporariamente indisponível. Tenta novamente em alguns segundos.';
+  }
   
   // Se a resposta é um Blob, converter para texto/JSON
   if (data instanceof Blob) {
     try {
       const text = await data.text();
+      // HTML do Cloudflare/proxy — não mostrar conteúdo técnico
+      if (text.trim().startsWith('<!DOCTYPE') || text.includes('cf-error') || text.includes('Cloudflare')) {
+        return `Erro ${status}: O servidor não respondeu correctamente ao gerar o PDF. Tenta novamente em alguns segundos.`;
+      }
       try {
         const json = JSON.parse(text);
-        return json.detail || json.message || json.error || text;
+        const detail = json.detail || json.message || json.error || '';
+        return (typeof detail === 'string' ? detail : JSON.stringify(detail)).substring(0, 300);
       } catch {
-        return text || `Erro ${status} ao gerar PDF`;
+        return (text || `Erro ${status} ao gerar PDF`).substring(0, 300);
       }
     } catch {
       return `Erro ${status} ao gerar PDF`;
@@ -155,8 +168,8 @@ const extractBlobError = async (error) => {
   }
   
   // Resposta normal (não-blob)
-  if (typeof data?.detail === 'string') return data.detail;
-  if (typeof data?.message === 'string') return data.message;
+  if (typeof data?.detail === 'string') return data.detail.substring(0, 300);
+  if (typeof data?.message === 'string') return data.message.substring(0, 300);
   
   return `Erro ${status} ao gerar PDF`;
 };
@@ -3422,7 +3435,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       const response = await axios.get(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-        { responseType: 'blob' }
+        { responseType: 'blob', timeout: 90000 }
       );
       
       // Criar URL do blob para visualização
@@ -3433,7 +3446,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       const msg = await extractBlobError(error);
-      toast.error(`Erro ao gerar PDF: ${msg}`, { duration: 8000 });
+      toast.error(msg, { duration: 8000 });
     } finally {
       setLoadingPDFPreview(false);
     }
@@ -3456,7 +3469,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       const response = await axios.get(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-        { responseType: 'blob' }
+        { responseType: 'blob', timeout: 90000 }
       );
       
       const blob = new Blob([response.data], { type: 'application/pdf' });

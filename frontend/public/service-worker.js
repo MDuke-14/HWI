@@ -1,6 +1,6 @@
-const CACHE_NAME = 'hwi-ponto-v2';
-const STATIC_CACHE = 'hwi-static-v2';
-const DATA_CACHE = 'hwi-data-v2';
+const CACHE_NAME = 'hwi-ponto-v3';
+const STATIC_CACHE = 'hwi-static-v3';
+const DATA_CACHE = 'hwi-data-v3';
 const OFFLINE_QUEUE_NAME = 'hwi-offline-queue';
 
 // Recursos estáticos para cache
@@ -13,13 +13,11 @@ const STATIC_ASSETS = [
   '/offline.html'
 ];
 
-// APIs que podem ser cached
+// APIs cacheáveis (apenas leituras de longa-duração que NÃO afetam autenticação)
+// IMPORTANTE: NUNCA cachar /api/auth/me — o estado de autenticação tem de ser sempre fresh.
+// Listas grandes (relatórios) também não são cacheadas para evitar mostrar dados stale após crash.
 const CACHEABLE_APIS = [
-  '/api/auth/me',
-  '/api/time-entries/today',
   '/api/company-info',
-  '/api/clientes',
-  '/api/relatorios-tecnicos',
   '/api/equipamentos'
 ];
 
@@ -127,14 +125,20 @@ self.addEventListener('fetch', (event) => {
 async function handleApiRequest(request) {
   const url = new URL(request.url);
   
+  // Auth endpoints NUNCA usam cache nem queue offline.
+  // Se a network falha, propagamos o erro real para o app gerir.
+  if (url.pathname.startsWith('/api/auth/')) {
+    return fetch(request);
+  }
+  
   // Check if this API should be queued when offline
   const shouldQueue = OFFLINE_QUEUE_APIS.some(api => url.pathname.includes(api));
   
   try {
     const response = await fetch(request.clone());
     
-    // Cache GET requests
-    if (request.method === 'GET' && response.ok) {
+    // Cache GET requests apenas se status 2xx — nunca cachar 5xx
+    if (request.method === 'GET' && response.ok && response.status < 300) {
       const isCacheable = CACHEABLE_APIS.some(api => url.pathname.includes(api));
       if (isCacheable) {
         const cache = await caches.open(DATA_CACHE);

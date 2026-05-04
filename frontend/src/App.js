@@ -17,6 +17,7 @@ import PCStatusPage from '@/components/PCStatusPage';
 import PublicReferencePage from '@/components/PublicReferencePage';
 import ErrorLog from '@/components/ErrorLog';
 import DespesasInternas from '@/components/DespesasInternas';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { MobileProvider } from '@/contexts/MobileContext';
@@ -62,20 +63,26 @@ axios.interceptors.response.use(
 
     // Retry somente para status transitórios, métodos idempotentes ou endpoints seguros,
     // e não para o próprio endpoint de logging (evita loops).
+    // O login PERMITE retry porque é o caminho crítico de recuperação após o backend reiniciar.
     const url = config.url || '';
     const method = (config.method || 'get').toLowerCase();
     const isIdempotent = ['get', 'head', 'options', 'put', 'delete'].includes(method);
-    const isLoginOrLog = url.includes('/auth/login') || url.includes('/errors/log');
+    const isLoginRequest = url.includes('/auth/login');
+    const isLogEndpoint = url.includes('/errors/log');
 
     if (
       (status === undefined || TRANSIENT_STATUSES.has(status)) &&
-      !isLoginOrLog &&
-      (isIdempotent || method === 'post')  // permitir retry em POSTs quando o status é transitório (1ª resposta falhou)
+      !isLogEndpoint &&
+      (isIdempotent || method === 'post' || isLoginRequest)
     ) {
       config.__retryCount = config.__retryCount || 0;
-      if (config.__retryCount < MAX_RETRIES) {
+      // Login tem mais retries (3) com mais delay para apanhar arranque do backend
+      const maxRetries = isLoginRequest ? 4 : MAX_RETRIES;
+      if (config.__retryCount < maxRetries) {
         config.__retryCount += 1;
-        const delay = 250 * 2 ** (config.__retryCount - 1); // 250ms, 500ms
+        const delay = isLoginRequest
+          ? 800 * config.__retryCount  // 800ms, 1.6s, 2.4s, 3.2s
+          : 250 * 2 ** (config.__retryCount - 1); // 250ms, 500ms
         await sleep(delay);
         try {
           return await axios(config);
@@ -224,6 +231,7 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <ThemeProvider>
       <MobileProvider>
         <div className="App">
@@ -416,6 +424,7 @@ function App() {
         </div>
       </MobileProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
