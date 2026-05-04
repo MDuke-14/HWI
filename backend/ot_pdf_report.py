@@ -9,7 +9,69 @@ from datetime import datetime
 from pathlib import Path
 import base64
 import os
+import logging
 from collections import defaultdict
+
+try:
+    from PIL import Image as PILImage
+    _PIL_OK = True
+except Exception:
+    _PIL_OK = False
+
+
+# Limite acima do qual uma foto é comprimida antes de ser embutida no PDF.
+# Fotos grandes (>2MB) provocam OOM em workers de produção com pouca RAM.
+PHOTO_COMPRESS_THRESHOLD_BYTES = 2 * 1024 * 1024  # 2 MB
+PHOTO_MAX_DIMENSION_PX = 1600  # lado maior após compressão
+PHOTO_JPEG_QUALITY = 80
+
+
+def _compress_photo_if_large(raw_bytes: bytes, context: str = "") -> bytes:
+    """
+    Se a imagem for maior que PHOTO_COMPRESS_THRESHOLD_BYTES, reduz o lado maior
+    para PHOTO_MAX_DIMENSION_PX e converte para JPEG quality=80. Mantém o tamanho
+    original caso já seja pequena, ou caso Pillow não esteja disponível.
+
+    Nunca rebenta: se a compressão falhar, devolve os bytes originais e faz log.
+    """
+    if not raw_bytes or len(raw_bytes) <= PHOTO_COMPRESS_THRESHOLD_BYTES:
+        return raw_bytes
+    if not _PIL_OK:
+        return raw_bytes
+    try:
+        src = BytesIO(raw_bytes)
+        img = PILImage.open(src)
+        # Normalizar para RGB (JPEG não suporta RGBA/P)
+        if img.mode in ("RGBA", "LA", "P"):
+            img = img.convert("RGB")
+        # Aplicar exif rotation se existir
+        try:
+            img = PILImage.open(BytesIO(raw_bytes))
+            from PIL import ImageOps
+            img = ImageOps.exif_transpose(img)
+            if img.mode in ("RGBA", "LA", "P"):
+                img = img.convert("RGB")
+        except Exception:
+            pass
+
+        # Redimensionar se maior que limite
+        w, h = img.size
+        m = max(w, h)
+        if m > PHOTO_MAX_DIMENSION_PX:
+            scale = PHOTO_MAX_DIMENSION_PX / m
+            img = img.resize((int(w * scale), int(h * scale)), PILImage.LANCZOS)
+
+        out = BytesIO()
+        img.save(out, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
+        compressed = out.getvalue()
+        logging.info(
+            f"[PDF] Foto comprimida {context}: {len(raw_bytes)/1024:.0f}KB → {len(compressed)/1024:.0f}KB"
+        )
+        return compressed
+    except Exception as e:
+        logging.warning(f"[PDF] Falha ao comprimir foto {context}: {e} — usa original")
+        return raw_bytes
+
 
 def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None, relatorios_assistencia=None):
     """
@@ -570,6 +632,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 if not img1_added and foto1.get('foto_base64'):
                     try:
                         foto_bytes = base64.b64decode(foto1['foto_base64'])
+                        foto_bytes = _compress_photo_if_large(foto_bytes, context=f"foto1 rel={foto1.get('relatorio_id','')[:8]}")
                         foto_buffer = BytesIO(foto_bytes)
                         img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
                         cell1.append(img)
@@ -602,6 +665,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     if not img2_added and foto2.get('foto_base64'):
                         try:
                             foto_bytes = base64.b64decode(foto2['foto_base64'])
+                            foto_bytes = _compress_photo_if_large(foto_bytes, context=f"foto2 rel={foto2.get('relatorio_id','')[:8]}")
                             foto_buffer = BytesIO(foto_bytes)
                             img = RLImage(foto_buffer, width=7.5*cm, height=5*cm, kind='proportional')
                             cell2.append(img)
