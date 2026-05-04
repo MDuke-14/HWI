@@ -1796,11 +1796,18 @@ async def enviar_pdf_ot(
             {"relatorio_id": relatorio_id}, {"_id": 0}
         ).sort("created_at", 1).to_list(length=None)
         
-        # Gerar PDF do Relatório se selecionado
+        # Gerar PDF do Relatório se selecionado — thread pool para não bloquear o loop
         pdf_buffer = None
         if "relatorio" in docs_selecionados:
             try:
-                pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia)
+                import asyncio as _asyncio
+                loop = _asyncio.get_event_loop()
+                pdf_buffer = await loop.run_in_executor(
+                    None,
+                    generate_ot_pdf,
+                    relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
+                    equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+                )
             except Exception as e:
                 logging.error(f"Erro ao gerar PDF para envio - OT {relatorio_id}: {str(e)}")
                 import traceback
@@ -2174,9 +2181,23 @@ async def preview_pdf_ot(
         {"relatorio_id": relatorio_id}, {"_id": 0}
     ).sort("created_at", 1).to_list(length=None)
     
-    # Gerar PDF com tratamento de erros
+    # Gerar PDF com tratamento de erros — executado em thread pool para NÃO bloquear
+    # o event loop asyncio. Assim, outros requests (incluindo /health e logout) continuam
+    # a responder mesmo durante geração de um PDF grande.
+    import asyncio
+    import time as _time
+    t0 = _time.time()
     try:
-        pdf_buffer = generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia)
+        loop = asyncio.get_event_loop()
+        pdf_buffer = await loop.run_in_executor(
+            None,
+            generate_ot_pdf,
+            relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
+            equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+        )
+        duration = _time.time() - t0
+        if duration > 15:
+            logging.warning(f"[PDF] Geração lenta FS#{relatorio.get('numero_assistencia')}: {duration:.1f}s")
     except Exception as e:
         logging.error(f"Erro ao gerar PDF para OT {relatorio_id}: {str(e)}")
         import traceback
@@ -2187,7 +2208,7 @@ async def preview_pdf_ot(
             context=f"FS#{numero_ot}",
             action="Gerar PDF",
             error_message=str(e),
-            details={"relatorio_id": relatorio_id, "traceback": tb[:1500]},
+            details={"relatorio_id": relatorio_id, "traceback": tb[:1500], "duration_s": round(_time.time()-t0, 1)},
             user_id=current_user.get("sub"),
             username=current_user.get("username")
         )

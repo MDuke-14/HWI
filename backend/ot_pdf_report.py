@@ -20,10 +20,12 @@ except Exception:
 
 
 # Limite acima do qual uma foto é comprimida antes de ser embutida no PDF.
-# Fotos grandes (>2MB) provocam OOM em workers de produção com pouca RAM.
-PHOTO_COMPRESS_THRESHOLD_BYTES = 2 * 1024 * 1024  # 2 MB
-PHOTO_MAX_DIMENSION_PX = 1600  # lado maior após compressão
-PHOTO_JPEG_QUALITY = 80
+# A 7.5cm × 5cm no PDF final, 1400px já é mais que suficiente para impressão de alta qualidade.
+# Threshold baixo (500KB) garante PDFs leves e geração rápida mesmo em pods com pouca RAM —
+# CRÍTICO: estes PDFs vão para clientes anexados às faturas, não podem falhar nem ser pesados.
+PHOTO_COMPRESS_THRESHOLD_BYTES = 500 * 1024  # 500 KB
+PHOTO_MAX_DIMENSION_PX = 1400  # lado maior após compressão
+PHOTO_JPEG_QUALITY = 82  # qualidade suficiente para impressão
 
 
 def _compress_photo_if_large(raw_bytes: bytes, context: str = "") -> bytes:

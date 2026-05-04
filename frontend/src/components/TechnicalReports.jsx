@@ -3873,7 +3873,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           documentos: documentos,
           hide_client_pcs: false,
           idioma: idiomaEmail
-        }
+        },
+        { timeout: 120000 }  // 2 min — envio de email pode demorar com PDFs grandes + SMTP
       );
       
       const { emails_enviados, emails_falhados } = response.data;
