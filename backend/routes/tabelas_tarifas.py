@@ -180,6 +180,57 @@ async def delete_tabela_preco_imagem(
     return {"message": "Imagem eliminada com sucesso"}
 
 
+@router.post("/tabelas-preco/{table_id}/set-default")
+async def set_default_tabela_preco(
+    table_id: int,
+    current_user: dict = Depends(get_current_admin)
+):
+    """Marcar uma tabela como padrão (admin only).
+    
+    A tabela padrão é usada automaticamente nas Folhas de Horas (download e
+    envio por email) quando nenhuma `table_id` é passada explicitamente.
+    """
+    existing = await db.tabelas_preco.find_one({"table_id": table_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tabela de preço não encontrada")
+    
+    # Desmarcar todas as outras tabelas (mutex)
+    await db.tabelas_preco.update_many(
+        {"table_id": {"$ne": table_id}},
+        {"$set": {"is_default": False}}
+    )
+    # Marcar esta como padrão
+    await db.tabelas_preco.update_one(
+        {"table_id": table_id},
+        {"$set": {
+            "is_default": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    logging.info(f"Tabela de Preço {table_id} marcada como padrão por {current_user['sub']}")
+    return {"message": f"Tabela {table_id} definida como padrão", "table_id": table_id}
+
+
+async def get_default_table_id() -> int:
+    """Retorna o `table_id` da tabela marcada como padrão.
+    
+    Fallback inteligente: se não houver tabela marcada como padrão, devolve a
+    primeira tabela ativa que tenha tarifas. Se não existir nada, devolve 1.
+    """
+    default = await db.tabelas_preco.find_one({"is_default": True}, {"_id": 0, "table_id": 1})
+    if default:
+        return default["table_id"]
+    # Fallback: primeira tabela com tarifas ativas
+    first_with_tarifa = await db.tarifas.find_one(
+        {"ativo": True, "codigo": {"$nin": [None, "", "manual"]}},
+        {"_id": 0, "table_id": 1}
+    )
+    if first_with_tarifa and first_with_tarifa.get("table_id"):
+        return first_with_tarifa["table_id"]
+    return 1
+
+
 @router.get("/tarifas")
 async def get_tarifas(
     table_id: Optional[int] = None,

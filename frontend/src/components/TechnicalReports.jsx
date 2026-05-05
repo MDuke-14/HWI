@@ -3900,7 +3900,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           hide_client_pcs: false,
           idioma: idiomaEmail,
           // paridade com /folha-horas-pdf — garante valores €/h e despesas corretas
-          table_id: 1,
+          // Backend escolhe automaticamente a tabela marcada como padrão em /admin
+          table_id: null,
           tarifas_por_tecnico: tarifasPorTecnico,
           dados_extras: dadosExtras,
           despesa_adjustments: {}

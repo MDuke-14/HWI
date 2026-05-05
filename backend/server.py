@@ -4078,8 +4078,13 @@ async def generate_folha_horas(
                 if ho > 0:
                     registos_mao_obra.append({**base, "tipo": "oficina", "horas_arredondadas": ho, "km": 0})
     
-    # Obter o table_id do request (default: 1)
-    table_id = request.table_id if hasattr(request, 'table_id') else 1
+    # Obter o table_id do request — fallback para tabela marcada como padrão em /admin
+    requested_table_id = request.table_id if hasattr(request, 'table_id') else None
+    if not requested_table_id:
+        from routes.tabelas_tarifas import get_default_table_id
+        table_id = await get_default_table_id()
+    else:
+        table_id = requested_table_id
     
     # Buscar configuração da tabela de preço selecionada (valor por Km)
     tabela_config = await db.tabelas_preco.find_one({"table_id": table_id}, {"_id": 0})

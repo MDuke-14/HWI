@@ -59,6 +59,11 @@ const FolhaHorasModal = ({
     try {
       const response = await axios.get(`${API}/tabelas-preco`);
       setTabelasPreco(response.data);
+      // Pré-selecionar a tabela marcada como padrão (se existir)
+      const defaultTabela = response.data.find(t => t.is_default);
+      if (defaultTabela) {
+        setSelectedTableId(defaultTabela.table_id);
+      }
     } catch (error) {
       console.error('Erro ao carregar tabelas de preço');
     }

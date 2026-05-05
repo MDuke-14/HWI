@@ -194,6 +194,19 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 - O frontend já usa `/image?thumb=true` (thumbnail) na grid e `/image` (full) apenas ao clicar — portanto lazy loading funciona sem alterações no frontend.
 - **Validação:** Payload com 3 fotos passou de centenas de KB para ~1.4 KB. Thumbs (~6 KB) e full (~89 KB) servidos individualmente via endpoint `/image` com `Cache-Control: public, max-age=86400`.
 
+### P1 IMPLEMENTED (2026-02): Tabela de preços padrão para Folhas de Horas
+- **Pedido:** Marcar uma tabela de preços em `/admin > Tabela de Preço` como padrão para que seja sempre usada automaticamente ao gerar Folhas de Horas (preview, download, email).
+- **Implementação:**
+  - Backend `models.py::TabelaPrecoConfig` — adicionado campo `is_default: bool = False`.
+  - Backend novo endpoint `POST /api/tabelas-preco/{table_id}/set-default` (admin only) — marca a tabela como padrão e desmarca todas as outras (mutex).
+  - Backend novo helper `routes/tabelas_tarifas.py::get_default_table_id()` — devolve `table_id` da tabela padrão; fallback inteligente para primeira tabela com tarifas ativas; final fallback `1`.
+  - Backend `EnviarEmailRequest` e `FolhaHorasRequest`: `table_id` agora é `Optional[int] = None`. Quando `None`, o handler chama `get_default_table_id()`.
+  - Backend `_enviar_pdf_worker` (email) e `/folha-horas-pdf` (preview/download) usam `get_default_table_id()` quando frontend não passa `table_id`.
+  - Frontend `AdminDashboard.jsx` — botão "Definir como Padrão" (com ícone Star) no card da tabela; estrela amarela na tab da tabela padrão; botão "Eliminar" oculto para a tabela padrão (proteção); badge "Padrão" no header.
+  - Frontend `FolhaHorasModal.jsx` — pré-seleciona automaticamente a tabela marcada como padrão ao abrir o modal.
+  - Frontend `TechnicalReports.jsx::handleConfirmSendEmail` — passa `table_id: null` para deixar o backend escolher a padrão.
+- **Validação:** Marcar tabela 2 como padrão → toast "Será usada automaticamente nas Folhas de Horas" → estrela aparece na tab "2025" → ao gerar Folha de Horas SEM `table_id`, o PDF usa as tarifas da tabela 2 (50€/h em vez de 30€/h da tabela 1). Mutex confirmado: só uma tabela é padrão de cada vez.
+
 ### P0 FIXED (2026-02): Folha de Horas no email — "h" no Resumo + valores €0
 - **Sintoma:** No PDF de Folha de Horas enviado por email, o resumo do colaborador mostrava `8.00h, 1.20h` (com sufixo "h" duplicado já que o cabeçalho já indica horas) E os valores €/h por código apareciam todos a "-" (zero euros).
 - **Root cause 1 (cosmético):** `f"{h:.2f}h"` no resumo. Linha 581, 585, 589 de `folha_horas_pdf.py`.

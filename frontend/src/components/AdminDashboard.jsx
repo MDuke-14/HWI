@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map, Receipt } from 'lucide-react';
+import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map, Receipt, Star } from 'lucide-react';
 import HelpTooltip from '@/components/HelpTooltip';
 import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
@@ -246,6 +246,19 @@ const AdminDashboard = ({ user, onLogout }) => {
       fetchTabelasPreco();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao eliminar tabela');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetDefaultTabela = async (tableId, tableName) => {
+    setLoading(true);
+    try {
+      await axios.post(`${API}/tabelas-preco/${tableId}/set-default`);
+      toast.success(`"${tableName}" definida como tabela padrão. Será usada automaticamente nas Folhas de Horas.`);
+      fetchTabelasPreco();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao definir tabela padrão');
     } finally {
       setLoading(false);
     }
@@ -1774,8 +1787,13 @@ const AdminDashboard = ({ user, onLogout }) => {
                           ? 'bg-amber-600 text-white'
                           : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#252525] border border-gray-700'
                       }`}
+                      data-testid={`tab-tabela-${tabela.table_id}`}
                     >
-                      <DollarSign className="w-4 h-4" />
+                      {tabela.is_default ? (
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      ) : (
+                        <DollarSign className="w-4 h-4" />
+                      )}
                       {tabela.nome || `Tabela ${tabela.table_id}`}
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
                         selectedTableId === tabela.table_id ? 'bg-amber-700' : 'bg-gray-700'
@@ -1812,8 +1830,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <DollarSign className="w-6 h-6 text-amber-400" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-amber-400">
+                            <h3 className="text-lg font-semibold text-amber-400 flex items-center gap-2">
                               {tabelaAtual?.nome || `Tabela ${selectedTableId}`}
+                              {tabelaAtual?.is_default && (
+                                <span className="inline-flex items-center gap-1 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-500/40">
+                                  <Star className="w-3 h-3 fill-yellow-400" />
+                                  Padrão
+                                </span>
+                              )}
                             </h3>
                             <p className="text-gray-400 text-sm">
                               Valor por Km: <span className="text-amber-400 font-bold">{(tabelaAtual?.valor_km || 0.65).toFixed(2)}€</span>
@@ -1821,7 +1845,19 @@ const AdminDashboard = ({ user, onLogout }) => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          {!tabelaAtual?.is_default && tabelaAtual && (
+                            <Button 
+                              onClick={() => handleSetDefaultTabela(tabelaAtual.table_id, tabelaAtual.nome || `Tabela ${tabelaAtual.table_id}`)}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white rounded-full"
+                              size="sm"
+                              data-testid="btn-set-default-tabela"
+                              title="Esta tabela será usada automaticamente nas Folhas de Horas"
+                            >
+                              <Star className="w-4 h-4 mr-2" />
+                              Definir como Padrão
+                            </Button>
+                          )}
                           <Button 
                             onClick={() => tabelaAtual && handleOpenTabelaDialog(tabelaAtual)}
                             className="bg-amber-600 hover:bg-amber-700 text-white rounded-full"
@@ -1830,7 +1866,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </Button>
-                          {tabelasPreco.length > 1 && (
+                          {tabelasPreco.length > 1 && !tabelaAtual?.is_default && (
                             <Button 
                               onClick={() => tabelaAtual && handleDeleteTabela(tabelaAtual.table_id, tabelaAtual.nome)}
                               className="bg-red-600 hover:bg-red-700 text-white rounded-full"

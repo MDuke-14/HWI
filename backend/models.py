@@ -369,7 +369,7 @@ class EnviarEmailRequest(BaseModel):
     hide_client_pcs: bool = False
     idioma: str = "pt"
     # Folha de Horas — paridade com /folha-horas-pdf (preview/download)
-    table_id: int = 1
+    table_id: Optional[int] = None  # None = usa tabela marcada como padrão em /admin
     tarifas_por_tecnico: Optional[dict] = None
     dados_extras: Optional[dict] = None
     despesa_adjustments: Optional[dict] = None
@@ -623,6 +623,7 @@ class TabelaPrecoConfig(BaseModel):
     valor_km: float = 0.65
     valor_dieta: float = 0
     nome: str = ""
+    is_default: bool = False  # Tabela padrão usada automaticamente nas Folhas de Horas
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
 
@@ -635,11 +636,12 @@ class TabelaPrecoConfigUpdate(BaseModel):
     valor_km: Optional[float] = None
     valor_dieta: Optional[float] = None
     nome: Optional[str] = None
+    is_default: Optional[bool] = None
 
 class FolhaHorasRequest(BaseModel):
     tarifas_por_tecnico: dict
     dados_extras: dict
-    table_id: int = 1
+    table_id: Optional[int] = None  # None = usa tabela marcada como padrão em /admin
     despesa_adjustments: Optional[dict] = None
     intervencao_ids: Optional[List[str]] = None  # se preenchido, gera FH só com horas facturadas dessas intervenções
 

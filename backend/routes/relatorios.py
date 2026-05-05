@@ -1879,7 +1879,9 @@ async def _enviar_pdf_worker(
                 ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
                 
                 # Buscar tarifas da tabela de preço escolhida pelo utilizador (paridade c/ preview)
-                _table_id = request.table_id or 1
+                # Se não passou table_id explícito, usa a tabela marcada como padrão em /admin
+                from routes.tabelas_tarifas import get_default_table_id
+                _table_id = request.table_id if request.table_id else await get_default_table_id()
                 tabela_config = await db.tabelas_preco.find_one({"table_id": _table_id}, {"_id": 0})
                 valor_km = tabela_config.get("valor_km", 0.65) if tabela_config else 0.65
                 valor_dieta_tabela = tabela_config.get("valor_dieta", 0) if tabela_config else 0
