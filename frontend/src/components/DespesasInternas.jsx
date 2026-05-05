@@ -670,10 +670,12 @@ const DespesasInternas = ({ user, onLogout }) => {
                   >
                     <option value="semanal">Semanal</option>
                     <option value="mensal">Mensal</option>
+                    <option value="trimestral">Trimestral</option>
+                    <option value="semestral">Semestral</option>
                     <option value="anual">Anual</option>
                   </select>
                 </div>
-                {form.recorrencia === 'mensal' && (
+                {(form.recorrencia === 'mensal' || form.recorrencia === 'trimestral' || form.recorrencia === 'semestral') && (
                   <div>
                     <Label>Dia do mês (1–31, opcional)</Label>
                     <Input

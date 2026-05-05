@@ -2,7 +2,7 @@
 Router para Despesas Internas (gestão administrativa de encargos da empresa).
 
 Inclui:
-- CRUD de despesas (pontuais ou recorrentes: semanal/mensal/anual)
+- CRUD de despesas (pontuais ou recorrentes: semanal/mensal/trimestral/semestral/anual)
 - Geração virtual de ocorrências num intervalo (até 24 meses)
 - Marcar ocorrência como paga (materializa o pagamento)
 - Balanço anual (total + por mês + por despesa)
@@ -91,6 +91,24 @@ def _generate_occurrences(
                 y += 1; m = 1
             else:
                 m += 1
+        return dates
+
+    if rec in ("trimestral", "semestral"):
+        # Saltos de 3 ou 6 meses mantendo o dia_mes (ou o dia de `di`)
+        step_meses = 3 if rec == "trimestral" else 6
+        dia_mes = despesa.get("dia_mes") or di.day
+        y, m = di.year, di.month
+        while True:
+            d = _adjust_day_for_month(y, m, dia_mes)
+            if d > end_lim:
+                break
+            if d >= range_start and d >= di:
+                dates.append(d)
+            # avançar `step_meses` meses
+            m += step_meses
+            while m > 12:
+                m -= 12
+                y += 1
         return dates
 
     if rec == "anual":
@@ -199,8 +217,8 @@ async def criar_despesa(
 ):
     if payload.tipo_pagamento not in ("pontual", "recorrente"):
         raise HTTPException(status_code=400, detail="tipo_pagamento deve ser 'pontual' ou 'recorrente'")
-    if payload.tipo_pagamento == "recorrente" and payload.recorrencia not in ("semanal", "mensal", "anual"):
-        raise HTTPException(status_code=400, detail="recorrencia deve ser 'semanal', 'mensal' ou 'anual'")
+    if payload.tipo_pagamento == "recorrente" and payload.recorrencia not in ("semanal", "mensal", "trimestral", "semestral", "anual"):
+        raise HTTPException(status_code=400, detail="recorrencia deve ser 'semanal', 'mensal', 'trimestral', 'semestral' ou 'anual'")
 
     # Validação anti-duplicado: mesma categoria + mesmo valor já existe (e activa)?
     if payload.categoria_id:
