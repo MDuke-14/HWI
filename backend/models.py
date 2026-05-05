@@ -368,6 +368,11 @@ class EnviarEmailRequest(BaseModel):
     documentos: Optional[List[str]] = None
     hide_client_pcs: bool = False
     idioma: str = "pt"
+    # Folha de Horas — paridade com /folha-horas-pdf (preview/download)
+    table_id: int = 1
+    tarifas_por_tecnico: Optional[dict] = None
+    dados_extras: Optional[dict] = None
+    despesa_adjustments: Optional[dict] = None
 
 
 # ============ Referência Interna ============

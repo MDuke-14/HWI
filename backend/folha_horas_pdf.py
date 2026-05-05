@@ -578,15 +578,15 @@ def generate_folha_horas_pdf(
         resumo_row_horas = [nome, funcao_label]
         for c in codigos:
             h = trabalho_horas_cod.get(c, 0)
-            resumo_row_horas.append(f"{h:.2f}h" if h > 0 else '-')
+            resumo_row_horas.append(f"{h:.2f}" if h > 0 else '-')
             total_horas_colab += h
         for c in codigos:
             h = viagem_horas_cod.get(c, 0)
-            resumo_row_horas.append(f"{h:.2f}h" if h > 0 else '-')
+            resumo_row_horas.append(f"{h:.2f}" if h > 0 else '-')
             total_horas_colab += h
         resumo_row_horas.append(f"{km_total_val:.2f}" if km_total_val > 0 else '-')
         resumo_row_horas.append(f"{colab_total_dieta:.2f}€" if colab_total_dieta > 0 else '-')
-        resumo_row_horas.append(f"{total_horas_colab:.2f}h")
+        resumo_row_horas.append(f"{total_horas_colab:.2f}")
 
         # --- Linha 2: TOTAL € POR CÓDIGO ---
         resumo_row_euros = ['', 'TOTAL €']

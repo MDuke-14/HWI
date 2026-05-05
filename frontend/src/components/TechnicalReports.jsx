@@ -3866,13 +3866,44 @@ const TechnicalReports = ({ user, onLogout }) => {
         return;
       }
       
+      // Construir tarifas_por_tecnico e dados_extras a partir do estado da Folha de Horas
+      // (paridade com handleGenerateFolhaHoras — garante que os €/h aparecem no PDF)
+      const tarifasPorTecnico = {};
+      const tarifasMap = {};
+      if (folhaHorasData?.tarifas) {
+        folhaHorasData.tarifas.forEach(t => { tarifasMap[t.id] = t.valor_por_hora; });
+      }
+      Object.entries(folhaHorasTarifas || {}).forEach(([tecnicoId, tarifaIdOrValor]) => {
+        if (tarifaIdOrValor) {
+          const valor = tarifasMap[tarifaIdOrValor] !== undefined 
+            ? tarifasMap[tarifaIdOrValor] 
+            : parseFloat(tarifaIdOrValor);
+          if (!isNaN(valor)) {
+            tarifasPorTecnico[tecnicoId] = valor;
+          }
+        }
+      });
+      const dadosExtras = {};
+      Object.entries(folhaHorasExtras || {}).forEach(([chave, valores]) => {
+        dadosExtras[chave] = {
+          dieta: parseFloat(valores.dieta) || 0,
+          portagens: parseFloat(valores.portagens) || 0,
+          despesas: parseFloat(valores.despesas) || 0
+        };
+      });
+      
       const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/enviar-pdf`,
         { 
           emails: emailsPendentes,
           documentos: documentos,
           hide_client_pcs: false,
-          idioma: idiomaEmail
+          idioma: idiomaEmail,
+          // paridade com /folha-horas-pdf — garante valores €/h e despesas corretas
+          table_id: 1,
+          tarifas_por_tecnico: tarifasPorTecnico,
+          dados_extras: dadosExtras,
+          despesa_adjustments: {}
         },
         { timeout: 30000 }  // resposta imediata (background) — 30s é seguro
       );

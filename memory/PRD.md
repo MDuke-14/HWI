@@ -194,6 +194,18 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 - O frontend já usa `/image?thumb=true` (thumbnail) na grid e `/image` (full) apenas ao clicar — portanto lazy loading funciona sem alterações no frontend.
 - **Validação:** Payload com 3 fotos passou de centenas de KB para ~1.4 KB. Thumbs (~6 KB) e full (~89 KB) servidos individualmente via endpoint `/image` com `Cache-Control: public, max-age=86400`.
 
+### P0 FIXED (2026-02): Folha de Horas no email — "h" no Resumo + valores €0
+- **Sintoma:** No PDF de Folha de Horas enviado por email, o resumo do colaborador mostrava `8.00h, 1.20h` (com sufixo "h" duplicado já que o cabeçalho já indica horas) E os valores €/h por código apareciam todos a "-" (zero euros).
+- **Root cause 1 (cosmético):** `f"{h:.2f}h"` no resumo. Linha 581, 585, 589 de `folha_horas_pdf.py`.
+- **Root cause 2 (valores):** O endpoint `enviar-pdf` (em `routes/relatorios.py`) **hardcodava** `table_id=1` e **passava `tarifas_por_tecnico={}`** sem aceitar overrides do frontend, ao contrário do `/folha-horas-pdf` (download) que aceita `request.table_id`, `tarifas_por_tecnico`, `dados_extras`, `despesa_adjustments`. Resultado: se o utilizador configurou tarifas noutra tabela ou se as tarifas DB têm `tipo_colaborador` estrito que não bate com a `funcao_ot` do colaborador, o lookup falha e `total_valor=0`.
+- **Fix:**
+  - `folha_horas_pdf.py` — sufixo "h" removido das células do resumo (mantido nos cabeçalhos como contexto).
+  - `models.py::EnviarEmailRequest` — adicionados `table_id`, `tarifas_por_tecnico`, `dados_extras`, `despesa_adjustments`.
+  - `routes/relatorios.py::_enviar_pdf_worker` — usa `request.table_id` (não hardcoded) e os overrides do frontend; aplica também `despesa_adjustments` (exclusões/percentuais) tal como o preview.
+  - **Fallback inteligente:** Se a `table_id` escolhida não tem tarifas, o backend procura automaticamente qualquer tabela ativa com tarifas e regista um warning. Evita PDFs com €0 quando o utilizador não passa `table_id`.
+  - `TechnicalReports.jsx::handleConfirmSendEmail` — passa `tarifas_por_tecnico` e `dados_extras` construídos a partir do estado da Folha de Horas.
+- **Validação:** Folha de Horas testada com FS `8d3a0111-...` mostra Resumo correto: `9.00 / 270.00€ / 1056.25€` — sem "h", com valores €.
+
 ### P0 FIXED (2026-02): `enviar-pdf` HTTP 520 persistente — refactor para background task
 - **Sintoma:** Mesmo após mover geração de PDF para thread pool, FSs com muitas fotos+registos continuavam a dar HTTP 520 em produção (FS 57326e83). O timeout do Cloudflare ingress (~100s) é INDEPENDENTE do worker estar bloqueado ou não — qualquer request HTTP que demore mais que 100s = 520.
 - **Root cause definitivo:** O fluxo síncrono "request → gerar 2-3 PDFs → enviar SMTP a N destinatários → responder" pode legitimamente ultrapassar 100s em FSs muito pesadas.

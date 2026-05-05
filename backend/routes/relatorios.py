@@ -1878,19 +1878,41 @@ async def _enviar_pdf_worker(
                     {"relatorio_id": relatorio_id}, {"_id": 0}
                 ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
                 
-                # Buscar tarifas da primeira tabela de preço activa
-                tabela_config = await db.tabelas_preco.find_one({"table_id": 1}, {"_id": 0})
+                # Buscar tarifas da tabela de preço escolhida pelo utilizador (paridade c/ preview)
+                _table_id = request.table_id or 1
+                tabela_config = await db.tabelas_preco.find_one({"table_id": _table_id}, {"_id": 0})
                 valor_km = tabela_config.get("valor_km", 0.65) if tabela_config else 0.65
                 valor_dieta_tabela = tabela_config.get("valor_dieta", 0) if tabela_config else 0
                 
                 tarifas_db = await db.tarifas.find({
                     "ativo": True, 
-                    "table_id": 1,
+                    "table_id": _table_id,
                     "codigo": {"$nin": [None, "", "manual"]}
                 }, {"_id": 0}).to_list(length=None)
                 
+                # Fallback: se a tabela escolhida não tem tarifas, usar qualquer outra
+                # tabela ativa (evita PDF com valores €0 quando o utilizador não passou table_id)
+                if not tarifas_db:
+                    tarifas_db = await db.tarifas.find({
+                        "ativo": True,
+                        "codigo": {"$nin": [None, "", "manual"]}
+                    }, {"_id": 0}).to_list(length=None)
+                    if tarifas_db:
+                        fallback_table_id = tarifas_db[0].get('table_id')
+                        logging.warning(
+                            f"[enviar-pdf] FS#{numero_ot}: tabela {_table_id} sem tarifas — fallback para tabela {fallback_table_id}"
+                        )
+                        if not tabela_config:
+                            tabela_config = await db.tabelas_preco.find_one(
+                                {"table_id": fallback_table_id}, {"_id": 0}
+                            )
+                            if tabela_config:
+                                valor_km = tabela_config.get("valor_km", 0.65)
+                                valor_dieta_tabela = tabela_config.get("valor_dieta", 0)
+                
                 tarifas_por_codigo = {}
-                tarifas_por_tecnico = {}
+                # tarifas_por_tecnico vem do frontend (overrides manuais por colaborador/dia)
+                tarifas_por_tecnico = request.tarifas_por_tecnico or {}
                 tarifas_detalhadas_email = []
                 for tarifa in tarifas_db:
                     codigo = tarifa.get('codigo')
@@ -1904,14 +1926,27 @@ async def _enviar_pdf_worker(
                             'nome': tarifa.get('nome', '')
                         })
                 
-                # Buscar despesas da OT
+                # Buscar despesas da OT (com ajustes vindos do frontend)
                 despesas_ot = await db.despesas_ot.find(
                     {"relatorio_id": relatorio_id}, {"_id": 0}
                 ).to_list(length=None)
                 
+                # Aplicar despesa_adjustments do frontend (exclusões + percentuais)
+                _adjustments = request.despesa_adjustments or {}
                 dados_extras = {}
                 despesas_ajustadas_email = []
                 for desp in despesas_ot:
+                    desp_id = desp.get("id", "")
+                    adj = _adjustments.get(desp_id, {})
+                    if adj.get("excluida", False):
+                        continue
+                    valor_original = desp.get("valor", 0) or 0
+                    percentual = adj.get("percentual", 0) or 0
+                    valor_final = valor_original * (1 + percentual / 100)
+                    desp["valor_original"] = valor_original
+                    desp["valor_ajustado"] = valor_final
+                    desp["percentual_aplicado"] = percentual
+                    
                     key = f"{desp['tecnico_id']}_{desp['data']}"
                     tipo = desp.get('tipo', 'outras')
                     
@@ -1919,13 +1954,25 @@ async def _enviar_pdf_worker(
                         dados_extras[key] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
                     
                     if tipo == 'portagens':
-                        dados_extras[key]['portagens'] += desp.get('valor', 0)
+                        dados_extras[key]['portagens'] += valor_final
                     elif tipo == 'combustivel':
                         pass
                     else:
-                        dados_extras[key]['despesas'] += desp.get('valor', 0)
+                        dados_extras[key]['despesas'] += valor_final
                     
                     despesas_ajustadas_email.append(desp)
+                
+                # Mesclar dados_extras vindos do frontend (dieta/portagens manuais por dia)
+                _frontend_extras = request.dados_extras or {}
+                for k, v in _frontend_extras.items():
+                    if k not in dados_extras:
+                        dados_extras[k] = {'dieta': 0, 'portagens': 0, 'despesas': 0}
+                    if 'dieta' in v:
+                        dados_extras[k]['dieta'] = float(v.get('dieta', 0) or 0)
+                    if 'portagens' in v:
+                        dados_extras[k]['portagens'] = float(v.get('portagens', 0) or 0)
+                    if 'despesas' in v:
+                        dados_extras[k]['despesas'] = float(v.get('despesas', 0) or 0)
                 
                 # Aplicar dieta automática da tabela de preço a cada técnico/dia
                 if valor_dieta_tabela > 0:
