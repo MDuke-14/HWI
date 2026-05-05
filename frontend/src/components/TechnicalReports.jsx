@@ -3874,12 +3874,18 @@ const TechnicalReports = ({ user, onLogout }) => {
           hide_client_pcs: false,
           idioma: idiomaEmail
         },
-        { timeout: 120000 }  // 2 min — envio de email pode demorar com PDFs grandes + SMTP
+        { timeout: 30000 }  // resposta imediata (background) — 30s é seguro
       );
       
-      const { emails_enviados, emails_falhados } = response.data;
+      const { emails_enviados, emails_falhados, queued } = response.data;
       
-      if (emails_falhados && emails_falhados.length > 0) {
+      if (queued) {
+        // Backend processa em background — informar utilizador
+        toast.success(
+          `${documentos.length} documento(s) em processamento para ${emails_enviados.length} email(s). Se houver erro será registado em /admin/erros.`,
+          { duration: 5000 }
+        );
+      } else if (emails_falhados && emails_falhados.length > 0) {
         toast.warning(`Documentos enviados para ${emails_enviados.length} email(s). ${emails_falhados.length} falharam.`);
       } else {
         toast.success(`${documentos.length} documento(s) enviado(s) para ${emails_enviados.length} email(s)!`);

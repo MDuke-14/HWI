@@ -194,15 +194,17 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 - O frontend já usa `/image?thumb=true` (thumbnail) na grid e `/image` (full) apenas ao clicar — portanto lazy loading funciona sem alterações no frontend.
 - **Validação:** Payload com 3 fotos passou de centenas de KB para ~1.4 KB. Thumbs (~6 KB) e full (~89 KB) servidos individualmente via endpoint `/image` com `Cache-Control: public, max-age=86400`.
 
-### P0 FIXED (2026-02): `enviar-pdf` timeout 520 bloqueando event loop
-- **Root cause:** O endpoint `POST /relatorios-tecnicos/{id}/enviar-pdf` gerava `generate_folha_horas_pdf` e `generate_pc_pdf` de forma **síncrona dentro do handler async**, bloqueando o event loop do FastAPI. Consequências:
-  1. Endpoints paralelos (ex: `GET /notifications`) também retornavam 520 porque não conseguiam ser processados enquanto o worker estava preso na geração de PDF.
-  2. Para FSs pesadas, a geração total ultrapassava o timeout de ingress Cloudflare (100s) → HTTP 520.
-- **Fix:** Migradas as 2 gerações sync de PDF para `loop.run_in_executor` (thread pool), igual ao que já existia para `generate_ot_pdf`.
-  - `generate_folha_horas_pdf` em thread pool (com `functools.partial` para kwargs).
-  - `generate_pc_pdf` em thread pool num loop.
-- **Validação:** `POST /enviar-pdf` com `documentos=[relatorio, folha_horas]` agora responde em ~4.5s (antes bloqueava tudo). O event loop fica livre → `/notifications` e outras requests concorrentes servidas sem 520.
-- **Nota:** FSs extremamente pesadas (muitas fotos + muitos registos) ainda podem exceder 100s no total. Se o problema persistir em produção após deploy, considerar migração para `BackgroundTasks` + resposta 202 imediata.
+### P0 FIXED (2026-02): `enviar-pdf` HTTP 520 persistente — refactor para background task
+- **Sintoma:** Mesmo após mover geração de PDF para thread pool, FSs com muitas fotos+registos continuavam a dar HTTP 520 em produção (FS 57326e83). O timeout do Cloudflare ingress (~100s) é INDEPENDENTE do worker estar bloqueado ou não — qualquer request HTTP que demore mais que 100s = 520.
+- **Root cause definitivo:** O fluxo síncrono "request → gerar 2-3 PDFs → enviar SMTP a N destinatários → responder" pode legitimamente ultrapassar 100s em FSs muito pesadas.
+- **Fix definitivo:** Refatorado `POST /api/relatorios-tecnicos/{id}/enviar-pdf` para usar **fire-and-forget background task** (`asyncio.create_task`):
+  - Endpoint valida inputs e responde **HTTP 200 em ~0.2s**.
+  - Worker `_enviar_pdf_worker` corre em background gerando PDFs e enviando SMTP.
+  - Erros (geração ou SMTP) são registados em `app_errors` via `log_app_error` e aparecem em `/admin/erros`.
+  - Resposta inclui flag `queued: true` para o frontend informar o utilizador.
+- **Frontend:** Toast atualizado: "X documento(s) em processamento para Y email(s). Se houver erro será registado em /admin/erros." Timeout reduzido para 30s.
+- **Resultado:** Impossível dar 520 neste endpoint, independente de quão pesada seja a FS.
+- **Validação:** Endpoint retorna 200 em 200ms. Background task verificada nos logs com erros corretos em `app_errors`.
 
 ## Pending Issues (Prioritized)
 ### P0

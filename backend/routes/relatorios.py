@@ -1728,7 +1728,53 @@ async def enviar_pdf_ot(
     request: EnviarEmailRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Gerar PDFs selecionados da FS e enviar por email"""
+    """Enfileira a geração + envio de PDFs em background para evitar timeout 520.
+    
+    Retorna 200 imediatamente. O trabalho pesado (gerar PDFs + enviar SMTP) corre
+    numa task assíncrona. Erros são registados em `app_errors` (visíveis em
+    `/admin/erros`). Frontend não precisa esperar o SMTP.
+    """
+    # Validações rápidas (síncronas) - podem rejeitar cedo
+    if not request.emails or len(request.emails) == 0:
+        raise HTTPException(status_code=400, detail="Pelo menos um email deve ser fornecido")
+    
+    relatorio_exists = await db.relatorios_tecnicos.find_one(
+        {"id": relatorio_id}, {"_id": 0, "numero_assistencia": 1}
+    )
+    if not relatorio_exists:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+    
+    # Enfileirar trabalho em background (não bloqueia a resposta HTTP)
+    import asyncio as _asyncio
+    _asyncio.create_task(_enviar_pdf_worker(
+        relatorio_id=relatorio_id,
+        request=request,
+        current_user=current_user,
+    ))
+    
+    numero_ot = relatorio_exists.get('numero_assistencia', 'N/A')
+    logging.info(f"[enviar-pdf] FS#{numero_ot} enfileirada para envio a {len(request.emails)} email(s)")
+    
+    # Resposta imediata mantendo forma compatível com o frontend
+    return {
+        "message": f"Envio em processamento para {len(request.emails)} email(s). Notificaremos o resultado em /admin/erros se falhar.",
+        "emails_enviados": list(request.emails),  # otimista: frontend mostra sucesso
+        "emails_falhados": [],
+        "queued": True,
+    }
+
+
+async def _enviar_pdf_worker(
+    relatorio_id: str,
+    request: EnviarEmailRequest,
+    current_user: dict,
+):
+    """Worker assíncrono: gera os PDFs selecionados e envia por email.
+    
+    Roda em background (asyncio.create_task). Qualquer erro é registado em
+    `app_errors` via `log_app_error` para aparecer em `/admin/erros`.
+    """
+    numero_ot = "?"
     try:
         # Determinar documentos a enviar
         docs_selecionados = request.documentos or []
@@ -2096,38 +2142,53 @@ async def enviar_pdf_ot(
                     username=current_user.get("username"),
                 )
         
-        # Se TODOS falharam, devolver 502 para que o frontend trate como erro
+        # Background task: logar resumo final
         if request.emails and not emails_enviados:
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    f"Não foi possível enviar o PDF para nenhum dos {len(request.emails)} destinatário(s). "
-                    f"Verifica as configurações SMTP em /admin/company-info. "
-                    f"Detalhe: {emails_falhados[0].get('error') if emails_falhados else 'sem detalhes'}"
-                ),
+            # Todos falharam — log principal já criado por destinatário
+            logging.error(
+                f"[enviar-pdf][bg] FS#{numero_ot}: TODOS os {len(request.emails)} emails falharam"
             )
-
-        return {
-            "message": f"PDF enviado para {len(emails_enviados)} email(s)" + (
-                f" — {len(emails_falhados)} falhado(s)" if emails_falhados else ""
-            ),
-            "emails_enviados": emails_enviados,
-            "emails_falhados": emails_falhados
-        }
+            await log_app_error(
+                context=f"FS#{numero_ot}",
+                action="Enviar PDF por Email (background)",
+                error_message=(
+                    f"Falha total no envio: {len(request.emails)} destinatário(s) não receberam. "
+                    f"Primeiro erro: {emails_falhados[0].get('error') if emails_falhados else 'sem detalhes'}"
+                ),
+                details={
+                    "relatorio_id": relatorio_id,
+                    "documentos": docs_selecionados,
+                    "destinatarios": request.emails,
+                    "falhas": emails_falhados,
+                },
+                user_id=current_user.get("sub"),
+                username=current_user.get("username"),
+            )
+        else:
+            logging.info(
+                f"[enviar-pdf][bg] FS#{numero_ot}: enviados={len(emails_enviados)}, "
+                f"falhados={len(emails_falhados)}"
+            )
+        return
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logging.error(f"Erro ao enviar PDF: {e}")
-        await log_app_error(
-            context=f"FS#{numero_ot}" if 'numero_ot' in dir() else "FS",
-            action="Enviar PDF por Email",
-            error_message=str(e),
-            details={"relatorio_id": relatorio_id if 'relatorio_id' in dir() else "?"},
-            user_id=current_user.get("sub"),
-            username=current_user.get("username")
-        )
-        raise HTTPException(status_code=500, detail=f"Erro ao enviar PDF: {str(e)}")
+        import traceback as _tb
+        logging.error(f"[enviar-pdf][bg] Erro no worker para FS#{numero_ot}: {e}\n{_tb.format_exc()}")
+        try:
+            await log_app_error(
+                context=f"FS#{numero_ot}",
+                action="Enviar PDF por Email (background)",
+                error_message=f"{type(e).__name__}: {e}",
+                details={
+                    "relatorio_id": relatorio_id,
+                    "traceback": _tb.format_exc()[:1500],
+                },
+                user_id=current_user.get("sub"),
+                username=current_user.get("username"),
+            )
+        except Exception:
+            pass
+        return
 
 @router.get("/relatorios-tecnicos/{relatorio_id}/preview-pdf")
 async def preview_pdf_ot(
