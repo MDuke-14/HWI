@@ -1,5 +1,6 @@
 // Technical Reports Components - Modals
 export { default as FolhaHorasModal } from './FolhaHorasModal';
+export { default as DespesasEmailModal } from './DespesasEmailModal';
 export { default as EquipamentoModal } from './EquipamentoModal';
 export { default as TecnicoModal } from './TecnicoModal';
 export { default as AssinaturaModal } from './AssinaturaModal';

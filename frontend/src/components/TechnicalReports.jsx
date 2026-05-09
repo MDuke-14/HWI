@@ -88,6 +88,7 @@ import {
 // Componentes extraídos
 import { 
   FolhaHorasModal,
+  DespesasEmailModal,
   PDFPreviewModal,
   DeleteConfirmModal,
   AssinaturaModal,
@@ -297,6 +298,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [emailsCliente, setEmailsCliente] = useState([]);
   const [emailsAdicionais, setEmailsAdicionais] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
+  // Ajustes de despesas (percentagens/exclusões) configurados no popup do envio por email
+  const [emailDespesaAdjustments, setEmailDespesaAdjustments] = useState({});
+  const [showDespesasEmailModal, setShowDespesasEmailModal] = useState(false);
   const [emailDestinatario, setEmailDestinatario] = useState('');
   const [emailCC, setEmailCC] = useState('');
 
@@ -3847,6 +3851,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       });
     }
     setDocsSelecionados(docsIniciais);
+    // Reset ajustes de despesas para email (utilizador configura novamente se quiser)
+    setEmailDespesaAdjustments({});
     setShowFolhaHorasConfirm(true);
   };
 
@@ -3904,7 +3910,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           table_id: null,
           tarifas_por_tecnico: tarifasPorTecnico,
           dados_extras: dadosExtras,
-          despesa_adjustments: {}
+          despesa_adjustments: emailDespesaAdjustments || {}
         },
         { timeout: 30000 }  // resposta imediata (background) — 30s é seguro
       );
@@ -6503,11 +6509,35 @@ const TechnicalReports = ({ user, onLogout }) => {
                 onChange={(e) => setDocsSelecionados({ ...docsSelecionados, folha_horas: e.target.checked })}
                 className="accent-amber-500 w-4 h-4"
               />
-              <div>
+              <div className="flex-1">
                 <span className="text-white text-sm font-medium">Folha de Horas</span>
                 <p className="text-gray-500 text-xs">Registo de mão de obra e custos</p>
               </div>
             </label>
+
+            {/* Botão para configurar despesas (só aparece se Folha de Horas estiver selecionada e existirem despesas) */}
+            {docsSelecionados.folha_horas && despesas && despesas.length > 0 && (
+              <div className="ml-7 -mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDespesasEmailModal(true)}
+                  className="w-full text-left px-3 py-2 bg-[#0f0f0f] border border-amber-700/50 rounded-lg hover:border-amber-500 transition-all flex items-center justify-between gap-2"
+                  data-testid="btn-configurar-despesas-email"
+                >
+                  <div className="flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-amber-400" />
+                    <span className="text-amber-300 text-xs">
+                      Configurar despesas ({despesas.length})
+                    </span>
+                  </div>
+                  {Object.keys(emailDespesaAdjustments).length > 0 && (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-700/30 text-emerald-300 border border-emerald-600/50">
+                      {Object.values(emailDespesaAdjustments).filter(a => a.percentual > 0 || a.excluida).length} ajuste(s)
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* PCs */}
             {pedidosCotacao && pedidosCotacao.length > 0 && (
@@ -10325,6 +10355,18 @@ const TechnicalReports = ({ user, onLogout }) => {
         onGeneratePDF={handleGenerateFolhaHoras}
         generatingFolhaHoras={generatingFolhaHoras}
         despesas={despesas}
+      />
+
+      {/* Modal de configuração de despesas para envio por email */}
+      <DespesasEmailModal
+        open={showDespesasEmailModal}
+        onOpenChange={setShowDespesasEmailModal}
+        despesas={despesas}
+        initialAdjustments={emailDespesaAdjustments}
+        onConfirm={(adjustments) => {
+          setEmailDespesaAdjustments(adjustments);
+          toast.success('Configuração de despesas guardada para o email');
+        }}
       />
 
       {/* Modal de Criar FS de Continuidade */}
