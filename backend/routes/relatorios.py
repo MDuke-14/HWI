@@ -2111,85 +2111,137 @@ async def _enviar_pdf_worker(
             referencia_interna=relatorio.get('referencia_interna_cliente')
         )
         
-        # Enviar email para cada destinatário
+        # Normalizar lista de destinatários — dedupe, lowercase, strip vazios
+        # Isto resolve casos onde o cliente.email e emails_adicionais contêm o mesmo endereço
+        seen = set()
+        destinatarios = []
+        for raw in request.emails or []:
+            e = (raw or "").strip()
+            if not e:
+                continue
+            ek = e.lower()
+            if ek in seen:
+                continue
+            seen.add(ek)
+            destinatarios.append(e)
+        
+        if not destinatarios:
+            logging.warning(f"[enviar-pdf][bg] FS#{numero_ot}: nenhum destinatário válido após normalização")
+            return
+        
+        # ENVIO EM LOTE: uma única mensagem com TODOS os destinatários no campo To.
+        # Vantagens vs. loop por email:
+        #   • Uma única conexão SMTP (evita rate limiting do servidor de email)
+        #   • Mais rápido (1 build de mensagem vs. N)
+        #   • Garante que todos recebem ou todos falham juntos (transação atómica)
         emails_enviados = []
         emails_falhados = []
         
-        for email_dest in request.emails:
+        try:
+            message = MIMEMultipart()
+            message['From'] = smtp_from
+            message['To'] = ", ".join(destinatarios)
+            message['Subject'] = subject
+            message.attach(MIMEText(body, 'html'))
+            
+            # Anexar PDF do Relatório se selecionado
+            if pdf_buffer:
+                pdf_attachment = MIMEBase('application', 'pdf')
+                pdf_attachment.set_payload(pdf_buffer.getvalue())
+                encoders.encode_base64(pdf_attachment)
+                pdf_attachment.add_header('Content-Disposition', f'attachment; filename="FS_{numero_ot}.pdf"')
+                message.attach(pdf_attachment)
+            
+            # Anexar Folha de Horas se selecionada
+            if folha_horas_buffer:
+                fh_attachment = MIMEBase('application', 'pdf')
+                fh_attachment.set_payload(folha_horas_buffer.getvalue())
+                encoders.encode_base64(fh_attachment)
+                fh_attachment.add_header('Content-Disposition', f'attachment; filename="FolhaHoras_FS_{numero_ot}.pdf"')
+                message.attach(fh_attachment)
+            
+            # Anexar PDFs de PCs selecionados
+            for pc_info in pc_buffers:
+                pc_attach = MIMEBase('application', 'pdf')
+                pc_attach.set_payload(pc_info["buffer"].getvalue())
+                encoders.encode_base64(pc_attach)
+                pc_attach.add_header('Content-Disposition', f'attachment; filename="{pc_info["numero_pc"]}.pdf"')
+                message.attach(pc_attach)
+            
+            # Enviar para todos os destinatários numa única transação SMTP
+            await aiosmtplib.send(
+                message,
+                hostname=smtp_host,
+                port=smtp_port,
+                username=smtp_user,
+                password=smtp_password,
+                start_tls=True,
+                recipients=destinatarios,
+            )
+            
+            emails_enviados = list(destinatarios)
+            logging.info(
+                f"[enviar-pdf][bg] FS#{numero_ot}: enviado em lote para {len(destinatarios)} destinatário(s): {', '.join(destinatarios)}"
+            )
+            
+        except aiosmtplib.SMTPRecipientsRefused as e:
+            # `e.recipients` é uma list de SMTPRecipientRefused com .recipient/.code/.message
+            rejected_map = {}
             try:
-                message = MIMEMultipart()
-                message['From'] = smtp_from
-                message['To'] = email_dest
-                message['Subject'] = subject
-                
-                message.attach(MIMEText(body, 'html'))
-                
-                # Anexar PDF do Relatório se selecionado
-                if pdf_buffer:
-                    pdf_attachment = MIMEBase('application', 'pdf')
-                    pdf_attachment.set_payload(pdf_buffer.getvalue())
-                    encoders.encode_base64(pdf_attachment)
-                    pdf_attachment.add_header('Content-Disposition', f'attachment; filename="FS_{numero_ot}.pdf"')
-                    message.attach(pdf_attachment)
-                    pdf_buffer.seek(0)
-                
-                # Anexar Folha de Horas se selecionada
-                if folha_horas_buffer:
-                    fh_attachment = MIMEBase('application', 'pdf')
-                    fh_attachment.set_payload(folha_horas_buffer.getvalue())
-                    encoders.encode_base64(fh_attachment)
-                    fh_attachment.add_header('Content-Disposition', f'attachment; filename="FolhaHoras_FS_{numero_ot}.pdf"')
-                    message.attach(fh_attachment)
-                    folha_horas_buffer.seek(0)
-                
-                # Anexar PDFs de PCs selecionados
-                for pc_info in pc_buffers:
-                    pc_attach = MIMEBase('application', 'pdf')
-                    pc_attach.set_payload(pc_info["buffer"].getvalue())
-                    encoders.encode_base64(pc_attach)
-                    pc_attach.add_header('Content-Disposition', f'attachment; filename="{pc_info["numero_pc"]}.pdf"')
-                    message.attach(pc_attach)
-                    pc_info["buffer"].seek(0)
-                
-                # Resetar buffer para próximo email
-                if pdf_buffer:
-                    pdf_buffer.seek(0)
-                
-                # Enviar email
-                await aiosmtplib.send(
-                    message,
-                    hostname=smtp_host,
-                    port=smtp_port,
-                    username=smtp_user,
-                    password=smtp_password,
-                    start_tls=True
-                )
-                
-                emails_enviados.append(email_dest)
-                logging.info(f"PDF da OT {numero_ot} enviado para {email_dest}")
-                
-            except Exception as e:
-                import traceback as _tb
-                tb_str = _tb.format_exc()
-                logging.error(f"Erro ao enviar email para {email_dest}: {e}")
-                emails_falhados.append({"email": email_dest, "error": str(e)[:500]})
+                for r in getattr(e, 'recipients', []) or []:
+                    addr = getattr(r, 'recipient', None) or str(r)
+                    msg = f"{getattr(r, 'code', '')} {getattr(r, 'message', str(r))}"
+                    rejected_map[(addr or '').strip().lower()] = msg
+            except Exception as parse_err:
+                logging.warning(f"[enviar-pdf][bg] FS#{numero_ot}: erro a parsear SMTPRecipientsRefused: {parse_err}")
+            
+            for d in destinatarios:
+                if d.lower() in rejected_map:
+                    emails_falhados.append({"email": d, "error": rejected_map[d.lower()][:500]})
+                else:
+                    emails_enviados.append(d)
+            logging.warning(
+                f"[enviar-pdf][bg] FS#{numero_ot}: SMTPRecipientsRefused — "
+                f"aceites={len(emails_enviados)}, recusados={len(emails_falhados)}"
+            )
+            # Logar falhas em app_errors
+            if emails_falhados:
                 await log_app_error(
                     context=f"FS#{numero_ot}",
                     action="Enviar PDF por Email (SMTP)",
-                    error_message=f"{type(e).__name__}: {e}",
+                    error_message=f"SMTPRecipientsRefused: {len(emails_falhados)} destinatário(s) recusado(s)",
                     details={
-                        "destinatario": email_dest,
-                        "smtp_host": smtp_host,
-                        "smtp_port": smtp_port,
-                        "smtp_user_present": bool(smtp_user),
-                        "smtp_password_present": bool(smtp_password),
-                        "relatorio_id": relatorio_id,
-                        "documentos": docs_selecionados,
-                        "traceback": tb_str[:1500],
+                        "destinatarios": destinatarios,
+                        "recusados": emails_falhados,
+                        "aceites": emails_enviados,
                     },
                     user_id=current_user.get("sub"),
                     username=current_user.get("username"),
                 )
+            
+        except Exception as e:
+            import traceback as _tb
+            tb_str = _tb.format_exc()
+            logging.error(f"[enviar-pdf][bg] FS#{numero_ot}: falha geral no envio em lote: {e}")
+            for d in destinatarios:
+                emails_falhados.append({"email": d, "error": str(e)[:500]})
+            await log_app_error(
+                context=f"FS#{numero_ot}",
+                action="Enviar PDF por Email (SMTP em lote)",
+                error_message=f"{type(e).__name__}: {e}",
+                details={
+                    "destinatarios": destinatarios,
+                    "smtp_host": smtp_host,
+                    "smtp_port": smtp_port,
+                    "smtp_user_present": bool(smtp_user),
+                    "smtp_password_present": bool(smtp_password),
+                    "relatorio_id": relatorio_id,
+                    "documentos": docs_selecionados,
+                    "traceback": tb_str[:1500],
+                },
+                user_id=current_user.get("sub"),
+                username=current_user.get("username"),
+            )
         
         # Background task: logar resumo final
         if request.emails and not emails_enviados:
