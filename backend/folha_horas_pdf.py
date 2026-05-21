@@ -314,23 +314,24 @@ def generate_folha_horas_pdf(
         total_km = reg.get('km', 0) or 0
         dia = reg['data']
 
-        # Tarifa
+        # Tarifa — ordem de prioridade:
+        #   1) Override manual do admin via `tarifas_por_tecnico` (config no modal)
+        #   2) Match exato na DB (find_best_tariff: tipo_registo + tipo_colaborador)
+        #   3) Fallback para tarifa genérica por código
         tarifa_valor = 0
-        if tarifas_detalhadas:
+        for key_attempt in [
+            f"{tecnico_id}_{dia}_{codigo}_{tipo_registo}",
+            reg.get('tarifa_key', ''),
+            reg.get('tarifa_key_alt', ''),
+            f"{tecnico_id}_{dia}_{codigo}",
+            f"{tecnico_id}_{dia}",
+            tecnico_id,
+        ]:
+            if key_attempt and tarifas_por_tecnico.get(key_attempt):
+                tarifa_valor = tarifas_por_tecnico[key_attempt]
+                break
+        if tarifa_valor == 0 and tarifas_detalhadas:
             tarifa_valor = find_best_tariff(codigo, tipo_registo, funcao_ot, tarifas_detalhadas, tarifas_por_codigo)
-        if tarifa_valor == 0:
-            for key_attempt in [
-                f"{tecnico_id}_{dia}_{codigo}_{tipo_registo}",
-                reg.get('tarifa_key', ''),
-                reg.get('tarifa_key_alt', ''),
-                f"{tecnico_id}_{dia}_{codigo}",
-                f"{tecnico_id}_{dia}",
-                tecnico_id,
-            ]:
-                if key_attempt:
-                    tarifa_valor = tarifas_por_tecnico.get(key_attempt, 0)
-                    if tarifa_valor:
-                        break
         if tarifa_valor == 0 and codigo:
             tarifa_valor = tarifas_por_codigo.get(codigo, 0)
 
