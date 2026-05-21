@@ -549,6 +549,37 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro na migração de viagem: {str(e)}")
     
+    # Migração 2026-02: Recalcular `horas_arredondadas` como tempo real (sem arredondamento)
+    # Executada uma única vez controlada por flag em `system_flags`.
+    try:
+        flag = await db.system_flags.find_one({"_id": "migration_no_round_hours_v1"})
+        if not flag:
+            recount = 0
+            cursor = db.registos_tecnico_ot.find(
+                {"minutos_trabalhados": {"$gt": 0}},
+                {"_id": 0, "id": 1, "minutos_trabalhados": 1, "horas_arredondadas": 1}
+            )
+            async for r in cursor:
+                mins = r.get("minutos_trabalhados", 0) or 0
+                if mins <= 0:
+                    continue
+                novas_horas = round(float(mins) / 60.0, 4)
+                # Só atualiza se houver diferença significativa (evita writes inúteis)
+                if abs((r.get("horas_arredondadas", 0) or 0) - novas_horas) > 0.001:
+                    await db.registos_tecnico_ot.update_one(
+                        {"id": r["id"]},
+                        {"$set": {"horas_arredondadas": novas_horas}}
+                    )
+                    recount += 1
+            await db.system_flags.insert_one({
+                "_id": "migration_no_round_hours_v1",
+                "ran_at": datetime.now(timezone.utc).isoformat(),
+                "updated_count": recount,
+            })
+            logging.info(f"✅ Migração no_round_hours_v1: {recount} registos recalculados para tempo real")
+    except Exception as e:
+        logging.error(f"❌ Erro na migração no_round_hours_v1: {e}")
+    
     # Migração: Mover relatorio_assistencia das intervenções para relatorios_assistencia
     try:
         intervs_to_migrate = await db.intervencoes_relatorio.find(
