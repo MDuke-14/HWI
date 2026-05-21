@@ -549,22 +549,27 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro na migração de viagem: {str(e)}")
     
-    # Migração 2026-02: Recalcular `horas_arredondadas` como tempo real (sem arredondamento)
-    # Executada uma única vez controlada por flag em `system_flags`.
+    # Migração 2026-02 (REVERTIDA): Repor regra original.
+    # - TRABALHO: arredondamento aos 15 min + mínimo 1h (via cronometro_logic.arredondar_horas)
+    # - VIAGEM: tempo real (sem arredondamento, sem mínimo) — já era o comportamento original
     try:
-        flag = await db.system_flags.find_one({"_id": "migration_no_round_hours_v1"})
+        flag = await db.system_flags.find_one({"_id": "migration_restore_work_round_v2"})
         if not flag:
+            from cronometro_logic import arredondar_horas as _round_work
             recount = 0
             cursor = db.registos_tecnico_ot.find(
                 {"minutos_trabalhados": {"$gt": 0}},
-                {"_id": 0, "id": 1, "minutos_trabalhados": 1, "horas_arredondadas": 1}
+                {"_id": 0, "id": 1, "tipo": 1, "minutos_trabalhados": 1, "horas_arredondadas": 1}
             )
             async for r in cursor:
                 mins = r.get("minutos_trabalhados", 0) or 0
                 if mins <= 0:
                     continue
-                novas_horas = round(float(mins) / 60.0, 4)
-                # Só atualiza se houver diferença significativa (evita writes inúteis)
+                tipo = (r.get("tipo") or "trabalho").lower()
+                if tipo == "viagem":
+                    novas_horas = round(float(mins) / 60.0, 4)  # tempo real
+                else:
+                    novas_horas = _round_work(mins)  # 15 min + mín 1h
                 if abs((r.get("horas_arredondadas", 0) or 0) - novas_horas) > 0.001:
                     await db.registos_tecnico_ot.update_one(
                         {"id": r["id"]},
@@ -572,13 +577,13 @@ async def startup_event():
                     )
                     recount += 1
             await db.system_flags.insert_one({
-                "_id": "migration_no_round_hours_v1",
+                "_id": "migration_restore_work_round_v2",
                 "ran_at": datetime.now(timezone.utc).isoformat(),
                 "updated_count": recount,
             })
-            logging.info(f"✅ Migração no_round_hours_v1: {recount} registos recalculados para tempo real")
+            logging.info(f"✅ Migração restore_work_round_v2: {recount} registos repostos (trabalho c/ arredondamento, viagem real)")
     except Exception as e:
-        logging.error(f"❌ Erro na migração no_round_hours_v1: {e}")
+        logging.error(f"❌ Erro na migração restore_work_round_v2: {e}")
     
     # Migração: Mover relatorio_assistencia das intervenções para relatorios_assistencia
     try:
