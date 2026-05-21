@@ -1570,8 +1570,18 @@ const AdminDashboard = ({ user, onLogout }) => {
                           );
                           if (!ok) return;
                           try {
-                            const resp = await axios.delete(`${API}/admin/overtime-authorizations/all`);
-                            toast.success(resp.data?.message || 'Todas as autorizações removidas');
+                            // Limpar AMBAS as coleções (overtime + day) — chamadas em paralelo
+                            const [r1, r2] = await Promise.allSettled([
+                              axios.delete(`${API}/admin/overtime-authorizations/all`),
+                              axios.delete(`${API}/admin/day-authorizations/all`),
+                            ]);
+                            const m1 = r1.status === 'fulfilled' ? r1.value.data?.message : `overtime falhou: ${r1.reason?.response?.data?.detail || r1.reason?.message}`;
+                            const m2 = r2.status === 'fulfilled' ? r2.value.data?.message : `day falhou: ${r2.reason?.response?.data?.detail || r2.reason?.message}`;
+                            if (r1.status === 'fulfilled' && r2.status === 'fulfilled') {
+                              toast.success(`${m1} | ${m2}`);
+                            } else {
+                              toast.warning(`${m1} | ${m2}`);
+                            }
                             fetchOvertimeAuthorizations(authStatusFilter);
                           } catch (error) {
                             const detail = error.response?.data?.detail || error.message || 'Erro desconhecido';
@@ -1706,14 +1716,17 @@ const AdminDashboard = ({ user, onLogout }) => {
                               onClick={async () => {
                                 const ok = window.confirm(`Remover esta autorização de ${auth.user_name}?`);
                                 if (!ok) return;
+                                const endpoint = auth.authType === 'day' 
+                                  ? `${API}/admin/day-authorizations/${auth.id}`
+                                  : `${API}/admin/overtime-authorizations/${auth.id}`;
                                 try {
-                                  const resp = await axios.delete(`${API}/admin/overtime-authorizations/${auth.id}`);
+                                  const resp = await axios.delete(endpoint);
                                   toast.success(resp.data?.message || 'Autorização removida');
                                   fetchOvertimeAuthorizations(authStatusFilter);
                                 } catch (error) {
                                   const detail = error.response?.data?.detail || error.message || 'Erro desconhecido';
                                   toast.error(`Erro ao remover: ${detail}`);
-                                  console.error('[delete-overtime] ', auth.id, error.response?.status, error.response?.data, error);
+                                  console.error('[delete-overtime] ', auth.id, auth.authType, endpoint, error.response?.status, error.response?.data, error);
                                 }
                               }}
                               size="sm"
@@ -1729,14 +1742,17 @@ const AdminDashboard = ({ user, onLogout }) => {
                               onClick={async () => {
                                 const ok = window.confirm(`Remover esta autorização pendente de ${auth.user_name}?`);
                                 if (!ok) return;
+                                const endpoint = auth.authType === 'day' 
+                                  ? `${API}/admin/day-authorizations/${auth.id}`
+                                  : `${API}/admin/overtime-authorizations/${auth.id}`;
                                 try {
-                                  const resp = await axios.delete(`${API}/admin/overtime-authorizations/${auth.id}`);
+                                  const resp = await axios.delete(endpoint);
                                   toast.success(resp.data?.message || 'Autorização pendente removida');
                                   fetchOvertimeAuthorizations(authStatusFilter);
                                 } catch (error) {
                                   const detail = error.response?.data?.detail || error.message || 'Erro desconhecido';
                                   toast.error(`Erro ao remover: ${detail}`);
-                                  console.error('[delete-pending-overtime] ', auth.id, error.response?.status, error.response?.data, error);
+                                  console.error('[delete-pending-overtime] ', auth.id, auth.authType, endpoint, error.response?.status, error.response?.data, error);
                                 }
                               }}
                               size="sm"

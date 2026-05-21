@@ -2375,6 +2375,22 @@ async def decide_day_authorization(
     return response
 
 
+@api_router.delete("/admin/day-authorizations/all")
+async def delete_all_day_authorizations(current_user: dict = Depends(get_current_admin)):
+    """Remover todas as autorizações de dia (admin only)"""
+    result = await db.day_authorizations.delete_many({})
+    return {"message": f"{result.deleted_count} autorizações de dia removidas"}
+
+
+@api_router.delete("/admin/day-authorizations/{auth_id}")
+async def delete_day_authorization(auth_id: str, current_user: dict = Depends(get_current_admin)):
+    """Remover uma autorização de dia (admin only)"""
+    result = await db.day_authorizations.delete_one({"id": auth_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Autorização não encontrada")
+    return {"message": "Autorização removida"}
+
+
 @api_router.get("/day-authorization/status")
 async def get_my_day_authorization_status(
     date: Optional[str] = None,
