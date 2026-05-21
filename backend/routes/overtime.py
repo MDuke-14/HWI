@@ -52,7 +52,13 @@ async def list_overtime_authorizations(
     status: Optional[str] = None,
     current_user: dict = Depends(get_current_admin)
 ):
-    """Listar todos os pedidos de autorização de horas extra (apenas admin)"""
+    """Listar todos os pedidos de autorização de horas extra (apenas admin).
+    
+    Faz enrichment de cada autorização com:
+    - `periodos`: lista de períodos de ponto do dia (formato "HH:MM - HH:MM")
+    - `day_type` derivado: detecta se é Sábado/Domingo automaticamente caso
+      o registo original não tenha guardado.
+    """
     query = {}
     if status:
         query["status"] = status
@@ -61,6 +67,64 @@ async def list_overtime_authorizations(
         query,
         {"_id": 0}
     ).sort("requested_at", -1).to_list(100)
+    
+    # Enrichment: buscar períodos de ponto do dia para cada autorização
+    for auth in authorizations:
+        try:
+            user_id = auth.get("user_id")
+            date_str = auth.get("date")
+            if not user_id or not date_str:
+                auth["periodos"] = []
+                continue
+            
+            entries = await db.time_entries.find(
+                {"user_id": user_id, "date": date_str},
+                {"_id": 0, "start_time": 1, "end_time": 1, "status": 1}
+            ).sort("start_time", 1).to_list(100)
+            
+            periodos = []
+            for e in entries:
+                s = e.get("start_time")
+                ed = e.get("end_time")
+                try:
+                    s_hm = datetime.fromisoformat(s).strftime("%H:%M") if s else "??:??"
+                except Exception:
+                    s_hm = "??:??"
+                if ed and e.get("status") != "active":
+                    try:
+                        e_hm = datetime.fromisoformat(ed).strftime("%H:%M")
+                    except Exception:
+                        e_hm = "??:??"
+                    periodos.append(f"{s_hm} - {e_hm}")
+                else:
+                    periodos.append(f"{s_hm} - (ativo)")
+            auth["periodos"] = periodos
+            
+            # Derivar day_type se não estiver guardado
+            if not auth.get("day_type") and date_str:
+                try:
+                    d_obj = datetime.fromisoformat(date_str + "T00:00:00").date() if "T" not in date_str else datetime.fromisoformat(date_str).date()
+                    wd = d_obj.weekday()  # 0=Mon, 6=Sun
+                    if wd == 5:
+                        auth["day_type"] = "Sábado"
+                    elif wd == 6:
+                        auth["day_type"] = "Domingo"
+                except Exception:
+                    pass
+            
+            # Verificar se é dia de férias (independente do day_type já guardado)
+            if not auth.get("is_vacation"):
+                vac = await db.vacation_requests.find_one({
+                    "user_id": user_id,
+                    "start_date": {"$lte": date_str},
+                    "end_date": {"$gte": date_str},
+                    "status": "approved"
+                }, {"_id": 0, "id": 1})
+                if vac:
+                    auth["is_vacation"] = True
+        except Exception as e:
+            logging.warning(f"Erro ao enriquecer autorização {auth.get('id')}: {e}")
+            auth.setdefault("periodos", [])
     
     return authorizations
 

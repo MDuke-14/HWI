@@ -1638,16 +1638,35 @@ const AdminDashboard = ({ user, onLogout }) => {
                               {auth.day_type && <span className="ml-2 text-yellow-400">({auth.day_type})</span>}
                             </p>
                             <p className="text-gray-400 text-sm">
-                              <span className="text-gray-500">Hora:</span> {auth.start_time || auth.clock_in_time || 'N/A'}
+                              <span className="text-gray-500">Hora:</span>{' '}
+                              {Array.isArray(auth.periodos) && auth.periodos.length > 0
+                                ? auth.periodos.join(' / ')
+                                : (auth.start_time || auth.clock_in_time || 'N/A')}
                             </p>
                             <p className="text-gray-400 text-sm">
-                              <span className="text-gray-500">Tipo:</span> {
-                                auth.request_type === 'vacation_work' 
-                                  ? 'Trabalho em férias' 
-                                  : auth.request_type === 'overtime_start' 
-                                    ? 'Início em dia especial' 
-                                    : 'Horas extra após 18:00'
-                              }
+                              <span className="text-gray-500">Tipo:</span>{' '}
+                              {(() => {
+                                const dt = (auth.day_type || '').toLowerCase();
+                                if (auth.is_vacation || dt.includes('férias') || dt.includes('ferias') || dt === 'vacation') {
+                                  return 'Trabalho em dia de Férias';
+                                }
+                                if (dt.includes('sábado') || dt.includes('sabado') || dt === 'saturday') {
+                                  return 'Trabalho ao Sábado';
+                                }
+                                if (dt.includes('domingo') || dt === 'sunday') {
+                                  return 'Trabalho ao Domingo';
+                                }
+                                if (dt.includes('feriado') || dt === 'holiday') {
+                                  return 'Trabalho em Feriado';
+                                }
+                                if (auth.request_type === 'vacation_work') {
+                                  return 'Trabalho em dia de Férias';
+                                }
+                                if (auth.request_type === 'overtime_start') {
+                                  return 'Início em dia especial';
+                                }
+                                return 'Horas extra (após 18:00)';
+                              })()}
                             </p>
                             {auth.decided_by && (
                               <p className="text-gray-500 text-xs mt-2">
