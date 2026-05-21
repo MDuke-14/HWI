@@ -340,14 +340,17 @@ def generate_folha_horas_pdf(
             # Regra de faturação de Viagem:
             # < 30 min: cobra apenas km (não cobra horas)
             # >= 30 min: cobra horas e km
-            total_km_valor = total_km * PRECO_KM
+            # Cálculo do valor usa horas arredondadas a 2 casas (o que o user vê no PDF)
+            total_km_valor = round(round(total_km, 2) * PRECO_KM, 2)
             if total_minutos < 30:
                 total_valor = 0
             else:
-                total_valor = (total_minutos / 60) * tarifa_valor
+                horas_display = round(total_minutos / 60, 2)
+                total_valor = round(horas_display * tarifa_valor, 2)
         else:
-            total_valor = (total_minutos / 60) * tarifa_valor
-            total_km_valor = total_km * PRECO_KM
+            horas_display = round(total_minutos / 60, 2)
+            total_valor = round(horas_display * tarifa_valor, 2)
+            total_km_valor = round(round(total_km, 2) * PRECO_KM, 2)
 
         # Dieta
         chave_dieta = f"{tecnico_id}_{dia}"
@@ -546,7 +549,8 @@ def generate_folha_horas_pdf(
         for reg in regs:
             cod = reg['codigo']
             minutos = reg.get('minutos', 0)
-            horas = minutos / 60
+            # Horas arredondadas a 2 casas (paridade com cálculo de €)
+            horas = round(minutos / 60, 2)
             tipo_norm = 'trabalho' if reg['tipo_registo'] in ('trabalho', 'oficina', 'manual') else reg['tipo_registo']
             if tipo_norm == 'viagem':
                 # Usar a mesma lógica de faturação para horas no resumo
