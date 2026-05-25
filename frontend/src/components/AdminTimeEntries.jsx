@@ -32,6 +32,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
   
   // Calcular período de faturação (26 do mês anterior a 25 do mês atual)
   const calculateBillingPeriod = (month, year) => {
+    // Período de faturação: dia 26 do mês anterior até dia 15 do mês selecionado
     let fromYear = year;
     let fromMonth = month - 1;
     
@@ -41,7 +42,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
     
     const fromDate = `${fromYear}-${String(fromMonth).padStart(2, '0')}-26`;
-    const toDate = `${year}-${String(month).padStart(2, '0')}-25`;
+    const toDate = `${year}-${String(month).padStart(2, '0')}-15`;
     
     return { from: fromDate, to: toDate };
   };
