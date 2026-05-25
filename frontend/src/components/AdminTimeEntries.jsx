@@ -32,7 +32,6 @@ const AdminTimeEntries = ({ user, onLogout }) => {
   
   // Calcular período de faturação (26 do mês anterior a 25 do mês atual)
   const calculateBillingPeriod = (month, year) => {
-    // Período de faturação: dia 26 do mês anterior até dia 15 do mês selecionado
     let fromYear = year;
     let fromMonth = month - 1;
     
@@ -42,7 +41,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
     
     const fromDate = `${fromYear}-${String(fromMonth).padStart(2, '0')}-26`;
-    const toDate = `${year}-${String(month).padStart(2, '0')}-15`;
+    const toDate = `${year}-${String(month).padStart(2, '0')}-25`;
     
     return { from: fromDate, to: toDate };
   };
@@ -91,8 +90,12 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     
     const current = new Date(start);
     while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0];
-      days.push(dateStr);
+      // Usar componentes locais (evita bug timezone com toISOString que 
+      // converte para UTC e atrasa 1 dia em DST/UTC+1)
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const d = String(current.getDate()).padStart(2, '0');
+      days.push(`${y}-${m}-${d}`);
       current.setDate(current.getDate() + 1);
     }
     return days;
