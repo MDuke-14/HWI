@@ -229,6 +229,8 @@ class MaterialOT(BaseModel):
     fornecido_por: str
     data_utilizacao: Optional[str] = None
     pc_id: Optional[str] = None
+    posicao: Optional[str] = None
+    codigo: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class DespesaOT(BaseModel):

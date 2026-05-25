@@ -3395,7 +3395,9 @@ async def add_material_ot(
         quantidade=quantidade,
         unidade=material_data.get("unidade", "Un"),
         fornecido_por=material_data["fornecido_por"],
-        data_utilizacao=material_data.get("data_utilizacao")
+        data_utilizacao=material_data.get("data_utilizacao"),
+        posicao=material_data.get("posicao"),
+        codigo=material_data.get("codigo"),
     )
     
     material_dict = material.dict()
