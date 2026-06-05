@@ -99,6 +99,9 @@ import {
   EmailModal,
   StatusChangeModal,
   DeleteRelatorioModal,
+  CronometroFuncaoPopup,
+  StopCronometroPopup,
+  WorkKmPopup,
   TechnicalReportsTabs,
   ReportsSection,
   FacturadosSection,
@@ -110,11 +113,6 @@ import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
-import {
-  CronometroFuncaoPopup,
-  StopCronometroPopup,
-  WorkKmPopup,
-} from './technical-reports/CronometroPopups';
 
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {

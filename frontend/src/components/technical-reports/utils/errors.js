@@ -1,6 +1,6 @@
 export const formatTechnicalReportError = (error) => {
   if (!error?.response) {
-    return 'Erro de conexÃ£o';
+    return 'Erro de conexão';
   }
 
   const data = error.response.data;
@@ -18,7 +18,7 @@ export const formatTechnicalReportError = (error) => {
       .join(', ');
   }
 
-  return 'Erro ao processar solicitaÃ§Ã£o';
+  return 'Erro ao processar solicitação';
 };
 
 export default formatTechnicalReportError;

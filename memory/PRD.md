@@ -237,8 +237,18 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 ### P1
 - Complete and Test Dynamic Price Table Creation (delayed 7+ forks)
-- Continue refactoring TechnicalReports.jsx (~10.3k lines) e Calendar.jsx (~1300 lines)
+- Continue refactoring TechnicalReports.jsx (~10k lines → reduced to ~10042 after this session) e Calendar.jsx (~1300 lines)
 - Continue backend modular router extraction
+
+### Refactor Progress (2026-02-06)
+- Extracted 5 more inline modals from `TechnicalReports.jsx` (~373 lines removed, now at 10042 lines):
+  - `EmailModal` (envio de FS por email)
+  - `StatusChangeModal` (alteração de status com utils/labels extraídos)
+  - `DeleteRelatorioModal` (confirmação de eliminação)
+  - `CronometroFuncaoPopup`, `StopCronometroPopup`, `WorkKmPopup` (popups de cronómetro em `CronometroPopups.jsx`)
+- Fixed mojibake (double-UTF-8 encoded) Portuguese chars in `technical-reports/utils/labels.js` and `utils/errors.js`.
+- All extracted modals are prop-driven; no business logic embedded.
+- Verified by testing agent: login + listing + StatusChangeModal + DeleteRelatorioModal + EmailModal pass.
 
 ### P2
 - Recurring VAPID Key Mismatch

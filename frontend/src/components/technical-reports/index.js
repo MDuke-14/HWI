@@ -11,6 +11,7 @@ export { default as CronometroStartModal } from './CronometroStartModal';
 export { default as EmailModal } from './EmailModal';
 export { default as StatusChangeModal } from './StatusChangeModal';
 export { default as DeleteRelatorioModal } from './DeleteRelatorioModal';
+export { CronometroFuncaoPopup, StopCronometroPopup, WorkKmPopup } from './CronometroPopups';
 
 // Technical Reports Components - Sections
 export { default as TechnicalReportsHeader } from './TechnicalReportsHeader';
