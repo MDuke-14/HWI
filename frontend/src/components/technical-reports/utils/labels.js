@@ -1,7 +1,7 @@
 const TIPO_HORARIO_LABELS = {
   diurno: 'Diurno (07h-19h)',
   noturno: 'Noturno (19h-07h)',
-  sabado: 'SÃ¡bado',
+  sabado: 'Sábado',
   domingo_feriado: 'Domingo/Feriado',
 };
 
@@ -23,10 +23,10 @@ const STATUS_COLORS = {
 
 const STATUS_LABELS = {
   agendado: 'Agendado',
-  orcamento: 'OrÃ§amento',
-  em_execucao: 'Em ExecuÃ§Ã£o',
-  em_andamento: 'Em ExecuÃ§Ã£o',
-  concluido: 'ConcluÃ­do',
+  orcamento: 'Orçamento',
+  em_execucao: 'Em Execução',
+  em_andamento: 'Em Execução',
+  concluido: 'Concluído',
   facturado: 'Facturado',
 };
 

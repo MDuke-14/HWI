@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Body
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
@@ -10,7 +10,6 @@ import asyncio
 import math
 import httpx
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta, date, time
@@ -22,28 +21,16 @@ import sys
 import aiosmtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 sys.path.insert(0, str(Path(__file__).parent))
-from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates, is_holiday, is_weekend
-from excel_report import generate_monthly_report
-from pdf_report import generate_monthly_pdf_report
-from pdf_report_simple import generate_monthly_pdf_report as generate_pdf_simple
-from import_excel import parse_excel_timesheet
-from import_pdf import parse_pdf_timesheet
-from ot_pdf_report import generate_ot_pdf
-from pc_pdf_report import generate_pc_pdf
+from holidays import is_overtime_day, get_holidays_for_year, get_billing_period_dates, is_holiday
 from folha_horas_pdf import generate_folha_horas_pdf
 from manual_pdf import create_manual_pdf
-from notification_system import notification_loop, NotificationSystem
-from hours_calculator import calcular_breakdown_completo
+from notification_system import notification_loop
 from cronometro_logic import segmentar_periodo
 from migrations import run_migrations
 from notifications_scheduler import (
     check_clock_in_status,
     check_clock_out_status,
-    handle_overtime_start,
-    process_authorization_decision,
     send_push_to_admins,
     send_push_notification,
     check_upcoming_services
@@ -91,7 +78,7 @@ async def reverse_geocode(latitude: float, longitude: float) -> dict:
     - industrial, commercial, retail, aeroway, etc.
     """
     try:
-        url = f"https://nominatim.openstreetmap.org/reverse"
+        url = "https://nominatim.openstreetmap.org/reverse"
         params = {
             "lat": latitude,
             "lon": longitude,
@@ -308,13 +295,12 @@ async def migrate_fotos_intervencao_ids(database):
                 foto_date = None
                 if foto.get("uploaded_at"):
                     try:
-                        from datetime import datetime
                         dt_str = str(foto["uploaded_at"])
                         if "T" in dt_str:
                             foto_date = dt_str.split("T")[0]
                         else:
                             foto_date = dt_str[:10]
-                    except:
+                    except Exception:
                         pass
                 
                 matched = False
@@ -497,6 +483,167 @@ async def check_annual_vacation_reset(database):
 # ============ Startup Event ============
 
 @app.on_event("startup")
+async def _generate_missing_thumbnails_setup():
+    """Stub para garantir que a função worker é definida antes do startup_event"""
+    pass
+
+
+async def _generate_thumb_from_b64(foto_base64: str) -> str | None:
+    """Gera thumb_base64 (300x300, JPEG 60%) a partir de uma imagem base64.
+    Devolve None se falhar.
+    """
+    try:
+        import base64 as _b64
+        from io import BytesIO
+        from PIL import Image, ExifTags
+        raw = _b64.b64decode(foto_base64)
+        img = Image.open(BytesIO(raw))
+        # Corrigir orientação EXIF
+        try:
+            for orientation in ExifTags.TAGS.keys():
+                if ExifTags.TAGS[orientation] == 'Orientation':
+                    break
+            exif = img._getexif()
+            if exif and orientation in exif:
+                if exif[orientation] == 3:
+                    img = img.rotate(180, expand=True)
+                elif exif[orientation] == 6:
+                    img = img.rotate(270, expand=True)
+                elif exif[orientation] == 8:
+                    img = img.rotate(90, expand=True)
+        except Exception:
+            pass
+        if img.mode in ('RGBA', 'P', 'LA'):
+            img = img.convert('RGB')
+        img.thumbnail((300, 300), Image.LANCZOS)
+        buf = BytesIO()
+        img.save(buf, format='JPEG', quality=60, optimize=True)
+        return _b64.b64encode(buf.getvalue()).decode('utf-8')
+    except Exception as e:
+        logging.warning(f"_generate_thumb_from_b64: falhou ao gerar thumb: {e}")
+        return None
+
+
+async def _generate_missing_thumbnails():
+    """Background task: gera thumb_base64 para fotos antigas sem thumb.
+    
+    Processa em lotes (50 fotos de cada vez) com `await asyncio.sleep(0.5)`
+    entre lotes para não saturar o worker. Idempotente — só processa fotos
+    onde `thumb_base64` é null/missing.
+    """
+    # Esperar 30s após o startup para não competir com tráfego inicial
+    await asyncio.sleep(30)
+    
+    from fastapi.concurrency import run_in_threadpool
+    
+    total_processed = 0
+    total_failed = 0
+    
+    for collection_name in ('fotos_relatorio', 'fotos_pc'):
+        collection = db[collection_name]
+        try:
+            count = await collection.count_documents({
+                "foto_base64": {"$exists": True, "$ne": None},
+                "$or": [
+                    {"thumb_base64": {"$exists": False}},
+                    {"thumb_base64": None},
+                    {"thumb_base64": ""},
+                ],
+            })
+            if count == 0:
+                continue
+            logging.info(f"[thumb-migration] {collection_name}: {count} fotos sem thumb a processar")
+            
+            batch_size = 25
+            processed_in_collection = 0
+            
+            while True:
+                fotos = await collection.find(
+                    {
+                        "foto_base64": {"$exists": True, "$ne": None},
+                        "$or": [
+                            {"thumb_base64": {"$exists": False}},
+                            {"thumb_base64": None},
+                            {"thumb_base64": ""},
+                        ],
+                    },
+                    {"_id": 0, "id": 1, "foto_base64": 1},
+                ).limit(batch_size).to_list(batch_size)
+                
+                if not fotos:
+                    break
+                
+                for foto in fotos:
+                    foto_b64 = foto.get("foto_base64")
+                    if not foto_b64:
+                        continue
+                    # CPU-bound em thread pool (não bloqueia event loop)
+                    thumb = await run_in_threadpool(
+                        lambda b=foto_b64: _generate_thumb_from_b64_sync(b)
+                    )
+                    if thumb:
+                        await collection.update_one(
+                            {"id": foto["id"]},
+                            {"$set": {"thumb_base64": thumb}}
+                        )
+                        processed_in_collection += 1
+                        total_processed += 1
+                    else:
+                        # Marcar como falhada para não tentar novamente neste run
+                        # (no próximo restart, vai tentar de novo)
+                        await collection.update_one(
+                            {"id": foto["id"]},
+                            {"$set": {"thumb_base64": ""}}  # string vazia ≠ null
+                        )
+                        total_failed += 1
+                
+                # Pausa entre lotes para libertar o event loop
+                await asyncio.sleep(0.5)
+            
+            logging.info(f"[thumb-migration] {collection_name}: {processed_in_collection} thumbs gerados")
+        except Exception as e:
+            logging.error(f"[thumb-migration] erro em {collection_name}: {e}")
+    
+    if total_processed or total_failed:
+        logging.info(f"✅ [thumb-migration] Concluída: {total_processed} gerados, {total_failed} falharam")
+
+
+def _generate_thumb_from_b64_sync(foto_base64: str):
+    """Versão síncrona de _generate_thumb_from_b64 para usar em run_in_threadpool."""
+    try:
+        import base64 as _b64
+        from io import BytesIO
+        from PIL import Image, ExifTags
+        raw = _b64.b64decode(foto_base64)
+        img = Image.open(BytesIO(raw))
+        try:
+            orientation = None
+            for o in ExifTags.TAGS.keys():
+                if ExifTags.TAGS[o] == 'Orientation':
+                    orientation = o
+                    break
+            if orientation is not None:
+                exif = img._getexif()
+                if exif and orientation in exif:
+                    if exif[orientation] == 3:
+                        img = img.rotate(180, expand=True)
+                    elif exif[orientation] == 6:
+                        img = img.rotate(270, expand=True)
+                    elif exif[orientation] == 8:
+                        img = img.rotate(90, expand=True)
+        except Exception:
+            pass
+        if img.mode in ('RGBA', 'P', 'LA'):
+            img = img.convert('RGB')
+        img.thumbnail((300, 300), Image.LANCZOS)
+        buf = BytesIO()
+        img.save(buf, format='JPEG', quality=60, optimize=True)
+        return _b64.b64encode(buf.getvalue()).decode('utf-8')
+    except Exception:
+        return None
+
+
+@app.on_event("startup")
 async def startup_event():
     """Iniciar loop de notificações em background e criar admin se necessário"""
     
@@ -585,10 +732,15 @@ async def startup_event():
     except Exception as e:
         logging.error(f"❌ Erro na migração restore_work_round_v2: {e}")
     
+    # Migração 2026-06: Gerar thumbnails para fotos antigas que não têm `thumb_base64`.
+    # Corre em BACKGROUND (asyncio.create_task) para não atrasar o arranque.
+    # Idempotente: só processa fotos sem thumb. Pode ser interrompida e retomada.
+    asyncio.create_task(_generate_missing_thumbnails())
+    
     # Migração: Mover relatorio_assistencia das intervenções para relatorios_assistencia
     try:
         intervs_to_migrate = await db.intervencoes_relatorio.find(
-            {'relatorio_assistencia': {'$exists': True, '$ne': None, '$ne': ''}},
+            {'relatorio_assistencia': {'$exists': True, '$nin': [None, '']}},
             {'_id': 1, 'relatorio_id': 1, 'data_intervencao': 1, 'relatorio_assistencia': 1, 'equipamento_id': 1}
         ).to_list(None)
         intervs_to_migrate = [i for i in intervs_to_migrate if i.get('relatorio_assistencia') and str(i['relatorio_assistencia']).strip()]
@@ -928,28 +1080,17 @@ async def startup_event():
 
     scheduler.start()
     logging.info("📅 Scheduler de verificações de ponto iniciado (09:30 e 18:15)")
-    logging.info(f"   + Lembretes de serviço a cada 15 min (07:00-20:00)")
-    logging.info(f"   Timezone: Europe/Lisbon")
+    logging.info("   + Lembretes de serviço a cada 15 min (07:00-20:00)")
+    logging.info("   Timezone: Europe/Lisbon")
     logging.info(f"   Base URL: {base_url}")
 
 # ============ Models (importados de models.py) ============
 
 from models import (
-    User, UserCreate, UserUpdate, UserLogin, ForgotPasswordRequest, ChangePasswordRequest, Token,
-    Cliente, Equipamento,
-    RelatorioTecnico, RelatorioTecnicoCreate, TecnicoRelatorio, CronometroOT, RegistoTecnicoOT,
-    EquipamentoOT, MaterialOT, DespesaOT, PedidoCotacao,
-    IntervencaoRelatorio, RelatorioAssistencia, MaterialRelatorio, FotoRelatorio, AssinaturaRelatorio,
-    EnviarEmailRequest, ReferenceToken,
-    Notification, PushSubscription,
-    TimeEntry, TimeEntryStart, TimeEntryEnd, TimeEntryUpdate, ManualTimeEntryCreate,
-    VacationRequest, VacationRequestCreate, VacationBalance,
+    User, UserCreate, UserUpdate, MaterialOT, DespesaOT, PedidoCotacao,
+    RelatorioAssistencia, Notification, VacationBalance,
     Absence, AbsenceCreate,
-    ServiceAppointment, ServiceAppointmentCreate, ServiceWithOTCreate, ServiceAppointmentUpdate,
-    CompanyInfo, Tarifa, TarifaCreate, TarifaUpdate,
-    TabelaPrecoConfig, TabelaPrecoCreate, TabelaPrecoConfigUpdate,
     FolhaHorasRequest,
-    OvertimeAuthorization, DayAuthorization, OvertimeDecision,
 )
 
 
@@ -1615,7 +1756,7 @@ async def send_time_entry_edit_notification_email(
             try:
                 dt = parse_stored_datetime(time_str)
                 return dt.astimezone(LISBON_TZ).strftime('%H:%M')
-            except:
+            except Exception:
                 return time_str
         
         before_start = format_time(before_data.get('start_time'))
@@ -2282,7 +2423,7 @@ async def decide_day_authorization(
     vacation_day_returned = False
     if action == "approve" and auth.get("day_type") == "ferias":
         user_id = auth.get("user_id")
-        vacation_request_id = auth.get("vacation_request_id")
+        auth.get("vacation_request_id")
         
         # Buscar saldo de férias do utilizador
         current_year = datetime.now().year
@@ -3046,7 +3187,7 @@ async def create_registo_tecnico_manual(
     Se o registo atravessar diferentes códigos horários, será automaticamente
     dividido em múltiplos registos.
     """
-    from cronometro_logic import segmentar_periodo, verificar_sobreposicao, get_codigo_horario
+    from cronometro_logic import verificar_sobreposicao, get_codigo_horario
     
     tecnico_id = registo_data.get("tecnico_id")
     tecnico_nome = registo_data.get("tecnico_nome")
@@ -3476,7 +3617,7 @@ async def add_material_ot(
             # Notificar admins
             await send_push_to_admins(
                 db,
-                f"Novo Pedido de Cotação",
+                "Novo Pedido de Cotação",
                 f"{numero_pc} criado para FS #{fs_numero}\nMaterial: {material_data.get('descricao', 'N/A')[:50]}",
                 "pc_created",
                 "medium"

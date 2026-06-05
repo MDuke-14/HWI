@@ -8,6 +8,9 @@ export { default as MaterialModal } from './MaterialModal';
 export { default as PDFPreviewModal } from './PDFPreviewModal';
 export { default as DeleteConfirmModal } from './DeleteConfirmModal';
 export { default as CronometroStartModal } from './CronometroStartModal';
+export { default as EmailModal } from './EmailModal';
+export { default as StatusChangeModal } from './StatusChangeModal';
+export { default as DeleteRelatorioModal } from './DeleteRelatorioModal';
 
 // Technical Reports Components - Sections
 export { default as TechnicalReportsHeader } from './TechnicalReportsHeader';

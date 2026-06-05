@@ -1,0 +1,37 @@
+{
+  "summary": "Frontend-only refactoring verification of /technical-reports modals (StatusChangeModal, DeleteRelatorioModal, EmailModal, CronometroFuncaoPopup, StopCronometroPopup, WorkKmPopup) extracted from TechnicalReports.jsx. Login + listing + 3 of 4 visible modals verified working. Found one encoding regression introduced by the refactor in utils/labels.js (mojibake double-encoded Portuguese chars) which I fixed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "technical-reports/utils/labels.js (consumed by StatusChangeModal)",
+        "issue": "REGRESSION FIXED BY TESTER: Labels file contained mojibake (Latin-1 bytes of UTF-8) — e.g. 'Em ExecuÃ§Ã£o' instead of 'Em Execução', 'OrÃ§amento', 'ConcluÃ­do', 'SÃ¡bado'. This caused StatusChangeModal 'Status atual' badge to render garbled while the card list (which uses an unrelated local getStatusLabel inside TechnicalReports.jsx) showed correct accents. Fix applied: re-encoded the string literals in /app/frontend/src/components/technical-reports/utils/labels.js using proper UTF-8.",
+        "selector": "StatusChangeModal status-atual badge",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Tester already fixed) Verify the labels.js fix didn't slip into other extracted util files — same mojibake pattern may exist elsewhere if the refactor used copy-paste from non-UTF-8 source. Recommend grepping repo for 'Ã§|Ã£|Ã­|Ã¡|Ã©|Ãª' to find any other regressions.",
+    "Consolidate duplicate status-label logic: TechnicalReports.jsx still keeps a local getStatusLabel/getStatusColor (~lines 4000-4020) duplicating utils/labels.js — switch to the extracted helpers to avoid future drift."
+  ],
+  "critical_code_review_comments": [
+    "TechnicalReports.jsx is still 10042 lines after this refactor — extracting 5 modals only removed ~370 lines; many more inline modals/sections remain (IntervencaoModal, FotoModals, DespesaModals are external but most workflow sections still inline). Continue the split.",
+    "All 5 extracted modal files (StatusChangeModal, DeleteRelatorioModal, EmailModal, CronometroFuncaoPopup, StopCronometroPopup, WorkKmPopup) are clean, prop-driven, no business logic embedded — refactor quality is good.",
+    "CronometroPopups.jsx is NOT re-exported in technical-reports/index.js (the other 12 modals are). It is imported directly from './technical-reports/CronometroPopups' in TechnicalReports.jsx, which works, but is inconsistent. Add to index.js for consistency.",
+    "Duplicate STATUS_LABELS / STATUS_COLORS lives in both utils/labels.js AND TechnicalReports.jsx — exactly the kind of duplication the refactor is supposed to remove. This is what allowed the encoding regression to be invisible on the listing page."
+  ],
+  "updated_files": [
+    "/app/frontend/src/components/technical-reports/utils/labels.js (fixed mojibake encoding for all 6 Portuguese labels: Orçamento, Em Execução x2, Concluído, Sábado)"
+  ],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "StatusChangeModal ✅, DeleteRelatorioModal ✅, EmailModal ✅ — 3/3 directly tested pass after fix. CronometroFuncaoPopup/StopCronometroPopup/WorkKmPopup not opened end-to-end but file/code review and integration wiring verified clean."},
+  "test_credentials": "teste@email.com / teste (admin) — login works; submit must be Enter key or the second 'Entrar' button (first 'Entrar' is just the login/register toggle tab)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Login flow: fill 2 text inputs (no type=email) then press Enter on password — clicking the first 'Entrar' button only toggles between Entrar/Registar tabs. After login, navigate to /technical-reports and click [data-testid=tab-ots]. StatusChangeModal opens by clicking the status badge text 'Em Execução' inside any FS card (the badge is a clickable span, not a button — locator: page.locator('text=Em Execução').first). DeleteRelatorioModal opens via the 2nd button in [data-testid^=ot-card-]. EmailModal: open FS detail (click card body), then click 'Enviar Por Email' button at the bottom. CronometroFuncaoPopup: in FS detail, first tick a técnico checkbox, then click 'Iniciar Trabalho' or 'Iniciar Viagem'. Note: every page load logs 'IDBDatabase NotFoundError: One of the specified object stores was not found' — pre-existing client/relatorios cache bug, not related to this refactor.",
+  "rca of the issue": "RCA encoding regression: When utils/labels.js was created during the refactor, the Portuguese string literals were saved as latin-1 byte sequences that represent UTF-8-encoded characters — i.e. the bytes 0xC3 0xA7 (which together encode 'ç' in UTF-8) were stored as the visible 2-char sequence 'Ã§'. Effect: any consumer reading the file as UTF-8 sees doubly-encoded mojibake. The bug was only visible inside StatusChangeModal because TechnicalReports.jsx kept its own correctly-encoded duplicate getStatusLabel and continued to pass that to ReportCard, masking the issue on the listing. Mitigation: re-saved labels.js as proper UTF-8."
+}

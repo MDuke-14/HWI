@@ -96,6 +96,9 @@ import {
   EquipamentoModal,
   MaterialModal,
   CronometroStartModal,
+  EmailModal,
+  StatusChangeModal,
+  DeleteRelatorioModal,
   TechnicalReportsTabs,
   ReportsSection,
   FacturadosSection,
@@ -107,6 +110,11 @@ import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
+import {
+  CronometroFuncaoPopup,
+  StopCronometroPopup,
+  WorkKmPopup,
+} from './technical-reports/CronometroPopups';
 
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
@@ -6386,103 +6394,17 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
     <>
-      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Mail className="w-5 h-5 text-purple-400" />
-              Enviar FS Por Email
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 mt-4">
-            {/* Emails do Cliente */}
-            <div>
-              <Label className="text-gray-300 mb-2 block">Destinatários</Label>
-              {emailsCliente.length === 0 ? (
-                <p className="text-gray-500 text-sm italic">Nenhum email registado para este cliente</p>
-              ) : (
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {emailsCliente.map((item, index) => (
-                    <label
-                      key={index}
-                      data-testid={`email-option-${index}`}
-                      className={`flex items-center gap-3 p-3 bg-[#0f0f0f] border rounded-lg cursor-pointer transition ${
-                        item.is_hwi
-                          ? 'border-amber-600/50 hover:border-amber-400/70'
-                          : 'border-gray-700 hover:border-purple-500/50'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={item.selected}
-                        onChange={() => toggleEmailSelection(index)}
-                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
-                      />
-                      <span className="text-white">{item.email}</span>
-                      {item.is_hwi && (
-                        <span className="ml-auto text-[10px] uppercase font-bold bg-amber-600 text-white px-1.5 py-0.5 rounded">
-                          HWI · Teste
-                        </span>
-                      )}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Emails Adicionais */}
-            <div>
-              <Label className="text-gray-300 mb-2 block">
-                Emails Adicionais <span className="text-gray-500 text-xs">(separados por vírgula)</span>
-              </Label>
-              <Input
-                value={emailsAdicionais}
-                onChange={(e) => setEmailsAdicionais(e.target.value)}
-                placeholder="email1@exemplo.com, email2@exemplo.com"
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-              />
-            </div>
-
-            {/* Resumo */}
-            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
-              <p className="text-sm text-purple-300">
-                <strong>FS #{selectedRelatorio?.numero_assistencia}</strong> será enviada para {emailsCliente.filter(e => e.selected).length + (emailsAdicionais.trim() ? emailsAdicionais.split(/[;,]/).filter(e => e.trim()).length : 0)} email(s)
-              </p>
-            </div>
-
-            {/* Botões */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={() => setShowEmailModal(false)}
-                variant="outline"
-                className="flex-1 border-gray-600"
-                disabled={sendingEmail}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSendEmail}
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                disabled={sendingEmail || (emailsCliente.filter(e => e.selected).length === 0 && !emailsAdicionais.trim())}
-                data-testid="confirmar-enviar-email"
-              >
-                {sendingEmail ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                    A enviar...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Enviar
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EmailModal
+        open={showEmailModal}
+        onOpenChange={setShowEmailModal}
+        selectedRelatorio={selectedRelatorio}
+        emailsCliente={emailsCliente}
+        toggleEmailSelection={toggleEmailSelection}
+        emailsAdicionais={emailsAdicionais}
+        setEmailsAdicionais={setEmailsAdicionais}
+        sendingEmail={sendingEmail}
+        onSend={handleSendEmail}
+      />
 
       {/* Popup 2 — Seleção de Documentos a Enviar */}
       <Dialog open={showFolhaHorasConfirm} onOpenChange={(open) => {
@@ -8091,150 +8013,29 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Change Status Modal */}
-      <Dialog open={showStatusModal} onOpenChange={setShowStatusModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-blue-400" />
-              Alterar Status da OT
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedStatusRelatorio && (
-            <div className="space-y-4 mt-4">
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <p className="text-white font-semibold mb-2">
-                  FS #{selectedStatusRelatorio.numero_assistencia}
-                </p>
-                <p className="text-gray-400 text-sm">{selectedStatusRelatorio.cliente_nome}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-gray-500 text-xs">Status atual:</span>
-                  <span className={`text-xs px-2 py-1 rounded ${getStatusColor(selectedStatusRelatorio.status)}`}>
-                    {getStatusLabel(selectedStatusRelatorio.status)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-gray-300 text-sm mb-3">Selecione o novo status:</p>
-                
-                <Button
-                  onClick={() => handleChangeStatus('orcamento')}
-                  className="w-full justify-start bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                    <span>Orçamento</span>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => handleChangeStatus('em_execucao')}
-                  className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                    <span>Em Execução</span>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => handleChangeStatus('concluido')}
-                  className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    <span>Concluído</span>
-                  </div>
-                </Button>
-
-                {user?.is_admin && (
-                  <Button
-                    onClick={() => handleChangeStatus('facturado')}
-                    className="w-full justify-start bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-purple-400"></div>
-                      <span>Facturado</span>
-                      <span className="ml-auto text-xs bg-purple-400/20 px-2 py-0.5 rounded">Admin</span>
-                    </div>
-                  </Button>
-                )}
-              </div>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowStatusModal(false);
-                  setSelectedStatusRelatorio(null);
-                }}
-                variant="outline"
-                className="w-full border-gray-600 mt-4"
-              >
-                Cancelar
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StatusChangeModal
+        open={showStatusModal}
+        onOpenChange={setShowStatusModal}
+        selectedStatusRelatorio={selectedStatusRelatorio}
+        onChangeStatus={handleChangeStatus}
+        onCancel={() => {
+          setShowStatusModal(false);
+          setSelectedStatusRelatorio(null);
+        }}
+        isAdmin={user?.is_admin}
+      />
 
       {/* Delete Relatório Confirmation Modal */}
-      <Dialog open={showDeleteRelatorioModal} onOpenChange={setShowDeleteRelatorioModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-400">
-              <Trash2 className="w-5 h-5" />
-              Confirmar Eliminação
-            </DialogTitle>
-          </DialogHeader>
-
-          {relatorioToDelete && (
-            <div className="space-y-4 mt-4">
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                <p className="text-white mb-2">
-                  Tem certeza que deseja eliminar esta OT?
-                </p>
-                <div className="bg-[#0f0f0f] p-3 rounded mt-3">
-                  <p className="text-white font-semibold">
-                    Relatório #{relatorioToDelete.numero_assistencia}
-                  </p>
-                  <p className="text-gray-400 text-sm">{relatorioToDelete.cliente_nome}</p>
-                  <p className="text-gray-400 text-sm">
-                    {new Date(relatorioToDelete.data_servico).toLocaleDateString('pt-PT')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                <p className="text-amber-200 text-sm">
-                  <strong>Atenção:</strong> Esta ação não pode ser desfeita. A FS e todos os dados associados (técnicos, fotos, materiais) serão permanentemente eliminados.
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowDeleteRelatorioModal(false);
-                    setRelatorioToDelete(null);
-                  }}
-                  variant="outline"
-                  className="flex-1 border-gray-600"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleDeleteRelatorio}
-                  className="flex-1 bg-red-500 hover:bg-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar OT
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <DeleteRelatorioModal
+        open={showDeleteRelatorioModal}
+        onOpenChange={setShowDeleteRelatorioModal}
+        relatorioToDelete={relatorioToDelete}
+        onConfirm={handleDeleteRelatorio}
+        onCancel={() => {
+          setShowDeleteRelatorioModal(false);
+          setRelatorioToDelete(null);
+        }}
+      />
 
       {/* Add Cliente Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
@@ -9585,210 +9386,36 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Popup Função na FS para Cronómetro */}
-      <Dialog open={showCronometroFuncaoPopup} onOpenChange={setShowCronometroFuncaoPopup}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <UserCheck className="w-5 h-5 text-blue-400" />
-              Definir Função na FS
-            </DialogTitle>
-            <p className="text-sm text-gray-400 mt-1">
-              Defina a função de cada técnico antes de iniciar o cronómetro de {cronometroFuncaoData.tipo === 'trabalho' ? 'Trabalho' : cronometroFuncaoData.tipo === 'viagem' ? 'Viagem' : 'Oficina'}.
-            </p>
-          </DialogHeader>
-
-          <div className="space-y-3 mt-4">
-            {cronometroFuncaoData.tecnicos.map((tec, idx) => (
-              <div key={tec.id} className="flex items-center justify-between gap-3 bg-gray-800/50 p-3 rounded-lg border border-gray-700" data-testid={`crono-funcao-row-${idx}`}>
-                <span className="text-white font-medium text-sm flex-1 truncate">{tec.nome}</span>
-                <Select
-                  value={tec.funcao_ot}
-                  onValueChange={(val) => {
-                    setCronometroFuncaoData(prev => ({
-                      ...prev,
-                      tecnicos: prev.tecnicos.map((t, i) => 
-                        i === idx ? { ...t, funcao_ot: val } : t
-                      )
-                    }));
-                  }}
-                >
-                  <SelectTrigger data-testid={`crono-funcao-select-${idx}`} className="w-[140px] bg-gray-800 border-gray-600 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
-                    <SelectItem value="junior" className="text-white">Téc. Júnior</SelectItem>
-                    <SelectItem value="tecnico" className="text-white">Técnico</SelectItem>
-                    <SelectItem value="senior" className="text-white">Téc. Sénior</SelectItem>
-                    <SelectItem value="ajudante" className="text-white">Ajudante</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-          </div>
-
-          {/* Km's Iniciais - apenas para Viagem */}
-          {cronometroFuncaoData.tipo === 'viagem' && (
-            <div className="mt-4">
-              <Label className="text-gray-300 flex items-center gap-2">
-                <Car className="w-4 h-4" />
-                Km's Iniciais
-              </Label>
-              <Input
-                type="number"
-                data-testid="crono-km-inicial"
-                value={cronometroFuncaoData.km_inicial || ''}
-                onChange={(e) => setCronometroFuncaoData(prev => ({ ...prev, km_inicial: e.target.value }))}
-                placeholder="Ex: 45230"
-                className="bg-gray-800 border-gray-700 text-white mt-1"
-              />
-            </div>
-          )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowCronometroFuncaoPopup(false)}
-              className="border-gray-600 text-gray-300"
-            >
-              Cancelar
-            </Button>
-            <Button
-              data-testid="confirm-crono-funcao-btn"
-              onClick={handleConfirmCronometroFuncao}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Iniciar Cronómetro
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CronometroFuncaoPopup
+        open={showCronometroFuncaoPopup}
+        onOpenChange={setShowCronometroFuncaoPopup}
+        cronometroFuncaoData={cronometroFuncaoData}
+        setCronometroFuncaoData={setCronometroFuncaoData}
+        onConfirm={handleConfirmCronometroFuncao}
+      />
 
       {/* Modal Parar Cronómetro - KMs */}
-      <Dialog open={showStopCronoPopup} onOpenChange={setShowStopCronoPopup}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-sm" data-testid="stop-crono-popup">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white text-base">
-              <MapPin className="w-5 h-5 text-blue-400" />
-              Parar Cronómetro
-            </DialogTitle>
-            <div className="text-sm text-gray-400 mt-1">
-              {stopCronoData.tecnicos?.length > 1 ? (
-                <div className="space-y-0.5">
-                  {stopCronoData.tecnicos.map((t, i) => (
-                    <span key={i} className="block">{t.tecnico_nome} — {stopCronoData.tipo === 'viagem' ? 'Viagem' : stopCronoData.tipo === 'trabalho' ? 'Trabalho' : 'Oficina'}</span>
-                  ))}
-                </div>
-              ) : (
-                <span>{stopCronoData.tecnicos?.[0]?.tecnico_nome || 'Técnico'} — {stopCronoData.tipo === 'viagem' ? 'Viagem' : stopCronoData.tipo === 'trabalho' ? 'Trabalho' : 'Oficina'}</span>
-              )}
-            </div>
-          </DialogHeader>
-          <div className="space-y-4 mt-3">
-            {stopCronoData.tecnicos?.length === 1 && (
-              <div>
-                <Label className="text-gray-400 text-xs">KMs Iniciais</Label>
-                <Input
-                  value={stopCronoData.tecnicos[0]?.km_inicial || 0}
-                  readOnly
-                  className="bg-[#0a0a0a] border-gray-700 text-gray-400 cursor-default mt-1"
-                  data-testid="stop-crono-km-inicial"
-                />
-              </div>
-            )}
-            {stopCronoData.tecnicos?.length > 1 && (
-              <div className="space-y-1">
-                <Label className="text-gray-400 text-xs">KMs Iniciais por técnico</Label>
-                {stopCronoData.tecnicos.map((t, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
-                    <span className="text-gray-300 flex-1 truncate">{t.tecnico_nome}</span>
-                    <span className="text-gray-500">{t.km_inicial || 0} km</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div>
-              <Label className="text-gray-400 text-xs">KMs Finais</Label>
-              <Input
-                type="number"
-                value={stopCronoData.km_final}
-                onChange={(e) => setStopCronoData(prev => ({ ...prev, km_final: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                placeholder="Ex: 125500"
-                min="0"
-                autoFocus
-                data-testid="stop-crono-km-final"
-              />
-            </div>
-            <Button
-              onClick={async () => {
-                const kmFinal = stopCronoData.km_final ? parseFloat(stopCronoData.km_final) : 0;
-                for (const tec of (stopCronoData.tecnicos || [])) {
-                  await handlePararCronometro(tec, stopCronoData.tipo, kmFinal);
-                }
-                setShowStopCronoPopup(false);
-              }}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
-              data-testid="confirm-stop-crono-btn"
-            >
-              Parar {stopCronoData.tecnicos?.length > 1 ? `${stopCronoData.tecnicos.length} Cronómetros` : 'Cronómetro'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <StopCronometroPopup
+        open={showStopCronoPopup}
+        onOpenChange={setShowStopCronoPopup}
+        stopCronoData={stopCronoData}
+        setStopCronoData={setStopCronoData}
+        onStop={async () => {
+          const kmFinal = stopCronoData.km_final ? parseFloat(stopCronoData.km_final) : 0;
+          for (const tec of (stopCronoData.tecnicos || [])) {
+            await handlePararCronometro(tec, stopCronoData.tipo, kmFinal);
+          }
+          setShowStopCronoPopup(false);
+        }}
+      />
 
       {/* Modal KMs Deslocação durante Trabalho */}
-      <Dialog open={showWorkKmPopup} onOpenChange={setShowWorkKmPopup}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-sm" data-testid="work-km-popup">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white text-base">
-              <Car className="w-5 h-5 text-amber-400" />
-              Deslocação durante Trabalho
-            </DialogTitle>
-            <p className="text-xs text-gray-400 mt-1">Registar KMs de deslocação (ex: compra de peças)</p>
-          </DialogHeader>
-          <div className="space-y-4 mt-3">
-            <div>
-              <Label className="text-gray-400 text-xs">KMs Iniciais</Label>
-              <Input
-                type="number"
-                value={workKmData.km_inicial}
-                onChange={(e) => setWorkKmData(prev => ({ ...prev, km_inicial: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                placeholder="Ex: 125000"
-                min="0"
-                data-testid="work-km-inicial"
-              />
-            </div>
-            <div>
-              <Label className="text-gray-400 text-xs">KMs Finais</Label>
-              <Input
-                type="number"
-                value={workKmData.km_final}
-                onChange={(e) => setWorkKmData(prev => ({ ...prev, km_final: e.target.value }))}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                placeholder="Ex: 125050"
-                min="0"
-                data-testid="work-km-final"
-              />
-            </div>
-            {workKmData.km_inicial && workKmData.km_final && (
-              <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3 flex items-center justify-between">
-                <span className="text-green-400 text-sm font-medium">Total KM</span>
-                <span className="text-green-400 font-bold text-lg">
-                  {Math.max(0, (parseFloat(workKmData.km_final) || 0) - (parseFloat(workKmData.km_inicial) || 0)).toFixed(1)} km
-                </span>
-              </div>
-            )}
-            <Button
-              onClick={() => setShowWorkKmPopup(false)}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-              data-testid="save-work-km-btn"
-            >
-              Guardar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <WorkKmPopup
+        open={showWorkKmPopup}
+        onOpenChange={setShowWorkKmPopup}
+        workKmData={workKmData}
+        setWorkKmData={setWorkKmData}
+      />
 
       {/* Modal Editar Registo Cronómetro */}
       <Dialog open={showEditRegistoModal} onOpenChange={(open) => {

@@ -1201,9 +1201,9 @@ async def get_fotografia_image(
     """
     # Passo 1: tentar APENAS o campo solicitado (sem carregar a foto inteira)
     if thumb:
-        projection = {"_id": 0, "content_type": 1, "thumb_base64": 1}
+        projection = {"_id": 0, "content_type": 1, "thumb_base64": 1, "foto_path": 1}
     else:
-        projection = {"_id": 0, "content_type": 1, "foto_base64": 1}
+        projection = {"_id": 0, "content_type": 1, "foto_base64": 1, "foto_path": 1}
     
     foto = await db.fotos_relatorio.find_one(
         {"id": foto_id, "relatorio_id": relatorio_id},
@@ -1220,13 +1220,28 @@ async def get_fotografia_image(
     if not image_data and thumb:
         foto_full = await db.fotos_relatorio.find_one(
             {"id": foto_id, "relatorio_id": relatorio_id},
-            {"_id": 0, "foto_base64": 1, "content_type": 1},
+            {"_id": 0, "foto_base64": 1, "content_type": 1, "foto_path": 1},
         )
         if foto_full:
             image_data = foto_full.get("foto_base64")
             foto["content_type"] = foto.get("content_type") or foto_full.get("content_type")
+            foto["foto_path"] = foto.get("foto_path") or foto_full.get("foto_path")
     
+    # Fallback final: ficheiro em disco (fotos legadas armazenadas em /app/backend/uploads)
     if not image_data:
+        foto_path_str = foto.get("foto_path")
+        if foto_path_str:
+            from pathlib import Path
+            fp = Path(foto_path_str)
+            if fp.exists() and fp.is_file():
+                return FileResponse(
+                    fp,
+                    media_type=foto.get("content_type", "image/jpeg"),
+                    headers={
+                        "Cache-Control": "public, max-age=86400",
+                        "ETag": f'"{foto_id}-disk"',
+                    },
+                )
         raise HTTPException(status_code=404, detail="Imagem não disponível")
     
     # Decodificar base64 num thread pool para não bloquear o event loop.
