@@ -66,6 +66,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -4703,6 +4704,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Plus className="w-5 h-5 text-blue-400" />
               Nova FS
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleAddRelatorio} className={`${isMobile ? 'space-y-4' : 'space-y-6'} mt-4`}>
@@ -4914,6 +4916,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
               )}
             </div>
+              <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           {selectedRelatorio && (
@@ -6414,6 +6417,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <FileText className="w-5 h-5 text-amber-400" />
               Documentos a Enviar
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <p className="text-gray-400 text-sm">Selecione os documentos que pretende anexar ao email:</p>
 
@@ -6750,6 +6754,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
               </div>
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           {selectedPC && (
@@ -7020,6 +7025,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         <DialogContent className="bg-[#1a1a1a] border-gray-700">
           <DialogHeader>
             <DialogTitle className="text-white">Adicionar Fotografia ao PC</DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUploadFotoPC} className="space-y-4">
             <div>
@@ -7076,6 +7082,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         <DialogContent className="bg-[#1a1a1a] border-gray-700">
           <DialogHeader>
             <DialogTitle className="text-white">Enviar PDF por Email</DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-gray-300">Selecione o email de destino:</p>
@@ -7101,6 +7108,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         <DialogContent className="bg-[#1a1a1a] border-gray-700 max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-white">Dados do Cliente</DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <p className="text-gray-300 text-sm">
             Deseja ocultar o nome do cliente no documento?
@@ -7162,6 +7170,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         <DialogContent className="bg-[#1a1a1a] border-gray-700">
           <DialogHeader>
             <DialogTitle className="text-white">Editar Material</DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -7235,6 +7244,10 @@ const TechnicalReports = ({ user, onLogout }) => {
       {/* HTML Preview Modal - Visualização estilo PDF para Cliente - ORGANIZADO POR DATA DE INTERVENÇÃO */}
       <Dialog open={showHTMLPreviewModal} onOpenChange={setShowHTMLPreviewModal}>
         <DialogContent className="bg-white text-black max-w-4xl max-h-[95vh] overflow-y-auto p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Pré-visualização da FS em formato PDF</DialogTitle>
+            <DialogDescription>Visualização do relatório técnico organizada por data de intervenção.</DialogDescription>
+          </DialogHeader>
           {htmlPreviewData && (() => {
             // Agrupar dados por data de intervenção
             const intervencoesPorData = {};
@@ -7757,6 +7770,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Edit className="w-5 h-5 text-blue-400" />
               Editar Relatório #{selectedRelatorio?.numero_assistencia}
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleEditRelatorio} className="space-y-6 mt-4">
@@ -7904,6 +7918,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Tag className="w-5 h-5 text-purple-400" />
               Alterar Tipo de Registo
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           {selectedTecnicoForTipo && (
@@ -8043,6 +8058,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Plus className="w-5 h-5 text-blue-400" />
               Adicionar Novo Cliente
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleAddCliente} className="space-y-4 mt-4">
@@ -8215,6 +8231,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Edit className="w-5 h-5 text-blue-400" />
               Editar Cliente
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleEditCliente} className="space-y-4 mt-4">
@@ -8387,6 +8404,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <User className="w-5 h-5 text-blue-400" />
               Detalhes do Cliente
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           {selectedCliente && (
@@ -8574,6 +8592,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 Adicionar
               </Button>
             </div>
+              <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
@@ -8733,6 +8752,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Plus className="w-5 h-5 text-emerald-400" />
               Novo Equipamento
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddClienteEquip} className="space-y-4 mt-4">
             <div>
@@ -8816,6 +8836,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Edit className="w-5 h-5 text-blue-400" />
               Editar Equipamento
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditClienteEquip} className="space-y-4 mt-4">
             <div>
@@ -8916,6 +8937,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
               )}
             </div>
+              <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
@@ -9056,6 +9078,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </span>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <div className="mt-4 space-y-3" data-testid="intervencoes-equipamento-list">
@@ -9122,6 +9145,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Trash2 className="w-5 h-5" />
               Confirmar Eliminação
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           {clienteToDelete && (
@@ -9183,6 +9207,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             <p className="text-gray-400 text-sm">
               Se o período atravessar diferentes códigos horários (07:00/19:00), será automaticamente dividido em múltiplos registos.
             </p>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
@@ -9426,6 +9451,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <Edit className="w-5 h-5 text-blue-400" />
               Editar Registo de Cronómetro
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           {editingRegisto && (
@@ -9814,6 +9840,7 @@ const TechnicalReports = ({ user, onLogout }) => {
             <DialogTitle className="text-white text-lg">
               Referência Interna do Cliente
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-gray-400 text-sm">
@@ -9865,6 +9892,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               <PlayCircle className="w-5 h-5 text-green-400" />
               Iniciar Cronómetro - FS #{novaOTParaCrono?.numero}
             </DialogTitle>
+            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
