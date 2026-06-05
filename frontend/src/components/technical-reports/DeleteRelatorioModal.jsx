@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 /**
  * Modal de confirmação para eliminar uma OT/FS.
@@ -22,6 +22,9 @@ const DeleteRelatorioModal = ({
             <Trash2 className="w-5 h-5" />
             Confirmar Eliminação
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirmação de eliminação permanente da ordem de trabalho.
+          </DialogDescription>
         </DialogHeader>
 
         {relatorioToDelete && (

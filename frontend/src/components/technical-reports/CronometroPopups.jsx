@@ -3,7 +3,7 @@ import { UserCheck, MapPin, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -40,9 +40,9 @@ export const CronometroFuncaoPopup = ({
             <UserCheck className="w-5 h-5 text-blue-400" />
             Definir Função na FS
           </DialogTitle>
-          <p className="text-sm text-gray-400 mt-1">
+          <DialogDescription className="text-sm text-gray-400 mt-1">
             Defina a função de cada técnico antes de iniciar o cronómetro de {tipoLabel}.
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 mt-4">
@@ -145,21 +145,23 @@ export const StopCronometroPopup = ({
             <MapPin className="w-5 h-5 text-blue-400" />
             Parar Cronómetro
           </DialogTitle>
-          <div className="text-sm text-gray-400 mt-1">
-            {tecnicos.length > 1 ? (
-              <div className="space-y-0.5">
-                {tecnicos.map((t, i) => (
-                  <span key={i} className="block">
-                    {t.tecnico_nome} — {tipoLabel}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span>
-                {tecnicos[0]?.tecnico_nome || 'Técnico'} — {tipoLabel}
-              </span>
-            )}
-          </div>
+          <DialogDescription asChild>
+            <div className="text-sm text-gray-400 mt-1">
+              {tecnicos.length > 1 ? (
+                <div className="space-y-0.5">
+                  {tecnicos.map((t, i) => (
+                    <span key={i} className="block">
+                      {t.tecnico_nome} — {tipoLabel}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span>
+                  {tecnicos[0]?.tecnico_nome || 'Técnico'} — {tipoLabel}
+                </span>
+              )}
+            </div>
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-3">
           {tecnicos.length === 1 && (
@@ -230,9 +232,9 @@ export const WorkKmPopup = ({ open, onOpenChange, workKmData, setWorkKmData }) =
             <Car className="w-5 h-5 text-amber-400" />
             Deslocação durante Trabalho
           </DialogTitle>
-          <p className="text-xs text-gray-400 mt-1">
+          <DialogDescription className="text-xs text-gray-400 mt-1">
             Registar KMs de deslocação (ex: compra de peças)
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-3">
           <div>

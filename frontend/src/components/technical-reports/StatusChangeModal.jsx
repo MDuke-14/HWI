@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   getTechnicalReportStatusColor,
   getTechnicalReportStatusLabel,
@@ -27,6 +27,9 @@ const StatusChangeModal = ({
             <FileText className="w-5 h-5 text-blue-400" />
             Alterar Status da OT
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecione o novo estado para esta ordem de trabalho.
+          </DialogDescription>
         </DialogHeader>
 
         {selectedStatusRelatorio && (

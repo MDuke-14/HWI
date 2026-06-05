@@ -3,7 +3,7 @@ import { Mail, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 /**
  * Modal de envio de FS por email.
@@ -34,6 +34,9 @@ const EmailModal = ({
             <Mail className="w-5 h-5 text-purple-400" />
             Enviar FS Por Email
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Selecione os destinatários para envio da Folha de Serviço por email.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
