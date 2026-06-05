@@ -110,11 +110,28 @@ import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaMo
 
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
-  if (!error.response) {
-    return 'Erro de conexão';
+  // Network/conexão sem response
+  if (!error?.response) {
+    return error?.message?.includes('Network') 
+      ? 'Erro de conexão. Verifica a tua internet e tenta novamente.'
+      : (error?.message || 'Erro de conexão');
   }
   
+  const status = error.response.status;
   const data = error.response.data;
+  
+  // 5xx/520/timeout — backend caiu ou demorou demais
+  if (status >= 500) {
+    if (status === 520 || status === 521 || status === 522 || status === 524) {
+      return 'Servidor temporariamente indisponível (timeout). Aguarda 10 segundos e tenta novamente.';
+    }
+    return `Erro do servidor (${status}). Aguarda e tenta novamente. Se persistir, contacta o administrador.`;
+  }
+  
+  // Se body é vazio/null/undefined ou string, devolve mensagem segura
+  if (!data || typeof data === 'string') {
+    return typeof data === 'string' && data.length < 200 ? data : `Erro ${status}`;
+  }
   
   // Se detail é uma string, retorne-a diretamente
   if (typeof data.detail === 'string') {
@@ -123,14 +140,18 @@ const formatErrorMessage = (error) => {
   
   // Se detail é um array (erros de validação do Pydantic)
   if (Array.isArray(data.detail)) {
-    return data.detail.map(err => {
-      const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
-      return `${field}: ${err.msg}`;
-    }).join(', ');
+    try {
+      return data.detail.map(err => {
+        const field = err?.loc ? err.loc[err.loc.length - 1] : 'campo';
+        return `${field}: ${err?.msg || 'inválido'}`;
+      }).join(', ');
+    } catch {
+      return `Erro de validação (${status})`;
+    }
   }
   
   // Fallback
-  return 'Erro ao processar solicitação';
+  return data?.message || `Erro ao processar solicitação (${status})`;
 };
 
 // Extrair mensagem de erro de respostas blob (usado em endpoints PDF)

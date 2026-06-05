@@ -125,23 +125,44 @@ const AdminTimeEntries = ({ user, onLogout }) => {
       const dayEntries = grouped[date] || [];
       const totalHours = dayEntries.reduce((sum, entry) => sum + (entry.total_hours || 0), 0);
       
-      // Extrair localizações GPS dos registos do dia
-      const locations = dayEntries
-        .filter(entry => entry.geo_location?.latitude && entry.geo_location?.longitude)
-        .map((entry, idx) => ({
-          id: `${entry.id}_${idx}`,
-          latitude: entry.geo_location.latitude,
-          longitude: entry.geo_location.longitude,
-          accuracy: entry.geo_location.accuracy,
-          timestamp: entry.start_time,
-          address: entry.geo_location.address?.locality || 
-                   entry.geo_location.address?.city || 
-                   entry.geo_location.address?.formatted ||
-                   entry.location_description,
-          type: entry.status === 'active' ? 'Entrada' : 'Registo',
-          color: entry.outside_residence_zone ? 'orange' : 'green',
-          outside_residence_zone: entry.outside_residence_zone
-        }));
+      // Extrair localizações GPS dos registos do dia (entrada E saída)
+      const locations = [];
+      dayEntries.forEach((entry, idx) => {
+        // Picagem de ENTRADA (start)
+        if (entry.geo_location?.latitude && entry.geo_location?.longitude) {
+          locations.push({
+            id: `${entry.id}_start_${idx}`,
+            latitude: entry.geo_location.latitude,
+            longitude: entry.geo_location.longitude,
+            accuracy: entry.geo_location.accuracy,
+            timestamp: entry.start_time,
+            address: entry.geo_location.address?.locality || 
+                     entry.geo_location.address?.city || 
+                     entry.geo_location.address?.formatted ||
+                     entry.location_description,
+            type: 'Entrada',
+            color: entry.outside_residence_zone ? 'orange' : 'green',
+            outside_residence_zone: entry.outside_residence_zone
+          });
+        }
+        // Picagem de SAÍDA (end)
+        if (entry.end_geo_location?.latitude && entry.end_geo_location?.longitude) {
+          locations.push({
+            id: `${entry.id}_end_${idx}`,
+            latitude: entry.end_geo_location.latitude,
+            longitude: entry.end_geo_location.longitude,
+            accuracy: entry.end_geo_location.accuracy,
+            timestamp: entry.end_time,
+            address: entry.end_geo_location.address?.locality || 
+                     entry.end_geo_location.address?.city || 
+                     entry.end_geo_location.address?.formatted ||
+                     entry.location_description,
+            type: 'Saída',
+            color: entry.outside_residence_zone ? 'orange' : 'red',
+            outside_residence_zone: entry.outside_residence_zone
+          });
+        }
+      });
       
       // Verificar se é fim de semana
       const dayOfWeek = new Date(date + 'T00:00:00').getDay();

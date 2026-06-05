@@ -3263,7 +3263,11 @@ async def update_registo_tecnico(
             update_data["incluir_pausa"] = incluir_pausa
             
         except Exception as e:
-            logging.error(f"Erro ao processar horários: {str(e)}")
+            logging.error(f"Erro ao processar horários para registo {registo_id}: {str(e)}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Erro ao processar horários: '{hora_inicio_str}' / '{hora_fim_str}'. Verifica o formato (HH:MM). Detalhe: {str(e)}"
+            )
     
     # Outros campos
     if "minutos_trabalhados" in registo_data and "hora_inicio" not in registo_data:
