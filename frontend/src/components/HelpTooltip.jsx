@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Info, X } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import {
   Dialog,
   DialogContent,
@@ -540,6 +541,12 @@ const HelpTooltip = ({ section, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const help = helpContent[section];
   
+  // Sanitizar HTML do conteúdo de ajuda (DOMPurify previne XSS)
+  const safeContent = useMemo(
+    () => DOMPurify.sanitize(help?.content || ''),
+    [help?.content]
+  );
+  
   if (!help) return null;
   
   return (
@@ -561,7 +568,7 @@ const HelpTooltip = ({ section, className = '' }) => {
           </DialogHeader>
           <div 
             className="text-gray-300 text-sm mt-2"
-            dangerouslySetInnerHTML={{ __html: help.content }}
+            dangerouslySetInnerHTML={{ __html: safeContent }}
           />
           <div className="flex justify-end mt-4">
             <button

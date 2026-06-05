@@ -91,7 +91,7 @@ class TestAdminReferenceTokens:
         
         # All returned tokens should be pending (used=False)
         for token in data:
-            assert token["used"] == False, f"Token {token['id']} should be pending (used=False)"
+            assert not token["used"], f"Token {token['id']} should be pending (used=False)"
         
         print(f"✓ Filter by status=pendente works - found {len(data)} pending tokens")
     
@@ -107,7 +107,7 @@ class TestAdminReferenceTokens:
         
         # All returned tokens should be submitted (used=True)
         for token in data:
-            assert token["used"] == True, f"Token {token['id']} should be submitted (used=True)"
+            assert token["used"], f"Token {token['id']} should be submitted (used=True)"
         
         print(f"✓ Filter by status=submetido works - found {len(data)} submitted tokens")
     
@@ -140,7 +140,7 @@ class TestAdminReferenceTokens:
         
         # All returned tokens should match both filters
         for token in data:
-            assert token["used"] == True, f"Token should be submitted"
+            assert token["used"], f"Token should be submitted"
             assert "560" in token["cliente_nome"].lower() or "560" in token["cliente_nome"], \
                 f"Token cliente_nome should contain '560'"
         
@@ -295,9 +295,9 @@ class TestAdminReferenceTokens:
             
             # Verify the flags are consistent
             if used:
-                assert token["used"] == True
+                assert token["used"]
             if expired and not used:
-                assert token["expired"] == True
+                assert token["expired"]
             
             print(f"  Token FS#{token.get('numero_assistencia', '?')}: {expected_status}")
         

@@ -1,5 +1,6 @@
 """
 Utilidades de autenticação partilhadas por todas as rotas.
+Importar daqui (NÃO de server.py) para evitar circular imports.
 """
 import os
 from datetime import datetime, timezone, timedelta
@@ -7,6 +8,8 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 import jwt
+
+from database import db
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'hwi-timeclock-secret-key-2025')
 ALGORITHM = "HS256"
@@ -46,6 +49,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 async def get_current_admin(current_user: dict = Depends(get_current_user)):
-    if not current_user.get("is_admin"):
-        raise HTTPException(status_code=403, detail="Apenas administradores podem aceder")
+    """Verifica que o utilizador é admin consultando a DB (suporta promoção/despromoção sem refresh do token)."""
+    user = await db.users.find_one({"id": current_user["sub"]})
+    if not user or not user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores.")
     return current_user
+

@@ -20,7 +20,7 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://field-clock.preview.
 
 # Test credentials
 ADMIN_USERNAME = "pedro"
-ADMIN_PASSWORD = "password"
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "password")
 
 # Existing OT ID for testing
 TEST_OT_ID = "6952755f-2fcf-4d34-a90d-38626782bc86"

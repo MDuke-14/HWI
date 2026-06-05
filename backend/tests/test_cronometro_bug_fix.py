@@ -102,7 +102,7 @@ class TestCronometroBugFix:
         data = response.json()
         assert "cronometro" in data
         assert data["cronometro"]["tipo"] == "viagem"
-        assert data["cronometro"]["ativo"] == True
+        assert data["cronometro"]["ativo"]
         print(f"Viagem cronometro started: {data['cronometro']['id']}")
     
     def test_04_stop_viagem_cronometro_verify_minutos(self, api_client):

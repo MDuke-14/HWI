@@ -22,9 +22,9 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
 ADMIN_USERNAME = "pedro"
-ADMIN_PASSWORD = "password"
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "password")
 NON_ADMIN_USERNAME = "teste@email.com"
-NON_ADMIN_PASSWORD = "teste"
+NON_ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "teste")
 
 
 # ============ AUTH ROUTES (routes/auth_routes.py) ============
@@ -42,7 +42,7 @@ class TestAuthRoutes:
         data = response.json()
         assert "access_token" in data
         assert "user" in data
-        assert data["user"]["is_admin"] == True
+        assert data["user"]["is_admin"]
         print(f"✓ Admin login successful: {data['user']['username']}")
     
     def test_login_non_admin_success(self):

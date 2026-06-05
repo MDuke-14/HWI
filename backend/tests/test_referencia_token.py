@@ -214,7 +214,7 @@ class TestSubmitReference:
             
             # Verify token is now marked as used
             updated_token = db.reference_tokens.find_one({"token": token_str}, {"_id": 0})
-            assert updated_token["used"] == True, "Token should be marked as used"
+            assert updated_token["used"], "Token should be marked as used"
             assert updated_token["referencia"] == test_ref, "Token should store the reference"
             
             # Verify FS was updated with the reference

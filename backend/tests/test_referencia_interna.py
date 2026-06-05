@@ -81,7 +81,7 @@ class TestClienteReferenciaInterna:
         
         cliente = response.json()
         assert 'incluir_referencia_interna' in cliente, "Client should have 'incluir_referencia_interna' field"
-        assert cliente['incluir_referencia_interna'] == True, f"560Lab client should have incluir_referencia_interna=true, got {cliente['incluir_referencia_interna']}"
+        assert cliente['incluir_referencia_interna'], f"560Lab client should have incluir_referencia_interna=true, got {cliente['incluir_referencia_interna']}"
         
         print(f"PASS: GET /api/clientes/{TEST_CLIENT_ID} returns incluir_referencia_interna=True")
     

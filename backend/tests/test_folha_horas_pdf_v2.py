@@ -265,7 +265,7 @@ class TestTabelaPrecoImage(TestAuth):
         data = response.json()
         table_1 = next((t for t in data if t["table_id"] == 1), None)
         assert table_1 is not None, "Table 1 not found"
-        assert table_1.get("has_imagem") == True, f"Expected has_imagem=True, got {table_1.get('has_imagem')}"
+        assert table_1.get("has_imagem"), f"Expected has_imagem=True, got {table_1.get('has_imagem')}"
         
         # Verify imagem_data is NOT in response (should be excluded)
         assert "imagem_data" not in table_1, "imagem_data should be excluded from GET response"
@@ -341,7 +341,7 @@ class TestTabelaPrecoImage(TestAuth):
         data = response.json()
         table_1 = next((t for t in data if t["table_id"] == 1), None)
         assert table_1 is not None, "Table 1 not found"
-        assert table_1.get("has_imagem") == False, f"Expected has_imagem=False, got {table_1.get('has_imagem')}"
+        assert not table_1.get("has_imagem"), f"Expected has_imagem=False, got {table_1.get('has_imagem')}"
         
         print("✓ has_imagem=false after image delete")
 

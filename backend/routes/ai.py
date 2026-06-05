@@ -12,13 +12,12 @@ import os
 import smtplib
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from database import db
-from server import get_current_user, get_current_admin, log_app_error
+from auth_utils import get_current_user, get_current_admin
 from services.ai_service import analyze_error, review_fs
 
 router = APIRouter(tags=["ai"])
@@ -39,6 +38,7 @@ async def ai_resolve_error(error_id: str, current_user: dict = Depends(get_curre
         analysis = await analyze_error(err)
     except Exception as e:
         logging.error(f"Falha ao chamar IA para erro {error_id}: {e}")
+        from server import log_app_error  # lazy import (evita circular)
         await log_app_error(
             context="IA",
             action="Analisar erro com IA",
@@ -257,6 +257,7 @@ async def ai_review_fs(relatorio_id: str, current_user: dict = Depends(get_curre
         result = await review_fs(payload)
     except Exception as e:
         logging.error(f"Falha IA review FS {relatorio_id}: {e}")
+        from server import log_app_error  # lazy import (evita circular)
         await log_app_error(
             context=f"FS#{relatorio.get('numero_assistencia')}",
             action="Rever FS com IA",

@@ -139,7 +139,7 @@ class TestMaoObraRegistos:
         
         # First segment should have pause deducted
         first = registos[0]
-        assert first.get('incluir_pausa') == True, "incluir_pausa should be True"
+        assert first.get('incluir_pausa'), "incluir_pausa should be True"
         
         # Total should be 540 (600 - 60)
         assert total_mins == 540, f"Expected 540 minutes (10h - 1h pause), got {total_mins}"
@@ -186,7 +186,7 @@ class TestMaoObraRegistos:
         
         print(f"After adding pause: {new_mins} min (expected {expected_mins})")
         assert new_mins == expected_mins, f"Expected {expected_mins} min after adding pause, got {new_mins}"
-        assert updated.get('incluir_pausa') == True, "incluir_pausa should be True"
+        assert updated.get('incluir_pausa'), "incluir_pausa should be True"
         
         # Store for next test
         self.registo_with_added_pause = updated
@@ -234,7 +234,7 @@ class TestMaoObraRegistos:
         
         print(f"After removing pause: {new_mins} min (expected {expected_mins})")
         assert new_mins == expected_mins, f"Expected {expected_mins} min after removing pause, got {new_mins}"
-        assert updated.get('incluir_pausa') == False, "incluir_pausa should be False"
+        assert not updated.get('incluir_pausa'), "incluir_pausa should be False"
         
         return updated
         
