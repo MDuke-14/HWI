@@ -1191,44 +1191,55 @@ async def get_fotografia_image(
     foto_id: str,
     thumb: bool = False
 ):
-    """Obter imagem da fotografia - endpoint público para servir imagens"""
-    # Buscar foto no MongoDB - apenas campos necessários
-    projection = {"_id": 0, "content_type": 1}
-    if thumb:
-        projection["thumb_base64"] = 1
-        projection["foto_base64"] = 1  # fallback se não houver thumbnail
-    else:
-        projection["foto_base64"] = 1
+    """Obter imagem da fotografia - endpoint público para servir imagens.
     
-    foto = await db.fotos_relatorio.find_one({
-        "id": foto_id,
-        "relatorio_id": relatorio_id
-    }, projection)
+    CRÍTICO (2026-06): A projection é estritamente separada para evitar OOM em
+    produção. Quando o frontend pede thumb, NÃO carregamos `foto_base64`
+    (potencialmente 5-10MB por imagem); só carregamos a foto completa se o
+    thumbnail não existir (fallback raro). Isto reduz o uso de memória de
+    ~150MB para ~3MB ao carregar 15 thumbs em paralelo.
+    """
+    # Passo 1: tentar APENAS o campo solicitado (sem carregar a foto inteira)
+    if thumb:
+        projection = {"_id": 0, "content_type": 1, "thumb_base64": 1}
+    else:
+        projection = {"_id": 0, "content_type": 1, "foto_base64": 1}
+    
+    foto = await db.fotos_relatorio.find_one(
+        {"id": foto_id, "relatorio_id": relatorio_id},
+        projection,
+    )
     
     if not foto:
         raise HTTPException(status_code=404, detail="Fotografia não encontrada")
     
-    # Usar thumbnail se disponível e solicitado
-    image_data = None
-    if thumb and foto.get("thumb_base64"):
-        image_data = foto["thumb_base64"]
-    elif foto.get("foto_base64"):
-        image_data = foto["foto_base64"]
+    image_data = foto.get("thumb_base64") if thumb else foto.get("foto_base64")
+    
+    # Fallback: se thumb solicitado mas não existe, buscar a foto completa
+    # (segunda query — só acontece para fotos antigas sem thumb gerado)
+    if not image_data and thumb:
+        foto_full = await db.fotos_relatorio.find_one(
+            {"id": foto_id, "relatorio_id": relatorio_id},
+            {"_id": 0, "foto_base64": 1, "content_type": 1},
+        )
+        if foto_full:
+            image_data = foto_full.get("foto_base64")
+            foto["content_type"] = foto.get("content_type") or foto_full.get("content_type")
     
     if not image_data:
         raise HTTPException(status_code=404, detail="Imagem não disponível")
     
-    # Decodificar base64 e retornar com cache headers
-    import base64
-    foto_bytes = base64.b64decode(image_data)
+    # Decodificar base64 num thread pool para não bloquear o event loop.
+    # 15 imagens em paralelo × decode CPU-bound pode bloquear o worker.
+    from fastapi.concurrency import run_in_threadpool
+    foto_bytes = await run_in_threadpool(base64.b64decode, image_data)
     
-    from fastapi.responses import Response
     return Response(
         content=foto_bytes,
         media_type=foto.get("content_type", "image/jpeg"),
         headers={
             "Cache-Control": "public, max-age=86400",
-            "ETag": f'"{foto_id}"'
+            "ETag": f'"{foto_id}-{"t" if thumb else "f"}"',
         }
     )
 
@@ -1586,7 +1597,7 @@ async def delete_assinatura(
     return {"message": "Assinatura eliminada com sucesso"}
 
 @router.put("/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_id}")
-async def update_assinatura(
+async def update_assinatura_put(
     relatorio_id: str,
     assinatura_id: str,
     data: dict,
@@ -1628,8 +1639,11 @@ async def get_assinatura_imagem_by_id(
     assinatura_id: str
 ):
     """Obter imagem de uma assinatura específica pelo ID - endpoint público"""
+    # Projection mínima: só os campos necessários para servir a imagem.
+    # Sem isto, o documento inteiro (incluindo metadados) é carregado.
     assinatura = await db.assinaturas_relatorio.find_one(
-        {"relatorio_id": relatorio_id, "id": assinatura_id}
+        {"relatorio_id": relatorio_id, "id": assinatura_id},
+        {"_id": 0, "assinatura_path": 1, "assinatura_base64": 1},
     )
     
     if not assinatura:
@@ -1651,10 +1665,11 @@ async def get_assinatura_imagem_by_id(
     if not assinatura.get("assinatura_base64"):
         raise HTTPException(status_code=404, detail="Assinatura não encontrada")
     
-    import base64
-    from fastapi.responses import Response
+    from fastapi.concurrency import run_in_threadpool
     
-    assinatura_bytes = base64.b64decode(assinatura["assinatura_base64"])
+    # Decode em thread pool (evita bloquear o event loop quando há muitas
+    # assinaturas a serem servidas em paralelo)
+    assinatura_bytes = await run_in_threadpool(base64.b64decode, assinatura["assinatura_base64"])
     return Response(content=assinatura_bytes, media_type="image/png", headers=headers)
 
 @router.get("/relatorios-tecnicos/{relatorio_id}/assinatura/imagem")
@@ -1692,11 +1707,11 @@ async def get_assinatura_imagem(
     return Response(content=assinatura_bytes, media_type="image/png", headers=headers)
 
 @router.delete("/relatorios-tecnicos/{relatorio_id}/assinatura")
-async def delete_assinatura(
+async def delete_assinatura_relatorio(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Remover assinatura de um relatório técnico"""
+    """Remover TODAS as assinaturas de um relatório técnico (endpoint legado)"""
     # Buscar assinatura
     assinatura = await db.assinaturas_relatorio.find_one({"relatorio_id": relatorio_id})
     

@@ -262,27 +262,50 @@ async def get_fotografias_pc(
 @router.get("/pedidos-cotacao/{pc_id}/fotografias/{foto_id}/image")
 async def get_fotografia_pc_image(
     pc_id: str,
-    foto_id: str
+    foto_id: str,
+    thumb: bool = False,
 ):
-    """Obter imagem da fotografia de um PC"""
-    foto = await db.fotos_pc.find_one({
-        "id": foto_id,
-        "pc_id": pc_id
-    }, {"_id": 0})
+    """Obter imagem da fotografia de um PC. Projection mínima + thread pool."""
+    if thumb:
+        projection = {"_id": 0, "content_type": 1, "thumb_base64": 1}
+    else:
+        projection = {"_id": 0, "content_type": 1, "foto_base64": 1}
+    
+    foto = await db.fotos_pc.find_one(
+        {"id": foto_id, "pc_id": pc_id},
+        projection,
+    )
     
     if not foto:
         raise HTTPException(status_code=404, detail="Fotografia não encontrada")
     
-    if not foto.get("foto_base64"):
+    image_data = foto.get("thumb_base64") if thumb else foto.get("foto_base64")
+    
+    # Fallback se thumb pedido mas não existir
+    if not image_data and thumb:
+        foto_full = await db.fotos_pc.find_one(
+            {"id": foto_id, "pc_id": pc_id},
+            {"_id": 0, "foto_base64": 1, "content_type": 1},
+        )
+        if foto_full:
+            image_data = foto_full.get("foto_base64")
+            foto["content_type"] = foto.get("content_type") or foto_full.get("content_type")
+    
+    if not image_data:
         raise HTTPException(status_code=404, detail="Imagem não disponível")
     
     import base64
-    foto_bytes = base64.b64decode(foto["foto_base64"])
+    from fastapi.concurrency import run_in_threadpool
+    foto_bytes = await run_in_threadpool(base64.b64decode, image_data)
     
     from fastapi.responses import Response
     return Response(
         content=foto_bytes,
-        media_type=foto.get("content_type", "image/jpeg")
+        media_type=foto.get("content_type", "image/jpeg"),
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "ETag": f'"{foto_id}-{"t" if thumb else "f"}"',
+        },
     )
 
 @router.delete("/pedidos-cotacao/{pc_id}/fotografias/{foto_id}")
