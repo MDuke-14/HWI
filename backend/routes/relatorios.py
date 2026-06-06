@@ -38,6 +38,92 @@ from folha_horas_pdf import generate_folha_horas_pdf
 
 router = APIRouter()
 
+
+# ============================================================================
+# Streaming helper para PDFs grandes (FS com muitas fotos)
+# ----------------------------------------------------------------------------
+# Em vez de aguardar a geração completa em memória e só depois enviar o PDF
+# para o cliente, escrevemos directamente para um ficheiro temporário num
+# thread separado e fazemos "tail-read" desse ficheiro à medida que ele
+# cresce. Isto faz com que o gateway (Cloudflare / K8s ingress) receba bytes
+# de forma contínua durante a geração — evitando o timeout de inactividade
+# (~100s) que corta a ligação em FS com 20+ fotografias.
+# ============================================================================
+async def stream_pdf_via_tempfile(generate_fn, *args, **kwargs):
+    """Gera PDF num thread escrevendo num tempfile; produz chunks em streaming."""
+    import asyncio
+    import tempfile
+    import threading
+    import os as _os
+
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".pdf", prefix="fs_pdf_")
+    _os.close(tmp_fd)
+
+    done_event = threading.Event()
+    error_holder: list = []
+
+    def _worker():
+        try:
+            # generate_fn DEVE aceitar output_file= (path string)
+            generate_fn(*args, output_file=tmp_path, **kwargs)
+        except Exception as e:
+            error_holder.append(e)
+        finally:
+            done_event.set()
+
+    # Lançar a geração em background thread
+    thread = threading.Thread(target=_worker, daemon=True)
+    thread.start()
+
+    position = 0
+    CHUNK_SIZE = 64 * 1024  # 64 KB
+    POLL_INTERVAL = 0.4     # segundos entre poll do ficheiro
+
+    try:
+        while True:
+            try:
+                current_size = _os.path.getsize(tmp_path)
+            except FileNotFoundError:
+                current_size = 0
+
+            if current_size > position:
+                # Há novos bytes para enviar
+                with open(tmp_path, "rb") as f:
+                    f.seek(position)
+                    while True:
+                        chunk = f.read(CHUNK_SIZE)
+                        if not chunk:
+                            break
+                        position += len(chunk)
+                        yield chunk
+
+            if done_event.is_set():
+                # Geração terminou — verificar se há bytes finais
+                try:
+                    final_size = _os.path.getsize(tmp_path)
+                except FileNotFoundError:
+                    final_size = 0
+                if final_size > position:
+                    with open(tmp_path, "rb") as f:
+                        f.seek(position)
+                        while True:
+                            chunk = f.read(CHUNK_SIZE)
+                            if not chunk:
+                                break
+                            position += len(chunk)
+                            yield chunk
+                if error_holder:
+                    # Algo falhou no worker — propaga
+                    raise error_holder[0]
+                break
+
+            await asyncio.sleep(POLL_INTERVAL)
+    finally:
+        try:
+            _os.unlink(tmp_path)
+        except Exception:
+            pass
+
 @router.post("/relatorios-tecnicos", response_model=RelatorioTecnico)
 async def create_relatorio(
     relatorio_data: RelatorioTecnicoCreate,
@@ -2395,46 +2481,51 @@ async def preview_pdf_ot(
         {"relatorio_id": relatorio_id}, {"_id": 0}
     ).sort("created_at", 1).to_list(length=None)
     
-    # Gerar PDF com tratamento de erros — executado em thread pool para NÃO bloquear
-    # o event loop asyncio. Assim, outros requests (incluindo /health e logout) continuam
-    # a responder mesmo durante geração de um PDF grande.
-    import asyncio
+    # Gerar PDF em STREAMING — escreve para tempfile num thread separado e
+    # transmite os bytes em chunks ao cliente à medida que vão sendo escritos.
+    # Isto mantém a ligação activa para o gateway durante a geração e evita
+    # timeouts 520/524 em FS com muitas fotos.
     import time as _time
     t0 = _time.time()
-    try:
-        loop = asyncio.get_event_loop()
-        pdf_buffer = await loop.run_in_executor(
-            None,
-            generate_ot_pdf,
-            relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
-            equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
-        )
-        duration = _time.time() - t0
-        if duration > 15:
-            logging.warning(f"[PDF] Geração lenta FS#{relatorio.get('numero_assistencia')}: {duration:.1f}s")
-    except Exception as e:
-        logging.error(f"Erro ao gerar PDF para OT {relatorio_id}: {str(e)}")
-        import traceback
-        tb = traceback.format_exc()
-        logging.error(f"Traceback: {tb}")
-        numero_ot = relatorio.get('numero_assistencia', 'N/A')
-        await log_app_error(
-            context=f"FS#{numero_ot}",
-            action="Gerar PDF",
-            error_message=str(e),
-            details={"relatorio_id": relatorio_id, "traceback": tb[:1500], "duration_s": round(_time.time()-t0, 1)},
-            user_id=current_user.get("sub"),
-            username=current_user.get("username")
-        )
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
-    
-    # Retornar como download
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
+
+    async def _pdf_stream():
+        try:
+            async for chunk in stream_pdf_via_tempfile(
+                generate_ot_pdf,
+                relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
+                equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+            ):
+                yield chunk
+            duration = _time.time() - t0
+            if duration > 15:
+                logging.warning(f"[PDF] Geração lenta FS#{numero_ot}: {duration:.1f}s")
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            logging.error(f"Erro ao gerar PDF para OT {relatorio_id}: {str(e)}\nTraceback: {tb}")
+            try:
+                await log_app_error(
+                    context=f"FS#{numero_ot}",
+                    action="Gerar PDF (stream)",
+                    error_message=str(e),
+                    details={"relatorio_id": relatorio_id, "traceback": tb[:1500], "duration_s": round(_time.time()-t0, 1)},
+                    user_id=current_user.get("sub"),
+                    username=current_user.get("username"),
+                )
+            except Exception:
+                pass
+            # Sem forma de devolver 500 após bytes terem começado a fluir.
+            # A response simplesmente fecha — o cliente apanha o erro.
+            return
+
     return StreamingResponse(
-        pdf_buffer,
+        _pdf_stream(),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=FS_{numero_ot}_{cliente.get('nome', 'Cliente').replace(' ', '_')}.pdf"
+            "Content-Disposition": f"attachment; filename=FS_{numero_ot}_{cliente.get('nome', 'Cliente').replace(' ', '_')}.pdf",
+            "X-Accel-Buffering": "no",  # Desliga buffering NGINX (faz streaming real)
+            "Cache-Control": "no-cache, no-store, must-revalidate",
         }
     )
 

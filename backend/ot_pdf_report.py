@@ -126,13 +126,23 @@ def _compress_photo_if_large(raw_bytes, context=""):
         return raw_bytes
 
 
-def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None, relatorios_assistencia=None):
+def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None, relatorios_assistencia=None, output_file=None):
     """
     Gera PDF completo de uma Folha de Serviço
     Layout baseado na visualização HTML, organizado por data de intervenção
+
+    Args:
+        output_file: opcional. Se fornecido (path string ou file-like),
+            ReportLab escreve directamente nesse destino (permite streaming
+            via tempfile). Se None (default), devolve um BytesIO em memória.
     """
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
+    if output_file is not None:
+        buffer = None
+        doc_target = output_file
+    else:
+        buffer = BytesIO()
+        doc_target = buffer
+    doc = SimpleDocTemplate(doc_target, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
     elements = []
     styles = getSampleStyleSheet()
     
@@ -944,8 +954,18 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         logging.error(f"[PDF] doc.build() FALHOU: {type(e).__name__}: {e}")
         # Fallback: remover todos os RLImage dos elementos e tentar de novo
         # Isto garante que mesmo com imagens problemáticas o PDF textual é gerado.
-        buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
+        if output_file is not None:
+            # Truncar o ficheiro/objecto de saída antes do retry
+            if hasattr(output_file, 'truncate'):
+                try:
+                    output_file.seek(0)
+                    output_file.truncate(0)
+                except Exception:
+                    pass
+            doc = SimpleDocTemplate(output_file, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
+        else:
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.6*cm, bottomMargin=0.6*cm, leftMargin=0.8*cm, rightMargin=0.8*cm)
         cleaned = _strip_images_from_elements(elements)
         try:
             doc.build(cleaned)
@@ -953,6 +973,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         except Exception as e2:
             logging.error(f"[PDF] Fallback também falhou: {type(e2).__name__}: {e2}")
             raise
+    if output_file is not None:
+        # Caller é responsável por ler o ficheiro de output. Não devolvemos buffer.
+        return None
     buffer.seek(0)
     return buffer
 
