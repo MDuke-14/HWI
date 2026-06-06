@@ -115,6 +115,11 @@ import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-re
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
 
+// Timeout para download/geração de PDFs no cliente.
+// PDFs de FS com muitas fotos podem demorar bastante a gerar no servidor.
+// Definido a 5 minutos para evitar AbortError em geração lenta.
+const PDF_DOWNLOAD_TIMEOUT = 300000; // 5 min
+
 // Helper function to format error messages from FastAPI validation errors
 const formatErrorMessage = (error) => {
   // Network/conexão sem response
@@ -170,7 +175,7 @@ const extractBlobError = async (error) => {
   
   // Códigos transitórios típicos de Cloudflare/proxy quando o backend está sobrecarregado ou a reiniciar
   if (status === 520 || status === 521 || status === 522 || status === 523 || status === 524) {
-    return 'O servidor está temporariamente indisponível ou demasiado ocupado a gerar o PDF. Aguarda 15 segundos e tenta novamente. Se persistir, contacta o administrador.';
+    return 'O servidor está temporariamente indisponível ou demasiado ocupado a gerar o PDF. Aguarda um momento e tenta novamente. Se persistir, contacta o administrador.';
   }
   if (status === 502 || status === 503 || status === 504) {
     return 'Servidor temporariamente indisponível. Tenta novamente em alguns segundos.';
@@ -967,7 +972,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         try {
           const response = await axios.get(
             `${API}/relatorios-tecnicos/${relatorio.id}/preview-pdf`,
-            { responseType: 'blob' }
+            { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
           );
           
           // Criar blob e fazer download
@@ -1011,7 +1016,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     setDownloadingClientesPDF(true);
     try {
       const response = await axios.get(`${API}/clientes/export/pdf`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: PDF_DOWNLOAD_TIMEOUT
       });
       
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -1041,7 +1047,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     setDownloadingEmailsPDF(true);
     try {
       const response = await axios.get(`${API}/clientes/export/emails-pdf`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: PDF_DOWNLOAD_TIMEOUT
       });
       
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -2623,7 +2630,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleDownloadPDFPC = async (pcId, hideClient = false) => {
     try {
       const response = await axios.get(`${API}/pedidos-cotacao/${pcId}/preview-pdf?hide_client=${hideClient}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: PDF_DOWNLOAD_TIMEOUT
       });
       
       const pc = pedidosCotacao.find(p => p.id === pcId) || allPCs.find(p => p.id === pcId);
@@ -3415,7 +3423,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           table_id: tableId,
           despesa_adjustments: despesaAdjustments
         },
-        { responseType: 'blob' }
+        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
       );
       
       // Download do PDF
@@ -3467,7 +3475,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       const response = await axios.get(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-        { responseType: 'blob', timeout: 90000 }
+        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
       );
       
       // Criar URL do blob para visualização
@@ -3501,7 +3509,7 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       const response = await axios.get(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-        { responseType: 'blob', timeout: 90000 }
+        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
       );
       
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -6237,7 +6245,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     try {
                       const response = await axios.get(
                         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-                        { responseType: 'blob' }
+                        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
                       );
                       
                       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -7702,7 +7710,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     try {
                       const response = await axios.get(
                         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-                        { responseType: 'blob' }
+                        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
                       );
                       
                       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -9018,7 +9026,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             try {
                               const response = await axios.get(
                                 `${API}/relatorios-tecnicos/${relatorio.id}/preview-pdf`,
-                                { responseType: 'blob' }
+                                { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
                               );
                               
                               const blob = new Blob([response.data], { type: 'application/pdf' });
