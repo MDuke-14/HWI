@@ -289,6 +289,25 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 **Fix**: corrigido mapping com fallbacks defensivos. Pré-join de `relatorios_assistencia[].texto` por `intervencao_id` em cada intervenção (evita IA falhar no lookup). Prompt atualizado: `equipamento_principal=null` é VÁLIDO quando há `equipamentos_adicionais`; só flag null em registos específicos, não generaliza.
 
+### PDF Jobs Multi-Pod — migração para MongoDB + GridFS (2026-02-06)
+**Bug crítico identificado pelo utilizador**: 404 "Job não encontrado ou expirado" no `GET /pdf-jobs/{id}` em produção.
+
+**Causa raiz**: produção corre **múltiplos PODS** (não apenas múltiplos workers). Cada pod tem o seu próprio `/tmp` — NÃO é partilhado. POST criava o job no pod A (escrevia para `/tmp/fs_pdfjobs/` local), GET caía no pod B (que não tinha o ficheiro) → 404. Aplica-se também em deploys (pod novo não vê o /tmp do anterior).
+
+**Fix**: migração completa do estado para **MongoDB + GridFS**:
+- Metadados → collection `pdf_jobs` (substitui ficheiros JSON locais)
+- PDF binário → **GridFS** bucket `pdf_files` (substitui ficheiros PDF locais)
+- Worker thread:
+  1. Gera PDF para tempfile local (memory-efficient)
+  2. Upload do PDF para GridFS via `bucket.upload_from_stream` (chamado via `run_coroutine_threadsafe`)
+  3. Atualiza `pdf_jobs.{status, size_bytes, gridfs_id}` na MongoDB
+  4. Apaga tempfile local
+- Download stream usa `bucket.open_download_stream` → chunks via `readchunk()` → cleanup automático no `finally`.
+
+**Resultado**: qualquer pod do cluster consegue ver e descarregar qualquer job. Resolve definitivamente o 404 multi-pod e também sobrevive a deploys (a MongoDB persiste).
+
+**Validação preview**: POST → poll status `done` em 1.2s → download PDF 219KB válido → GET retorna 404 (cleanup OK). ✓
+
 ### Visibility de Erros — STARTED logs persistentes contra OOM (2026-02-06)
 **Bug identificado pelo utilizador**: quando o pod morre por OOM durante geração de PDF, **nada aparece em `/admin/errors`** porque o Python é terminado por SIGKILL antes de poder gravar o erro.
 

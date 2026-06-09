@@ -2581,67 +2581,59 @@ import time as _job_time
 import json as _job_json
 from threading import Thread as _JobThread
 
-_PDF_JOBS_DIR = "/tmp/fs_pdfjobs"
+_PDF_JOBS_TMP_DIR = "/tmp/fs_pdfjobs"  # apenas para geração temporária (não partilhado entre pods)
 _PDF_JOB_TTL_SECONDS = 30 * 60  # 30 minutos
 
-_os.makedirs(_PDF_JOBS_DIR, exist_ok=True)
+_os.makedirs(_PDF_JOBS_TMP_DIR, exist_ok=True)
 
 
-def _job_meta_path(job_id: str) -> str:
-    return _os.path.join(_PDF_JOBS_DIR, f"{job_id}.meta.json")
+def _job_local_pdf_path(job_id: str) -> str:
+    """Path LOCAL ao pod para gerar o PDF. Após geração é uploaded para GridFS."""
+    return _os.path.join(_PDF_JOBS_TMP_DIR, f"{job_id}.pdf")
 
 
-def _job_pdf_path(job_id: str) -> str:
-    return _os.path.join(_PDF_JOBS_DIR, f"{job_id}.pdf")
+async def _read_job_meta_async(job_id: str):
+    """Lê metadados de um job da MongoDB (partilhado entre todos os pods)."""
+    doc = await db.pdf_jobs.find_one({"id": job_id}, {"_id": 0})
+    return doc
 
 
-def _read_job_meta(job_id: str):
-    """Lê metadados de um job. Devolve None se não existir ou for ilegível."""
-    try:
-        with open(_job_meta_path(job_id), "r", encoding="utf-8") as f:
-            return _job_json.load(f)
-    except (FileNotFoundError, _job_json.JSONDecodeError, OSError):
-        return None
+async def _write_job_meta_async(job_id: str, meta: dict) -> None:
+    """Escreve/atualiza metadados na MongoDB (upsert atómico)."""
+    meta = {**meta, "id": job_id}
+    await db.pdf_jobs.update_one({"id": job_id}, {"$set": meta}, upsert=True)
 
 
-def _write_job_meta(job_id: str, meta: dict) -> None:
-    """Escreve metadados de forma atómica (write-then-rename)."""
-    path = _job_meta_path(job_id)
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        _job_json.dump(meta, f)
-    _os.replace(tmp, path)
+async def _cleanup_old_pdf_jobs_async() -> None:
+    """Remove jobs antigos (>TTL) + os respectivos ficheiros em GridFS."""
+    from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+    cutoff = _job_time.time() - _PDF_JOB_TTL_SECONDS
+    cursor = db.pdf_jobs.find({"started_at": {"$lt": cutoff}}, {"id": 1, "gridfs_id": 1})
+    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="pdf_files")
+    async for doc in cursor:
+        gid = doc.get("gridfs_id")
+        if gid:
+            try:
+                from bson import ObjectId
+                await bucket.delete(ObjectId(gid) if isinstance(gid, str) else gid)
+            except Exception:
+                pass
+        await db.pdf_jobs.delete_one({"id": doc["id"]})
 
 
-def _cleanup_old_pdf_jobs() -> None:
-    """Remove jobs antigos (>TTL) e os respectivos ficheiros PDF + meta."""
-    now = _job_time.time()
-    try:
-        names = _os.listdir(_PDF_JOBS_DIR)
-    except FileNotFoundError:
-        return
-    for name in names:
-        if not name.endswith(".meta.json"):
-            continue
-        meta_path = _os.path.join(_PDF_JOBS_DIR, name)
+async def _delete_pdf_job_async(job_id: str) -> None:
+    """Remove um job + ficheiro GridFS associado."""
+    from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="pdf_files")
+    doc = await db.pdf_jobs.find_one({"id": job_id}, {"gridfs_id": 1})
+    if doc and doc.get("gridfs_id"):
         try:
-            mtime = _os.path.getmtime(meta_path)
-        except OSError:
-            continue
-        if now - mtime > _PDF_JOB_TTL_SECONDS:
-            job_id = name[: -len(".meta.json")]
-            _delete_pdf_job(job_id)
-
-
-def _delete_pdf_job(job_id: str) -> None:
-    """Remove ficheiros meta + pdf de um job."""
-    for p in (_job_meta_path(job_id), _job_pdf_path(job_id)):
-        try:
-            _os.unlink(p)
-        except FileNotFoundError:
+            from bson import ObjectId
+            gid = doc["gridfs_id"]
+            await bucket.delete(ObjectId(gid) if isinstance(gid, str) else gid)
+        except Exception:
             pass
-        except OSError:
-            pass
+    await db.pdf_jobs.delete_one({"id": job_id})
 
 
 def _run_pdf_generation_job(
@@ -2651,8 +2643,14 @@ def _run_pdf_generation_job(
     loop=None, user_sub: str = "", username: str = "", relatorio_id: str = "", numero_ot: str = "",
     started_error_id: str = None,
 ):
-    """Worker síncrono que corre em thread separada. Atualiza meta em disco."""
-    tmp_path = _job_pdf_path(job_id)
+    """Worker síncrono que corre em thread separada.
+    
+    1. Gera PDF para tempfile local (memory-efficient via output_file).
+    2. Faz upload para GridFS (partilhado entre pods).
+    3. Atualiza meta na collection pdf_jobs.
+    4. Apaga tempfile local.
+    """
+    tmp_path = _job_local_pdf_path(job_id)
     try:
         generate_ot_pdf(
             relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
@@ -2663,13 +2661,46 @@ def _run_pdf_generation_job(
             size = _os.path.getsize(tmp_path)
         except OSError:
             size = 0
-        meta = _read_job_meta(job_id) or {}
-        meta.update({
-            "status": "done",
-            "finished_at": _job_time.time(),
-            "size_bytes": size,
-        })
-        _write_job_meta(job_id, meta)
+
+        # Upload do PDF para GridFS via coroutine_threadsafe (worker é síncrono)
+        gridfs_id = None
+        if loop is not None and size > 0:
+            try:
+                import asyncio as _async_upload
+                from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+
+                async def _upload():
+                    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="pdf_files")
+                    with open(tmp_path, "rb") as fin:
+                        oid = await bucket.upload_from_stream(
+                            f"{job_id}.pdf",
+                            fin,
+                            metadata={"job_id": job_id, "relatorio_id": relatorio_id},
+                        )
+                    return str(oid)
+
+                fut = _async_upload.run_coroutine_threadsafe(_upload(), loop)
+                gridfs_id = fut.result(timeout=120)  # max 2 min para upload
+            except Exception as up_err:
+                logging.error(f"[pdf-job] upload GridFS falhou job={job_id}: {up_err}")
+                raise
+
+        # Update meta com sucesso
+        if loop is not None:
+            try:
+                import asyncio as _async_done
+                _async_done.run_coroutine_threadsafe(
+                    _write_job_meta_async(job_id, {
+                        "status": "done",
+                        "finished_at": _job_time.time(),
+                        "size_bytes": size,
+                        "gridfs_id": gridfs_id,
+                    }),
+                    loop,
+                ).result(timeout=30)
+            except Exception as meta_err:
+                logging.error(f"[pdf-job] meta done update falhou job={job_id}: {meta_err}")
+
         # Sucesso — apagar STARTED log se existir
         if started_error_id and loop is not None:
             try:
@@ -2684,17 +2715,21 @@ def _run_pdf_generation_job(
         import traceback as _tb
         tb_text = _tb.format_exc()
         logging.error(f"[pdf-job] FALHA job={job_id}: {e}\n{tb_text}")
-        meta = _read_job_meta(job_id) or {}
-        started_at = meta.get("started_at", _job_time.time())
-        meta.update({
-            "status": "error",
-            "finished_at": _job_time.time(),
-            "error": f"{type(e).__name__}: {e}",
-        })
-        try:
-            _write_job_meta(job_id, meta)
-        except Exception:
-            pass
+        if loop is not None:
+            try:
+                import asyncio as _async_err
+                _async_err.run_coroutine_threadsafe(
+                    _write_job_meta_async(job_id, {
+                        "status": "error",
+                        "finished_at": _job_time.time(),
+                        "error": f"{type(e).__name__}: {e}",
+                    }),
+                    loop,
+                ).result(timeout=15)
+            except Exception:
+                pass
+
+        # Apagar tempfile local
         try:
             _os.unlink(tmp_path)
         except OSError:
@@ -2704,7 +2739,6 @@ def _run_pdf_generation_job(
         if loop is not None:
             try:
                 import asyncio as _async_log
-                duration_s = round(_job_time.time() - started_at, 1)
                 _async_log.run_coroutine_threadsafe(
                     log_app_error(
                         context=f"FS#{numero_ot}",
@@ -2713,7 +2747,6 @@ def _run_pdf_generation_job(
                         details={
                             "job_id": job_id,
                             "relatorio_id": relatorio_id,
-                            "duration_s": duration_s,
                             "n_fotos": len(fotografias) if fotografias else 0,
                             "n_intervencoes": len(intervencoes) if intervencoes else 0,
                             "traceback": tb_text[:1500],
@@ -2726,6 +2759,13 @@ def _run_pdf_generation_job(
                 )
             except Exception as log_err:
                 logging.error(f"[pdf-job] falha ao registar erro em app_errors: {log_err}")
+        return
+
+    # Sucesso — apagar tempfile local
+    try:
+        _os.unlink(tmp_path)
+    except OSError:
+        pass
 
 
 @router.post("/relatorios-tecnicos/{relatorio_id}/preview-pdf-async")
@@ -2735,7 +2775,7 @@ async def start_pdf_generation_job(
 ):
     """Inicia geração de PDF em background. Devolve job_id de imediato."""
     import asyncio as _asyncio_local
-    _cleanup_old_pdf_jobs()
+    await _cleanup_old_pdf_jobs_async()
 
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
@@ -2791,11 +2831,7 @@ async def start_pdf_generation_job(
     cliente_nome = (cliente.get('nome') or 'Cliente').replace(' ', '_')
     filename = f"FS_{numero_ot}_{cliente_nome}.pdf"
 
-    # Pre-criar PDF file vazio para evitar race "file not found" no worker
-    _os.makedirs(_PDF_JOBS_DIR, exist_ok=True)
-    open(_job_pdf_path(job_id), "wb").close()
-
-    _write_job_meta(job_id, {
+    await _write_job_meta_async(job_id, {
         "status": "pending",
         "filename": filename,
         "started_at": _job_time.time(),
@@ -2803,6 +2839,7 @@ async def start_pdf_generation_job(
         "size_bytes": 0,
         "user_sub": current_user.get("sub", ""),
         "error": None,
+        "gridfs_id": None,
     })
 
     # LOGGING PROATIVO: regista STARTED ANTES de lançar a thread. Se o pod
@@ -2859,7 +2896,7 @@ async def get_pdf_job_status(
     current_user: dict = Depends(get_current_user),
 ):
     """Devolve estado do job de geração de PDF."""
-    meta = _read_job_meta(job_id)
+    meta = await _read_job_meta_async(job_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Job não encontrado ou expirado")
     if meta.get("user_sub") and meta["user_sub"] != current_user.get("sub", ""):
@@ -2881,8 +2918,8 @@ async def download_pdf_job(
     job_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Faz stream do PDF gerado. Após sucesso, o job e o tempfile são removidos."""
-    meta = _read_job_meta(job_id)
+    """Faz stream do PDF gerado. Após sucesso, o job e os ficheiros são removidos."""
+    meta = await _read_job_meta_async(job_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Job não encontrado ou expirado")
     if meta.get("user_sub") and meta["user_sub"] != current_user.get("sub", ""):
@@ -2892,24 +2929,32 @@ async def download_pdf_job(
     if meta.get("status") == "error":
         raise HTTPException(status_code=500, detail=meta.get("error") or "Erro na geração")
 
-    file_path = _job_pdf_path(job_id)
-    if not _os.path.exists(file_path):
-        raise HTTPException(status_code=410, detail="Ficheiro expirou")
+    gridfs_id = meta.get("gridfs_id")
+    if not gridfs_id:
+        raise HTTPException(status_code=410, detail="Ficheiro expirou ou ainda não foi gerado")
 
     filename = meta.get("filename", "FS.pdf")
     size = meta.get("size_bytes", 0)
 
+    from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+    from bson import ObjectId
+    bucket = AsyncIOMotorGridFSBucket(db, bucket_name="pdf_files")
+    try:
+        gridfs_oid = ObjectId(gridfs_id) if isinstance(gridfs_id, str) else gridfs_id
+    except Exception:
+        raise HTTPException(status_code=500, detail="gridfs_id inválido")
+
     async def _stream_file():
         try:
-            CHUNK = 64 * 1024
-            with open(file_path, "rb") as f:
-                while True:
-                    chunk = f.read(CHUNK)
-                    if not chunk:
-                        break
-                    yield chunk
+            grid_out = await bucket.open_download_stream(gridfs_oid)
+            while True:
+                chunk = await grid_out.readchunk()
+                if not chunk:
+                    break
+                yield chunk
         finally:
-            _delete_pdf_job(job_id)
+            # Limpeza: apaga doc + ficheiro GridFS
+            await _delete_pdf_job_async(job_id)
 
     return StreamingResponse(
         _stream_file(),
