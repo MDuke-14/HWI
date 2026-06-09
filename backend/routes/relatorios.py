@@ -2533,63 +2533,82 @@ async def preview_pdf_ot(
 # ============================================================================
 # PDF Jobs Async — para FS com muitas fotos (40+)
 # ----------------------------------------------------------------------------
-# A geração de PDFs grandes pode demorar mais que o timeout do gateway
-# (Cloudflare ~100s). Em vez de manter uma única ligação HTTP aberta durante
-# toda a geração, dividimos em 3 endpoints curtos:
+# Estado mantido EM DISCO (não em memória) para suportar múltiplos workers
+# uvicorn em produção. Cada job tem 2 ficheiros em /tmp/fs_pdfjobs/:
+#   - {job_id}.meta.json  → metadados (status, filename, user, etc.)
+#   - {job_id}.pdf        → PDF gerado
 #
+# Endpoints:
 #   1. POST /api/relatorios-tecnicos/{id}/preview-pdf-async
-#      → cria job em background, devolve {job_id} de imediato
 #   2. GET  /api/pdf-jobs/{job_id}
-#      → devolve {status, size_bytes, error?} (frontend faz poll)
 #   3. GET  /api/pdf-jobs/{job_id}/download
-#      → quando job.status == "done", faz stream do tempfile e marca para
-#        cleanup
-#
-# Cada pedido individual é curto (<1s) → nunca atinge timeout do gateway.
 # ============================================================================
 import uuid as _uuid
 import os as _os
 import time as _job_time
+import json as _job_json
 from threading import Thread as _JobThread
 
-# job_id -> {
-#   "status": "pending" | "done" | "error",
-#   "file_path": str | None,
-#   "filename": str,
-#   "started_at": float,
-#   "finished_at": float | None,
-#   "size_bytes": int,
-#   "user_sub": str,           # owner
-#   "error": str | None,
-# }
-_PDF_JOBS: dict = {}
+_PDF_JOBS_DIR = "/tmp/fs_pdfjobs"
 _PDF_JOB_TTL_SECONDS = 30 * 60  # 30 minutos
 
+_os.makedirs(_PDF_JOBS_DIR, exist_ok=True)
 
-def _cleanup_old_pdf_jobs():
-    """Remove jobs antigos (>TTL) e os respectivos tempfiles."""
+
+def _job_meta_path(job_id: str) -> str:
+    return _os.path.join(_PDF_JOBS_DIR, f"{job_id}.meta.json")
+
+
+def _job_pdf_path(job_id: str) -> str:
+    return _os.path.join(_PDF_JOBS_DIR, f"{job_id}.pdf")
+
+
+def _read_job_meta(job_id: str):
+    """Lê metadados de um job. Devolve None se não existir ou for ilegível."""
+    try:
+        with open(_job_meta_path(job_id), "r", encoding="utf-8") as f:
+            return _job_json.load(f)
+    except (FileNotFoundError, _job_json.JSONDecodeError, OSError):
+        return None
+
+
+def _write_job_meta(job_id: str, meta: dict) -> None:
+    """Escreve metadados de forma atómica (write-then-rename)."""
+    path = _job_meta_path(job_id)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        _job_json.dump(meta, f)
+    _os.replace(tmp, path)
+
+
+def _cleanup_old_pdf_jobs() -> None:
+    """Remove jobs antigos (>TTL) e os respectivos ficheiros PDF + meta."""
     now = _job_time.time()
-    expired = []
-    for jid, job in list(_PDF_JOBS.items()):
-        started = job.get("started_at", now)
-        if now - started > _PDF_JOB_TTL_SECONDS:
-            expired.append(jid)
-    for jid in expired:
-        job = _PDF_JOBS.pop(jid, None)
-        if job and job.get("file_path"):
-            try:
-                _os.unlink(job["file_path"])
-            except Exception:
-                pass
-
-
-def _delete_pdf_job(job_id: str):
-    """Remove um job + tempfile imediatamente (chamado após download bem-sucedido)."""
-    job = _PDF_JOBS.pop(job_id, None)
-    if job and job.get("file_path"):
+    try:
+        names = _os.listdir(_PDF_JOBS_DIR)
+    except FileNotFoundError:
+        return
+    for name in names:
+        if not name.endswith(".meta.json"):
+            continue
+        meta_path = _os.path.join(_PDF_JOBS_DIR, name)
         try:
-            _os.unlink(job["file_path"])
-        except Exception:
+            mtime = _os.path.getmtime(meta_path)
+        except OSError:
+            continue
+        if now - mtime > _PDF_JOB_TTL_SECONDS:
+            job_id = name[: -len(".meta.json")]
+            _delete_pdf_job(job_id)
+
+
+def _delete_pdf_job(job_id: str) -> None:
+    """Remove ficheiros meta + pdf de um job."""
+    for p in (_job_meta_path(job_id), _job_pdf_path(job_id)):
+        try:
+            _os.unlink(p)
+        except FileNotFoundError:
+            pass
+        except OSError:
             pass
 
 
@@ -2597,9 +2616,9 @@ def _run_pdf_generation_job(
     job_id: str,
     relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
     equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
-    tmp_path: str,
 ):
-    """Worker síncrono que corre em thread separada. Atualiza _PDF_JOBS."""
+    """Worker síncrono que corre em thread separada. Atualiza meta em disco."""
+    tmp_path = _job_pdf_path(job_id)
     try:
         generate_ot_pdf(
             relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
@@ -2608,25 +2627,31 @@ def _run_pdf_generation_job(
         )
         try:
             size = _os.path.getsize(tmp_path)
-        except Exception:
+        except OSError:
             size = 0
-        job = _PDF_JOBS.get(job_id)
-        if job is not None:
-            job["status"] = "done"
-            job["finished_at"] = _job_time.time()
-            job["size_bytes"] = size
+        meta = _read_job_meta(job_id) or {}
+        meta.update({
+            "status": "done",
+            "finished_at": _job_time.time(),
+            "size_bytes": size,
+        })
+        _write_job_meta(job_id, meta)
     except Exception as e:
         import traceback as _tb
         logging.error(f"[pdf-job] FALHA job={job_id}: {e}\n{_tb.format_exc()}")
-        job = _PDF_JOBS.get(job_id)
-        if job is not None:
-            job["status"] = "error"
-            job["finished_at"] = _job_time.time()
-            job["error"] = f"{type(e).__name__}: {e}"
-        # apagar tempfile parcial
+        meta = _read_job_meta(job_id) or {}
+        meta.update({
+            "status": "error",
+            "finished_at": _job_time.time(),
+            "error": f"{type(e).__name__}: {e}",
+        })
+        try:
+            _write_job_meta(job_id, meta)
+        except Exception:
+            pass
         try:
             _os.unlink(tmp_path)
-        except Exception:
+        except OSError:
             pass
 
 
@@ -2687,32 +2712,30 @@ async def start_pdf_generation_job(
         {"relatorio_id": relatorio_id}, {"_id": 0}
     ).sort("created_at", 1).to_list(length=None)
 
-    import tempfile as _tempfile
-    tmp_fd, tmp_path = _tempfile.mkstemp(suffix=".pdf", prefix="fs_pdfjob_")
-    _os.close(tmp_fd)
-
     job_id = _uuid.uuid4().hex
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
     cliente_nome = (cliente.get('nome') or 'Cliente').replace(' ', '_')
     filename = f"FS_{numero_ot}_{cliente_nome}.pdf"
 
-    _PDF_JOBS[job_id] = {
+    # Pre-criar PDF file vazio para evitar race "file not found" no worker
+    _os.makedirs(_PDF_JOBS_DIR, exist_ok=True)
+    open(_job_pdf_path(job_id), "wb").close()
+
+    _write_job_meta(job_id, {
         "status": "pending",
-        "file_path": tmp_path,
         "filename": filename,
         "started_at": _job_time.time(),
         "finished_at": None,
         "size_bytes": 0,
         "user_sub": current_user.get("sub", ""),
         "error": None,
-    }
+    })
 
     thread = _JobThread(
         target=_run_pdf_generation_job,
         args=(
             job_id, relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
             equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
-            tmp_path,
         ),
         daemon=True,
     )
@@ -2727,20 +2750,20 @@ async def get_pdf_job_status(
     current_user: dict = Depends(get_current_user),
 ):
     """Devolve estado do job de geração de PDF."""
-    job = _PDF_JOBS.get(job_id)
-    if not job:
+    meta = _read_job_meta(job_id)
+    if not meta:
         raise HTTPException(status_code=404, detail="Job não encontrado ou expirado")
-    if job["user_sub"] and job["user_sub"] != current_user.get("sub", ""):
+    if meta.get("user_sub") and meta["user_sub"] != current_user.get("sub", ""):
         raise HTTPException(status_code=403, detail="Sem permissão para este job")
 
-    elapsed = _job_time.time() - job["started_at"]
+    elapsed = _job_time.time() - meta.get("started_at", _job_time.time())
     return {
         "job_id": job_id,
-        "status": job["status"],
-        "filename": job["filename"],
-        "size_bytes": job.get("size_bytes", 0),
+        "status": meta.get("status", "pending"),
+        "filename": meta.get("filename", "FS.pdf"),
+        "size_bytes": meta.get("size_bytes", 0),
         "elapsed_seconds": round(elapsed, 1),
-        "error": job.get("error"),
+        "error": meta.get("error"),
     }
 
 
@@ -2750,21 +2773,22 @@ async def download_pdf_job(
     current_user: dict = Depends(get_current_user),
 ):
     """Faz stream do PDF gerado. Após sucesso, o job e o tempfile são removidos."""
-    job = _PDF_JOBS.get(job_id)
-    if not job:
+    meta = _read_job_meta(job_id)
+    if not meta:
         raise HTTPException(status_code=404, detail="Job não encontrado ou expirado")
-    if job["user_sub"] and job["user_sub"] != current_user.get("sub", ""):
+    if meta.get("user_sub") and meta["user_sub"] != current_user.get("sub", ""):
         raise HTTPException(status_code=403, detail="Sem permissão para este job")
-    if job["status"] == "pending":
+    if meta.get("status") == "pending":
         raise HTTPException(status_code=425, detail="PDF ainda em geração")
-    if job["status"] == "error":
-        raise HTTPException(status_code=500, detail=job.get("error") or "Erro na geração")
+    if meta.get("status") == "error":
+        raise HTTPException(status_code=500, detail=meta.get("error") or "Erro na geração")
 
-    file_path = job["file_path"]
-    if not file_path or not _os.path.exists(file_path):
+    file_path = _job_pdf_path(job_id)
+    if not _os.path.exists(file_path):
         raise HTTPException(status_code=410, detail="Ficheiro expirou")
 
-    filename = job["filename"]
+    filename = meta.get("filename", "FS.pdf")
+    size = meta.get("size_bytes", 0)
 
     async def _stream_file():
         try:
@@ -2776,7 +2800,6 @@ async def download_pdf_job(
                         break
                     yield chunk
         finally:
-            # apagar job + tempfile após download
             _delete_pdf_job(job_id)
 
     return StreamingResponse(
@@ -2784,7 +2807,7 @@ async def download_pdf_job(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Length": str(job.get("size_bytes", 0)),
+            "Content-Length": str(size),
             "X-Accel-Buffering": "no",
             "Cache-Control": "no-cache, no-store, must-revalidate",
         }
