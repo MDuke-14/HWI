@@ -273,6 +273,35 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 **Fix aplicado em `ot_pdf_report.py`**:
 - Adicionados helpers `_pe(text)` (paragraph_escape via `xml.sax.saxutils.escape`) e `_pe_with_nl(text)` (mesma escape + `\n→<br/>`).
+- Aplicado a TODOS os Paragraph com texto livre do utilizador: cliente, equipamentos, motivo, relatorio_assistencia.texto, materiais (descricao + fornecido_por convertidos a Paragraph), assinaturas, fotos.
+- Teste de regressão em `/app/backend/tests/test_pdf_xml_escape.py` com strings problemáticas: passa ✓.
+
+**Cobertura**: todos os 3 endpoints (`/enviar-pdf`, `/preview-pdf` streaming, `/preview-pdf-async` job) usam a mesma `generate_ot_pdf` → todos beneficiam.
+
+### AI Review FS — fix de mapping de campos (2026-02-06)
+**Bug crítico identificado pelo utilizador**: a função "Rever FS com IA" (Claude Sonnet 4.5) reportava inconsistências FALSAS em todas as FS — dizia que `tecnicos_cronometro[].nome` e `tecnicos_cronometro[].data` estavam null, e que intervenções não tinham relatórios associados, mesmo quando tudo estava preenchido. Score sempre baixo (~58/100).
+
+**Causa raiz**: nomes de campos errados no payload enviado ao LLM (`routes/ai.py`):
+- Código usava `t.get("nome_tecnico")` → na DB é `tecnico_nome`
+- Código usava `t.get("data_trabalho")` em `registos_tecnico_ot` → na DB é `data`
+- Código usava `t.get("tipo_registo")` → na DB é `tipo`
+- Código usava `t.get("codigo_horario")` → na DB é `codigo`
+
+Resultado: LLM via `null` em TODOS os campos críticos → reportava como dados em falta.
+
+**Fix aplicado**:
+1. `routes/ai.py` — corrigido mapeamento para usar `tecnico_nome`, `data` (com fallback para `data_trabalho` em registos manuais), `tipo`, `codigo`. Adicionados também `minutos_trabalhados`, `horas_arredondadas`, `km`, `horas_cliente`, `kms_deslocacao` para contexto rico.
+2. **Pré-join `relatorios_assistencia` por `intervencao_id`** — cada intervenção no payload passa a ter `relatorios_assistencia_textos[]` (lista de textos relacionados) e flag `tem_relatorio_associado: bool`. Evita que a IA falhe ao fazer o lookup e marque erradamente "intervenção sem relatório".
+3. `services/ai_service.py` — prompt atualizado:
+   - Instrui a IA a SÓ flag inconsistência se `tem_relatorio_associado=false`.
+   - Esclarece que `equipamento_principal=null` é VÁLIDO quando há `equipamentos_adicionais` (manutenção de vários equipamentos).
+   - Esclarece que se há registos mistos (alguns null, alguns OK), só reportar os null.
+
+**Validação**: query directa à DB confirma mapping correcto — `nome='Técnico Teste'`, `data='2025-12-23'`, `tipo='trabalho'` (antes: tudo `null`).
+**Bug crítico identificado pelo utilizador**: certas FS continuam a falhar em produção mesmo após o fix de memória — outras gerar OK. Causa raiz: ReportLab `Paragraph()` usa mini-XML internamente. Quando técnicos escreviam `<`, `>`, ou `&` em campos livres (ex: "AC&DC", "5 < 10 horas", "<urgente>", "PO #2026/<001>"), o parser rebentava com `ParaParser syntax error`.
+
+**Fix aplicado em `ot_pdf_report.py`**:
+- Adicionados helpers `_pe(text)` (paragraph_escape via `xml.sax.saxutils.escape`) e `_pe_with_nl(text)` (mesma escape + `\n→<br/>`).
 - Aplicado a TODOS os Paragraph com texto livre do utilizador:
   - `cliente.nome`, `pedido_por`, `local_intervencao`, `referencia_interna_cliente`, `ot_relacionada_numero`
   - Cards de equipamento: `tipologia`, `marca`, `modelo`, `numero_serie`, `ano_fabrico`

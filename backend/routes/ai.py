@@ -186,6 +186,14 @@ async def ai_review_fs(relatorio_id: str, current_user: dict = Depends(get_curre
     }
     tem_equip_principal = any(v for v in equipamento_principal.values())
 
+    # Pré-juntar texto de relatorios_assistencia por intervencao_id para que a IA
+    # não tenha de fazer o lookup manualmente (evita falsos positivos "sem relatório").
+    rel_assist_por_interv = {}
+    for ra in relatorios_assist:
+        iid = ra.get("intervencao_id")
+        if iid:
+            rel_assist_por_interv.setdefault(iid, []).append(ra.get("texto") or "")
+
     payload = {
         "numero_assistencia": relatorio.get("numero_assistencia"),
         "cliente": {
@@ -203,12 +211,16 @@ async def ai_review_fs(relatorio_id: str, current_user: dict = Depends(get_curre
         "problema_resolvido": relatorio.get("problema_resolvido"),
         "relatorio_assistencia_principal": relatorio.get("relatorio_assistencia"),
         "equipamento_principal": equipamento_principal if tem_equip_principal else None,
+        "tem_equipamentos_adicionais": bool(equipamentos_adic),
         "intervencoes": [{
             "id": i.get("id"),
             "ordem": i.get("ordem"),
             "data_intervencao": i.get("data_intervencao"),
             "motivo_assistencia": i.get("motivo_assistencia"),
             "relatorio_assistencia_intervencao": i.get("relatorio_assistencia"),
+            # Pre-join: texto(s) do relatorios_assistencia[] que pertencem a esta intervenção
+            "relatorios_assistencia_textos": rel_assist_por_interv.get(i.get("id"), []),
+            "tem_relatorio_associado": bool(rel_assist_por_interv.get(i.get("id"))) or bool(i.get("relatorio_assistencia")),
             "equipamento": (
                 lambda e: {"tipologia": e.get("tipologia"), "marca": e.get("marca"),
                            "modelo": e.get("modelo"), "numero_serie": e.get("numero_serie")}
@@ -225,19 +237,24 @@ async def ai_review_fs(relatorio_id: str, current_user: dict = Depends(get_curre
             "data_utilizacao": m.get("data_utilizacao"),
         } for m in materiais],
         "tecnicos_cronometro": [{
-            "nome": t.get("nome_tecnico") or t.get("username"),
-            "data": t.get("data_trabalho"),
+            "nome": t.get("tecnico_nome") or t.get("nome_tecnico") or t.get("username"),
+            "data": t.get("data") or t.get("data_trabalho"),
             "hora_inicio": t.get("hora_inicio_segmento") or t.get("hora_inicio"),
             "hora_fim": t.get("hora_fim_segmento") or t.get("hora_fim"),
-            "tipo": t.get("tipo_registo") or t.get("tipo"),
-            "codigo_horario": t.get("codigo_horario"),
+            "tipo": t.get("tipo") or t.get("tipo_registo"),
+            "codigo_horario": t.get("codigo") or t.get("codigo_horario"),
+            "minutos_trabalhados": t.get("minutos_trabalhados"),
+            "horas_arredondadas": t.get("horas_arredondadas"),
+            "km": t.get("km"),
         } for t in registos_crono],
         "tecnicos_manuais": [{
-            "nome": t.get("nome_tecnico") or t.get("username"),
-            "data": t.get("data_trabalho"),
+            "nome": t.get("tecnico_nome") or t.get("nome_tecnico") or t.get("username"),
+            "data": t.get("data_trabalho") or t.get("data"),
             "hora_inicio": t.get("hora_inicio"),
             "hora_fim": t.get("hora_fim"),
-            "tipo": t.get("tipo_registo") or t.get("tipo"),
+            "tipo": t.get("tipo_horario") or t.get("tipo") or t.get("tipo_registo"),
+            "horas_cliente": t.get("horas_cliente"),
+            "kms_deslocacao": t.get("kms_deslocacao"),
         } for t in registos_manuais],
         "equipamentos_adicionais": [{
             "tipologia": e.get("tipologia"),
