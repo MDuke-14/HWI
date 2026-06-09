@@ -279,6 +279,31 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 **Cobertura**: todos os 3 endpoints (`/enviar-pdf`, `/preview-pdf` streaming, `/preview-pdf-async` job) usam a mesma `generate_ot_pdf` → todos beneficiam.
 
 ### AI Review FS — fix de mapping de campos (2026-02-06)
+**Bug crítico identificado pelo utilizador**: a função "Rever FS com IA" reportava inconsistências FALSAS — dizia que `tecnicos_cronometro[].nome` e `data` estavam null em todos os registos mesmo quando estavam preenchidos.
+
+**Causa**: nomes de campos errados no payload (`routes/ai.py`):
+- `nome_tecnico` → DB usa `tecnico_nome`
+- `data_trabalho` → DB usa `data` (em `registos_tecnico_ot`)
+- `tipo_registo` → DB usa `tipo`
+- `codigo_horario` → DB usa `codigo`
+
+**Fix**: corrigido mapping com fallbacks defensivos. Pré-join de `relatorios_assistencia[].texto` por `intervencao_id` em cada intervenção (evita IA falhar no lookup). Prompt atualizado: `equipamento_principal=null` é VÁLIDO quando há `equipamentos_adicionais`; só flag null em registos específicos, não generaliza.
+
+### Visibility de Erros — STARTED logs persistentes contra OOM (2026-02-06)
+**Bug identificado pelo utilizador**: quando o pod morre por OOM durante geração de PDF, **nada aparece em `/admin/errors`** porque o Python é terminado por SIGKILL antes de poder gravar o erro.
+
+**Fix**: padrão "STARTED-then-DELETE" implementado em ambos os endpoints críticos:
+- `/enviar-pdf` (worker `_enviar_pdf_worker`)
+- `/preview-pdf-async` (worker `_run_pdf_generation_job`)
+
+**Funcionamento**:
+1. ANTES de iniciar a geração, regista uma entrada de severidade `info` em `app_errors` com `action: "... — STARTED"`, contexto `FS#<numero>`, e detalhes (`n_fotos`, `n_intervencoes`, `relatorio_id`, `job_id`).
+2. EM CASO DE SUCESSO, a entrada é eliminada → não polui o log.
+3. EM CASO DE OOM (pod morto antes de chegar ao DELETE), a entrada **persiste em /admin/errors** com toda a informação necessária para identificar QUE FS falhou.
+
+**Auxiliar**: `log_app_error()` em `server.py` agora devolve o `id` da entrada inserida (ou `None` se falhar), permitindo eliminá-la em sucesso.
+
+**Benefício para o utilizador**: pela primeira vez consegue ver `/admin/errors` e identificar EXACTAMENTE qual FS está a matar o pod (pelo número da FS, número de fotos, e timestamp). Antes era invisível.
 **Bug crítico identificado pelo utilizador**: a função "Rever FS com IA" (Claude Sonnet 4.5) reportava inconsistências FALSAS em todas as FS — dizia que `tecnicos_cronometro[].nome` e `tecnicos_cronometro[].data` estavam null, e que intervenções não tinham relatórios associados, mesmo quando tudo estava preenchido. Score sempre baixo (~58/100).
 
 **Causa raiz**: nomes de campos errados no payload enviado ao LLM (`routes/ai.py`):

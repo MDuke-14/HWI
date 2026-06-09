@@ -1248,8 +1248,10 @@ async def log_app_error(
         await db.app_errors.insert_one(error_doc)
         prefix = "[APP WARN]" if severity == "warning" else "[APP ERROR]"
         logging.error(f"{prefix} {context} | {action} | {error_message}")
+        return error_doc["id"]
     except Exception as log_err:
         logging.error(f"Falha ao registar erro: {log_err}")
+        return None
 
 
 def _suggest_solution(msg: str, context: str, action: str, details: dict) -> str:

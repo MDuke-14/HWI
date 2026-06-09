@@ -1891,6 +1891,8 @@ async def _enviar_pdf_worker(
     `app_errors` via `log_app_error` para aparecer em `/admin/erros`.
     """
     numero_ot = "?"
+    user_id_from_req = current_user.get("sub", "") if current_user else ""
+    username_from_req = current_user.get("username", "") if current_user else ""
     try:
         # Determinar documentos a enviar
         docs_selecionados = request.documentos or []
@@ -1903,6 +1905,30 @@ async def _enviar_pdf_worker(
         relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
         if not relatorio:
             raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+        # LOGGING PROATIVO: regista "STARTED" ANTES de qualquer trabalho pesado.
+        # Se o pod for morto por OOM durante a geração do PDF, esta entrada
+        # fica em /admin/errors e indica QUE FS estava a ser processada.
+        # Será removida automaticamente em caso de sucesso.
+        _job_started_id = None
+        try:
+            from server import log_app_error  # lazy import (evita circular)
+            _job_started_id = await log_app_error(
+                context=f"FS#{relatorio.get('numero_assistencia', 'N/A')}",
+                action="Enviar FS por email — STARTED",
+                error_message="Geração de PDF iniciada (este registo é apagado em caso de sucesso; se ficar visível, indica que o processo morreu antes de concluir — provável OOM)",
+                details={
+                    "relatorio_id": relatorio_id,
+                    "n_fotos_db": None,  # preenchido abaixo
+                    "destinatarios": (request.emails or [])[:5],
+                    "docs": docs_selecionados,
+                },
+                severity="info",
+                user_id=user_id_from_req,
+                username=username_from_req,
+            )
+        except Exception as _log_err:
+            logging.warning(f"[enviar-pdf] falha ao registar STARTED: {_log_err}")
         
         # Enriquecer com info da OT relacionada
         if relatorio.get("ot_relacionada_id"):
@@ -2386,6 +2412,12 @@ async def _enviar_pdf_worker(
                 f"[enviar-pdf][bg] FS#{numero_ot}: enviados={len(emails_enviados)}, "
                 f"falhados={len(emails_falhados)}"
             )
+        # Sucesso completo (ou parcial) — apaga o registo STARTED para não poluir.
+        if _job_started_id:
+            try:
+                await db.app_errors.delete_one({"id": _job_started_id})
+            except Exception:
+                pass
         return
         
     except Exception as e:
@@ -2617,6 +2649,7 @@ def _run_pdf_generation_job(
     relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
     equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
     loop=None, user_sub: str = "", username: str = "", relatorio_id: str = "", numero_ot: str = "",
+    started_error_id: str = None,
 ):
     """Worker síncrono que corre em thread separada. Atualiza meta em disco."""
     tmp_path = _job_pdf_path(job_id)
@@ -2637,6 +2670,16 @@ def _run_pdf_generation_job(
             "size_bytes": size,
         })
         _write_job_meta(job_id, meta)
+        # Sucesso — apagar STARTED log se existir
+        if started_error_id and loop is not None:
+            try:
+                import asyncio as _async_ok
+                _async_ok.run_coroutine_threadsafe(
+                    db.app_errors.delete_one({"id": started_error_id}),
+                    loop,
+                )
+            except Exception:
+                pass
     except Exception as e:
         import traceback as _tb
         tb_text = _tb.format_exc()
@@ -2762,6 +2805,33 @@ async def start_pdf_generation_job(
         "error": None,
     })
 
+    # LOGGING PROATIVO: regista STARTED ANTES de lançar a thread. Se o pod
+    # morrer durante a geração (ex: OOM), esta entrada persiste em
+    # /admin/errors com identificação da FS para investigação.
+    # Apagada em caso de sucesso pelo download endpoint.
+    _started_error_id = None
+    try:
+        _started_error_id = await log_app_error(
+            context=f"FS#{numero_ot}",
+            action="Gerar PDF (job-async) — STARTED",
+            error_message=(
+                "Geração de PDF iniciada. Se este registo permanecer visível "
+                "após alguns minutos, significa que o processo foi terminado "
+                "pelo sistema (provável OOM em FS com muitas fotografias)."
+            ),
+            details={
+                "relatorio_id": relatorio_id,
+                "job_id": job_id,
+                "n_fotos": len(fotografias) if fotografias else 0,
+                "n_intervencoes": len(intervencoes) if intervencoes else 0,
+            },
+            severity="info",
+            user_id=current_user.get("sub"),
+            username=current_user.get("username"),
+        )
+    except Exception as _log_err:
+        logging.warning(f"[pdf-job] falha STARTED log: {_log_err}")
+
     thread = _JobThread(
         target=_run_pdf_generation_job,
         args=(
@@ -2774,6 +2844,7 @@ async def start_pdf_generation_job(
             "username": current_user.get("username", ""),
             "relatorio_id": relatorio_id,
             "numero_ot": str(numero_ot),
+            "started_error_id": _started_error_id,
         },
         daemon=True,
     )
