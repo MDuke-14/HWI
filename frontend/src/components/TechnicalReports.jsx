@@ -114,6 +114,7 @@ import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
+import { downloadFSPdfAsync, downloadFSPdfToFile } from './technical-reports/utils/pdfJobs';
 
 // Timeout para download/geração de PDFs no cliente.
 // PDFs de FS com muitas fotos podem demorar bastante a gerar no servidor.
@@ -970,30 +971,20 @@ const TechnicalReports = ({ user, onLogout }) => {
     try {
       for (const relatorio of clienteRelatorios) {
         try {
-          const response = await axios.get(
-            `${API}/relatorios-tecnicos/${relatorio.id}/preview-pdf`,
-            { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
-          );
-          
-          // Criar blob e fazer download
-          const blob = new Blob([response.data], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', `FS_${relatorio.numero_assistencia}_${relatorio.cliente_nome?.replace(/\s+/g, '_')}.pdf`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          
+          await downloadFSPdfToFile({
+            api: API,
+            relatorioId: relatorio.id,
+            axios,
+            fallbackFilename: `FS_${relatorio.numero_assistencia}_${relatorio.cliente_nome?.replace(/\s+/g, '_')}.pdf`,
+          });
+
           successCount++;
-          
+
           // Pequena pausa entre downloads para não sobrecarregar
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (error) {
           console.error(`Erro ao gerar PDF para OT #${relatorio.numero_assistencia}:`, error);
-          const msg = await extractBlobError(error);
-          toast.error(`FS #${relatorio.numero_assistencia}: ${msg}`, { duration: 8000 });
+          toast.error(`FS #${relatorio.numero_assistencia}: ${error?.message || 'erro'}`, { duration: 8000 });
           errorCount++;
         }
       }
@@ -3470,23 +3461,26 @@ const TechnicalReports = ({ user, onLogout }) => {
   
   const handlePreviewPDF = async () => {
     if (!selectedRelatorio) return;
-    
+
     setLoadingPDFPreview(true);
+    const toastId = toast.loading('A gerar PDF... 0s');
     try {
-      const response = await axios.get(
-        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
-      );
-      
-      // Criar URL do blob para visualização
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const { blob } = await downloadFSPdfAsync({
+        api: API,
+        relatorioId: selectedRelatorio.id,
+        axios,
+        onProgress: (elapsed) => {
+          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+        },
+      });
+
       const url = URL.createObjectURL(blob);
       setPdfPreviewUrl(url);
       setShowPDFPreviewModal(true);
+      toast.success('PDF pronto!', { id: toastId, duration: 2000 });
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      const msg = await extractBlobError(error);
-      toast.error(msg, { duration: 8000 });
+      toast.error(error?.message || 'Erro ao gerar PDF', { id: toastId, duration: 8000 });
     } finally {
       setLoadingPDFPreview(false);
     }
@@ -3504,29 +3498,26 @@ const TechnicalReports = ({ user, onLogout }) => {
   
   const handlePDFViewer = async () => {
     if (!selectedRelatorio) return;
-    
+
     setLoadingPDFViewer(true);
+    const toastId = toast.loading('A gerar PDF... 0s');
     try {
-      const response = await axios.get(
-        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
-      );
-      
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const { blob } = await downloadFSPdfAsync({
+        api: API,
+        relatorioId: selectedRelatorio.id,
+        axios,
+        onProgress: (elapsed) => {
+          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+        },
+      });
+
       const url = window.URL.createObjectURL(blob);
-      
-      // Abrir PDF numa nova aba para visualização
       window.open(url, '_blank');
-      
-      // Libertar URL após um pequeno delay para garantir que a aba abriu
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 1000);
-      
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      toast.success('PDF aberto numa nova aba', { id: toastId, duration: 2000 });
     } catch (error) {
       console.error('Erro ao carregar PDF:', error);
-      const msg = await extractBlobError(error);
-      toast.error(`Erro ao carregar PDF: ${msg}`, { duration: 8000 });
+      toast.error(`Erro ao carregar PDF: ${error?.message || 'desconhecido'}`, { id: toastId, duration: 8000 });
     } finally {
       setLoadingPDFViewer(false);
     }
@@ -6242,26 +6233,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                 {/* Download PDF - Vermelho */}
                 <Button
                   onClick={async () => {
+                    const toastId = toast.loading('A gerar PDF... 0s');
                     try {
-                      const response = await axios.get(
-                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-                        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
-                      );
-                      
-                      const blob = new Blob([response.data], { type: 'application/pdf' });
-                      const url = window.URL.createObjectURL(blob);
-                      const link = document.createElement('a');
-                      link.href = url;
-                      link.download = `FS_${selectedRelatorio.numero_assistencia}.pdf`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      window.URL.revokeObjectURL(url);
-                      
-                      toast.success('PDF baixado com sucesso!');
+                      await downloadFSPdfToFile({
+                        api: API,
+                        relatorioId: selectedRelatorio.id,
+                        axios,
+                        fallbackFilename: `FS_${selectedRelatorio.numero_assistencia}.pdf`,
+                        onProgress: (elapsed) => {
+                          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+                        },
+                      });
+                      toast.success('PDF descarregado com sucesso!', { id: toastId, duration: 2500 });
                     } catch (error) {
-                      const msg = await extractBlobError(error);
-                      toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
+                      toast.error(`Erro ao descarregar PDF: ${error?.message || 'desconhecido'}`, { id: toastId, duration: 8000 });
                     }
                   }}
                   className={`bg-red-600 hover:bg-red-700 text-white ${isMobile ? 'w-full py-3 text-sm' : 'px-4 py-3'}`}
@@ -7707,26 +7692,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </Button>
                 <Button
                   onClick={async () => {
+                    const toastId = toast.loading('A gerar PDF... 0s');
                     try {
-                      const response = await axios.get(
-                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/preview-pdf`,
-                        { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
-                      );
-                      
-                      const blob = new Blob([response.data], { type: 'application/pdf' });
-                      const url = window.URL.createObjectURL(blob);
-                      const link = document.createElement('a');
-                      link.href = url;
-                      link.download = `FS_${selectedRelatorio.numero_assistencia}.pdf`;
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      window.URL.revokeObjectURL(url);
-                      
-                      toast.success('PDF baixado com sucesso!');
+                      await downloadFSPdfToFile({
+                        api: API,
+                        relatorioId: selectedRelatorio.id,
+                        axios,
+                        fallbackFilename: `FS_${selectedRelatorio.numero_assistencia}.pdf`,
+                        onProgress: (elapsed) => {
+                          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+                        },
+                      });
+                      toast.success('PDF descarregado com sucesso!', { id: toastId, duration: 2500 });
                     } catch (error) {
-                      const msg = await extractBlobError(error);
-                      toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
+                      toast.error(`Erro ao descarregar PDF: ${error?.message || 'desconhecido'}`, { id: toastId, duration: 8000 });
                     }
                   }}
                   className="bg-red-600 hover:bg-red-700 text-white"
@@ -9023,26 +9002,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <Button
                           onClick={async (e) => {
                             e.stopPropagation();
+                            const toastId = toast.loading('A gerar PDF... 0s');
                             try {
-                              const response = await axios.get(
-                                `${API}/relatorios-tecnicos/${relatorio.id}/preview-pdf`,
-                                { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
-                              );
-                              
-                              const blob = new Blob([response.data], { type: 'application/pdf' });
-                              const url = window.URL.createObjectURL(blob);
-                              const link = document.createElement('a');
-                              link.href = url;
-                              link.download = `FS_${relatorio.numero_assistencia}.pdf`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              window.URL.revokeObjectURL(url);
-                              
-                              toast.success('PDF baixado com sucesso!');
+                              await downloadFSPdfToFile({
+                                api: API,
+                                relatorioId: relatorio.id,
+                                axios,
+                                fallbackFilename: `FS_${relatorio.numero_assistencia}.pdf`,
+                                onProgress: (elapsed) => {
+                                  toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+                                },
+                              });
+                              toast.success('PDF descarregado com sucesso!', { id: toastId, duration: 2500 });
                             } catch (error) {
-                              const msg = await extractBlobError(error);
-                              toast.error(`Erro ao baixar PDF: ${msg}`, { duration: 8000 });
+                              toast.error(`Erro ao descarregar PDF: ${error?.message || 'desconhecido'}`, { id: toastId, duration: 8000 });
                             }
                           }}
                           size="sm"

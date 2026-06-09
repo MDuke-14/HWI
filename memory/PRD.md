@@ -250,6 +250,14 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 - All extracted modals are prop-driven; no business logic embedded.
 - Verified by testing agent: login + listing + StatusChangeModal + DeleteRelatorioModal + EmailModal pass.
 
+### PDF Download Reliability (2026-02-06 — multi-step)
+1. **Aumentou-se axios timeout** em todas as chamadas PDF para 5 minutos (constante `PDF_DOWNLOAD_TIMEOUT`).
+2. **Streaming via tempfile** no endpoint `/preview-pdf`: `generate_ot_pdf(output_file=path)` escreve para disco; rota faz tail-read e emite chunks de 64KB (helper `stream_pdf_via_tempfile`). `X-Accel-Buffering: no` desactiva buffering NGINX.
+3. **Padrão job-async** implementado para FS com 40+ fotos (`POST /preview-pdf-async` → `GET /pdf-jobs/{id}` → `GET /pdf-jobs/{id}/download`). Backend mantém `_PDF_JOBS` dict + tempfiles + TTL 30min + auto-cleanup pós-download. Frontend usa `downloadFSPdfAsync` / `downloadFSPdfToFile` helpers em todos os 6 sites onde se descarregavam PDFs de FS. Toast com contador "A gerar PDF... Ns" durante poll.
+
+### Accessibility Fix (2026-02-06)
+- Adicionado `DialogDescription` (sr-only) aos 24 `<DialogContent>` inline em `TechnicalReports.jsx` via script de injeção. Elimina os warnings Radix UI no console.
+
 ### P2
 - Recurring VAPID Key Mismatch
 - Unresolved "Edit OT Equipment" Test Failure

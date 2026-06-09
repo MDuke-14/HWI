@@ -2530,6 +2530,267 @@ async def preview_pdf_ot(
     )
 
 
+# ============================================================================
+# PDF Jobs Async — para FS com muitas fotos (40+)
+# ----------------------------------------------------------------------------
+# A geração de PDFs grandes pode demorar mais que o timeout do gateway
+# (Cloudflare ~100s). Em vez de manter uma única ligação HTTP aberta durante
+# toda a geração, dividimos em 3 endpoints curtos:
+#
+#   1. POST /api/relatorios-tecnicos/{id}/preview-pdf-async
+#      → cria job em background, devolve {job_id} de imediato
+#   2. GET  /api/pdf-jobs/{job_id}
+#      → devolve {status, size_bytes, error?} (frontend faz poll)
+#   3. GET  /api/pdf-jobs/{job_id}/download
+#      → quando job.status == "done", faz stream do tempfile e marca para
+#        cleanup
+#
+# Cada pedido individual é curto (<1s) → nunca atinge timeout do gateway.
+# ============================================================================
+import uuid as _uuid
+import os as _os
+import time as _job_time
+from threading import Thread as _JobThread
+
+# job_id -> {
+#   "status": "pending" | "done" | "error",
+#   "file_path": str | None,
+#   "filename": str,
+#   "started_at": float,
+#   "finished_at": float | None,
+#   "size_bytes": int,
+#   "user_sub": str,           # owner
+#   "error": str | None,
+# }
+_PDF_JOBS: dict = {}
+_PDF_JOB_TTL_SECONDS = 30 * 60  # 30 minutos
+
+
+def _cleanup_old_pdf_jobs():
+    """Remove jobs antigos (>TTL) e os respectivos tempfiles."""
+    now = _job_time.time()
+    expired = []
+    for jid, job in list(_PDF_JOBS.items()):
+        started = job.get("started_at", now)
+        if now - started > _PDF_JOB_TTL_SECONDS:
+            expired.append(jid)
+    for jid in expired:
+        job = _PDF_JOBS.pop(jid, None)
+        if job and job.get("file_path"):
+            try:
+                _os.unlink(job["file_path"])
+            except Exception:
+                pass
+
+
+def _delete_pdf_job(job_id: str):
+    """Remove um job + tempfile imediatamente (chamado após download bem-sucedido)."""
+    job = _PDF_JOBS.pop(job_id, None)
+    if job and job.get("file_path"):
+        try:
+            _os.unlink(job["file_path"])
+        except Exception:
+            pass
+
+
+def _run_pdf_generation_job(
+    job_id: str,
+    relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
+    equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+    tmp_path: str,
+):
+    """Worker síncrono que corre em thread separada. Atualiza _PDF_JOBS."""
+    try:
+        generate_ot_pdf(
+            relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
+            equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+            output_file=tmp_path,
+        )
+        try:
+            size = _os.path.getsize(tmp_path)
+        except Exception:
+            size = 0
+        job = _PDF_JOBS.get(job_id)
+        if job is not None:
+            job["status"] = "done"
+            job["finished_at"] = _job_time.time()
+            job["size_bytes"] = size
+    except Exception as e:
+        import traceback as _tb
+        logging.error(f"[pdf-job] FALHA job={job_id}: {e}\n{_tb.format_exc()}")
+        job = _PDF_JOBS.get(job_id)
+        if job is not None:
+            job["status"] = "error"
+            job["finished_at"] = _job_time.time()
+            job["error"] = f"{type(e).__name__}: {e}"
+        # apagar tempfile parcial
+        try:
+            _os.unlink(tmp_path)
+        except Exception:
+            pass
+
+
+@router.post("/relatorios-tecnicos/{relatorio_id}/preview-pdf-async")
+async def start_pdf_generation_job(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Inicia geração de PDF em background. Devolve job_id de imediato."""
+    _cleanup_old_pdf_jobs()
+
+    relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
+    if not relatorio:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+    if relatorio.get("ot_relacionada_id"):
+        ot_rel = await db.relatorios_tecnicos.find_one(
+            {"id": relatorio["ot_relacionada_id"]}, {"_id": 0, "numero_assistencia": 1}
+        )
+        if ot_rel:
+            relatorio["ot_relacionada_numero"] = ot_rel.get("numero_assistencia")
+
+    cliente = await db.clientes.find_one({"id": relatorio['cliente_id']}, {"_id": 0})
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+
+    intervencoes = await db.intervencoes_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+
+    tecnicos = await db.tecnicos_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
+
+    fotografias = await db.fotos_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+
+    assinaturas = await db.assinaturas_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort("data_assinatura", 1).to_list(length=None)
+
+    equipamentos_adicionais = await db.equipamentos_ot.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort("ordem", 1).to_list(length=None)
+
+    materiais = await db.materiais_ot.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).to_list(length=None)
+
+    registos_mao_obra = await db.registos_tecnico_ot.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
+
+    company_info = await db.company_info.find_one({"id": "company_info_default"}, {"_id": 0})
+
+    rel_assistencia = await db.relatorios_assistencia.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(length=None)
+
+    import tempfile as _tempfile
+    tmp_fd, tmp_path = _tempfile.mkstemp(suffix=".pdf", prefix="fs_pdfjob_")
+    _os.close(tmp_fd)
+
+    job_id = _uuid.uuid4().hex
+    numero_ot = relatorio.get('numero_assistencia', 'N/A')
+    cliente_nome = (cliente.get('nome') or 'Cliente').replace(' ', '_')
+    filename = f"FS_{numero_ot}_{cliente_nome}.pdf"
+
+    _PDF_JOBS[job_id] = {
+        "status": "pending",
+        "file_path": tmp_path,
+        "filename": filename,
+        "started_at": _job_time.time(),
+        "finished_at": None,
+        "size_bytes": 0,
+        "user_sub": current_user.get("sub", ""),
+        "error": None,
+    }
+
+    thread = _JobThread(
+        target=_run_pdf_generation_job,
+        args=(
+            job_id, relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
+            equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+            tmp_path,
+        ),
+        daemon=True,
+    )
+    thread.start()
+
+    return {"job_id": job_id, "filename": filename}
+
+
+@router.get("/pdf-jobs/{job_id}")
+async def get_pdf_job_status(
+    job_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Devolve estado do job de geração de PDF."""
+    job = _PDF_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job não encontrado ou expirado")
+    if job["user_sub"] and job["user_sub"] != current_user.get("sub", ""):
+        raise HTTPException(status_code=403, detail="Sem permissão para este job")
+
+    elapsed = _job_time.time() - job["started_at"]
+    return {
+        "job_id": job_id,
+        "status": job["status"],
+        "filename": job["filename"],
+        "size_bytes": job.get("size_bytes", 0),
+        "elapsed_seconds": round(elapsed, 1),
+        "error": job.get("error"),
+    }
+
+
+@router.get("/pdf-jobs/{job_id}/download")
+async def download_pdf_job(
+    job_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Faz stream do PDF gerado. Após sucesso, o job e o tempfile são removidos."""
+    job = _PDF_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job não encontrado ou expirado")
+    if job["user_sub"] and job["user_sub"] != current_user.get("sub", ""):
+        raise HTTPException(status_code=403, detail="Sem permissão para este job")
+    if job["status"] == "pending":
+        raise HTTPException(status_code=425, detail="PDF ainda em geração")
+    if job["status"] == "error":
+        raise HTTPException(status_code=500, detail=job.get("error") or "Erro na geração")
+
+    file_path = job["file_path"]
+    if not file_path or not _os.path.exists(file_path):
+        raise HTTPException(status_code=410, detail="Ficheiro expirou")
+
+    filename = job["filename"]
+
+    async def _stream_file():
+        try:
+            CHUNK = 64 * 1024
+            with open(file_path, "rb") as f:
+                while True:
+                    chunk = f.read(CHUNK)
+                    if not chunk:
+                        break
+                    yield chunk
+        finally:
+            # apagar job + tempfile após download
+            _delete_pdf_job(job_id)
+
+    return StreamingResponse(
+        _stream_file(),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Length": str(job.get("size_bytes", 0)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
+    )
+
+
 
 
 
