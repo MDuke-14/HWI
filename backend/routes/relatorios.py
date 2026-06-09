@@ -2636,6 +2636,43 @@ async def _delete_pdf_job_async(job_id: str) -> None:
     await db.pdf_jobs.delete_one({"id": job_id})
 
 
+def _build_fs_zip_with_photos(pdf_path: str, fotografias: list, zip_path: str, filename_pdf: str, numero_ot: str):
+    """Cria um ZIP contendo o PDF + uma pasta /fotos/ com TODAS as fotos em HD.
+    
+    Usado para FS huge_fs (>50 fotos): PDF tem thumbnails, ZIP tem fotos HD.
+    """
+    import zipfile as _zip
+    import base64 as _b64
+
+    with _zip.ZipFile(zip_path, "w", _zip.ZIP_DEFLATED, allowZip64=True) as zf:
+        # 1. PDF principal
+        zf.write(pdf_path, arcname=filename_pdf)
+        # 2. Pasta de fotos HD
+        folder_name = f"FS_{numero_ot}_fotos"
+        for idx, foto in enumerate(fotografias or [], 1):
+            b64 = foto.get("foto_base64") or foto.get("thumb_base64")
+            if not b64:
+                continue
+            try:
+                if isinstance(b64, str) and "," in b64[:64] and b64.lstrip().startswith("data:"):
+                    b64 = b64.split(",", 1)[1]
+                raw = _b64.b64decode(b64, validate=False)
+                if not raw or len(raw) < 100:
+                    continue
+                # Detectar extensão (PIL é overkill aqui — assumimos jpg)
+                ext = "jpg"
+                if raw[:8].startswith(b"\x89PNG"):
+                    ext = "png"
+                arc = f"{folder_name}/foto_{idx:03d}.{ext}"
+                zf.writestr(arc, raw)
+                # Libertar base64 após processar — crítico para evitar OOM
+                foto["foto_base64"] = None
+                foto["thumb_base64"] = None
+            except Exception as e:
+                import logging as _log
+                _log.warning(f"[zip-fotos] FS#{numero_ot} foto idx={idx}: {e} — skip")
+
+
 def _run_pdf_generation_job(
     job_id: str,
     relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
@@ -2646,23 +2683,59 @@ def _run_pdf_generation_job(
     """Worker síncrono que corre em thread separada.
     
     1. Gera PDF para tempfile local (memory-efficient via output_file).
-    2. Faz upload para GridFS (partilhado entre pods).
-    3. Atualiza meta na collection pdf_jobs.
-    4. Apaga tempfile local.
+    2. Se huge_fs (>50 fotos), também cria ZIP com PDF + fotos HD.
+    3. Faz upload para GridFS (partilhado entre pods).
+    4. Atualiza meta na collection pdf_jobs.
+    5. Apaga tempfiles locais.
     """
     tmp_path = _job_local_pdf_path(job_id)
+    zip_path = tmp_path.replace(".pdf", ".zip")
+    is_huge = (len(fotografias) if fotografias else 0) >= 50  # mantém-se em sync com HUGE_FS_PHOTO_COUNT
     try:
+        # Guardar cópia das fotos PARA o ZIP (antes do PDF as consumir/pop)
+        fotos_para_zip = []
+        if is_huge:
+            for f in (fotografias or []):
+                fotos_para_zip.append({
+                    "foto_base64": f.get("foto_base64"),
+                    "thumb_base64": f.get("thumb_base64"),
+                })
+
         generate_ot_pdf(
             relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
             equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
             output_file=tmp_path,
         )
         try:
-            size = _os.path.getsize(tmp_path)
+            size_pdf = _os.path.getsize(tmp_path)
+        except OSError:
+            size_pdf = 0
+
+        # Para huge_fs: criar ZIP com PDF + fotos HD
+        upload_path = tmp_path
+        upload_filename_suffix = "pdf"
+        if is_huge and size_pdf > 0:
+            try:
+                filename_pdf_inside = f"FS_{numero_ot}.pdf"
+                _build_fs_zip_with_photos(tmp_path, fotos_para_zip, zip_path, filename_pdf_inside, numero_ot)
+                if _os.path.exists(zip_path) and _os.path.getsize(zip_path) > 0:
+                    upload_path = zip_path
+                    upload_filename_suffix = "zip"
+                    try:
+                        _os.unlink(tmp_path)  # apagar PDF original (já está dentro do ZIP)
+                    except OSError:
+                        pass
+            except Exception as zip_err:
+                logging.error(f"[pdf-job] ZIP creation falhou job={job_id}: {zip_err}")
+                # Continua com upload do PDF sem ZIP
+        # Libertar referências grandes
+        fotos_para_zip = None
+        try:
+            size = _os.path.getsize(upload_path)
         except OSError:
             size = 0
 
-        # Upload do PDF para GridFS via coroutine_threadsafe (worker é síncrono)
+        # Upload do PDF/ZIP para GridFS via coroutine_threadsafe (worker é síncrono)
         gridfs_id = None
         if loop is not None and size > 0:
             try:
@@ -2671,16 +2744,16 @@ def _run_pdf_generation_job(
 
                 async def _upload():
                     bucket = AsyncIOMotorGridFSBucket(db, bucket_name="pdf_files")
-                    with open(tmp_path, "rb") as fin:
+                    with open(upload_path, "rb") as fin:
                         oid = await bucket.upload_from_stream(
-                            f"{job_id}.pdf",
+                            f"{job_id}.{upload_filename_suffix}",
                             fin,
-                            metadata={"job_id": job_id, "relatorio_id": relatorio_id},
+                            metadata={"job_id": job_id, "relatorio_id": relatorio_id, "type": upload_filename_suffix},
                         )
                     return str(oid)
 
                 fut = _async_upload.run_coroutine_threadsafe(_upload(), loop)
-                gridfs_id = fut.result(timeout=120)  # max 2 min para upload
+                gridfs_id = fut.result(timeout=120)
             except Exception as up_err:
                 logging.error(f"[pdf-job] upload GridFS falhou job={job_id}: {up_err}")
                 raise
@@ -2695,6 +2768,7 @@ def _run_pdf_generation_job(
                         "finished_at": _job_time.time(),
                         "size_bytes": size,
                         "gridfs_id": gridfs_id,
+                        "output_type": upload_filename_suffix,  # "pdf" ou "zip"
                     }),
                     loop,
                 ).result(timeout=30)
@@ -2761,11 +2835,12 @@ def _run_pdf_generation_job(
                 logging.error(f"[pdf-job] falha ao registar erro em app_errors: {log_err}")
         return
 
-    # Sucesso — apagar tempfile local
-    try:
-        _os.unlink(tmp_path)
-    except OSError:
-        pass
+    # Sucesso — apagar tempfile(s) local(is)
+    for _p in (tmp_path, zip_path):
+        try:
+            _os.unlink(_p)
+        except OSError:
+            pass
 
 
 @router.post("/relatorios-tecnicos/{relatorio_id}/preview-pdf-async")
@@ -2934,7 +3009,12 @@ async def download_pdf_job(
         raise HTTPException(status_code=410, detail="Ficheiro expirou ou ainda não foi gerado")
 
     filename = meta.get("filename", "FS.pdf")
+    output_type = meta.get("output_type", "pdf")
+    # Se foi gerado ZIP (huge_fs), troca a extensão do filename
+    if output_type == "zip" and filename.lower().endswith(".pdf"):
+        filename = filename[:-4] + ".zip"
     size = meta.get("size_bytes", 0)
+    media_type = "application/zip" if output_type == "zip" else "application/pdf"
 
     from motor.motor_asyncio import AsyncIOMotorGridFSBucket
     from bson import ObjectId
@@ -2953,12 +3033,11 @@ async def download_pdf_job(
                     break
                 yield chunk
         finally:
-            # Limpeza: apaga doc + ficheiro GridFS
             await _delete_pdf_job_async(job_id)
 
     return StreamingResponse(
         _stream_file(),
-        media_type="application/pdf",
+        media_type=media_type,
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
             "Content-Length": str(size),

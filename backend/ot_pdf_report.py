@@ -59,10 +59,10 @@ except Exception:
 PHOTO_COMPRESS_THRESHOLD_BYTES = 500 * 1024  # 500 KB
 PHOTO_MAX_DIMENSION_PX = 1400  # lado maior após compressão (FS pequenas)
 PHOTO_MAX_DIMENSION_PX_LARGE_FS = 1000  # FS com muitas fotos (>20)
-PHOTO_MAX_DIMENSION_PX_HUGE_FS = 700   # FS com fotos extremas (>50) — anti-OOM agressivo
+PHOTO_MAX_DIMENSION_PX_HUGE_FS = 350   # FS extremas (>50) — só thumbnails, fotos HD vão no ZIP separado
 PHOTO_JPEG_QUALITY = 82  # qualidade suficiente para impressão
 PHOTO_JPEG_QUALITY_LARGE_FS = 72  # FS com muitas fotos — comprime mais
-PHOTO_JPEG_QUALITY_HUGE_FS = 60  # FS extremas — comprime ao máximo (mas ainda legível)
+PHOTO_JPEG_QUALITY_HUGE_FS = 65  # FS extremas — thumbnails no PDF, HD vão em ZIP
 LARGE_FS_PHOTO_COUNT = 20
 HUGE_FS_PHOTO_COUNT = 50  # acima disto, anti-OOM forte
 

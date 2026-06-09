@@ -289,19 +289,28 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 **Fix**: corrigido mapping com fallbacks defensivos. Pré-join de `relatorios_assistencia[].texto` por `intervencao_id` em cada intervenção (evita IA falhar no lookup). Prompt atualizado: `equipamento_principal=null` é VÁLIDO quando há `equipamentos_adicionais`; só flag null em registos específicos, não generaliza.
 
-### PDF Huge FS Anti-OOM (2026-02-06)
-**Bug confirmado pelo utilizador via STARTED log persistente**: FS#478 com 95 fotografias + 9 intervenções foi morta pelo Kubernetes (OOM kill). Detalhes técnicos visíveis em /admin/errors. Sucesso do mecanismo STARTED!
+### PDF Huge FS → ZIP wrapper com fotos HD (2026-02-06)
+**Bug reportado pelo utilizador**: mesmo com tier "huge_fs" (700px/q60), uma FS com 95 fotos demorou >550s e não terminou o download. Geração demasiado lenta + risco contínuo de OOM.
 
-**Análise**: o tier `large_fs` (>20 fotos, 1000px/q72) ainda dava pico de memória ~950 MB para 95 fotos → OOM. Necessário tier mais agressivo.
+**Estratégia escolhida pelo utilizador (opção D)**: PDF com thumbnails + ZIP separado com fotos HD.
 
-**Fix**: terceiro tier `HUGE_FS_PHOTO_COUNT=50`:
-- `PHOTO_MAX_DIMENSION_PX_HUGE_FS=700` (vs 1000 large, 1400 normal)
-- `PHOTO_JPEG_QUALITY_HUGE_FS=60` (vs 72 large, 82 normal)
-- `_safe_image_from_base64(huge_fs=True)` ativa automaticamente quando `_n_fotos >= 50`
-- `gc.collect()` após CADA par de fotos (não cada 4 pares) em huge_fs
-- Aplicado a TODOS os 4 call sites
+**Fix em `ot_pdf_report.py`**:
+- `PHOTO_MAX_DIMENSION_PX_HUGE_FS` reduzido para **350 px** (de 700) — apenas thumbnails no PDF.
+- `PHOTO_JPEG_QUALITY_HUGE_FS` ajustado para 65.
+- Pico de memória estimado para 95 fotos: <200 MB (era ~475 MB).
 
-**Estimativa para 95 fotos**: pico de memória cai de ~950 MB → ~475 MB (margem confortável dentro do limite de 1 GB do pod).
+**Fix em `routes/relatorios.py`**:
+- Nova função `_build_fs_zip_with_photos()`: cria ZIP com o PDF + pasta `FS_{numero}_fotos/foto_001.jpg, foto_002.jpg, ...` contendo todas as fotos em qualidade original da DB.
+- `_run_pdf_generation_job` detecta `is_huge` (≥50 fotos) e:
+  1. Gera PDF (com thumbnails 350px)
+  2. Cria ZIP envolvendo o PDF + fotos HD
+  3. Faz upload do ZIP (não do PDF) para GridFS
+  4. Marca `meta.output_type = "zip"`
+- Download endpoint detecta `output_type` e serve com `Content-Type: application/zip` e filename `FS_xxx.zip`.
+
+**Resultado para o cliente**: recebe um ficheiro ZIP que descomprime para `FS_478.pdf` (relatório com thumbnails) + pasta `FS_478_fotos/` com 95 fotos em qualidade HD. UX muito superior a um PDF de 80MB que não abre.
+
+**Validação preview**: FS pequena (5 fotos) → continua a devolver PDF (Content-Type application/pdf). ✓
 
 ### PDF Jobs Multi-Pod — migração para MongoDB + GridFS (2026-02-06)
 **Bug crítico identificado pelo utilizador**: 404 "Job não encontrado ou expirado" no `GET /pdf-jobs/{id}` em produção.
