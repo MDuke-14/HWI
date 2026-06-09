@@ -289,6 +289,20 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 **Fix**: corrigido mapping com fallbacks defensivos. Pré-join de `relatorios_assistencia[].texto` por `intervencao_id` em cada intervenção (evita IA falhar no lookup). Prompt atualizado: `equipamento_principal=null` é VÁLIDO quando há `equipamentos_adicionais`; só flag null em registos específicos, não generaliza.
 
+### PDF Huge FS Anti-OOM (2026-02-06)
+**Bug confirmado pelo utilizador via STARTED log persistente**: FS#478 com 95 fotografias + 9 intervenções foi morta pelo Kubernetes (OOM kill). Detalhes técnicos visíveis em /admin/errors. Sucesso do mecanismo STARTED!
+
+**Análise**: o tier `large_fs` (>20 fotos, 1000px/q72) ainda dava pico de memória ~950 MB para 95 fotos → OOM. Necessário tier mais agressivo.
+
+**Fix**: terceiro tier `HUGE_FS_PHOTO_COUNT=50`:
+- `PHOTO_MAX_DIMENSION_PX_HUGE_FS=700` (vs 1000 large, 1400 normal)
+- `PHOTO_JPEG_QUALITY_HUGE_FS=60` (vs 72 large, 82 normal)
+- `_safe_image_from_base64(huge_fs=True)` ativa automaticamente quando `_n_fotos >= 50`
+- `gc.collect()` após CADA par de fotos (não cada 4 pares) em huge_fs
+- Aplicado a TODOS os 4 call sites
+
+**Estimativa para 95 fotos**: pico de memória cai de ~950 MB → ~475 MB (margem confortável dentro do limite de 1 GB do pod).
+
 ### PDF Jobs Multi-Pod — migração para MongoDB + GridFS (2026-02-06)
 **Bug crítico identificado pelo utilizador**: 404 "Job não encontrado ou expirado" no `GET /pdf-jobs/{id}` em produção.
 
