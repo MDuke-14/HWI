@@ -268,6 +268,24 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 **Estimativa do impacto**: para FS com 40 fotos, pico de memória cai de ~1 GB para ~250 MB.
 
+### PDF XML Escape — fix para "algumas FS rebentam aleatoriamente" (2026-02-06)
+**Bug crítico identificado pelo utilizador**: certas FS continuam a falhar em produção mesmo após o fix de memória — outras gerar OK. Causa raiz: ReportLab `Paragraph()` usa mini-XML internamente. Quando técnicos escreviam `<`, `>`, ou `&` em campos livres (ex: "AC&DC", "5 < 10 horas", "<urgente>", "PO #2026/<001>"), o parser rebentava com `ParaParser syntax error`.
+
+**Fix aplicado em `ot_pdf_report.py`**:
+- Adicionados helpers `_pe(text)` (paragraph_escape via `xml.sax.saxutils.escape`) e `_pe_with_nl(text)` (mesma escape + `\n→<br/>`).
+- Aplicado a TODOS os Paragraph com texto livre do utilizador:
+  - `cliente.nome`, `pedido_por`, `local_intervencao`, `referencia_interna_cliente`, `ot_relacionada_numero`
+  - Cards de equipamento: `tipologia`, `marca`, `modelo`, `numero_serie`, `ano_fabrico`
+  - Equipamento na intervenção (descrição compósita)
+  - `motivo_assistencia` (multi-linha)
+  - `relatorios_assistencia[].texto` (multi-linha)
+  - `materiais[].descricao`, `materiais[].fornecido_por` (também convertidos para Paragraph para permitir quebra de linha em descrições longas)
+  - `assinaturas[].assinado_por` e timestamp
+  - `fotografias[].descricao` (limitada a 100 chars)
+- Teste de regressão criado em `/app/backend/tests/test_pdf_xml_escape.py` com strings problemáticas: passa ✓.
+
+**Cobertura**: todos os 3 endpoints (`/enviar-pdf`, `/preview-pdf` streaming, `/preview-pdf-async` job) usam a mesma `generate_ot_pdf` → todos beneficiam.
+
 ### P2
 - Recurring VAPID Key Mismatch
 - Unresolved "Edit OT Equipment" Test Failure

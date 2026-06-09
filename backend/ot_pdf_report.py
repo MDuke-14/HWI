@@ -11,6 +11,39 @@ import base64
 import os
 import logging
 from collections import defaultdict
+from xml.sax.saxutils import escape as _xml_escape
+
+
+def _pe(text):
+    """Paragraph-escape: escapa caracteres XML problemáticos para ReportLab Paragraph.
+    
+    ReportLab usa mini-XML internamente. Sem escape, caracteres `<`, `>`, `&`
+    digitados pelo utilizador (ex: "AC&DC", "5 < 10 horas", "<urgente>") fazem
+    a geração do PDF rebentar com `ParaParser syntax error`.
+    
+    NÃO escapa `\\n` → mantém-se "<br/>" se for chamado APÓS o replace.
+    """
+    if text is None:
+        return ''
+    if not isinstance(text, str):
+        text = str(text)
+    # escape() escapa &, <, > — não toca em "<br/>" se chamado antes do replace
+    # Por isso fazemos: 1) escape, 2) restaurar <br/> se existir
+    escaped = _xml_escape(text)
+    # Permitir tags whitelisted (<br/>, <b>, </b>, <i>, </i>) caso o caller queira
+    # Convertemos &lt;br/&gt; → <br/> só se foi escapado por nós
+    # SIMPLES: o caller que quiser <br/> chama replace('\n', '<br/>') APÓS este escape
+    return escaped
+
+
+def _pe_with_nl(text):
+    """Como _pe mas converte \\n → <br/>. Uso típico em campos multi-linha (motivo, relatórios)."""
+    if text is None:
+        return ''
+    if not isinstance(text, str):
+        text = str(text)
+    return _xml_escape(text).replace('\n', '<br/>').replace('\r', '')
+
 
 try:
     from PIL import Image as PILImage
@@ -392,9 +425,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     # ========== INFORMAÇÕES DO CLIENTE ==========
     
     client_grid = [
-        [Paragraph("Cliente:", label_style), Paragraph(cliente.get('nome', 'N/A'), value_style),
-         Paragraph("Pedido por:", label_style), Paragraph(relatorio.get('pedido_por', '-') or '-', value_style)],
-        [Paragraph("Local:", label_style), Paragraph(relatorio.get('local_intervencao', '-') or '-', value_style),
+        [Paragraph("Cliente:", label_style), Paragraph(_pe(cliente.get('nome', 'N/A')), value_style),
+         Paragraph("Pedido por:", label_style), Paragraph(_pe(relatorio.get('pedido_por', '-') or '-'), value_style)],
+        [Paragraph("Local:", label_style), Paragraph(_pe(relatorio.get('local_intervencao', '-') or '-'), value_style),
          Paragraph("", label_style), Paragraph("", value_style)],
     ]
     
@@ -403,7 +436,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if ref_interna:
         client_grid.append([
             Paragraph("Ref. Interna:", label_style),
-            Paragraph(ref_interna, ParagraphStyle('RefInternaStyle', parent=value_style, fontName='Helvetica-Bold')),
+            Paragraph(_pe(ref_interna), ParagraphStyle('RefInternaStyle', parent=value_style, fontName='Helvetica-Bold')),
             Paragraph("", label_style), Paragraph("", value_style)
         ])
     
@@ -412,7 +445,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if ot_rel_numero:
         client_grid.append([
             Paragraph("FS Relacionada:", label_style),
-            Paragraph(f"FS #{ot_rel_numero}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#555555'))),
+            Paragraph(f"FS #{_pe(ot_rel_numero)}", ParagraphStyle('OTRelLink', parent=value_style, textColor=colors.HexColor('#555555'))),
             Paragraph("", label_style), Paragraph("", value_style)
         ])
     
@@ -443,31 +476,31 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         if tipologia:
             equip_data.append([
                 Paragraph("<b>Tipo:</b>", label_style),
-                Paragraph(tipologia, value_style)
+                Paragraph(_pe(tipologia), value_style)
             ])
         
         if marca:
             equip_data.append([
                 Paragraph("<b>Marca:</b>", label_style),
-                Paragraph(marca, value_style)
+                Paragraph(_pe(marca), value_style)
             ])
         
         if modelo:
             equip_data.append([
                 Paragraph("<b>Modelo:</b>", label_style),
-                Paragraph(modelo, value_style)
+                Paragraph(_pe(modelo), value_style)
             ])
         
         # Nº Série aparece sempre
         equip_data.append([
             Paragraph("<b>Nº Série:</b>", label_style),
-            Paragraph(numero_serie if numero_serie else "Sem Dados", value_style)
+            Paragraph(_pe(numero_serie) if numero_serie else "Sem Dados", value_style)
         ])
         
         if ano_fabrico:
             equip_data.append([
                 Paragraph("<b>Ano:</b>", label_style),
-                Paragraph(format_ano_fabrico(ano_fabrico), value_style)
+                Paragraph(_pe(format_ano_fabrico(ano_fabrico)), value_style)
             ])
         
         if horas_funcionamento:
@@ -601,10 +634,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 equip_desc = f"{equip_rel.get('tipologia', '')} - {equip_rel.get('marca', '')} {equip_rel.get('modelo', '')}"
                 if equip_rel.get('numero_serie'):
                     equip_desc += f" (S/N: {equip_rel.get('numero_serie')})"
-                interv_content.append(Paragraph(f"<b>Equipamento:</b> {equip_desc}", normal_style))
+                interv_content.append(Paragraph(f"<b>Equipamento:</b> {_pe(equip_desc)}", normal_style))
         
         if interv.get('motivo_assistencia'):
-            motivo_text = interv.get('motivo_assistencia', '').replace('\n', '<br/>')
+            motivo_text = _pe_with_nl(interv.get('motivo_assistencia', ''))
             interv_content.append(Paragraph(f"<b>Motivo:</b> {motivo_text}", normal_style))
         
         if interv_content:
@@ -636,10 +669,13 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             for mat in date_materiais:
                 qty = mat.get('quantidade', 0)
                 unit = mat.get('unidade', 'Un')
+                # Descrição como Paragraph para permitir quebra de linha e suportar caracteres especiais
+                desc_para = Paragraph(_pe(mat.get('descricao', 'N/A')), normal_style)
+                fornecido_para = Paragraph(_pe(mat.get('fornecido_por', '-') or '-'), normal_style)
                 mat_header.append([
-                    mat.get('descricao', 'N/A'),
+                    desc_para,
                     f"{qty} {unit}",
-                    mat.get('fornecido_por', '-') or '-'
+                    fornecido_para
                 ])
             
             mat_table = Table(mat_header, colWidths=[10*cm, 3*cm, 4.5*cm])
@@ -671,7 +707,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         if date_rel_assist:
             ra_content = []
             for ra in date_rel_assist:
-                ra_text = ra.get('texto', '').replace('\n', '<br/>')
+                ra_text = _pe_with_nl(ra.get('texto', ''))
                 ra_content.append(Paragraph(ra_text, normal_style))
                 ra_content.append(Spacer(1, 0.2*cm))
             if ra_content:
@@ -718,7 +754,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                 
                 if foto1.get('descricao'):
-                    cell1.append(Paragraph(foto1.get('descricao', '')[:100], foto_desc_style))
+                    cell1.append(Paragraph(_pe(foto1.get('descricao', '')[:100]), foto_desc_style))
                 
                 row_content.append(cell1)
                 
@@ -736,7 +772,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                     
                     if foto2.get('descricao'):
-                        cell2.append(Paragraph(foto2.get('descricao', '')[:100], foto_desc_style))
+                        cell2.append(Paragraph(_pe(foto2.get('descricao', '')[:100]), foto_desc_style))
                     
                     row_content.append(cell2)
                 else:
@@ -819,9 +855,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         data_assinatura_display = str(assinatura['data_assinatura'])
                 
                 if nome_completo:
-                    assin_elements.append(Paragraph(nome_completo, assin_name_style))
+                    assin_elements.append(Paragraph(_pe(nome_completo), assin_name_style))
                 if data_assinatura_display:
-                    assin_elements.append(Paragraph(data_assinatura_display, assin_data_style))
+                    assin_elements.append(Paragraph(_pe(data_assinatura_display), assin_data_style))
                 
                 # Tabela com layout centrado - SEM FUNDO VERDE
                 assin_table = Table([[assin_elements]], colWidths=[17*cm])
@@ -892,7 +928,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     cell1.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                 
                 if foto1.get('descricao'):
-                    cell1.append(Paragraph(foto1.get('descricao', '')[:100], foto_desc_style))
+                    cell1.append(Paragraph(_pe(foto1.get('descricao', '')[:100]), foto_desc_style))
                 
                 row_content.append(cell1)
                 
@@ -910,7 +946,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         cell2.append(Paragraph("<i>(Sem imagem)</i>", foto_desc_style))
                     
                     if foto2.get('descricao'):
-                        cell2.append(Paragraph(foto2.get('descricao', '')[:100], foto_desc_style))
+                        cell2.append(Paragraph(_pe(foto2.get('descricao', '')[:100]), foto_desc_style))
                     
                     row_content.append(cell2)
                 else:
