@@ -2616,6 +2616,7 @@ def _run_pdf_generation_job(
     job_id: str,
     relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
     equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
+    loop=None, user_sub: str = "", username: str = "", relatorio_id: str = "", numero_ot: str = "",
 ):
     """Worker síncrono que corre em thread separada. Atualiza meta em disco."""
     tmp_path = _job_pdf_path(job_id)
@@ -2638,8 +2639,10 @@ def _run_pdf_generation_job(
         _write_job_meta(job_id, meta)
     except Exception as e:
         import traceback as _tb
-        logging.error(f"[pdf-job] FALHA job={job_id}: {e}\n{_tb.format_exc()}")
+        tb_text = _tb.format_exc()
+        logging.error(f"[pdf-job] FALHA job={job_id}: {e}\n{tb_text}")
         meta = _read_job_meta(job_id) or {}
+        started_at = meta.get("started_at", _job_time.time())
         meta.update({
             "status": "error",
             "finished_at": _job_time.time(),
@@ -2654,6 +2657,33 @@ def _run_pdf_generation_job(
         except OSError:
             pass
 
+        # Registar no log de erros admin para análise posterior
+        if loop is not None:
+            try:
+                import asyncio as _async_log
+                duration_s = round(_job_time.time() - started_at, 1)
+                _async_log.run_coroutine_threadsafe(
+                    log_app_error(
+                        context=f"FS#{numero_ot}",
+                        action="Gerar PDF (job-async)",
+                        error_message=f"{type(e).__name__}: {e}",
+                        details={
+                            "job_id": job_id,
+                            "relatorio_id": relatorio_id,
+                            "duration_s": duration_s,
+                            "n_fotos": len(fotografias) if fotografias else 0,
+                            "n_intervencoes": len(intervencoes) if intervencoes else 0,
+                            "traceback": tb_text[:1500],
+                        },
+                        severity="error",
+                        user_id=user_sub,
+                        username=username,
+                    ),
+                    loop,
+                )
+            except Exception as log_err:
+                logging.error(f"[pdf-job] falha ao registar erro em app_errors: {log_err}")
+
 
 @router.post("/relatorios-tecnicos/{relatorio_id}/preview-pdf-async")
 async def start_pdf_generation_job(
@@ -2661,6 +2691,7 @@ async def start_pdf_generation_job(
     current_user: dict = Depends(get_current_user),
 ):
     """Inicia geração de PDF em background. Devolve job_id de imediato."""
+    import asyncio as _asyncio_local
     _cleanup_old_pdf_jobs()
 
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
@@ -2737,6 +2768,13 @@ async def start_pdf_generation_job(
             job_id, relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas,
             equipamentos_adicionais, materiais, registos_mao_obra, company_info, rel_assistencia,
         ),
+        kwargs={
+            "loop": _asyncio_local.get_event_loop(),
+            "user_sub": current_user.get("sub", ""),
+            "username": current_user.get("username", ""),
+            "relatorio_id": relatorio_id,
+            "numero_ot": str(numero_ot),
+        },
         daemon=True,
     )
     thread.start()

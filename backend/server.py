@@ -4536,6 +4536,13 @@ async def clear_resolved_errors(current_user: dict = Depends(get_current_admin))
     return {"message": f"{result.deleted_count} erros resolvidos eliminados"}
 
 
+@api_router.delete("/admin/errors/all")
+async def clear_all_errors(current_user: dict = Depends(get_current_admin)):
+    """Limpar TODOS os erros (incluindo não-resolvidos). Acção destrutiva — sem recuperação."""
+    result = await db.app_errors.delete_many({})
+    return {"message": f"{result.deleted_count} erro(s) eliminado(s)", "deleted": result.deleted_count}
+
+
 @api_router.post("/errors/log")
 async def log_frontend_error(error_data: dict, current_user: dict = Depends(get_current_user)):
     """Endpoint para o frontend reportar erros e avisos"""

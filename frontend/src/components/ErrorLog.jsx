@@ -101,6 +101,22 @@ const ErrorLog = ({ user, onLogout }) => {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!window.confirm(
+      `Tens a CERTEZA que queres eliminar TODOS os ${stats.total} erro(s)?\n\n` +
+      `Isto inclui os ${stats.unresolved} por resolver. ` +
+      `Esta acção é permanente e não pode ser desfeita.`
+    )) return;
+    if (!window.confirm('Última confirmação: eliminar TUDO?')) return;
+    try {
+      const res = await axios.delete(`${API}/admin/errors/all`);
+      toast.success(res.data.message);
+      fetchErrors();
+    } catch (error) {
+      toast.error('Erro ao limpar tudo');
+    }
+  };
+
   const getContextColor = (ctx) => {
     if (!ctx) return 'text-gray-400';
     if (ctx.startsWith('FS')) return 'text-blue-400';
@@ -148,6 +164,11 @@ const ErrorLog = ({ user, onLogout }) => {
             {stats.resolved > 0 && (
               <Button size="sm" onClick={handleClearResolved} className="bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-800" data-testid="clear-resolved-btn">
                 <Trash2 className="w-4 h-4 mr-1" /> Limpar Resolvidos ({stats.resolved})
+              </Button>
+            )}
+            {stats.total > 0 && (
+              <Button size="sm" onClick={handleClearAll} className="bg-red-700 hover:bg-red-800 text-white" data-testid="clear-all-errors-btn" title="Eliminar TODOS os erros, mesmo os não resolvidos">
+                <Trash2 className="w-4 h-4 mr-1" /> Limpar Tudo ({stats.total})
               </Button>
             )}
           </div>
