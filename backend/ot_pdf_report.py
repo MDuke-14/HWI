@@ -24,11 +24,15 @@ except Exception:
 # Threshold baixo (500KB) garante PDFs leves e geração rápida mesmo em pods com pouca RAM —
 # CRÍTICO: estes PDFs vão para clientes anexados às faturas, não podem falhar nem ser pesados.
 PHOTO_COMPRESS_THRESHOLD_BYTES = 500 * 1024  # 500 KB
-PHOTO_MAX_DIMENSION_PX = 1400  # lado maior após compressão
+PHOTO_MAX_DIMENSION_PX = 1400  # lado maior após compressão (FS pequenas)
+PHOTO_MAX_DIMENSION_PX_LARGE_FS = 1000  # FS com muitas fotos (>20) — menos memória
 PHOTO_JPEG_QUALITY = 82  # qualidade suficiente para impressão
+PHOTO_JPEG_QUALITY_LARGE_FS = 72  # FS com muitas fotos — comprime mais
+# Threshold a partir do qual a FS é considerada "grande" para efeitos de memória
+LARGE_FS_PHOTO_COUNT = 20
 
 
-def _safe_image_from_base64(b64_str, width_cm, height_cm, context="photo"):
+def _safe_image_from_base64(b64_str, width_cm, height_cm, context="photo", large_fs=False):
     """
     Cria um RLImage a partir de base64 de forma 100% segura.
     - Valida que o base64 é decodificável
@@ -36,9 +40,15 @@ def _safe_image_from_base64(b64_str, width_cm, height_cm, context="photo"):
     - Comprime se > 500KB
     - Converte para JPEG RGB (evita bugs ReportLab com PNG/RGBA)
     - Devolve None se qualquer coisa falhar (nunca rebenta)
+
+    Args:
+        large_fs: True quando a FS tem muitas fotos. Usa dimensão e
+            qualidade JPEG mais agressivas para reduzir pico de memória.
     """
     if not b64_str or not _PIL_OK:
         return None
+    max_dim = PHOTO_MAX_DIMENSION_PX_LARGE_FS if large_fs else PHOTO_MAX_DIMENSION_PX
+    quality = PHOTO_JPEG_QUALITY_LARGE_FS if large_fs else PHOTO_JPEG_QUALITY
     try:
         # 1. Decode base64 (pode ter prefixo "data:image/...;base64,")
         if isinstance(b64_str, str) and "," in b64_str[:64] and b64_str.lstrip().startswith("data:"):
@@ -63,24 +73,31 @@ def _safe_image_from_base64(b64_str, width_cm, height_cm, context="photo"):
             img = img.convert("RGB")
         # 3. Redimensionar se muito grande OU se ficheiro > 500KB
         should_resize = (
-            max(img.size) > PHOTO_MAX_DIMENSION_PX
+            max(img.size) > max_dim
             or len(raw) > PHOTO_COMPRESS_THRESHOLD_BYTES
         )
         if should_resize:
             w, h = img.size
             m = max(w, h)
-            if m > PHOTO_MAX_DIMENSION_PX:
-                scale = PHOTO_MAX_DIMENSION_PX / m
+            if m > max_dim:
+                scale = max_dim / m
                 img = img.resize((max(1, int(w * scale)), max(1, int(h * scale))), PILImage.LANCZOS)
         # 4. Re-encode sempre como JPEG optimizado
         out = BytesIO()
-        img.save(out, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
+        img.save(out, format="JPEG", quality=quality, optimize=True)
         out.seek(0)
         final_bytes = out.getvalue()
         if should_resize:
             logging.info(
                 f"[PDF] Foto {context}: {len(raw)/1024:.0f}KB → {len(final_bytes)/1024:.0f}KB"
+                + (" (large_fs)" if large_fs else "")
             )
+        # Libertar referências grandes antes de retornar
+        try:
+            img.close()
+        except Exception:
+            pass
+        del img, raw, out
         # 5. Criar RLImage
         return RLImage(BytesIO(final_bytes), width=width_cm, height=height_cm, kind='proportional')
     except Exception as e:
@@ -136,6 +153,15 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             ReportLab escreve directamente nesse destino (permite streaming
             via tempfile). Se None (default), devolve um BytesIO em memória.
     """
+    import gc as _gc
+
+    # Detectar FS "grande" — usa compressão mais agressiva para evitar OOM.
+    # Cada foto com base64 ~3MB descomprime em PIL para ~20MB; com 30+ fotos
+    # o pico de memória ultrapassa facilmente o limite do pod Kubernetes.
+    _n_fotos = len(fotografias) if fotografias else 0
+    _is_large_fs = _n_fotos >= LARGE_FS_PHOTO_COUNT
+    if _is_large_fs:
+        logging.info(f"[PDF] FS grande detectada: {_n_fotos} fotos → modo de baixa memória ativo")
     if output_file is not None:
         buffer = None
         doc_target = output_file
@@ -682,7 +708,10 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 cell1 = []
                 img1_obj = _safe_image_from_path(foto1.get('foto_path'), 7.5*cm, 5*cm, f"foto1-path rel={foto1.get('relatorio_id','')[:8]}")
                 if img1_obj is None:
-                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"foto1 rel={foto1.get('relatorio_id','')[:8]}")
+                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"foto1 rel={foto1.get('relatorio_id','')[:8]}", large_fs=_is_large_fs)
+                # Libertar base64 grande imediatamente após uso (redução crítica de memória)
+                foto1.pop('foto_base64', None)
+                foto1.pop('thumb_base64', None)
                 if img1_obj is not None:
                     cell1.append(img1_obj)
                 else:
@@ -698,7 +727,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     cell2 = []
                     img2_obj = _safe_image_from_path(foto2.get('foto_path'), 7.5*cm, 5*cm, f"foto2-path rel={foto2.get('relatorio_id','')[:8]}")
                     if img2_obj is None:
-                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"foto2 rel={foto2.get('relatorio_id','')[:8]}")
+                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"foto2 rel={foto2.get('relatorio_id','')[:8]}", large_fs=_is_large_fs)
+                    foto2.pop('foto_base64', None)
+                    foto2.pop('thumb_base64', None)
                     if img2_obj is not None:
                         cell2.append(img2_obj)
                     else:
@@ -722,6 +753,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 ]))
                 foto_content.append(foto_row_table)
                 foto_content.append(Spacer(1, 0.1*cm))
+                # Forçar libertação de memória entre pares de fotos em FS grandes
+                if _is_large_fs and (i // 2) % 4 == 3:
+                    _gc.collect()
             
             foto_section = create_section_box(foto_content, "FOTOGRAFIAS")
             add_section_to_elements(elements, foto_section)
@@ -849,7 +883,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 cell1 = []
                 img1_obj = _safe_image_from_path(foto1.get('foto_path'), 7.5*cm, 5*cm, f"fotoA-path rel={foto1.get('relatorio_id','')[:8]}")
                 if img1_obj is None:
-                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"fotoA rel={foto1.get('relatorio_id','')[:8]}")
+                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"fotoA rel={foto1.get('relatorio_id','')[:8]}", large_fs=_is_large_fs)
+                foto1.pop('foto_base64', None)
+                foto1.pop('thumb_base64', None)
                 if img1_obj is not None:
                     cell1.append(img1_obj)
                 else:
@@ -865,7 +901,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     cell2 = []
                     img2_obj = _safe_image_from_path(foto2.get('foto_path'), 7.5*cm, 5*cm, f"fotoB-path rel={foto2.get('relatorio_id','')[:8]}")
                     if img2_obj is None:
-                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"fotoB rel={foto2.get('relatorio_id','')[:8]}")
+                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"fotoB rel={foto2.get('relatorio_id','')[:8]}", large_fs=_is_large_fs)
+                    foto2.pop('foto_base64', None)
+                    foto2.pop('thumb_base64', None)
                     if img2_obj is not None:
                         cell2.append(img2_obj)
                     else:
@@ -948,6 +986,9 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     # layout demasiado grande, etc.) sejam reportadas de forma clara em vez de
     # fazerem o worker morrer. Se rebentar, faz fallback removendo todas as
     # imagens problemáticas e tentando de novo.
+    # Forçar libertação de memória antes do build (FS grandes consomem muito).
+    if _is_large_fs:
+        _gc.collect()
     try:
         doc.build(elements)
     except Exception as e:

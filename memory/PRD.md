@@ -255,8 +255,18 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 2. **Streaming via tempfile** no endpoint `/preview-pdf`: `generate_ot_pdf(output_file=path)` escreve para disco; rota faz tail-read e emite chunks de 64KB (helper `stream_pdf_via_tempfile`). `X-Accel-Buffering: no` desactiva buffering NGINX.
 3. **Padrão job-async** implementado para FS com 40+ fotos (`POST /preview-pdf-async` → `GET /pdf-jobs/{id}` → `GET /pdf-jobs/{id}/download`). Backend mantém `_PDF_JOBS` dict + tempfiles + TTL 30min + auto-cleanup pós-download. Frontend usa `downloadFSPdfAsync` / `downloadFSPdfToFile` helpers em todos os 6 sites onde se descarregavam PDFs de FS. Toast com contador "A gerar PDF... Ns" durante poll.
 
-### Accessibility Fix (2026-02-06)
-- Adicionado `DialogDescription` (sr-only) aos 24 `<DialogContent>` inline em `TechnicalReports.jsx` via script de injeção. Elimina os warnings Radix UI no console.
+### PDF Memory Safety (2026-02-06 — critical fix para OOM em produção)
+**Bug crítico identificado pelo utilizador**: 520 Bad Gateway no `/enviar-pdf` em produção a impedir facturação. Causa raiz: gerar PDF de FS com 40+ fotos consumia >1 GB de RAM (cada foto base64 ~3MB → PIL descompactava para ~20MB cada). Kubernetes matava o pod → 520.
+
+**Fix aplicado em `ot_pdf_report.py`**:
+- Novas constantes `PHOTO_MAX_DIMENSION_PX_LARGE_FS=1000`, `PHOTO_JPEG_QUALITY_LARGE_FS=72`, `LARGE_FS_PHOTO_COUNT=20`.
+- `_safe_image_from_base64(..., large_fs=False)` — quando `True`, usa dimensão 1000px e qualidade 72 em vez de 1400px/82.
+- `generate_ot_pdf()` detecta automaticamente FS grandes (≥20 fotos) e propaga `large_fs=True` a todas as chamadas.
+- Após processar cada foto: `foto.pop('foto_base64', None)` + `foto.pop('thumb_base64', None)` → liberta ~3MB por foto.
+- `gc.collect()` forçado a cada 8 fotos e antes de `doc.build()` em FS grandes.
+- 100% backwards compatible (FS pequenas mantêm qualidade original 1400px/82).
+
+**Estimativa do impacto**: para FS com 40 fotos, pico de memória cai de ~1 GB para ~250 MB.
 
 ### P2
 - Recurring VAPID Key Mismatch
