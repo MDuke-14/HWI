@@ -70,6 +70,7 @@ class Cliente(BaseModel):
     emails_adicionais: Optional[str] = None
     incluir_referencia_interna: Optional[bool] = False
     email_referencia_interna: Optional[str] = None
+    faturar_viagens_curtas: Optional[bool] = False  # Se True, viagens <30min cobram horas (não só KM)
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

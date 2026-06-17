@@ -563,7 +563,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     nif: '',
     emails_adicionais: [],
     incluir_referencia_interna: false,
-    email_referencia_interna: ''
+    email_referencia_interna: '',
+    faturar_viagens_curtas: false
   });
   
   const [relatorioFormData, setRelatorioFormData] = useState({
@@ -848,7 +849,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       nif: cliente.nif || '',
       emails_adicionais: emailsArray,
       incluir_referencia_interna: cliente.incluir_referencia_interna || false,
-      email_referencia_interna: cliente.email_referencia_interna || ''
+      email_referencia_interna: cliente.email_referencia_interna || '',
+      faturar_viagens_curtas: cliente.faturar_viagens_curtas || false
     });
     setShowEditModal(true);
   };
@@ -1078,7 +1080,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       nif: '',
       emails_adicionais: [],
       incluir_referencia_interna: false,
-      email_referencia_interna: ''
+      email_referencia_interna: '',
+      faturar_viagens_curtas: false
     });
     setSelectedCliente(null);
   };
@@ -8187,6 +8190,21 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             )}
 
+            <div className="flex items-start gap-3 p-3 bg-[#0f0f0f] rounded-lg border border-amber-700/40">
+              <input
+                type="checkbox"
+                id="add-faturar-viagens-curtas"
+                checked={formData.faturar_viagens_curtas}
+                onChange={(e) => setFormData({ ...formData, faturar_viagens_curtas: e.target.checked })}
+                className="w-4 h-4 mt-0.5 rounded border-gray-600 bg-gray-800 text-amber-500 focus:ring-amber-500"
+                data-testid="add-checkbox-faturar-viagens-curtas"
+              />
+              <Label htmlFor="add-faturar-viagens-curtas" className="text-gray-300 cursor-pointer text-sm leading-tight">
+                Faturar viagens curtas (&lt;30min) na Folha de Horas
+                <span className="block text-gray-500 text-xs mt-0.5">Por defeito, viagens com menos de 30min só cobram KM. Ative para cobrar também as horas (ex.: Kannegiesser).</span>
+              </Label>
+            </div>
+
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"
@@ -8359,6 +8377,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                 />
               </div>
             )}
+
+            <div className="flex items-start gap-3 p-3 bg-[#0f0f0f] rounded-lg border border-amber-700/40">
+              <input
+                type="checkbox"
+                id="edit-faturar-viagens-curtas"
+                checked={formData.faturar_viagens_curtas}
+                onChange={(e) => setFormData({ ...formData, faturar_viagens_curtas: e.target.checked })}
+                className="w-4 h-4 mt-0.5 rounded border-gray-600 bg-gray-800 text-amber-500 focus:ring-amber-500"
+                data-testid="edit-checkbox-faturar-viagens-curtas"
+              />
+              <Label htmlFor="edit-faturar-viagens-curtas" className="text-gray-300 cursor-pointer text-sm leading-tight">
+                Faturar viagens curtas (&lt;30min) na Folha de Horas
+                <span className="block text-gray-500 text-xs mt-0.5">Por defeito, viagens com menos de 30min só cobram KM. Ative para cobrar também as horas (ex.: Kannegiesser).</span>
+              </Label>
+            </div>
 
             <div className="flex gap-3 pt-4">
               <Button

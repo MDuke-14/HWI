@@ -4396,6 +4396,7 @@ async def generate_folha_horas(
             despesas_ajustadas=despesas_ajustadas,
             valor_dieta_default=valor_dieta_tabela,
             tabela_preco_image=tabela_preco_image,
+            faturar_viagens_curtas=bool(cliente.get('faturar_viagens_curtas', False)),
         )
     except Exception as e:
         logging.error(f"Erro ao gerar Folha de Horas para OT {relatorio_id}: {str(e)}")

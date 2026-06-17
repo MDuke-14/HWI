@@ -1,0 +1,35 @@
+{
+  "summary": "Validação completa da feature 'faturar_viagens_curtas': testes unitários do gerador PDF, testes E2E aos endpoints REST e UI da modal de Cliente em /technical-reports. Todos os 8 cenários requeridos passaram.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_faturar_viagens_curtas.py",
+    "/app/backend/tests/test_faturar_viagens_curtas_api.py",
+    "/app/test_reports/pytest/faturar_viagens_curtas_api.xml",
+    "/app/test_reports/folha_horas_kannegiesser_flag_on.pdf",
+    "/app/test_reports/folha_horas_kannegiesser_flag_off.pdf"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "TechnicalReports.jsx ultrapassa 10.000 linhas — recomendação forte de modularizar (Clientes, Relatorios, Pesquisa, Refs, Pedidos) em ficheiros separados. Não bloqueia a feature mas dificulta manutenção/teste.",
+    "Edit/Delete dos cards de cliente não têm data-testid (apenas o card o tem). Recomenda-se adicionar `edit-cliente-btn-${id}` e `delete-cliente-btn-${id}` para automação mais robusta.",
+    "Endpoint POST /api/relatorios-tecnicos/{id}/folha-horas-pdf rejeita corpo vazio com 422 porque exige `tarifas_por_tecnico` e `dados_extras` — considerar tornar opcionais com default {} para reduzir fricção em integrações."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_faturar_viagens_curtas_api.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "teste@email.com / teste (admin)",
+  "seed_data_creation": "Não foi necessário criar seed novo. Os testes API tipo OFF utilizam toggle temporário da flag do próprio Kannegiesser (com restauro automático) para validar regressão na mesma FS com viagens curtas reais.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend: pytest /app/backend/tests/test_faturar_viagens_curtas_api.py (4/4 PASS) e python3 /app/backend/tests/test_faturar_viagens_curtas.py (2/2 PASS). UI: login => /technical-reports abre na tab Clientes por defeito; o segundo botão (lápis) dentro do card-id `cliente-card-{id}` abre o modal de edição. Os checkboxes `edit-checkbox-faturar-viagens-curtas` e `add-checkbox-faturar-viagens-curtas` estão presentes e funcionam (toggle + save persiste, toast 'Cliente atualizado com sucesso!' aparece). PDF gerados gravados em /app/test_reports/folha_horas_kannegiesser_flag_on.pdf (sem 'Só KM') e flag_off.pdf (com 'Só KM').",
+  "rca of the issue": "N/A — feature funciona corretamente. Único ajuste feito foi nos testes: payload do POST folha-horas-pdf precisa de incluir {\"tarifas_por_tecnico\": {}, \"dados_extras\": {}} pois ambos são required pelo Pydantic model."
+}

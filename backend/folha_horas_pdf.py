@@ -95,6 +95,7 @@ def generate_folha_horas_pdf(
     despesas_ajustadas=None,
     valor_dieta_default=0,
     tabela_preco_image=None,
+    faturar_viagens_curtas=False,
 ):
     if tarifas_por_codigo is None:
         tarifas_por_codigo = {}
@@ -338,11 +339,12 @@ def generate_folha_horas_pdf(
         # Cálculo de valores com lógica especial para Viagem
         if tipo_registo == 'viagem':
             # Regra de faturação de Viagem:
-            # < 30 min: cobra apenas km (não cobra horas)
+            # < 30 min: cobra apenas km (não cobra horas) — POR DEFEITO
             # >= 30 min: cobra horas e km
+            # SE cliente.faturar_viagens_curtas == True: cobra sempre horas + km (ignora threshold)
             # Cálculo do valor usa horas arredondadas a 2 casas (o que o user vê no PDF)
             total_km_valor = round(round(total_km, 2) * PRECO_KM, 2)
-            if total_minutos < 30:
+            if total_minutos < 30 and not faturar_viagens_curtas:
                 total_valor = 0
             else:
                 horas_display = round(total_minutos / 60, 2)
@@ -378,7 +380,7 @@ def generate_folha_horas_pdf(
         # Observações: justificar kms em registos de trabalho
         # Observação para viagens não faturáveis em horas
         obs_parts = []
-        if tipo_registo == 'viagem' and total_minutos < 30:
+        if tipo_registo == 'viagem' and total_minutos < 30 and not faturar_viagens_curtas:
             obs_parts.append('Só KM (<30min)')
         if reg.get('observacoes'):
             obs_parts.append(reg['observacoes'])
@@ -554,7 +556,8 @@ def generate_folha_horas_pdf(
             tipo_norm = 'trabalho' if reg['tipo_registo'] in ('trabalho', 'oficina', 'manual') else reg['tipo_registo']
             if tipo_norm == 'viagem':
                 # Usar a mesma lógica de faturação para horas no resumo
-                horas_fatur = horas if minutos >= 30 else 0
+                # Se faturar_viagens_curtas=True, todas as horas contam; senão só >=30min
+                horas_fatur = horas if (minutos >= 30 or faturar_viagens_curtas) else 0
                 viagem_horas_cod[cod] += horas_fatur
                 viagem_euros_cod[cod] += reg['total_valor']
                 if cod not in tarifa_por_cod_viag:

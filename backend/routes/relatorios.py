@@ -2173,6 +2173,7 @@ async def _enviar_pdf_worker(
                         despesas_ajustadas=despesas_ajustadas_email,
                         valor_dieta_default=valor_dieta_tabela,
                         tabela_preco_image=tabela_preco_image_email,
+                        faturar_viagens_curtas=bool(cliente.get('faturar_viagens_curtas', False)),
                     ),
                 )
             except Exception as e:
