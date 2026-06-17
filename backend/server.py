@@ -489,7 +489,7 @@ async def _generate_missing_thumbnails_setup():
 
 
 async def _generate_thumb_from_b64(foto_base64: str) -> str | None:
-    """Gera thumb_base64 (300x300, JPEG 60%) a partir de uma imagem base64.
+    """Gera thumb_base64 (200x200, JPEG 70%) a partir de uma imagem base64.
     Devolve None se falhar.
     """
     try:
@@ -515,9 +515,9 @@ async def _generate_thumb_from_b64(foto_base64: str) -> str | None:
             pass
         if img.mode in ('RGBA', 'P', 'LA'):
             img = img.convert('RGB')
-        img.thumbnail((300, 300), Image.LANCZOS)
+        img.thumbnail((200, 200), Image.LANCZOS)
         buf = BytesIO()
-        img.save(buf, format='JPEG', quality=60, optimize=True)
+        img.save(buf, format='JPEG', quality=70, optimize=True)
         return _b64.b64encode(buf.getvalue()).decode('utf-8')
     except Exception as e:
         logging.warning(f"_generate_thumb_from_b64: falhou ao gerar thumb: {e}")
@@ -635,9 +635,9 @@ def _generate_thumb_from_b64_sync(foto_base64: str):
             pass
         if img.mode in ('RGBA', 'P', 'LA'):
             img = img.convert('RGB')
-        img.thumbnail((300, 300), Image.LANCZOS)
+        img.thumbnail((200, 200), Image.LANCZOS)
         buf = BytesIO()
-        img.save(buf, format='JPEG', quality=60, optimize=True)
+        img.save(buf, format='JPEG', quality=70, optimize=True)
         return _b64.b64encode(buf.getvalue()).decode('utf-8')
     except Exception:
         return None

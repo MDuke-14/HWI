@@ -1017,9 +1017,9 @@ async def upload_fotografia(
             compressed = buffer.getvalue()
             foto_base64 = base64.b64encode(compressed).decode('utf-8')
             content_type = 'image/jpeg'
-            # Gerar thumbnail (300px) para listagem rápida
+            # Gerar thumbnail (200px) para listagem rápida e PDF
             thumb = img.copy()
-            thumb.thumbnail((300, 300), Image.LANCZOS)
+            thumb.thumbnail((200, 200), Image.LANCZOS)
             thumb_buffer = BytesIO()
             thumb.save(thumb_buffer, format='JPEG', quality=60, optimize=True)
             thumb_base64 = base64.b64encode(thumb_buffer.getvalue()).decode('utf-8')

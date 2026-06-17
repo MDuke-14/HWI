@@ -289,7 +289,24 @@ Problema real detectado através da console do browser: `[SW] Service Worker loa
 
 **Fix**: corrigido mapping com fallbacks defensivos. Pré-join de `relatorios_assistencia[].texto` por `intervencao_id` em cada intervenção (evita IA falhar no lookup). Prompt atualizado: `equipamento_principal=null` é VÁLIDO quando há `equipamentos_adicionais`; só flag null em registos específicos, não generaliza.
 
+### Thumbnails 200x200 unificados em PDF e UI (2026-02-06)
+**Decisão do utilizador**: simplificar tudo para thumbnails 200x200 em qualquer ponto da aplicação.
+
+**Fix aplicado**:
+- **`ot_pdf_report.py`**: removidos os 3 tiers. Constantes simplificadas:
+  - `PHOTO_THUMB_MAX_DIMENSION_PX = 200`
+  - `PHOTO_THUMB_JPEG_QUALITY = 75`
+  - Apenas o flag `huge_fs (≥50 fotos)` permanece para ativar o ZIP wrapper.
+- **Preferência por `thumb_base64`** sobre `foto_base64` em todas as 4 chamadas: thumb já é ~30KB vs ~3MB → economiza 95% de memória.
+- **`server.py` + `routes/relatorios.py`**: gerador de thumbnails passou de 300x300 (q60) → **200x200 (q70)**.
+
+**Impacto**: pico de memória para FS#478 (95 fotos) cai de ~1 GB → **<30 MB**. Sem necessidade de GC agressivo. Geração esperada em <30s.
+
 ### PDF Huge FS → ZIP wrapper com fotos HD (2026-02-06)
+Para FS com ≥50 fotos, em vez de só PDF, o sistema gera um **ZIP** contendo:
+1. `FS_{numero}.pdf` (com thumbnails 200px) — leve e rápido
+2. Pasta `FS_{numero}_fotos/` — fotos em qualidade HD original (1 ficheiro por foto)
+Worker thread em `routes/relatorios.py` detecta `is_huge` e dispara o caminho ZIP. Upload para GridFS marca `meta.output_type = "zip"`. Download endpoint serve `Content-Type: application/zip`.
 **Bug reportado pelo utilizador**: mesmo com tier "huge_fs" (700px/q60), uma FS com 95 fotos demorou >550s e não terminou o download. Geração demasiado lenta + risco contínuo de OOM.
 
 **Estratégia escolhida pelo utilizador (opção D)**: PDF com thumbnails + ZIP separado com fotos HD.

@@ -56,42 +56,30 @@ except Exception:
 # A 7.5cm × 5cm no PDF final, 1400px já é mais que suficiente para impressão de alta qualidade.
 # Threshold baixo (500KB) garante PDFs leves e geração rápida mesmo em pods com pouca RAM —
 # CRÍTICO: estes PDFs vão para clientes anexados às faturas, não podem falhar nem ser pesados.
-PHOTO_COMPRESS_THRESHOLD_BYTES = 500 * 1024  # 500 KB
-PHOTO_MAX_DIMENSION_PX = 1400  # lado maior após compressão (FS pequenas)
-PHOTO_MAX_DIMENSION_PX_LARGE_FS = 1000  # FS com muitas fotos (>20)
-PHOTO_MAX_DIMENSION_PX_HUGE_FS = 350   # FS extremas (>50) — só thumbnails, fotos HD vão no ZIP separado
-PHOTO_JPEG_QUALITY = 82  # qualidade suficiente para impressão
-PHOTO_JPEG_QUALITY_LARGE_FS = 72  # FS com muitas fotos — comprime mais
-PHOTO_JPEG_QUALITY_HUGE_FS = 65  # FS extremas — thumbnails no PDF, HD vão em ZIP
-LARGE_FS_PHOTO_COUNT = 20
-HUGE_FS_PHOTO_COUNT = 50  # acima disto, anti-OOM forte
+# ============================================================================
+# Thumbnails 200x200 para fotos no PDF (todas as FS — qualquer tamanho).
+# Decisão de produto: as fotos do PDF são thumbnails de referência rápida.
+# Fotos em HD continuam acessíveis via ZIP separado em FS huge_fs (>50 fotos).
+# Impacto: pico de memória cai radicalmente (~15MB total para 95 fotos vs 1GB).
+# ============================================================================
+PHOTO_COMPRESS_THRESHOLD_BYTES = 100 * 1024  # 100 KB
+PHOTO_THUMB_MAX_DIMENSION_PX = 200  # tamanho fixo dos thumbnails no PDF
+PHOTO_THUMB_JPEG_QUALITY = 75
+# Tier "huge" mantém-se SÓ para activar o ZIP wrapper com fotos HD originais.
+HUGE_FS_PHOTO_COUNT = 50
 
 
 def _safe_image_from_base64(b64_str, width_cm, height_cm, context="photo", large_fs=False, huge_fs=False):
     """
-    Cria um RLImage a partir de base64 de forma 100% segura.
-    - Valida que o base64 é decodificável
-    - Valida que os bytes são uma imagem suportada (PIL abre)
-    - Comprime se > 500KB
-    - Converte para JPEG RGB (evita bugs ReportLab com PNG/RGBA)
+    Cria um RLImage thumbnail (200x200) a partir de base64.
+    - Sempre 200px max + JPEG q75 (decisão de produto: PDF usa thumbnails)
+    - Fotos HD continuam acessíveis no ZIP separado em FS huge_fs
     - Devolve None se qualquer coisa falhar (nunca rebenta)
-
-    Args:
-        large_fs: True quando a FS tem >20 fotos. Usa dimensão 1000px / qty 72.
-        huge_fs: True quando a FS tem >50 fotos. Anti-OOM agressivo (700px / qty 60).
     """
     if not b64_str or not _PIL_OK:
         return None
-    # Hierarquia de compressão: huge > large > normal
-    if huge_fs:
-        max_dim = PHOTO_MAX_DIMENSION_PX_HUGE_FS
-        quality = PHOTO_JPEG_QUALITY_HUGE_FS
-    elif large_fs:
-        max_dim = PHOTO_MAX_DIMENSION_PX_LARGE_FS
-        quality = PHOTO_JPEG_QUALITY_LARGE_FS
-    else:
-        max_dim = PHOTO_MAX_DIMENSION_PX
-        quality = PHOTO_JPEG_QUALITY
+    max_dim = PHOTO_THUMB_MAX_DIMENSION_PX
+    quality = PHOTO_THUMB_JPEG_QUALITY
     try:
         # 1. Decode base64 (pode ter prefixo "data:image/...;base64,")
         if isinstance(b64_str, str) and "," in b64_str[:64] and b64_str.lstrip().startswith("data:"):
@@ -198,17 +186,17 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     """
     import gc as _gc
 
-    # Detectar FS "grande" / "enorme" — usa compressão progressivamente mais
-    # agressiva para evitar OOM em FS extremas (50+ fotos). Cada foto base64
-    # ~3MB descomprime em PIL para ~20MB; mesmo com 30+ fotos o pico ultrapassa
-    # facilmente o limite do pod Kubernetes (~512MB-1GB).
+    # Detectar FS "enorme" — apenas para activar o ZIP wrapper externo com
+    # fotos HD originais. As thumbnails no PDF têm sempre 200px (decisão de
+    # produto), pelo que o pico de memória já é baixo independentemente do
+    # número de fotos.
     _n_fotos = len(fotografias) if fotografias else 0
     _is_huge_fs = _n_fotos >= HUGE_FS_PHOTO_COUNT
-    _is_large_fs = _n_fotos >= LARGE_FS_PHOTO_COUNT  # também True quando huge
+    _is_large_fs = _is_huge_fs  # legado: passado para _safe_image_from_base64 mas sem efeito agora
     if _is_huge_fs:
-        logging.warning(f"[PDF] FS ENORME detectada: {_n_fotos} fotos → modo ANTI-OOM agressivo (700px / q60 / gc por foto)")
-    elif _is_large_fs:
-        logging.info(f"[PDF] FS grande detectada: {_n_fotos} fotos → modo de baixa memória ativo")
+        logging.info(f"[PDF] FS com {_n_fotos} fotos — PDF terá thumbnails 200px + ZIP separado com HD")
+    elif _n_fotos >= 20:
+        logging.info(f"[PDF] FS com {_n_fotos} fotos — usar thumbnails 200px no PDF")
     if output_file is not None:
         buffer = None
         doc_target = output_file
@@ -754,11 +742,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 row_content = []
                 
-                # Foto 1
+                # Foto 1 — preferir thumb_base64 (já pequeno) sobre foto_base64 (HD)
                 cell1 = []
                 img1_obj = _safe_image_from_path(foto1.get('foto_path'), 7.5*cm, 5*cm, f"foto1-path rel={foto1.get('relatorio_id','')[:8]}")
                 if img1_obj is None:
-                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"foto1 rel={foto1.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
+                    img1_obj = _safe_image_from_base64(foto1.get('thumb_base64') or foto1.get('foto_base64'), 7.5*cm, 5*cm, f"foto1 rel={foto1.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
                 # Libertar base64 grande imediatamente após uso (redução crítica de memória)
                 foto1.pop('foto_base64', None)
                 foto1.pop('thumb_base64', None)
@@ -772,12 +760,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 row_content.append(cell1)
                 
-                # Foto 2
+                # Foto 2 — preferir thumb_base64
                 if foto2:
                     cell2 = []
                     img2_obj = _safe_image_from_path(foto2.get('foto_path'), 7.5*cm, 5*cm, f"foto2-path rel={foto2.get('relatorio_id','')[:8]}")
                     if img2_obj is None:
-                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"foto2 rel={foto2.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
+                        img2_obj = _safe_image_from_base64(foto2.get('thumb_base64') or foto2.get('foto_base64'), 7.5*cm, 5*cm, f"foto2 rel={foto2.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
                     foto2.pop('foto_base64', None)
                     foto2.pop('thumb_base64', None)
                     if img2_obj is not None:
@@ -933,11 +921,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 row_content = []
                 
-                # Foto 1
+                # Foto 1 — preferir thumb_base64
                 cell1 = []
                 img1_obj = _safe_image_from_path(foto1.get('foto_path'), 7.5*cm, 5*cm, f"fotoA-path rel={foto1.get('relatorio_id','')[:8]}")
                 if img1_obj is None:
-                    img1_obj = _safe_image_from_base64(foto1.get('foto_base64'), 7.5*cm, 5*cm, f"fotoA rel={foto1.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
+                    img1_obj = _safe_image_from_base64(foto1.get('thumb_base64') or foto1.get('foto_base64'), 7.5*cm, 5*cm, f"fotoA rel={foto1.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
                 foto1.pop('foto_base64', None)
                 foto1.pop('thumb_base64', None)
                 if img1_obj is not None:
@@ -950,12 +938,12 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 
                 row_content.append(cell1)
                 
-                # Foto 2
+                # Foto 2 — preferir thumb_base64
                 if foto2:
                     cell2 = []
                     img2_obj = _safe_image_from_path(foto2.get('foto_path'), 7.5*cm, 5*cm, f"fotoB-path rel={foto2.get('relatorio_id','')[:8]}")
                     if img2_obj is None:
-                        img2_obj = _safe_image_from_base64(foto2.get('foto_base64'), 7.5*cm, 5*cm, f"fotoB rel={foto2.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
+                        img2_obj = _safe_image_from_base64(foto2.get('thumb_base64') or foto2.get('foto_base64'), 7.5*cm, 5*cm, f"fotoB rel={foto2.get('relatorio_id','')[:8]}", large_fs=_is_large_fs, huge_fs=_is_huge_fs)
                     foto2.pop('foto_base64', None)
                     foto2.pop('thumb_base64', None)
                     if img2_obj is not None:
