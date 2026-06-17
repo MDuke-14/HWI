@@ -35,6 +35,7 @@ Full-stack time-tracking and work-order (FS - Folha de Servico) management appli
 - FS creation, management, and lifecycle
 - Time tracking with chronometer (batch start/stop)
 - Client management with NIF/email
+- **Per-client billing config: `faturar_viagens_curtas` (Feb 2026)** — toggle no modal Cliente; quando ativo, viagens <30min cobram horas + KM (ex.: Kannegiesser); quando inativo (default), cobram apenas KM com observação "Só KM (<30min)" no PDF da Folha de Horas
 - Equipment tracking per FS
 - Intervention management with tabs
 - Signature management (add, edit, delete)
