@@ -4546,6 +4546,69 @@ async def clear_all_errors(current_user: dict = Depends(get_current_admin)):
     return {"message": f"{result.deleted_count} erro(s) eliminado(s)", "deleted": result.deleted_count}
 
 
+@api_router.delete("/admin/errors/started-orphans")
+async def clear_started_orphans(current_user: dict = Depends(get_current_admin)):
+    """Limpar entradas 'STARTED' órfãs.
+
+    Remove app_errors do tipo '... — STARTED' (geração de PDF / envio de email)
+    cujo job correspondente já está finalizado ('done' ou 'error'), ou cuja
+    referência ao job não existe (timestamp > 1h e job_id ausente).
+
+    Estas entradas servem como tracer durante a geração: se o pod morre por
+    OOM, ficam visíveis para investigação. Quando o pod sobrevive ao job, são
+    apagadas automaticamente pelo handler de sucesso. No entanto se o pod cai
+    a meio sem chance de limpar, ficam órfãs e poluem o painel /admin/errors.
+    """
+    from datetime import datetime, timezone, timedelta
+    cutoff_dt = datetime.now(timezone.utc) - timedelta(hours=1)
+    # Buscar todos os STARTED
+    started_cursor = db.app_errors.find(
+        {"action": {"$regex": "STARTED"}},
+        {"_id": 0, "id": 1, "timestamp": 1, "details": 1, "action": 1}
+    )
+    to_delete_ids = []
+    inspected = 0
+    async for entry in started_cursor:
+        inspected += 1
+        job_id = (entry.get("details") or {}).get("job_id")
+        if job_id:
+            # Verificar estado do pdf_job correspondente
+            job = await db.pdf_jobs.find_one({"id": job_id}, {"_id": 0, "status": 1})
+            if not job:
+                # Job foi limpo (TTL); STARTED é órfão
+                to_delete_ids.append(entry["id"])
+            elif (job.get("status") or "").lower() in ("done", "error"):
+                # Job terminou — STARTED é redundante
+                to_delete_ids.append(entry["id"])
+        else:
+            # Sem job_id (ex.: envio email STARTED). Aplicar regra de idade.
+            ts = entry.get("timestamp")
+            ts_dt = None
+            if isinstance(ts, str):
+                try:
+                    ts_dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                except Exception:
+                    ts_dt = None
+            elif isinstance(ts, datetime):
+                ts_dt = ts
+            if ts_dt is not None:
+                if ts_dt.tzinfo is None:
+                    ts_dt = ts_dt.replace(tzinfo=timezone.utc)
+                if ts_dt < cutoff_dt:
+                    to_delete_ids.append(entry["id"])
+
+    deleted = 0
+    if to_delete_ids:
+        result = await db.app_errors.delete_many({"id": {"$in": to_delete_ids}})
+        deleted = result.deleted_count
+
+    return {
+        "message": f"{deleted} entrada(s) STARTED órfã(s) eliminada(s) (de {inspected} inspecionadas)",
+        "deleted": deleted,
+        "inspected": inspected,
+    }
+
+
 @api_router.post("/errors/log")
 async def log_frontend_error(error_data: dict, current_user: dict = Depends(get_current_user)):
     """Endpoint para o frontend reportar erros e avisos"""

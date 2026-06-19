@@ -117,6 +117,22 @@ const ErrorLog = ({ user, onLogout }) => {
     }
   };
 
+  const handleClearStartedOrphans = async () => {
+    if (!window.confirm(
+      'Limpar entradas "STARTED" órfãs?\n\n' +
+      'Estas correspondem a gerações de PDF em que o pod morreu antes de terminar (provável OOM). ' +
+      'Só serão removidas as que tenham job já finalizado, ou sejam mais antigas que 1 hora. ' +
+      'Erros reais não são afetados.'
+    )) return;
+    try {
+      const res = await axios.delete(`${API}/admin/errors/started-orphans`);
+      toast.success(res.data.message);
+      fetchErrors();
+    } catch (error) {
+      toast.error('Erro ao limpar STARTED órfãos');
+    }
+  };
+
   const getContextColor = (ctx) => {
     if (!ctx) return 'text-gray-400';
     if (ctx.startsWith('FS')) return 'text-blue-400';
@@ -166,6 +182,9 @@ const ErrorLog = ({ user, onLogout }) => {
                 <Trash2 className="w-4 h-4 mr-1" /> Limpar Resolvidos ({stats.resolved})
               </Button>
             )}
+            <Button size="sm" onClick={handleClearStartedOrphans} className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-400 border border-amber-800" data-testid="clear-started-orphans-btn" title="Limpar registos 'STARTED' que ficaram órfãos por OOM/crash do pod">
+              <Trash2 className="w-4 h-4 mr-1" /> Limpar STARTED órfãos
+            </Button>
             {stats.total > 0 && (
               <Button size="sm" onClick={handleClearAll} className="bg-red-700 hover:bg-red-800 text-white" data-testid="clear-all-errors-btn" title="Eliminar TODOS os erros, mesmo os não resolvidos">
                 <Trash2 className="w-4 h-4 mr-1" /> Limpar Tudo ({stats.total})
