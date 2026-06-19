@@ -5662,23 +5662,41 @@ const TechnicalReports = ({ user, onLogout }) => {
                               )}
                             </button>
                             {!isHerdada && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveIntervencaoId(interv.id);
-                                  handleAbrirContinuidade(interv.id);
-                                }}
-                                title="Criar FS de continuidade desta intervenção"
-                                data-testid={`btn-continuidade-tab-${idx}`}
-                                className={`px-2 flex items-center justify-center transition-colors rounded-tr-lg ${
-                                  isActive
-                                    ? 'hover:bg-blue-700'
-                                    : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')
-                                }`}
-                              >
-                                <ArrowRightCircle className="w-4 h-4" />
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveIntervencaoId(interv.id);
+                                    handleAbrirContinuidade(interv.id);
+                                  }}
+                                  title="Criar FS de continuidade desta intervenção"
+                                  data-testid={`btn-continuidade-tab-${idx}`}
+                                  className={`px-2 flex items-center justify-center transition-colors ${
+                                    isActive
+                                      ? 'hover:bg-blue-700'
+                                      : (isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200')
+                                  }`}
+                                >
+                                  <ArrowRightCircle className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIntervencaoToDelete(interv);
+                                  }}
+                                  title="Apagar esta intervenção"
+                                  data-testid={`btn-close-tab-${idx}`}
+                                  className={`px-2 flex items-center justify-center transition-colors rounded-tr-lg hover:bg-red-600 hover:text-white ${
+                                    isActive
+                                      ? 'text-white/80'
+                                      : (isDark ? 'text-gray-400' : 'text-gray-500')
+                                  }`}
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </>
                             )}
                           </div>
                         );
