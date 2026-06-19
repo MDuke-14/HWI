@@ -1,0 +1,39 @@
+{
+  "summary": "BUG REPRODUCTION FAILED — não foi possível reproduzir o bug 'não conseguimos apagar intervenções'. O fluxo de delete de intervenção funciona end-to-end no frontend (sem qualquer alteração ao código). Testado em produção (preview URL) com a FS indicada b5f7c19a-5b3d-43b2-9783-af090df28f8f (FS #363, Albano R. N. Alves). O botão Trash abre o modal, o botão Apagar dispara o DELETE para /api/relatorios-tecnicos/{rid}/intervencoes/{iid} (HTTP 200), o toast 'Intervenção removida com sucesso!' aparece, o modal fecha, e a lista de intervenções é refrescada (passou de 2 → 1). Regressão Edit Intervenção também OK: o modal 'Editar Intervenção' abre corretamente.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Edit Intervenção modal", "issues": ["Aviso a11y do Radix: 'Missing Description or aria-describedby={undefined} for DialogContent' — adicionar <DialogDescription> (ou sr-only) ao modal Editar Intervenção. Não bloqueia funcionalidade."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/del_step1_fs_list.png",
+    "/app/test_reports/del_fs_tab.png",
+    "/app/test_reports/del_fs_detail.png",
+    "/app/test_reports/del_modal.png",
+    "/app/test_reports/del_after_confirm.png",
+    "/app/test_reports/del_edit2.png"
+  ],
+  "action_items": [
+    "Pedir mais informação ao utilizador: navegador/versão, ação exata (clica trash mas não aparece modal? aparece mas Apagar não responde?), screenshot do console, e se existe Service Worker em cache desatualizado (foi observado 'SW Controller changed — reloading page to pick up new version' nos logs — pode indicar versão antiga em cache no browser do utilizador).",
+    "Adicionar DialogDescription/sr-only ao modal 'Editar Intervenção' para silenciar warning a11y do Radix.",
+    "OPCIONAL: O teste deletou 1 intervenção real da FS b5f7c19a (intervenção eb4ce94c-0b9d-4501-8c18-65fdbdb52700, data 20/03/2026). Ficou apenas a intervenção 18/03/2026. Se for necessário, recriar via POST /api/relatorios-tecnicos/b5f7c19a-.../intervencoes para restaurar seed."
+  ],
+  "critical_code_review_comments": [
+    "Lógica do AlertDialog confirmar-delete está correta (TechnicalReports.jsx linha 9822-9846): open={!!intervencaoToDelete}, onOpenChange limpa estado só quando open=false, AlertDialogAction chama handleDeleteIntervencao(intervencaoToDelete?.id) — não há race condition aparente.",
+    "handleDeleteIntervencao (linha 1477) faz await axios.delete, depois fetchIntervencoesRelatorio — fluxo correto. Toast genérico 'Erro ao remover intervenção' não revela detalhe ao utilizador; recomenda-se usar formatErrorMessage(error) como em outros handlers.",
+    "TechnicalReports.jsx >10000 linhas — recomendação repetida de modularizar.",
+    "Erros 'NotFoundError: Failed to execute transaction on IDBDatabase' aparecem nos logs (cache offline com IndexedDB). Não afeta delete mas pode estar relacionado com sintomas do utilizador se o service worker tem versão antiga em cache.",
+    "Observado [SW] Controller changed — reloading page to pick up new version. Se o utilizador está num build antigo em cache pode estar a ver UI desatualizada — sugerir Hard Reload / limpar SW (mas só como passo de diagnóstico, não como fix)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skip)", "frontend": "100% (delete intervenção + edit intervenção)"},
+  "test_credentials": "teste@email.com / teste",
+  "seed_data_creation": "Não foi criada seed nova. Foi deletada 1 intervenção real (eb4ce94c-...) da FS b5f7c19a — ficou 1 intervenção 18/03/2026.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Para abrir uma FS no UI: 1) /technical-reports 2) clicar botão de texto 'Folhas de Servico' (NÃO existe role=tab, são <button> normais) 3) clicar no card via [data-testid=\"ot-card-{fs_id}\"]. Trash intervenção: [data-testid=\"btn-delete-intervencao\"]; modal: [data-testid=\"modal-delete-intervencao\"]; confirmar: [data-testid=\"btn-confirm-delete-intervencao\"]. Edit intervenção: botão lápis é o sibling do Trash no mesmo container (sem data-testid próprio — RECOMENDAR adicionar testid 'btn-edit-intervencao'). Network confirmado: DELETE /api/relatorios-tecnicos/b5f7c19a-5b3d-43b2-9783-af090df28f8f/intervencoes/eb4ce94c-... 200 OK.",
+  "rca of the issue": "Não foi possível reproduzir o bug. Hipóteses descartadas: (a) botão dispara setState ✅; (b) modal abre ✅; (c) confirm chama handler ✅; (d) axios.delete tem sucesso (HTTP 200 confirmado em network) ✅; (e) sem overlay/z-index bloqueante (elementFromPoint não retornou overlay) ✅; (f) sem race condition com onOpenChange ✅. Causa provável do report do utilizador: service worker / cache antigo no browser do utilizador (logs mostram 'SW Controller changed — reloading page'), ou utilizador estava a tentar apagar uma intervenção que já tinha sido apagada noutra sessão. Recomenda-se pedir vídeo/screenshot ao utilizador antes de fazer qualquer alteração ao código."
+}
