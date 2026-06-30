@@ -31,6 +31,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [todayEntries, setTodayEntries] = useState([]);
   const [observations, setObservations] = useState('');
   const [endObservations, setEndObservations] = useState('');
+  const [earlyLeaveCompanyOrder, setEarlyLeaveCompanyOrder] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showRealtimeModal, setShowRealtimeModal] = useState(false);
   const [realtimeData, setRealtimeData] = useState(null);
@@ -682,8 +683,13 @@ const Dashboard = ({ user, onLogout }) => {
       const response = await axios.post(`${API}/time-entries/end/${entry.id}`, {
         observations: endObservations,
         end_geo_location: endLocation,
-        client_time: getLocalISOString()
+        client_time: getLocalISOString(),
+        early_leave_company_order: earlyLeaveCompanyOrder,
       });
+      try { sessionStorage.removeItem('early_leave_company_order'); } catch (_) {}
+      if (earlyLeaveCompanyOrder && response.data?.total_hours !== undefined) {
+        toast.message('Pedido de saída antecipada enviado ao administrador para aprovação.');
+      }
       toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
       
       // Forçar reload imediato da página
@@ -1037,6 +1043,53 @@ const Dashboard = ({ user, onLogout }) => {
                     className={`${bgCard} ${borderColor} ${textPrimary} focus:ring-blue-500 min-h-[70px] text-sm`}
                   />
                 </div>
+
+                {/* Saída antecipada por ordem da empresa
+                    Mostra checkbox apenas quando JÁ houve uma picagem anterior
+                    completa hoje (segunda entrada efetuada) E o total acumulado
+                    do dia, incluindo o tempo decorrido desta entry, fica < 8h. */}
+                {(() => {
+                  const completedToday = todayEntries.filter(e => e.status === 'completed');
+                  if (completedToday.length === 0) return null;
+                  const hoursCompleted = completedToday.reduce((acc, e) => acc + (e.total_hours || 0), 0);
+                  const startMs = entry.start_time ? new Date(entry.start_time).getTime() : Date.now();
+                  const currentEntryHours = Math.max(0, (Date.now() - startMs) / 3600000);
+                  const totalEstimated = hoursCompleted + currentEntryHours;
+                  if (totalEstimated >= 8) return null;
+                  const minsShort = Math.max(0, Math.round((8 - totalEstimated) * 60));
+                  return (
+                    <div className={`p-3 rounded-lg border ${earlyLeaveCompanyOrder ? 'border-amber-600/60 bg-amber-600/10' : `${borderColor} ${bgCard}`}`}>
+                      <label htmlFor="early-leave-checkbox" className="flex items-start gap-3 cursor-pointer">
+                        <Checkbox
+                          id="early-leave-checkbox"
+                          checked={earlyLeaveCompanyOrder}
+                          onCheckedChange={(v) => {
+                            const val = !!v;
+                            setEarlyLeaveCompanyOrder(val);
+                            // Partilhar com mobile bottom nav (mesma sessão)
+                            try {
+                              if (val) sessionStorage.setItem('early_leave_company_order', '1');
+                              else sessionStorage.removeItem('early_leave_company_order');
+                            } catch (_) { /* sessionStorage indisponível */ }
+                          }}
+                          data-testid="early-leave-checkbox"
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1">
+                          <div className={`text-sm font-semibold ${earlyLeaveCompanyOrder ? 'text-amber-300' : textPrimary}`}>
+                            Saída por Ordem da Empresa
+                          </div>
+                          <div className={`text-xs mt-1 ${textSecondary}`}>
+                            Marca esta opção se estás a sair antes de completar 8h por instrução da empresa.
+                            Estimativa: faltam <span className="font-semibold text-amber-400">{minsShort} min</span> para perfazer 8h.
+                            O ponto fecha agora; um pedido de autorização é enviado ao administrador.
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  );
+                })()}
+
                 {/* Botão Finalizar - Escondido em mobile (usa bottom nav) */}
                 {!isMobile && (
                   <Button

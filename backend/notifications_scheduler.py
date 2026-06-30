@@ -201,6 +201,7 @@ async def send_authorization_request_email(
             "work_weekend": "trabalho em fim-de-semana",
             "work_vacation": "trabalho em dia de férias",
             "work_special": "trabalho em dia especial",
+            "early_leave": "saída antecipada por ordem da empresa",
         }
         type_label = type_labels.get(auth_type, "autorização")
 
@@ -1332,7 +1333,6 @@ async def process_authorization_decision(
             }
     
     elif request_type == "overtime_end":
-        # Ponto não encerrado após 18:00
         user_id = auth_request.get("user_id")
         date_str = auth_request.get("date")
         
@@ -1428,5 +1428,223 @@ async def process_authorization_decision(
                 "decision": "rejected",
                 "message": "Horas extra não autorizadas. O ponto foi encerrado às 18:00."
             }
-    
+
+    elif request_type == "early_leave":
+        # Saída antecipada por ordem da empresa (< 8h trabalhadas após 2ª picagem).
+        # O ponto já está fechado; aqui apenas creditamos (ou não) o tempo em falta.
+        user_id = auth_request.get("user_id")
+        date_str = auth_request.get("date")
+        hours_short_min = int(auth_request.get("hours_short_minutes") or 0)
+        worked_hours = auth_request.get("worked_hours")
+
+        if approved:
+            # Marcar a entrada original como tendo crédito autorizado e criar
+            # uma entrada "virtual" (manual) com o tempo em falta para completar 8h.
+            if entry_id:
+                await db.time_entries.update_one(
+                    {"id": entry_id},
+                    {"$set": {
+                        "early_leave_company_order": True,
+                        "early_leave_authorized": True,
+                        "early_leave_authorized_by": decided_by,
+                        "early_leave_authorized_at": datetime.now().isoformat(),
+                        "early_leave_credit_minutes": hours_short_min,
+                    }}
+                )
+
+            # Criar entrada de crédito separada (rastreabilidade total)
+            if hours_short_min > 0:
+                from uuid import uuid4
+                credit_entry = {
+                    "id": str(uuid4()),
+                    "user_id": user_id,
+                    "username": auth_request.get("user_name"),
+                    "date": date_str,
+                    "start_time": None,
+                    "end_time": None,
+                    "status": "completed",
+                    "is_manual": True,
+                    "is_early_leave_credit": True,
+                    "early_leave_source_entry_id": entry_id,
+                    "credit_minutes": hours_short_min,
+                    "total_hours": round(hours_short_min / 60, 4),
+                    "regular_hours": round(hours_short_min / 60, 4),
+                    "overtime_hours": 0,
+                    "special_hours": 0,
+                    "observations": f"Crédito automático — saída antecipada por ordem da empresa autorizada por {decided_by}",
+                    "authorized_by": decided_by,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                await db.time_entries.insert_one(credit_entry)
+
+            # Notificação ao utilizador
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "early_leave_approved",
+                "message": (
+                    f"Saída antecipada de {date_str} autorizada por {decided_by}. "
+                    f"Foram creditados {hours_short_min} minutos para completar as 8h."
+                ),
+                "read": False,
+                "related_id": entry_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+
+            await send_push_notification(
+                db, user_id,
+                "✅ Saída Antecipada Autorizada",
+                f"Saída antecipada de {date_str} autorizada. Foram creditados {hours_short_min} minutos.",
+                "early_leave_approved",
+                "high"
+            )
+
+            return {
+                "status": "success",
+                "decision": "approved",
+                "message": (
+                    f"Saída antecipada autorizada. {hours_short_min} minutos creditados "
+                    f"({worked_hours}h trabalhadas + crédito = 8h)."
+                ),
+            }
+        else:
+            # Rejeição: o registo mantém-se com as horas efetivamente trabalhadas.
+            if entry_id:
+                await db.time_entries.update_one(
+                    {"id": entry_id},
+                    {"$set": {
+                        "early_leave_company_order": True,
+                        "early_leave_authorized": False,
+                        "early_leave_rejected_by": decided_by,
+                        "early_leave_rejected_at": datetime.now().isoformat(),
+                    }}
+                )
+
+            from uuid import uuid4
+            notification = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "type": "early_leave_rejected",
+                "message": (
+                    f"Saída antecipada de {date_str} rejeitada por {decided_by}. "
+                    f"Mantêm-se apenas as {worked_hours}h efetivamente trabalhadas."
+                ),
+                "read": False,
+                "related_id": entry_id,
+                "created_at": datetime.now().isoformat()
+            }
+            await db.notifications.insert_one(notification)
+
+            await send_push_notification(
+                db, user_id,
+                "❌ Saída Antecipada Rejeitada",
+                f"Saída antecipada de {date_str} rejeitada. Mantêm-se apenas as {worked_hours}h trabalhadas.",
+                "early_leave_rejected",
+                "high"
+            )
+
+            return {
+                "status": "success",
+                "decision": "rejected",
+                "message": "Saída antecipada não autorizada. Mantêm-se as horas efetivamente trabalhadas."
+            }
+
     return {"status": "error", "message": "Tipo de pedido desconhecido"}
+
+
+async def create_early_leave_authorization(
+    db,
+    *,
+    user_id: str,
+    entry_id: str,
+    date_str: str,
+    worked_hours: float,
+    hours_short_minutes: int,
+) -> Optional[str]:
+    """Cria um pedido de autorização do tipo "early_leave" e envia email ao admin.
+
+    Devolve o `id` (token) do pedido criado ou None em caso de erro.
+    Reutiliza a tabela overtime_authorizations e o fluxo public_authorizations.
+    """
+    try:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user:
+            logger.warning(f"[early_leave] user {user_id} não encontrado")
+            return None
+
+        user_name = user.get("full_name") or user.get("username") or "Utilizador"
+
+        # Idempotente: se já existe pedido pendente para a mesma entry, não duplica
+        existing = await db.overtime_authorizations.find_one({
+            "user_id": user_id,
+            "date": date_str,
+            "request_type": "early_leave",
+            "entry_id": entry_id,
+            "status": "pending",
+        })
+        if existing:
+            return existing.get("id")
+
+        token = secrets.token_urlsafe(24)
+        approval_token = str(uuid.uuid4())
+        now = datetime.now()
+
+        auth_request = {
+            "id": token,
+            "user_id": user_id,
+            "user_name": user_name,
+            "user_email": user.get("email"),
+            "entry_id": entry_id,
+            "date": date_str,
+            "request_type": "early_leave",
+            "worked_hours": round(worked_hours, 2),
+            "hours_short_minutes": int(hours_short_minutes),
+            "requested_at": now.isoformat(),
+            "expires_at": (now + timedelta(hours=TOKEN_VALIDITY_HOURS * 7)).isoformat(),
+            "status": "pending",
+            "decided_by": None,
+            "decided_at": None,
+            "decision": None,
+            "approval_token": approval_token,
+            "token_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        }
+        await db.overtime_authorizations.insert_one(auth_request)
+
+        minutos = int(hours_short_minutes)
+        h_falta = minutos // 60
+        m_falta = minutos % 60
+        if h_falta and m_falta:
+            falta_label = f"{h_falta}h{m_falta:02d}min"
+        elif h_falta:
+            falta_label = f"{h_falta}h"
+        else:
+            falta_label = f"{m_falta}min"
+
+        extra_info = (
+            f"O colaborador finalizou o ponto com {round(worked_hours, 2)}h trabalhadas "
+            f"(menos {falta_label} para completar 8h) e marcou a saída como sendo por "
+            f"ordem da empresa. Se aprovar, o tempo em falta é automaticamente creditado."
+        )
+
+        await send_authorization_request_email(
+            db, user_id, "early_leave", date_str,
+            extra_info=extra_info,
+            approval_token=approval_token,
+        )
+
+        # Push ao próprio utilizador (confirmação de que o pedido foi enviado)
+        await send_push_notification(
+            db, user_id,
+            "📤 Pedido de Saída Antecipada Enviado",
+            f"Saída antecipada de {date_str} ({falta_label} em falta) enviada para aprovação.",
+            "early_leave_requested",
+            "medium",
+        )
+
+        return token
+    except Exception as exc:
+        logger.error(f"[early_leave] falha a criar pedido user={user_id}: {exc}")
+        return None
+

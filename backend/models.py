@@ -488,6 +488,11 @@ class TimeEntryEnd(BaseModel):
     observations: Optional[str] = None
     end_geo_location: Optional[dict] = None
     client_time: Optional[str] = None  # ISO local time with offset
+    # Saída antecipada por Ordem da Empresa (< 8h trabalhadas após 2ª picagem)
+    # Quando True, o sistema fecha o ponto normalmente E cria um pedido de
+    # autorização ao admin (request_type="early_leave"). Se aprovado, é
+    # automaticamente creditado o tempo em falta para completar 8h.
+    early_leave_company_order: bool = False
 
 class TimeEntryUpdate(BaseModel):
     start_time: Optional[datetime] = None

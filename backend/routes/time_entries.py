@@ -445,7 +445,52 @@ async def end_time_entry(
             {"id": entry_id},
             {"$set": update_data}
         )
-        
+
+        # === Saída antecipada por ordem da empresa ===
+        # Aplica-se apenas quando:
+        #  • O dia tem >= 2 picagens completas (ou seja, esta é a saída após
+        #    pelo menos uma pausa de almoço — 2ª entrada já feita).
+        #  • O total trabalhado no dia (somando todas as entries) < 8h.
+        #  • O utilizador marcou explicitamente a checkbox `early_leave_company_order`.
+        # O ponto FECHA na mesma; é apenas criado um pedido de autorização ao
+        # admin (mesmo fluxo das horas extra) que, se aprovado, credita o tempo
+        # em falta para perfazer 8h.
+        try:
+            if end_data.early_leave_company_order:
+                day_str = start_time.strftime("%Y-%m-%d")
+                # Buscar todas as entries do dia para este utilizador (incl. a actual)
+                day_entries = await db.time_entries.find(
+                    {"user_id": current_user["sub"], "date": day_str, "status": "completed"},
+                    {"_id": 0, "total_hours": 1},
+                ).to_list(50)
+                total_day_hours = sum(e.get("total_hours", 0) or 0 for e in day_entries)
+                num_completed = len(day_entries)
+                EIGHT_HOURS = 8.0
+
+                if num_completed >= 2 and total_day_hours < EIGHT_HOURS:
+                    minutes_short = max(0, int(round((EIGHT_HOURS - total_day_hours) * 60)))
+                    from notifications_scheduler import create_early_leave_authorization
+                    await create_early_leave_authorization(
+                        db,
+                        user_id=current_user["sub"],
+                        entry_id=entry_id,
+                        date_str=day_str,
+                        worked_hours=total_day_hours,
+                        hours_short_minutes=minutes_short,
+                    )
+                    # Marcar a entrada com a flag (mesmo antes da decisão)
+                    await db.time_entries.update_one(
+                        {"id": entry_id},
+                        {"$set": {
+                            "early_leave_company_order": True,
+                            "early_leave_status": "pending",
+                        }}
+                    )
+                # Caso não cumpra as condições, ignora silenciosamente a flag
+                # (o ponto continua fechado normalmente, sem pedido).
+        except Exception as exc:
+            logging.warning(f"[early_leave] falha não-bloqueante: {exc}")
+
         return {
             "message": "Relógio finalizado",
             "total_hours": total_hours,

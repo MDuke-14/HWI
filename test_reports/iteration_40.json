@@ -1,0 +1,45 @@
+{
+  "summary": "Validated end-to-end 'Saída por Ordem da Empresa' (early_leave_company_order). Backend: 8/8 pytest tests pass (happy path + approve creates credit + reject + 3 edge cases + listing). Frontend: checkbox appears under correct conditions, sessionStorage shared with mobile, POST body carries flag, sessionStorage cleared after submit. One MINOR UX issue: success toasts are dismissed by immediate window.location reload.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "End relógio com early_leave_company_order=true",
+        "issue": "Toasts 'Pedido de saída antecipada enviado...' e 'Relógio finalizado!' são chamados (toast.message + toast.success) mas Dashboard.jsx:696 executa window.location.href = window.location.href imediatamente após, fazendo full reload. Resultado: o utilizador NÃO vê confirmação visual do pedido. POST e sessionStorage clearing funcionam — só falha o feedback visual.",
+        "affected_selectors": ["toast.message", "toast.success"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_early_leave_company_order.py",
+    "/app/test_reports/pytest/test_early_leave_company_order.xml"
+  ],
+  "action_items": [
+    "(Minor UX) Em Dashboard.jsx ~linha 696, substituir window.location.href = window.location.href por refresh dos dados via fetch (fetchTodayEntry/loadData) OU adiar o reload com setTimeout(..., 1500) para o toast ser visível, ou usar await toast.promise(). Atualmente os toasts (incluindo o de saída antecipada) são instantaneamente apagados pelo reload."
+  ],
+  "critical_code_review_comments": [
+    "time_entries.py:458-492 — branch single-day OK; guarda corretamente flags + status=pending na entry original; try/except torna o pedido não-bloqueante (logging.warning). Boa prática.",
+    "notifications_scheduler.py:1432-1552 — handler early_leave cria credit entry com is_early_leave_credit=true, mantém rastreabilidade via early_leave_source_entry_id; em rejeição não cria credit e marca early_leave_rejected_by/at. Soma do dia ficou exatamente 8.00 no teste.",
+    "notifications_scheduler.py:1579-1588 — idempotência via lookup (user_id, date, request_type, entry_id, status=pending). Bom para evitar duplicados.",
+    "Dashboard.jsx:1051-1091 — gatekeeping da checkbox depende de Date.now() (computado no render). Não há re-render automático ao passar do limiar das 8h, mas o estado é recalculado a cada interação. Aceitável.",
+    "Dashboard.jsx:696 (PRINCIPAL) — window.location.href = window.location.href é anti-pattern e cancela o feedback dos toasts. Recomendação: substituir por refetch ou window.location.reload() condicional."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_early_leave_company_order.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8)",
+    "frontend": "100% functional (1 minor UX bug — toast invisible)"
+  },
+  "test_credentials": "Admin: teste@email.com / Admin123! (id c145d94b-bb5f-4fe1-b05d-6fa1034db968)",
+  "seed_data_creation": "Backend tests seedam e limpam time_entries+overtime_authorizations para datas 2026-07-01..05. UI test seedou 2026-06-30 (hoje). Tudo foi cleanup ao final. NOTA: encontrei e removi um active entry stale de 2026-04-29 que estava a bloquear novas picagens do user admin.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_early_leave_company_order.py cobre todos os cenários (happy path, approve, reject, 3 edge cases). O test_zz_cleanup no final remove tudo o que foi criado. UI: checkbox visível só com (active entry) + (>=1 completed do dia) + (estimativa < 8h). Bug menor: window.location.href = window.location.href em Dashboard.jsx:696 mata os toasts. POST body confirmed: {observations, end_geo_location, client_time, early_leave_company_order}. SessionStorage 'early_leave_company_order' é definido ao clicar, limpo após POST.",
+  "rca of the issue": "N/A — feature 'Saída por Ordem da Empresa' funciona conforme spec. Único ponto melhorável: o reload imediato em Dashboard.jsx:696 esconde os toasts (toast.message + toast.success) chamados imediatamente antes. Não bloqueia funcionalidade, apenas UX."
+}

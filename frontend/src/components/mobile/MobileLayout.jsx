@@ -126,12 +126,20 @@ const MobileLayout = ({ children, user, onLogout, showBottomNav = true }) => {
           }
         }
         
+        const earlyLeaveFlag = (() => {
+          try { return sessionStorage.getItem('early_leave_company_order') === '1'; }
+          catch (_) { return false; }
+        })();
         const response = await axios.post(`${API}/time-entries/end/${timerToEnd.id}`, {
           observations: 'Saída via mobile',
           end_geo_location: endLocationData,
-          client_time: getLocalISOString()
+          client_time: getLocalISOString(),
+          early_leave_company_order: earlyLeaveFlag,
         });
-        
+        try { sessionStorage.removeItem('early_leave_company_order'); } catch (_) {}
+        if (earlyLeaveFlag) {
+          toast.message('Pedido de saída antecipada enviado ao administrador.');
+        }
         toast.success(`Saída registada! Total: ${response.data.total_hours || '0'}h`);
         
         // Forçar reload da página para atualizar o dashboard
