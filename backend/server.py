@@ -2308,26 +2308,26 @@ async def create_day_authorization_request(
     
     await db.day_authorizations.insert_one(auth_doc)
     
-    # Enviar notificação push aos admins
-    date_formatted = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y")
-    
-    if day_type == "ferias":
-        push_title = f"⚠️ Trabalho em Férias - {user_name}"
-        push_body = f"{user_name} iniciou ponto às {entry_time} em dia de férias ({date_formatted}). Se autorizado, 1 dia de férias será devolvido."
-    elif day_type == "feriado":
-        push_title = f"🏛️ Trabalho em Feriado - {user_name}"
-        push_body = f"{user_name} iniciou ponto às {entry_time} ({day_type_display} - {date_formatted}). Autorizar trabalho?"
-    else:
-        push_title = f"📅 Trabalho em {day_type_display} - {user_name}"
-        push_body = f"{user_name} iniciou ponto às {entry_time} ({date_formatted}). Autorizar trabalho?"
-    
-    await send_push_to_admins(
-        db,
-        push_title,
-        push_body,
-        "day_authorization",
-        "high"
-    )
+    # Email ao admin (substitui push notification)
+    try:
+        from notifications_scheduler import send_authorization_request_email
+        if day_type == "ferias":
+            email_auth_type = "work_vacation"
+            extra_info = "Se autorizado, 1 dia de férias será devolvido ao saldo do utilizador."
+        elif day_type == "feriado":
+            email_auth_type = "work_holiday"
+            extra_info = None
+        elif day_type in ("sabado", "domingo"):
+            email_auth_type = "work_weekend"
+            extra_info = None
+        else:
+            email_auth_type = "work_special"
+            extra_info = None
+        await send_authorization_request_email(
+            db, user_id, email_auth_type, date_str, extra_info=extra_info,
+        )
+    except Exception as _email_err:
+        logging.warning(f"[day-auth] falha ao enviar email ao admin: {_email_err}")
     
     logging.info(f"Pedido de autorização diária criado: {user_name} em {date_str} ({day_type_display})")
     
@@ -2358,6 +2358,8 @@ async def get_day_authorizations(
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     
+    # Enrichment: períodos de ponto + tipo_colaborador para o frontend mostrar
+    await _enrich_day_authorizations(authorizations)
     return authorizations
 
 
@@ -2369,7 +2371,48 @@ async def get_pending_day_authorizations(current_user: dict = Depends(get_curren
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     
+    await _enrich_day_authorizations(authorizations)
     return authorizations
+
+
+async def _enrich_day_authorizations(authorizations: list) -> None:
+    """Adiciona campos `periodos` (lista de "HH:MM - HH:MM") e `tipo_colaborador`
+    a cada autorização para a UI mostrar contexto completo ao admin."""
+    for auth in authorizations:
+        try:
+            user_id = auth.get("user_id")
+            date_str = auth.get("date")
+            if not user_id or not date_str:
+                auth["periodos"] = []
+                continue
+            # Períodos de ponto do dia
+            entries = await db.time_entries.find(
+                {"user_id": user_id, "date": date_str},
+                {"_id": 0, "start_time": 1, "end_time": 1, "status": 1}
+            ).sort("start_time", 1).to_list(100)
+            periodos = []
+            for e in entries:
+                s = e.get("start_time")
+                ed = e.get("end_time")
+                try:
+                    s_hm = datetime.fromisoformat(s).strftime("%H:%M") if s else "??:??"
+                except Exception:
+                    s_hm = "??:??"
+                if ed and e.get("status") != "active":
+                    try:
+                        e_hm = datetime.fromisoformat(ed).strftime("%H:%M")
+                    except Exception:
+                        e_hm = "??:??"
+                    periodos.append(f"{s_hm} – {e_hm}")
+                else:
+                    periodos.append(f"{s_hm} – (em trabalho)")
+            auth["periodos"] = periodos
+            # tipo_colaborador (função) do utilizador
+            user = await db.users.find_one({"id": user_id}, {"_id": 0, "tipo_colaborador": 1})
+            auth["tipo_colaborador"] = (user or {}).get("tipo_colaborador")
+        except Exception as _err:
+            auth["periodos"] = []
+            logging.warning(f"[day-auth] enrichment falhou: {_err}")
 
 
 @api_router.post("/admin/day-authorizations/{auth_id}/decide")

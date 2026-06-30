@@ -20,8 +20,182 @@ CHECK_CLOCK_IN_TIME = "09:30"
 CHECK_CLOCK_OUT_TIME = "18:15"
 TOKEN_VALIDITY_HOURS = 24
 
+# Email destino e URL pública para pedidos de autorização (admin)
+ADMIN_AUTH_EMAIL = os.environ.get('ADMIN_AUTH_EMAIL', 'geral@hwi.pt')
+ADMIN_PORTAL_URL = "https://timesync-app-2.emergent.host/admin?tab=notifications"
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# Função utilitária: tradução de tipo_colaborador para etiqueta
+def _format_user_role(tipo_colaborador: Optional[str]) -> str:
+    if not tipo_colaborador:
+        return "Técnico"
+    mapping = {
+        "junior": "Técnico Junior",
+        "tecnico": "Técnico",
+        "senior": "Técnico Sénior",
+    }
+    return mapping.get(tipo_colaborador.lower(), tipo_colaborador.capitalize())
+
+
+def get_authorization_request_email_html(
+    user_name: str,
+    user_role: str,
+    auth_type_label: str,
+    date_str: str,
+    extra_info: Optional[str] = None,
+    periodos: Optional[List[str]] = None,
+) -> str:
+    """Email enviado ao admin (geral@hwi.pt) sempre que um utilizador necessita de
+    autorização para horas extras, trabalho em dia especial ou trabalho em férias.
+
+    Em vez de incluir botões aprovar/recusar no email (que tinham bugs e perdiam
+    contexto), envia um link único para o portal de admin para que o gestor
+    decida no contexto completo com toda a informação disponível.
+    """
+    periodos_html = ""
+    if periodos:
+        items = "".join([f"<li style='padding:4px 0'>{p}</li>" for p in periodos])
+        periodos_html = (
+            f"<div class='info-box'>"
+            f"<div style='font-weight:600; color:#2d3748; margin-bottom:6px'>"
+            f"📋 Registos de Ponto do Dia:</div>"
+            f"<ul style='margin:0; padding-left:18px; color:#4a5568'>{items}</ul>"
+            f"</div>"
+        )
+
+    extra_info_html = ""
+    if extra_info:
+        extra_info_html = (
+            f"<div class='warning'><p class='warning-text'>{extra_info}</p></div>"
+        )
+
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset='utf-8'>
+        <style>
+            body {{ font-family: Arial, sans-serif; background-color:#f5f5f5; margin:0; padding:20px; }}
+            .container {{ max-width:600px; margin:0 auto; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.1); }}
+            .header {{ background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%); color:white; padding:30px; text-align:center; }}
+            .header h1 {{ margin:0; font-size:22px; }}
+            .content {{ padding:30px; color:#2d3748; font-size:15px; line-height:1.55; }}
+            .info-box {{ background:#f8f9fa; border-left:4px solid #3182ce; padding:15px 18px; margin:18px 0; border-radius:0 8px 8px 0; }}
+            .info-row {{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #e2e8f0; }}
+            .info-row:last-child {{ border-bottom:none; }}
+            .info-label {{ color:#718096; font-weight:500; }}
+            .info-value {{ color:#2d3748; font-weight:600; text-align:right; }}
+            .cta {{ display:block; margin:28px auto 0 auto; padding:14px 28px; background:#3182ce; color:white !important; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; text-align:center; max-width:300px; }}
+            .footer {{ background:#f8f9fa; padding:18px; text-align:center; color:#718096; font-size:12px; }}
+            .warning {{ background:#fffbeb; border:1px solid #f6e05e; padding:12px 15px; border-radius:8px; margin-top:18px; }}
+            .warning-text {{ color:#744210; font-size:13px; margin:0; }}
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>🔔 Pedido de Autorização</h1>
+            </div>
+            <div class='content'>
+                <p style='margin-top:0'>
+                    O técnico <strong>({user_role}) {user_name}</strong> necessita de autorização
+                    para <strong>{auth_type_label}</strong>. Clique no link abaixo para autorizar
+                    ou recusar.
+                </p>
+                <div class='info-box'>
+                    <div class='info-row'><span class='info-label'>👤 Utilizador</span><span class='info-value'>{user_name}</span></div>
+                    <div class='info-row'><span class='info-label'>🎓 Função</span><span class='info-value'>{user_role}</span></div>
+                    <div class='info-row'><span class='info-label'>📅 Data</span><span class='info-value'>{date_str}</span></div>
+                    <div class='info-row'><span class='info-label'>📌 Tipo</span><span class='info-value'>{auth_type_label}</span></div>
+                </div>
+                {periodos_html}
+                {extra_info_html}
+                <a class='cta' href='{ADMIN_PORTAL_URL}'>🔍 Abrir Portal de Autorização</a>
+            </div>
+            <div class='footer'>
+                <p>Email automático do Sistema de Gestão de Ponto HWI.</p>
+                <p>© {datetime.now().year} HWI Unipessoal – Todos os direitos reservados</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+async def send_authorization_request_email(
+    db,
+    user_id: str,
+    auth_type: str,
+    date_str: str,
+    extra_info: Optional[str] = None,
+) -> bool:
+    """Helper que reúne dados do utilizador + períodos de ponto e envia o email
+    de pedido de autorização ao admin (geral@hwi.pt).
+
+    auth_type: 'overtime' | 'work_holiday' | 'work_weekend' | 'work_vacation' | 'work_special'
+    """
+    try:
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        user_name = (user.get("full_name") or user.get("username") or "Utilizador") if user else "Utilizador"
+        user_role = _format_user_role(user.get("tipo_colaborador") if user else None)
+
+        # Buscar registos de ponto do dia para contexto
+        entries = await db.time_entries.find(
+            {"user_id": user_id, "date": date_str},
+            {"_id": 0, "start_time": 1, "end_time": 1, "status": 1}
+        ).sort("start_time", 1).to_list(100)
+        periodos = []
+        for e in entries:
+            s = e.get("start_time")
+            ed = e.get("end_time")
+            try:
+                s_hm = datetime.fromisoformat(s).strftime("%H:%M") if s else "??:??"
+            except Exception:
+                s_hm = "??:??"
+            if ed and e.get("status") != "active":
+                try:
+                    e_hm = datetime.fromisoformat(ed).strftime("%H:%M")
+                except Exception:
+                    e_hm = "??:??"
+                periodos.append(f"{s_hm} – {e_hm}")
+            else:
+                periodos.append(f"{s_hm} – (em trabalho)")
+
+        type_labels = {
+            "overtime": "horas extras",
+            "work_holiday": "trabalho em feriado",
+            "work_weekend": "trabalho em fim-de-semana",
+            "work_vacation": "trabalho em dia de férias",
+            "work_special": "trabalho em dia especial",
+        }
+        type_label = type_labels.get(auth_type, "autorização")
+
+        try:
+            date_formatted = datetime.strptime(date_str, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except Exception:
+            date_formatted = date_str
+
+        html = get_authorization_request_email_html(
+            user_name=user_name,
+            user_role=user_role,
+            auth_type_label=type_label,
+            date_str=date_formatted,
+            extra_info=extra_info,
+            periodos=periodos,
+        )
+
+        subject = f"🔔 Autorização: {type_label} – {user_name} ({date_formatted})"
+        return await send_notification_email(
+            to_email=ADMIN_AUTH_EMAIL,
+            subject=subject,
+            html_content=html,
+        )
+    except Exception as e:
+        logger.error(f"Falha ao enviar email de autorização ({auth_type}, user={user_id}): {e}")
+        return False
 
 
 async def send_push_notification(db, user_id: str, title: str, message: str, notification_type: str = "info", priority: str = "medium") -> bool:
@@ -616,22 +790,19 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         }
         await db.overtime_authorizations.insert_one(auth_request)
         
-        # Enviar PUSH notification ao utilizador
+        # Email ao admin (substitui push notification ao admin)
+        await send_authorization_request_email(
+            db, user_id, "overtime", today_str,
+            extra_info="O utilizador ainda tem o ponto activo após as 18:00.",
+        )
+        
+        # Push ao próprio utilizador continua a existir (lembrete pessoal)
         await send_push_notification(
             db,
             user_id,
             "🕐 Não Parou o Ponto",
             f"O seu ponto está ativo após as 18:00. Entrada: {clock_in_time}. Aguarde autorização de horas extra.",
             "clock_out_reminder",
-            "high"
-        )
-        
-        # Enviar PUSH notification aos admins
-        await send_push_to_admins(
-            db,
-            "⚠️ Pedido de Horas Extra",
-            f"{user_name} ainda tem o ponto ativo. Autorize ou rejeite as horas extra.",
-            "overtime_authorization",
             "high"
         )
         
@@ -843,20 +1014,22 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
     }
     await db.overtime_authorizations.insert_one(auth_request)
     
-    # Enviar PUSH notification aos admins com título específico para férias
+    # Email ao admin (substitui push notification)
     if is_vacation_work:
-        push_title = f"⚠️ Trabalho em Férias - {user_name}"
-        push_body = f"{user_name} iniciou ponto às {current_time} durante período de férias. Se autorizado, o dia de férias será devolvido."
+        email_auth_type = "work_vacation"
+        extra_info = "Se autorizado, 1 dia de férias será devolvido ao saldo do utilizador."
     else:
-        push_title = f"🕐 Pedido de Horas Extra - {reason}"
-        push_body = f"{user_name} iniciou ponto às {current_time}. Autorize ou rejeite."
+        # reason: 'Sábado', 'Domingo', 'Feriado' ou similar
+        if "feriado" in (reason or "").lower():
+            email_auth_type = "work_holiday"
+        elif "sábado" in (reason or "").lower() or "sabado" in (reason or "").lower() or "domingo" in (reason or "").lower():
+            email_auth_type = "work_weekend"
+        else:
+            email_auth_type = "work_special"
+        extra_info = None
     
-    await send_push_to_admins(
-        db,
-        push_title,
-        push_body,
-        "overtime_authorization",
-        "high"
+    await send_authorization_request_email(
+        db, user_id, email_auth_type, today_str, extra_info=extra_info,
     )
     
     # Registar notificação
@@ -905,10 +1078,15 @@ async def process_authorization_decision(
             "decided_at": auth_request.get("decided_at")
         }
     
-    # Verificar validade do token
-    expires_at = datetime.fromisoformat(auth_request.get("expires_at"))
-    if datetime.now() > expires_at:
-        return {"status": "error", "message": "Token expirado"}
+    # Verificar validade do token (se expires_at definido)
+    expires_at_str = auth_request.get("expires_at")
+    if expires_at_str:
+        try:
+            expires_at = datetime.fromisoformat(expires_at_str)
+            if datetime.now() > expires_at:
+                return {"status": "error", "message": "Token expirado"}
+        except (ValueError, TypeError):
+            logger.warning(f"expires_at inválido em autorização {token}: {expires_at_str}")
     
     entry_id = auth_request.get("entry_id")
     request_type = auth_request.get("request_type")

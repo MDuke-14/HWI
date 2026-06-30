@@ -10,6 +10,7 @@ from typing import Optional
 
 from database import db
 from models import OvertimeDecision
+from notifications_scheduler import process_authorization_decision
 from server import get_current_user, get_current_admin
 
 router = APIRouter()

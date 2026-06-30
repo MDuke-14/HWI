@@ -37,6 +37,9 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 7. ✅ Validação/redimensionamento automático no upload do logo da empresa (limite 1200×400 px) para prevenir LayoutError do ReportLab com logos enormes
 8. ✅ Endpoint `DELETE /admin/errors/started-orphans` + botão UI para limpar STARTED órfãos sem afetar erros reais
 9. 📨 User vai contactar support@emergent.sh para pedir aumento de recursos (Opção A)
+10. ✅ Regras SA/AC unificadas Feb/2026: SA binário (≥4h=10€), AC tiered (4-6h=25€, ≥6h=50€). Helper `calcular_sa_ac` em time_entries.py + 10 testes unitários
+11. ✅ Fix scroll bloqueado nos modais de Cliente — adicionado `max-h-[90vh] overflow-y-auto`
+12. ✅ Sistema de autorizações refactor: emails para geral@hwi.pt em vez de push notifications aos admin; link para portal admin; periodos de ponto incluídos no email e na UI; fix do bug do botão Aprovar/Rejeitar (response.data.status check); fix do import process_authorization_decision em routes/overtime.py
 
 ## Production Deployment Config (CRÍTICO)
 - Memory: **1 GiB** (insuficiente — picos observados 1.87 GiB)

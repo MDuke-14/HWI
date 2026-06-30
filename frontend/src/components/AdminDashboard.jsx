@@ -386,11 +386,16 @@ const AdminDashboard = ({ user, onLogout }) => {
       }
       
       const response = await axios.post(endpoint, { action });
-      if (response.data.status === 'success') {
-        toast.success(response.data.message);
+      // Backend devolve 200 com payload incluindo `status` ('authorized'|'rejected'|'approved')
+      // ou `message`. Consideramos sucesso sempre que HTTP 200 e não houver erro explícito.
+      const data = response.data || {};
+      const ok = !data.error && (data.message || data.status);
+      if (ok) {
+        const friendly = action === 'approve' ? 'Autorização aprovada' : 'Autorização rejeitada';
+        toast.success(data.message || friendly);
         fetchOvertimeAuthorizations(authStatusFilter);
       } else {
-        toast.error(response.data.message || 'Erro ao processar decisão');
+        toast.error(data.message || data.detail || 'Erro ao processar decisão');
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao processar decisão');
@@ -794,9 +799,16 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                               Data: {new Date(req.date).toLocaleDateString('pt-PT')}
                             </div>
-                            <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                              Entrada: {req.start_time || req.clock_in_time || 'N/A'}
-                            </div>
+                            {Array.isArray(req.periodos) && req.periodos.length > 0 ? (
+                              <div className={`text-gray-300 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                <span className="text-gray-400">Registos:</span>{' '}
+                                {req.periodos.join(' · ')}
+                              </div>
+                            ) : (
+                              <div className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                Entrada: {req.start_time || req.clock_in_time || req.first_entry_time || 'N/A'}
+                              </div>
+                            )}
                             {req.day_type && (
                               <div className={`text-orange-400 font-semibold mt-1 ${isMobile ? 'text-sm' : ''}`}>{req.day_type}</div>
                             )}
