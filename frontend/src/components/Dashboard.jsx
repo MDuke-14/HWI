@@ -686,14 +686,16 @@ const Dashboard = ({ user, onLogout }) => {
         client_time: getLocalISOString(),
         early_leave_company_order: earlyLeaveCompanyOrder,
       });
-      try { sessionStorage.removeItem('early_leave_company_order'); } catch (_) {}
+      try { sessionStorage.removeItem('early_leave_company_order'); } catch (_) { /* ignore */ }
       if (earlyLeaveCompanyOrder && response.data?.total_hours !== undefined) {
         toast.message('Pedido de saída antecipada enviado ao administrador para aprovação.');
       }
       toast.success(`Relógio finalizado! Total: ${formatHours(response.data.total_hours)}`);
-      
-      // Forçar reload imediato da página
-      window.location.href = window.location.href;
+
+      // Reload com pequeno delay para o(s) toast(s) serem visíveis
+      setTimeout(() => {
+        window.location.href = window.location.href;
+      }, earlyLeaveCompanyOrder ? 2200 : 1200);
       return;
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao finalizar');

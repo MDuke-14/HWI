@@ -1,0 +1,27 @@
+{
+  "summary": "Validated UX fix in Dashboard.jsx for toast visibility before reload (setTimeout 1200ms normal / 2200ms early_leave). End-of-clock flow tested live: toast 'Relógio finalizado! Total: 0h00m' was captured both by DOM MutationObserver and direct DOM query 700ms after Finalizar click — proving the toast renders BEFORE the reload (previously it was wiped instantly). After reload, Dashboard correctly transitions to no-active-entry state with the new completed entry listed in 'Registos de Hoje'. Fix verified on the 1200ms branch; early_leave 2200ms branch shares identical code path and was backend-validated in iteration_40 (8/8 pytest).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_40.json",
+    "/app/backend/tests/test_early_leave_company_order.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Dashboard.jsx:696-698 — setTimeout(()=>{ window.location.href = window.location.href; }, earlyLeaveCompanyOrder ? 2200 : 1200) — correct minimal fix. Toast.message + toast.success are flushed before the navigation. Note (non-blocking): window.location.href = window.location.href is still an anti-pattern; window.location.reload() would be cleaner. Acceptable for now.",
+    "Dashboard.jsx:625 — handleStart uses setTimeout(...., warn ? 1500 : 0). 0ms for normal start is OK (only 'Relógio iniciado!' toast which is short-lived); 1500ms when there is early_leave_warning is appropriate.",
+    "Dashboard.jsx:689 — sessionStorage.removeItem('early_leave_company_order') happens BEFORE the toast/reload — correct ordering, ensures mobile bottom-nav state is cleared even if reload is delayed."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (not re-tested, per request)", "frontend": "100% (toast visibility fix verified live)"},
+  "test_credentials": "Admin: teste@email.com / Admin123!",
+  "seed_data_creation": "Live test created and immediately closed one entry for user teste@email.com on 2026-06-30 (visible in 'Registos de Hoje', total 0h00m). Not cleaned up since dataset is harmless and traceable.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Toast-visibility-before-reload fix in Dashboard.jsx:696-698 is verified. Mutation observer captured 'Relógio finalizado!' toast text 700ms after click. Same setTimeout pattern handles early_leave_company_order with 2200ms. If revisiting: consider replacing window.location.href=window.location.href with window.location.reload() (cosmetic).",
+  "rca of the issue": "Previously toasts were instantly wiped by synchronous window.location.href reassignment in handleEnd/handleStart. Fix wraps the reload in setTimeout (1200ms normal / 2200ms early_leave / 1500ms early_leave_warning at start), giving Sonner toasts time to render and the user time to read them. Verified live: toast rendered + visible 700ms post-click, Dashboard correctly updates after reload."
+}
