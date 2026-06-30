@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
@@ -16,6 +17,18 @@ import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
 
 const AdminDashboard = ({ user, onLogout }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'notifications' ? 'notifications' : 'vacations';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    if (value === 'notifications') {
+      setSearchParams({ tab: 'notifications' }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
   const { isMobile } = useMobile();
   const [users, setUsers] = useState([]);
   const [pendingVacations, setPendingVacations] = useState([]);
@@ -726,7 +739,7 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <Tabs defaultValue="vacations" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className={`overflow-x-auto ${isMobile ? 'pb-2 mb-4 -mx-3 px-3' : 'pb-2 mb-6 -mx-4 px-4 md:mx-0 md:px-0'}`}>
             <TabsList className={`inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg ${isMobile ? '' : 'md:grid md:grid-cols-6 md:w-full md:max-w-5xl md:mx-auto'}`}>
               <TabsTrigger value="vacations" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative`}>
@@ -1644,7 +1657,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         key={auth.id}
                         className={`p-4 rounded-lg border ${
                           auth.status === 'pending' ? 'bg-yellow-900/20 border-yellow-600' :
-                          auth.status === 'approved' ? 'bg-green-900/20 border-green-600' :
+                          (auth.status === 'approved' || auth.status === 'authorized') ? 'bg-green-900/20 border-green-600' :
                           'bg-red-900/20 border-red-600'
                         }`}
                       >
@@ -1654,11 +1667,11 @@ const AdminDashboard = ({ user, onLogout }) => {
                               <span className="text-white font-semibold">{auth.user_name}</span>
                               <span className={`text-xs px-2 py-0.5 rounded ${
                                 auth.status === 'pending' ? 'bg-yellow-600 text-white' :
-                                auth.status === 'approved' ? 'bg-green-600 text-white' :
+                                (auth.status === 'approved' || auth.status === 'authorized') ? 'bg-green-600 text-white' :
                                 'bg-red-600 text-white'
                               }`}>
                                 {auth.status === 'pending' ? 'Pendente' :
-                                 auth.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                                 (auth.status === 'approved' || auth.status === 'authorized') ? 'Aprovado' : 'Rejeitado'}
                               </span>
                             </div>
                             <p className="text-gray-400 text-sm">
@@ -1696,10 +1709,26 @@ const AdminDashboard = ({ user, onLogout }) => {
                                 return 'Horas extra (após 18:00)';
                               })()}
                             </p>
-                            {auth.decided_by && (
-                              <p className="text-gray-500 text-xs mt-2">
-                                Decidido por {auth.decided_by} em {new Date(auth.decided_at).toLocaleString('pt-PT')}
-                              </p>
+                            {(auth.decided_by || auth.decided_by_name) && (
+                              <div className={`mt-2 px-3 py-2 rounded border-l-4 ${
+                                (auth.status === 'approved' || auth.status === 'authorized')
+                                  ? 'bg-green-900/20 border-green-500'
+                                  : 'bg-red-900/20 border-red-500'
+                              }`}>
+                                <p className="text-xs text-gray-300">
+                                  <span className="text-gray-400">
+                                    {(auth.status === 'approved' || auth.status === 'authorized') ? '✓ Autorizado' : '✗ Rejeitado'} por:
+                                  </span>{' '}
+                                  <strong className="text-white">{auth.decided_by_name || auth.decided_by}</strong>
+                                  {auth.decided_at && (
+                                    <> <span className="text-gray-400">em</span>{' '}
+                                       <strong className="text-white">{new Date(auth.decided_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></>
+                                  )}
+                                  {auth.decided_via === 'email-link' && (
+                                    <span className="ml-2 text-xs text-blue-300">(via email)</span>
+                                  )}
+                                </p>
+                              </div>
                             )}
                           </div>
                           {auth.status === 'pending' && (

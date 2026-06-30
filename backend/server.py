@@ -2303,7 +2303,10 @@ async def create_day_authorization_request(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "decided_by": None,
         "decided_at": None,
-        "notification_sent": True
+        "notification_sent": True,
+        # Token público para aprovação/rejeição via email (one-click, válido 7 dias)
+        "approval_token": str(uuid.uuid4()),
+        "token_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
     }
     
     await db.day_authorizations.insert_one(auth_doc)
@@ -2324,7 +2327,9 @@ async def create_day_authorization_request(
             email_auth_type = "work_special"
             extra_info = None
         await send_authorization_request_email(
-            db, user_id, email_auth_type, date_str, extra_info=extra_info,
+            db, user_id, email_auth_type, date_str,
+            extra_info=extra_info,
+            approval_token=auth_doc["approval_token"],
         )
     except Exception as _email_err:
         logging.warning(f"[day-auth] falha ao enviar email ao admin: {_email_err}")
@@ -2453,6 +2458,8 @@ async def decide_day_authorization(
         {"$set": {
             "status": new_status,
             "decided_by": admin_name,
+            "decided_by_name": admin_name,
+            "decided_via": "admin-ui",
             "decided_at": datetime.now(timezone.utc).isoformat()
         }}
     )
@@ -4513,6 +4520,7 @@ from routes.overtime import router as overtime_router
 from routes.despesas_internas import router as despesas_internas_router
 from routes.indisponibilidades import router as indisponibilidades_router
 from routes.ai import router as ai_router
+from routes.public_authorizations import router as public_authorizations_router
 api_router.include_router(references_router)
 api_router.include_router(clientes_router)
 api_router.include_router(auth_router)
@@ -4530,6 +4538,7 @@ api_router.include_router(overtime_router)
 api_router.include_router(despesas_internas_router)
 api_router.include_router(indisponibilidades_router)
 api_router.include_router(ai_router)
+api_router.include_router(public_authorizations_router)
 
 # ============ Admin Error Log Endpoints ============
 

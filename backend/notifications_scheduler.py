@@ -4,6 +4,7 @@ Sistema de Notificações por Email e Push - Regras de Ponto e Autorizações
 import os
 import logging
 import secrets
+import uuid
 from datetime import datetime, date, timedelta
 from typing import Optional, List, Dict
 from email.mime.text import MIMEText
@@ -47,13 +48,15 @@ def get_authorization_request_email_html(
     date_str: str,
     extra_info: Optional[str] = None,
     periodos: Optional[List[str]] = None,
+    approval_token: Optional[str] = None,
 ) -> str:
     """Email enviado ao admin (geral@hwi.pt) sempre que um utilizador necessita de
     autorização para horas extras, trabalho em dia especial ou trabalho em férias.
 
-    Em vez de incluir botões aprovar/recusar no email (que tinham bugs e perdiam
-    contexto), envia um link único para o portal de admin para que o gestor
-    decida no contexto completo com toda a informação disponível.
+    Quando `approval_token` é fornecido, inclui 2 botões one-click (Aprovar /
+    Rejeitar) que vão para /auth-decide/{token}?action=... e aplicam a decisão
+    sem precisar de login. Link de fallback para o portal admin é sempre
+    incluído. Token expira em 7 dias.
     """
     periodos_html = ""
     if periodos:
@@ -72,6 +75,26 @@ def get_authorization_request_email_html(
             f"<div class='warning'><p class='warning-text'>{extra_info}</p></div>"
         )
 
+    # Botões one-click (se houver token)
+    one_click_html = ""
+    if approval_token:
+        approve_url = (
+            f"https://timesync-app-2.emergent.host/auth-decide/{approval_token}?action=approve"
+        )
+        reject_url = (
+            f"https://timesync-app-2.emergent.host/auth-decide/{approval_token}?action=reject"
+        )
+        one_click_html = f"""
+            <div style='margin:24px 0; text-align:center'>
+                <a class='cta-approve' href='{approve_url}'>✅ Aprovar</a>
+                <a class='cta-reject' href='{reject_url}'>❌ Rejeitar</a>
+                <p style='margin-top:14px; color:#718096; font-size:12px'>
+                    Os botões acima aprovam ou rejeitam o pedido com um único clique.
+                    Link válido durante 7 dias.
+                </p>
+            </div>
+        """
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -88,10 +111,14 @@ def get_authorization_request_email_html(
             .info-row:last-child {{ border-bottom:none; }}
             .info-label {{ color:#718096; font-weight:500; }}
             .info-value {{ color:#2d3748; font-weight:600; text-align:right; }}
-            .cta {{ display:block; margin:28px auto 0 auto; padding:14px 28px; background:#3182ce; color:white !important; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; text-align:center; max-width:300px; }}
+            .cta {{ display:inline-block; margin:18px 6px 0 6px; padding:12px 22px; background:#3182ce; color:white !important; border-radius:8px; text-decoration:none; font-weight:bold; font-size:15px; text-align:center; }}
+            .cta-approve {{ display:inline-block; margin:0 8px; padding:14px 32px; background:#16a34a; color:white !important; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; }}
+            .cta-reject {{ display:inline-block; margin:0 8px; padding:14px 32px; background:#dc2626; color:white !important; border-radius:8px; text-decoration:none; font-weight:bold; font-size:16px; }}
             .footer {{ background:#f8f9fa; padding:18px; text-align:center; color:#718096; font-size:12px; }}
             .warning {{ background:#fffbeb; border:1px solid #f6e05e; padding:12px 15px; border-radius:8px; margin-top:18px; }}
             .warning-text {{ color:#744210; font-size:13px; margin:0; }}
+            .divider {{ border:none; border-top:1px solid #e2e8f0; margin:24px 0; }}
+            .secondary-link {{ display:block; text-align:center; color:#3182ce; text-decoration:none; font-size:14px; }}
         </style>
     </head>
     <body>
@@ -102,8 +129,7 @@ def get_authorization_request_email_html(
             <div class='content'>
                 <p style='margin-top:0'>
                     O técnico <strong>({user_role}) {user_name}</strong> necessita de autorização
-                    para <strong>{auth_type_label}</strong>. Clique no link abaixo para autorizar
-                    ou recusar.
+                    para <strong>{auth_type_label}</strong>.
                 </p>
                 <div class='info-box'>
                     <div class='info-row'><span class='info-label'>👤 Utilizador</span><span class='info-value'>{user_name}</span></div>
@@ -113,7 +139,11 @@ def get_authorization_request_email_html(
                 </div>
                 {periodos_html}
                 {extra_info_html}
-                <a class='cta' href='{ADMIN_PORTAL_URL}'>🔍 Abrir Portal de Autorização</a>
+                {one_click_html}
+                <hr class='divider'>
+                <a class='secondary-link' href='{ADMIN_PORTAL_URL}'>
+                    Abrir Portal de Administração →
+                </a>
             </div>
             <div class='footer'>
                 <p>Email automático do Sistema de Gestão de Ponto HWI.</p>
@@ -131,6 +161,7 @@ async def send_authorization_request_email(
     auth_type: str,
     date_str: str,
     extra_info: Optional[str] = None,
+    approval_token: Optional[str] = None,
 ) -> bool:
     """Helper que reúne dados do utilizador + períodos de ponto e envia o email
     de pedido de autorização ao admin (geral@hwi.pt).
@@ -185,6 +216,7 @@ async def send_authorization_request_email(
             date_str=date_formatted,
             extra_info=extra_info,
             periodos=periodos,
+            approval_token=approval_token,
         )
 
         subject = f"🔔 Autorização: {type_label} – {user_name} ({date_formatted})"
@@ -772,6 +804,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         token = generate_authorization_token()
         
         # Guardar pedido de autorização
+        approval_token = str(uuid.uuid4())
         auth_request = {
             "id": token,
             "user_id": user_id,
@@ -786,7 +819,9 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "status": "pending",
             "decided_by": None,
             "decided_at": None,
-            "decision": None
+            "decision": None,
+            "approval_token": approval_token,
+            "token_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         }
         await db.overtime_authorizations.insert_one(auth_request)
         
@@ -794,6 +829,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         await send_authorization_request_email(
             db, user_id, "overtime", today_str,
             extra_info="O utilizador ainda tem o ponto activo após as 18:00.",
+            approval_token=approval_token,
         )
         
         # Push ao próprio utilizador continua a existir (lembrete pessoal)
@@ -994,6 +1030,7 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
     token = generate_authorization_token()
     
     # Guardar pedido de autorização
+    approval_token = str(uuid.uuid4())
     auth_request = {
         "id": token,
         "user_id": user_id,
@@ -1010,7 +1047,9 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "decided_by": None,
         "decided_at": None,
         "decision": None,
-        "vacation_request_id": vacation_request_id  # ID do pedido de férias a anular (se aplicável)
+        "vacation_request_id": vacation_request_id,  # ID do pedido de férias a anular (se aplicável)
+        "approval_token": approval_token,
+        "token_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
     }
     await db.overtime_authorizations.insert_one(auth_request)
     
@@ -1029,7 +1068,9 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         extra_info = None
     
     await send_authorization_request_email(
-        db, user_id, email_auth_type, today_str, extra_info=extra_info,
+        db, user_id, email_auth_type, today_str,
+        extra_info=extra_info,
+        approval_token=approval_token,
     )
     
     # Registar notificação
@@ -1101,6 +1142,7 @@ async def process_authorization_decision(
             "status": decision,
             "decision": decision,
             "decided_by": decided_by,
+            "decided_by_name": decided_by,
             "decided_at": datetime.now().isoformat()
         }}
     )

@@ -15,6 +15,7 @@ import TechnicalReports from '@/components/TechnicalReports';
 import OvertimeAuthorization from '@/components/OvertimeAuthorization';
 import PCStatusPage from '@/components/PCStatusPage';
 import PublicReferencePage from '@/components/PublicReferencePage';
+import PublicAuthorizationDecidePage from '@/components/PublicAuthorizationDecidePage';
 import ErrorLog from '@/components/ErrorLog';
 import DespesasInternas from '@/components/DespesasInternas';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -419,6 +420,11 @@ function App() {
               <Route
                 path="/reference/:token"
                 element={<PublicReferencePage />}
+              />
+              {/* Página pública para admin aprovar/recusar autorização via email (one-click) */}
+              <Route
+                path="/auth-decide/:token"
+                element={<PublicAuthorizationDecidePage />}
               />
             </Routes>
           </BrowserRouter>
