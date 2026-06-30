@@ -1,0 +1,27 @@
+{
+  "summary": "Backend testing of migration 'early_leave_credit_virtual_times_v1' (/app/backend/migrations.py, lines 260-348). 6/6 pytest tests PASSED. Validated: (1) backend /api/health 200 after migration registered; (2) db.migrations contains record with key/executed_at/fixed_count/skipped_count fields (current state: fixed_count=0, skipped_count=0); (3) idempotency confirmed via supervisor log 'Migração ... já foi executada' on subsequent restarts; (4) EDGE CASE — inserted a fresh credit entry with start_time/end_time=None plus a real completed picagem on the same date (2024-01-15, 08:00→16:00 UTC), deleted db.migrations record, restarted backend via supervisorctl, verified migration ran and set start_time=16:00 + end_time=17:00 (credit_minutes=60), and fixed_count >= 1; (5) SKIP CASE — credit entry on a date with NO real picagem is correctly skipped (entry stays None, skipped_count >= 1, backend stays healthy); (6) regression GET /api/admin/realtime-status and GET /api/time-entries/reports/monthly-detailed return 200 after restarts. Original migration record + test entries restored/cleaned up in finally blocks.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_migration_early_leave_credit_times.py",
+    "/app/test_reports/pytest/migration_early_leave_credit.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "migrations.py:340 executed_at uses datetime.now() without timezone — other migrations use datetime.now(timezone.utc).isoformat(). Minor consistency issue, not functional.",
+    "migrations.py:347-348 'raise' suppressed for non-critical migration — sensible, but the migration record is NOT inserted on partial failure, so a subsequent restart will retry the whole batch (potential thundering herd on slow query). Consider try/finally insert with status field.",
+    "migrations.py:323 datetime.fromisoformat(max(real_ends)) compares ISO strings lexicographically. Works if all entries on the day share the same TZ offset; cross-TZ entries could pick a chronologically wrong end. Low risk in practice."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_migration_early_leave_credit_times.py"
+  ],
+  "success_rate": {"backend": "100% (6/6 tests passed)", "frontend": "not tested (per request)"},
+  "test_credentials": "teste@email.com / Admin123! (user_id c145d94b-bb5f-4fe1-b05d-6fa1034db968); miguel.moreira@hwi.pt / Miguel123!",
+  "seed_data_creation": "Inside the edge/skip tests: TEST_real_* + TEST_credit_* entries on 2024-01-15 and TEST_orphan_credit_* on 2024-02-20 for user c145d94b. All marked with test_marker and deleted in finally blocks. Original db.migrations record (executed_at=2026-06-30T20:52:42, fixed=0, skipped=0) restored after each test that mutated it. Final DB verified: 0 leftover test entries and migration record intact.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pytest /app/backend/tests/test_migration_early_leave_credit_times.py is fully idempotent — it backs up/restores db.migrations record and uses TEST_/test_marker prefixed data. It DOES restart the backend twice via 'sudo supervisorctl restart backend'. Total runtime ~16s. Required env: REACT_APP_BACKEND_URL, MONGO_URL, DB_NAME. Migration code lives at /app/backend/migrations.py L260-348; ensure run_migrations(db) is still called from server.py lifespan startup."
+}

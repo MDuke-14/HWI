@@ -19,6 +19,9 @@ async def run_migrations(db: AsyncIOMotorDatabase):
     # Migration 3: Segmentar registos de cronómetro por código horário
     await migrate_segmentar_registos(db)
 
+    # Migration 4: Corrigir entries de crédito early_leave sem start_time/end_time
+    await migrate_early_leave_credit_times(db)
+
 
 async def migrate_ot_numbers(db: AsyncIOMotorDatabase):
     """
@@ -252,3 +255,95 @@ async def migrate_segmentar_registos(db: AsyncIOMotorDatabase):
     except Exception as e:
         logger.error(f"❌ Erro na migração '{MIGRATION_KEY}': {str(e)}")
         raise
+
+
+async def migrate_early_leave_credit_times(db: AsyncIOMotorDatabase):
+    """Atribui start_time/end_time virtuais a entries de crédito early_leave
+    que ficaram com None (criadas antes do fix).
+
+    Para cada entry de crédito sem horas, calcula:
+      start_time = end_time da última picagem REAL desse dia
+      end_time   = start_time + credit_minutes
+    """
+    MIGRATION_KEY = "early_leave_credit_virtual_times_v1"
+
+    migration_done = await db.migrations.find_one({"key": MIGRATION_KEY})
+    if migration_done:
+        logger.info(f"✅ Migração '{MIGRATION_KEY}' já foi executada.")
+        return
+
+    logger.info(f"🔄 A executar migração '{MIGRATION_KEY}'…")
+
+    try:
+        from datetime import datetime, timedelta
+
+        bad = await db.time_entries.find(
+            {
+                "is_early_leave_credit": True,
+                "$or": [
+                    {"start_time": None},
+                    {"start_time": {"$exists": False}},
+                ],
+            },
+            {"_id": 0, "id": 1, "user_id": 1, "date": 1,
+             "credit_minutes": 1, "total_hours": 1},
+        ).to_list(2000)
+
+        if not bad:
+            logger.info("  Nenhuma entry de crédito sem horas — nada a corrigir.")
+        else:
+            logger.info(f"  Encontradas {len(bad)} entries de crédito sem horas.")
+
+        fixed = 0
+        skipped = 0
+        for c in bad:
+            try:
+                date_str = c.get("date")
+                uid = c.get("user_id")
+                mins = c.get("credit_minutes")
+                if not mins:
+                    mins = int(round((c.get("total_hours") or 0) * 60))
+                if not date_str or not uid or not mins:
+                    skipped += 1
+                    continue
+
+                # Buscar end_time da última picagem REAL desse dia
+                day_entries = await db.time_entries.find(
+                    {"user_id": uid, "date": date_str, "status": "completed"},
+                    {"_id": 0, "end_time": 1, "is_early_leave_credit": 1},
+                ).to_list(50)
+                real_ends = [
+                    e.get("end_time") for e in day_entries
+                    if e.get("end_time") and not e.get("is_early_leave_credit")
+                ]
+                if not real_ends:
+                    skipped += 1
+                    continue
+
+                latest = datetime.fromisoformat(max(real_ends))
+                vstart = latest.isoformat()
+                vend = (latest + timedelta(minutes=int(mins))).isoformat()
+                await db.time_entries.update_one(
+                    {"id": c["id"]},
+                    {"$set": {"start_time": vstart, "end_time": vend}},
+                )
+                fixed += 1
+            except Exception as exc:
+                logger.warning(f"  skip entry {c.get('id')}: {exc}")
+                skipped += 1
+
+        logger.info(f"  Resultado: {fixed} corrigidas, {skipped} ignoradas.")
+
+        # Registar migração como executada
+        await db.migrations.insert_one({
+            "key": MIGRATION_KEY,
+            "executed_at": datetime.now().isoformat(),
+            "fixed_count": fixed,
+            "skipped_count": skipped,
+        })
+        logger.info(f"✅ Migração '{MIGRATION_KEY}' concluída.")
+
+    except Exception as exc:
+        logger.error(f"❌ Erro na migração '{MIGRATION_KEY}': {exc}")
+        # Não fazer raise — migration não-crítica, server pode arrancar
+
