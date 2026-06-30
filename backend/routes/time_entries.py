@@ -23,6 +23,41 @@ from excel_report import generate_monthly_report
 from pdf_report import generate_monthly_pdf_report
 from import_pdf import parse_pdf_timesheet
 
+
+# ---------------------------------------------------------------------------
+# Subsídio Alimentação (SA) / Ajuda de Custos (AC) — regras unificadas
+# ---------------------------------------------------------------------------
+# Regras (vigentes desde Feb/2026):
+#   • Total de horas trabalhadas no dia (entradas confirmadas)
+#   • SA (quando NÃO está outside_residence_zone):
+#       - h < 4   → 0
+#       - h >= 4  → SA_FULL_VALUE (10€)
+#   • AC (quando está outside_residence_zone):
+#       - h < 4         → 0
+#       - 4 <= h < 6    → 25% (12,50€)
+#       - h >= 6        → 100% (50€)
+# Nota: a regra antiga de "dia especial só paga >=5h" foi substituída pelo
+# limite universal de 4h (aplica-se a TODOS os dias).
+SA_FULL_VALUE = 10.0
+AC_FULL_VALUE = 50.0
+
+
+def calcular_sa_ac(total_hours: float, outside_zone: bool) -> tuple[str | None, float | None]:
+    """Calcula o tipo e o valor de pagamento (SA ou AC) com base nas horas.
+
+    Retorna (payment_type, payment_value). Se o utilizador não tem direito a
+    qualquer pagamento nesse dia, devolve (None, None).
+    """
+    if total_hours < 4:
+        return (None, None)
+    if outside_zone:
+        # AC tiered
+        if total_hours < 6:
+            return ("Ajuda de Custos", round(AC_FULL_VALUE * 0.25, 2))  # 25%
+        return ("Ajuda de Custos", AC_FULL_VALUE)
+    # SA binário
+    return ("Subsídio de Alimentação", SA_FULL_VALUE)
+
 import pytz
 LISBON_TZ = pytz.timezone('Europe/Lisbon')
 
@@ -1152,25 +1187,14 @@ async def get_custom_range_report(
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
             
-            # Payment calculation
-            is_special_day = is_weekend or is_holiday
-            qualifies_for_payment = True
-            
-            if is_special_day and total_hours < 5.0:
-                qualifies_for_payment = False
-            
-            if qualifies_for_payment:
-                if outside_zone:
-                    day_data["payment_type"] = "Ajuda de Custos"
-                    day_data["payment_value"] = 50.0
-                    days_with_travel_allowance += 1
-                else:
-                    day_data["payment_type"] = "Subsídio de Alimentação"
-                    day_data["payment_value"] = 10.0
-                    days_with_meal_allowance += 1
-            else:
-                day_data["payment_type"] = None
-                day_data["payment_value"] = None
+            # Payment calculation — novas regras Feb/2026 (SA binário, AC tiered)
+            payment_type, payment_value = calcular_sa_ac(total_hours, outside_zone)
+            day_data["payment_type"] = payment_type
+            day_data["payment_value"] = payment_value
+            if payment_type == "Ajuda de Custos":
+                days_with_travel_allowance += 1
+            elif payment_type == "Subsídio de Alimentação":
+                days_with_meal_allowance += 1
             
             total_worked_minutes += total_minutos_dia
             total_overtime_minutes += breakdown_min["horas_extra"]
@@ -1385,26 +1409,14 @@ async def get_monthly_detailed_report(
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
             
-            # Verificar se tem direito a subsídio/ajuda de custos
-            # Em dias especiais (fins de semana/feriados), só paga subsídio se trabalhar >= 5h
-            is_special_day = is_weekend or is_holiday
-            qualifies_for_payment = True
-            
-            if is_special_day and total_hours < 5.0:
-                qualifies_for_payment = False
-            
-            if qualifies_for_payment:
-                if outside_zone:
-                    day_data["payment_type"] = "Ajuda de Custos"
-                    day_data["payment_value"] = 50.0
-                    days_with_travel_allowance += 1
-                else:
-                    day_data["payment_type"] = "Subsídio de Alimentação"
-                    day_data["payment_value"] = 10.0
-                    days_with_meal_allowance += 1
-            else:
-                day_data["payment_type"] = None
-                day_data["payment_value"] = None
+            # Payment calculation — novas regras Feb/2026 (SA binário, AC tiered)
+            payment_type, payment_value = calcular_sa_ac(total_hours, outside_zone)
+            day_data["payment_type"] = payment_type
+            day_data["payment_value"] = payment_value
+            if payment_type == "Ajuda de Custos":
+                days_with_travel_allowance += 1
+            elif payment_type == "Subsídio de Alimentação":
+                days_with_meal_allowance += 1
             
             total_worked_minutes_m += total_minutos_dia
             total_overtime_minutes_m += breakdown_min["horas_extra"]
@@ -1692,26 +1704,14 @@ async def download_monthly_pdf_report(
             day_data["outside_residence_zone"] = outside_zone
             day_data["location"] = location
             
-            # Verificar se tem direito a subsídio/ajuda de custos
-            # Em dias especiais (fins de semana/feriados), só paga subsídio se trabalhar >= 5h
-            is_special_day = is_weekend or is_holiday
-            qualifies_for_payment = True
-            
-            if is_special_day and total_hours < 5.0:
-                qualifies_for_payment = False
-            
-            if qualifies_for_payment:
-                if outside_zone:
-                    day_data["payment_type"] = "Ajuda de Custos"
-                    day_data["payment_value"] = 50.0
-                    days_with_travel_allowance += 1
-                else:
-                    day_data["payment_type"] = "Subsídio de Alimentação"
-                    day_data["payment_value"] = 10.0
-                    days_with_meal_allowance += 1
-            else:
-                day_data["payment_type"] = None
-                day_data["payment_value"] = None
+            # Payment calculation — novas regras Feb/2026 (SA binário, AC tiered)
+            payment_type, payment_value = calcular_sa_ac(total_hours, outside_zone)
+            day_data["payment_type"] = payment_type
+            day_data["payment_value"] = payment_value
+            if payment_type == "Ajuda de Custos":
+                days_with_travel_allowance += 1
+            elif payment_type == "Subsídio de Alimentação":
+                days_with_meal_allowance += 1
             
             total_worked_minutes_p += total_minutos_dia
             total_overtime_minutes_p += breakdown_min["horas_extra"]
