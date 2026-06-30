@@ -1,0 +1,28 @@
+{
+  "summary": "Auth login fix VALIDATED end-to-end. Backend pytest suite (6 tests) 100% pass: login com teste@email.com/Admin123! retorna access_token + is_admin=true, password incorrecta retorna 401, /api/auth/me devolve user id c145d94b-bb5f-4fe1-b05d-6fa1034db968, MongoDB tem exactamente 1 utilizador com email teste@email.com (sem duplicados, hashed_password é bcrypt $2...), GET /api/relatorios-tecnicos retorna 200 lista, endpoint protegido sem token retorna 401. Frontend: login UI (https://field-clock.preview.emergentagent.com/login) aceita as credenciais, mostra toast 'Login efetuado!', redireciona para dashboard, token persiste em localStorage. Bonus: GET /api/relatorios-simples/by-fs/{id} também responde 200 com o token.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_auth_login_fix.py",
+    "/app/test_reports/pytest/auth_login_fix.xml",
+    "/app/test_reports/login_after.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth_routes.py /auth/login (linhas 62-101) faz find_one({username}) primeiro e depois find_one({email}) se não encontrar — funcionou só porque o duplicado foi removido manualmente. Recomenda-se adicionar unique index na collection users sobre {email: 1} (e idealmente sobre {username: 1}) para que o problema não volte a acontecer em criações futuras. Sem o índice, basta um POST /api/auth/register (ou um insert via script) recriar a colisão.",
+    "verify_password no auth_routes aceita tanto 'hashed_password' como 'password' (campo legado) — manter mas considerar migração one-shot para garantir que todos os users só têm 'hashed_password' bcrypt.",
+    "test_credentials.md está actualizado e consistente com o estado actual da DB."
+  ],
+  "updated_files": ["/app/backend/tests/test_auth_login_fix.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (login + redirect + token persist)"},
+  "test_credentials": "teste@email.com / Admin123! (admin, id c145d94b-bb5f-4fe1-b05d-6fa1034db968)",
+  "seed_data_creation": "Nenhuma seed criada. DB verificada: 1 user único com email teste@email.com.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Login endpoint: POST /api/auth/login com body {username, password} — o campo é 'username' mas aceita email. Token vai em Authorization: Bearer <access_token>. localStorage key usada pelo frontend: 'token'. Para testes futuros: usar fixture admin_token de /app/backend/tests/test_auth_login_fix.py. Não existem mais duplicados — mas não há unique index na DB, ver code review.",
+  "rca of the issue": "Bug original: dois utilizadores com email teste@email.com (id 3907d254 sem hashed_password + id c145d94b com bcrypt). auth_routes /login faz find_one({username}) primeiro: como o duplicado 3907d254 tinha username='teste' mas o user real tinha username='teste@email.com', dependendo do valor enviado podia retornar o registo sem hashed_password e o login falhava. Fix aplicado pelo main agent: (1) DELETE do user duplicado 3907d254, (2) bcrypt hash novo de 'Admin123!' atribuído ao user c145d94b. Validação confirmou que ambas as alterações persistem e o fluxo end-to-end funciona."
+}
