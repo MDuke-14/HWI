@@ -1,0 +1,32 @@
+{
+  "summary": "Verified red-color display of early_leave_credit entries and removal of auto-generated 'Crédito automático' observation across PDF, Excel and frontend. 7/7 pytest tests PASSED + Playwright UI verification on /reports for user teste@email.com / month 6 2026 (admin table view).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_early_leave_credit_red_display.py",
+    "/app/test_reports/pytest/early_leave_credit_red_display.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "excel_report.py:138-144 — payment column logic uses 'any outside_residence_zone' flag for the whole day, but credit entries propagate outside_residence_zone=False even when real entries are outside zone. Confirmed via this iteration's payload (routes/time_entries.py L1742-1748 now includes both flags). Not blocking.",
+    "pdf_report.py:218-226 — when has_credit=True ALL entry labels are wrapped in a single Paragraph so even non-credit entries (08:00-13:00, 14:00-16:00) become Paragraph cells; this works but means alignment differs slightly between days with and without credit. Cosmetic only.",
+    "Reports.jsx admin compact table (L1010-1029) intentionally omits observations — confirmed real user obs 'teste E2E' is therefore not visible in admin table view; it is shown only in the card view (L700-704). User flow OK but worth documenting in PRD if users expect to see obs in admin table."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_early_leave_credit_red_display.py"
+  ],
+  "success_rate": {"backend": "100% (7/7 tests passed)", "frontend": "100% (UI manually verified)"},
+  "test_credentials": "teste@email.com / Admin123! (user_id c145d94b-bb5f-4fe1-b05d-6fa1034db968) — has 3 entries on 2026-06-25 (08:00-13:00 normal, 14:00-16:00 normal+'teste E2E' obs, 16:00-17:00 credit).",
+  "seed_data_creation": "None. Used existing seed in db.time_entries for 2026-06-25.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pytest /app/backend/tests/test_early_leave_credit_red_display.py covers: (1) monthly-detailed exposes is_early_leave_credit=true on the credit entry and false on the others; (2) monthly-pdf returns 200 with %PDF header, contains all 3 time ranges (08:00-13:00, 14:00-16:00, 16:00-17:00), does NOT contain 'Crédito automático' or 'saída antecipada por ordem da empresa', does contain real user obs 'teste E2E', and has a red 'rg' color op (~0.86 0.15 0.15) in a content stream (pypdf decoded); (3) monthly Excel (/api/time-entries/reports/excel?start_date=2026-06-01&end_date=2026-06-30) — row for day 25 has cells with rgb FFDC2626 + bold=True on the credit pair (the credit entry was rendered in columns 7,8 with values 16:00 and 17:00; reading is filtered by font.color.type=='rgb' to skip default theme cells); (4) regression: no other day in June 2026 has is_early_leave_credit=true. Playwright run logged in on /reports, set month=6 year=2026 + clicked Atualizar, scrolled to Dia 25 row → confirmed '15:00–16:00' (UTC view of 16:00-17:00 +01:00) rendered with class text-red-400 + tooltip 'Crédito de horas por ordem da empresa', and 'Crédito automático' string was absent from page HTML. Admin compact table view does not render observations by design.",
+  "rca of the issue": "N/A — review request; no bug found. Implementation matches spec: backend payload exposes is_early_leave_credit; PDF/Excel render the credit cell in #dc2626 bold; auto observation 'Crédito automático — saída antecipada por ordem da empresa autorizada por X' is stripped in _extrair_localizacao_e_limpar_obs and hidden in Reports.jsx via {!isCredit && entry.observations}."
+}

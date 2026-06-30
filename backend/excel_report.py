@@ -98,16 +98,24 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
             col = 3  # Coluna Ent/Sai
             
             for entry in day_entries[:4]:  # Máximo 4 entradas/saídas por dia
+                is_credit = entry.get('is_early_leave_credit', False)
+                red_font = Font(color='FFDC2626', bold=is_credit)
                 if entry.get('start_time'):
                     start_dt = datetime.fromisoformat(entry['start_time'])
-                    ws.cell(row=row, column=col).value = start_dt.strftime('%H:%M')
-                    ws.cell(row=row, column=col).border = border_thin
+                    cell = ws.cell(row=row, column=col)
+                    cell.value = start_dt.strftime('%H:%M')
+                    cell.border = border_thin
+                    if is_credit:
+                        cell.font = red_font
                 col += 1
                 
                 if entry.get('end_time'):
                     end_dt = datetime.fromisoformat(entry['end_time'])
-                    ws.cell(row=row, column=col).value = end_dt.strftime('%H:%M')
-                    ws.cell(row=row, column=col).border = border_thin
+                    cell = ws.cell(row=row, column=col)
+                    cell.value = end_dt.strftime('%H:%M')
+                    cell.border = border_thin
+                    if is_credit:
+                        cell.font = red_font
                 col += 1
             
             # Total de horas do dia

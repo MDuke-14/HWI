@@ -670,15 +670,22 @@ const Reports = ({ user, onLogout }) => {
 
                   {/* Entries for this day */}
                   <div className="space-y-2">
-                    {day.entries.map((entry, index) => (
+                    {day.entries.map((entry, index) => {
+                      const isCredit = entry.is_early_leave_credit;
+                      const timeColorClass = isCredit ? 'text-red-400' : 'text-gray-400';
+                      const labelColorClass = isCredit ? 'text-red-500' : 'text-blue-400';
+                      const hoursColorClass = isCredit ? 'text-red-400' : 'text-green-400';
+                      return (
                       <div
                         key={entry.id || index}
                         className="flex justify-between items-center bg-[#0f0f0f] p-3 rounded"
                         data-testid="report-entry"
                       >
                         <div className="flex-1">
-                          <div className="text-sm text-gray-400">
-                            <span className="text-blue-400 font-semibold">Entrada #{index + 1}</span>
+                          <div className={`text-sm ${timeColorClass}`}>
+                            <span className={`${labelColorClass} font-semibold`}>
+                              {isCredit ? 'Crédito' : `Entrada #${index + 1}`}
+                            </span>
                             {' • '}
                             {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', {
                               hour: '2-digit',
@@ -690,19 +697,20 @@ const Reports = ({ user, onLogout }) => {
                               minute: '2-digit'
                             }) : '-'}
                           </div>
-                          {entry.observations && (
+                          {!isCredit && entry.observations && (
                             <div className="text-xs text-gray-500 mt-1">
                               💬 {entry.observations}
                             </div>
                           )}
                         </div>
                         <div className="text-right ml-4">
-                          <div className="text-green-400 font-semibold">
+                          <div className={`${hoursColorClass} font-semibold`}>
                             {formatHours(entry.total_hours)}
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -1004,7 +1012,11 @@ const Reports = ({ user, onLogout }) => {
                                 {day.status === 'TRABALHADO' && day.entries && (
                                   <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                                     {day.entries.map((entry, idx) => (
-                                      <span key={idx} className="text-xs text-gray-300">
+                                      <span
+                                        key={idx}
+                                        className={`text-xs ${entry.is_early_leave_credit ? 'text-red-400 font-semibold' : 'text-gray-300'}`}
+                                        title={entry.is_early_leave_credit ? 'Crédito de horas por ordem da empresa' : undefined}
+                                      >
                                         {entry.start_time && entry.end_time && (
                                           <>
                                             {new Date(entry.start_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})}{String.fromCharCode(8211)}{new Date(entry.end_time).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'})}
@@ -1101,13 +1113,17 @@ const Reports = ({ user, onLogout }) => {
                             {day.status === 'TRABALHADO' && day.entries && day.entries.length > 0 && (
                               <div className="mt-1.5 space-y-0.5">
                                 {day.entries.map((entry, idx) => (
-                                  <div key={idx} className="text-xs text-gray-400 flex justify-between">
+                                  <div
+                                    key={idx}
+                                    className={`text-xs flex justify-between ${entry.is_early_leave_credit ? 'text-red-400 font-semibold' : 'text-gray-400'}`}
+                                    title={entry.is_early_leave_credit ? 'Crédito de horas por ordem da empresa' : undefined}
+                                  >
                                     <span>
                                       {entry.start_time ? new Date(entry.start_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                       {' → '}
                                       {entry.end_time ? new Date(entry.end_time).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '-'}
                                     </span>
-                                    <span className="text-gray-500">{formatHours(entry.total_hours)}</span>
+                                    <span className={entry.is_early_leave_credit ? 'text-red-400' : 'text-gray-500'}>{formatHours(entry.total_hours)}</span>
                                   </div>
                                 ))}
                                 {day.overtime_hours > 0 && (

@@ -23,6 +23,9 @@ def _extrair_localizacao_e_limpar_obs(entries):
     obs_unicas = set()
     
     for entry in entries:
+        # Esconder observações automáticas de entries de crédito early_leave
+        if entry.get('is_early_leave_credit'):
+            continue
         obs = entry.get('observations') or ''
         
         # Extrair localização do padrão: \nn LOCATION | ou -\nn LOCATION |
@@ -199,14 +202,29 @@ def generate_monthly_pdf_report(report_data):
             entries_text = 'N/T'
         elif day['status'] == 'TRABALHADO' and day.get('entries'):
             entries_list = []
+            has_credit = False
             for entry in day['entries']:
                 if entry.get('start_time') and entry.get('end_time'):
                     start = datetime.fromisoformat(entry['start_time']).strftime('%H:%M')
                     end = datetime.fromisoformat(entry['end_time']).strftime('%H:%M')
-                    entries_list.append(f"{start}-{end}")
-            
-            entries_text = '\n'.join(entries_list) if entries_list else '-'
-            
+                    label = f"{start}-{end}"
+                    if entry.get('is_early_leave_credit'):
+                        # Marcar crédito a vermelho (HTML inline para Paragraph)
+                        entries_list.append(f'<font color="#dc2626"><b>{label}</b></font>')
+                        has_credit = True
+                    else:
+                        entries_list.append(label)
+
+            if has_credit:
+                # Usa Paragraph para permitir HTML inline com cor
+                entries_para = Paragraph('<br/>'.join(entries_list),
+                                         ParagraphStyle('entries_cell',
+                                                        fontSize=9, leading=11,
+                                                        alignment=1))
+                entries_text = entries_para
+            else:
+                entries_text = '\n'.join(entries_list) if entries_list else '-'
+
             # Extrair localização das obs e limpar observações
             extracted_location, clean_obs = _extrair_localizacao_e_limpar_obs(day['entries'])
             observations_text = clean_obs

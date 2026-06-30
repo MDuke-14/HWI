@@ -1738,7 +1738,9 @@ async def download_monthly_pdf_report(
                 "start_time": e.get("start_time"),
                 "end_time": e.get("end_time"),
                 "total_hours": e.get("total_hours"),
-                "observations": e.get("observations")
+                "observations": e.get("observations"),
+                "is_early_leave_credit": e.get("is_early_leave_credit", False),
+                "outside_residence_zone": e.get("outside_residence_zone", False),
             } for e in sorted(day_entries, key=lambda x: x.get("start_time") or "")]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
