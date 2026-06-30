@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Link2, Trash2, User } from 'lucide-react';
+import { Edit, FileText, Link2, Trash2, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -18,6 +18,7 @@ const ReportCard = ({
   openEditRelatorioModal,
   openDeleteRelatorioModal,
   openStatusModal,
+  openRelatorioSimples,
   showRelatedReports = true,
   footerLabel = true,
 }) => {
@@ -49,6 +50,18 @@ const ReportCard = ({
         </div>
 
         <div className="flex gap-1 ml-2 flex-shrink-0">
+          {openRelatorioSimples && (
+            <Button
+              onClick={(e) => { e.stopPropagation(); openRelatorioSimples(relatorio); }}
+              variant="outline"
+              size="sm"
+              title="Relatório Simples"
+              data-testid={`rs-open-${relatorio.id}`}
+              className={`${isDark ? 'border-gray-600 hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300' : 'border-gray-300 hover:border-emerald-500 hover:bg-emerald-50'} ${isMobile ? 'p-1.5' : 'p-2'}`}
+            >
+              <FileText className={`${isMobile ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
+            </Button>
+          )}
           <Button
             onClick={(e) => { e.stopPropagation(); openEditRelatorioModal(relatorio, e); }}
             variant="outline"

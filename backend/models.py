@@ -365,6 +365,45 @@ class AssinaturaRelatorio(BaseModel):
     data_intervencao: Optional[str] = None
     intervencao_id: Optional[str] = None
 
+
+# ============ Relatório Simples (sem fotografias, estilo Word) ============
+
+class RelatorioSimplesSecao(BaseModel):
+    """Uma secção do Relatório Simples — título + corpo HTML simples (bold/italic/underline/listas)."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    titulo: Optional[str] = None
+    corpo_html: str = ""
+
+
+class RelatorioSimples(BaseModel):
+    """Relatório Simples profissional sem fotografias, associado a uma FS.
+    Uma única versão por FS (upsert por relatorio_id)."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    relatorio_id: str  # FK -> RelatorioTecnico.id (FS)
+    cliente_id: Optional[str] = None
+    cliente_nome: Optional[str] = None
+    titulo: str = ""
+    secoes: List[RelatorioSimplesSecao] = Field(default_factory=list)
+    incluir_equipamentos: bool = False
+    equipamento_ids: List[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
+
+
+class RelatorioSimplesUpsert(BaseModel):
+    """Payload para criar/atualizar um Relatório Simples (upsert por relatorio_id)."""
+    model_config = ConfigDict(extra="ignore")
+    titulo: str = ""
+    secoes: List[RelatorioSimplesSecao] = Field(default_factory=list)
+    incluir_equipamentos: bool = False
+    equipamento_ids: List[str] = Field(default_factory=list)
+
+
+
 class EnviarEmailRequest(BaseModel):
     emails: List[str]
     incluir_folha_horas: bool = False

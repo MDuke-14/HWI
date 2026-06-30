@@ -25,6 +25,7 @@ const FacturadosSection = ({
   getStatusColor,
   getStatusLabel,
   openStatusModal,
+  openRelatorioSimples,
 }) => {
   if (activeTab !== 'facturados' || !user?.is_admin) {
     return null;
@@ -80,6 +81,7 @@ const FacturadosSection = ({
               openEditRelatorioModal={openEditRelatorioModal}
               openDeleteRelatorioModal={openDeleteRelatorioModal}
               openStatusModal={openStatusModal}
+              openRelatorioSimples={openRelatorioSimples}
             />
           ))}
         </div>

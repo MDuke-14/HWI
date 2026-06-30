@@ -108,6 +108,7 @@ import {
   DeleteClienteModal,
   ReferenciaInternaModal,
   IniciarCronoModal,
+  RelatorioSimplesModal,
   CronometroFuncaoPopup,
   StopCronometroPopup,
   WorkKmPopup,
@@ -298,6 +299,14 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [relatorioToDelete, setRelatorioToDelete] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedStatusRelatorio, setSelectedStatusRelatorio] = useState(null);
+
+  // Relatório Simples (estilo Word, sem fotos)
+  const [showRelatorioSimplesModal, setShowRelatorioSimplesModal] = useState(false);
+  const [relatorioSimplesTarget, setRelatorioSimplesTarget] = useState(null);
+  const openRelatorioSimples = (relatorio) => {
+    setRelatorioSimplesTarget(relatorio);
+    setShowRelatorioSimplesModal(true);
+  };
   const [tecnicos, setTecnicos] = useState([]);
   const [showAddTecnicoModal, setShowAddTecnicoModal] = useState(false);
   const [showEditTecnicoModal, setShowEditTecnicoModal] = useState(false);
@@ -4289,6 +4298,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           getStatusColor={getStatusColor}
           getStatusLabel={getStatusLabel}
           openStatusModal={openStatusModal}
+          openRelatorioSimples={openRelatorioSimples}
         />
 
         {/* Facturados Section */}
@@ -4311,6 +4321,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           getStatusColor={getStatusColor}
           getStatusLabel={getStatusLabel}
           openStatusModal={openStatusModal}
+          openRelatorioSimples={openRelatorioSimples}
         />
 
         {/* Pesquisa por Estado Section */}
@@ -4913,17 +4924,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <span className="truncate">FS #{selectedRelatorio?.numero_assistencia}</span>
               </DialogTitle>
               {!isMobile && (
-                <Button
-                  onClick={() => {
-                    setShowViewRelatorioModal(false);
-                    openEditRelatorioModal(selectedRelatorio);
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-                  size="sm"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar FS
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      setShowViewRelatorioModal(false);
+                      openRelatorioSimples(selectedRelatorio);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                    size="sm"
+                    data-testid="btn-open-rs-from-view"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Relatório Simples
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewRelatorioModal(false);
+                      openEditRelatorioModal(selectedRelatorio);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+                    size="sm"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar FS
+                  </Button>
+                </div>
               )}
             </div>
               <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
@@ -4957,17 +4982,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                     )}
                   </span>
                   {isMobile && (
-                    <Button
-                      onClick={() => {
-                        setShowViewRelatorioModal(false);
-                        openEditRelatorioModal(selectedRelatorio);
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      size="sm"
-                    >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Editar
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={() => {
+                          setShowViewRelatorioModal(false);
+                          openRelatorioSimples(selectedRelatorio);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        size="sm"
+                        data-testid="btn-open-rs-from-view-mobile"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Relatório
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowViewRelatorioModal(false);
+                          openEditRelatorioModal(selectedRelatorio);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        size="sm"
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Editar
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -9644,6 +9683,17 @@ const TechnicalReports = ({ user, onLogout }) => {
         onOpenChange={setShowAIReview}
         relatorioId={selectedRelatorio?.id}
         onApplied={() => { if (selectedRelatorio?.id) fetchRelatoriosAssistencia(selectedRelatorio.id); }}
+      />
+
+      {/* Relatório Simples Modal (estilo Word, sem fotos) */}
+      <RelatorioSimplesModal
+        open={showRelatorioSimplesModal}
+        onOpenChange={(open) => {
+          setShowRelatorioSimplesModal(open);
+          if (!open) setRelatorioSimplesTarget(null);
+        }}
+        relatorio={relatorioSimplesTarget}
+        clienteNome={relatorioSimplesTarget?.cliente_nome}
       />
     </div>
   );

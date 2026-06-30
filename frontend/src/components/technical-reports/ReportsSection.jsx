@@ -27,6 +27,7 @@ const ReportsSection = ({
   getStatusColor,
   getStatusLabel,
   openStatusModal,
+  openRelatorioSimples,
 }) => {
   if (activeTab !== 'relatorios') {
     return null;
@@ -98,6 +99,7 @@ const ReportsSection = ({
               openEditRelatorioModal={openEditRelatorioModal}
               openDeleteRelatorioModal={openDeleteRelatorioModal}
               openStatusModal={openStatusModal}
+              openRelatorioSimples={openRelatorioSimples}
             />
           ))}
 

@@ -42,6 +42,13 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 12. ✅ Sistema de autorizações refactor: emails para geral@hwi.pt em vez de push notifications aos admin; link para portal admin; periodos de ponto incluídos no email e na UI; fix do bug do botão Aprovar/Rejeitar (response.data.status check); fix do import process_authorization_decision em routes/overtime.py
 13. ✅ Cleanup de código morto (9 ficheiros eliminados, 15+ bugs latentes corrigidos em `relatorios.py`, `time_entries.py`, etc.)
 14. ✅ **Refactor TechnicalReports.jsx (Feb 2026)** — extração de 8 novos modais para `/app/frontend/src/components/technical-reports/`: `AddFotoPCModal`, `EmailPCModal`, `HideClientPopup`, `EditMaterialPCModal`, `ChangeTipoModal`, `DeleteClienteModal`, `ReferenciaInternaModal`, `IniciarCronoModal`. Reduzido de 10100 → ~9650 linhas (-450). Adicionalmente corrigidos 2 bugs latentes (`fetchRegistosTecnicosOT` → `fetchRegistosTecnicos`, `fetchMateriaisRelatorio` → `fetchMateriais`).
+15. ✅ **Relatório Simples (Feb 2026)** — nova feature: relatório profissional sem fotografias, estilo Word.
+    - Botão "Relatório Simples" em cada card de FS (lista) + modal de visualização (desktop+mobile).
+    - Modal full-screen: editor estilo Word com formatação simples (negrito/itálico/sublinhado/listas), secções dinâmicas (adicionar/remover/reordenar), título do relatório, opção de incluir equipamentos da FS (Marca/Modelo/Nº Série).
+    - Pré-visualização A4 lado-a-lado em tempo real.
+    - Persistência: 1 versão por FS (upsert). Endpoints `GET/POST/DELETE /api/relatorios-simples/by-fs/{id}` + `GET /api/relatorios-simples/by-fs/{id}/pdf` + `GET /api/relatorios-simples/by-fs/{id}/equipamentos`.
+    - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
+    - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
 
 ## Production Deployment Config (CRÍTICO)
 - Memory: **1 GiB** (insuficiente — picos observados 1.87 GiB)

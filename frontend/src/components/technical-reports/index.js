@@ -19,6 +19,7 @@ export { default as ChangeTipoModal } from './ChangeTipoModal';
 export { default as DeleteClienteModal } from './DeleteClienteModal';
 export { default as ReferenciaInternaModal } from './ReferenciaInternaModal';
 export { default as IniciarCronoModal } from './IniciarCronoModal';
+export { default as RelatorioSimplesModal } from './RelatorioSimplesModal';
 export { CronometroFuncaoPopup, StopCronometroPopup, WorkKmPopup } from './CronometroPopups';
 
 // Technical Reports Components - Sections
