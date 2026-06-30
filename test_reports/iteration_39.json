@@ -1,0 +1,27 @@
+{
+  "summary": "Validated 'Mostrar/Esconder anos anteriores' toggles on /vacations page. Backend honors include_past query param on both endpoints (default=false hides past approvals; true returns full history). Frontend has two independent toggles ('toggle-past-years' for Meus Pedidos and 'toggle-past-years-admin' for admin Férias por Colaborador) — both flip text + amber styling and re-fetch correctly. 6/6 backend tests pass; UI verified end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_vacation_include_past_toggle.py",
+    "/app/test_reports/pytest/test_vacation_include_past_toggle.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "vacations.py:118-140 my-requests: include_past=False uses $or[status!=approved OR start_date>={year}-01-01]. String comparison on ISO 'YYYY-MM-DD' is correct (lexicographic == chronological).",
+    "vacations.py:293-326 all-balances: include_past=False adds start_date>={year}-01-01 to status='approved' query. Both endpoints compute current_year per-request — correct.",
+    "Vacations.jsx:48-67 onChange handlers call fetchRequests(next)/fetchAllBalances(next) explicitly to avoid useEffect race-conditions — clean. State for the two toggles is fully separate (showPastYears vs showPastYearsAdmin)."
+  ],
+  "updated_files": ["/app/backend/tests/test_vacation_include_past_toggle.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100%"},
+  "test_credentials": "miguel / Miguel123! (admin) — has 4 approved in 2026 + 3 rejected on 2025-10-20. System-wide there is exactly 1 past-year approved request (confirmed by test_all_balances_include_past_true_has_past_approved).",
+  "seed_data_creation": "None — relied on existing data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Toggle tests live at /app/backend/tests/test_vacation_include_past_toggle.py (6 tests). Always export REACT_APP_BACKEND_URL before pytest. Observed counts: my-requests default=7 entries (4 approved 2026 + 3 rejected 2025); include_past=true=8 (adds 1 past approved). Admin all-balances default has 0 past-year approved across all users; include_past=true exposes 1 past-year approved somewhere in the system. UI: user toggle in 'Meus Pedidos' section (always visible on As Minhas Férias tab); admin toggle in 'Todos os Colaboradores' tab. Both turn amber when active. The two toggles drive independent state variables and independent fetches.",
+  "rca of the issue": "N/A — feature works as specified. No bugs."
+}

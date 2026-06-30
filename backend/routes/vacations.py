@@ -116,24 +116,27 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
     return {"message": "Pedido de férias submetido", "request_id": vac_request.id, "days_requested": days_requested}
 
 @router.get("/vacations/my-requests")
-async def get_my_vacation_requests(current_user: dict = Depends(get_current_user)):
+async def get_my_vacation_requests(
+    include_past: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
     """Get current user's vacation requests.
 
-    Esconde pedidos APROVADOS de anos anteriores (férias já gozadas em anos
-    passados não devem poluir a página). Pendentes/rejeitados de qualquer
+    Por defeito esconde pedidos APROVADOS de anos anteriores (férias já gozadas
+    em anos passados não devem poluir a página). Pendentes/rejeitados de qualquer
     ano continuam visíveis.
+
+    Use `?include_past=true` para mostrar o histórico completo.
     """
-    current_year = date.today().year
-    requests = await db.vacation_requests.find(
-        {
-            "user_id": current_user["sub"],
-            "$or": [
-                {"status": {"$ne": "approved"}},
-                {"start_date": {"$gte": f"{current_year}-01-01"}},
-            ],
-        },
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(100)
+    query = {"user_id": current_user["sub"]}
+    if not include_past:
+        current_year = date.today().year
+        query["$or"] = [
+            {"status": {"$ne": "approved"}},
+            {"start_date": {"$gte": f"{current_year}-01-01"}},
+        ]
+    requests = await db.vacation_requests.find(query, {"_id": 0}) \
+        .sort("created_at", -1).to_list(500)
     return requests
 
 @router.get("/vacations/approved-days")
@@ -288,8 +291,15 @@ async def get_pending_vacation_requests(current_user: dict = Depends(get_current
     return requests
 
 @router.get("/admin/vacations/all-balances")
-async def get_all_vacation_balances(current_user: dict = Depends(get_current_admin)):
-    """Get vacation balances for all users with transition history (admin only)"""
+async def get_all_vacation_balances(
+    include_past: bool = False,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Get vacation balances for all users with transition history (admin only).
+
+    Por defeito `approved_requests` só inclui pedidos do ano corrente. Use
+    `?include_past=true` para devolver o histórico completo.
+    """
     balances = await db.vacation_balances.find({}, {"_id": 0}).to_list(None)
     
     # Mapear dados dos users
@@ -305,15 +315,14 @@ async def get_all_vacation_balances(current_user: dict = Depends(get_current_adm
             logs_by_user[uid] = []
         logs_by_user[uid].append(log)
     
-    # Buscar pedidos aprovados por user (apenas do ano corrente — férias gozadas
-    # em anos anteriores não devem ser apresentadas na página /vacations).
+    # Buscar pedidos aprovados por user (apenas do ano corrente por defeito —
+    # férias gozadas em anos anteriores não devem ser apresentadas na página).
     current_year = date.today().year
+    approved_query = {"status": "approved"}
+    if not include_past:
+        approved_query["start_date"] = {"$gte": f"{current_year}-01-01"}
     approved_requests = await db.vacation_requests.find(
-        {
-            "status": "approved",
-            "start_date": {"$gte": f"{current_year}-01-01"},
-        },
-        {"_id": 0},
+        approved_query, {"_id": 0},
     ).sort("start_date", -1).to_list(None)
     
     requests_by_user = {}

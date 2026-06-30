@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw, Users, ChevronDown, ChevronUp, History } from 'lucide-react';
 import VacationReviewModal from './VacationReviewModal';
 
 const Vacations = ({ user, onLogout }) => {
@@ -25,12 +25,14 @@ const Vacations = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('my');
   const [allBalances, setAllBalances] = useState([]);
   const [expandedUser, setExpandedUser] = useState(null);
+  const [showPastYears, setShowPastYears] = useState(false);
+  const [showPastYearsAdmin, setShowPastYearsAdmin] = useState(false);
 
   useEffect(() => {
     fetchBalance();
-    fetchRequests();
+    fetchRequests(showPastYears);
     if (user?.is_admin) {
-      fetchAllBalances();
+      fetchAllBalances(showPastYearsAdmin);
     }
   }, []);
 
@@ -43,18 +45,22 @@ const Vacations = ({ user, onLogout }) => {
     }
   };
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (includePast = false) => {
     try {
-      const response = await axios.get(`${API}/vacations/my-requests`);
+      const response = await axios.get(`${API}/vacations/my-requests`, {
+        params: { include_past: includePast },
+      });
       setRequests(response.data);
     } catch (error) {
       toast.error('Erro ao carregar pedidos');
     }
   };
 
-  const fetchAllBalances = async () => {
+  const fetchAllBalances = async (includePast = false) => {
     try {
-      const response = await axios.get(`${API}/admin/vacations/all-balances`);
+      const response = await axios.get(`${API}/admin/vacations/all-balances`, {
+        params: { include_past: includePast },
+      });
       setAllBalances(response.data);
     } catch (error) {
       console.error('Erro ao carregar balances admin');
@@ -69,7 +75,7 @@ const Vacations = ({ user, onLogout }) => {
       setShowRequestDialog(false);
       setRequestForm({ start_date: '', end_date: '', reason: '' });
       fetchBalance();
-      fetchRequests();
+      fetchRequests(showPastYears);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao submeter pedido');
     } finally {
@@ -194,10 +200,26 @@ const Vacations = ({ user, onLogout }) => {
         {/* Admin: All balances */}
         {user?.is_admin && activeTab === 'admin' && (
           <div className="space-y-4">
-            <h2 className="text-lg md:text-2xl font-semibold text-white flex items-center gap-2">
-              <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
-              Férias por Colaborador
-            </h2>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-lg md:text-2xl font-semibold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+                Férias por Colaborador
+              </h2>
+              <Button
+                onClick={() => {
+                  const next = !showPastYearsAdmin;
+                  setShowPastYearsAdmin(next);
+                  fetchAllBalances(next);
+                }}
+                variant="outline"
+                size="sm"
+                className={`border-gray-600 ${showPastYearsAdmin ? 'bg-amber-600/10 text-amber-300 border-amber-600/50' : 'text-gray-300 hover:bg-white/5'}`}
+                data-testid="toggle-past-years-admin"
+              >
+                <History className="w-3.5 h-3.5 mr-1.5" />
+                {showPastYearsAdmin ? 'Esconder anos anteriores' : 'Mostrar anos anteriores'}
+              </Button>
+            </div>
 
             {allBalances.length === 0 ? (
               <div className="glass-effect p-6 rounded-xl text-center text-gray-400">
@@ -367,7 +389,23 @@ const Vacations = ({ user, onLogout }) => {
         )}
 
         <div className="glass-effect p-4 md:p-6 rounded-xl">
-          <h2 className="text-lg md:text-2xl font-semibold text-white mb-4 md:mb-6">Meus Pedidos</h2>
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-4 md:mb-6">
+            <h2 className="text-lg md:text-2xl font-semibold text-white">Meus Pedidos</h2>
+            <Button
+              onClick={() => {
+                const next = !showPastYears;
+                setShowPastYears(next);
+                fetchRequests(next);
+              }}
+              variant="outline"
+              size="sm"
+              className={`border-gray-600 ${showPastYears ? 'bg-amber-600/10 text-amber-300 border-amber-600/50' : 'text-gray-300 hover:bg-white/5'}`}
+              data-testid="toggle-past-years"
+            >
+              <History className="w-3.5 h-3.5 mr-1.5" />
+              {showPastYears ? 'Esconder anos anteriores' : 'Mostrar anos anteriores'}
+            </Button>
+          </div>
           {requests.length > 0 ? (
             <div className="space-y-3 md:space-y-4">
               {requests.map((req) => (
@@ -394,7 +432,7 @@ const Vacations = ({ user, onLogout }) => {
       <VacationReviewModal
         open={showReviewDialog}
         onOpenChange={setShowReviewDialog}
-        onSuccess={() => { fetchBalance(); fetchRequests(); }}
+        onSuccess={() => { fetchBalance(); fetchRequests(showPastYears); if (user?.is_admin) fetchAllBalances(showPastYearsAdmin); }}
       />
     </div>
   );
