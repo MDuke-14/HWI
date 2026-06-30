@@ -1,0 +1,29 @@
+{
+  "summary": "Backend testing of fix in notifications_scheduler.py (~L1455-1500) that creates credit entries with virtual start_time/end_time when an early_leave authorization is approved. Full e2e flow validated on user teste@email.com / 2026-07-15: seed 08:00-13:00 + 14:00 active → POST end with early_leave_company_order=true + client_time=16:00 (total worked 7h) → pending early_leave auth created → POST /overtime/authorization/{id}/decide action=approve → credit entry persisted with start_time=2026-07-15T16:00:00+01:00, end_time=2026-07-15T17:00:00+01:00, total_hours=1.0, credit_minutes=60. GET /reports/monthly-detailed?month=7&year=2026 returns 3 entries with non-null start_time/end_time on 2026-07-15. GET /admin/realtime-status returns 200 and does NOT include credit in entradas. Regression: migrated credit 2026-06-25 has start_time/end_time non-null (16:00→17:00, 1.0h). All 7/7 tests PASSED. Test data cleaned up.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_early_leave_credit_virtual_times.py",
+    "/app/test_reports/pytest/early_leave_credit_virtual_times.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "notifications_scheduler.py:1465-1466 — real_ends filter correctly excludes credit entries via `not e.get('is_early_leave_credit')`, so re-approvals on a day with prior credits won't chain virtual times. Good defensive design.",
+    "notifications_scheduler.py:1471 max(real_ends) on ISO strings works because all entries of the same day share identical TZ offset; if mixed-TZ entries ever land on the same day this could pick a chronologically wrong end. Low risk but consider parsing dt then maxing.",
+    "notifications_scheduler.py:1477-1478 — exception swallowed silently with virtual_start/end staying None → credit will revert to dashes. Acceptable fallback, but consider logging the offending real_ends to aid future debugging.",
+    "routes/overtime.py:21 — endpoint resolves `{'id': token}` (not `approval_token`). Public route /public_authorizations.py:25-28 uses approval_token. Two different identifiers serving similar lookups — consider unifying or documenting clearly."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_early_leave_credit_virtual_times.py"
+  ],
+  "success_rate": {"backend": "100% (7/7 tests passed)", "frontend": "not tested (per request)"},
+  "test_credentials": "teste@email.com / Admin123! (id c145d94b-bb5f-4fe1-b05d-6fa1034db968); miguel / Miguel123!",
+  "seed_data_creation": "Seeded 08:00-13:00 completed + 14:00 active entries for user teste@email.com on 2026-07-15. All seed entries, generated credit entry and overtime authorization removed in class teardown. Final DB verification: 0 entries and 0 authorizations remain for 2026-07-15. Migrated 2026-06-25 credit preserved (16:00→17:00, 1.0h).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pytest /app/backend/tests/test_early_leave_credit_virtual_times.py is idempotent (auto cleanup). Run with REACT_APP_BACKEND_URL / MONGO_URL / DB_NAME env vars. Covers the virtual start/end times of credit entries plus realtime-status exclusion and June-25 migration regression. Note: decide endpoint uses doc.id (not approval_token) as URL token.",
+  "rca of the issue": "Original symptom: credit entries showed '—' in monthly reports because start_time/end_time were None. Fix in notifications_scheduler.py L1461-1476 computes virtual_start = max(end_time of real completed picagens) and virtual_end = virtual_start + hours_short_minutes. Verified end-to-end: credit on 2026-07-15 stored as 16:00→17:00, surfaced correctly in monthly-detailed, excluded from admin/realtime-status entradas, and migration retroactively fixed 2026-06-25 credit (also 16:00→17:00, 1.0h)."
+}

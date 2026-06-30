@@ -1455,13 +1455,35 @@ async def process_authorization_decision(
             # Criar entrada de crédito separada (rastreabilidade total)
             if hours_short_min > 0:
                 from uuid import uuid4
+                # Calcular horas virtuais: começam a seguir ao end_time da última
+                # picagem real do dia e duram exactamente os minutos em falta.
+                # Permite que o relatório mostre [HH:MM → HH:MM] em vez de "—".
+                day_entries = await db.time_entries.find(
+                    {"user_id": user_id, "date": date_str, "status": "completed"},
+                    {"_id": 0, "end_time": 1, "is_early_leave_credit": 1},
+                ).to_list(50)
+                real_ends = [e.get("end_time") for e in day_entries
+                             if e.get("end_time") and not e.get("is_early_leave_credit")]
+                virtual_start = None
+                virtual_end = None
+                try:
+                    if real_ends:
+                        latest_end_iso = max(real_ends)
+                        latest_end_dt = datetime.fromisoformat(latest_end_iso)
+                        virtual_start_dt = latest_end_dt
+                        virtual_end_dt = latest_end_dt + timedelta(minutes=hours_short_min)
+                        virtual_start = virtual_start_dt.isoformat()
+                        virtual_end = virtual_end_dt.isoformat()
+                except Exception as exc:
+                    logger.warning(f"[early_leave] não foi possível calcular horas virtuais: {exc}")
+
                 credit_entry = {
                     "id": str(uuid4()),
                     "user_id": user_id,
                     "username": auth_request.get("user_name"),
                     "date": date_str,
-                    "start_time": None,
-                    "end_time": None,
+                    "start_time": virtual_start,
+                    "end_time": virtual_end,
                     "status": "completed",
                     "is_manual": True,
                     "is_early_leave_credit": True,
