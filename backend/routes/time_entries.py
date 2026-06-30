@@ -34,7 +34,7 @@ from import_pdf import parse_pdf_timesheet
 #       - h >= 4  → SA_FULL_VALUE (10€)
 #   • AC (quando está outside_residence_zone):
 #       - h < 4         → 0
-#       - 4 <= h < 6    → 25% (12,50€)
+#       - 4 <= h < 6    → 50% (25€)
 #       - h >= 6        → 100% (50€)
 # Nota: a regra antiga de "dia especial só paga >=5h" foi substituída pelo
 # limite universal de 4h (aplica-se a TODOS os dias).
@@ -53,7 +53,7 @@ def calcular_sa_ac(total_hours: float, outside_zone: bool) -> tuple[str | None, 
     if outside_zone:
         # AC tiered
         if total_hours < 6:
-            return ("Ajuda de Custos", round(AC_FULL_VALUE * 0.25, 2))  # 25%
+            return ("Ajuda de Custos", round(AC_FULL_VALUE * 0.5, 2))  # 50%
         return ("Ajuda de Custos", AC_FULL_VALUE)
     # SA binário
     return ("Subsídio de Alimentação", SA_FULL_VALUE)

@@ -56,22 +56,22 @@ def test_4h_exactas_recebe_sa():
     print("✅ 4h exact sem outside_zone → SA 10€")
 
 
-def test_4h_exactas_recebe_ac_25pct():
+def test_4h_exactas_recebe_ac_50pct():
     tipo, valor = calcular_sa_ac(4.0, outside_zone=True)
-    assert tipo == "Ajuda de Custos" and valor == 12.5, f"4h exact AC deve dar 25% = 12.50€, foi: {tipo}/{valor}"
-    print("✅ 4h exact com outside_zone → AC 12.50€ (25%)")
+    assert tipo == "Ajuda de Custos" and valor == 25.0, f"4h exact AC deve dar 50% = 25.00€, foi: {tipo}/{valor}"
+    print("✅ 4h exact com outside_zone → AC 25.00€ (50%)")
 
 
-def test_5h_recebe_ac_25pct():
+def test_5h_recebe_ac_50pct():
     tipo, valor = calcular_sa_ac(5.0, outside_zone=True)
-    assert tipo == "Ajuda de Custos" and valor == 12.5, f"5h AC deve dar 25%, foi: {tipo}/{valor}"
-    print("✅ 5h com outside_zone → AC 12.50€ (25%)")
+    assert tipo == "Ajuda de Custos" and valor == 25.0, f"5h AC deve dar 50%, foi: {tipo}/{valor}"
+    print("✅ 5h com outside_zone → AC 25.00€ (50%)")
 
 
-def test_5h59_recebe_ac_25pct():
+def test_5h59_recebe_ac_50pct():
     tipo, valor = calcular_sa_ac(5.983, outside_zone=True)  # 5h59m
-    assert tipo == "Ajuda de Custos" and valor == 12.5, f"5h59 AC deve dar 25%, foi: {tipo}/{valor}"
-    print("✅ 5h59 com outside_zone → AC 12.50€ (25%)")
+    assert tipo == "Ajuda de Custos" and valor == 25.0, f"5h59 AC deve dar 50%, foi: {tipo}/{valor}"
+    print("✅ 5h59 com outside_zone → AC 25.00€ (50%)")
 
 
 def test_6h_exactas_recebe_ac_100pct():
@@ -104,9 +104,9 @@ if __name__ == '__main__':
     test_menos_de_4h_sa_nao_recebe()
     test_menos_de_4h_ac_nao_recebe()
     test_4h_exactas_recebe_sa()
-    test_4h_exactas_recebe_ac_25pct()
-    test_5h_recebe_ac_25pct()
-    test_5h59_recebe_ac_25pct()
+    test_4h_exactas_recebe_ac_50pct()
+    test_5h_recebe_ac_50pct()
+    test_5h59_recebe_ac_50pct()
     test_6h_exactas_recebe_ac_100pct()
     test_8h_recebe_ac_100pct()
     test_8h_sem_outside_recebe_sa()
