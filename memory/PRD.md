@@ -49,6 +49,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
     - Persistência: 1 versão por FS (upsert). Endpoints `GET/POST/DELETE /api/relatorios-simples/by-fs/{id}` + `GET /api/relatorios-simples/by-fs/{id}/pdf` + `GET /api/relatorios-simples/by-fs/{id}/equipamentos`.
     - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
     - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
+16. ✅ **Auth fix + Vacations filter (Feb 2026)** — eliminado utilizador duplicado em `users`; passwords reset para `miguel` (`Miguel123!`) e `teste@email.com` (`Admin123!`). Filtro `include_past` (default false) em `/vacations/my-requests` e `/admin/vacations/all-balances` esconde férias gozadas de anos anteriores. Toggles UI 'Mostrar/Esconder anos anteriores' nas secções Meus Pedidos + Admin.
+17. ✅ **Saída por Ordem da Empresa (Feb 2026)** — quando o colaborador faz a 2ª picagem e tenta fechar o ponto com total < 8h, aparece checkbox "Saída por Ordem da Empresa" no Dashboard.
+    - Sem checkbox: ponto fecha normalmente sem aprovação.
+    - Com checkbox: ponto fecha + email automático ao admin com mesmo template/fluxo das horas extra (`request_type="early_leave"` em `overtime_authorizations`).
+    - Admin aprova: sistema cria entry virtual de crédito (`is_early_leave_credit=true`) com observação rastreável para perfazer 8h.
+    - Admin rejeita: mantém-se as horas efetivamente trabalhadas.
+    - SessionStorage partilhada Dashboard ↔ MobileLayout para mobile usar a mesma flag.
+    - Files: `models.py` (TimeEntryEnd campo `early_leave_company_order`), `routes/time_entries.py`, `notifications_scheduler.py` (handler `early_leave` + helper `create_early_leave_authorization`), `Dashboard.jsx`, `mobile/MobileLayout.jsx`.
 
 ## Production Deployment Config (CRÍTICO)
 - Memory: **1 GiB** (insuficiente — picos observados 1.87 GiB)
