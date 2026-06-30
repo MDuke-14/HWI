@@ -1206,7 +1206,7 @@ async def get_custom_range_report(
                 "end_time": e.get("end_time"),
                 "total_hours": e.get("total_hours"),
                 "observations": e.get("observations")
-            } for e in sorted(day_entries, key=lambda x: x.get("start_time", ""))]
+            } for e in sorted(day_entries, key=lambda x: x.get("start_time") or "")]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
             day_data["special_hours"] = round(special_hours, 2)
@@ -1427,8 +1427,10 @@ async def get_monthly_detailed_report(
                 "start_time": e.get("start_time"),
                 "end_time": e.get("end_time"),
                 "total_hours": e.get("total_hours"),
-                "observations": e.get("observations")
-            } for e in sorted(day_entries, key=lambda x: x.get("start_time", ""))]
+                "observations": e.get("observations"),
+                "is_early_leave_credit": e.get("is_early_leave_credit", False),
+                "authorized_by": e.get("authorized_by"),
+            } for e in sorted(day_entries, key=lambda x: x.get("start_time") or "")]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
             day_data["special_hours"] = round(special_hours, 2)
@@ -1723,7 +1725,7 @@ async def download_monthly_pdf_report(
                 "end_time": e.get("end_time"),
                 "total_hours": e.get("total_hours"),
                 "observations": e.get("observations")
-            } for e in sorted(day_entries, key=lambda x: x.get("start_time", ""))]
+            } for e in sorted(day_entries, key=lambda x: x.get("start_time") or "")]
             day_data["total_hours"] = round(total_hours, 2)
             day_data["overtime_hours"] = round(overtime_hours, 2)
             day_data["special_hours"] = round(special_hours, 2)
