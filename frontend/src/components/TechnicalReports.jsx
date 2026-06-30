@@ -8060,7 +8060,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* Add Cliente Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Plus className="w-5 h-5 text-blue-400" />
@@ -8248,7 +8248,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       {/* Edit Cliente Modal */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">
               <Edit className="w-5 h-5 text-blue-400" />
