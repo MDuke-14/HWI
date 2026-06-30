@@ -117,10 +117,22 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
 
 @router.get("/vacations/my-requests")
 async def get_my_vacation_requests(current_user: dict = Depends(get_current_user)):
-    """Get current user's vacation requests"""
+    """Get current user's vacation requests.
+
+    Esconde pedidos APROVADOS de anos anteriores (férias já gozadas em anos
+    passados não devem poluir a página). Pendentes/rejeitados de qualquer
+    ano continuam visíveis.
+    """
+    current_year = date.today().year
     requests = await db.vacation_requests.find(
-        {"user_id": current_user["sub"]},
-        {"_id": 0}
+        {
+            "user_id": current_user["sub"],
+            "$or": [
+                {"status": {"$ne": "approved"}},
+                {"start_date": {"$gte": f"{current_year}-01-01"}},
+            ],
+        },
+        {"_id": 0},
     ).sort("created_at", -1).to_list(100)
     return requests
 
@@ -293,11 +305,15 @@ async def get_all_vacation_balances(current_user: dict = Depends(get_current_adm
             logs_by_user[uid] = []
         logs_by_user[uid].append(log)
     
-    # Buscar pedidos aprovados por user (do ano corrente)
+    # Buscar pedidos aprovados por user (apenas do ano corrente — férias gozadas
+    # em anos anteriores não devem ser apresentadas na página /vacations).
     current_year = date.today().year
     approved_requests = await db.vacation_requests.find(
-        {"status": "approved"},
-        {"_id": 0}
+        {
+            "status": "approved",
+            "start_date": {"$gte": f"{current_year}-01-01"},
+        },
+        {"_id": 0},
     ).sort("start_date", -1).to_list(None)
     
     requests_by_user = {}

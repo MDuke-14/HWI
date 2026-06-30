@@ -1,0 +1,33 @@
+{
+  "summary": "Validated year-based filter that hides APPROVED vacation requests of previous years on /vacations. Backend (2 endpoints) and Frontend (Meus Pedidos + admin Todos os Colaboradores) all confirmed working. 8/8 backend tests pass; UI matches expectations.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/vacations 'Meus Pedidos'", "issues": ["Pre-existing (unrelated to this fix): one card shows '25/02/2026 até 25/02/2026' with text 'dias' (no number) because days_requested=0 for that justified-day record. Not a regression."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_vacation_year_filter.py",
+    "/app/test_reports/pytest/test_vacation_year_filter.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "vacations.py:127-136 uses string comparison `{$gte: 'YYYY-01-01'}` on start_date — works because start_date is stored as ISO 'YYYY-MM-DD' string. Lexicographic order matches chronological order. OK.",
+    "vacations.py:290-348 mirrors the same filter for admin endpoint. Both use date.today().year computed at request time (correct, reflects server timezone)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_vacation_year_filter.py"
+  ],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100%"},
+  "test_credentials": "miguel / Miguel123! (admin). Has approved entries in 2026 (23/01, 20/02, 25/02, 01/03-28/03) and 3 rejected entries on 2025-10-20.",
+  "seed_data_creation": "None - relied on existing miguel data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend test file /app/backend/tests/test_vacation_year_filter.py validates the year filter for /api/vacations/my-requests and /api/admin/vacations/all-balances and that /api/vacations/balance is unchanged. Must export REACT_APP_BACKEND_URL before pytest. Frontend at /vacations confirmed: 'Meus Pedidos' shows only 2026 approved + 2025 rejected (3 rejected entries from 2025-10-20 remain visible because non-approved). Admin 'Todos os Colaboradores' tab also filters approved_requests by current year.",
+  "rca of the issue": "Filter implemented as MongoDB query on start_date string (ISO format). For my-requests: {$or:[{status:{$ne:'approved'}},{start_date:{$gte:'2026-01-01'}}]} — keeps non-approved of any year and only current-year approved. For all-balances: status='approved' AND start_date>='2026-01-01'. Both endpoints verified via API and UI render."
+}
