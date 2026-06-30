@@ -5,7 +5,7 @@ import os
 import logging
 import secrets
 import uuid
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from typing import Optional, List, Dict
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart

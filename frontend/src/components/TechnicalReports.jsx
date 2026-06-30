@@ -100,6 +100,14 @@ import {
   EmailModal,
   StatusChangeModal,
   DeleteRelatorioModal,
+  AddFotoPCModal,
+  EmailPCModal,
+  HideClientPopup,
+  EditMaterialPCModal,
+  ChangeTipoModal,
+  DeleteClienteModal,
+  ReferenciaInternaModal,
+  IniciarCronoModal,
   CronometroFuncaoPopup,
   StopCronometroPopup,
   WorkKmPopup,
@@ -1542,7 +1550,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           { tipo: novoTipo }
         );
         // Recarregar registos de cronómetro
-        fetchRegistosTecnicosOT(selectedRelatorio.id);
+        fetchRegistosTecnicos(selectedRelatorio.id);
       } else {
         // Atualizar registo manual
         await axios.put(
@@ -2817,7 +2825,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.success('Movido com sucesso!');
 
       if (type === 'foto') fetchFotografiasRelatorio(selectedRelatorio.id);
-      else if (type === 'material') fetchMateriaisRelatorio(selectedRelatorio.id);
+      else if (type === 'material') fetchMateriais(selectedRelatorio.id);
       else if (type === 'equipamento') fetchEquipamentosOT(selectedRelatorio.id);
     } catch (error) {
       console.error('Erro ao mover:', error);
@@ -7035,195 +7043,48 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Add Foto PC Modal */}
-      <Dialog open={showAddFotoPCModal} onOpenChange={setShowAddFotoPCModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Adicionar Fotografia ao PC</DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleUploadFotoPC} className="space-y-4">
-            <div>
-              <Label htmlFor="foto_pc_file" className="text-gray-300">Selecionar Imagem</Label>
-              <Input
-                id="foto_pc_file"
-                type="file"
-                accept="image/*"
-                onChange={handleFotoPCFileChange}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="foto_pc_descricao" className="text-gray-300">Descrição</Label>
-              <Input
-                id="foto_pc_descricao"
-                defaultValue={fotoPCDescricao}
-                onBlur={(e) => setFotoPCDescricao(e.target.value)}
-                className="bg-[#0f0f0f] border-gray-700 text-white"
-                placeholder="Ex: Vista frontal do equipamento"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowAddFotoPCModal(false);
-                  setFotoPCFile(null);
-                  setFotoPCDescricao('');
-                }}
-                variant="outline"
-                className="flex-1 border-gray-600"
-                disabled={uploadingFotoPC}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                disabled={uploadingFotoPC}
-              >
-                {uploadingFotoPC ? 'Enviando...' : 'Adicionar'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AddFotoPCModal
+        open={showAddFotoPCModal}
+        onOpenChange={setShowAddFotoPCModal}
+        onSubmit={handleUploadFotoPC}
+        onFileChange={handleFotoPCFileChange}
+        descricao={fotoPCDescricao}
+        setDescricao={setFotoPCDescricao}
+        uploading={uploadingFotoPC}
+        onCancel={() => {
+          setShowAddFotoPCModal(false);
+          setFotoPCFile(null);
+          setFotoPCDescricao('');
+        }}
+      />
 
       {/* Email PC Modal */}
-      <Dialog open={showEmailPCModal} onOpenChange={setShowEmailPCModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Enviar PDF por Email</DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-gray-300">Selecione o email de destino:</p>
-            <div className="space-y-2">
-              {['geral@hwi.pt', 'pedro.duarte@hwi.pt', 'miguel.moreira@hwi.pt'].map((email) => (
-                <Button
-                  key={email}
-                  onClick={() => triggerPCEmail(email)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={sendingEmailPC}
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  {email}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EmailPCModal
+        open={showEmailPCModal}
+        onOpenChange={setShowEmailPCModal}
+        onSend={triggerPCEmail}
+        sending={sendingEmailPC}
+      />
 
       {/* Popup: Esconder nome do cliente no PC */}
-      <Dialog open={showHideClientPopup} onOpenChange={setShowHideClientPopup}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-white">Dados do Cliente</DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-          <p className="text-gray-300 text-sm">
-            Deseja ocultar o nome do cliente no documento?
-          </p>
-          <p className="text-gray-500 text-xs mt-1">
-            O nome será substituído por uma barra preta de confidencialidade.
-          </p>
-
-          {/* Idioma do Email (só aparece para envio de email, não download) */}
-          {hideClientAction?.type === 'email' && (
-            <div className="border-t border-gray-800 pt-3 mt-3">
-              <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Idioma do Email</p>
-              <div className="flex gap-2">
-                {[
-                  { value: 'pt', label: 'PT', flag: '🇵🇹' },
-                  { value: 'es', label: 'ES', flag: '🇪🇸' },
-                  { value: 'en', label: 'EN', flag: '🇬🇧' },
-                ].map((lang) => (
-                  <button
-                    key={lang.value}
-                    onClick={() => setIdiomaEmail(lang.value)}
-                    data-testid={`pc-lang-${lang.value}`}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm transition-all ${
-                      idiomaEmail === lang.value
-                        ? 'border-green-500 bg-green-600/10 text-white font-medium'
-                        : 'border-gray-700 bg-[#0f0f0f] text-gray-400 hover:border-gray-500'
-                    }`}
-                  >
-                    <span>{lang.flag}</span>
-                    <span>{lang.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3 mt-4">
-            <Button
-              onClick={() => executeHideClientAction(false)}
-              className="flex-1 bg-gray-600 hover:bg-gray-700"
-              data-testid="pc-client-show"
-            >
-              Mostrar Cliente
-            </Button>
-            <Button
-              onClick={() => executeHideClientAction(true)}
-              className="flex-1 bg-gray-900 hover:bg-black border border-gray-600"
-              data-testid="pc-client-hide"
-            >
-              Ocultar Cliente
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <HideClientPopup
+        open={showHideClientPopup}
+        onOpenChange={setShowHideClientPopup}
+        actionType={hideClientAction?.type}
+        idiomaEmail={idiomaEmail}
+        setIdiomaEmail={setIdiomaEmail}
+        onExecute={executeHideClientAction}
+      />
 
 
       {/* Edit Material PC Modal */}
-      <Dialog open={showEditMaterialPCModal} onOpenChange={setShowEditMaterialPCModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-white">Editar Material</DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label className="text-gray-300">Descrição</Label>
-              <Input
-                value={editMaterialPCForm.descricao}
-                onChange={(e) => setEditMaterialPCForm({ ...editMaterialPCForm, descricao: e.target.value })}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-                placeholder="Descrição do material"
-              />
-            </div>
-            <div>
-              <Label className="text-gray-300">Quantidade</Label>
-              <Input
-                type="number"
-                min="1"
-                value={editMaterialPCForm.quantidade}
-                onChange={(e) => setEditMaterialPCForm({ ...editMaterialPCForm, quantidade: parseInt(e.target.value) || 1 })}
-                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
-              />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={() => setShowEditMaterialPCModal(false)}
-                variant="outline"
-                className="flex-1 border-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleUpdateMaterialPC}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                Guardar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EditMaterialPCModal
+        open={showEditMaterialPCModal}
+        onOpenChange={setShowEditMaterialPCModal}
+        form={editMaterialPCForm}
+        setForm={setEditMaterialPCForm}
+        onSave={handleUpdateMaterialPC}
+      />
 
 
     </>
@@ -7919,119 +7780,16 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Change Tipo Modal */}
-      <Dialog open={showTipoModal} onOpenChange={setShowTipoModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Tag className="w-5 h-5 text-purple-400" />
-              Alterar Tipo de Registo
-            </DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-
-          {selectedTecnicoForTipo && (
-            <div className="space-y-4 mt-4">
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <p className="text-white font-semibold mb-2">
-                  Técnico: {selectedTecnicoForTipo.tecnico_nome}
-                </p>
-                <p className="text-gray-400 text-sm">
-                  Data: {new Date(selectedTecnicoForTipo.data_trabalho).toLocaleDateString('pt-PT')}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-gray-500 text-xs">Tipo atual:</span>
-                  <span className={`px-2 py-1 rounded text-sm ${
-                    selectedTecnicoForTipo._tipo_registo === 'manual' ? 'bg-gray-600/30 text-gray-300' :
-                    selectedTecnicoForTipo._tipo_registo === 'trabalho' ? 'bg-green-600/20 text-green-400' : 
-                    selectedTecnicoForTipo._tipo_registo === 'oficina' ? 'bg-orange-600/20 text-orange-400' :
-                    'bg-blue-600/20 text-blue-400'
-                  }`}>
-                    {selectedTecnicoForTipo._tipo_registo === 'manual' ? 'Manual' : 
-                     selectedTecnicoForTipo._tipo_registo === 'trabalho' ? 'Trabalho' : 
-                     selectedTecnicoForTipo._tipo_registo === 'oficina' ? 'Oficina' : 'Viagem'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-gray-300 text-sm mb-3">Selecione o novo tipo:</p>
-                
-                <Button
-                  onClick={() => handleChangeTipo('manual')}
-                  className="w-full justify-start bg-gray-500/10 hover:bg-gray-500/20 border border-gray-500/20 text-gray-300"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded bg-gray-500 flex items-center justify-center">
-                      <Edit className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="font-semibold">Manual</div>
-                      <div className="text-xs text-gray-400">Registo inserido manualmente</div>
-                    </div>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => handleChangeTipo('trabalho')}
-                  className="w-full justify-start bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded bg-green-500 flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="font-semibold">Trabalho</div>
-                      <div className="text-xs text-gray-400">Tempo de trabalho no cliente</div>
-                    </div>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => handleChangeTipo('viagem')}
-                  className="w-full justify-start bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded bg-blue-500 flex items-center justify-center">
-                      <Car className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="font-semibold">Viagem</div>
-                      <div className="text-xs text-gray-400">Tempo de deslocação</div>
-                    </div>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => handleChangeTipo('oficina')}
-                  className="w-full justify-start bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-400"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded bg-orange-500 flex items-center justify-center">
-                      <Wrench className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="font-semibold">Oficina</div>
-                      <div className="text-xs text-gray-400">Trabalho em oficina</div>
-                    </div>
-                  </div>
-                </Button>
-              </div>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setShowTipoModal(false);
-                  setSelectedTecnicoForTipo(null);
-                }}
-                variant="outline"
-                className="w-full border-gray-600 mt-4"
-              >
-                Cancelar
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ChangeTipoModal
+        open={showTipoModal}
+        onOpenChange={setShowTipoModal}
+        tecnico={selectedTecnicoForTipo}
+        onChangeTipo={handleChangeTipo}
+        onCancel={() => {
+          setShowTipoModal(false);
+          setSelectedTecnicoForTipo(null);
+        }}
+      />
 
       {/* Change Status Modal */}
       <StatusChangeModal
@@ -9170,63 +8928,16 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-400">
-              <Trash2 className="w-5 h-5" />
-              Confirmar Eliminação
-            </DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-
-          {clienteToDelete && (
-            <div className="space-y-4 mt-4">
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                <p className="text-white mb-2">
-                  Tem certeza que deseja eliminar este cliente?
-                </p>
-                <div className="bg-[#0f0f0f] p-3 rounded mt-3">
-                  <p className="text-white font-semibold">{clienteToDelete.nome}</p>
-                  {clienteToDelete.nif && (
-                    <p className="text-gray-400 text-sm">NIF: {clienteToDelete.nif}</p>
-                  )}
-                  {clienteToDelete.email && (
-                    <p className="text-gray-400 text-sm">{clienteToDelete.email}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                <p className="text-amber-200 text-sm">
-                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. O cliente será marcado como inativo.
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setClienteToDelete(null);
-                  }}
-                  variant="outline"
-                  className="flex-1 border-gray-600"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleDeleteCliente}
-                  className="flex-1 bg-red-500 hover:bg-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar Cliente
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <DeleteClienteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        cliente={clienteToDelete}
+        onConfirm={handleDeleteCliente}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setClienteToDelete(null);
+        }}
+      />
 
       {/* Modal Adicionar Registo Manual */}
       <Dialog open={showAddRegistoManualModal} onOpenChange={setShowAddRegistoManualModal}>
@@ -9864,189 +9575,30 @@ const TechnicalReports = ({ user, onLogout }) => {
       </AlertDialog>
 
       {/* Modal Referência Interna do Cliente */}
-      <Dialog open={showReferenciaInternaModal} onOpenChange={(open) => {
-        if (!open) handleIgnorarReferenciaInterna();
-      }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md" data-testid="modal-ref-interna">
-          <DialogHeader>
-            <DialogTitle className="text-white text-lg">
-              Referência Interna do Cliente
-            </DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <p className="text-gray-400 text-sm">
-              Existe referência interna do cliente para esta FS?
-            </p>
-            <Input
-              value={referenciaInternaValue}
-              onChange={(e) => setReferenciaInternaValue(e.target.value)}
-              className="bg-[#0f0f0f] border-gray-700 text-white"
-              placeholder="Nº encomenda, referência interna, etc."
-              autoFocus
-              data-testid="input-ref-interna"
-            />
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 border-gray-600 text-gray-300"
-                onClick={handleIgnorarReferenciaInterna}
-                data-testid="btn-ignorar-ref"
-              >
-                Ignorar
-              </Button>
-              <Button
-                type="button"
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                onClick={handleGravarReferenciaInterna}
-                disabled={!referenciaInternaValue.trim()}
-                data-testid="btn-gravar-ref"
-              >
-                Gravar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ReferenciaInternaModal
+        open={showReferenciaInternaModal}
+        value={referenciaInternaValue}
+        setValue={setReferenciaInternaValue}
+        onIgnorar={handleIgnorarReferenciaInterna}
+        onGravar={handleGravarReferenciaInterna}
+      />
 
       {/* Modal Iniciar Cronómetro após criar FS */}
-      <Dialog open={showIniciarCronoModal} onOpenChange={(open) => {
-        if (!open) {
+      <IniciarCronoModal
+        open={showIniciarCronoModal}
+        onClose={() => {
           setShowIniciarCronoModal(false);
           setNovaOTParaCrono(null);
           setCronoTecnicosSelecionados([]);
-        }
-      }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <PlayCircle className="w-5 h-5 text-green-400" />
-              Iniciar Cronómetro - FS #{novaOTParaCrono?.numero}
-            </DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 mt-4">
-            <p className="text-gray-400 text-sm">
-              FS criada com sucesso! Deseja iniciar um cronómetro?
-            </p>
-
-            {/* Tipo de Cronómetro */}
-            <div>
-              <Label className="text-gray-300 mb-2 block">Tipo de Cronómetro</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  onClick={() => setCronoTipo('trabalho')}
-                  className={`${cronoTipo === 'trabalho' 
-                    ? 'bg-blue-600 hover:bg-blue-700' 
-                    : 'bg-gray-700 hover:bg-gray-600'}`}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Trabalho
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setCronoTipo('viagem')}
-                  className={`${cronoTipo === 'viagem' 
-                    ? 'bg-purple-600 hover:bg-purple-700' 
-                    : 'bg-gray-700 hover:bg-gray-600'}`}
-                >
-                  <Car className="w-4 h-4 mr-2" />
-                  Viagem
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setCronoTipo('oficina')}
-                  className={`${cronoTipo === 'oficina' 
-                    ? 'bg-orange-600 hover:bg-orange-700' 
-                    : 'bg-gray-700 hover:bg-gray-600'}`}
-                >
-                  <Wrench className="w-4 h-4 mr-2" />
-                  Oficina
-                </Button>
-              </div>
-            </div>
-
-            {/* Seleção de Técnicos */}
-            <div>
-              <Label className="text-gray-300 mb-2 block">Selecionar Técnico(s)</Label>
-              <div className="bg-[#0f0f0f] border border-gray-700 rounded-md max-h-48 overflow-y-auto">
-                {allSystemUsers.length > 0 ? (
-                  allSystemUsers.map((userItem) => {
-                    const isSelected = cronoTecnicosSelecionados.some(t => t.id === userItem.id);
-                    return (
-                      <div
-                        key={userItem.id}
-                        onClick={() => {
-                          if (isSelected) {
-                            setCronoTecnicosSelecionados(
-                              cronoTecnicosSelecionados.filter(t => t.id !== userItem.id)
-                            );
-                          } else {
-                            setCronoTecnicosSelecionados([
-                              ...cronoTecnicosSelecionados,
-                              { id: userItem.id, nome: userItem.full_name || userItem.username }
-                            ]);
-                          }
-                        }}
-                        className={`flex items-center gap-3 p-3 cursor-pointer border-b border-gray-700 last:border-b-0 hover:bg-gray-800 ${
-                          isSelected ? 'bg-blue-900/30' : ''
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${
-                          isSelected 
-                            ? 'bg-blue-600 border-blue-600' 
-                            : 'border-gray-600'
-                        }`}>
-                          {isSelected && <span className="text-white text-xs">✓</span>}
-                        </div>
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-white">{userItem.full_name || userItem.username}</span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-4 text-gray-500 text-center">
-                    Nenhum utilizador encontrado
-                  </div>
-                )}
-              </div>
-              {cronoTecnicosSelecionados.length > 0 && (
-                <p className="text-sm text-gray-400 mt-2">
-                  {cronoTecnicosSelecionados.length} técnico(s) selecionado(s)
-                </p>
-              )}
-            </div>
-
-            {/* Botões */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={() => {
-                  setShowIniciarCronoModal(false);
-                  setNovaOTParaCrono(null);
-                  setCronoTecnicosSelecionados([]);
-                }}
-                variant="outline"
-                className="flex-1 border-gray-600"
-              >
-                Ignorar
-              </Button>
-              <Button
-                onClick={handleIniciarCronoNovaOT}
-                disabled={cronoTecnicosSelecionados.length === 0}
-                className={`flex-1 ${cronoTipo === 'trabalho' 
-                  ? 'bg-blue-600 hover:bg-blue-700' 
-                  : 'bg-orange-600 hover:bg-orange-700'} disabled:opacity-50`}
-              >
-                <PlayCircle className="w-4 h-4 mr-2" />
-                Iniciar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        }}
+        novaOT={novaOTParaCrono}
+        cronoTipo={cronoTipo}
+        setCronoTipo={setCronoTipo}
+        allSystemUsers={allSystemUsers}
+        tecnicosSelecionados={cronoTecnicosSelecionados}
+        setTecnicosSelecionados={setCronoTecnicosSelecionados}
+        onIniciar={handleIniciarCronoNovaOT}
+      />
 
       {/* Modal Folha de Horas - Componente Extraído */}
       <FolhaHorasModal

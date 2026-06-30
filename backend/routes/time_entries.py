@@ -852,25 +852,6 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
 
 
 # ============ Time Entry Reports Routes ============
-# ============ Time Entry Reports Routes ============
-    total_minutes_today = calcular_minutos_de_entradas(today_entries)
-    total_hours = total_minutes_today / 60
-    regular_hours = sum(e.get("regular_hours") or 0 for e in today_entries)
-    overtime_hours = sum(e.get("overtime_hours") or 0 for e in today_entries)
-    special_hours = sum(e.get("special_hours") or 0 for e in today_entries)
-    
-    return {
-        "entries": today_entries,
-        "has_active": False,
-        "daily_summary": {
-            "date": today,
-            "total_hours": round(total_hours, 2),
-            "regular_hours": round(truncar_horas_para_minutos(regular_hours), 2),
-            "overtime_hours": round(truncar_horas_para_minutos(overtime_hours), 2),
-            "special_hours": round(truncar_horas_para_minutos(special_hours), 2),
-            "entry_count": len(today_entries)
-        }
-    }
 
 @router.get("/time-entries/list")
 async def list_time_entries(
@@ -2644,14 +2625,12 @@ async def recalculate_user_hours(
                     "old_values": {
                         "regular": round(old_regular, 2),
                         "overtime": round(old_overtime, 2),
-                        "saturday": round(old_saturday, 2),
                         "special": round(old_special, 2),
                         "total": round(old_total, 2)
                     },
                     "new_values": {
                         "regular": new_regular,
                         "overtime": new_overtime,
-                        "saturday": new_saturday,
                         "special": new_special,
                         "total": new_total
                     }

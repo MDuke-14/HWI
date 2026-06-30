@@ -148,32 +148,6 @@ def _safe_image_from_path(path, width_cm, height_cm, context="photo"):
         return None
 
 
-def _compress_photo_if_large(raw_bytes, context=""):
-    """Compatibilidade — delega em _safe_image_from_base64 internamente não é usado agora."""
-    if not raw_bytes or not _PIL_OK or len(raw_bytes) <= PHOTO_COMPRESS_THRESHOLD_BYTES:
-        return raw_bytes
-    try:
-        img = PILImage.open(BytesIO(raw_bytes))
-        try:
-            from PIL import ImageOps
-            img = ImageOps.exif_transpose(img)
-        except Exception:
-            pass
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-        w, h = img.size
-        m = max(w, h)
-        if m > PHOTO_MAX_DIMENSION_PX:
-            scale = PHOTO_MAX_DIMENSION_PX / m
-            img = img.resize((int(w * scale), int(h * scale)), PILImage.LANCZOS)
-        out = BytesIO()
-        img.save(out, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
-        return out.getvalue()
-    except Exception as e:
-        logging.warning(f"[PDF] Compress fallback {context}: {e}")
-        return raw_bytes
-
-
 def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, assinaturas, equipamentos_adicionais=None, materiais=None, registos_mao_obra=None, company_info=None, relatorios_assistencia=None, output_file=None):
     """
     Gera PDF completo de uma Folha de Serviço

@@ -11,6 +11,14 @@ export { default as CronometroStartModal } from './CronometroStartModal';
 export { default as EmailModal } from './EmailModal';
 export { default as StatusChangeModal } from './StatusChangeModal';
 export { default as DeleteRelatorioModal } from './DeleteRelatorioModal';
+export { default as AddFotoPCModal } from './AddFotoPCModal';
+export { default as EmailPCModal } from './EmailPCModal';
+export { default as HideClientPopup } from './HideClientPopup';
+export { default as EditMaterialPCModal } from './EditMaterialPCModal';
+export { default as ChangeTipoModal } from './ChangeTipoModal';
+export { default as DeleteClienteModal } from './DeleteClienteModal';
+export { default as ReferenciaInternaModal } from './ReferenciaInternaModal';
+export { default as IniciarCronoModal } from './IniciarCronoModal';
 export { CronometroFuncaoPopup, StopCronometroPopup, WorkKmPopup } from './CronometroPopups';
 
 // Technical Reports Components - Sections

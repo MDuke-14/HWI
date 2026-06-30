@@ -40,6 +40,8 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 10. ✅ Regras SA/AC unificadas Feb/2026: SA binário (≥4h=10€), AC tiered (4-6h=25€, ≥6h=50€). Helper `calcular_sa_ac` em time_entries.py + 10 testes unitários
 11. ✅ Fix scroll bloqueado nos modais de Cliente — adicionado `max-h-[90vh] overflow-y-auto`
 12. ✅ Sistema de autorizações refactor: emails para geral@hwi.pt em vez de push notifications aos admin; link para portal admin; periodos de ponto incluídos no email e na UI; fix do bug do botão Aprovar/Rejeitar (response.data.status check); fix do import process_authorization_decision em routes/overtime.py
+13. ✅ Cleanup de código morto (9 ficheiros eliminados, 15+ bugs latentes corrigidos em `relatorios.py`, `time_entries.py`, etc.)
+14. ✅ **Refactor TechnicalReports.jsx (Feb 2026)** — extração de 8 novos modais para `/app/frontend/src/components/technical-reports/`: `AddFotoPCModal`, `EmailPCModal`, `HideClientPopup`, `EditMaterialPCModal`, `ChangeTipoModal`, `DeleteClienteModal`, `ReferenciaInternaModal`, `IniciarCronoModal`. Reduzido de 10100 → ~9650 linhas (-450). Adicionalmente corrigidos 2 bugs latentes (`fetchRegistosTecnicosOT` → `fetchRegistosTecnicos`, `fetchMateriaisRelatorio` → `fetchMateriais`).
 
 ## Production Deployment Config (CRÍTICO)
 - Memory: **1 GiB** (insuficiente — picos observados 1.87 GiB)
@@ -49,7 +51,7 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Backlog (P1/P2)
 - (Aguarda Opção A) **Aumento de recursos do deployment** (pedido a support@emergent.sh)
-- (P1) Continuar refactor de `TechnicalReports.jsx` (>10k linhas)
+- (P1) Continuar refactor de `TechnicalReports.jsx` (~9650 linhas; modais grandes ainda inline: `showViewRelatorioModal` ~1500 linhas, `showHTMLPreviewModal` ~500, `showAddRegistoManualModal`/`showEditRegistoModal` ~700, Add/Edit/View Cliente ~600)
 - (P2) Consolidar `overtime_authorizations` + `day_authorizations`
 - (P2) Refactor `excel_report.py` e `import_excel.py`
 - (P2) OneDrive integration
