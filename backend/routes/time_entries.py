@@ -551,8 +551,13 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
     users = await db.users.find({}, {"_id": 0, "id": 1, "username": 1, "full_name": 1}).to_list(1000)
     
     # Get all today's entries (active and completed)
+    # Excluir entries virtuais de crédito early_leave (não são picagens reais)
     all_entries = await db.time_entries.find({
-        "date": today
+        "date": today,
+        "$or": [
+            {"is_early_leave_credit": {"$exists": False}},
+            {"is_early_leave_credit": False},
+        ],
     }, {"_id": 0}).to_list(1000)
     
     # Get approved vacations for today
@@ -655,27 +660,31 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
                 }
         elif completed_entries:
             # Worked today (finished)
+            # Excluir entries de crédito early_leave dos cálculos de clock_in/out
+            # (não são picagens reais — mas contam para o total de horas).
+            real_entries = [e for e in completed_entries if not e.get("is_early_leave_credit")]
             total_hours = sum(e.get("total_hours", 0) for e in completed_entries)
-            first_entry = min(completed_entries, key=lambda x: x.get("start_time", ""))
-            last_entry = max(completed_entries, key=lambda x: x.get("end_time", ""))
-            
+
             status_info["status"] = "TRABALHOU"
             status_info["status_color"] = "blue"
-            status_info["clock_in_time"] = format_time_from_iso(first_entry["start_time"])
-            status_info["clock_out_time"] = format_time_from_iso(last_entry["end_time"])
             status_info["total_hours"] = round(truncar_horas_para_minutos(total_hours), 2)
             status_info["outside_residence_zone"] = any(e.get("outside_residence_zone", False) for e in completed_entries)
-            
-            # Adicionar geolocalização da última entrada
-            geo = last_entry.get("geo_location")
-            if geo:
-                status_info["geo_location"] = {
-                    "latitude": geo.get("latitude"),
-                    "longitude": geo.get("longitude"),
-                    "accuracy": geo.get("accuracy"),
-                    "timestamp": geo.get("timestamp"),
-                    "address": geo.get("address", {})
-                }
+
+            if real_entries:
+                first_entry = min(real_entries, key=lambda x: x.get("start_time") or "")
+                last_entry = max(real_entries, key=lambda x: x.get("end_time") or "")
+                status_info["clock_in_time"] = format_time_from_iso(first_entry["start_time"])
+                status_info["clock_out_time"] = format_time_from_iso(last_entry["end_time"])
+                # Adicionar geolocalização da última entrada
+                geo = last_entry.get("geo_location")
+                if geo:
+                    status_info["geo_location"] = {
+                        "latitude": geo.get("latitude"),
+                        "longitude": geo.get("longitude"),
+                        "accuracy": geo.get("accuracy"),
+                        "timestamp": geo.get("timestamp"),
+                        "address": geo.get("address", {})
+                    }
         elif user_id in vacation_users:
             # On vacation
             status_info["status"] = "FÉRIAS"
@@ -824,9 +833,14 @@ async def get_my_realtime_status(current_user: dict = Depends(get_current_user))
     user_id = current_user["sub"]
     
     # Get user's today entries
+    # Excluir entries virtuais de crédito early_leave (não são picagens reais)
     entries_db = await db.time_entries.find({
         "user_id": user_id,
-        "date": today
+        "date": today,
+        "$or": [
+            {"is_early_leave_credit": {"$exists": False}},
+            {"is_early_leave_credit": False},
+        ],
     }, {"_id": 0}).to_list(1000)
     
     # Process entries

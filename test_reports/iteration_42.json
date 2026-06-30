@@ -1,0 +1,36 @@
+{
+  "summary": "Backend testing of HTTP 500 fix on GET /api/admin/realtime-status and /api/time-entries/my-realtime-status when virtual early_leave credit entries exist (start_time=None / end_time=None). Pre-seeded credit entry for user miguel (id 92e60254-5bae-4fd7-ad44-7b2f5f4bcc60) on 2026-06-30 with total_hours=0.5, observations='Test credit'. Created pytest suite with 9 tests covering: (a) endpoints return 200 with credit present, (b) credit not contaminating 'entradas' array, (c) clock_in/out derived from real entries only, (d) edge — endpoint still 200 after credit deletion, (e) users without entries fall into FALTA/FOLGA/FERIADO/FÉRIAS, (f) regression on /reports/monthly-detailed for both admins. Result: 9/9 PASSED. Test credit entry cleaned up at end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/admin/realtime-status",
+        "issue": "Code comment at routes/time_entries.py:664 says 'credit entries não são picagens reais — mas contam para o total de horas', but the Mongo $or filter (lines 555-561) excludes them from all_entries entirely. Consequence: credit's 0.5h does NOT contribute to total_hours in realtime-status (observed: total_hours=0.0 despite a 0.5h credit). The comment is misleading; either update comment to clarify credit is fully excluded from realtime-status, or add a separate aggregation for credit hours into total_hours."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_realtime_status_early_leave_credit.py",
+    "/app/test_reports/pytest/realtime_status_results.xml"
+  ],
+  "action_items": [
+    "Optional: reconcile the comment vs implementation in routes/time_entries.py:663-666 — decide if credit hours should sum into realtime-status.total_hours (currently they don't) or update the comment to match. Non-blocking."
+  ],
+  "critical_code_review_comments": [
+    "routes/time_entries.py:555-561 — Mongo $or filter to exclude is_early_leave_credit entries is correct and consistently applied in both admin/realtime-status and time-entries/my-realtime-status (lines 837-844).",
+    "routes/time_entries.py:673-687 — `real_entries` defensive filter (`not e.get('is_early_leave_credit')`) is redundant since the Mongo query already excludes them, but harmless (defence-in-depth).",
+    "routes/time_entries.py:674-675 — `key=lambda x: x.get('start_time') or ''` properly handles None safely, preventing the original 500.",
+    "Misleading comment at line 664: claims credit 'conta para total_hours' but credit is completely filtered out of all_entries → completed_entries before sum() is applied. Either fix comment or move total_hours aggregation to query credit entries separately and add."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_realtime_status_early_leave_credit.py"
+  ],
+  "success_rate": {"backend": "100% (9/9 tests passed)", "frontend": "not tested (per request)"},
+  "test_credentials": "miguel / Miguel123! (admin id 92e60254-5bae-4fd7-ad44-7b2f5f4bcc60); teste@email.com / Admin123! (id c145d94b-bb5f-4fe1-b05d-6fa1034db968)",
+  "seed_data_creation": "Re-inserted test credit entry for miguel on 2026-06-30 (was already present, then deleted by an earlier test; re-inserted to ensure all dependent tests had data). Final test (test_admin_realtime_status_after_deleting_credit) cleans it up. Verified 0 remaining after run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pytest file /app/backend/tests/test_realtime_status_early_leave_credit.py covers all realtime-status scenarios with credit entries. Re-running the file is idempotent (auto-cleans up credit after run). If credit must persist beyond the suite, re-insert via the snippet used in this iteration. Note: realtime-status.total_hours currently excludes credit hours — see minor issue above.",
+  "rca of the issue": "Original 500 was caused by min()/max() comparing str (real start_time) with None (credit start_time) → TypeError. Fix excludes credit entries from the Mongo query and adds a defensive `or ''` fallback in the lambda. Verified by 9/9 pytest passing. Endpoints respond 200 both when credit exists and when it doesn't. clock_in/out and entradas array correctly derived from real picagens only."
+}
