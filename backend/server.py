@@ -413,14 +413,17 @@ async def migrate_items_intervencao_ids(database):
 
 
 async def check_annual_vacation_reset(database):
+    """DEPRECATED (Feb 2026): O rollover anual destrutivo foi desativado.
+
+    O saldo de férias é agora derivado on-the-fly em `routes/vacations.py`
+    (fonte única: `company_start_date` + `vacation_requests` +
+    `cancelled_vacation_days` + `vacation_taken_by_year`). Esta função ficava a
+    somar 22 dias cegos e a resetar `days_taken=0` no arranque, corrompendo o
+    carry-over para quem entrou a meio de ano. Passa a ser um no-op.
     """
-    Verificação anual de férias no startup/deploy.
-    Para cada vacation_balance existente:
-    - Se não tem 'year' ou é de um ano anterior ao corrente:
-      - Soma 22 dias ao saldo existente (ex: 5 → 27, -10 → 12)
-      - Reseta days_taken para 0
-      - Atualiza year para o ano corrente
-    """
+    logging.info("✅ Férias anuais: rollover destrutivo desativado (cálculo é dinâmico)")
+    return None
+    # -------------------- CÓDIGO ORIGINAL (desativado) --------------------
     from datetime import date
     current_year = date.today().year
     

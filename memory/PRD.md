@@ -50,6 +50,18 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
     - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
     - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
 16. ✅ **Auth fix + Vacations filter (Feb 2026)** — eliminado utilizador duplicado em `users`; passwords reset para `miguel` (`Miguel123!`) e `teste@email.com` (`Admin123!`). Filtro `include_past` (default false) em `/vacations/my-requests` e `/admin/vacations/all-balances` esconde férias gozadas de anos anteriores. Toggles UI 'Mostrar/Esconder anos anteriores' nas secções Meus Pedidos + Admin.
+19. ✅ **Refactor Vacation Balance Engine (Feb 2026)** — refatorado o motor de cálculo de férias para ter **UMA ÚNICA FONTE DE VERDADE** dinâmica. Regras:
+    - `days_earned` por ano = `helpers.calculate_vacation_days_by_year` (2 dias/mês, máx 22/ano).
+    - `days_taken` por ano = **max(override_manual, contagem automática)** dos pedidos aprovados (dias úteis) menos cancelamentos.
+    - **Carry-over positivo apenas** — sobra de um ano soma no seguinte; negativos ficam nesse ano e não empurram dívida.
+    - **Ignora anos < company_start_date** (elimina fantasmas do modal admin, ex.: "2024=22 dias" para user que entrou em 2025).
+    - `vacation_balances.days_earned/days_taken/days_available` deixa de ser fonte — só guarda `company_start_date`.
+    - **`check_annual_vacation_reset()` desativado** — o rollover destrutivo (somar 22 cegos + reset taken=0) corrompia carry-over para quem entrava a meio do ano.
+    - Approve/reject/cancel deixam de mexer em `vacation_balances`; a mudança de `status="approved"` no pedido é suficiente.
+    - Nova migração `cleanup_orphan_vacation_taken_by_year_v1` remove entries fantasma.
+    - Endpoints refatorados: `GET /vacations/balance`, `GET /admin/vacations/all-balances` (agora inclui `year_breakdown`), `GET /admin/vacations/taken-by-year/{user_id}` (agora expõe `days_taken_manual` + `days_taken_auto`), `POST /admin/vacations/taken-by-year/{user_id}` (rejeita anos < company_start_date).
+    - Validado: Miguel (start 14/02/2025, hoje Jul/2026, 4 aprovados 2026 dos quais 20 dias cancelados em Março, 1 dia em 2025) → 33 acumulados, 3 gozados, **30 disponíveis** (era negativo).
+
 18. ✅ **Vacation balance dinâmico (Feb 2026)** — `GET /vacations/balance` (user) e `GET /admin/vacations/all-balances` (admin) recalculam `days_earned`/`days_taken`/`days_available` on-the-fly usando `helpers.calculate_vacation_days_by_year()` + carry-over anual via `db.vacation_taken_by_year`. A coleção `vacation_balances` passa a ser usada apenas para `company_start_date` — valores agregados eram estáticos (ex.: 22 dias para user que entrou em Nov/2025) e agora seguem a regra legal de 2 dias/mês trabalhado com máximo de 22/ano. Valida: Chelson (start 2025-11-13, hoje Jul/2026) = 2 (2025) + 14 (2026) = 16.
 
 17. ✅ **Saída por Ordem da Empresa (Feb 2026)** — quando o colaborador faz a 2ª picagem e tenta fechar o ponto com total < 8h, aparece checkbox "Saída por Ordem da Empresa" no Dashboard.

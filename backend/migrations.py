@@ -22,6 +22,10 @@ async def run_migrations(db: AsyncIOMotorDatabase):
     # Migration 4: Corrigir entries de crédito early_leave sem start_time/end_time
     await migrate_early_leave_credit_times(db)
 
+    # Migration 5: Remover entries fantasma em vacation_taken_by_year para
+    # anos anteriores ao company_start_date de cada user (Feb 2026)
+    await migrate_cleanup_orphan_taken_by_year(db)
+
 
 async def migrate_ot_numbers(db: AsyncIOMotorDatabase):
     """
@@ -347,3 +351,43 @@ async def migrate_early_leave_credit_times(db: AsyncIOMotorDatabase):
         logger.error(f"❌ Erro na migração '{MIGRATION_KEY}': {exc}")
         # Não fazer raise — migration não-crítica, server pode arrancar
 
+
+async def migrate_cleanup_orphan_taken_by_year(db: AsyncIOMotorDatabase):
+    """Remove entries em vacation_taken_by_year para anos < company_start_date
+    de cada utilizador. Estes valores fantasma polúiam a lógica de carry-over.
+    """
+    MIGRATION_KEY = "cleanup_orphan_vacation_taken_by_year_v1"
+
+    migration_done = await db.migrations.find_one({"key": MIGRATION_KEY})
+    if migration_done:
+        logger.info(f"✅ Migração '{MIGRATION_KEY}' já foi executada.")
+        return
+
+    logger.info(f"🔄 A executar migração '{MIGRATION_KEY}'…")
+
+    try:
+        from datetime import datetime as _dt
+
+        balances = await db.vacation_balances.find({}, {"_id": 0}).to_list(None)
+        total_removed = 0
+        for b in balances:
+            csd = b.get("company_start_date")
+            if not csd:
+                continue
+            try:
+                min_y = _dt.strptime(csd, "%Y-%m-%d").date().year
+            except Exception:
+                continue
+            r = await db.vacation_taken_by_year.delete_many(
+                {"user_id": b["user_id"], "year": {"$lt": min_y}}
+            )
+            total_removed += r.deleted_count or 0
+
+        await db.migrations.insert_one({
+            "key": MIGRATION_KEY,
+            "executed_at": _dt.now().isoformat(),
+            "removed_count": total_removed,
+        })
+        logger.info(f"✅ Migração '{MIGRATION_KEY}' concluída — {total_removed} entries removidas.")
+    except Exception as exc:
+        logger.error(f"❌ Erro na migração '{MIGRATION_KEY}': {exc}")

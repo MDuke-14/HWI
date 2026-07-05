@@ -523,6 +523,11 @@ const Vacations = ({ user, onLogout }) => {
                         className="bg-[#0a0a0a] border-gray-700 text-white h-8 text-sm text-right"
                         data-testid={`taken-input-${y.year}`}
                       />
+                      {typeof y.days_taken_auto === 'number' && (
+                        <span className="block text-[10px] text-gray-500 mt-0.5">
+                          auto: {y.days_taken_auto} (pedidos aprovados)
+                        </span>
+                      )}
                     </div>
                     <div className={`col-span-4 text-right font-semibold ${y.days_available <= 0 ? 'text-red-400' : 'text-green-400'}`}>
                       {y.days_available}
@@ -530,7 +535,7 @@ const Vacations = ({ user, onLogout }) => {
                   </div>
                 ))}
                 <p className="text-xs text-gray-500 mt-2">
-                  Dias em falta do ano anterior transitam automaticamente e são consumidos primeiro.
+                  Dias em falta do ano anterior transitam automaticamente e são consumidos primeiro. O valor auto é a contagem de pedidos aprovados (menos cancelamentos); o input serve para forçar um total manual (útil para importar anos anteriores ao sistema). Efectivo = max(manual, auto).
                 </p>
               </>
             )}

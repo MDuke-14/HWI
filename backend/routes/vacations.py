@@ -21,20 +21,111 @@ from notifications_scheduler import send_push_to_admins, send_push_notification
 
 router = APIRouter()
 
+
+# =============================================================================
+# Fonte única de verdade para o saldo de férias (Feb 2026)
+# =============================================================================
+# O saldo é 100% derivado a partir de:
+#   1. company_start_date (guardado em vacation_balances)   -> dias GANHOS por ano
+#   2. vacation_requests com status="approved"              -> dias GOZADOS (auto)
+#   3. cancelled_vacation_days                              -> dias devolvidos
+#   4. vacation_taken_by_year (override manual do admin)    -> importação histórica
+#
+# vacation_balances.days_earned/days_taken/days_available deixam de ser fonte
+# de verdade — só ficam por retrocompatibilidade.
+# =============================================================================
+
+
+def _count_approved_days_by_year(approved_requests, cancelled_dates_set, valid_years):
+    """Expande cada pedido aprovado dia-a-dia (só dias úteis, excluindo
+    cancelados) e agrupa por ano. Só conta anos válidos (>= company_start_date)."""
+    counts = {y: 0 for y in valid_years}
+    for req in approved_requests:
+        try:
+            start = datetime.strptime(req["start_date"], "%Y-%m-%d").date()
+            end = datetime.strptime(req["end_date"], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        current = start
+        while current <= end:
+            if current.weekday() < 5:  # dias úteis
+                ds = current.strftime("%Y-%m-%d")
+                if ds not in cancelled_dates_set and current.year in counts:
+                    counts[current.year] += 1
+            current += timedelta(days=1)
+    return counts
+
+
+def _build_year_balances(company_start_date, taken_manual_by_year, approved_requests, cancelled_dates_set):
+    """Devolve lista de dicts com balanço detalhado por ano + carry-over.
+
+    Regras:
+    - days_taken efectivo por ano = max(override manual do admin, contagem auto)
+    - carry-over para ano seguinte = max(0, disponível deste ano)  (negativos não passam)
+    - days_available do ano corrente pode ser negativo (revela over-consumo)
+    - Anos anteriores ao company_start_date são ignorados
+    """
+    years_calc = calculate_vacation_days_by_year(company_start_date)
+    valid_years = [y["year"] for y in years_calc]
+    approved_counts = _count_approved_days_by_year(approved_requests, cancelled_dates_set, valid_years)
+
+    result = []
+    carry = 0
+    for y in years_calc:
+        year = y["year"]
+        earned = y["days_earned"]
+        manual = int(taken_manual_by_year.get(year, 0))
+        auto = approved_counts.get(year, 0)
+        taken_effective = max(manual, auto)
+        earned_effective = earned + carry
+        raw_available = earned_effective - taken_effective
+        result.append({
+            "year": year,
+            "days_earned": earned,
+            "months_worked": y.get("months_worked", 0),
+            "days_taken": taken_effective,
+            "days_taken_manual": manual,
+            "days_taken_auto": auto,
+            "carry_over_prev": carry,
+            "days_earned_effective": earned_effective,
+            "days_available": raw_available,
+        })
+        carry = max(0, raw_available)
+    return result
+
+
+async def _fetch_user_vacation_context(user_id: str):
+    """Reúne todos os dados necessários para calcular o saldo dinâmico."""
+    balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0}) or {}
+    csd = balance.get("company_start_date")
+
+    approved = await db.vacation_requests.find(
+        {"user_id": user_id, "status": "approved"}, {"_id": 0},
+    ).to_list(None)
+
+    cancelled = await db.cancelled_vacation_days.find(
+        {"user_id": user_id}, {"_id": 0, "date": 1},
+    ).to_list(None)
+    cancelled_set = {c["date"] for c in cancelled}
+
+    taken_docs = await db.vacation_taken_by_year.find(
+        {"user_id": user_id}, {"_id": 0, "year": 1, "days_taken": 1},
+    ).to_list(None)
+    taken_map = {int(d["year"]): int(d.get("days_taken") or 0) for d in taken_docs}
+
+    return csd, taken_map, approved, cancelled_set
+
+
 @router.get("/vacations/balance")
 async def get_vacation_balance(current_user: dict = Depends(get_current_user)):
-    """Get current user's vacation balance (dinâmico com carry-over anual).
+    """Get current user's vacation balance (fonte única de verdade dinâmica).
 
-    Fonte de verdade: `helpers.calculate_vacation_days_by_year(company_start_date)`
-    + `db.vacation_taken_by_year` para dias gozados por ano.
-    A coleção `vacation_balances` só é usada para obter `company_start_date`;
-    valores agregados (`days_earned`, `days_taken`, `days_available`) são
-    recalculados on-the-fly para respeitar a regra de 2 dias por mês trabalhado
-    no primeiro ano.
+    Deriva earned/taken/available on-the-fly a partir de company_start_date +
+    pedidos aprovados + cancelamentos + override manual por ano.
+    Ver `_build_year_balances` para detalhes das regras.
     """
     current_year = date.today().year
-    balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]}, {"_id": 0})
-    csd = (balance or {}).get("company_start_date", "")
+    csd, taken_map, approved, cancelled_set = await _fetch_user_vacation_context(current_user["sub"])
 
     if not csd:
         return {
@@ -46,36 +137,34 @@ async def get_vacation_balance(current_user: dict = Depends(get_current_user)):
             "message": "Configure a data de início na empresa",
         }
 
-    # Dias gozados por ano
-    taken_docs = await db.vacation_taken_by_year.find(
-        {"user_id": current_user["sub"]}, {"_id": 0, "year": 1, "days_taken": 1},
-    ).to_list(200)
-    taken_by_year = {int(d["year"]): int(d.get("days_taken") or 0) for d in taken_docs}
-
-    days_earned_effective = 0
-    days_taken_curr = 0
-    days_available = 0
     try:
-        years_calc = calculate_vacation_days_by_year(csd)
-        carry = 0
-        for y in years_calc:
-            y_taken = taken_by_year.get(y["year"], 0)
-            raw_avail = (y["days_earned"] + carry) - y_taken
-            if y["year"] == current_year:
-                days_earned_effective = y["days_earned"] + carry
-                days_taken_curr = y_taken
-                days_available = max(0, raw_avail)
-            carry = max(0, raw_avail)
+        years = _build_year_balances(csd, taken_map, approved, cancelled_set)
     except Exception:
         logging.exception("Erro a calcular saldo dinâmico de férias")
-        days_earned_effective = balance.get("days_earned", 0)
-        days_taken_curr = balance.get("days_taken", 0)
-        days_available = balance.get("days_available", 0)
+        return {
+            "days_earned": 0,
+            "days_taken": 0,
+            "days_available": 0,
+            "year": current_year,
+            "company_start_date": csd,
+            "error": "Erro ao calcular saldo",
+        }
+
+    curr = next((y for y in years if y["year"] == current_year), None)
+    if not curr:
+        # Ano corrente ainda não iniciou (company_start_date no futuro)
+        return {
+            "days_earned": 0,
+            "days_taken": 0,
+            "days_available": 0,
+            "year": current_year,
+            "company_start_date": csd,
+        }
 
     return {
-        "days_earned": days_earned_effective,
-        "days_taken": days_taken_curr,
-        "days_available": days_available,
+        "days_earned": curr["days_earned_effective"],
+        "days_taken": curr["days_taken"],
+        "days_available": curr["days_available"],
         "year": current_year,
         "company_start_date": csd,
     }
@@ -264,15 +353,10 @@ async def cancel_vacation_days(
             "cancelled_at": datetime.now(timezone.utc).isoformat()
         })
     
-    # Update vacation balance - refund the days
+    # NOTA (Feb 2026): O saldo é derivado on-the-fly a partir de
+    # vacation_requests menos cancelled_vacation_days. Não mexer em
+    # vacation_balances aggregate (deprecated).
     days_refunded = len(valid_dates)
-    await db.vacation_balances.update_one(
-        {"user_id": current_user["sub"]},
-        {"$inc": {
-            "days_taken": -days_refunded,
-            "days_available": days_refunded
-        }}
-    )
     
     # Notify admins
     await create_notification(
@@ -292,36 +376,38 @@ async def update_company_start_date(
     vacation_days_taken: int = 0,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update or create company start date for vacation calculation"""
-    existing = await db.vacation_balances.find_one({"user_id": current_user["sub"]})
-    
-    calc = calculate_vacation_days(company_start_date, vacation_days_taken)
-    
-    if existing:
-        await db.vacation_balances.update_one(
-            {"user_id": current_user["sub"]},
+    """Update or create company start date for vacation calculation.
+
+    NOTA (Feb 2026): O saldo é agora derivado dinamicamente. Este endpoint só
+    persiste `company_start_date` em `vacation_balances`. O parâmetro
+    `vacation_days_taken` é gravado como override manual do ano corrente em
+    `vacation_taken_by_year` (para compatibilidade com o formulário legado).
+    """
+    now_iso = datetime.now(timezone.utc).isoformat()
+    await db.vacation_balances.update_one(
+        {"user_id": current_user["sub"]},
+        {"$set": {
+            "user_id": current_user["sub"],
+            "company_start_date": company_start_date,
+            "updated_at": now_iso,
+        }},
+        upsert=True,
+    )
+
+    if vacation_days_taken and vacation_days_taken > 0:
+        await db.vacation_taken_by_year.update_one(
+            {"user_id": current_user["sub"], "year": date.today().year},
             {"$set": {
-                "company_start_date": company_start_date,
+                "user_id": current_user["sub"],
                 "year": date.today().year,
-                "days_taken": vacation_days_taken,
-                "days_earned": calc["days_earned"],
-                "days_available": calc["days_available"],
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
+                "days_taken": int(vacation_days_taken),
+                "updated_at": now_iso,
+                "updated_by": current_user["sub"],
+            }},
+            upsert=True,
         )
-    else:
-        balance = VacationBalance(
-            user_id=current_user["sub"],
-            year=date.today().year,
-            company_start_date=company_start_date,
-            days_earned=calc["days_earned"],
-            days_taken=vacation_days_taken,
-            days_available=calc["days_available"]
-        )
-        bal_dict = balance.model_dump()
-        bal_dict['updated_at'] = bal_dict['updated_at'].isoformat()
-        await db.vacation_balances.insert_one(bal_dict)
-    
+
+    calc = calculate_vacation_days(company_start_date, vacation_days_taken)
     return {"message": "Data atualizada com sucesso", **calc}
 
 
@@ -359,28 +445,41 @@ async def get_all_vacation_balances(
             logs_by_user[uid] = []
         logs_by_user[uid].append(log)
     
-    # Buscar pedidos aprovados por user (apenas do ano corrente por defeito —
-    # férias gozadas em anos anteriores não devem ser apresentadas na página).
+    # Buscar todos os pedidos APROVADOS (todos os anos, todos os utilizadores).
+    # Necessário para calcular saldos com carry-over ano a ano. O filtro
+    # `include_past` só afeta o array `approved_requests` devolvido no output.
     current_year = date.today().year
-    approved_query = {"status": "approved"}
-    if not include_past:
-        approved_query["start_date"] = {"$gte": f"{current_year}-01-01"}
-    approved_requests = await db.vacation_requests.find(
-        approved_query, {"_id": 0},
+    all_approved = await db.vacation_requests.find(
+        {"status": "approved"}, {"_id": 0},
     ).sort("start_date", -1).to_list(None)
-    
+
+    approved_by_user = {}
+    for req in all_approved:
+        approved_by_user.setdefault(req["user_id"], []).append(req)
+
+    # Pedidos aprovados para o payload (filtrados por include_past)
+    if include_past:
+        display_reqs = all_approved
+    else:
+        display_reqs = [r for r in all_approved if (r.get("start_date") or "") >= f"{current_year}-01-01"]
+
     requests_by_user = {}
-    for req in approved_requests:
-        uid = req["user_id"]
-        if uid not in requests_by_user:
-            requests_by_user[uid] = []
-        requests_by_user[uid].append(req)
-    
-    # Pré-carregar dias gozados por ano (para recomputar com carry-over)
+    for req in display_reqs:
+        requests_by_user.setdefault(req["user_id"], []).append(req)
+
+    # Cancellations by user
+    all_cancelled = await db.cancelled_vacation_days.find(
+        {}, {"_id": 0, "user_id": 1, "date": 1},
+    ).to_list(None)
+    cancelled_by_user = {}
+    for c in all_cancelled:
+        cancelled_by_user.setdefault(c["user_id"], set()).add(c["date"])
+
+    # Pré-carregar overrides manuais por ano
     all_taken = await db.vacation_taken_by_year.find({}, {"_id": 0}).to_list(None)
     taken_by_user_year = {}
     for t in all_taken:
-        taken_by_user_year.setdefault(t["user_id"], {})[t["year"]] = int(t.get("days_taken") or 0)
+        taken_by_user_year.setdefault(t["user_id"], {})[int(t["year"])] = int(t.get("days_taken") or 0)
 
     result = []
     for balance in balances:
@@ -388,25 +487,26 @@ async def get_all_vacation_balances(
         user_info = users_map.get(uid, {})
         csd = balance.get("company_start_date", "")
 
-        # Recalcular dinamicamente com o helper by-year + carry-over
-        days_earned_effective = balance.get("days_earned", 0)
-        days_taken_curr = balance.get("days_taken", 0)
-        days_available = balance.get("days_available", 0)
+        days_earned_effective = 0
+        days_taken_curr = 0
+        days_available = 0
+        year_breakdown = []
         if csd:
             try:
-                years_calc = calculate_vacation_days_by_year(csd)
-                user_taken = taken_by_user_year.get(uid, {})
-                carry = 0
-                for y in years_calc:
-                    y_taken = user_taken.get(y["year"], 0)
-                    raw_avail = (y["days_earned"] + carry) - y_taken
-                    if y["year"] == current_year:
-                        days_earned_effective = y["days_earned"] + carry
-                        days_taken_curr = y_taken
-                        days_available = max(0, raw_avail)
-                    carry = max(0, raw_avail)
+                years = _build_year_balances(
+                    csd,
+                    taken_by_user_year.get(uid, {}),
+                    approved_by_user.get(uid, []),
+                    cancelled_by_user.get(uid, set()),
+                )
+                year_breakdown = years
+                curr = next((y for y in years if y["year"] == current_year), None)
+                if curr:
+                    days_earned_effective = curr["days_earned_effective"]
+                    days_taken_curr = curr["days_taken"]
+                    days_available = curr["days_available"]
             except Exception:
-                pass
+                logging.exception("Erro a calcular saldo dinâmico para %s", uid)
 
         result.append({
             "user_id": uid,
@@ -419,7 +519,8 @@ async def get_all_vacation_balances(
             "days_available": days_available,
             "company_start_date": csd,
             "annual_transitions": logs_by_user.get(uid, []),
-            "approved_requests": requests_by_user.get(uid, [])
+            "approved_requests": requests_by_user.get(uid, []),
+            "year_breakdown": year_breakdown,
         })
     
     # Ordenar por nome
@@ -455,15 +556,12 @@ async def approve_vacation(
         }}
     )
     
-    # If approved, update days taken and days available
+    # NOTA (Feb 2026): O saldo agregado é agora 100% derivado on-the-fly a partir de
+    # vacation_requests. Não mexer em `vacation_balances.days_taken/days_available`.
+    # O simples facto de marcar `status="approved"` no pedido é suficiente para
+    # que o cálculo dinâmico o contabilize.
     if approved:
-        await db.vacation_balances.update_one(
-            {"user_id": vac_request["user_id"]},
-            {"$inc": {
-                "days_taken": vac_request["days_requested"],
-                "days_available": -vac_request["days_requested"]
-            }}
-        )
+        pass
     
     # Get user details for email
     user = await db.users.find_one({"id": vac_request["user_id"]}, {"_id": 0})
@@ -513,19 +611,19 @@ async def admin_get_taken_by_year(
     user_id: str,
     current_user: dict = Depends(get_current_admin),
 ):
-    """Devolve para um user a lista de anos desde company_start_date com:
-       - year, days_earned (calculado), days_taken (guardado por ano ou 0).
+    """Devolve breakdown ano-a-ano para o modal de férias do admin.
 
-    Fonte de days_taken:
-      db.vacation_taken_by_year — {user_id, year, days_taken}
+    Cada ano contém `days_taken_auto` (contagem de pedidos aprovados nesse ano,
+    menos cancelados), `days_taken_manual` (override do admin) e
+    `days_taken` efectivo = max(auto, manual). O admin pode editar `manual`
+    para importar histórico pré-sistema; o auto é sempre calculado.
     """
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1, "full_name": 1})
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
 
-    balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0})
-    company_start_date = (balance or {}).get("company_start_date")
-    if not company_start_date:
+    csd, taken_map, approved, cancelled_set = await _fetch_user_vacation_context(user_id)
+    if not csd:
         return {
             "user_id": user_id,
             "username": user.get("full_name") or user.get("username"),
@@ -534,31 +632,12 @@ async def admin_get_taken_by_year(
             "message": "Utilizador não tem data de entrada configurada.",
         }
 
-    years = calculate_vacation_days_by_year(company_start_date)
-    taken_docs = await db.vacation_taken_by_year.find(
-        {"user_id": user_id}, {"_id": 0, "year": 1, "days_taken": 1},
-    ).to_list(100)
-    taken_by_year = {d["year"]: int(d.get("days_taken") or 0) for d in taken_docs}
-
-    # Regra de carry-over:
-    # - days_available de cada ano = (dias por gozar do ano anterior) + (earned_current - taken_current)
-    # - Se ano anterior tem sobra, ela acumula no seguinte.
-    # - Nunca negativo (clamp).
-    carry_over = 0
-    for y in years:
-        y["days_taken"] = taken_by_year.get(y["year"], 0)
-        y["days_earned_effective"] = y["days_earned"] + carry_over
-        y["carry_over_prev"] = carry_over
-        # Saldo cumulativo (ano anterior + este ano - gozados este ano)
-        raw_available = y["days_earned_effective"] - y["days_taken"]
-        y["days_available"] = max(0, raw_available)
-        # Carry-over para o próximo ano = sobra (positiva) deste
-        carry_over = max(0, raw_available)
+    years = _build_year_balances(csd, taken_map, approved, cancelled_set)
 
     return {
         "user_id": user_id,
         "username": user.get("full_name") or user.get("username"),
-        "company_start_date": company_start_date,
+        "company_start_date": csd,
         "years": years,
     }
 
@@ -569,11 +648,12 @@ async def admin_set_taken_by_year(
     payload: dict,
     current_user: dict = Depends(get_current_admin),
 ):
-    """Grava (upsert) o número de dias gozados por ano.
+    """Grava (upsert) o override manual de dias gozados por ano.
     Body: { "years": [{"year": 2024, "days_taken": 22}, ...] }
 
-    Atualiza também db.vacation_balances.days_taken com a soma total
-    (para o saldo agregado ficar consistente).
+    Nota: com o cálculo dinâmico, este override serve apenas para importar
+    histórico pré-sistema (ou para casos onde o admin precise de sobrepor a
+    contagem automática). O saldo agregado é sempre recalculado on-the-fly.
     """
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
     if not user:
@@ -583,13 +663,26 @@ async def admin_set_taken_by_year(
     if not isinstance(years_data, list):
         raise HTTPException(status_code=400, detail="Campo 'years' inválido")
 
-    now_iso = datetime.now().isoformat()
+    # Só aceitar anos válidos (>= company_start_date.year)
+    balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0})
+    csd = (balance or {}).get("company_start_date")
+    min_year = None
+    if csd:
+        try:
+            min_year = datetime.strptime(csd, "%Y-%m-%d").date().year
+        except Exception:
+            min_year = None
+
+    now_iso = datetime.now(timezone.utc).isoformat()
     total_taken = 0
     for item in years_data:
         try:
             year = int(item.get("year"))
             days_taken = int(item.get("days_taken") or 0)
         except (TypeError, ValueError):
+            continue
+        if min_year is not None and year < min_year:
+            # Anos anteriores à entrada na empresa são ignorados
             continue
         if days_taken < 0:
             days_taken = 0
@@ -606,47 +699,11 @@ async def admin_set_taken_by_year(
             upsert=True,
         )
 
-    # Atualizar saldo agregado — regra de carry-over do ano anterior.
-    current_year = date.today().year
-    curr_taken = 0
-    curr_earned = 0
-    carry_over = 0
-    balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0})
-    if balance and balance.get("company_start_date"):
-        years_calc = calculate_vacation_days_by_year(balance["company_start_date"])
-        # Acumular carry-over dos anos anteriores ao corrente
-        for y in years_calc:
-            if y["year"] >= current_year:
-                break
-            taken_prev_doc = await db.vacation_taken_by_year.find_one(
-                {"user_id": user_id, "year": y["year"]},
-                {"_id": 0, "days_taken": 1},
-            )
-            taken_prev = int((taken_prev_doc or {}).get("days_taken") or 0)
-            carry_over = max(0, (y["days_earned"] + carry_over) - taken_prev)
-
-        curr = next((y for y in years_calc if y["year"] == current_year), None)
-        if curr:
-            curr_earned = curr["days_earned"]
-        curr_taken_doc = await db.vacation_taken_by_year.find_one(
-            {"user_id": user_id, "year": current_year},
-            {"_id": 0, "days_taken": 1},
+    # Limpar overrides de anos inválidos (ex.: 2024 para user que entrou em 2025)
+    if min_year is not None:
+        await db.vacation_taken_by_year.delete_many(
+            {"user_id": user_id, "year": {"$lt": min_year}},
         )
-        curr_taken = int((curr_taken_doc or {}).get("days_taken") or 0)
-
-    effective_earned = curr_earned + carry_over
-    await db.vacation_balances.update_one(
-        {"user_id": user_id},
-        {"$set": {
-            "days_taken": curr_taken,
-            "days_earned": effective_earned,
-            "days_available": max(0, effective_earned - curr_taken),
-            "carry_over_from_previous": carry_over,
-            "total_days_taken_history": total_taken,
-            "updated_at": now_iso,
-        }},
-        upsert=True,
-    )
 
     return {"message": "Dias gozados atualizados", "total": total_taken}
 
