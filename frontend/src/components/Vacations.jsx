@@ -105,9 +105,25 @@ const Vacations = ({ user, onLogout }) => {
   const updateTakenYear = (year, value) => {
     const parsed = value === '' ? 0 : parseInt(value, 10);
     const days = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
-    setTakenYears((prev) => prev.map((y) => y.year === year
-      ? { ...y, days_taken: days, days_available: Math.max(0, (y.days_earned || 0) - days) }
-      : y));
+    setTakenYears((prev) => {
+      // Recalcular carry-over em cadeia após alterar um ano
+      let carry = 0;
+      return prev.map((y) => {
+        const nextTaken = y.year === year ? days : (y.days_taken || 0);
+        const effective = (y.days_earned || 0) + carry;
+        const rawAvail = effective - nextTaken;
+        const nextCarry = Math.max(0, rawAvail);
+        const updated = {
+          ...y,
+          days_taken: nextTaken,
+          days_earned_effective: effective,
+          carry_over_prev: carry,
+          days_available: Math.max(0, rawAvail),
+        };
+        carry = nextCarry;
+        return updated;
+      });
+    });
   };
 
   const saveTakenYears = async () => {
@@ -482,33 +498,39 @@ const Vacations = ({ user, onLogout }) => {
             ) : (
               <>
                 <div className="grid grid-cols-12 gap-2 text-xs text-gray-500 font-medium uppercase tracking-wide px-1">
-                  <div className="col-span-3">Ano</div>
+                  <div className="col-span-2">Ano</div>
                   <div className="col-span-3 text-right">Disponíveis</div>
                   <div className="col-span-3 text-right">Gozados</div>
-                  <div className="col-span-3 text-right">Saldo</div>
+                  <div className="col-span-4 text-right">Saldo</div>
                 </div>
                 {takenYears.map((y) => (
                   <div key={y.year} className="grid grid-cols-12 gap-2 items-center bg-[#0f0f0f] p-2 rounded">
-                    <div className="col-span-3 text-white font-semibold">{y.year}</div>
-                    <div className="col-span-3 text-right text-blue-400 font-semibold">{y.days_earned}</div>
+                    <div className="col-span-2 text-white font-semibold">{y.year}</div>
+                    <div className="col-span-3 text-right">
+                      <span className="text-blue-400 font-semibold">{y.days_earned_effective ?? y.days_earned}</span>
+                      {y.carry_over_prev > 0 && (
+                        <span className="block text-[10px] text-gray-500">
+                          {y.days_earned} + {y.carry_over_prev} carry
+                        </span>
+                      )}
+                    </div>
                     <div className="col-span-3 text-right">
                       <Input
                         type="number"
                         min="0"
-                        max={y.days_earned}
                         value={y.days_taken ?? 0}
                         onChange={(e) => updateTakenYear(y.year, e.target.value)}
                         className="bg-[#0a0a0a] border-gray-700 text-white h-8 text-sm text-right"
                         data-testid={`taken-input-${y.year}`}
                       />
                     </div>
-                    <div className={`col-span-3 text-right font-semibold ${y.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    <div className={`col-span-4 text-right font-semibold ${y.days_available <= 0 ? 'text-red-400' : 'text-green-400'}`}>
                       {y.days_available}
                     </div>
                   </div>
                 ))}
                 <p className="text-xs text-gray-500 mt-2">
-                  Os valores atualizam o saldo do ano corrente automaticamente.
+                  Dias em falta do ano anterior transitam automaticamente e são consumidos primeiro.
                 </p>
               </>
             )}

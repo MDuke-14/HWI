@@ -1,0 +1,22 @@
+{
+  "summary": "Testing of vacation carry-over rule (GET/POST /admin/vacations/taken-by-year + balance sync + frontend UX). All backend scenarios A/B/C, /vacations/balance reflection, and frontend live recalculation verified successfully.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_vacation_carry_over.py",
+    "/app/test_reports/pytest/pytest_vacation_carry_over.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Vacations.jsx (562 lines) is close to 700-line limit; consider splitting AdminVacationSection and TakenByYear modal into subcomponents proactively.",
+    "GET /admin/vacations/taken-by-year iterates all years computing carry chain — OK for now; POST recomputes chain again (duplicate logic). Could be factored into a helper to keep GET and POST semantics symmetric."
+  ],
+  "updated_files": ["/app/backend/tests/test_vacation_carry_over.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (3/3 scenarios)"},
+  "test_credentials": "miguel / Miguel123!",
+  "seed_data_creation": "None permanent — final state reverted to 2025=0, 2026=0 in backend tests; frontend modal closed via Cancelar (no save).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Miguel company_start_date=2025-02-14. 2025 earned=20 (10 months), 2026 earned=14 (7 months in Jul 2026 → min(7*2,22)=14). GET response includes days_earned_effective and carry_over_prev per year. POST syncs vacation_balances with effective earned (earned+carry) and current-year taken. Frontend Vacations.jsx updateTakenYear recalculates carry chain live and renders '{earned} + {carry} carry' subtext when carry_over_prev>0. Service Worker auto-reloads on first visit — always wait ~5s before interacting with login form after navigation.",
+  "rca of the issue": "N/A — feature working as designed."
+}

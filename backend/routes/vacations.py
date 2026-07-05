@@ -470,9 +470,20 @@ async def admin_get_taken_by_year(
     ).to_list(100)
     taken_by_year = {d["year"]: int(d.get("days_taken") or 0) for d in taken_docs}
 
+    # Regra de carry-over:
+    # - days_available de cada ano = (dias por gozar do ano anterior) + (earned_current - taken_current)
+    # - Se ano anterior tem sobra, ela acumula no seguinte.
+    # - Nunca negativo (clamp).
+    carry_over = 0
     for y in years:
         y["days_taken"] = taken_by_year.get(y["year"], 0)
-        y["days_available"] = max(0, y["days_earned"] - y["days_taken"])
+        y["days_earned_effective"] = y["days_earned"] + carry_over
+        y["carry_over_prev"] = carry_over
+        # Saldo cumulativo (ano anterior + este ano - gozados este ano)
+        raw_available = y["days_earned_effective"] - y["days_taken"]
+        y["days_available"] = max(0, raw_available)
+        # Carry-over para o próximo ano = sobra (positiva) deste
+        carry_over = max(0, raw_available)
 
     return {
         "user_id": user_id,
@@ -525,14 +536,25 @@ async def admin_set_taken_by_year(
             upsert=True,
         )
 
-    # Atualizar saldo agregado — usar o ano corrente como referência para
-    # days_earned/available da tabela principal (a única exibida em /vacations).
+    # Atualizar saldo agregado — regra de carry-over do ano anterior.
     current_year = date.today().year
     curr_taken = 0
     curr_earned = 0
+    carry_over = 0
     balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0})
     if balance and balance.get("company_start_date"):
         years_calc = calculate_vacation_days_by_year(balance["company_start_date"])
+        # Acumular carry-over dos anos anteriores ao corrente
+        for y in years_calc:
+            if y["year"] >= current_year:
+                break
+            taken_prev_doc = await db.vacation_taken_by_year.find_one(
+                {"user_id": user_id, "year": y["year"]},
+                {"_id": 0, "days_taken": 1},
+            )
+            taken_prev = int((taken_prev_doc or {}).get("days_taken") or 0)
+            carry_over = max(0, (y["days_earned"] + carry_over) - taken_prev)
+
         curr = next((y for y in years_calc if y["year"] == current_year), None)
         if curr:
             curr_earned = curr["days_earned"]
@@ -542,12 +564,14 @@ async def admin_set_taken_by_year(
         )
         curr_taken = int((curr_taken_doc or {}).get("days_taken") or 0)
 
+    effective_earned = curr_earned + carry_over
     await db.vacation_balances.update_one(
         {"user_id": user_id},
         {"$set": {
             "days_taken": curr_taken,
-            "days_earned": curr_earned,
-            "days_available": max(0, curr_earned - curr_taken),
+            "days_earned": effective_earned,
+            "days_available": max(0, effective_earned - curr_taken),
+            "carry_over_from_previous": carry_over,
             "total_days_taken_history": total_taken,
             "updated_at": now_iso,
         }},
