@@ -23,18 +23,61 @@ router = APIRouter()
 
 @router.get("/vacations/balance")
 async def get_vacation_balance(current_user: dict = Depends(get_current_user)):
-    """Get current user's vacation balance"""
+    """Get current user's vacation balance (dinâmico com carry-over anual).
+
+    Fonte de verdade: `helpers.calculate_vacation_days_by_year(company_start_date)`
+    + `db.vacation_taken_by_year` para dias gozados por ano.
+    A coleção `vacation_balances` só é usada para obter `company_start_date`;
+    valores agregados (`days_earned`, `days_taken`, `days_available`) são
+    recalculados on-the-fly para respeitar a regra de 2 dias por mês trabalhado
+    no primeiro ano.
+    """
+    current_year = date.today().year
     balance = await db.vacation_balances.find_one({"user_id": current_user["sub"]}, {"_id": 0})
-    
-    if not balance:
-        return {"days_earned": 0, "days_taken": 0, "days_available": 0, "year": date.today().year, "message": "Configure a data de início na empresa"}
-    
+    csd = (balance or {}).get("company_start_date", "")
+
+    if not csd:
+        return {
+            "days_earned": 0,
+            "days_taken": 0,
+            "days_available": 0,
+            "year": current_year,
+            "company_start_date": "",
+            "message": "Configure a data de início na empresa",
+        }
+
+    # Dias gozados por ano
+    taken_docs = await db.vacation_taken_by_year.find(
+        {"user_id": current_user["sub"]}, {"_id": 0, "year": 1, "days_taken": 1},
+    ).to_list(200)
+    taken_by_year = {int(d["year"]): int(d.get("days_taken") or 0) for d in taken_docs}
+
+    days_earned_effective = 0
+    days_taken_curr = 0
+    days_available = 0
+    try:
+        years_calc = calculate_vacation_days_by_year(csd)
+        carry = 0
+        for y in years_calc:
+            y_taken = taken_by_year.get(y["year"], 0)
+            raw_avail = (y["days_earned"] + carry) - y_taken
+            if y["year"] == current_year:
+                days_earned_effective = y["days_earned"] + carry
+                days_taken_curr = y_taken
+                days_available = max(0, raw_avail)
+            carry = max(0, raw_avail)
+    except Exception:
+        logging.exception("Erro a calcular saldo dinâmico de férias")
+        days_earned_effective = balance.get("days_earned", 0)
+        days_taken_curr = balance.get("days_taken", 0)
+        days_available = balance.get("days_available", 0)
+
     return {
-        "days_earned": balance.get("days_earned", 22),
-        "days_taken": balance.get("days_taken", 0),
-        "days_available": balance.get("days_available", 0),
-        "year": balance.get("year", date.today().year),
-        "company_start_date": balance.get("company_start_date", "")
+        "days_earned": days_earned_effective,
+        "days_taken": days_taken_curr,
+        "days_available": days_available,
+        "year": current_year,
+        "company_start_date": csd,
     }
 
 @router.post("/vacations/request")
