@@ -110,37 +110,33 @@ def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
 def calculate_vacation_days_by_year(start_date_str: str) -> list:
     """Devolve lista de dicts (um por cada ano desde company_start_date até ao ano corrente)
     com o número de dias de férias GANHOS nesse ano.
-    Regra: 2 dias por mês trabalhado, máx 22 dias/ano.
-    - No 1º ano: só ganha desde start_date.month até Dezembro.
-    - No ano corrente: só ganha desde Janeiro até (today.month) — se today.day < 1 ajustar.
-    - Anos completos: 22 dias.
+
+    Regras (lei portuguesa aplicada pela empresa):
+    - Ano de admissão: pró-rata (2 dias por mês trabalhado, máx 22).
+      Se `start_date.day > 1`, o mês da admissão não conta.
+    - Anos posteriores ao de admissão: **22 dias completos**, atribuídos
+      logo a 1 de Janeiro (mesmo que o ano corrente ainda esteja a decorrer).
     """
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     today = date.today()
     result = []
     for year in range(start_date.year, today.year + 1):
-        # meses trabalhados neste ano
-        if year == start_date.year and year == today.year:
-            months = today.month - start_date.month
-            if today.day < start_date.day:
-                months -= 1
-        elif year == start_date.year:
-            months = 12 - start_date.month + 1
-            if start_date.day > 1:
-                months -= 1
-        elif year == today.year:
-            months = today.month
-            if today.day < 1:  # never true, kept for symmetry
-                months -= 1
+        if year == start_date.year:
+            # Ano de admissão — pró-rata
+            if start_date.year == today.year:
+                months = today.month - start_date.month
+                if today.day < start_date.day:
+                    months -= 1
+            else:
+                months = 12 - start_date.month + 1
+                if start_date.day > 1:
+                    months -= 1
+            months = max(0, months)
+            earned = min(months * 2, 22)
+            result.append({"year": year, "days_earned": earned, "months_worked": months})
         else:
-            months = 12
-        months = max(0, months)
-        earned = min(months * 2, 22)
-        result.append({
-            "year": year,
-            "days_earned": earned,
-            "months_worked": months,
-        })
+            # Ano posterior ao de admissão — 22 dias completos
+            result.append({"year": year, "days_earned": 22, "months_worked": 12})
     return result
 
 

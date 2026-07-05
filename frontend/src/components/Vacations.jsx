@@ -106,22 +106,34 @@ const Vacations = ({ user, onLogout }) => {
     const parsed = value === '' ? 0 : parseInt(value, 10);
     const days = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
     setTakenYears((prev) => {
-      // Recalcular carry-over em cadeia após alterar um ano
-      let carry = 0;
-      return prev.map((y) => {
-        const nextTaken = y.year === year ? days : (y.days_taken || 0);
-        const effective = (y.days_earned || 0) + carry;
-        const rawAvail = effective - nextTaken;
-        const nextCarry = Math.max(0, rawAvail);
-        const updated = {
+      // Novo modelo: cada ano tem earned próprio. Alocação FIFO por total_taken.
+      const updated = prev.map((y) => ({
+        ...y,
+        days_taken_raw: y.year === year ? days : (y.days_taken_raw ?? y.days_taken ?? 0),
+      }));
+      // Recalcular days_taken (FIFO) e days_available
+      let remaining = updated.reduce((s, y) => s + (y.days_taken_raw || 0), 0);
+      return updated.map((y, i) => {
+        const earned = y.days_earned || 0;
+        const isLast = i === updated.length - 1;
+        let displayTaken;
+        let displayAvail;
+        if (isLast) {
+          displayTaken = remaining;
+          displayAvail = earned - displayTaken;
+          remaining = 0;
+        } else {
+          displayTaken = Math.min(remaining, earned);
+          displayAvail = earned - displayTaken;
+          remaining -= displayTaken;
+        }
+        return {
           ...y,
-          days_taken: nextTaken,
-          days_earned_effective: effective,
-          carry_over_prev: carry,
-          days_available: Math.max(0, rawAvail),
+          days_taken: displayTaken,
+          days_available: displayAvail,
+          days_earned_effective: earned,
+          carry_over_prev: 0,
         };
-        carry = nextCarry;
-        return updated;
       });
     });
   };
@@ -131,7 +143,7 @@ const Vacations = ({ user, onLogout }) => {
     setTakenSaving(true);
     try {
       await axios.post(`${API}/admin/vacations/taken-by-year/${takenDialogUser.user_id}`, {
-        years: takenYears.map((y) => ({ year: y.year, days_taken: y.days_taken || 0 })),
+        years: takenYears.map((y) => ({ year: y.year, days_taken: y.days_taken_raw ?? y.days_taken ?? 0 })),
       });
       toast.success('Dias gozados atualizados');
       setShowTakenDialog(false);
@@ -275,37 +287,28 @@ const Vacations = ({ user, onLogout }) => {
                           </div>
                         </div>
 
-                        {/* Quick stats — year breakdown */}
+                        {/* Quick stats — year breakdown from backend */}
                         <div className="flex items-center gap-3 md:gap-6 mr-2">
-                          {(() => {
-                            // Calcular carryover: total_base = available + taken, carryover = total_base - 22
-                            const totalBase = ub.days_available + ub.days_taken;
-                            const carryover = Math.round((totalBase - 22) * 100) / 100;
-                            const hasCarryover = carryover !== 0;
-                            const prevYear = ub.year - 1;
-                            
-                            if (hasCarryover) {
-                              return (
-                                <>
+                          {ub.year_breakdown && ub.year_breakdown.length > 0 ? (
+                            <>
+                              {ub.year_breakdown.map((y, idx) => (
+                                <div key={y.year} className="flex items-center gap-2 md:gap-3">
                                   <div className="text-center">
-                                    <div className="text-xs text-gray-500">{prevYear}</div>
-                                    <div className={`font-bold text-sm md:text-lg ${carryover < 0 ? 'text-red-400' : 'text-purple-400'}`}>{carryover}</div>
+                                    <div className="text-xs text-gray-500">{y.year}</div>
+                                    <div className={`font-bold text-sm md:text-lg ${y.days_available < 0 ? 'text-red-400' : 'text-blue-400'}`}>{y.days_available}</div>
                                   </div>
-                                  <div className="text-gray-600 text-xs">+</div>
-                                  <div className="text-center">
-                                    <div className="text-xs text-gray-500">{ub.year}</div>
-                                    <div className="text-blue-400 font-bold text-sm md:text-lg">22</div>
-                                  </div>
-                                </>
-                              );
-                            }
-                            return (
-                              <div className="text-center">
-                                <div className="text-xs text-gray-500">{ub.year}</div>
-                                <div className="text-blue-400 font-bold text-sm md:text-lg">{ub.days_earned}</div>
-                              </div>
-                            );
-                          })()}
+                                  {idx < ub.year_breakdown.length - 1 && (
+                                    <div className="text-gray-600 text-xs">+</div>
+                                  )}
+                                </div>
+                              ))}
+                            </>
+                          ) : (
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500">{ub.year}</div>
+                              <div className="text-blue-400 font-bold text-sm md:text-lg">{ub.days_earned}</div>
+                            </div>
+                          )}
                           <div className="text-gray-700 font-light">|</div>
                           <div className="text-center">
                             <div className="text-xs text-gray-500">Gozados</div>
@@ -402,7 +405,8 @@ const Vacations = ({ user, onLogout }) => {
         {(activeTab === 'my' || !user?.is_admin) && (
         <>
         {balance ? (
-          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
+          <>
+          <div className="grid grid-cols-3 gap-3 md:gap-6 mb-4">
             <div className="glass-effect p-4 md:p-6 rounded-xl">
               <div className="text-gray-400 text-xs md:text-sm mb-1">Dias Acumulados</div>
               <div className="text-2xl md:text-4xl font-bold text-blue-400">{balance.days_earned}</div>
@@ -416,6 +420,25 @@ const Vacations = ({ user, onLogout }) => {
               <div className={`text-2xl md:text-4xl font-bold ${balance.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>{balance.days_available}</div>
             </div>
           </div>
+          {balance.year_breakdown && balance.year_breakdown.length > 0 && (
+            <div className="glass-effect p-4 md:p-5 rounded-xl mb-6 md:mb-8">
+              <div className="text-gray-400 text-xs md:text-sm mb-3">Disponíveis por ano (consumo FIFO — os dias mais antigos são gastos primeiro)</div>
+              <div className="flex flex-wrap gap-3">
+                {balance.year_breakdown.map((y) => (
+                  <div key={y.year} className="bg-[#0f0f0f] rounded-lg px-4 py-3 border border-gray-800 min-w-[120px]" data-testid={`year-card-${y.year}`}>
+                    <div className="text-gray-500 text-xs mb-1">{y.year}</div>
+                    <div className={`text-xl md:text-2xl font-bold ${y.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      {y.days_available}
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-1">
+                      {y.days_taken}/{y.days_earned} gastos
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          </>
         ) : (
           <div className="glass-effect p-6 rounded-xl mb-8 border-l-4 border-amber-500">
             <div className="flex items-start gap-3">
@@ -518,7 +541,7 @@ const Vacations = ({ user, onLogout }) => {
                       <Input
                         type="number"
                         min="0"
-                        value={y.days_taken ?? 0}
+                        value={y.days_taken_raw ?? y.days_taken ?? 0}
                         onChange={(e) => updateTakenYear(y.year, e.target.value)}
                         className="bg-[#0a0a0a] border-gray-700 text-white h-8 text-sm text-right"
                         data-testid={`taken-input-${y.year}`}
@@ -535,7 +558,7 @@ const Vacations = ({ user, onLogout }) => {
                   </div>
                 ))}
                 <p className="text-xs text-gray-500 mt-2">
-                  Dias em falta do ano anterior transitam automaticamente e são consumidos primeiro. O valor auto é a contagem de pedidos aprovados (menos cancelamentos); o input serve para forçar um total manual (útil para importar anos anteriores ao sistema). Efectivo = max(manual, auto).
+                  Os dias são consumidos por FIFO — o saldo mais antigo é gasto primeiro. Se o consumo total ultrapassar o total ganho, o último ano fica com saldo negativo (que transita para o ano seguinte). O valor {'"'}auto{'"'} é a contagem de pedidos aprovados nesse ano (menos cancelamentos); o input define um total manual (útil para importar anos pré-sistema). Efectivo = max(manual, auto).
                 </p>
               </>
             )}

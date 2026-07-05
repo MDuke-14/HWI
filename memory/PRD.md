@@ -50,7 +50,19 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
     - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
     - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
 16. ✅ **Auth fix + Vacations filter (Feb 2026)** — eliminado utilizador duplicado em `users`; passwords reset para `miguel` (`Miguel123!`) e `teste@email.com` (`Admin123!`). Filtro `include_past` (default false) em `/vacations/my-requests` e `/admin/vacations/all-balances` esconde férias gozadas de anos anteriores. Toggles UI 'Mostrar/Esconder anos anteriores' nas secções Meus Pedidos + Admin.
-19. ✅ **Refactor Vacation Balance Engine (Feb 2026)** — refatorado o motor de cálculo de férias para ter **UMA ÚNICA FONTE DE VERDADE** dinâmica. Regras:
+20. ✅ **Vacation Engine — modelo FIFO com regra de 1 Janeiro (Feb 2026)** — refatorado o motor de férias para respeitar a regra correta portuguesa da empresa:
+    - **Ano de admissão**: pró-rata (2 dias/mês trabalhado, máx 22).
+    - **Anos seguintes ao de admissão**: **22 dias completos** atribuídos automaticamente a 1 de Janeiro (o ano corrente já ganha 22 mesmo em Julho — não pró-rata pelo mês actual).
+    - **Consumo FIFO**: o total de dias gozados é alocado ao ano mais antigo primeiro; só depois transita ao seguinte. Se o consumo excede o total ganho, o último ano fica com saldo **negativo** (transita para o ano seguinte).
+    - `helpers.calculate_vacation_days_by_year` alterado; `_build_year_balances` reescrito com alocação FIFO em vez de carry-over aditivo.
+    - `GET /vacations/balance` devolve totais (soma de todos os anos) + `year_breakdown`.
+    - `GET /admin/vacations/all-balances` também inclui `year_breakdown` por user.
+    - UI `Vacations.jsx`: nova secção "Disponíveis por ano" com cards side-by-side (ex.: 2025: 16 (4/20 gastos) | 2026: 22 (0/22 gastos)); admin também mostra breakdown no header do card de cada colaborador.
+    - Validado (Miguel start 14/02/2025, hoje Jul/2026, 4 gozados): 42 acumulados / 4 gozados / 38 disponíveis, 2025=16 e 2026=22.
+    - Validado (Chelson start 13/11/2025, manual 29 dias/2026): 24 acumulados / 29 gozados / -5 disponíveis, 2025=0 e 2026=-5. Perfeito para transitar dívida.
+    - **NOTA**: substitui a versão anterior (item 19) — o modelo com carry-over aditivo não era o que a empresa queria.
+
+19. ✅ **Refactor Vacation Balance Engine v1 (Feb 2026)** — [SUBSTITUÍDO pelo item 20]
     - `days_earned` por ano = `helpers.calculate_vacation_days_by_year` (2 dias/mês, máx 22/ano).
     - `days_taken` por ano = **max(override_manual, contagem automática)** dos pedidos aprovados (dias úteis) menos cancelamentos.
     - **Carry-over positivo apenas** — sobra de um ano soma no seguinte; negativos ficam nesse ano e não empurram dívida.

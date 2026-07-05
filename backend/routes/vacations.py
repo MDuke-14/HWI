@@ -57,40 +57,64 @@ def _count_approved_days_by_year(approved_requests, cancelled_dates_set, valid_y
 
 
 def _build_year_balances(company_start_date, taken_manual_by_year, approved_requests, cancelled_dates_set):
-    """Devolve lista de dicts com balanço detalhado por ano + carry-over.
+    """Devolve lista de dicts com balanço detalhado por ano.
 
-    Regras:
-    - days_taken efectivo por ano = max(override manual do admin, contagem auto)
-    - carry-over para ano seguinte = max(0, disponível deste ano)  (negativos não passam)
-    - days_available do ano corrente pode ser negativo (revela over-consumo)
-    - Anos anteriores ao company_start_date são ignorados
+    Modelo:
+    - Cada ano tem `days_earned` fixo (helper: pró-rata no ano de admissão,
+      22 completos nos seguintes atribuídos a 1/Jan).
+    - `days_taken_raw` por ano = dias efectivamente gozados nesse ano
+      (start_date do pedido em y, menos cancelamentos), com **max** do
+      override manual do admin.
+    - O consumo total (sum de days_taken_raw) é alocado por **FIFO** aos anos
+      do mais antigo para o mais recente: gasta primeiro tudo o que existe
+      em anos anteriores; se sobra consumo, imputa-se ao último ano (que
+      pode ficar negativo).
+    - O último ano pode ter `days_available` negativo — esta dívida transita
+      para o próximo ano.
     """
     years_calc = calculate_vacation_days_by_year(company_start_date)
     valid_years = [y["year"] for y in years_calc]
     approved_counts = _count_approved_days_by_year(approved_requests, cancelled_dates_set, valid_years)
 
-    result = []
-    carry = 0
+    # 1) Contagem "raw" por ano do pedido (informativa)
+    total_taken = 0
+    raw_by_year = {}
     for y in years_calc:
         year = y["year"]
-        earned = y["days_earned"]
         manual = int(taken_manual_by_year.get(year, 0))
         auto = approved_counts.get(year, 0)
-        taken_effective = max(manual, auto)
-        earned_effective = earned + carry
-        raw_available = earned_effective - taken_effective
+        raw = max(manual, auto)
+        raw_by_year[year] = {"manual": manual, "auto": auto, "raw": raw}
+        total_taken += raw
+
+    # 2) Alocação FIFO — mais antigo primeiro; último ano pode ficar negativo
+    remaining = total_taken
+    result = []
+    for i, y in enumerate(years_calc):
+        year = y["year"]
+        earned = y["days_earned"]
+        raw_info = raw_by_year[year]
+        is_last = (i == len(years_calc) - 1)
+        if is_last:
+            display_taken = remaining
+            display_available = earned - display_taken
+            remaining = 0
+        else:
+            display_taken = min(remaining, earned)
+            display_available = earned - display_taken
+            remaining -= display_taken
         result.append({
             "year": year,
             "days_earned": earned,
+            "days_earned_effective": earned,  # sem carry — cada ano tem earning próprio
             "months_worked": y.get("months_worked", 0),
-            "days_taken": taken_effective,
-            "days_taken_manual": manual,
-            "days_taken_auto": auto,
-            "carry_over_prev": carry,
-            "days_earned_effective": earned_effective,
-            "days_available": raw_available,
+            "days_taken": display_taken,        # imputado após FIFO
+            "days_taken_raw": raw_info["raw"],  # dias gozados nesse ano (start_date year)
+            "days_taken_manual": raw_info["manual"],
+            "days_taken_auto": raw_info["auto"],
+            "carry_over_prev": 0,               # legacy field (sempre 0 no novo modelo)
+            "days_available": display_available,
         })
-        carry = max(0, raw_available)
     return result
 
 
@@ -150,23 +174,18 @@ async def get_vacation_balance(current_user: dict = Depends(get_current_user)):
             "error": "Erro ao calcular saldo",
         }
 
-    curr = next((y for y in years if y["year"] == current_year), None)
-    if not curr:
-        # Ano corrente ainda não iniciou (company_start_date no futuro)
-        return {
-            "days_earned": 0,
-            "days_taken": 0,
-            "days_available": 0,
-            "year": current_year,
-            "company_start_date": csd,
-        }
+    # Total = soma de todos os anos válidos (podem ser vários com o modelo FIFO)
+    total_earned = sum(y["days_earned"] for y in years)
+    total_taken = sum(y["days_taken"] for y in years)
+    total_available = sum(y["days_available"] for y in years)
 
     return {
-        "days_earned": curr["days_earned_effective"],
-        "days_taken": curr["days_taken"],
-        "days_available": curr["days_available"],
+        "days_earned": total_earned,
+        "days_taken": total_taken,
+        "days_available": total_available,
         "year": current_year,
         "company_start_date": csd,
+        "year_breakdown": years,
     }
 
 @router.post("/vacations/request")
@@ -500,11 +519,10 @@ async def get_all_vacation_balances(
                     cancelled_by_user.get(uid, set()),
                 )
                 year_breakdown = years
-                curr = next((y for y in years if y["year"] == current_year), None)
-                if curr:
-                    days_earned_effective = curr["days_earned_effective"]
-                    days_taken_curr = curr["days_taken"]
-                    days_available = curr["days_available"]
+                # Totais somam todos os anos válidos
+                days_earned_effective = sum(y["days_earned"] for y in years)
+                days_taken_curr = sum(y["days_taken"] for y in years)
+                days_available = sum(y["days_available"] for y in years)
             except Exception:
                 logging.exception("Erro a calcular saldo dinâmico para %s", uid)
 
