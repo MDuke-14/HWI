@@ -530,7 +530,8 @@ const AdminDashboard = ({ user, onLogout }) => {
       full_name: user.full_name || '',
       password: '',
       is_admin: user.is_admin || false,
-      tipo_colaborador: user.tipo_colaborador || ''
+      tipo_colaborador: user.tipo_colaborador || '',
+      company_start_date: user.company_start_date || '',
     });
     setShowEditDialog(true);
   };
@@ -1153,7 +1154,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                     </DialogContent>
                   </Dialog>
                   
-                  <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                  <Dialog open={showCreateDialog} onOpenChange={(open) => {
+                    if (open) {
+                      // Pré-preencher data de entrada com hoje ao abrir
+                      const today = new Date().toISOString().slice(0, 10);
+                      setCreateForm((f) => ({ ...f, company_start_date: f.company_start_date || today }));
+                    }
+                    setShowCreateDialog(open);
+                  }}>
                     <DialogTrigger asChild>
                       <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full">
                         <Plus className="w-4 h-4 mr-2" />Criar Utilizador
@@ -1181,6 +1189,17 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <div>
                         <Label className={isMobile ? 'text-xs' : ''}>Password</Label>
                         <Input type="password" value={createForm.password} onChange={(e) => setCreateForm({...createForm, password: e.target.value})} className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`} />
+                      </div>
+                      <div>
+                        <Label className={isMobile ? 'text-xs' : ''}>Data de Entrada na Empresa</Label>
+                        <Input
+                          type="date"
+                          value={createForm.company_start_date}
+                          onChange={(e) => setCreateForm({...createForm, company_start_date: e.target.value})}
+                          className={`bg-[#0a0a0a] border-gray-700 text-white ${isMobile ? 'text-sm' : ''}`}
+                          data-testid="create-user-company-start-date"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Pré-preenchida com a data de hoje. Ajusta se necessário.</p>
                       </div>
                       <Button onClick={handleCreateUser} disabled={loading} className={`w-full bg-green-600 hover:bg-green-700 text-white rounded-full ${isMobile ? 'text-sm py-2' : ''}`}>
                         {loading ? 'A criar...' : 'Criar Utilizador'}
@@ -1487,6 +1506,17 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <option value="ajudante">Ajudante</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Define automaticamente a função ao adicionar este utilizador a uma FS</p>
+                    </div>
+                    <div>
+                      <Label>Data de Entrada na Empresa</Label>
+                      <Input
+                        type="date"
+                        value={editForm.company_start_date || ''}
+                        onChange={(e) => setEditForm({...editForm, company_start_date: e.target.value})}
+                        className="bg-[#0a0a0a] border-gray-700 text-white"
+                        data-testid="edit-user-company-start-date"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Data em que o colaborador iniciou funções na empresa. Usada no cálculo de férias.</p>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg">
                       <Label className="cursor-pointer">Privilégios de Admin</Label>

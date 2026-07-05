@@ -39,6 +39,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     is_admin: Optional[bool] = None
     tipo_colaborador: Optional[str] = None
+    company_start_date: Optional[str] = None
 
 class UserLogin(BaseModel):
     username: str

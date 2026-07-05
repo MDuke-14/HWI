@@ -18,10 +18,8 @@ const Vacations = ({ user, onLogout }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
-  const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [requestForm, setRequestForm] = useState({ start_date: '', end_date: '', reason: '' });
-  const [setupForm, setSetupForm] = useState({ company_start_date: '', vacation_days_taken: 0 });
   const [activeTab, setActiveTab] = useState('my');
   const [allBalances, setAllBalances] = useState([]);
   const [expandedUser, setExpandedUser] = useState(null);
@@ -83,20 +81,6 @@ const Vacations = ({ user, onLogout }) => {
     }
   };
 
-  const handleSetup = async () => {
-    setLoading(true);
-    try {
-      await axios.post(`${API}/vacations/update-start-date?company_start_date=${setupForm.company_start_date}&vacation_days_taken=${setupForm.vacation_days_taken}`);
-      toast.success('Dados atualizados!');
-      setShowSetupDialog(false);
-      fetchBalance();
-    } catch (error) {
-      toast.error('Erro ao atualizar dados');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getStatusBadge = (status) => {
     const badges = {
       pending: { color: 'bg-amber-700 text-amber-200', icon: <Clock className="w-3 h-3" />, text: 'Pendente' },
@@ -117,25 +101,6 @@ const Vacations = ({ user, onLogout }) => {
             <h1 className="text-2xl md:text-4xl font-bold text-white">Gestão de Férias</h1>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Dialog open={showSetupDialog} onOpenChange={setShowSetupDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-gray-700 hover:bg-gray-600 text-white rounded-full text-xs md:text-sm">Configurar</Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                <DialogHeader><DialogTitle>Configurar Dados</DialogTitle></DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div>
-                    <Label>Data de Início na Empresa</Label>
-                    <Input type="date" value={setupForm.company_start_date} onChange={(e) => setSetupForm({...setupForm, company_start_date: e.target.value})} className="bg-[#0a0a0a] border-gray-700 text-white" />
-                  </div>
-                  <div>
-                    <Label>Dias de Férias Já Gozados</Label>
-                    <Input type="number" value={setupForm.vacation_days_taken} onChange={(e) => setSetupForm({...setupForm, vacation_days_taken: parseInt(e.target.value)})} className="bg-[#0a0a0a] border-gray-700 text-white" />
-                  </div>
-                  <Button onClick={handleSetup} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full">Guardar</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
             {balance && (
               <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
                 <DialogTrigger asChild>

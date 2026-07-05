@@ -2645,8 +2645,14 @@ async def get_my_day_authorization_status(
 
 @api_router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_admin)):
-    """Get all users (admin only)"""
+    """Get all users (admin only) — includes company_start_date from vacation_balances."""
     users = await db.users.find({}, {"_id": 0, "hashed_password": 0, "password": 0}).to_list(1000)
+    # Enriquecer com company_start_date de vacation_balances
+    balances = await db.vacation_balances.find({}, {"_id": 0, "user_id": 1, "company_start_date": 1}).to_list(1000)
+    csd_by_user = {b["user_id"]: b.get("company_start_date") for b in balances}
+    for u in users:
+        if not u.get("company_start_date"):
+            u["company_start_date"] = csd_by_user.get(u["id"])
     return users
 
 
@@ -2693,18 +2699,18 @@ async def admin_create_user(user_data: UserCreate, current_user: dict = Depends(
     user_dict['plain_password'] = user_data.password
     await db.users.insert_one(user_dict)
     
-    # Create vacation balance if company start date provided
-    if user_data.company_start_date:
-        vacation_balance = VacationBalance(
-            user_id=user.id,
-            company_start_date=user_data.company_start_date,
-            days_earned=0,
-            days_taken=user_data.vacation_days_taken,
-            days_available=0
-        )
-        vac_dict = vacation_balance.model_dump()
-        vac_dict['updated_at'] = vac_dict['updated_at'].isoformat()
-        await db.vacation_balances.insert_one(vac_dict)
+    # Create vacation balance — company_start_date obrigatório (default: hoje)
+    company_start_date = user_data.company_start_date or date.today().strftime("%Y-%m-%d")
+    vacation_balance = VacationBalance(
+        user_id=user.id,
+        company_start_date=company_start_date,
+        days_earned=0,
+        days_taken=user_data.vacation_days_taken or 0,
+        days_available=0
+    )
+    vac_dict = vacation_balance.model_dump()
+    vac_dict['updated_at'] = vac_dict['updated_at'].isoformat()
+    await db.vacation_balances.insert_one(vac_dict)
     
     return {"message": "Utilizador criado com sucesso", "user_id": user.id}
 
@@ -2752,7 +2758,19 @@ async def admin_update_user(
     
     if update_dict:
         await db.users.update_one({"id": user_id}, {"$set": update_dict})
-    
+
+    # Atualizar company_start_date em vacation_balances (fonte de verdade)
+    if update_data.company_start_date is not None:
+        from datetime import datetime as _dt
+        await db.vacation_balances.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "company_start_date": update_data.company_start_date,
+                "updated_at": _dt.now().isoformat(),
+            }},
+            upsert=True,
+        )
+
     return {"message": "Utilizador atualizado com sucesso"}
 
 @api_router.delete("/admin/users/{user_id}")

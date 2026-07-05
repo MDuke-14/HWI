@@ -1,0 +1,32 @@
+{
+  "summary": "Tested new company_start_date feature (backend + frontend) and confirmation that 'Configurar' button was removed from /vacations. 5/5 pytest backend tests PASSED. Frontend verified: /vacations header contains no 'Configurar'; /admin > Utilizadores > Criar Utilizador dialog pre-fills the date field with today; edit dialog renders the field with current value. Test users created during POST tests were deleted.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_company_start_date.py",
+    "/app/test_reports/pytest/company_start_date.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py L2669-2715 (POST /admin/users/create): stores `plain_password` on the user document — pre-existing pattern (also in PUT L2750), but worth noting as a security-hygiene item; not introduced in this iteration.",
+    "server.py L2762-2772: PUT updates vacation_balances via upsert=True; if a user has no vacation_balance yet, csd is written but the balance doc is only partial (missing days_earned/days_taken/days_available). Consider populating full defaults, or restrict upsert. Not blocking.",
+    "AdminDashboard.jsx L1161: pre-fill only applies if createForm.company_start_date is empty ('|| today'). If admin closes the dialog after clearing the field and reopens it, today re-populates — correct behaviour."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_company_start_date.py"
+  ],
+  "success_rate": {"backend": "100% (5/5 tests passed)", "frontend": "100% (all critical UI checks passed)"},
+  "test_credentials": "miguel / Miguel123! (id 92e60254-5bae-4fd7-ad44-7b2f5f4bcc60, csd 2023-01-15)",
+  "seed_data_creation": "None persisted. Two temporary users (TEST_csd_default_* and TEST_csd_explicit_*) were created and deleted within the test flow.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints validated: GET /api/admin/users enriches every user with company_start_date from vacation_balances (miguel=2023-01-15). PUT /api/admin/users/{id} accepts company_start_date and upserts vacation_balances (verified via GET). PUT without csd does NOT change balances. POST /api/admin/users/create with no csd defaults to today (verified via GET after creation); with explicit csd (2020-05-10) it persists. Frontend: /vacations header only shows 'Pedir Férias' + (admin) 'Rever'; no 'Configurar'. AdminDashboard 'Criar Utilizador' dialog auto-fills [data-testid=create-user-company-start-date] with today's date when opened (verified: value='2026-07-05' == today). 'Editar' dialog renders [data-testid=edit-user-company-start-date] with the user's current csd (or empty for users like 'pedro' who have no csd yet — this is expected).",
+  "rca of the issue": "N/A — feature-add verification. Implementation matches spec across models.py (UserUpdate.company_start_date Optional[str]), server.py (enrichment, default-today on create, upsert on PUT), Vacations.jsx (Configurar button removed), and AdminDashboard.jsx (create/edit dialogs with data-testids)."
+}
