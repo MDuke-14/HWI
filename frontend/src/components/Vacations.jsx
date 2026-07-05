@@ -25,6 +25,12 @@ const Vacations = ({ user, onLogout }) => {
   const [expandedUser, setExpandedUser] = useState(null);
   const [showPastYears, setShowPastYears] = useState(false);
   const [showPastYearsAdmin, setShowPastYearsAdmin] = useState(false);
+  // Modal admin: editar dias gozados por ano
+  const [showTakenDialog, setShowTakenDialog] = useState(false);
+  const [takenDialogUser, setTakenDialogUser] = useState(null);
+  const [takenYears, setTakenYears] = useState([]);
+  const [takenLoading, setTakenLoading] = useState(false);
+  const [takenSaving, setTakenSaving] = useState(false);
 
   useEffect(() => {
     fetchBalance();
@@ -78,6 +84,47 @@ const Vacations = ({ user, onLogout }) => {
       toast.error(error.response?.data?.detail || 'Erro ao submeter pedido');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openTakenDialog = async (ub) => {
+    setTakenDialogUser(ub);
+    setShowTakenDialog(true);
+    setTakenLoading(true);
+    try {
+      const res = await axios.get(`${API}/admin/vacations/taken-by-year/${ub.user_id}`);
+      setTakenYears(res.data.years || []);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao carregar anos');
+      setTakenYears([]);
+    } finally {
+      setTakenLoading(false);
+    }
+  };
+
+  const updateTakenYear = (year, value) => {
+    const parsed = value === '' ? 0 : parseInt(value, 10);
+    const days = Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
+    setTakenYears((prev) => prev.map((y) => y.year === year
+      ? { ...y, days_taken: days, days_available: Math.max(0, (y.days_earned || 0) - days) }
+      : y));
+  };
+
+  const saveTakenYears = async () => {
+    if (!takenDialogUser) return;
+    setTakenSaving(true);
+    try {
+      await axios.post(`${API}/admin/vacations/taken-by-year/${takenDialogUser.user_id}`, {
+        years: takenYears.map((y) => ({ year: y.year, days_taken: y.days_taken || 0 })),
+      });
+      toast.success('Dias gozados atualizados');
+      setShowTakenDialog(false);
+      setTakenDialogUser(null);
+      fetchAllBalances(showPastYearsAdmin);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao guardar');
+    } finally {
+      setTakenSaving(false);
     }
   };
 
@@ -260,6 +307,18 @@ const Vacations = ({ user, onLogout }) => {
                       {/* Expanded details */}
                       {isExpanded && (
                         <div className="border-t border-gray-800 p-4 md:p-5 space-y-4">
+                          {/* Ações admin */}
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              onClick={() => openTakenDialog(ub)}
+                              className="bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs"
+                              data-testid={`edit-taken-${ub.user_id}`}
+                            >
+                              Editar Dias Gozados por Ano
+                            </Button>
+                          </div>
+
                           {/* Annual transitions */}
                           {ub.annual_transitions && ub.annual_transitions.length > 0 && (
                             <div>
@@ -399,6 +458,81 @@ const Vacations = ({ user, onLogout }) => {
         onOpenChange={setShowReviewDialog}
         onSuccess={() => { fetchBalance(); fetchRequests(showPastYears); if (user?.is_admin) fetchAllBalances(showPastYearsAdmin); }}
       />
+
+      {/* Admin: Editar dias gozados por ano */}
+      <Dialog open={showTakenDialog} onOpenChange={(o) => { if (!o) { setShowTakenDialog(false); setTakenDialogUser(null); } }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Dias Gozados por Ano</DialogTitle>
+          </DialogHeader>
+          {takenDialogUser && (
+            <p className="text-sm text-gray-400">
+              <span className="text-white font-medium">{takenDialogUser.full_name || takenDialogUser.username}</span>
+              {' · Entrada: '}
+              {takenDialogUser.company_start_date
+                ? new Date(takenDialogUser.company_start_date + 'T00:00:00').toLocaleDateString('pt-PT')
+                : 'N/D'}
+            </p>
+          )}
+          <div className="space-y-3 mt-2">
+            {takenLoading ? (
+              <p className="text-gray-500 text-sm">A carregar...</p>
+            ) : takenYears.length === 0 ? (
+              <p className="text-amber-400 text-sm">Sem dados. Configura a data de entrada primeiro.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-12 gap-2 text-xs text-gray-500 font-medium uppercase tracking-wide px-1">
+                  <div className="col-span-3">Ano</div>
+                  <div className="col-span-3 text-right">Disponíveis</div>
+                  <div className="col-span-3 text-right">Gozados</div>
+                  <div className="col-span-3 text-right">Saldo</div>
+                </div>
+                {takenYears.map((y) => (
+                  <div key={y.year} className="grid grid-cols-12 gap-2 items-center bg-[#0f0f0f] p-2 rounded">
+                    <div className="col-span-3 text-white font-semibold">{y.year}</div>
+                    <div className="col-span-3 text-right text-blue-400 font-semibold">{y.days_earned}</div>
+                    <div className="col-span-3 text-right">
+                      <Input
+                        type="number"
+                        min="0"
+                        max={y.days_earned}
+                        value={y.days_taken ?? 0}
+                        onChange={(e) => updateTakenYear(y.year, e.target.value)}
+                        className="bg-[#0a0a0a] border-gray-700 text-white h-8 text-sm text-right"
+                        data-testid={`taken-input-${y.year}`}
+                      />
+                    </div>
+                    <div className={`col-span-3 text-right font-semibold ${y.days_available < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      {y.days_available}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500 mt-2">
+                  Os valores atualizam o saldo do ano corrente automaticamente.
+                </p>
+              </>
+            )}
+          </div>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => { setShowTakenDialog(false); setTakenDialogUser(null); }}
+              className="border-gray-600 text-gray-300"
+              disabled={takenSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={saveTakenYears}
+              disabled={takenSaving || takenLoading || takenYears.length === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+              data-testid="save-taken-btn"
+            >
+              {takenSaving ? 'A guardar…' : 'Guardar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

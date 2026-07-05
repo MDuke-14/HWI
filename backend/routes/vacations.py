@@ -16,6 +16,7 @@ from server import (
     send_vacation_decision_email, log_app_error,
     create_notification,
 )
+from helpers import calculate_vacation_days_by_year
 from notifications_scheduler import send_push_to_admins, send_push_notification
 
 router = APIRouter()
@@ -432,4 +433,126 @@ async def approve_vacation(
     )
     
     return {"message": f"Pedido {'aprovado' if approved else 'rejeitado'} com sucesso"}
+
+
+
+# ===================== Admin: dias gozados por ano =====================
+
+@router.get("/admin/vacations/taken-by-year/{user_id}")
+async def admin_get_taken_by_year(
+    user_id: str,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Devolve para um user a lista de anos desde company_start_date com:
+       - year, days_earned (calculado), days_taken (guardado por ano ou 0).
+
+    Fonte de days_taken:
+      db.vacation_taken_by_year — {user_id, year, days_taken}
+    """
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1, "full_name": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0})
+    company_start_date = (balance or {}).get("company_start_date")
+    if not company_start_date:
+        return {
+            "user_id": user_id,
+            "username": user.get("full_name") or user.get("username"),
+            "company_start_date": None,
+            "years": [],
+            "message": "Utilizador não tem data de entrada configurada.",
+        }
+
+    years = calculate_vacation_days_by_year(company_start_date)
+    taken_docs = await db.vacation_taken_by_year.find(
+        {"user_id": user_id}, {"_id": 0, "year": 1, "days_taken": 1},
+    ).to_list(100)
+    taken_by_year = {d["year"]: int(d.get("days_taken") or 0) for d in taken_docs}
+
+    for y in years:
+        y["days_taken"] = taken_by_year.get(y["year"], 0)
+        y["days_available"] = max(0, y["days_earned"] - y["days_taken"])
+
+    return {
+        "user_id": user_id,
+        "username": user.get("full_name") or user.get("username"),
+        "company_start_date": company_start_date,
+        "years": years,
+    }
+
+
+@router.post("/admin/vacations/taken-by-year/{user_id}")
+async def admin_set_taken_by_year(
+    user_id: str,
+    payload: dict,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Grava (upsert) o número de dias gozados por ano.
+    Body: { "years": [{"year": 2024, "days_taken": 22}, ...] }
+
+    Atualiza também db.vacation_balances.days_taken com a soma total
+    (para o saldo agregado ficar consistente).
+    """
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    years_data = payload.get("years") or []
+    if not isinstance(years_data, list):
+        raise HTTPException(status_code=400, detail="Campo 'years' inválido")
+
+    now_iso = datetime.now().isoformat()
+    total_taken = 0
+    for item in years_data:
+        try:
+            year = int(item.get("year"))
+            days_taken = int(item.get("days_taken") or 0)
+        except (TypeError, ValueError):
+            continue
+        if days_taken < 0:
+            days_taken = 0
+        total_taken += days_taken
+        await db.vacation_taken_by_year.update_one(
+            {"user_id": user_id, "year": year},
+            {"$set": {
+                "user_id": user_id,
+                "year": year,
+                "days_taken": days_taken,
+                "updated_at": now_iso,
+                "updated_by": current_user["sub"],
+            }},
+            upsert=True,
+        )
+
+    # Atualizar saldo agregado — usar o ano corrente como referência para
+    # days_earned/available da tabela principal (a única exibida em /vacations).
+    current_year = date.today().year
+    curr_taken = 0
+    curr_earned = 0
+    balance = await db.vacation_balances.find_one({"user_id": user_id}, {"_id": 0})
+    if balance and balance.get("company_start_date"):
+        years_calc = calculate_vacation_days_by_year(balance["company_start_date"])
+        curr = next((y for y in years_calc if y["year"] == current_year), None)
+        if curr:
+            curr_earned = curr["days_earned"]
+        curr_taken_doc = await db.vacation_taken_by_year.find_one(
+            {"user_id": user_id, "year": current_year},
+            {"_id": 0, "days_taken": 1},
+        )
+        curr_taken = int((curr_taken_doc or {}).get("days_taken") or 0)
+
+    await db.vacation_balances.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "days_taken": curr_taken,
+            "days_earned": curr_earned,
+            "days_available": max(0, curr_earned - curr_taken),
+            "total_days_taken_history": total_taken,
+            "updated_at": now_iso,
+        }},
+        upsert=True,
+    )
+
+    return {"message": "Dias gozados atualizados", "total": total_taken}
 

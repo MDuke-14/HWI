@@ -1,0 +1,25 @@
+{
+  "summary": "Tested admin vacations taken-by-year GET/POST endpoints and Vacations UI edit modal. All backend cases passed (5/5, non-admin 403 skipped due to missing credentials for a non-admin test user). Frontend flow verified: expand admin panel → 'Editar Dias Gozados por Ano' button → modal with per-year inputs → save shows toast and refreshes balances. State was reverted at end of tests.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dialog Editar Dias Gozados", "issues": ["Console warning: Missing Description/aria-describedby for DialogContent (accessibility only, not blocking)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_admin_taken_by_year.py", "/app/test_reports/pytest/pytest_taken_by_year.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "helpers.calculate_vacation_days_by_year: 'if today.day < 1' is dead code (day is always >=1) — cosmetic only.",
+    "vacation_balances.days_taken is overwritten with only current-year's value on POST (by design per spec); older reports/consumers relying on cumulative days_taken should use total_days_taken_history.",
+    "DialogContent missing aria-describedby (a11y warning in console)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (5/5 executed; 1 skipped)", "frontend": "100%"},
+  "test_credentials": "miguel / Miguel123! (admin)",
+  "seed_data_creation": "Tests upsert docs into db.vacation_taken_by_year for miguel — state was reverted (days_taken=0 for 2025 and 2026) by test_zzz_revert_state at the end.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests in /app/backend/tests/test_admin_taken_by_year.py cover GET/POST, negative clamp, empty state (no company_start_date), persistence in db.vacation_taken_by_year and vacation_balances aggregate, and revert. Non-admin 403 branch is skipped (no known non-admin creds); if needed, create a non-admin test user with a known password."
+}
