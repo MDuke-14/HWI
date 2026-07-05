@@ -333,21 +333,48 @@ async def get_all_vacation_balances(
             requests_by_user[uid] = []
         requests_by_user[uid].append(req)
     
+    # Pré-carregar dias gozados por ano (para recomputar com carry-over)
+    all_taken = await db.vacation_taken_by_year.find({}, {"_id": 0}).to_list(None)
+    taken_by_user_year = {}
+    for t in all_taken:
+        taken_by_user_year.setdefault(t["user_id"], {})[t["year"]] = int(t.get("days_taken") or 0)
+
     result = []
     for balance in balances:
         uid = balance["user_id"]
         user_info = users_map.get(uid, {})
-        
+        csd = balance.get("company_start_date", "")
+
+        # Recalcular dinamicamente com o helper by-year + carry-over
+        days_earned_effective = balance.get("days_earned", 0)
+        days_taken_curr = balance.get("days_taken", 0)
+        days_available = balance.get("days_available", 0)
+        if csd:
+            try:
+                years_calc = calculate_vacation_days_by_year(csd)
+                user_taken = taken_by_user_year.get(uid, {})
+                carry = 0
+                for y in years_calc:
+                    y_taken = user_taken.get(y["year"], 0)
+                    raw_avail = (y["days_earned"] + carry) - y_taken
+                    if y["year"] == current_year:
+                        days_earned_effective = y["days_earned"] + carry
+                        days_taken_curr = y_taken
+                        days_available = max(0, raw_avail)
+                    carry = max(0, raw_avail)
+            except Exception:
+                pass
+
         result.append({
             "user_id": uid,
             "username": user_info.get("username", "?"),
             "full_name": user_info.get("full_name", user_info.get("username", "?")),
             "is_active": user_info.get("is_active", True),
-            "year": balance.get("year", current_year),
-            "days_earned": balance.get("days_earned", 0),
-            "days_taken": balance.get("days_taken", 0),
-            "days_available": balance.get("days_available", 0),
-            "company_start_date": balance.get("company_start_date", ""),
+            "year": current_year,
+            "days_earned": days_earned_effective,
+            "days_taken": days_taken_curr,
+            "days_available": days_available,
+            "company_start_date": csd,
             "annual_transitions": logs_by_user.get(uid, []),
             "approved_requests": requests_by_user.get(uid, [])
         })
