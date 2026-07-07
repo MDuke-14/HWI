@@ -25,6 +25,67 @@ from import_pdf import parse_pdf_timesheet
 
 
 # ---------------------------------------------------------------------------
+# Auto-detecção "Fora de Zona de Residência" a partir do reverse geocoding
+# ---------------------------------------------------------------------------
+# Zona de residência = distritos da grande Lisboa/Setúbal habituais.
+# Se a picagem vier fora destes distritos (ou de outro país que não PT),
+# o backend marca automaticamente `outside_residence_zone=True` e preenche
+# uma `location_description` com a cidade/país detectados.
+#
+# Isto garante que mobile + desktop têm a mesma lógica (o frontend mobile
+# não faz reverse geocoding local — só o backend).
+# ---------------------------------------------------------------------------
+
+_ZONA_RESIDENCIA = {"lisboa", "sintra", "setúbal", "setubal"}
+
+
+def _detect_outside_residence_zone(address_info: dict):
+    """Devolve (is_outside: bool, description: str | None).
+
+    Regras:
+    - Se country_code != 'PT' → fora de zona (usa cidade+país como descrição).
+    - Se country_code == 'PT' e nenhum dos campos (city/municipality/county/
+      region) contém "Lisboa", "Sintra" ou "Setúbal" → fora de zona.
+    - Caso contrário devolve (False, None).
+    """
+    if not address_info:
+        return False, None
+
+    country_code = (address_info.get("country_code") or "").upper()
+    country = address_info.get("country")
+    locality = address_info.get("locality") or address_info.get("city")
+    municipality = address_info.get("municipality")
+    zone = address_info.get("zone")
+    region = address_info.get("region") or address_info.get("county")
+
+    def _fmt(city_val, county_val, country_val):
+        parts = []
+        if zone:
+            parts.append(zone)
+        if city_val:
+            parts.append(city_val)
+        if county_val and county_val != city_val:
+            parts.append(county_val)
+        if country_val and country_code != "PT":
+            parts.append(country_val)
+        return ", ".join([p for p in parts if p]) or country_val or "Local desconhecido"
+
+    if country_code and country_code != "PT":
+        return True, _fmt(locality or municipality, region, country)
+
+    if country_code == "PT":
+        haystack = " ".join([
+            (locality or ""), (municipality or ""), (region or ""),
+        ]).lower()
+        in_residence = any(z in haystack for z in _ZONA_RESIDENCIA)
+        if not in_residence:
+            return True, _fmt(locality or municipality, region, country)
+
+    return False, None
+
+
+
+# ---------------------------------------------------------------------------
 # Subsídio Alimentação (SA) / Ajuda de Custos (AC) — regras unificadas
 # ---------------------------------------------------------------------------
 # Regras (vigentes desde Feb/2026):
@@ -179,11 +240,13 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
             entry_dict['day_authorization_status'] = day_authorization.get("status")
     
     # Adicionar geolocalização se disponível
+    auto_outside_detected = False
+    auto_location_desc = None
     if entry_data.geo_location:
         geo = entry_data.geo_location
         entry_dict['geo_location'] = geo
         logging.info(f"Geolocalização registada: lat={geo.get('latitude')}, lng={geo.get('longitude')}")
-        
+
         # Fazer reverse geocoding para obter cidade/país
         if geo.get('latitude') and geo.get('longitude'):
             try:
@@ -191,8 +254,25 @@ async def start_time_entry(entry_data: TimeEntryStart, current_user: dict = Depe
                 if address_info:
                     entry_dict['geo_location']['address'] = address_info
                     logging.info(f"📍 Local: {address_info.get('city')}, {address_info.get('country')}")
+
+                    # Auto-detecção "Fora de Zona" — respeita override manual do cliente
+                    is_out, desc = _detect_outside_residence_zone(address_info)
+                    if is_out:
+                        auto_outside_detected = True
+                        auto_location_desc = desc
             except Exception as e:
                 logging.error(f"Erro no reverse geocoding: {str(e)}")
+
+    if auto_outside_detected and not outside_zone_value:
+        outside_zone_value = True
+        entry_dict["outside_residence_zone"] = True
+        # Só sobrepor a descrição se o cliente não enviou uma
+        if not entry_data.location_description:
+            entry_dict["location_description"] = auto_location_desc
+        else:
+            entry_dict["location_description"] = entry_data.location_description
+        logging.info(f"🌍 Auto-detectado FORA DE ZONA: {auto_location_desc}")
+
     
     # Inserir entrada na base de dados
     await db.time_entries.insert_one(entry_dict)
