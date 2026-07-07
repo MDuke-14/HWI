@@ -160,9 +160,14 @@ const Vacations = ({ user, onLogout }) => {
     const badges = {
       pending: { color: 'bg-amber-700 text-amber-200', icon: <Clock className="w-3 h-3" />, text: 'Pendente' },
       approved: { color: 'bg-green-700 text-green-200', icon: <CheckCircle className="w-3 h-3" />, text: 'Aprovado' },
-      rejected: { color: 'bg-red-700 text-red-200', icon: <XCircle className="w-3 h-3" />, text: 'Rejeitado' }
+      rejected: { color: 'bg-red-700 text-red-200', icon: <XCircle className="w-3 h-3" />, text: 'Rejeitado' },
+      cancelled: { color: 'bg-gray-700 text-gray-200', icon: <XCircle className="w-3 h-3" />, text: 'Cancelado' },
     };
-    const badge = badges[status];
+    const badge = badges[status] || {
+      color: 'bg-gray-700 text-gray-300',
+      icon: <AlertCircle className="w-3 h-3" />,
+      text: status ? String(status) : 'Desconhecido',
+    };
     return <span className={`${badge.color} px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1`}>{badge.icon}{badge.text}</span>;
   };
 
