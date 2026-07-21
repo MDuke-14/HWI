@@ -4507,6 +4507,28 @@ async def trigger_clock_out_check(current_user: dict = Depends(get_current_admin
     return result
 
 
+@api_router.post("/debug/test-smtp")
+async def debug_test_smtp(current_user: dict = Depends(get_current_admin)):
+    """Diagnóstico: envia um email de teste ao admin para verificar SMTP em runtime."""
+    from notifications_scheduler import send_notification_email
+    admin_email = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
+    smtp_host = os.environ.get('SMTP_HOST')
+    smtp_user = os.environ.get('SMTP_USER')
+    smtp_pw_set = bool(os.environ.get('SMTP_PASSWORD'))
+    ok = await send_notification_email(
+        to_email=admin_email,
+        subject='[DEBUG] Teste SMTP a partir do backend real',
+        html_content='<p>Se recebeste este email, o SMTP funciona a partir do backend em execução.</p>',
+    )
+    return {
+        "smtp_host_env": smtp_host,
+        "smtp_user_env": smtp_user,
+        "smtp_password_set": smtp_pw_set,
+        "admin_email_env": admin_email,
+        "sent_ok": ok,
+    }
+
+
 async def get_notification_logs(
     limit: int = 50,
     current_user: dict = Depends(get_current_admin)
