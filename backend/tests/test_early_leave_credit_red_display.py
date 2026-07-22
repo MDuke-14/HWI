@@ -25,8 +25,8 @@ def _load_backend_url():
     return url.rstrip('/')
 
 BASE_URL = _load_backend_url()
-EMAIL = "teste@email.com"
-PASSWORD = "Admin123!"
+EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "teste@email.com")
+PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "Admin123!")
 MONTH = 6
 YEAR = 2026
 TARGET_DATE = "2026-06-25"

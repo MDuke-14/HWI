@@ -3,7 +3,7 @@
  * Permite trabalhar com OTs sem conexão à internet
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 const DB_NAME = 'HWIOfflineDB';
@@ -71,13 +71,18 @@ export const useOfflineData = (apiBaseUrl) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastSyncTime, setLastSyncTime] = useState(null);
+  // Refs para evitar stale closures — os event listeners criados no useEffect
+  // vazio abaixo precisam sempre da versão MAIS RECENTE de `syncPendingOperations`
+  // e `loadPendingCount`.
+  const syncRef = useRef(() => {});
+  const loadPendingCountRef = useRef(() => {});
 
   // Monitorizar estado de conexão
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       toast.success('Conexão restabelecida! A sincronizar dados...');
-      syncPendingOperations();
+      syncRef.current();
     };
     
     const handleOffline = () => {
@@ -89,7 +94,7 @@ export const useOfflineData = (apiBaseUrl) => {
     window.addEventListener('offline', handleOffline);
     
     // Carregar contagem de operações pendentes
-    loadPendingCount();
+    loadPendingCountRef.current();
     
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -314,6 +319,11 @@ export const useOfflineData = (apiBaseUrl) => {
       setIsSyncing(false);
     }
   };
+
+  // Manter refs sincronizadas com a versão mais recente das funções.
+  // Assim os event listeners registados apenas 1x usam sempre a última versão.
+  syncRef.current = syncPendingOperations;
+  loadPendingCountRef.current = loadPendingCount;
 
   /**
    * Fazer request com fallback offline

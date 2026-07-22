@@ -18,9 +18,9 @@ BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DB_NAME = os.environ.get('DB_NAME', 'emergent')
 
-# Test credentials
-ADMIN_USER = "pedro"
-ADMIN_PASS = "password"
+# Test credentials (via env)
+ADMIN_USER = os.environ.get("TEST_USER_USERNAME", "pedro")
+ADMIN_PASS = os.environ.get("TEST_USER_PASSWORD", "password")
 
 # MongoDB connection for direct token manipulation
 mongo_client = MongoClient(MONGO_URL)

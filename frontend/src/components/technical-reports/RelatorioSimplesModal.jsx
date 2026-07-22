@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import axios from 'axios';
 import { toast } from 'sonner';
 import {
@@ -51,6 +52,17 @@ const EditorToolbar = ({ onCommand }) => {
   );
 };
 
+// Config DOMPurify — permitir formatação básica de texto (bold/italic/lists),
+// bloquear tudo o que possa executar código.
+const SANITIZE_CONFIG = {
+  ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'u', 'br', 'p', 'div', 'span',
+    'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'a'],
+  ALLOWED_ATTR: ['href', 'style', 'class'],
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+};
+
+const sanitizeHtml = (html) => DOMPurify.sanitize(html || '', SANITIZE_CONFIG);
+
 // ----- Editor contenteditable controlado -----
 const RichTextEditor = ({ value, onChange, placeholder, testid }) => {
   const ref = useRef(null);
@@ -60,11 +72,13 @@ const RichTextEditor = ({ value, onChange, placeholder, testid }) => {
   useEffect(() => {
     if (!ref.current) return;
     if (value === lastExternal.current) return;
-    if (value === ref.current.innerHTML) {
+    const safeValue = sanitizeHtml(value);
+    if (safeValue === ref.current.innerHTML) {
       lastExternal.current = value;
       return;
     }
-    ref.current.innerHTML = value || '';
+    // HTML já sanitizado com DOMPurify em `safeValue`
+    ref.current.innerHTML = safeValue;
     lastExternal.current = value;
   }, [value]);
 
@@ -167,7 +181,7 @@ const A4Preview = ({ titulo, secoes, clienteNome, fsNumero, equipamentos, inclui
             )}
             <div
               className="text-[15px] leading-relaxed text-justify prose-rs"
-              dangerouslySetInnerHTML={{ __html: s.corpo_html || '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(s.corpo_html) }}
             />
           </div>
         ))}

@@ -13,10 +13,10 @@ from datetime import datetime, timezone
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 API = f"{BASE_URL}/api"
 
-ADMIN_TESTE_USERNAME = "teste@email.com"
-ADMIN_TESTE_PASSWORD = "Admin123!"
-ADMIN_MIGUEL_USERNAME = "miguel"
-ADMIN_MIGUEL_PASSWORD = "Miguel123!"
+ADMIN_TESTE_USERNAME = os.environ.get("TEST_ADMIN_EMAIL", "teste@email.com")
+ADMIN_TESTE_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "Admin123!")
+ADMIN_MIGUEL_USERNAME = os.environ.get("TEST_USER_USERNAME", "miguel")
+ADMIN_MIGUEL_PASSWORD = os.environ.get("TEST_USER_PASSWORD", "Miguel123!")
 
 
 # ---------------- Fixtures ----------------

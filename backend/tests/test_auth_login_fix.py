@@ -9,8 +9,8 @@ import requests
 from pymongo import MongoClient
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://field-clock.preview.emergentagent.com").rstrip("/")
-ADMIN_EMAIL = "teste@email.com"
-ADMIN_PASSWORD = "Admin123!"
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "teste@email.com")
+ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD", "Admin123!")
 EXPECTED_USER_ID = "c145d94b-bb5f-4fe1-b05d-6fa1034db968"
 
 

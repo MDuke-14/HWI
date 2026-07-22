@@ -1084,7 +1084,7 @@ async def startup_event():
     )
 
     scheduler.start()
-    logging.info("📅 Scheduler de verificações de ponto iniciado (09:30 e 18:15)")
+    logging.info("📅 Scheduler de verificações de ponto iniciado (clock-in 09:30, overtime 8h10 a cada 15min)")
     logging.info("   + Lembretes de serviço a cada 15 min (07:00-20:00)")
     logging.info("   Timezone: Europe/Lisbon")
     logging.info(f"   Base URL: {base_url}")
@@ -2479,30 +2479,12 @@ async def decide_day_authorization(
     # Se aprovado E é dia de férias, devolver 1 dia ao saldo
     vacation_day_returned = False
     if action == "approve" and auth.get("day_type") == "ferias":
-        user_id = auth.get("user_id")
-        auth.get("vacation_request_id")
-        
-        # Buscar saldo de férias do utilizador
-        current_year = datetime.now().year
-        balance = await db.vacation_balances.find_one({
-            "user_id": user_id,
-            "year": current_year
-        })
-        
-        if balance:
-            # Devolver 1 dia
-            new_used = max(0, balance.get("used_days", 0) - 1)
-            new_remaining = balance.get("total_days", 22) - new_used
-            
-            await db.vacation_balances.update_one(
-                {"user_id": user_id, "year": current_year},
-                {"$set": {
-                    "used_days": new_used,
-                    "remaining_days": new_remaining
-                }}
-            )
-            
-            vacation_day_returned = True
+        from helpers import refund_vacation_day
+        vacation_day_returned = await refund_vacation_day(
+            auth.get("user_id"),
+            reason=f"Trabalho em dia de férias autorizado por {auth.get('decided_by_name') or 'admin'}",
+        )
+        if vacation_day_returned:
             logging.info(f"1 dia de férias devolvido ao utilizador {auth.get('user_name')}")
     
     # Atualizar status nas entradas de ponto deste utilizador/dia

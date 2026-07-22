@@ -28,6 +28,33 @@ def generate_temporary_password() -> str:
     return generate_temporary_password()
 
 
+async def refund_vacation_day(user_id: str, reason: str = "Trabalho em dia de férias autorizado") -> bool:
+    """Devolve 1 dia de férias ao saldo do utilizador.
+
+    Usada por `POST /admin/day-authorizations/{id}/decide` e pelo link público
+    de aprovação `routes/public_authorizations.py`. Extraída para evitar
+    import circular entre `server.py` e `routes/public_authorizations.py`.
+
+    Retorna True se atualizou o saldo, False se o utilizador não tinha balance.
+    """
+    current_year = datetime.now(timezone.utc).year
+    balance = await db.vacation_balances.find_one({
+        "user_id": user_id,
+        "year": current_year,
+    })
+    if not balance:
+        return False
+
+    new_used = max(0, balance.get("used_days", 0) - 1)
+    new_remaining = balance.get("total_days", 22) - new_used
+    await db.vacation_balances.update_one(
+        {"user_id": user_id, "year": current_year},
+        {"$set": {"used_days": new_used, "remaining_days": new_remaining}},
+    )
+    logging.info(f"1 dia de férias devolvido ao utilizador {user_id} ({reason})")
+    return True
+
+
 async def send_password_reset_email(user_name: str, user_email: str, temporary_password: str):
     """Send email with temporary password for password reset"""
     try:

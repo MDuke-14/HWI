@@ -20,9 +20,9 @@ from datetime import datetime
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials
-TEST_USERNAME = "pedro"
-TEST_PASSWORD = "teste"
+# Test credentials (via env)
+TEST_USERNAME = os.environ.get("TEST_USER_USERNAME", "pedro")
+TEST_PASSWORD = os.environ.get("TEST_USER_PASSWORD", "teste")
 TEST_USER_ID = "81cb1990-0482-40aa-be75-0a5f0aa4416b"
 TEST_USER_NAME = "Pedro Duarte"
 

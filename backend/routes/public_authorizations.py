@@ -157,10 +157,11 @@ async def decide_public_authorization(
         # Lógica de retorno de férias (se for trabalho em férias e foi aprovado)
         if new_status == "authorized" and auth.get("day_type") == "ferias":
             try:
-                from server import return_vacation_day  # type: ignore
-                user_id = auth.get("user_id")
-                date_str = auth.get("date")
-                await return_vacation_day(user_id, date_str, "Trabalho em dia de férias autorizado via email")
+                from helpers import refund_vacation_day
+                await refund_vacation_day(
+                    auth.get("user_id"),
+                    reason="Trabalho em dia de férias autorizado via email",
+                )
             except Exception as _vac_err:
                 logging.warning(f"[public-auth] retorno de férias falhou: {_vac_err}")
 

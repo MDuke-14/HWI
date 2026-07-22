@@ -7,9 +7,9 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://field-clock.preview.emergentagent.com').rstrip('/')
 
-# Test credentials
-TEST_USERNAME = "pedro"
-TEST_PASSWORD = "password"
+# Test credentials (via env)
+TEST_USERNAME = os.environ.get("TEST_USER_USERNAME", "pedro")
+TEST_PASSWORD = os.environ.get("TEST_USER_PASSWORD", "password")
 
 # Test OT IDs (from test request)
 OT_356_ID = "8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85"

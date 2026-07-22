@@ -13,11 +13,13 @@ from io import BytesIO
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials
-TEST_USERNAME = "pedro"
-TEST_PASSWORD = "password"
+# Test credentials (via env; fallback defaults for preview pod)
+# Test credentials (via env; fallback defaults para preview)
+TEST_USERNAME = os.environ.get("TEST_USER_USERNAME", "pedro")
+TEST_PASSWORD = os.environ.get("TEST_USER_PASSWORD", "password")
 
 # Test FS ID with 4 interventions
+TEST_FS_ID = "8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85"
 TEST_FS_ID = "8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85"
 
 

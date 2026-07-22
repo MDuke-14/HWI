@@ -99,25 +99,9 @@ def _detect_outside_residence_zone(address_info: dict):
 #       - h >= 6        → 100% (50€)
 # Nota: a regra antiga de "dia especial só paga >=5h" foi substituída pelo
 # limite universal de 4h (aplica-se a TODOS os dias).
-SA_FULL_VALUE = 10.0
-AC_FULL_VALUE = 50.0
-
-
-def calcular_sa_ac(total_hours: float, outside_zone: bool) -> tuple[str | None, float | None]:
-    """Calcula o tipo e o valor de pagamento (SA ou AC) com base nas horas.
-
-    Retorna (payment_type, payment_value). Se o utilizador não tem direito a
-    qualquer pagamento nesse dia, devolve (None, None).
-    """
-    if total_hours < 4:
-        return (None, None)
-    if outside_zone:
-        # AC tiered
-        if total_hours < 6:
-            return ("Ajuda de Custos", round(AC_FULL_VALUE * 0.5, 2))  # 50%
-        return ("Ajuda de Custos", AC_FULL_VALUE)
-    # SA binário
-    return ("Subsídio de Alimentação", SA_FULL_VALUE)
+# Regras extraídas para `sa_ac_rules.py` (pure module, sem deps) para permitir
+# testes unitários sem circular imports.
+from sa_ac_rules import SA_FULL_VALUE, AC_FULL_VALUE, calcular_sa_ac  # noqa: F401
 
 import pytz
 LISBON_TZ = pytz.timezone('Europe/Lisbon')
