@@ -50,6 +50,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
     - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
     - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
 16. ✅ **Auth fix + Vacations filter (Feb 2026)** — eliminado utilizador duplicado em `users`; passwords reset para `miguel` (`Miguel123!`) e `teste@email.com` (`Admin123!`). Filtro `include_past` (default false) em `/vacations/my-requests` e `/admin/vacations/all-balances` esconde férias gozadas de anos anteriores. Toggles UI 'Mostrar/Esconder anos anteriores' nas secções Meus Pedidos + Admin.
+22. ✅ **Overtime trigger a 8h10 (Feb 2026)** — regra alterada: em vez do cron das 18:15, o backend verifica a cada 15 min (dias úteis, 08h-22h) se algum utilizador acumulou **≥ 8h10 (490 min)** de trabalho no dia somando todas as picagens. Ao atingir o limite:
+    - Cria pedido `overtime_end` em `overtime_authorizations` (evita duplicados por dia).
+    - Email a `SMTP_FROM`/`geral@hwi.pt` com botões Aprovar/Rejeitar (7 dias válidos), com detalhe "trabalhou 8h15 hoje (entrada 09:00)".
+    - Push notification ao utilizador.
+    - **Regra aplica a admins também** (removido o `if is_admin: continue`).
+    - Se admin **rejeita**, o ponto activo é encerrado no `start_time + (480 - minutos_já_trabalhados_noutras_sessões)` para o total do dia ficar exactamente em 8h. Antes fechava sempre às 18:00.
+    - Validado E2E: miguel + admin com entrada 8h15 atrás → `notified_count=1`, email enviado.
+
 21. ✅ **Auto-detecção "Fora de Zona" no backend (Feb 2026)** — Bug reportado: em mobile a picagem fora de Portugal não marcava "Fora de Zona" automaticamente. Causa: `MobileLayout.jsx` não faz reverse geocoding local (só o desktop `Dashboard.jsx` fazia), e o backend só usava o flag enviado pelo cliente. Fix: nova função helper `_detect_outside_residence_zone()` em `routes/time_entries.py` — o backend, após reverse geocoding, verifica `country_code != PT` OU cidade/município/região não contém Lisboa/Sintra/Setúbal e marca `outside_residence_zone=True` + preenche `location_description` (ex.: "Barrio de los Austrias, Comunidade de Madrid, Espanha"). Respeita override manual do cliente. Fonte única para desktop + mobile. Validado com coordenadas de Madrid (40.4168, -3.7038) via API.
 
 20. ✅ **Vacation Engine — modelo FIFO com regra de 1 Janeiro (Feb 2026)** — refatorado o motor de férias para respeitar a regra correta portuguesa da empresa:

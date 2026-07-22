@@ -749,55 +749,93 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
 
 async def check_clock_out_status(db, base_url: str) -> Dict:
     """
-    Verificação das 18:15 - Utilizadores com ponto ativo
-    Envia notificação ao utilizador e pedido de autorização ao admin
+    Verificação de horas extra por limite trabalhado.
+    Regra: assim que qualquer utilizador (incluindo admins) ultrapassa **8h10**
+    (490 minutos) somando todas as picagens de hoje (com ponto ainda activo),
+    dispara um pedido de autorização de horas extra ao admin (`SMTP_FROM`).
+    Ignora fins-de-semana e feriados.
+    Só um pedido por dia por utilizador (não duplica se já `pending`).
     """
+    OVERTIME_THRESHOLD_MINUTES = 8 * 60 + 10  # 8h10 = 490 min
+
     today = date.today()
     today_str = today.strftime("%Y-%m-%d")
     today_formatted = today.strftime("%d/%m/%Y")
-    current_time = datetime.now().strftime("%H:%M")
-    
-    # Verificar se hoje é dia útil
+    now = datetime.now()
+
     if is_weekend(today):
         return {"status": "skipped", "reason": "Fim de semana", "notified": []}
-    
+
     is_hol, hol_name = is_holiday(today)
     if is_hol:
         return {"status": "skipped", "reason": f"Feriado: {hol_name}", "notified": []}
-    
+
     notified_users = []
-    admin_email = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
-    
-    # Buscar entradas ativas (sem end_time)
-    active_entries = await db.time_entries.find({
-        "date": today_str,
-        "end_time": None
-    }).to_list(1000)
-    
-    for entry in active_entries:
-        user_id = entry.get("user_id")
-        
-        # Buscar dados do utilizador
+
+    # Todas as picagens de hoje (finalizadas + activas). Agrupar por utilizador.
+    entries = await db.time_entries.find({"date": today_str}, {"_id": 0}).to_list(5000)
+    by_user: dict = {}
+    for e in entries:
+        uid = e.get("user_id")
+        if not uid:
+            continue
+        by_user.setdefault(uid, []).append(e)
+
+    for user_id, user_entries in by_user.items():
+        # Só considera utilizadores com pelo menos uma picagem activa neste dia.
+        active_entry = next((e for e in user_entries if not e.get("end_time")), None)
+        if not active_entry:
+            continue
+
+        # Somar minutos: sessões fechadas (end - start) + activa (now - start)
+        total_minutes = 0
+        for e in user_entries:
+            st_iso = e.get("start_time")
+            if not st_iso:
+                continue
+            try:
+                st = datetime.fromisoformat(st_iso)
+                if st.tzinfo is not None:
+                    st = st.replace(tzinfo=None)
+            except Exception:
+                continue
+            if e.get("end_time"):
+                try:
+                    en = datetime.fromisoformat(e["end_time"])
+                    if en.tzinfo is not None:
+                        en = en.replace(tzinfo=None)
+                    total_minutes += max(0, int((en - st).total_seconds() // 60))
+                except Exception:
+                    continue
+            else:
+                total_minutes += max(0, int((now - st).total_seconds() // 60))
+
+        if total_minutes < OVERTIME_THRESHOLD_MINUTES:
+            continue
+
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if not user:
             continue
-        
-        # Não notificar admins sobre eles próprios
-        if user.get("is_admin"):
-            continue
-        
+
         user_name = user.get("full_name") or user.get("username")
         user_email = user.get("email")
-        clock_in_time = datetime.fromisoformat(entry.get("start_time")).strftime("%H:%M") if entry.get("start_time") else "N/A"
-        
-        # Verificar se já existe autorização pendente para hoje
+        clock_in_time = "N/A"
+        if active_entry.get("start_time"):
+            try:
+                clock_in_time = datetime.fromisoformat(active_entry["start_time"]).strftime("%H:%M")
+            except Exception:
+                pass
+
+        # Só um pedido `pending` de overtime_end por dia por utilizador
         existing_auth = await db.overtime_authorizations.find_one({
             "user_id": user_id,
             "date": today_str,
             "request_type": "overtime_end",
-            "status": "pending"
+            "status": "pending",
         })
-        
+        if existing_auth:
+            continue
+
         if existing_auth:
             continue  # Já tem pedido pendente
         
@@ -811,10 +849,11 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "user_id": user_id,
             "user_name": user_name,
             "user_email": user_email,
-            "entry_id": entry.get("id"),
+            "entry_id": active_entry.get("id"),
             "date": today_str,
             "request_type": "overtime_end",
             "clock_in_time": clock_in_time,
+            "total_minutes_at_request": total_minutes,
             "requested_at": datetime.now().isoformat(),
             "expires_at": (datetime.now() + timedelta(hours=TOKEN_VALIDITY_HOURS)).isoformat(),
             "status": "pending",
@@ -825,47 +864,25 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "token_expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         }
         await db.overtime_authorizations.insert_one(auth_request)
-        
-        # Email ao admin (substitui push notification ao admin)
+
+        # Email ao admin
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
         await send_authorization_request_email(
             db, user_id, "overtime", today_str,
-            extra_info="O utilizador ainda tem o ponto activo após as 18:00.",
+            extra_info=f"O utilizador já trabalhou {hours}h{minutes:02d} hoje (entrada às {clock_in_time}) e o ponto continua activo.",
             approval_token=approval_token,
         )
-        
-        # Push ao próprio utilizador continua a existir (lembrete pessoal)
+
+        # Push ao próprio utilizador (lembrete pessoal)
         await send_push_notification(
             db,
             user_id,
-            "🕐 Não Parou o Ponto",
-            f"O seu ponto está ativo após as 18:00. Entrada: {clock_in_time}. Aguarde autorização de horas extra.",
+            "⏱️ Limite de 8h atingido",
+            f"Já trabalhou {hours}h{minutes:02d}. Aguarde autorização de horas extra para continuar.",
             "clock_out_reminder",
             "high"
         )
-        
-        # Emails desativados - apenas notificações push
-        # if user_email:
-        #     user_html = get_clock_out_reminder_email_html(user_name, today_formatted, clock_in_time)
-        #     await send_notification_email(
-        #         to_email=user_email,
-        #         subject=f"🕐 Não Parou o Ponto - {today_formatted}",
-        #         html_content=user_html
-        #     )
-        
-        # admin_html = get_admin_clock_out_alert_html(
-        #     user_name=user_name,
-        #     user_email=user_email or "N/A",
-        #     date_str=today_formatted,
-        #     current_time=current_time,
-        #     clock_in_time=clock_in_time,
-        #     token=token,
-        #     base_url=base_url
-        # )
-        # await send_notification_email(
-        #     to_email=admin_email,
-        #     subject=f"⚠️ Utilizador sem encerramento de ponto - {user_name}",
-        #     html_content=admin_html
-        # )
         
         notified_users.append({
             "user_id": user_id,
@@ -1376,18 +1393,33 @@ async def process_authorization_decision(
                 "message": "Horas extra autorizadas. As horas serão contabilizadas."
             }
         else:
-            # Encerrar ponto às 18:00
+            # Encerrar ponto para que o total do dia (todas as picagens) fique
+            # exactamente em 8h (480 min). Se houver múltiplas picagens no dia,
+            # calcula o `end_time` da activa que respeita esse limite.
             entry = await db.time_entries.find_one({"id": entry_id})
             if entry:
-                # Definir hora de saída como 18:00 do dia
-                end_datetime = datetime.strptime(f"{date_str} 18:00:00", "%Y-%m-%d %H:%M:%S")
                 start_time = datetime.fromisoformat(entry.get("start_time"))
-                
-                # Calcular total de minutos
-                total_minutes = int((end_datetime - start_time).total_seconds() / 60)
-                if total_minutes < 0:
-                    total_minutes = 0
-                
+                # Somar minutos já trabalhados noutras picagens do mesmo dia (fechadas)
+                same_day = await db.time_entries.find({
+                    "user_id": entry.get("user_id"),
+                    "date": date_str,
+                    "id": {"$ne": entry_id},
+                }, {"_id": 0}).to_list(50)
+                minutes_other = 0
+                for oe in same_day:
+                    if oe.get("start_time") and oe.get("end_time"):
+                        try:
+                            s = datetime.fromisoformat(oe["start_time"])
+                            e = datetime.fromisoformat(oe["end_time"])
+                            minutes_other += max(0, int((e - s).total_seconds() // 60))
+                        except Exception:
+                            pass
+
+                allowed_minutes = max(0, 8 * 60 - minutes_other)  # 480 total do dia
+                end_datetime = start_time + timedelta(minutes=allowed_minutes)
+                total_minutes = allowed_minutes
+                end_str = end_datetime.strftime("%H:%M")
+
                 await db.time_entries.update_one(
                     {"id": entry_id},
                     {"$set": {
@@ -1396,9 +1428,11 @@ async def process_authorization_decision(
                         "overtime_authorized": False,
                         "overtime_rejected_by": decided_by,
                         "overtime_rejected_at": datetime.now().isoformat(),
-                        "auto_closed_at_18": True
+                        "auto_closed_at_8h": True,
                     }}
                 )
+            else:
+                end_str = "8h"
             
             # Criar notificação para o utilizador
             from uuid import uuid4
@@ -1406,7 +1440,7 @@ async def process_authorization_decision(
                 "id": str(uuid4()),
                 "user_id": user_id,
                 "type": "overtime_rejected",
-                "message": f"As suas horas extra de {date_str} foram rejeitadas por {decided_by}. O ponto foi encerrado às 18:00.",
+                "message": f"As suas horas extra de {date_str} foram rejeitadas por {decided_by}. O ponto foi encerrado às {end_str} (limite de 8h).",
                 "read": False,
                 "related_id": entry_id,
                 "created_at": datetime.now().isoformat()
@@ -1418,7 +1452,7 @@ async def process_authorization_decision(
                 db,
                 user_id,
                 "❌ Horas Extra Rejeitadas",
-                f"As suas horas extra de {date_str} foram rejeitadas. O ponto foi encerrado às 18:00.",
+                f"As suas horas extra de {date_str} foram rejeitadas. O ponto foi encerrado às {end_str} (limite 8h).",
                 "overtime_rejected",
                 "high"
             )
@@ -1426,7 +1460,7 @@ async def process_authorization_decision(
             return {
                 "status": "success",
                 "decision": "rejected",
-                "message": "Horas extra não autorizadas. O ponto foi encerrado às 18:00."
+                "message": f"Horas extra não autorizadas. O ponto foi encerrado às {end_str} (limite 8h)."
             }
 
     elif request_type == "early_leave":
