@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '@/App';
@@ -502,6 +502,42 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [cronometrosAtivos, setCronometrosAtivos] = useState([]);
   const [registosTecnicos, setRegistosTecnicos] = useState([]);
   const [timers, setTimers] = useState({}); // Para contar tempo em tempo real
+
+  // Feb 2026 (Code Review Fase 2): merge+sort de tecnicos+registosTecnicos era
+  // repetido inline em 2 sítios da JSX (versão mobile+desktop). Memoização
+  // recomputa apenas quando os arrays de origem mudam.
+  const registosCombinados = useMemo(() => {
+    const merged = [
+      ...tecnicos.map(tec => ({
+        ...tec,
+        _tipo_registo: tec.tipo_registo || 'manual',
+        _source: 'tecnico',
+        _data_sort: tec.data_trabalho || tec.created_at || '',
+        _hora_inicio_sort: tec.hora_inicio || '',
+        _key: `manual-${tec.id}`,
+      })),
+      ...registosTecnicos.map(reg => ({
+        ...reg,
+        _tipo_registo: reg.tipo,
+        _source: 'cronometro',
+        _data_sort: reg.data || reg.created_at || '',
+        _hora_inicio_sort: reg.hora_inicio_segmento || '',
+        _key: `crono-${reg.id}`,
+      })),
+    ];
+    return merged.sort((a, b) => {
+      const dataAStr = (a._data_sort || '1970-01-01').substring(0, 10);
+      const dataBStr = (b._data_sort || '1970-01-01').substring(0, 10);
+      if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
+      const extractTime = (item) => {
+        if (item._source === 'cronometro' && item.hora_inicio_segmento) {
+          return item.hora_inicio_segmento.substring(11, 16);
+        }
+        return item.hora_inicio || '00:00';
+      };
+      return extractTime(a).localeCompare(extractTime(b));
+    });
+  }, [tecnicos, registosTecnicos]);
   
   // Todos os utilizadores do sistema (para cronómetros)
   const [allSystemUsers, setAllSystemUsers] = useState([]);
@@ -5344,39 +5380,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       {/* Mobile: Card-based layout */}
                       {isMobile ? (
                         <div className="space-y-2">
-                          {[
-                            ...tecnicos.map(tec => ({
-                              ...tec,
-                              _tipo_registo: tec.tipo_registo || 'manual',
-                              _source: 'tecnico',
-                              _data_sort: tec.data_trabalho || tec.created_at || '',
-                              _hora_inicio_sort: tec.hora_inicio || '',
-                              _key: `manual-${tec.id}`
-                            })),
-                            ...registosTecnicos.map(reg => ({
-                              ...reg,
-                              _tipo_registo: reg.tipo,
-                              _source: 'cronometro',
-                              _data_sort: reg.data || reg.created_at || '',
-                              _hora_inicio_sort: reg.hora_inicio_segmento || '',
-                              _key: `crono-${reg.id}`
-                            }))
-                          ]
-                          .sort((a, b) => {
-                            // Normalizar datas para YYYY-MM-DD (primeiros 10 chars)
-                            const dataAStr = (a._data_sort || '1970-01-01').substring(0, 10);
-                            const dataBStr = (b._data_sort || '1970-01-01').substring(0, 10);
-                            if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
-                            
-                            // Se mesma data, ordenar por hora de início normalizada (HH:MM)
-                            const extractTime = (item) => {
-                              if (item._source === 'cronometro' && item.hora_inicio_segmento) {
-                                return item.hora_inicio_segmento.substring(11, 16);
-                              }
-                              return item.hora_inicio || '00:00';
-                            };
-                            return extractTime(a).localeCompare(extractTime(b));
-                          })
+                          {registosCombinados
                           .map((item) => (
                             <div key={item._key} className={`${isDark ? 'bg-gray-800/50' : 'bg-gray-100'} p-2 rounded-lg border ${borderColor}`}>
                               <div className="flex items-center justify-between mb-1">
@@ -5464,41 +5468,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         </thead>
                         <tbody>
                           {/* Combinar e ordenar todos os registos cronologicamente */}
-                          {[
-                            // Registos Manuais (técnicos) - agora com tipo_registo dinâmico
-                            ...tecnicos.map(tec => ({
-                              ...tec,
-                              _tipo_registo: tec.tipo_registo || 'manual',
-                              _source: 'tecnico',
-                              _data_sort: tec.data_trabalho || tec.created_at || '',
-                              _hora_inicio_sort: tec.hora_inicio || '',
-                              _key: `manual-${tec.id}`
-                            })),
-                            // Registos do Cronómetro
-                            ...registosTecnicos.map(reg => ({
-                              ...reg,
-                              _tipo_registo: reg.tipo,
-                              _source: 'cronometro',
-                              _data_sort: reg.data || reg.created_at || '',
-                              _hora_inicio_sort: reg.hora_inicio_segmento || '',
-                              _key: `crono-${reg.id}`
-                            }))
-                          ]
-                          .sort((a, b) => {
-                            // Normalizar datas para YYYY-MM-DD (primeiros 10 chars)
-                            const dataAStr = (a._data_sort || '1970-01-01').substring(0, 10);
-                            const dataBStr = (b._data_sort || '1970-01-01').substring(0, 10);
-                            if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
-                            
-                            // Se mesma data, ordenar por hora de início normalizada (HH:MM)
-                            const extractTime = (item) => {
-                              if (item._source === 'cronometro' && item.hora_inicio_segmento) {
-                                return item.hora_inicio_segmento.substring(11, 16);
-                              }
-                              return item.hora_inicio || '00:00';
-                            };
-                            return extractTime(a).localeCompare(extractTime(b));
-                          })
+                          {registosCombinados
                           .map((item) => (
                             <tr key={item._key} className={`border-b ${isDark ? 'border-gray-800 hover:bg-gray-800/50' : 'border-gray-200 hover:bg-gray-50'}`}>
                               <td className={`py-2 px-2 ${textPrimary}`}>{item.tecnico_nome}</td>
@@ -7331,7 +7301,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       )}
                       {/* Equipamentos adicionais */}
                       {htmlPreviewData.equipamentos?.map((eq, idx) => (
-                        <div key={idx} className="bg-gray-50 p-3 rounded">
+                        <div key={eq.id || `${eq.tipologia || 'eq'}-${idx}`} className="bg-gray-50 p-3 rounded">
                           <div className="space-y-1.5 text-sm">
                             {eq.tipologia && (
                               <div className="flex flex-col sm:flex-row sm:gap-2">
@@ -7410,7 +7380,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               Descrição da Intervenção
                             </h3>
                             {dados.intervencoes.map((int, idx) => (
-                              <div key={idx} className="space-y-2">
+                              <div key={int.id || `${int.tecnico_nome || 'ti'}-${idx}`} className="space-y-2">
                                 {int.tecnico_nome && (
                                   <div>
                                     <span className="font-medium text-gray-600">Técnico: </span>
@@ -7452,7 +7422,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   const tipoLabel = tipoR === 'trabalho' ? 'T' : tipoR === 'oficina' ? 'O' : tipoR === 'viagem' ? 'V' : 'M';
                                   const tipoColor = tipoR === 'trabalho' ? 'text-green-700 bg-green-100' : tipoR === 'oficina' ? 'text-orange-700 bg-orange-100' : tipoR === 'viagem' ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100';
                                   return (
-                                  <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                                  <tr key={reg.id || `${reg.tecnico_nome || 'r'}-${reg.hora_inicio || 'hi'}-${idx}`} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                                     <td className="p-2">
                                       {reg.tecnico_nome}
                                       <span className={`ml-1 text-xs ${reg.funcao_ot === 'senior' ? 'text-purple-600' : reg.funcao_ot === 'junior' ? 'text-yellow-600' : reg.funcao_ot === 'ajudante' ? 'text-emerald-600' : 'text-cyan-600'}`}>
@@ -7489,7 +7459,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                               </thead>
                               <tbody>
                                 {dados.materiais.map((mat, idx) => (
-                                  <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                                  <tr key={mat.id || `${mat.descricao || 'mat'}-${idx}`} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                                     <td className="p-2">{mat.descricao}</td>
                                     <td className="p-2">{mat.quantidade} {mat.unidade || 'Un'}</td>
                                     <td className="p-2">{mat.fornecido_por}</td>
@@ -7543,7 +7513,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             </h3>
                             <div className="grid grid-cols-2 gap-3">
                               {dados.fotografias.map((foto, idx) => (
-                                <div key={idx} className="border border-gray-200 rounded overflow-hidden">
+                                <div key={foto.id || foto.foto_url || `foto-${idx}`} className="border border-gray-200 rounded overflow-hidden">
                                   <img 
                                     src={`${API}${foto.foto_url}`} 
                                     alt={foto.descricao || 'Fotografia'} 
@@ -7567,7 +7537,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             </h3>
                             <div className="space-y-4">
                               {dados.assinaturas.map((ass, idx) => (
-                                <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-white text-center">
+                                <div key={ass.id || ass.assinatura_url || `ass-${idx}`} className="border border-gray-200 rounded-lg p-4 bg-white text-center">
                                   {/* Imagem da assinatura - maior e centrada */}
                                   {ass.assinatura_url && (
                                     <img 
@@ -8312,7 +8282,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       if (!trimmedEmail) return null;
                       return (
                         <div 
-                          key={index} 
+                          key={`${trimmedEmail}-${index}`}
                           className="flex items-center gap-2 bg-[#1a1a1a] px-3 py-2 rounded-lg"
                         >
                           <Mail className="w-3.5 h-3.5 text-gray-500" />

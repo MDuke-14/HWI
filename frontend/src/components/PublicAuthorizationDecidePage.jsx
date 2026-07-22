@@ -138,7 +138,7 @@ export default function PublicAuthorizationDecidePage() {
                   <Clock className="w-4 h-4" /> Registos de Ponto
                 </div>
                 <ul className="text-sm space-y-1 text-gray-700">
-                  {info.periodos.map((p, i) => <li key={i} className="font-mono">{p}</li>)}
+                  {info.periodos.map((p, i) => <li key={`${p}-${i}`} className="font-mono">{p}</li>)}
                 </ul>
               </div>
             )}

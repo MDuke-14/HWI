@@ -120,7 +120,7 @@ const FSAIReviewModal = ({ open, onOpenChange, relatorioId, onApplied }) => {
                 </h3>
                 <div className="space-y-1">
                   {data.inconsistencias.map((inc, i) => (
-                    <div key={i} className="bg-amber-950/20 border border-amber-900/40 rounded p-2 text-sm">
+                    <div key={`${inc.campo || 'c'}-${inc.problema || 'p'}-${i}`} className="bg-amber-950/20 border border-amber-900/40 rounded p-2 text-sm">
                       <span className="font-semibold text-amber-300">{inc.campo}: </span>
                       <span className="text-gray-300">{inc.problema}</span>
                       {inc.sugestao && <div className="text-xs text-amber-200/80 italic mt-0.5">→ {inc.sugestao}</div>}
@@ -137,7 +137,7 @@ const FSAIReviewModal = ({ open, onOpenChange, relatorioId, onApplied }) => {
                   Dados em falta ({data.dados_em_falta.length})
                 </h3>
                 <ul className="text-sm text-gray-300 list-disc list-inside space-y-0.5">
-                  {data.dados_em_falta.map((d, i) => <li key={i}>{d}</li>)}
+                  {data.dados_em_falta.map((d, i) => <li key={`${d}-${i}`}>{d}</li>)}
                 </ul>
               </section>
             )}

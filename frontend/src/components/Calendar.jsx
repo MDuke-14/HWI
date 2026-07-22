@@ -465,7 +465,7 @@ const Calendar = ({ user, onLogout }) => {
 
               return (
                 <div
-                  key={index}
+                  key={dateStr || `empty-${index}`}
                   onClick={() => day && openDayDetail(day)}
                   className={`
                     ${isMobile ? 'min-h-[70px] p-1' : 'min-h-[120px] p-2'} border-b border-r border-white/5 relative group

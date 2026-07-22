@@ -150,7 +150,7 @@ export const StopCronometroPopup = ({
               {tecnicos.length > 1 ? (
                 <div className="space-y-0.5">
                   {tecnicos.map((t, i) => (
-                    <span key={i} className="block">
+                    <span key={t.tecnico_id || t.id || `${t.tecnico_nome || 'tec'}-${i}`} className="block">
                       {t.tecnico_nome} — {tipoLabel}
                     </span>
                   ))}
@@ -179,7 +179,7 @@ export const StopCronometroPopup = ({
             <div className="space-y-1">
               <Label className="text-gray-400 text-xs">KMs Iniciais por técnico</Label>
               {tecnicos.map((t, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs">
+                <div key={t.tecnico_id || t.id || `${t.tecnico_nome || 'tec'}-${i}`} className="flex items-center gap-2 text-xs">
                   <span className="text-gray-300 flex-1 truncate">{t.tecnico_nome}</span>
                   <span className="text-gray-500">{t.km_inicial || 0} km</span>
                 </div>

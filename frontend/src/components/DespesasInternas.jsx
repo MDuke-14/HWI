@@ -374,7 +374,7 @@ const DespesasInternas = ({ user, onLogout }) => {
               ))}
               {calendarDays.map((c, i) => (
                 <div
-                  key={i}
+                  key={c?.dateStr || c?.date || `empty-${i}`}
                   className={`min-h-[110px] p-1.5 rounded border ${
                     c ? 'bg-[#0f0f0f] border-gray-700' : 'border-transparent'
                   }`}

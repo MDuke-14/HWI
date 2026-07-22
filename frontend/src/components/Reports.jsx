@@ -1013,7 +1013,7 @@ const Reports = ({ user, onLogout }) => {
                                   <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                                     {day.entries.map((entry, idx) => (
                                       <span
-                                        key={idx}
+                                        key={entry.id || `${entry.start_time || '-'}-${entry.end_time || '-'}-${idx}`}
                                         className={`text-xs ${entry.is_early_leave_credit ? 'text-red-400 font-semibold' : 'text-gray-300'}`}
                                         title={entry.is_early_leave_credit ? 'Crédito de horas por ordem da empresa' : undefined}
                                       >
@@ -1114,7 +1114,7 @@ const Reports = ({ user, onLogout }) => {
                               <div className="mt-1.5 space-y-0.5">
                                 {day.entries.map((entry, idx) => (
                                   <div
-                                    key={idx}
+                                    key={entry.id || `${entry.start_time || '-'}-${entry.end_time || '-'}-${idx}`}
                                     className={`text-xs flex justify-between ${entry.is_early_leave_credit ? 'text-red-400 font-semibold' : 'text-gray-400'}`}
                                     title={entry.is_early_leave_credit ? 'Crédito de horas por ordem da empresa' : undefined}
                                   >

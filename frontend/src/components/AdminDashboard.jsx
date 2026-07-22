@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '@/App';
@@ -74,6 +74,17 @@ const AdminDashboard = ({ user, onLogout }) => {
   // Estados para Notificações e Autorizações
   const [overtimeAuthorizations, setOvertimeAuthorizations] = useState([]);
   const [vacationWorkRequests, setVacationWorkRequests] = useState([]); // Pedidos de trabalho em férias
+
+  // Memoização — recomputações a cada render eram feitas 5x em zonas quentes
+  // (linhas ~749, 794, 808, 909, 913). Feb 2026 — Code review Fase 2.
+  const pendingVacationWorkRequests = useMemo(
+    () => vacationWorkRequests.filter(r => r.status === 'pending'),
+    [vacationWorkRequests]
+  );
+  const decidedVacationWorkRequests = useMemo(
+    () => vacationWorkRequests.filter(r => r.status !== 'pending'),
+    [vacationWorkRequests]
+  );
   const [notificationLogs, setNotificationLogs] = useState([]);
   const [authStatusFilter, setAuthStatusFilter] = useState('all');
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -746,11 +757,11 @@ const AdminDashboard = ({ user, onLogout }) => {
               <TabsTrigger value="vacations" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative`}>
                 <Calendar className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
                 <span>{isMobile ? 'Férias' : 'Férias'}</span>
-                {(pendingVacations.length + vacationWorkRequests.filter(r => r.status === 'pending').length) > 0 && (
+                {(pendingVacations.length + pendingVacationWorkRequests.length) > 0 && (
                   <span className={`absolute -top-1 -right-1 text-white text-xs rounded-full ${isMobile ? 'w-4 h-4 text-[10px]' : 'w-5 h-5'} flex items-center justify-center ${
-                    vacationWorkRequests.filter(r => r.status === 'pending').length > 0 ? 'bg-orange-500' : 'bg-blue-500'
+                    pendingVacationWorkRequests.length > 0 ? 'bg-orange-500' : 'bg-blue-500'
                   }`}>
-                    {pendingVacations.length + vacationWorkRequests.filter(r => r.status === 'pending').length}
+                    {pendingVacations.length + pendingVacationWorkRequests.length}
                   </span>
                 )}
               </TabsTrigger>
@@ -791,12 +802,12 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
               
               {/* Secção: Trabalho em Férias (pedidos prioritários) */}
-              {vacationWorkRequests.filter(r => r.status === 'pending').length > 0 && (
+              {pendingVacationWorkRequests.length > 0 && (
                 <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl border-2 border-orange-500/50`}>
                   <div className={`flex items-center gap-2 ${isMobile ? 'mb-3' : 'mb-6'}`}>
                     <AlertTriangle className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-orange-400`} />
                     <h2 className={`${isMobile ? 'text-base' : 'text-2xl'} font-semibold text-orange-400`}>
-                      Trabalho em Férias ({vacationWorkRequests.filter(r => r.status === 'pending').length})
+                      Trabalho em Férias ({pendingVacationWorkRequests.length})
                     </h2>
                   </div>
                   {!isMobile && (
@@ -805,7 +816,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                     </p>
                   )}
                   <div className={isMobile ? 'space-y-3' : 'space-y-4'}>
-                    {vacationWorkRequests.filter(r => r.status === 'pending').map((req) => (
+                    {pendingVacationWorkRequests.map((req) => (
                       <div key={req.id} className={`bg-orange-900/20 border border-orange-600/50 ${isMobile ? 'p-3' : 'p-5'} rounded-lg`}>
                         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start'}`}>
                           <div>
@@ -906,11 +917,11 @@ const AdminDashboard = ({ user, onLogout }) => {
               </div>
 
               {/* Histórico de Trabalho em Férias (decididos) */}
-              {vacationWorkRequests.filter(r => r.status !== 'pending').length > 0 && (
+              {decidedVacationWorkRequests.length > 0 && (
                 <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
                   <h2 className={`${isMobile ? 'text-base' : 'text-xl'} font-semibold text-gray-400 ${isMobile ? 'mb-3' : 'mb-4'}`}>Histórico - Trabalho em Férias</h2>
                   <div className="space-y-2">
-                    {vacationWorkRequests.filter(r => r.status !== 'pending').slice(0, isMobile ? 5 : 10).map((req) => (
+                    {decidedVacationWorkRequests.slice(0, isMobile ? 5 : 10).map((req) => (
                       <div key={req.id} className={`bg-[#1a1a1a] ${isMobile ? 'p-2.5' : 'p-3'} rounded-lg flex ${isMobile ? 'flex-col gap-1' : 'justify-between items-center'}`}>
                         <div className={isMobile ? 'flex items-center gap-2 flex-wrap' : ''}>
                           <span className={`text-white ${isMobile ? 'text-sm' : ''}`}>{req.user_name}</span>
@@ -1416,7 +1427,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                           <h4 className="text-yellow-400 font-semibold mb-3">Problemas Corrigidos</h4>
                           <div className="space-y-2 max-h-48 overflow-y-auto">
                             {verifyResult.issues_found.map((issue, idx) => (
-                              <div key={idx} className="text-sm bg-black/30 p-2 rounded">
+                              <div key={`${issue.date || 'nd'}-${issue.issue || 'ni'}-${idx}`} className="text-sm bg-black/30 p-2 rounded">
                                 <p className="text-white">
                                   <span className="text-yellow-400">📅 {new Date(issue.date).toLocaleDateString('pt-PT')}</span>
                                   {' - '}{issue.issue}
@@ -1864,7 +1875,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                       </thead>
                       <tbody>
                         {notificationLogs.slice(0, 20).map((log, index) => (
-                          <tr key={index} className="border-b border-gray-800">
+                          <tr key={log.id || `${log.sent_at || 'ns'}-${index}`} className="border-b border-gray-800">
                             <td className="py-2 px-3 text-gray-300 text-sm">
                               {new Date(log.sent_at).toLocaleString('pt-PT')}
                             </td>
@@ -2458,7 +2469,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <div className="space-y-4">
                   {reports.users && reports.users.length > 0 ? (
                     reports.users.map((u, idx) => (
-                      <div key={idx} className="bg-[#1a1a1a] p-5 rounded-lg">
+                      <div key={u.user_id || u.username || idx} className="bg-[#1a1a1a] p-5 rounded-lg">
                         <div className="flex justify-between items-center mb-3">
                           <div className="text-white font-semibold text-lg">{u.username}</div>
                           <div className="flex items-center gap-3">

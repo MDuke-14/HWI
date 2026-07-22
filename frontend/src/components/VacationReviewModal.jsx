@@ -147,7 +147,7 @@ const VacationReviewModal = ({ open, onOpenChange, onSuccess }) => {
 
               return (
                 <div
-                  key={index}
+                  key={dateStr || `empty-${index}`}
                   onClick={() => day && isVacation && toggleDay(dateStr)}
                   className={`
                     min-h-[44px] md:min-h-[52px] p-1 border-b border-r border-white/5 relative flex items-center justify-center

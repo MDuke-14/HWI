@@ -352,7 +352,7 @@ const Vacations = ({ user, onLogout }) => {
                               </h4>
                               <div className="space-y-2">
                                 {ub.annual_transitions.map((t, i) => (
-                                  <div key={i} className="bg-[#0f0f0f] rounded-lg p-3 text-sm">
+                                  <div key={`${t.from_year || 'f'}-${t.to_year || 't'}-${t.transition_date || i}`} className="bg-[#0f0f0f] rounded-lg p-3 text-sm">
                                     <div className="flex items-center justify-between mb-1">
                                       <span className="text-gray-400">{t.from_year} → {t.to_year}</span>
                                       <span className="text-gray-500 text-xs">
