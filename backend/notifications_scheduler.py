@@ -756,7 +756,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
     Ignora fins-de-semana e feriados.
     Só um pedido por dia por utilizador (não duplica se já `pending`).
     """
-    OVERTIME_THRESHOLD_MINUTES = 8 * 60 + 10  # 8h10 = 490 min
+    OVERTIME_THRESHOLD_MINUTES = 8 * 60 + 15  # 8h15 = 495 min
 
     today = date.today()
     today_str = today.strftime("%Y-%m-%d")
@@ -826,12 +826,13 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             except Exception:
                 pass
 
-        # Só um pedido `pending` de overtime_end por dia por utilizador
+        # Um único pedido por dia por utilizador — independentemente do status.
+        # Sem este filtro, após approve o próximo ciclo (15min) via ainda
+        # o utilizador com >8h15 e criava um novo pedido → spam de emails.
         existing_auth = await db.overtime_authorizations.find_one({
             "user_id": user_id,
             "date": today_str,
             "request_type": "overtime_end",
-            "status": "pending",
         })
         if existing_auth:
             continue
@@ -878,7 +879,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         await send_push_notification(
             db,
             user_id,
-            "⏱️ Limite de 8h atingido",
+            "⏱️ Limite de 8h15 atingido",
             f"Já trabalhou {hours}h{minutes:02d}. Aguarde autorização de horas extra para continuar.",
             "clock_out_reminder",
             "high"
