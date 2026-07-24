@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useSearchParams } from 'react-router-dom';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,9 @@ import { useMobile } from '@/contexts/MobileContext';
 
 const AdminTimeEntries = ({ user, onLogout }) => {
   const { isMobile } = useMobile();
+  const [searchParams] = useSearchParams();
+  const highlightEntryId = searchParams.get('entry_id');
+  const highlightRef = useRef(null);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [entries, setEntries] = useState([]);
@@ -198,11 +202,51 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
   }, [selectedUser, selectedMonth, selectedYear]);
 
+  // Após entries carregarem, se veio `?entry_id=` no URL, faz scroll até essa
+  // entrada e destaca-a (ring amarelo pulsante durante 5s).
+  useEffect(() => {
+    if (!highlightEntryId || !entries.length) return;
+    // pequeno delay para o DOM renderizar
+    const t = setTimeout(() => {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [entries, highlightEntryId]);
+
   const fetchAllUsers = async () => {
     setLoadingUsers(true);
     try {
       const response = await axios.get(`${API}/admin/users`);
       setAllUsers(response.data);
+
+      // Se veio `?entry_id=` + `?date=` no URL, pré-selecciona o utilizador
+      // dono da entrada e ajusta mês/ano. Fallback: primeiro utilizador.
+      const dateParam = searchParams.get('date');
+      if (highlightEntryId && dateParam) {
+        try {
+          const found = await axios.get(`${API}/admin/time-entries/${highlightEntryId}`);
+          const entry = found.data;
+          if (entry && entry.user_id) {
+            const targetUser = response.data.find(u => u.id === entry.user_id);
+            if (targetUser) {
+              setSelectedUser(targetUser);
+              const [y, m] = dateParam.split('-');
+              const parsedM = parseInt(m, 10);
+              const parsedY = parseInt(y, 10);
+              if (!Number.isNaN(parsedM) && !Number.isNaN(parsedY)) {
+                setSelectedMonth(parsedM);
+                setSelectedYear(parsedY);
+              }
+              return;
+            }
+          }
+        } catch (_e) {
+          // ignora — cai no fallback
+        }
+      }
+
       if (response.data.length > 0) {
         setSelectedUser(response.data[0]);
       }
@@ -800,10 +844,13 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                         {/* Entries for this day */}
                         {day.hasEntries && (
                           <div className={`space-y-2 ${isMobile ? 'mt-2' : 'mt-3'}`}>
-                            {day.entries.map((entry, index) => (
+                            {day.entries.map((entry, index) => {
+                              const isHighlighted = highlightEntryId && entry.id === highlightEntryId;
+                              return (
                               <div
                                 key={entry.id || index}
-                                className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} bg-[#0f0f0f] ${isMobile ? 'p-2.5' : 'p-3'} rounded`}
+                                ref={isHighlighted ? highlightRef : undefined}
+                                className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} bg-[#0f0f0f] ${isMobile ? 'p-2.5' : 'p-3'} rounded ${isHighlighted ? 'ring-2 ring-amber-400 animate-pulse-slow' : ''}`}
                               >
                                 <div className="flex-1">
                                   <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-400`}>
@@ -868,7 +915,8 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

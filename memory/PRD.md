@@ -50,6 +50,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
     - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
     - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
 16. ✅ **Auth fix + Vacations filter (Feb 2026)** — eliminado utilizador duplicado em `users`; passwords reset para `miguel` (`Miguel123!`) e `teste@email.com` (`Admin123!`). Filtro `include_past` (default false) em `/vacations/my-requests` e `/admin/vacations/all-balances` esconde férias gozadas de anos anteriores. Toggles UI 'Mostrar/Esconder anos anteriores' nas secções Meus Pedidos + Admin.
+26. ✅ **Link "Ver picagem" no email admin (Feb 2026)** — os emails de autorização (`overtime`, `vacation_work`, `work_holiday`, `work_weekend`, `work_special`, `early_leave`) passam a incluir um link secundário `Ver picagem no portal admin →` que aponta para `/admin/time-entries?entry_id=<id>&date=<yyyy-mm-dd>`.
+    - `get_authorization_request_email_html` recebe novo parâmetro `entry_id` (opcional).
+    - `send_authorization_request_email` recebe e propaga o `entry_id`.
+    - 3 call sites actualizados: `check_clock_out_status`, `handle_overtime_start` (inclui vacation_work), `create_early_leave_authorization`.
+    - Novo endpoint `GET /admin/time-entries/{entry_id}` para fetch de uma entrada isolada.
+    - `AdminTimeEntries.jsx`: lê `?entry_id=` + `?date=` do URL, faz GET da entry para descobrir o dono, pré-selecciona o utilizador, ajusta mês/ano automaticamente, scroll até à entrada e destaca com `ring-amber-400 animate-pulse-slow`.
+    - Smoke test frontend: navegação directa ao link do email leva o admin à picagem correcta em 3s.
+
 25. ✅ **Overtime: threshold 8h15 + dedup (Feb 2026)** — 2 bugs reportados após deploy:
     - **Duplicate emails**: filtro em `check_clock_out_status` só bloqueava `status=pending`. Após admin aprovar, o ciclo seguinte encontrava 0 pending → criava novo pedido → spam. Corrigido: agora bloqueia se **existe qualquer pedido** para `user_id + date + request_type=overtime_end` (independentemente do status).
     - **Threshold 8h10 → 8h15**: constante alterada de 490 min para 495 min. Push texts + logs actualizados. Validado E2E: com 8h12 → 0 disparos; com 8h20 → 1 disparo, 2º/3º triggers após approve → 0 disparos.

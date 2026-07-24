@@ -49,6 +49,7 @@ def get_authorization_request_email_html(
     extra_info: Optional[str] = None,
     periodos: Optional[List[str]] = None,
     approval_token: Optional[str] = None,
+    entry_id: Optional[str] = None,
 ) -> str:
     """Email enviado ao admin (geral@hwi.pt) sempre que um utilizador necessita de
     autorização para horas extras, trabalho em dia especial ou trabalho em férias.
@@ -141,6 +142,10 @@ def get_authorization_request_email_html(
                 {extra_info_html}
                 {one_click_html}
                 <hr class='divider'>
+                {(
+                    f"<a class='secondary-link' href='{ADMIN_PORTAL_URL}/admin/time-entries?entry_id={entry_id}&date={date_str}'>"
+                    f"🔍 Ver picagem no portal admin →</a>"
+                ) if entry_id else ''}
                 <a class='secondary-link' href='{ADMIN_PORTAL_URL}'>
                     Abrir Portal de Administração →
                 </a>
@@ -162,6 +167,7 @@ async def send_authorization_request_email(
     date_str: str,
     extra_info: Optional[str] = None,
     approval_token: Optional[str] = None,
+    entry_id: Optional[str] = None,
 ) -> bool:
     """Helper que reúne dados do utilizador + períodos de ponto e envia o email
     de pedido de autorização ao admin (geral@hwi.pt).
@@ -218,6 +224,7 @@ async def send_authorization_request_email(
             extra_info=extra_info,
             periodos=periodos,
             approval_token=approval_token,
+            entry_id=entry_id,
         )
 
         subject = f"🔔 Autorização: {type_label} – {user_name} ({date_formatted})"
@@ -873,6 +880,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             db, user_id, "overtime", today_str,
             extra_info=f"O utilizador já trabalhou {hours}h{minutes:02d} hoje (entrada às {clock_in_time}) e o ponto continua activo.",
             approval_token=approval_token,
+            entry_id=active_entry.get("id"),
         )
 
         # Push ao próprio utilizador (lembrete pessoal)
@@ -1090,6 +1098,7 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         db, user_id, email_auth_type, today_str,
         extra_info=extra_info,
         approval_token=approval_token,
+        entry_id=entry_id,
     )
     
     # Registar notificação
@@ -1689,6 +1698,7 @@ async def create_early_leave_authorization(
             db, user_id, "early_leave", date_str,
             extra_info=extra_info,
             approval_token=approval_token,
+            entry_id=entry_id,
         )
 
         # Push ao próprio utilizador (confirmação de que o pedido foi enviado)

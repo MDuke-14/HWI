@@ -3494,6 +3494,20 @@ async def get_user_time_entries_by_month(
         "justifications": justifications
     }
 
+@router.get("/admin/time-entries/{entry_id}")
+async def admin_get_time_entry(
+    entry_id: str,
+    current_user: dict = Depends(get_current_admin),
+):
+    """Devolve uma única picagem por id. Usado pelo link
+    `/admin/time-entries?entry_id=...` incluído nos emails de autorização
+    para o admin poder saltar directamente para a picagem em causa."""
+    entry = await db.time_entries.find_one({"id": entry_id}, {"_id": 0})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entrada não encontrada")
+    return entry
+
+
 @router.put("/admin/time-entries/{entry_id}")
 async def admin_update_time_entry(
     entry_id: str,
