@@ -169,7 +169,35 @@ def generate_monthly_pdf_report(report_data):
     ]))
     
     elements.append(summary_table)
-    elements.append(Spacer(1, 0.7*cm))
+    elements.append(Spacer(1, 0.4*cm))
+    
+    # Detalhe de férias por ano (se disponível — modelo FIFO)
+    year_breakdown = summary.get('vacation_year_breakdown') or []
+    if year_breakdown:
+        breakdown_data = [['Ano', 'Dias Ganhos', 'Dias Gozados', 'Dias Disponíveis']]
+        for y in year_breakdown:
+            breakdown_data.append([
+                str(y.get('year', '')),
+                str(y.get('days_earned', 0)),
+                str(y.get('days_taken', 0)),
+                str(y.get('days_available', 0)),
+            ])
+        breakdown_table = Table(breakdown_data, colWidths=[5.5*cm, 5.5*cm, 5.5*cm, 5.5*cm])
+        breakdown_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f7fafc')),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#cbd5e0')),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(Paragraph("<b>Detalhe de Férias por Ano</b>", subtitle_style))
+        elements.append(breakdown_table)
+        elements.append(Spacer(1, 0.5*cm))
+    else:
+        elements.append(Spacer(1, 0.3*cm))
     
     # Daily records header
     elements.append(Paragraph("REGISTO DIÁRIO DETALHADO", title_style))

@@ -28,6 +28,17 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+29. ✅ **Fix HTTP 422 no upload de foto na FS (Feb 2026)** — bug reportado: `POST /relatorios-tecnicos/{id}/fotografias` retornava 422 com `{"loc":["body","file"],"msg":"Field required"}` em alguns browsers (Safari/iOS + mobile). Causa: 2 chamadas em `TechnicalReports.jsx` (`handleUploadFoto` linha 1861 + input file input linha 6101) passavam explicitamente `headers: {'Content-Type': 'multipart/form-data'}`. Alguns browsers **não** anexam automaticamente o `boundary=...` quando o header é definido manualmente pelo cliente → o backend não consegue parsear o body multipart → o campo `file` aparece em falta. Fix: removido o header explícito nos 2 sítios — axios/browser passam a computar e definir o Content-Type com boundary correcto ao detectar FormData. Validado via curl (upload OK, 200) e o botão de rollback (delete) também funciona.
+
+28. ✅ **Férias dinâmicas nos relatórios mensais (Feb 2026)** — bug reportado: `/vacations` mostrava saldo FIFO correto, mas relatórios mensais PDF/Excel exibiam valores antigos vindos da coleção depreciada `vacation_balances` (ex.: Gichelson Leite). Fix:
+    - `routes/time_entries.py::get_monthly_detailed_report` (endpoint JSON) — substituída consulta a `vacation_balances` por chamada a `_fetch_user_vacation_context` + `_build_year_balances` de `routes.vacations`. Import tardio para evitar ciclo.
+    - `routes/time_entries.py::download_excel_report` — mesma lógica FIFO aplicada; passa `year_breakdown` completo ao gerador Excel.
+    - `pdf_report.py::generate_monthly_pdf_report` — nova tabela "Detalhe de Férias por Ano" abaixo do sumário (mostra Ganhos/Gozados/Disponíveis por ano).
+    - `excel_report.py::generate_monthly_report` — nova secção "Gestão de Férias" no fim da folha (Gozados/Disponíveis/Anual) + tabela "Detalhe por Ano".
+    - Novo campo `summary.vacation_year_breakdown` na resposta JSON.
+    - Validado E2E: Gichelson (start 13/11/2025) — antes: valores errados do `vacation_balances`; agora: 1 gozado, 23 disponíveis, 24 anuais. Match exato com `/vacations/balance`. Miguel: 4/38/42. Match exato.
+
+## Sessão Anterior (Feb 2026) — Resumo
 1. ✅ Feature `faturar_viagens_curtas` no Cliente (Kannegiesser)
 2. ✅ Seed das 24 tarifas de produção em table_id=1 do preview (3 funções × 4 códigos × 2 tipos)
 3. ✅ Confirmação total de horas FS#471 (Trabalho 106h15 + Viagem 33h56)

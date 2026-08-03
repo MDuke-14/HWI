@@ -229,6 +229,45 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
     
     ws.cell(row=row, column=1).value = "Nº:"
     ws.cell(row=row, column=2).value = user_data.get('card_number', 'N/A')
+    row += 2
+    
+    # ===================== GESTÃO DE FÉRIAS (dados dinâmicos FIFO) =====================
+    ws.cell(row=row, column=1).value = "Gestão de Férias"
+    ws.cell(row=row, column=1).font = header_font
+    row += 1
+    
+    ws.cell(row=row, column=1).value = "Dias de Férias Gozados"
+    ws.cell(row=row, column=2).value = f"{vacation_data.get('days_taken', 0)} dias"
+    row += 1
+    
+    ws.cell(row=row, column=1).value = "Dias de Férias Disponíveis"
+    ws.cell(row=row, column=2).value = f"{vacation_data.get('days_available', 0)} dias"
+    row += 1
+    
+    ws.cell(row=row, column=1).value = "Total Anual de Férias"
+    ws.cell(row=row, column=2).value = f"{vacation_data.get('days_earned', 22)} dias"
+    row += 1
+    
+    # Breakdown por ano (se disponível)
+    year_breakdown = vacation_data.get('year_breakdown') or []
+    if year_breakdown:
+        row += 1
+        ws.cell(row=row, column=1).value = "Detalhe por Ano"
+        ws.cell(row=row, column=1).font = header_font
+        row += 1
+        ws.cell(row=row, column=1).value = "Ano"
+        ws.cell(row=row, column=2).value = "Ganhos"
+        ws.cell(row=row, column=3).value = "Gozados"
+        ws.cell(row=row, column=4).value = "Disponíveis"
+        for c in [1, 2, 3, 4]:
+            ws.cell(row=row, column=c).font = header_font
+        row += 1
+        for y in year_breakdown:
+            ws.cell(row=row, column=1).value = y.get('year')
+            ws.cell(row=row, column=2).value = y.get('days_earned', 0)
+            ws.cell(row=row, column=3).value = y.get('days_taken', 0)
+            ws.cell(row=row, column=4).value = y.get('days_available', 0)
+            row += 1
     
     # Ajustar largura das colunas
     ws.column_dimensions['A'].width = 12

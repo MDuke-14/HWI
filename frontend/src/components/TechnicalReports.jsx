@@ -1860,12 +1860,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       
       const response = await axios.post(
         `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
       
       const newFoto = response.data;
@@ -6098,7 +6093,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                     formData.append('file', file);
                     formData.append('descricao', '');
                     formData.append('intervencao_id', uploadIntervencaoId || '');
-                    const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`, formData);
                     const newFoto = response.data;
                     toast.success('Fotografia adicionada!');
                     await fetchFotografiasRelatorio(selectedRelatorio.id);
