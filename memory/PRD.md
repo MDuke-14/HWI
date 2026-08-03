@@ -28,6 +28,13 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+32. ✅ **Modo "Reorganizar" para fotos já guardadas (Feb 2026)** — extensão do bulk-edit para fotos existentes:
+    - **Novo botão "Reorganizar"** no header da secção Fotografias (aparece quando há ≥2 fotos na FS). Localizado ao lado do "Adicionar" em cada aba de intervenção.
+    - **Handler `openReorganizeFotosModal()`** carrega TODAS as fotografias da FS (`fotografias` state, já ordenadas pelo backend), popula `bulkFotosToEdit` e abre o mesmo `FotoBulkEditModal` usado no fluxo multi-upload.
+    - Reutiliza toda a mecânica: drag&drop, setas ↑/↓, edição de descrição in-place, botão "Guardar todas" (envia descrições + PUT /reorder).
+    - Ícone `ArrowUpDown` de lucide-react adicionado ao import.
+    - Validado E2E (curl): 3 fotos com descrições → PUT /reorder muda ordem [0,1,2]→[2,0,1] → GET confirma ordem 0,1,2 com IDs re-mapeados e descrições preservadas.
+
 31. ✅ **Reordenação de fotos (drag & drop) no bulk-edit (Feb 2026)** — extensão da feature multi-upload:
     - **Backend**: novo endpoint `PUT /relatorios-tecnicos/{id}/fotografias/reorder` aceita `{"foto_ids":[...]}` e escreve `ordem = index` em cada foto. Declarado ANTES do `PUT {foto_id}` para não colidir com o path param. Upload agora define `ordem = last+1` (novas vão para o fim). Listing `GET /fotografias` passa a ordenar por `("ordem", 1), ("uploaded_at", -1)` para consistência com o gerador de PDF (que já usava `sort("ordem", 1)`).
     - **Frontend**: `FotoBulkEditModal` refactored — cada card é `draggable` (HTML5 native DnD), com feedback visual (border blue quando drag-over). Handle `⋮⋮` + setas `↑/↓` como fallback para mobile/acessibilidade. Legenda actualizada: "Arraste os cards ou use as setas para reordenar — esta é a ordem em que aparecerão no PDF". Novo callback `onReorder(from, to)`.

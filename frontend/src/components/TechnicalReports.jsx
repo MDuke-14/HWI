@@ -55,6 +55,7 @@ import {
   Pencil,
   Link2,
   ArrowRightCircle,
+  ArrowUpDown,
   Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -1983,6 +1984,25 @@ const TechnicalReports = ({ user, onLogout }) => {
     setBulkFotosToEdit((prev) =>
       prev.map((f) => (f.id === id ? { ...f, descricao: value } : f))
     );
+  };
+
+  // Abrir modal em modo "Reorganizar" — carrega TODAS as fotos da FS
+  // (já persistidas) pela ordem actual, permitindo drag&drop + edição de
+  // descrições. Reutiliza o mesmo modal do fluxo multi-upload.
+  const openReorganizeFotosModal = () => {
+    if (!selectedRelatorio || !fotografias || fotografias.length === 0) {
+      toast.info('Ainda não existem fotografias para reorganizar.');
+      return;
+    }
+    // Fotografias já vêm ordenadas por `ordem` do backend
+    const items = fotografias.map((f) => ({
+      id: f.id,
+      foto_url: f.foto_url,
+      descricao: f.descricao || '',
+      uploaded_at: f.uploaded_at,
+    }));
+    setBulkFotosToEdit(items);
+    setShowBulkEditFotoModal(true);
   };
 
   // Reorder helper — move a foto da posição `from` para `to` (drag&drop ou setas)
@@ -5947,15 +5967,27 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
                                 <Camera className="w-3 h-3" /> Fotografias ({intervFotos.length})
                               </p>
-                              <Button
-                                onClick={() => {
-                                  setUploadIntervencaoId(activeInterv.id);
-                                  document.getElementById('foto-upload-input')?.click();
-                                }}
-                                size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
-                              >
-                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {fotografias.length > 1 && (
+                                  <Button
+                                    onClick={openReorganizeFotosModal}
+                                    size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
+                                    title="Reorganizar todas as fotografias da FS (arrastar)"
+                                    data-testid="btn-reorganizar-fotos"
+                                  >
+                                    <ArrowUpDown className="w-3 h-3 mr-0.5" /> Reorganizar
+                                  </Button>
+                                )}
+                                <Button
+                                  onClick={() => {
+                                    setUploadIntervencaoId(activeInterv.id);
+                                    document.getElementById('foto-upload-input')?.click();
+                                  }}
+                                  size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                                >
+                                  <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                                </Button>
+                              </div>
                             </div>
                             {intervFotos.length > 0 ? (
                               <div className="grid grid-cols-3 gap-2">
