@@ -120,7 +120,7 @@ import CriarContinuidadeModal from './technical-reports/CriarContinuidadeModal';
 import FSChainBreadcrumb from './technical-reports/FSChainBreadcrumb';
 import FaturaScanner from './technical-reports/FaturaScanner';
 import IntervencaoModal from './technical-reports/IntervencaoModal';
-import { FotoUploadModal, FotoEditModal, FotoPreviewModal } from './technical-reports/FotoModals';
+import { FotoUploadModal, FotoEditModal, FotoPreviewModal, FotoBulkEditModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
 import { downloadFSPdfAsync, downloadFSPdfToFile } from './technical-reports/utils/pdfJobs';
@@ -332,6 +332,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showAddFotoModal, setShowAddFotoModal] = useState(false);
   const [selectedFoto, setSelectedFoto] = useState(null);
   const [fotoFile, setFotoFile] = useState(null);
+  const [fotoFiles, setFotoFiles] = useState([]);  // Multi-upload: lista de ficheiros (comprimidos)
   const [fotoDescricao, setFotoDescricao] = useState('');
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [showEditFotoModal, setShowEditFotoModal] = useState(false);
@@ -339,6 +340,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [editFotoData, setEditFotoData] = useState('');
   const [selectedFotoUrl, setSelectedFotoUrl] = useState(null);
   const [showFotoPreviewModal, setShowFotoPreviewModal] = useState(false);
+  // Modal bulk-edit após multi-upload: [{ id, foto_url, descricao }, ...]
+  const [showBulkEditFotoModal, setShowBulkEditFotoModal] = useState(false);
+  const [bulkFotosToEdit, setBulkFotosToEdit] = useState([]);
 
   // Email OT
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -1798,88 +1802,118 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const handleFotoFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validar tipo de arquivo. Em mobile (iOS especialmente) `file.type` pode
-      // vir vazio ou não-standard (image/jpg, application/octet-stream). Aceitar
-      // se MIME válido OU se o nome termina numa extensão de imagem conhecida.
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-      const allowedExts = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
-      const mimeOk = file.type && (allowedTypes.includes(file.type) || file.type.startsWith('image/'));
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const allowedExts = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
+    const maxSize = 25 * 1024 * 1024; // 25MB
+
+    const processed = [];
+    for (const file of files) {
+      // Validar tipo (MIME OU extensão, para compatibilidade iOS/Android)
+      const mimeOk = file.type && file.type.startsWith('image/');
       const extOk = allowedExts.test(file.name || '');
       if (!mimeOk && !extOk) {
-        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP, HEIC');
-        return;
+        toast.error(`"${file.name}" — tipo não permitido. Ignorado.`);
+        continue;
       }
-      // Validar tamanho (máximo 25MB — fotos modernas de telemóvel podem chegar aqui)
-      if (file.size > 25 * 1024 * 1024) {
-        toast.error('Arquivo muito grande. Tamanho máximo: 25MB');
-        return;
+      if (file.size > maxSize) {
+        toast.error(`"${file.name}" é maior que 25MB. Ignorado.`);
+        continue;
       }
-      
-      // Comprimir imagem se for maior que 500KB (compressor pode falhar em HEIC
-      // porque o browser não decodifica — nesse caso usamos o original).
+      // Comprimir se for grande (falha graciosa para HEIC → usa original)
       if (file.size > 500 * 1024) {
         try {
-          toast.info('A comprimir imagem...');
-          const compressedFile = await compressImage(file, 1200, 1200, 0.7);
-          const savedPercent = Math.round((1 - compressedFile.size / file.size) * 100);
-          toast.success(`Imagem comprimida! Redução de ${savedPercent}%`);
-          setFotoFile(compressedFile);
-        } catch (error) {
-          console.warn('Compressão falhou (provavelmente HEIC ou browser sem suporte). Usando original.', error);
-          setFotoFile(file);
+          const compressed = await compressImage(file, 1200, 1200, 0.7);
+          processed.push(compressed);
+        } catch {
+          processed.push(file);
         }
       } else {
-        setFotoFile(file);
+        processed.push(file);
       }
     }
+
+    if (processed.length === 0) {
+      toast.error('Nenhuma imagem válida seleccionada.');
+      return;
+    }
+
+    setFotoFiles(processed);
+    // Retro-compatibilidade: manter fotoFile como o 1º ficheiro (para preview)
+    setFotoFile(processed[0]);
+    toast.success(`${processed.length} imagem(ns) pronta(s) para envio.`);
   };
 
   const handleUploadFoto = async (e) => {
     e.preventDefault();
-    
-    if (!fotoFile) {
-      toast.error('Selecione uma fotografia');
+
+    // Preferir a lista multi; fallback ao ficheiro único (retro-compat)
+    const filesToUpload = (fotoFiles && fotoFiles.length > 0)
+      ? fotoFiles
+      : (fotoFile ? [fotoFile] : []);
+
+    if (filesToUpload.length === 0) {
+      toast.error('Selecione pelo menos uma fotografia');
       return;
     }
-    
-    // Capturar valor diretamente do textarea para evitar problemas com estado
+
+    // Descrição inicial (opcional) — aplicada a todas
     const descricaoElement = document.getElementById('foto_descricao');
-    const descricao = descricaoElement ? descricaoElement.value.trim() : fotoDescricao.trim();
-    
-    // Descrição é opcional
-    
+    const descricaoInicial = descricaoElement ? descricaoElement.value.trim() : fotoDescricao.trim();
+
     setUploadingFoto(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', fotoFile);
-      formData.append('descricao', descricao || '');
-      formData.append('intervencao_id', activeIntervencaoId || '');
-      
-      const response = await axios.post(
-        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
-        formData
-      );
-      
-      const newFoto = response.data;
-      toast.success('Fotografia adicionada com sucesso!');
-      setShowAddFotoModal(false);
-      setFotoFile(null);
-      setFotoDescricao('');
-      await fetchFotografiasRelatorio(selectedRelatorio.id);
-      
-      // Abrir modal de edição automaticamente para adicionar observações
-      openEditFotoModal({
-        id: newFoto.id,
-        descricao: newFoto.descricao || '',
-        uploaded_at: newFoto.uploaded_at
-      });
-    } catch (error) {
-      toast.error(formatErrorMessage(error));
-    } finally {
-      setUploadingFoto(false);
+    const uploaded = [];
+    let failed = 0;
+
+    for (const [idx, file] of filesToUpload.entries()) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('descricao', descricaoInicial || '');
+        formData.append('intervencao_id', activeIntervencaoId || '');
+        const response = await axios.post(
+          `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
+          formData
+        );
+        uploaded.push({
+          id: response.data.id,
+          foto_url: response.data.foto_url,
+          descricao: response.data.descricao || '',
+          uploaded_at: response.data.uploaded_at,
+        });
+      } catch (error) {
+        failed++;
+        console.error(`Erro no upload da foto ${idx + 1}:`, error);
+      }
+    }
+
+    setUploadingFoto(false);
+
+    if (uploaded.length === 0) {
+      toast.error('Falha em todos os uploads. Tente novamente.');
+      return;
+    }
+    if (failed > 0) {
+      toast.warning(`${uploaded.length} enviada(s), ${failed} falhou/falharam.`);
+    } else {
+      toast.success(`${uploaded.length} fotografia(s) adicionada(s)!`);
+    }
+
+    // Reset do modal de upload
+    setShowAddFotoModal(false);
+    setFotoFile(null);
+    setFotoFiles([]);
+    setFotoDescricao('');
+    await fetchFotografiasRelatorio(selectedRelatorio.id);
+
+    // Se >1 fotografia, abre o modal bulk edit para descrever cada uma;
+    // caso contrário mantém o fluxo antigo (modal single edit).
+    if (uploaded.length === 1) {
+      openEditFotoModal(uploaded[0]);
+    } else {
+      setBulkFotosToEdit(uploaded);
+      setShowBulkEditFotoModal(true);
     }
   };
 
@@ -1940,6 +1974,43 @@ const TechnicalReports = ({ user, onLogout }) => {
     } catch (error) {
       toast.error(formatErrorMessage(error));
     }
+  };
+
+  // ---------------------------------------------------------------------
+  // Bulk edit descrições (após multi-upload)
+  // ---------------------------------------------------------------------
+  const handleBulkFotoDescricaoChange = (id, value) => {
+    setBulkFotosToEdit((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, descricao: value } : f))
+    );
+  };
+
+  const handleSaveBulkFotoDescricoes = async () => {
+    if (!selectedRelatorio || bulkFotosToEdit.length === 0) return;
+    setUploadingFoto(true);
+    let ok = 0;
+    let fail = 0;
+    for (const f of bulkFotosToEdit) {
+      try {
+        await axios.put(
+          `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${f.id}`,
+          { descricao: f.descricao || '' }
+        );
+        ok++;
+      } catch (err) {
+        console.error('Erro a guardar descrição da foto', f.id, err);
+        fail++;
+      }
+    }
+    setUploadingFoto(false);
+    if (fail === 0) {
+      toast.success(`Descrições guardadas (${ok}).`);
+    } else {
+      toast.warning(`${ok} descrição(ões) guardada(s), ${fail} falhou/falharam.`);
+    }
+    setShowBulkEditFotoModal(false);
+    setBulkFotosToEdit([]);
+    await fetchFotografiasRelatorio(selectedRelatorio.id);
   };
 
   // ========== Equipamentos OT Functions ==========
@@ -6079,31 +6150,53 @@ const TechnicalReports = ({ user, onLogout }) => {
                 )}
               </div>
 
-              {/* Hidden file input for photo upload */}
+              {/* Hidden file input for photo upload (suporta multi-selecção) */}
               <input
                 id="foto-upload-input"
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file || !selectedRelatorio) return;
-                  try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('descricao', '');
-                    formData.append('intervencao_id', uploadIntervencaoId || '');
-                    const response = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`, formData);
-                    const newFoto = response.data;
-                    toast.success('Fotografia adicionada!');
-                    await fetchFotografiasRelatorio(selectedRelatorio.id);
-                    // Abrir modal de edição para adicionar observações
-                    openEditFotoModal({
-                      id: newFoto.id,
-                      descricao: newFoto.descricao || '',
-                      uploaded_at: newFoto.uploaded_at
-                    });
-                  } catch (err) { toast.error('Erro ao fazer upload'); }
+                  const files = Array.from(e.target.files || []);
+                  if (files.length === 0 || !selectedRelatorio) return;
+                  const uploaded = [];
+                  let failed = 0;
+                  for (const file of files) {
+                    try {
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      formData.append('descricao', '');
+                      formData.append('intervencao_id', uploadIntervencaoId || '');
+                      const response = await axios.post(
+                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
+                        formData
+                      );
+                      uploaded.push({
+                        id: response.data.id,
+                        foto_url: response.data.foto_url,
+                        descricao: response.data.descricao || '',
+                        uploaded_at: response.data.uploaded_at,
+                      });
+                    } catch (err) {
+                      console.error('Erro no upload:', err);
+                      failed++;
+                    }
+                  }
+                  if (uploaded.length === 0) {
+                    toast.error('Erro ao fazer upload das fotografias');
+                  } else if (failed > 0) {
+                    toast.warning(`${uploaded.length} enviada(s), ${failed} falhou/falharam.`);
+                  } else {
+                    toast.success(`${uploaded.length} fotografia(s) adicionada(s)!`);
+                  }
+                  await fetchFotografiasRelatorio(selectedRelatorio.id);
+                  if (uploaded.length === 1) {
+                    openEditFotoModal(uploaded[0]);
+                  } else if (uploaded.length > 1) {
+                    setBulkFotosToEdit(uploaded);
+                    setShowBulkEditFotoModal(true);
+                  }
                   e.target.value = '';
                 }}
               />
@@ -6661,8 +6754,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       <FotoUploadModal
         open={showAddFotoModal} onOpenChange={setShowAddFotoModal}
         onSubmit={handleUploadFoto}
-        onCancel={() => { setShowAddFotoModal(false); setFotoFile(null); setFotoDescricao(''); }}
-        fotoFile={fotoFile} onFotoFileChange={handleFotoFileChange}
+        onCancel={() => { setShowAddFotoModal(false); setFotoFile(null); setFotoFiles([]); setFotoDescricao(''); }}
+        fotoFile={fotoFile} fotoFiles={fotoFiles} onFotoFileChange={handleFotoFileChange}
         fotoDescricao={fotoDescricao} setFotoDescricao={setFotoDescricao}
         uploadingFoto={uploadingFoto}
       />
@@ -6674,6 +6767,16 @@ const TechnicalReports = ({ user, onLogout }) => {
         onSave={handleUpdateFotoDescricao}
         onCancel={() => { setShowEditFotoModal(false); setSelectedFoto(null); setEditFotoDescricao(''); setEditFotoData(''); }}
         apiUrl={API}
+      />
+      <FotoBulkEditModal
+        open={showBulkEditFotoModal}
+        onOpenChange={(open) => { setShowBulkEditFotoModal(open); if (!open) setBulkFotosToEdit([]); }}
+        fotos={bulkFotosToEdit}
+        onDescricaoChange={handleBulkFotoDescricaoChange}
+        onSave={handleSaveBulkFotoDescricoes}
+        onCancel={() => { setShowBulkEditFotoModal(false); setBulkFotosToEdit([]); }}
+        apiUrl={API}
+        saving={uploadingFoto}
       />
       <FotoPreviewModal
         open={showFotoPreviewModal}

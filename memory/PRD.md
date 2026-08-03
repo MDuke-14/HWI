@@ -28,6 +28,15 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+30. ✅ **Multi-upload de fotografias nas FS com bulk-edit de descrições (Feb 2026)** — nova feature:
+    - **Input agora suporta `multiple`** em ambos os call sites (`FotoUploadModal` extraído + hidden input do fluxo por intervenção). Pré-visualização em grelha 2/3 colunas mostra as imagens seleccionadas.
+    - **`handleFotoFileChange`** refactored: itera todos os ficheiros, valida MIME/extensão + tamanho, comprime (falha graciosamente para HEIC).
+    - **`handleUploadFoto`** faz upload sequencial (mantém ordem, mostra warning se algum falhar), acumula os IDs devolvidos.
+    - **Novo `FotoBulkEditModal`** (em `technical-reports/FotoModals.jsx`): mostra 1 card por foto (thumbnail + textarea), botão "Guardar todas" faz PUT em série para cada `descricao`. Aberto automaticamente após multi-upload (>1 foto). Se só houver 1 foto, mantém-se o antigo `FotoEditModal`.
+    - Estados novos: `fotoFiles` (array), `showBulkEditFotoModal`, `bulkFotosToEdit`.
+    - Descrição comum inicial (opcional) no modal de upload é aplicada a todas, mas pode ser reescrita individualmente no bulk-edit.
+    - Validado E2E (curl loop): 3 uploads OK → 3 PUTs de descrição OK → GET confirma → cleanup. Fluxo idêntico ao que o frontend executa em série.
+
 29. ✅ **Fix HTTP 422 no upload de foto na FS (Feb 2026)** — bug reportado: `POST /relatorios-tecnicos/{id}/fotografias` retornava 422 com `{"loc":["body","file"],"msg":"Field required"}` em alguns browsers (Safari/iOS + mobile). Causa: 2 chamadas em `TechnicalReports.jsx` (`handleUploadFoto` linha 1861 + input file input linha 6101) passavam explicitamente `headers: {'Content-Type': 'multipart/form-data'}`. Alguns browsers **não** anexam automaticamente o `boundary=...` quando o header é definido manualmente pelo cliente → o backend não consegue parsear o body multipart → o campo `file` aparece em falta. Fix: removido o header explícito nos 2 sítios — axios/browser passam a computar e definir o Content-Type com boundary correcto ao detectar FormData. Validado via curl (upload OK, 200) e o botão de rollback (delete) também funciona.
 
 28. ✅ **Férias dinâmicas nos relatórios mensais (Feb 2026)** — bug reportado: `/vacations` mostrava saldo FIFO correto, mas relatórios mensais PDF/Excel exibiam valores antigos vindos da coleção depreciada `vacation_balances` (ex.: Gichelson Leite). Fix:
