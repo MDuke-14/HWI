@@ -1985,11 +1985,23 @@ const TechnicalReports = ({ user, onLogout }) => {
     );
   };
 
+  // Reorder helper — move a foto da posição `from` para `to` (drag&drop ou setas)
+  const handleBulkFotoReorder = (from, to) => {
+    setBulkFotosToEdit((prev) => {
+      if (from < 0 || from >= prev.length || to < 0 || to >= prev.length) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
   const handleSaveBulkFotoDescricoes = async () => {
     if (!selectedRelatorio || bulkFotosToEdit.length === 0) return;
     setUploadingFoto(true);
     let ok = 0;
     let fail = 0;
+    // 1) Guardar descrições
     for (const f of bulkFotosToEdit) {
       try {
         await axios.put(
@@ -2002,9 +2014,20 @@ const TechnicalReports = ({ user, onLogout }) => {
         fail++;
       }
     }
+    // 2) Guardar ordem — reordena todas as fotos que o utilizador enviou
+    //    respeitando a sequência actual do array (drag&drop/setas).
+    try {
+      await axios.put(
+        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/reorder`,
+        { foto_ids: bulkFotosToEdit.map((f) => f.id) }
+      );
+    } catch (err) {
+      console.error('Erro a guardar ordem das fotos', err);
+      // Não conta como fail para não confundir o utilizador — a descrição foi ok.
+    }
     setUploadingFoto(false);
     if (fail === 0) {
-      toast.success(`Descrições guardadas (${ok}).`);
+      toast.success(`Descrições e ordem guardadas (${ok}).`);
     } else {
       toast.warning(`${ok} descrição(ões) guardada(s), ${fail} falhou/falharam.`);
     }
@@ -6773,6 +6796,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         onOpenChange={(open) => { setShowBulkEditFotoModal(open); if (!open) setBulkFotosToEdit([]); }}
         fotos={bulkFotosToEdit}
         onDescricaoChange={handleBulkFotoDescricaoChange}
+        onReorder={handleBulkFotoReorder}
         onSave={handleSaveBulkFotoDescricoes}
         onCancel={() => { setShowBulkEditFotoModal(false); setBulkFotosToEdit([]); }}
         apiUrl={API}

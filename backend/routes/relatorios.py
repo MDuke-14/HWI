@@ -1038,6 +1038,13 @@ async def upload_fotografia(
         
         # Criar documento da foto
         foto_id = str(uuid.uuid4())
+        # Ordem = último + 1 (fotos novas vão para o fim). Sem "ordem" ainda? assume -1.
+        last = await db.fotos_relatorio.find_one(
+            {"relatorio_id": relatorio_id},
+            sort=[("ordem", -1)],
+            projection={"ordem": 1},
+        )
+        ordem_val = int(last.get("ordem", -1)) + 1 if last else 0
         foto_doc = {
             "id": foto_id,
             "relatorio_id": relatorio_id,
@@ -1048,7 +1055,8 @@ async def upload_fotografia(
             "filename": file.filename,
             "content_type": content_type,
             "uploaded_at": datetime.now(timezone.utc),
-            "uploaded_by": current_user["sub"]
+            "uploaded_by": current_user["sub"],
+            "ordem": ordem_val,
         }
         
         # Salvar no banco
@@ -1269,7 +1277,7 @@ async def get_fotografias(
     fotografias = await db.fotos_relatorio.find(
         {"relatorio_id": relatorio_id},
         projection
-    ).sort("uploaded_at", -1).to_list(length=None)
+    ).sort([("ordem", 1), ("uploaded_at", -1)]).to_list(length=None)
     
     # Adicionar foto_url para cada foto (usado pelo frontend para carregar a imagem sob demanda)
     for foto in fotografias:
@@ -1403,6 +1411,39 @@ async def delete_fotografia(
     logging.info(f"Fotografia {foto_id} removida do relatório {relatorio_id}")
     
     return {"message": "Fotografia removida com sucesso"}
+
+@router.put("/relatorios-tecnicos/{relatorio_id}/fotografias/reorder")
+async def reorder_fotografias(
+    relatorio_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """Reordenar fotografias de um relatório.
+
+    Aceita `{"foto_ids": ["id1", "id2", ...]}` — o índice na lista passa a ser
+    o campo `ordem` de cada foto. IDs não pertencentes ao relatório são
+    ignorados. Esta rota é declarada ANTES da rota `{foto_id}` para não ser
+    capturada como `foto_id="reorder"`.
+    """
+    foto_ids = data.get("foto_ids") or []
+    if not isinstance(foto_ids, list) or not foto_ids:
+        raise HTTPException(status_code=400, detail="foto_ids obrigatório (lista não vazia)")
+
+    if not await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 1}):
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+    updated = 0
+    for idx, fid in enumerate(foto_ids):
+        result = await db.fotos_relatorio.update_one(
+            {"id": fid, "relatorio_id": relatorio_id},
+            {"$set": {"ordem": idx}},
+        )
+        if result.matched_count:
+            updated += 1
+
+    logging.info(f"Reordenadas {updated}/{len(foto_ids)} fotos do relatório {relatorio_id}")
+    return {"updated": updated, "total_requested": len(foto_ids)}
+
 
 @router.put("/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}")
 async def update_fotografia(

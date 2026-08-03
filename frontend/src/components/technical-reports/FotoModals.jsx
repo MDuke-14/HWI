@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,9 +120,51 @@ export const FotoPreviewModal = ({ open, onOpenChange, selectedFotoUrl }) => (
 
 // Modal para adicionar/editar descrições em lote após multi-upload.
 // Mostra um card por foto (thumbnail + textarea) e um botão "Guardar todas".
+// Suporta arrastar cards (HTML5 native DnD) para reordenar; a nova ordem é
+// enviada ao backend via `PUT /fotografias/reorder`.
 export const FotoBulkEditModal = ({
-  open, onOpenChange, fotos, onDescricaoChange, onSave, onCancel, apiUrl, saving,
-}) => (
+  open, onOpenChange, fotos, onDescricaoChange, onReorder, onSave, onCancel, apiUrl, saving,
+}) => {
+  // dragIndex mantém o índice do card que está a ser arrastado no momento.
+  // hoverIndex é o slot alvo para dar feedback visual antes do drop.
+  const dragIndex = useRef(null);
+  const [hoverIndex, setHoverIndex] = useState(null);
+
+  const handleDragStart = (idx) => (e) => {
+    dragIndex.current = idx;
+    e.dataTransfer.effectAllowed = 'move';
+    // Necessário para Firefox iniciar o drag
+    try { e.dataTransfer.setData('text/plain', String(idx)); } catch { /* noop */ }
+  };
+  const handleDragOver = (idx) => (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (hoverIndex !== idx) setHoverIndex(idx);
+  };
+  const handleDragLeave = () => {
+    setHoverIndex(null);
+  };
+  const handleDrop = (dropIdx) => (e) => {
+    e.preventDefault();
+    const from = dragIndex.current;
+    dragIndex.current = null;
+    setHoverIndex(null);
+    if (from === null || from === undefined || from === dropIdx) return;
+    if (typeof onReorder === 'function') onReorder(from, dropIdx);
+  };
+  const handleDragEnd = () => {
+    dragIndex.current = null;
+    setHoverIndex(null);
+  };
+
+  // Setas ↑/↓ como fallback (mobile / acessibilidade)
+  const move = (idx, direction) => {
+    const target = idx + direction;
+    if (target < 0 || target >= (fotos || []).length) return;
+    if (typeof onReorder === 'function') onReorder(idx, target);
+  };
+
+  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
@@ -131,15 +174,50 @@ export const FotoBulkEditModal = ({
         </DialogTitle>
       </DialogHeader>
       <p className="text-sm text-gray-400 mt-2">
-        Adicione uma descrição para cada uma das fotografias que acabou de enviar.
+        Adicione uma descrição para cada foto. <span className="text-blue-300">Arraste os cards</span> ou use as setas <span className="text-blue-300">↑ ↓</span> para reordenar — esta é a ordem em que aparecerão no PDF.
       </p>
-      <div className="space-y-4 mt-4">
+      <div className="space-y-3 mt-4">
         {(fotos || []).map((foto, idx) => (
           <div
             key={foto.id}
-            className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-3 flex flex-col sm:flex-row gap-3"
+            draggable
+            onDragStart={handleDragStart(idx)}
+            onDragOver={handleDragOver(idx)}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop(idx)}
+            onDragEnd={handleDragEnd}
+            className={`bg-[#0f0f0f] border rounded-lg p-3 flex flex-col sm:flex-row gap-3 transition-colors ${
+              hoverIndex === idx ? 'border-blue-400 bg-blue-900/10' : 'border-gray-700'
+            }`}
             data-testid={`bulk-foto-card-${idx}`}
           >
+            <div className="flex items-center justify-center sm:flex-col gap-2 text-gray-400">
+              <span
+                className="cursor-grab active:cursor-grabbing select-none px-2 py-1 rounded hover:bg-gray-800 text-lg leading-none"
+                title="Arrastar para reordenar"
+                aria-label="Drag handle"
+              >
+                ⋮⋮
+              </span>
+              <div className="flex sm:flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => move(idx, -1)}
+                  disabled={idx === 0}
+                  className="p-1 rounded hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Mover para cima"
+                  data-testid={`bulk-foto-up-${idx}`}
+                >↑</button>
+                <button
+                  type="button"
+                  onClick={() => move(idx, 1)}
+                  disabled={idx === (fotos.length - 1)}
+                  className="p-1 rounded hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Mover para baixo"
+                  data-testid={`bulk-foto-down-${idx}`}
+                >↓</button>
+              </div>
+            </div>
             <div className="sm:w-40 flex-shrink-0">
               <img
                 src={`${apiUrl}${foto.foto_url}${foto.foto_url.includes('?') ? '&' : '?'}thumb=true`}
@@ -147,7 +225,7 @@ export const FotoBulkEditModal = ({
                 className="w-full h-32 sm:h-40 object-cover rounded"
                 onError={(e) => { e.currentTarget.src = `${apiUrl}${foto.foto_url}`; }}
               />
-              <p className="text-xs text-gray-500 mt-1 text-center">Foto #{idx + 1}</p>
+              <p className="text-xs text-gray-500 mt-1 text-center">Posição {idx + 1}</p>
             </div>
             <div className="flex-1">
               <Label className="text-gray-300 text-sm">Descrição / Observações</Label>
@@ -172,4 +250,5 @@ export const FotoBulkEditModal = ({
       </div>
     </DialogContent>
   </Dialog>
-);
+  );
+};

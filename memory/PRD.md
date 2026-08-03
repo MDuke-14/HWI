@@ -28,6 +28,12 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+31. ✅ **Reordenação de fotos (drag & drop) no bulk-edit (Feb 2026)** — extensão da feature multi-upload:
+    - **Backend**: novo endpoint `PUT /relatorios-tecnicos/{id}/fotografias/reorder` aceita `{"foto_ids":[...]}` e escreve `ordem = index` em cada foto. Declarado ANTES do `PUT {foto_id}` para não colidir com o path param. Upload agora define `ordem = last+1` (novas vão para o fim). Listing `GET /fotografias` passa a ordenar por `("ordem", 1), ("uploaded_at", -1)` para consistência com o gerador de PDF (que já usava `sort("ordem", 1)`).
+    - **Frontend**: `FotoBulkEditModal` refactored — cada card é `draggable` (HTML5 native DnD), com feedback visual (border blue quando drag-over). Handle `⋮⋮` + setas `↑/↓` como fallback para mobile/acessibilidade. Legenda actualizada: "Arraste os cards ou use as setas para reordenar — esta é a ordem em que aparecerão no PDF". Novo callback `onReorder(from, to)`.
+    - `handleBulkFotoReorder(from, to)` faz splice/insert no state. Ao guardar (`handleSaveBulkFotoDescricoes`), depois de PUT das descrições, envia PUT `/reorder` com a lista de IDs pela ordem actual do array.
+    - Validado E2E (curl): 4 uploads → reorder movendo id0 para o fim → GET confirma nova ordem 1,2,3,0. `updated=4/total=4`.
+
 30. ✅ **Multi-upload de fotografias nas FS com bulk-edit de descrições (Feb 2026)** — nova feature:
     - **Input agora suporta `multiple`** em ambos os call sites (`FotoUploadModal` extraído + hidden input do fluxo por intervenção). Pré-visualização em grelha 2/3 colunas mostra as imagens seleccionadas.
     - **`handleFotoFileChange`** refactored: itera todos os ficheiros, valida MIME/extensão + tamanho, comprime (falha graciosamente para HEIC).
