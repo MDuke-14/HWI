@@ -50,6 +50,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
     - Geração PDF com header de logo (igual restantes documentos), cliente, título centrado, secções, tabela equipamentos (3 colunas), rodapé com data + nome do técnico.
     - Novos ficheiros: `models.py` (RelatorioSimples + RelatorioSimplesUpsert), `routes/relatorios_simples.py`, `relatorio_simples_pdf.py`, `technical-reports/RelatorioSimplesModal.jsx`.
 16. ✅ **Auth fix + Vacations filter (Feb 2026)** — eliminado utilizador duplicado em `users`; passwords reset para `miguel` (`Miguel123!`) e `teste@email.com` (`Admin123!`). Filtro `include_past` (default false) em `/vacations/my-requests` e `/admin/vacations/all-balances` esconde férias gozadas de anos anteriores. Toggles UI 'Mostrar/Esconder anos anteriores' nas secções Meus Pedidos + Admin.
+27. ✅ **Fix upload de fotos em mobile nas FS (Feb 2026)** — bug reportado: upload de fotos em `TechnicalReports` falhava no telemóvel (tanto em modo mobile como em desktop-view), funcionava no PC. Causa raiz:
+    - Frontend validava com `allowedTypes.includes(file.type)` strict — mas em iOS Safari e alguns Android, `file.type` vem **vazio** ou não-standard (`image/jpg`, `application/octet-stream`) para fotos da câmara e HEIC. Toast dizia "Tipo não permitido" e travava.
+    - Limite 10MB era apertado — fotos modernas de iPhone em HDR facilmente ultrapassam.
+    - Se browser rejeitasse decodificar HEIC no compressor Canvas, todo o handler falhava.
+    - Backend usava PIL sem HEIC decoder — iPhone photos ficavam guardadas como HEIC raw impossíveis de visualizar num browser.
+    - **Fixes**: 2 handlers (`handleFotoFileChange`, `handleFotoPCFileChange`) agora aceitam MIME **OU** extensão do ficheiro; limite aumentado para 25MB; compressão falha graciosamente para o original. `accept` do input passa a ser `image/*` (a lista MIME longa rejeitava seleção em alguns Android). Instalado `pillow-heif` e registado o decoder em `routes/relatorios.py` → HEIC do iPhone convertido para JPEG servido.
+    - Validado E2E com JPEG 3000×2000 via curl (upload OK, foto guardada, ficheiro apagado).
+
 26. ✅ **Link "Ver picagem" no email admin (Feb 2026)** — os emails de autorização (`overtime`, `vacation_work`, `work_holiday`, `work_weekend`, `work_special`, `early_leave`) passam a incluir um link secundário `Ver picagem no portal admin →` que aponta para `/admin/time-entries?entry_id=<id>&date=<yyyy-mm-dd>`.
     - `get_authorization_request_email_html` recebe novo parâmetro `entry_id` (opcional).
     - `send_authorization_request_email` recebe e propaga o `entry_id`.

@@ -21,7 +21,7 @@ export const FotoUploadModal = ({
           <Label htmlFor="foto_file" className="text-gray-300">Selecionar Fotografia *</Label>
           <Input
             id="foto_file" type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/heic,image/heif"
+            accept="image/*"
             onChange={onFotoFileChange}
             className="bg-[#0f0f0f] border-gray-700 text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-500 file:text-white hover:file:bg-blue-600"
             required

@@ -75,6 +75,7 @@ pdf2image==1.17.0
 pdfminer.six==20250506
 pdfplumber==0.11.7
 pillow==11.3.0
+pillow_heif==1.5.0
 platformdirs==4.5.0
 pluggy==1.6.0
 propcache==0.4.1

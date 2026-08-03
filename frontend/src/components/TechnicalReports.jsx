@@ -1800,19 +1800,25 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleFotoFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar tipo de arquivo
+      // Validar tipo de arquivo. Em mobile (iOS especialmente) `file.type` pode
+      // vir vazio ou não-standard (image/jpg, application/octet-stream). Aceitar
+      // se MIME válido OU se o nome termina numa extensão de imagem conhecida.
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP');
+      const allowedExts = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
+      const mimeOk = file.type && (allowedTypes.includes(file.type) || file.type.startsWith('image/'));
+      const extOk = allowedExts.test(file.name || '');
+      if (!mimeOk && !extOk) {
+        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP, HEIC');
         return;
       }
-      // Validar tamanho (máximo 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
+      // Validar tamanho (máximo 25MB — fotos modernas de telemóvel podem chegar aqui)
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Tamanho máximo: 25MB');
         return;
       }
       
-      // Comprimir imagem se for maior que 500KB
+      // Comprimir imagem se for maior que 500KB (compressor pode falhar em HEIC
+      // porque o browser não decodifica — nesse caso usamos o original).
       if (file.size > 500 * 1024) {
         try {
           toast.info('A comprimir imagem...');
@@ -1821,8 +1827,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           toast.success(`Imagem comprimida! Redução de ${savedPercent}%`);
           setFotoFile(compressedFile);
         } catch (error) {
-          console.error('Erro ao comprimir:', error);
-          // Se falhar compressão, usa original
+          console.warn('Compressão falhou (provavelmente HEIC ou browser sem suporte). Usando original.', error);
           setFotoFile(file);
         }
       } else {
@@ -2541,15 +2546,17 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleFotoPCFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar tipo de arquivo
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP');
+      // Aceitar MIME image/* OU extensão conhecida — em mobile o `file.type`
+      // vem vazio ou não-standard com frequência.
+      const allowedExts = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
+      const mimeOk = file.type && file.type.startsWith('image/');
+      const extOk = allowedExts.test(file.name || '');
+      if (!mimeOk && !extOk) {
+        toast.error('Tipo de arquivo não permitido. Use: JPG, PNG, GIF, WEBP, HEIC');
         return;
       }
-      // Validar tamanho (máximo 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Arquivo muito grande. Tamanho máximo: 10MB');
+      if (file.size > 25 * 1024 * 1024) {
+        toast.error('Arquivo muito grande. Tamanho máximo: 25MB');
         return;
       }
       
@@ -2562,7 +2569,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           toast.success(`Imagem comprimida! Redução de ${savedPercent}%`);
           setFotoPCFile(compressedFile);
         } catch (error) {
-          console.error('Erro ao comprimir:', error);
+          console.warn('Compressão falhou. Usando original.', error);
           setFotoPCFile(file);
         }
       } else {

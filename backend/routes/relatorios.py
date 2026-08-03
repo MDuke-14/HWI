@@ -987,6 +987,12 @@ async def upload_fotografia(
         from io import BytesIO
         try:
             from PIL import Image
+            # Registar decoder HEIC/HEIF (fotos iPhone) — no-op se já registado
+            try:
+                import pillow_heif
+                pillow_heif.register_heif_opener()
+            except Exception:
+                pass
             img = Image.open(BytesIO(contents))
             # Corrigir orientação EXIF
             try:
