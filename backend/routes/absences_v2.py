@@ -399,3 +399,145 @@ async def fetch_absences_for_month(user_id: str, start_iso: str, end_iso: str) -
             "end_time": a.get("end_time"),
         }
     return out
+
+
+# ---------------------------------------------------------------------------
+# Scan semanal (Domingo 23:59) — dias úteis sem registo
+# ---------------------------------------------------------------------------
+
+async def _admin_email(db_) -> str:
+    """Email do admin (geral@hwi.pt por defeito, override via env)."""
+    import os
+    return os.environ.get("ADMIN_ALERT_EMAIL", "geral@hwi.pt")
+
+
+async def weekly_missing_records_scan(db_, base_url: str = "") -> int:
+    """Procura dias úteis (Seg-Sex, excluindo feriados PT) da semana que
+    terminou HOJE (Domingo) em que o utilizador não tem:
+      - qualquer registo de ponto (`time_entries`)
+      - nem qualquer falta registada (`absences`)
+      - nem férias aprovadas (`vacation_requests` status=approved)
+      - nem folga em `day_status_overrides`.
+
+    Para cada utilizador com dias em falta, envia 1 email ao próprio (se
+    tiver `email`) e 1 email ao admin (`geral@hwi.pt`) a pedir para definir
+    o tipo de falta em /absences.
+    """
+    import logging
+    from datetime import date, timedelta
+    from server import send_notification_email
+    from vacation_engine import feriados_do_ano
+
+    today = date.today()
+    # Semana que terminou hoje (assumimos correr ao Domingo 23:59) —
+    # se por qualquer razão correr noutro dia, calcula a última Seg-Dom.
+    # weekday(): Mon=0..Sun=6
+    days_since_sunday = (today.weekday() + 1) % 7  # Sun=0, Mon=1..Sat=6
+    last_sunday = today - timedelta(days=days_since_sunday)
+    last_monday = last_sunday - timedelta(days=6)
+
+    feriados = set()
+    for y in {last_monday.year, last_sunday.year}:
+        feriados |= feriados_do_ano(y)
+
+    users = await db_.users.find(
+        {"is_active": True}, {"_id": 0, "id": 1, "email": 1, "full_name": 1, "username": 1},
+    ).to_list(1000)
+
+    emails_sent = 0
+    admin_batches: list = []
+    admin_target = await _admin_email(db_)
+
+    for u in users:
+        # Dias úteis da semana passada
+        missing = []
+        d = last_monday
+        while d <= last_sunday:
+            if d.weekday() < 5 and d not in feriados:
+                ds = d.isoformat()
+                # Regista se tem AO MENOS uma ausência justificada? — verifica
+                # cada fonte em paralelo (curto-circuito ao primeiro hit)
+                found = False
+                if await db_.time_entries.find_one(
+                    {"user_id": u["id"], "date": ds}, {"_id": 1}):
+                    found = True
+                if not found and await db_.absences.find_one(
+                    {"user_id": u["id"], "date": ds}, {"_id": 1}):
+                    found = True
+                if not found and await db_.day_status_overrides.find_one(
+                    {"user_id": u["id"], "date": ds}, {"_id": 1}):
+                    found = True
+                if not found:
+                    # Verificar férias aprovadas que abrangem esse dia
+                    vac = await db_.vacation_requests.find_one({
+                        "user_id": u["id"], "status": "approved",
+                        "start_date": {"$lte": ds},
+                        "end_date": {"$gte": ds},
+                    }, {"_id": 1})
+                    if vac:
+                        found = True
+                if not found:
+                    missing.append(ds)
+            d += timedelta(days=1)
+
+        if not missing:
+            continue
+
+        # Envia email ao utilizador
+        name = u.get("full_name") or u.get("username") or "colaborador"
+        days_html = "".join(f"<li>{ds}</li>" for ds in missing)
+        subject_u = f"[HWI] Faltam registos da semana {last_monday.isoformat()} a {last_sunday.isoformat()}"
+        body_u = f"""
+        <html><body style='font-family:Arial,sans-serif;color:#222'>
+        <h2 style='color:#b45309'>Registos em falta</h2>
+        <p>Olá {name},</p>
+        <p>O sistema detectou que os seguintes dias úteis não têm registo de ponto,
+        falta, férias ou folga:</p>
+        <ul>{days_html}</ul>
+        <p>Por favor, entre em <b>{base_url}/absences</b> e defina o tipo de falta
+        para cada um dos dias.</p>
+        <p style='color:#666;font-size:12px;margin-top:16px'>Aviso automático do sistema HWI.</p>
+        </body></html>
+        """
+        if u.get("email"):
+            try:
+                if await send_notification_email(u["email"], subject_u, body_u):
+                    emails_sent += 1
+            except Exception as e:
+                logging.warning(f"Falha ao enviar aviso semanal a {u.get('username')}: {e}")
+
+        admin_batches.append({
+            "name": name, "username": u.get("username"), "days": missing,
+        })
+
+    # 1 email consolidado ao admin
+    if admin_batches and admin_target:
+        rows_html = "".join(
+            f"<tr><td style='padding:6px;border:1px solid #ddd'>{b['name']}</td>"
+            f"<td style='padding:6px;border:1px solid #ddd'>{', '.join(b['days'])}</td></tr>"
+            for b in admin_batches
+        )
+        subject_a = f"[HWI] Colaboradores com registos em falta ({last_monday.isoformat()} → {last_sunday.isoformat()})"
+        body_a = f"""
+        <html><body style='font-family:Arial,sans-serif;color:#222'>
+        <h2 style='color:#b45309'>Registos em falta — semana passada</h2>
+        <p>Estes colaboradores têm dias úteis sem qualquer registo (ponto,
+        falta, férias ou folga). Peça-lhes para definir o tipo de falta em
+        <b>{base_url}/absences</b>:</p>
+        <table style='border-collapse:collapse;width:100%'>
+            <thead><tr>
+                <th style='padding:6px;border:1px solid #ddd;background:#f3f4f6;text-align:left'>Colaborador</th>
+                <th style='padding:6px;border:1px solid #ddd;background:#f3f4f6;text-align:left'>Dias em falta</th>
+            </tr></thead>
+            <tbody>{rows_html}</tbody>
+        </table>
+        <p style='color:#666;font-size:12px;margin-top:16px'>Aviso automático semanal do sistema HWI.</p>
+        </body></html>
+        """
+        try:
+            if await send_notification_email(admin_target, subject_a, body_a):
+                emails_sent += 1
+        except Exception as e:
+            logging.warning(f"Falha ao enviar consolidado ao admin: {e}")
+
+    return emails_sent

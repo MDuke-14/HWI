@@ -28,6 +28,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+37. ✅ **Relatório Mensal — "Sem Registo" + scan semanal (Feb 2026)**:
+    - **Removido "Falta registada pelo admin"**: `time_entries.py` — `justifications_map` já não injecta este texto quando existe uma `absence` (observação é feita pelo `abs_info.obs` do novo motor de faltas v2).
+    - **"FALTA" → "SEM REGISTO"**: dias úteis sem qualquer registo (nem ponto, nem falta, nem férias, nem folga) passam a mostrar `SEM REGISTO` em vez de `FALTA` em ambos os pipelines (endpoint monthly-detailed + PDF). Cor de fundo cinzenta neutra (`#f3f4f6`) no PDF. Endpoint admin de override de status continua a aceitar `FALTA` (não substitui o override manual).
+    - **Scan semanal automático**: novo job APScheduler `weekly_missing_records` (Domingo 23:59, tz Europe/Lisbon). Percorre todos os users activos, verifica os 5 dias úteis da semana passada (Seg-Sex, exclui feriados PT nacionais+municipais Barreiro/Setúbal/Lisboa). Para cada dia útil sem entrada em `time_entries` NEM em `absences` NEM em `day_status_overrides` NEM abrangido por férias aprovadas, envia:
+      - 1 email individual ao colaborador com a lista de dias e link para `/absences`
+      - 1 email consolidado ao admin (`ADMIN_ALERT_EMAIL` env, default `geral@hwi.pt`) com tabela de todos os users afectados
+    - Validado E2E: `weekly_missing_records_scan()` corrido manualmente → 3 emails (2 users + 1 admin consolidado) para semana 2026-08-10 a 2026-08-16.
+
 36. ✅ **`/admin` aba Relatórios — mostrar todos os utilizadores (Feb 2026)**: antes só apareciam users com registos no período. Agora a lista é sempre construída a partir de `users` (todos activos), fundida com `reports.users`. Users sem registos mostram `0h` a cinzento + label "(sem registos neste período)" e o botão PDF continua acessível para gerar mesmo assim. Users inactivos que tiveram registos mantêm-se no fim da lista. Sem alteração ao backend.
 
 35. ✅ **Reformulação do sistema de Faltas (Código do Trabalho arts. 248.º–257.º) (Feb 2026)**:

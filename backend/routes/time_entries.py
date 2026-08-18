@@ -1314,7 +1314,7 @@ async def get_custom_range_report(
             elif is_holiday:
                 day_data["status"] = "FERIADO"
             else:
-                day_data["status"] = "FALTA"
+                day_data["status"] = "SEM REGISTO"
             
             day_data["entries"] = []
             day_data["total_hours"] = 0
@@ -1570,8 +1570,9 @@ async def get_monthly_detailed_report(
             elif is_holiday:
                 day_data["status"] = "FERIADO"
             else:
-                # Dia útil sem registo = FALTA
-                day_data["status"] = "FALTA"
+                # Dia útil sem registo — mostra "Sem Registo" (só passa a FALTA
+                # quando o admin/utilizador criar um pedido em /absences).
+                day_data["status"] = "SEM REGISTO"
             
             day_data["entries"] = []
             day_data["total_hours"] = 0
@@ -1769,7 +1770,8 @@ async def download_monthly_pdf_report(
     for absence in absences:
         absence_date = absence.get("date")
         if absence_date:
-            justifications_map[absence_date] = "Falta registada pelo admin"
+            # Deixamos vazio aqui — o observations final é injectado por absences_v2 (ver `abs_info.obs`)
+            justifications_map.setdefault(absence_date, "")
     
     # Get manual day status overrides (admin-set statuses)
     manual_statuses = {}
@@ -1900,8 +1902,9 @@ async def download_monthly_pdf_report(
             elif is_holiday:
                 day_data["status"] = "FERIADO"
             else:
-                # Dia útil sem registo = FALTA
-                day_data["status"] = "FALTA"
+                # Dia útil sem registo — mostra "Sem Registo" (só passa a FALTA
+                # quando o admin/utilizador criar um pedido em /absences).
+                day_data["status"] = "SEM REGISTO"
             
             day_data["entries"] = []
             day_data["total_hours"] = 0

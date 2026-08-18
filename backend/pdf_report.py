@@ -265,6 +265,8 @@ def generate_monthly_pdf_report(report_data):
             entries_text = 'FÉRIAS'
         elif day['status'] == 'FALTA':
             entries_text = 'FALTA'
+        elif day['status'] == 'SEM REGISTO':
+            entries_text = 'SEM REGISTO'
         elif day['status'] == 'FALTA INJUSTIFICADA':
             entries_text = 'FALTA INJUSTIFICADA'
         elif day['status'] == 'FALTA JUSTIFICADA':
@@ -399,6 +401,8 @@ def generate_monthly_pdf_report(report_data):
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#dbeafe')))
         elif day['status'] == 'FALTA':
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#fee2e2')))
+        elif day['status'] == 'SEM REGISTO':
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#f3f4f6')))
         elif day['status'] == 'TRABALHADO':
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#d1fae5')))
     

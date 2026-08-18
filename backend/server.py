@@ -1083,6 +1083,22 @@ async def startup_event():
         replace_existing=True,
     )
 
+    # ---- Verificação semanal de faltas de registo (Domingo 23:59) ----
+    async def scheduled_weekly_missing_records():
+        try:
+            from routes.absences_v2 import weekly_missing_records_scan
+            n = await weekly_missing_records_scan(db, base_url=base_url)
+            logging.info(f"📧 Verificação semanal de faltas de registo: {n} emails enviados")
+        except Exception as e:
+            logging.error(f"Erro na verificação semanal de faltas: {e}")
+
+    scheduler.add_job(
+        scheduled_weekly_missing_records,
+        CronTrigger(day_of_week='sun', hour=23, minute=59),
+        id='weekly_missing_records',
+        replace_existing=True,
+    )
+
     scheduler.start()
     logging.info("📅 Scheduler de verificações de ponto iniciado (clock-in 09:30, overtime 8h15 a cada 15min)")
     logging.info("   + Lembretes de serviço a cada 15 min (07:00-20:00)")
