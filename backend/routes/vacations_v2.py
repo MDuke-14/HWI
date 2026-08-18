@@ -293,7 +293,9 @@ async def admin_get_mapa(
 ):
     """Devolve o mapa de férias do ano (colaborador × períodos)."""
     users = await db.users.find(
-        {"is_active": True}, {"_id": 0, "hashed_password": 0},
+        # Trata `is_active` ausente como ativo (users legacy em produção não
+        # têm este campo). Ficam excluídos apenas os explicitamente inativos.
+        {"is_active": {"$ne": False}}, {"_id": 0, "hashed_password": 0},
     ).to_list(1000)
     rows = []
     for u in users:
@@ -365,7 +367,9 @@ async def admin_get_mapa_excel(
     label_curr = f"F{str(year)[-2:]}"       # ex: F26
 
     users = await db.users.find(
-        {"is_active": True}, {"_id": 0, "hashed_password": 0},
+        # Trata `is_active` ausente como ativo (users legacy em produção não
+        # têm este campo). Ficam excluídos apenas os explicitamente inativos.
+        {"is_active": {"$ne": False}}, {"_id": 0, "hashed_password": 0},
     ).to_list(1000)
 
     wb = Workbook()
@@ -538,7 +542,7 @@ async def admin_publicar_mapa(
     )
     # Notifica utilizadores
     users = await db.users.find(
-        {"is_active": True}, {"_id": 0, "id": 1, "full_name": 1, "username": 1},
+        {"is_active": {"$ne": False}}, {"_id": 0, "id": 1, "full_name": 1, "username": 1},
     ).to_list(1000)
     for u in users:
         try:

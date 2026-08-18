@@ -1552,8 +1552,12 @@ async def send_reference_link_email(client_email: str, client_name: str, fs_numb
         logging.error(f"Failed to send reference link email: {e}")
 
 
-async def send_vacation_request_email(user_name: str, user_email: str, start_date: str, end_date: str, days_requested: int):
-    """Send email to team when vacation is requested"""
+async def send_vacation_request_email(user_name: str, user_email: str, start_date: str, end_date: str, days_requested: int, approval_token: str = None, reason: str = ""):
+    """Send email to team when vacation is requested.
+
+    Quando `approval_token` é fornecido, inclui 2 botões one-click
+    (Aprovar / Rejeitar) que apontam para `/vac-decide/{token}?action=…`.
+    """
     try:
         smtp_host = os.environ.get('SMTP_HOST')
         smtp_port = int(os.environ.get('SMTP_PORT', 587))
@@ -1567,6 +1571,29 @@ async def send_vacation_request_email(user_name: str, user_email: str, start_dat
         
         subject = f"Nova Solicitação de Férias — {user_name}"
         
+        # Botões one-click de aprovar/rejeitar (mesmo padrão das horas extras)
+        buttons_html = ""
+        if approval_token:
+            base = os.environ.get('PUBLIC_BASE_URL', 'https://timesync-app-2.emergent.host')
+            approve_url = f"{base}/auth-decide/{approval_token}?action=approve"
+            reject_url = f"{base}/auth-decide/{approval_token}?action=reject"
+            buttons_html = f"""
+            <div style="margin: 25px 0; text-align: center;">
+                <a href="{approve_url}" style="background:#16a34a;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;margin-right:10px;display:inline-block;">✅ APROVAR</a>
+                <a href="{reject_url}" style="background:#dc2626;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">❌ REJEITAR</a>
+            </div>
+            <p style="text-align:center;color:#666;font-size:12px;">Link válido por 7 dias. Também pode decidir no painel admin.</p>
+            """
+        
+        reason_html = ""
+        if reason:
+            safe_reason = reason.replace('<', '&lt;').replace('>', '&gt;')
+            reason_html = f"""
+                    <tr>
+                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Motivo:</td>
+                        <td style="padding: 8px 15px;">{safe_reason}</td>
+                    </tr>"""
+
         html_body = f"""
         <html>
             <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
@@ -1587,16 +1614,14 @@ async def send_vacation_request_email(user_name: str, user_email: str, start_dat
                     <tr>
                         <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Dias úteis:</td>
                         <td style="padding: 8px 15px;"><strong>{days_requested}</strong> dias</td>
-                    </tr>
+                    </tr>{reason_html}
                 </table>
                 
-                <p style="margin-top: 25px;">Por favor, acesse o painel de administração e aprove ou recuse a solicitação.</p>
-                
-                <p style="margin-top: 20px;">Aguardando sua decisão.</p>
+                {buttons_html}
                 
                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
                 <p style="color: #666; font-size: 12px;">
-                    Sistema de Gestão de Ponto | Emergent
+                    Sistema de Gestão de Ponto | HWI
                 </p>
             </body>
         </html>

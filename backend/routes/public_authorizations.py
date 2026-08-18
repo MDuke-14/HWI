@@ -17,10 +17,9 @@ router = APIRouter()
 
 
 async def _find_auth_by_token(token: str):
-    """Procura o pedido de autorização pelo approval_token em ambas as collections.
+    """Procura o pedido pelo approval_token em collections suportadas.
 
-    Retorna (auth_doc, kind) onde kind = 'day' | 'overtime'. Caso não encontre,
-    retorna (None, None).
+    Retorna (auth_doc, kind) onde kind ∈ {'day', 'overtime', 'vacation'}.
     """
     doc = await db.day_authorizations.find_one({"approval_token": token}, {"_id": 0})
     if doc:
@@ -28,6 +27,9 @@ async def _find_auth_by_token(token: str):
     doc = await db.overtime_authorizations.find_one({"approval_token": token}, {"_id": 0})
     if doc:
         return doc, "overtime"
+    doc = await db.vacation_requests.find_one({"approval_token": token}, {"_id": 0})
+    if doc:
+        return doc, "vacation"
     return None, None
 
 
@@ -58,17 +60,20 @@ async def get_public_authorization(token: str):
     if _is_token_expired(auth):
         raise HTTPException(status_code=410, detail="Este link de autorização expirou (validade 7 dias).")
 
-    # Períodos de ponto do dia (mesmo enrichment usado no admin)
+    # Períodos de ponto do dia (mesmo enrichment usado no admin) — só para
+    # autorizações day/overtime; ferias mostra período completo.
     user_id = auth.get("user_id")
-    date_str = auth.get("date")
+    date_str = auth.get("date") or auth.get("start_date")
     periodos = []
     tipo_colab = None
-    user_full_name = auth.get("user_name")
+    user_full_name = auth.get("user_name") or auth.get("username")
     try:
-        entries = await db.time_entries.find(
-            {"user_id": user_id, "date": date_str},
-            {"_id": 0, "start_time": 1, "end_time": 1, "status": 1}
-        ).sort("start_time", 1).to_list(100)
+        if kind in ("day", "overtime"):
+            entries = await db.time_entries.find(
+                {"user_id": user_id, "date": date_str},
+                {"_id": 0, "start_time": 1, "end_time": 1, "status": 1}
+            ).sort("start_time", 1).to_list(100)
+            entries = []
         for e in entries:
             s = e.get("start_time")
             ed = e.get("end_time")
@@ -91,7 +96,7 @@ async def get_public_authorization(token: str):
     except Exception as enrich_err:
         logging.warning(f"[public-auth] enrichment falhou: {enrich_err}")
 
-    return {
+    result = {
         "kind": kind,
         "user_name": user_full_name,
         "tipo_colaborador": tipo_colab,
@@ -103,6 +108,14 @@ async def get_public_authorization(token: str):
         "decided_by_name": auth.get("decided_by_name"),
         "decided_at": auth.get("decided_at"),
     }
+    if kind == "vacation":
+        result.update({
+            "start_date": auth.get("start_date"),
+            "end_date": auth.get("end_date"),
+            "days_requested": auth.get("days_requested"),
+            "reason": auth.get("reason"),
+        })
+    return result
 
 
 @router.post("/public/authorizations/{token}/decide")
@@ -136,6 +149,44 @@ async def decide_public_authorization(
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent", "")[:200]
     decided_at = datetime.now(timezone.utc).isoformat()
+
+    if kind == "vacation":
+        new_status = "approved" if action == "approve" else "rejected"
+        await db.vacation_requests.update_one(
+            {"approval_token": token},
+            {"$set": {
+                "status": new_status,
+                "reviewed_by": "email-link",
+                "reviewed_by_name": "geral@hwi.pt (via email)",
+                "reviewed_at": decided_at,
+                "decided_by_name": "geral@hwi.pt (via email)",
+                "decided_at": decided_at,
+                "decided_via": "email-link",
+                "decided_from_ip": client_ip,
+                "decided_user_agent": user_agent,
+            }},
+        )
+        # Notificação in-app ao colaborador
+        try:
+            from server import create_notification  # type: ignore
+            msg = (
+                f"Férias {auth.get('start_date')} → {auth.get('end_date')} "
+                f"{'aprovadas' if new_status == 'approved' else 'rejeitadas'} via email."
+            )
+            await create_notification(
+                auth["user_id"],
+                f"vacation_{new_status}",
+                msg,
+                auth.get("id"),
+            )
+        except Exception as _ne:
+            logging.warning(f"[public-auth-vac] notification falhou: {_ne}")
+        return {
+            "status": new_status,
+            "message": "Férias aprovadas" if new_status == "approved" else "Pedido de férias rejeitado",
+            "decided_by_name": "geral@hwi.pt (via email)",
+            "decided_at": decided_at,
+        }
 
     if kind == "day":
         # Day authorization tem o seu próprio fluxo (server.py decide_day_authorization)

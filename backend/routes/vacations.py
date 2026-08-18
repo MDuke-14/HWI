@@ -222,6 +222,10 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
     
     req_dict = vac_request.model_dump()
     req_dict['created_at'] = req_dict['created_at'].isoformat()
+    # Token público para aprovar/rejeitar por email (uuid + expiração 7 dias)
+    import uuid as _uuid
+    req_dict['approval_token'] = str(_uuid.uuid4())
+    req_dict['token_expires_at'] = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
     await db.vacation_requests.insert_one(req_dict)
     
     # Get user details for email
@@ -229,13 +233,15 @@ async def request_vacation(request_data: VacationRequestCreate, current_user: di
     user_full_name = user.get("full_name", current_user["username"])
     user_email = user.get("email", "")
     
-    # Send email to team (geral@hwi.pt)
+    # Send email to team (geral@hwi.pt) — com botões one-click de aprovar/rejeitar
     await send_vacation_request_email(
         user_name=user_full_name,
         user_email=user_email,
         start_date=request_data.start_date,
         end_date=request_data.end_date,
-        days_requested=days_requested
+        days_requested=days_requested,
+        approval_token=req_dict['approval_token'],
+        reason=request_data.reason or "",
     )
     
     # Notify all admins

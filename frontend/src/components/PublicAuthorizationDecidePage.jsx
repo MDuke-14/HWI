@@ -122,12 +122,29 @@ export default function PublicAuthorizationDecidePage() {
             <div className="grid grid-cols-3 gap-2 text-sm">
               <span className="text-gray-500">Utilizador</span>
               <span className="col-span-2 font-semibold">{info.user_name} <span className="text-gray-500 font-normal">({renderRolePt(info.tipo_colaborador)})</span></span>
-              <span className="text-gray-500">Data</span>
-              <span className="col-span-2 font-semibold">{info.date}</span>
-              {info.day_type && (
+              {info.kind === 'vacation' ? (
                 <>
-                  <span className="text-gray-500">Tipo</span>
-                  <span className="col-span-2 font-semibold">{info.day_type}</span>
+                  <span className="text-gray-500">Período</span>
+                  <span className="col-span-2 font-semibold">{info.start_date} → {info.end_date}</span>
+                  <span className="text-gray-500">Dias úteis</span>
+                  <span className="col-span-2 font-semibold">{info.days_requested}</span>
+                  {info.reason && (
+                    <>
+                      <span className="text-gray-500">Motivo</span>
+                      <span className="col-span-2">{info.reason}</span>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span className="text-gray-500">Data</span>
+                  <span className="col-span-2 font-semibold">{info.date}</span>
+                  {info.day_type && (
+                    <>
+                      <span className="text-gray-500">Tipo</span>
+                      <span className="col-span-2 font-semibold">{info.day_type}</span>
+                    </>
+                  )}
                 </>
               )}
             </div>

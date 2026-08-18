@@ -28,6 +28,17 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+39. ✅ **Aprovação de férias por email (one-click) — igual às horas extras (Feb 2026)**:
+    - **Backend**:
+      - `routes/vacations.py` — ao criar um pedido `POST /vacations/request` passa a gerar `approval_token` (UUID) + `token_expires_at` (7 dias). Envia `approval_token` + `reason` para o email helper.
+      - `server.py::send_vacation_request_email` — nova assinatura aceita `approval_token` e `reason`. Se token existir, o HTML do email inclui dois botões one-click ✅ **APROVAR** / ❌ **REJEITAR** que apontam para `/auth-decide/{token}?action=approve|reject`. Nota de expiração 7 dias no fim.
+      - `routes/public_authorizations.py::_find_auth_by_token` — passa a procurar em 3 collections: `day_authorizations`, `overtime_authorizations`, `vacation_requests`. Novo `kind="vacation"`.
+      - `GET /public/authorizations/{token}` — quando `kind=vacation` devolve também `start_date`, `end_date`, `days_requested` e `reason` (sem enrichment de time_entries).
+      - `POST /public/authorizations/{token}/decide` — nova branch `kind=vacation` que actualiza `vacation_requests` com `status={approved|rejected}` + metadados de auditoria (`decided_via`, `decided_from_ip`, `decided_user_agent`), replica a lógica das horas extras. Envia notificação in-app ao colaborador.
+    - **Frontend** — `PublicAuthorizationDecidePage.jsx` reaproveita a mesma rota `/auth-decide/:token`; card mostra "Período / Dias úteis / Motivo" quando `kind=vacation`, ou "Data / Tipo" para day/overtime.
+    - **Fix bónus incluído** (`is_active`): substituído `{"is_active": True}` por `{"is_active": {"$ne": False}}` em `vacations_v2.py` (mapa/breakdown/publicar) e `absences_v2.py` (scan semanal), corrigindo o RCA da produção onde users legacy não tinham este campo → Mapa de Férias devolve dados como esperado.
+    - **Testado E2E (curl)**: pedido criado → GET /public/authorizations/{token} devolve `kind=vacation` + período + motivo → POST decide?action=approve marca `status=approved`, `decided_by_name="geral@hwi.pt (via email)"`, `decided_at` — GET seguinte confirma `status=approved`.
+
 38. ✅ **Mapa de Férias Excel — formato calendário anual com F(N-1) vs F(N) (Feb 2026)**:
     - Reescrito `admin_get_mapa_excel` em `routes/vacations_v2.py`.
     - Formato: 1 linha por mês × 31 colunas de dia por colaborador (12 linhas por trabalhador + linha em branco). Colunas iniciais: `Colaborador` + `Mês` + dias 1..31.

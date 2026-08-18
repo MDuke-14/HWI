@@ -441,7 +441,8 @@ async def weekly_missing_records_scan(db_, base_url: str = "") -> int:
         feriados |= feriados_do_ano(y)
 
     users = await db_.users.find(
-        {"is_active": True}, {"_id": 0, "id": 1, "email": 1, "full_name": 1, "username": 1},
+        # Trata `is_active` ausente como ativo (users legacy em produção)
+        {"is_active": {"$ne": False}}, {"_id": 0, "id": 1, "email": 1, "full_name": 1, "username": 1},
     ).to_list(1000)
 
     emails_sent = 0
