@@ -7,6 +7,7 @@ FIXED_HOLIDAYS = {
     (4, 25): "Dia da Liberdade",
     (5, 1): "Dia do Trabalhador",
     (6, 10): "Dia de Portugal",
+    (6, 28): "Dia da Cidade do Barreiro",  # Feriado municipal — sede da empresa
     (8, 15): "Assunção de Nossa Senhora",
     (10, 5): "Implantação da República",
     (11, 1): "Todos os Santos",

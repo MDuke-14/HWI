@@ -29,6 +29,10 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Sessão Atual (Feb 2026) — Resumo
 
+42. ✅ **Calendário — férias ocultas em fim-de-semana/feriados + feriado municipal Barreiro (Feb 2026)**:
+    - **`/calendar`**: `getVacationsForDate` em `Calendar.jsx` agora devolve `[]` se a data for sábado, domingo ou feriado — as barras de férias deixam de aparecer nesses dias no grid.
+    - **Feriado municipal do Barreiro (28 de Junho — Dia da Cidade)** adicionado em 3 fontes: `backend/holidays.py:FIXED_HOLIDAYS`, `backend/cronometro_logic.py:FERIADOS_PORTUGAL` (2025/2026/2027) e `frontend/Calendar.jsx:getHolidays`. Verificado via `is_holiday`, `is_feriado` e `vacation_engine.feriados_do_ano(2026)` — tudo devolve `True/incluído`.
+
 40. ✅ **AdminTimeEntries — botões limpos (Feb 2026)**:
     - Removido botão amarelo "8h" (Ajustar para 8h) + `handleAdjustTo8Hours` + import `Zap` de `AdminTimeEntries.jsx`. (Endpoint `POST /admin/time-entries/{id}/adjust-to-8h` mantido no backend — continua a ser usado pelo `Reports.jsx`.)
     - Botão "Justificar" agora só aparece quando o dia é útil (`!day.isWeekend`) **e** não tem registos (`!day.hasEntries`) **e** não tem justificação (`!day.justification`). Deixa de aparecer em dias com registos ou fins-de-semana.

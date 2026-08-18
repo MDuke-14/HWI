@@ -25,6 +25,7 @@ FERIADOS_PORTUGAL = {
     (2025, 5, 1),   # Dia do Trabalhador
     (2025, 6, 10),  # Dia de Portugal
     (2025, 6, 19),  # Corpo de Deus
+    (2025, 6, 28),  # Dia da Cidade do Barreiro (feriado municipal)
     (2025, 8, 15),  # Assunção de Nossa Senhora
     (2025, 10, 5),  # Implantação da República
     (2025, 11, 1),  # Todos os Santos
@@ -39,6 +40,7 @@ FERIADOS_PORTUGAL = {
     (2026, 5, 1),   # Dia do Trabalhador
     (2026, 6, 4),   # Corpo de Deus
     (2026, 6, 10),  # Dia de Portugal
+    (2026, 6, 28),  # Dia da Cidade do Barreiro (feriado municipal)
     (2026, 8, 15),  # Assunção de Nossa Senhora
     (2026, 10, 5),  # Implantação da República
     (2026, 11, 1),  # Todos os Santos
@@ -53,6 +55,7 @@ FERIADOS_PORTUGAL = {
     (2027, 5, 1),   # Dia do Trabalhador
     (2027, 5, 27),  # Corpo de Deus
     (2027, 6, 10),  # Dia de Portugal
+    (2027, 6, 28),  # Dia da Cidade do Barreiro (feriado municipal)
     (2027, 8, 15),  # Assunção de Nossa Senhora
     (2027, 10, 5),  # Implantação da República
     (2027, 11, 1),  # Todos os Santos

@@ -52,13 +52,14 @@ const Calendar = ({ user, onLogout }) => {
     status: 'scheduled'
   });
 
-  // Feriados portugueses
+  // Feriados portugueses (nacionais + municipal do Barreiro, sede da empresa)
   const getHolidays = (year) => {
     const fixedHolidays = [
       { date: `${year}-01-01`, name: 'Ano Novo' },
       { date: `${year}-04-25`, name: 'Dia da Liberdade' },
       { date: `${year}-05-01`, name: 'Dia do Trabalhador' },
       { date: `${year}-06-10`, name: 'Dia de Portugal' },
+      { date: `${year}-06-28`, name: 'Dia da Cidade do Barreiro' },
       { date: `${year}-08-15`, name: 'Assunção de Nossa Senhora' },
       { date: `${year}-10-05`, name: 'Implantação da República' },
       { date: `${year}-11-01`, name: 'Todos os Santos' },
@@ -319,6 +320,12 @@ const Calendar = ({ user, onLogout }) => {
 
   const getVacationsForDate = (dateStr) => {
     if (!dateStr) return [];
+    // Não mostrar férias em fins-de-semana nem em feriados
+    // (sábado=6, domingo=0 em JS Date com 'T00:00:00' no fuso local)
+    const d = new Date(dateStr + 'T00:00:00');
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6) return [];
+    if (getHolidayForDate(dateStr)) return [];
     return vacations.filter(v => dateStr >= v.start_date && dateStr <= v.end_date);
   };
 
