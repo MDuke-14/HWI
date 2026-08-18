@@ -171,16 +171,37 @@ def generate_monthly_pdf_report(report_data):
     vb2 = summary.get('vacation_breakdown_v2') or {}
     year_rows = vb2.get('year_breakdown') or []
     if year_rows:
+        # Estilo para células "Períodos" com wrap horizontal (flow left-to-right)
+        periodos_style = ParagraphStyle(
+            'PeriodosCell', parent=styles['Normal'],
+            fontSize=8, leading=10, textColor=colors.HexColor('#111111'),
+            wordWrap='CJK',  # permite quebra em qualquer ponto quando necessário
+        )
+        def _fmt_periodo(p):
+            s = p.get('start') or ''
+            e = p.get('end') or ''
+            days = p.get('days', 0)
+            # dd/mm/yyyy compacto — se start==end mostra só uma data
+            def _dm(iso):
+                try:
+                    return datetime.strptime(iso, '%Y-%m-%d').strftime('%d/%m/%Y')
+                except Exception:
+                    return iso
+            if s == e:
+                return f"{_dm(s)} ({days}d)"
+            return f"{_dm(s)}→{_dm(e)} ({days}d)"
+
         vac_data = [[
             'Ano', 'Vencidos', 'Transitados', 'Gozados', 'Disponíveis',
-            'Marcados (futuros)', 'Períodos'
+            'Marcados', 'Períodos'
         ]]
         for y in year_rows:
             periodos = y.get('periodos') or []
-            periodos_str = ' · '.join(
-                f"{p.get('start')}→{p.get('end')} ({p.get('days')}d)"
-                for p in periodos
-            ) if periodos else '-'
+            if periodos:
+                periodos_text = ' · '.join(_fmt_periodo(p) for p in periodos)
+                periodos_cell = Paragraph(periodos_text, periodos_style)
+            else:
+                periodos_cell = Paragraph('-', periodos_style)
             vac_data.append([
                 str(y.get('year', '')),
                 str(y.get('dias_vencidos', 0)),
@@ -188,11 +209,12 @@ def generate_monthly_pdf_report(report_data):
                 str(y.get('dias_gozados', 0)),
                 str(y.get('dias_disponiveis', 0)),
                 str(y.get('dias_marcados', 0)),
-                periodos_str,
+                periodos_cell,
             ])
+        # Landscape útil ≈ 28cm — dar mais espaço a "Períodos" para flow horizontal
         vac_table = Table(
             vac_data,
-            colWidths=[1.6*cm, 2.2*cm, 2.6*cm, 2.2*cm, 2.6*cm, 3.2*cm, 8.0*cm],
+            colWidths=[1.4*cm, 2.0*cm, 2.2*cm, 2.0*cm, 2.2*cm, 2.2*cm, 13.0*cm],
         )
         vac_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#374151')),
@@ -201,6 +223,7 @@ def generate_monthly_pdf_report(report_data):
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('ALIGN', (0, 0), (5, -1), 'CENTER'),
             ('ALIGN', (6, 0), (6, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f7fafc')),
             ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#cbd5e0')),
             ('PADDING', (0, 0), (-1, -1), 5),

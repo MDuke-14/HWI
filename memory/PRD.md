@@ -28,6 +28,10 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+34. ✅ **Ajustes UX ao sistema de Férias (Feb 2026)**:
+    - **PDF - Períodos horizontais**: coluna Períodos no relatório mensal passou a usar `Paragraph` (com `wordWrap='CJK'`) + coluna alargada de 8cm→13cm. Formato compactado (`dd/mm/yyyy (Nd)` para 1 dia, `dd/mm/yyyy→dd/mm/yyyy (Nd)` para intervalos). Textos deixam de ser truncados e fluem em linha (com quebra natural quando necessário) em vez de amontoados verticalmente.
+    - **"Gerir Férias" movido para `/admin` › aba Férias**: criada nova secção "Colaboradores" na aba, com lista de users activos e botão "Gerir Férias" por linha. Botão "Mapa de Férias" também nessa mesma secção (header). `AdminDashboard.jsx` importa `VacationConfigModal` + `MapaFeriasModal` e renderiza no fim. Removido o botão "Gerir Férias" da página `/vacations` (o Mapa foi mantido também lá para acesso rápido).
+
 33. ✅ **Reformulação total do sistema de Férias (Código do Trabalho — arts. 237.º–246.º, 264.º) (Feb 2026)**:
     - **Novo motor legal** `/app/backend/vacation_engine.py`: cálculo separado e explícito de **Dias Vencidos** (Art. 239.º/240.º), **Transitados** (Art. 244.º), **Gozados**, **Marcados** (futuros) e **Disponíveis** = vencidos+transitados-gozados-marcados. Ano de admissão: 2 dias/mês, máx **20**, gozáveis só após 6 meses. Anos seguintes: 22 dias úteis a 1 Jan. Feriados excluídos: nacionais + municipais **Barreiro (22/7)**, **Setúbal (15/9)**, **Lisboa (13/6)**.
     - **Novo modelo isolado** `vacation_configs` (1 doc/user): `admissao_date` (permanente, obrigatória, nunca em branco após set), `dias_gozados_anteriores` (dict {year:int} — histórico pré-sistema), `subsidio_ferias_valor` (meta informativa, não conta em dias). **Migração lazy** ao 1º acesso: para users com `vacation_balances.company_start_date` copia esse valor para o novo modelo + importa `vacation_taken_by_year`. **Não elimina** dados existentes.

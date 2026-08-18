@@ -351,15 +351,6 @@ const Vacations = ({ user, onLogout }) => {
                           <div className="flex justify-end gap-2 flex-wrap">
                             <Button
                               size="sm"
-                              onClick={() => { setConfigModalUser(ub); setShowConfigModal(true); }}
-                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs"
-                              data-testid={`gerir-ferias-${ub.user_id}`}
-                            >
-                              <Settings className="w-3 h-3 mr-1" />
-                              Gerir Férias
-                            </Button>
-                            <Button
-                              size="sm"
                               onClick={() => openTakenDialog(ub)}
                               className="bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs"
                               data-testid={`edit-taken-${ub.user_id}`}

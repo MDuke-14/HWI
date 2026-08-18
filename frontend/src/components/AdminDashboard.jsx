@@ -15,6 +15,8 @@ import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, 
 import HelpTooltip from '@/components/HelpTooltip';
 import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
+import VacationConfigModal from '@/components/vacations/VacationConfigModal';
+import MapaFeriasModal from '@/components/vacations/MapaFeriasModal';
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,6 +48,10 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [verifying, setVerifying] = useState(false);
   const [verifyMonth, setVerifyMonth] = useState(new Date().getMonth() + 1);
   const [verifyYear, setVerifyYear] = useState(new Date().getFullYear());
+  // Novo sistema de férias — modais partilhados
+  const [showVacConfig, setShowVacConfig] = useState(false);
+  const [vacConfigUser, setVacConfigUser] = useState(null);
+  const [showMapaFerias, setShowMapaFerias] = useState(false);
   
   // Estados para seleção de mês no Relatório Consolidado
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
@@ -943,6 +949,59 @@ const AdminDashboard = ({ user, onLogout }) => {
                   </div>
                 </div>
               )}
+              {/* Secção: Colaboradores — gestão individual + Mapa de Férias (Feb 2026) */}
+              <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+                <div className={`flex items-center justify-between gap-2 flex-wrap ${isMobile ? 'mb-3' : 'mb-6'}`}>
+                  <h2 className={`${isMobile ? 'text-base' : 'text-2xl'} font-semibold text-white`}>
+                    Colaboradores
+                  </h2>
+                  <Button
+                    onClick={() => setShowMapaFerias(true)}
+                    className={`bg-blue-600 hover:bg-blue-700 ${isMobile ? 'text-xs px-3 py-1' : ''}`}
+                    size={isMobile ? 'sm' : 'default'}
+                    data-testid="admin-btn-mapa-ferias"
+                  >
+                    <Map className="w-4 h-4 mr-1" />
+                    Mapa de Férias
+                  </Button>
+                </div>
+                {(users || []).filter(u => u.is_active !== false).length === 0 ? (
+                  <p className="text-gray-500 text-sm">Sem colaboradores activos.</p>
+                ) : (
+                  <div className={isMobile ? 'space-y-2' : 'space-y-3'}>
+                    {(users || []).filter(u => u.is_active !== false).map((u) => (
+                      <div
+                        key={u.id}
+                        className={`bg-[#1a1a1a] rounded-lg ${isMobile ? 'p-3' : 'p-4'} flex items-center justify-between gap-3`}
+                        data-testid={`admin-vac-user-${u.id}`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-white font-medium ${isMobile ? 'text-sm' : 'text-base'} truncate`}>
+                            {u.full_name || u.username}
+                          </div>
+                          <div className="text-gray-500 text-xs">
+                            {u.email || u.username}
+                            {u.company_start_date && (
+                              <span className="ml-2">
+                                · Adm.: {new Date(u.company_start_date + 'T00:00:00').toLocaleDateString('pt-PT')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => { setVacConfigUser({ id: u.id, user_id: u.id, full_name: u.full_name, username: u.username }); setShowVacConfig(true); }}
+                          className={`bg-blue-600 hover:bg-blue-700 ${isMobile ? 'text-xs px-2' : ''}`}
+                          data-testid={`admin-gerir-ferias-${u.id}`}
+                        >
+                          <Calendar className="w-3.5 h-3.5 mr-1" />
+                          Gerir Férias
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
@@ -2665,6 +2724,15 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Novo sistema de férias — modais partilhados */}
+        <VacationConfigModal
+          open={showVacConfig}
+          onOpenChange={setShowVacConfig}
+          userTarget={vacConfigUser}
+          onSaved={() => { fetchUsers(); fetchPendingVacations(); }}
+        />
+        <MapaFeriasModal open={showMapaFerias} onOpenChange={setShowMapaFerias} />
       </div>
     </div>
   );
