@@ -43,9 +43,9 @@ router = APIRouter()
 # =============================================================================
 
 async def _get_config(user_id: str) -> dict:
-    """Devolve config do user (novo modelo). Se não existir mas houver
-    vacation_balances com company_start_date, faz upsert-lazy migrando esse
-    campo para preservar histórico."""
+    """Devolve config do user (novo modelo, apenas admissão). Se não existir
+    mas houver vacation_balances com company_start_date, faz upsert-lazy
+    migrando esse campo para preservar histórico."""
     cfg = await db.vacation_configs.find_one({"user_id": user_id}, {"_id": 0})
     if cfg:
         return cfg
@@ -58,23 +58,9 @@ async def _get_config(user_id: str) -> dict:
             "admissao_date": legacy["company_start_date"],
             "admissao_date_set_at": datetime.now(timezone.utc).isoformat(),
             "admissao_date_set_by": "migration_v1",
-            "dias_gozados_anteriores": {},  # {year: int}
-            "subsidio_ferias_valor": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
-        # Importar do vacation_taken_by_year legacy (opcional, se existir)
-        taken_docs = await db.vacation_taken_by_year.find(
-            {"user_id": user_id}, {"_id": 0}
-        ).to_list(None)
-        for t in taken_docs:
-            try:
-                y = int(t.get("year"))
-                d = int(t.get("days_taken") or 0)
-                if d > 0:
-                    cfg["dias_gozados_anteriores"][str(y)] = d
-            except (TypeError, ValueError):
-                continue
         await db.vacation_configs.insert_one({**cfg})  # insert fresh dict
         logging.info(f"vacation_configs criada (lazy migration) para user={user_id}")
         return cfg
@@ -85,8 +71,6 @@ async def _get_config(user_id: str) -> dict:
         "admissao_date": None,
         "admissao_date_set_at": None,
         "admissao_date_set_by": None,
-        "dias_gozados_anteriores": {},
-        "subsidio_ferias_valor": None,
     }
 
 
@@ -118,17 +102,10 @@ async def _fetch_saldo_ctx(user_id: str):
         {"user_id": user_id}, {"_id": 0, "date": 1},
     ).to_list(None)
     cancelled_set = {c["date"] for c in cancelled}
-    # dias_gozados_anteriores está em string {"year": int} — normalizar
-    dga = {}
-    for k, v in (cfg.get("dias_gozados_anteriores") or {}).items():
-        try:
-            dga[int(k)] = int(v or 0)
-        except (TypeError, ValueError):
-            continue
-    return cfg, approved, cancelled_set, dga
+    return cfg, approved, cancelled_set
 
 
-def _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=1):
+def _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=1):
     """Constrói o breakdown legal. Falha se admissao_date não estiver definida."""
     if not cfg.get("admissao_date"):
         return {
@@ -143,13 +120,12 @@ def _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=1):
         admissao_date=adm,
         approved_requests=approved,
         cancelled_dates=cancelled_set,
-        dias_gozados_anteriores=dga,
+        dias_gozados_anteriores={},
         include_years_after=include_after,
     )
     totais = totais_do_saldo(saldos)
     return {
         "admissao_date": cfg["admissao_date"],
-        "subsidio_ferias_valor": cfg.get("subsidio_ferias_valor"),
         "year_breakdown": saldos,
         "totais": totais,
     }
@@ -176,15 +152,11 @@ async def admin_put_vacation_config(
 
     Body: {
       admissao_date: "YYYY-MM-DD"  (obrigatório, gravado permanentemente)
-      dias_gozados_anteriores: { "2023": 15, "2024": 10 }  (opcional)
-      subsidio_ferias_valor: number|null  (opcional, meta apenas)
-      motivo: str  (obrigatório para alterações)
     }
     """
     if not await db.users.find_one({"id": user_id}, {"_id": 1}):
         raise HTTPException(404, "Utilizador não encontrado")
 
-    motivo = (data.get("motivo") or "").strip()
     adm_new = (data.get("admissao_date") or "").strip()
     if not adm_new:
         raise HTTPException(400, "admissao_date é obrigatório")
@@ -194,22 +166,6 @@ async def admin_put_vacation_config(
         raise HTTPException(400, "admissao_date com formato inválido (YYYY-MM-DD)")
 
     existing = await _get_config(user_id)
-    is_change = existing.get("admissao_date") is not None
-    if is_change and not motivo:
-        raise HTTPException(400, "motivo é obrigatório em alterações")
-
-    # dias_gozados_anteriores — validar
-    dga_raw = data.get("dias_gozados_anteriores") or {}
-    dga_norm = {}
-    for k, v in dga_raw.items():
-        try:
-            y = int(k)
-            n = int(v or 0)
-            if n < 0:
-                raise ValueError
-            dga_norm[str(y)] = n
-        except (TypeError, ValueError):
-            raise HTTPException(400, f"dias_gozados_anteriores[{k}] inválido")
 
     now = datetime.now(timezone.utc).isoformat()
     new_doc = {
@@ -217,13 +173,17 @@ async def admin_put_vacation_config(
         "admissao_date": adm_new,
         "admissao_date_set_at": existing.get("admissao_date_set_at") or now,
         "admissao_date_set_by": existing.get("admissao_date_set_by") or current_user.get("username"),
-        "dias_gozados_anteriores": dga_norm,
-        "subsidio_ferias_valor": data.get("subsidio_ferias_valor"),
         "created_at": existing.get("created_at") or now,
         "updated_at": now,
     }
+    # Também limpa quaisquer campos legados (subsidio, dias_gozados_anteriores)
     await db.vacation_configs.update_one(
-        {"user_id": user_id}, {"$set": new_doc}, upsert=True,
+        {"user_id": user_id},
+        {
+            "$set": new_doc,
+            "$unset": {"dias_gozados_anteriores": "", "subsidio_ferias_valor": ""},
+        },
+        upsert=True,
     )
 
     # Retro-compat: também guarda em vacation_balances.company_start_date
@@ -238,9 +198,9 @@ async def admin_put_vacation_config(
     await _audit(
         user_id,
         action="update_config",
-        before={k: existing.get(k) for k in ("admissao_date", "dias_gozados_anteriores", "subsidio_ferias_valor")},
-        after={k: new_doc.get(k) for k in ("admissao_date", "dias_gozados_anteriores", "subsidio_ferias_valor")},
-        motivo=motivo,
+        before={"admissao_date": existing.get("admissao_date")},
+        after={"admissao_date": new_doc.get("admissao_date")},
+        motivo="",
         admin=current_user,
     )
     return {"success": True, "config": new_doc}
@@ -256,16 +216,16 @@ async def admin_get_breakdown(
     include_years_after: int = Query(1, ge=0, le=3),
     current_user: dict = Depends(get_current_admin),
 ):
-    cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(user_id)
-    result = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_years_after)
+    cfg, approved, cancelled_set = await _fetch_saldo_ctx(user_id)
+    result = _breakdown_from_ctx(cfg, approved, cancelled_set, include_years_after)
     result["user_id"] = user_id
     return result
 
 
 @router.get("/vacations/breakdown")
 async def user_get_breakdown(current_user: dict = Depends(get_current_user)):
-    cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(current_user["sub"])
-    result = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=1)
+    cfg, approved, cancelled_set = await _fetch_saldo_ctx(current_user["sub"])
+    result = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=1)
     result["user_id"] = current_user["sub"]
     return result
 
@@ -280,6 +240,64 @@ async def admin_get_audit(
         {"user_id": user_id}, {"_id": 0},
     ).sort("created_at", -1).limit(limit).to_list(limit)
     return {"entries": entries}
+
+
+@router.post("/admin/vacations/cleanup-configs")
+async def admin_cleanup_vacation_configs(current_user: dict = Depends(get_current_admin)):
+    """Faz limpeza da colecção `vacation_configs`:
+
+    1. Remove documentos duplicados por `user_id` (mantém o que tem
+       `admissao_date` definida e com `updated_at`/`created_at` mais recente).
+    2. Remove os campos legados `dias_gozados_anteriores` e
+       `subsidio_ferias_valor` de todos os documentos.
+
+    Retorna estatísticas da operação.
+    """
+    # 1) Deduplicação
+    pipeline = [
+        {"$group": {"_id": "$user_id", "count": {"$sum": 1}, "ids": {"$push": "$_id"}}},
+        {"$match": {"count": {"$gt": 1}}},
+    ]
+    dups = await db.vacation_configs.aggregate(pipeline).to_list(None)
+    removed_dups = 0
+    dedup_details = []
+    for d in dups:
+        user_id = d["_id"]
+        docs = await db.vacation_configs.find({"user_id": user_id}).to_list(None)
+
+        def _score(doc):
+            has_adm = 1 if doc.get("admissao_date") else 0
+            updated = doc.get("updated_at") or doc.get("created_at") or ""
+            return (has_adm, updated)
+
+        docs.sort(key=_score, reverse=True)
+        keep = docs[0]
+        to_remove_ids = [doc["_id"] for doc in docs[1:]]
+        if to_remove_ids:
+            res = await db.vacation_configs.delete_many({"_id": {"$in": to_remove_ids}})
+            removed_dups += res.deleted_count
+            dedup_details.append({
+                "user_id": user_id,
+                "kept_admissao_date": keep.get("admissao_date"),
+                "removed": res.deleted_count,
+            })
+
+    # 2) Strip campos legados
+    strip_res = await db.vacation_configs.update_many(
+        {"$or": [
+            {"dias_gozados_anteriores": {"$exists": True}},
+            {"subsidio_ferias_valor": {"$exists": True}},
+        ]},
+        {"$unset": {"dias_gozados_anteriores": "", "subsidio_ferias_valor": ""}},
+    )
+
+    return {
+        "success": True,
+        "duplicates_removed": removed_dups,
+        "duplicates_detail": dedup_details,
+        "legacy_fields_stripped_docs": strip_res.modified_count,
+    }
+
 
 
 # =============================================================================

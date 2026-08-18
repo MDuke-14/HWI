@@ -1613,8 +1613,8 @@ async def get_monthly_detailed_report(
     from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
     vacation_breakdown_v2 = None  # dict com year_breakdown legal
     try:
-        cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(target_user_id)
-        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=0)
+        cfg, approved, cancelled_set = await _fetch_saldo_ctx(target_user_id)
+        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=0)
         if not vb.get("error"):
             vacation_breakdown_v2 = vb
     except Exception:
@@ -1944,8 +1944,8 @@ async def download_monthly_pdf_report(
     from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
     vacation_breakdown_v2 = None
     try:
-        cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(target_user_id)
-        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=0)
+        cfg, approved, cancelled_set = await _fetch_saldo_ctx(target_user_id)
+        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=0)
         if not vb.get("error"):
             vacation_breakdown_v2 = vb
     except Exception:
@@ -2434,8 +2434,8 @@ async def download_excel_report(
     from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
     vacation_data = {}
     try:
-        cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(target_user_id)
-        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=0)
+        cfg, approved, cancelled_set = await _fetch_saldo_ctx(target_user_id)
+        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=0)
         if not vb.get("error"):
             vacation_data = {"vacation_breakdown_v2": vb}
     except Exception:

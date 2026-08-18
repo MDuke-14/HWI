@@ -5,21 +5,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar, History, Save, X, FileText, AlertCircle } from 'lucide-react';
+import { Calendar, History, Save } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 /**
- * Modal "Gerir Férias" (novo motor legal — Código do Trabalho arts. 237.º–246.º).
+ * Modal "Gerir Férias" — versão simplificada.
  *
- * Secções:
- *  1. Data de Admissão (permanente, obrigatória, guardada 1 vez e nunca vazia)
- *  2. Dias gozados anteriormente por ano (histórico pré-sistema — opcional)
- *  3. Subsídio de férias (valor informativo, opcional)
- *  4. Breakdown completo por ano (vencidos / transitados / gozados / marcados / disponíveis + períodos)
- *  5. Histórico de alterações (audit)
- *
- * Requer motivo em qualquer alteração após a config existir.
+ * Só configura a Data de Admissão (permanente, obrigatória).
+ * Continua a mostrar o breakdown legal por ano (informativo) e o
+ * histórico de alterações.
  */
 export default function VacationConfigModal({ open, onOpenChange, userTarget, onSaved }) {
   const [loading, setLoading] = useState(false);
@@ -30,9 +25,6 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
   const [audit, setAudit] = useState([]);
 
   const [admissaoDate, setAdmissaoDate] = useState('');
-  const [subsidio, setSubsidio] = useState('');
-  const [motivo, setMotivo] = useState('');
-  const [dgaRows, setDgaRows] = useState([]); // [{year, days}]
 
   const targetId = userTarget?.user_id || userTarget?.id;
 
@@ -51,17 +43,6 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
         setBreakdown(bkR.data);
         setAudit(auR.data?.entries || []);
         setAdmissaoDate(cfgR.data.config?.admissao_date || '');
-        setSubsidio(
-          cfgR.data.config?.subsidio_ferias_valor != null
-            ? String(cfgR.data.config.subsidio_ferias_valor)
-            : ''
-        );
-        const dga = cfgR.data.config?.dias_gozados_anteriores || {};
-        const rows = Object.entries(dga)
-          .map(([y, d]) => ({ year: Number(y), days: Number(d || 0) }))
-          .sort((a, b) => a.year - b.year);
-        setDgaRows(rows);
-        setMotivo('');
       } catch (err) {
         toast.error('Erro ao carregar dados de férias');
         console.error(err);
@@ -71,37 +52,15 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
     })();
   }, [open, targetId]);
 
-  const addDgaRow = () => {
-    const next = new Date().getFullYear() - 1;
-    setDgaRows((prev) => [...prev, { year: next, days: 0 }]);
-  };
-  const updateDgaRow = (idx, field, value) => {
-    setDgaRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: field === 'year' || field === 'days' ? Number(value || 0) : value } : r)));
-  };
-  const removeDgaRow = (idx) => setDgaRows((prev) => prev.filter((_, i) => i !== idx));
-
   const handleSave = async () => {
     if (!admissaoDate) {
       toast.error('Data de admissão é obrigatória');
       return;
     }
-    const wasSet = !!config?.admissao_date;
-    if (wasSet && !motivo.trim()) {
-      toast.error('Indique um motivo para a alteração');
-      return;
-    }
-    const dgaPayload = {};
-    for (const r of dgaRows) {
-      if (!r.year || Number.isNaN(r.year)) continue;
-      dgaPayload[String(r.year)] = Number(r.days || 0);
-    }
     setSaving(true);
     try {
       await axios.put(`${API}/admin/vacations/config/${targetId}`, {
         admissao_date: admissaoDate,
-        dias_gozados_anteriores: dgaPayload,
-        subsidio_ferias_valor: subsidio.trim() === '' ? null : Number(subsidio),
-        motivo: motivo.trim(),
       });
       toast.success('Configuração de férias guardada.');
       onSaved && onSaved();
@@ -113,7 +72,6 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
     }
   };
 
-  const admissaoWasSet = !!config?.admissao_date;
   const years = breakdown?.year_breakdown || [];
 
   return (
@@ -133,96 +91,19 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
             {/* 1. Dados base */}
             <section className="bg-[#1a1a1a] border border-gray-800 rounded-lg p-4 space-y-3">
               <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wide">Dados base</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-gray-300">
-                    Data de Admissão *
-                    {admissaoWasSet && (
-                      <span className="ml-2 text-[10px] text-amber-400">
-                        (guardada — requer motivo para alterar)
-                      </span>
-                    )}
-                  </Label>
-                  <Input
-                    type="date"
-                    value={admissaoDate}
-                    onChange={(e) => setAdmissaoDate(e.target.value)}
-                    className="bg-[#0f0f0f] border-gray-700 mt-1"
-                    data-testid="vacation-config-admissao"
-                  />
-                </div>
-                <div>
-                  <Label className="text-gray-300">Subsídio de férias (€)  <span className="text-gray-500 text-xs">(opcional, informativo)</span></Label>
-                  <Input
-                    type="number" step="0.01"
-                    value={subsidio}
-                    onChange={(e) => setSubsidio(e.target.value)}
-                    placeholder="Ex: 950.00"
-                    className="bg-[#0f0f0f] border-gray-700 mt-1"
-                    data-testid="vacation-config-subsidio"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* 2. Dias gozados anteriormente */}
-            <section className="bg-[#1a1a1a] border border-gray-800 rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wide">
-                  Dias gozados anteriormente <span className="text-gray-500 text-xs normal-case">(histórico pré-sistema)</span>
-                </h3>
-                <Button size="sm" onClick={addDgaRow} className="bg-blue-600 hover:bg-blue-700 text-xs" data-testid="add-dga-row">
-                  + Adicionar ano
-                </Button>
-              </div>
-              {dgaRows.length === 0 ? (
-                <p className="text-gray-500 text-xs">Nenhum registo. Adicione um ano para importar dias que já foram gozados antes do sistema.</p>
-              ) : (
-                <div className="space-y-2">
-                  {dgaRows.map((r, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Input
-                        type="number" value={r.year}
-                        onChange={(e) => updateDgaRow(idx, 'year', e.target.value)}
-                        className="bg-[#0f0f0f] border-gray-700 w-28"
-                        placeholder="Ano"
-                        data-testid={`dga-year-${idx}`}
-                      />
-                      <Input
-                        type="number" value={r.days}
-                        onChange={(e) => updateDgaRow(idx, 'days', e.target.value)}
-                        className="bg-[#0f0f0f] border-gray-700 w-28"
-                        placeholder="Dias"
-                        min="0"
-                        data-testid={`dga-days-${idx}`}
-                      />
-                      <span className="text-gray-500 text-xs">dias úteis gozados nesse ano</span>
-                      <Button size="sm" variant="ghost" onClick={() => removeDgaRow(idx)} className="ml-auto text-red-400" data-testid={`dga-remove-${idx}`}>
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* 3. Motivo (só se já estava configurado) */}
-            {admissaoWasSet && (
-              <section className="bg-[#1a1a1a] border border-amber-800/40 rounded-lg p-4 space-y-2">
-                <Label className="text-amber-300 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" /> Motivo da alteração *
-                </Label>
-                <textarea
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 min-h-[70px] text-sm"
-                  placeholder="Ex: correção de admissão após revisão de contrato"
-                  data-testid="vacation-config-motivo"
+              <div>
+                <Label className="text-gray-300">Data de Admissão *</Label>
+                <Input
+                  type="date"
+                  value={admissaoDate}
+                  onChange={(e) => setAdmissaoDate(e.target.value)}
+                  className="bg-[#0f0f0f] border-gray-700 mt-1 max-w-xs"
+                  data-testid="vacation-config-admissao"
                 />
-              </section>
-            )}
+              </div>
+            </section>
 
-            {/* 4. Breakdown */}
+            {/* 2. Breakdown legal */}
             {breakdown?.year_breakdown && (
               <section className="bg-[#1a1a1a] border border-gray-800 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wide mb-3">
@@ -256,23 +137,6 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
                     </tbody>
                   </table>
                 </div>
-                {years.some((y) => (y.periodos || []).length > 0) && (
-                  <div className="mt-3 text-xs text-gray-400">
-                    <div className="font-semibold mb-1 text-gray-300">Períodos de férias:</div>
-                    {years.map((y) => (
-                      (y.periodos || []).length > 0 && (
-                        <div key={`p-${y.year}`}>
-                          <span className="text-gray-500">{y.year}: </span>
-                          {y.periodos.map((p, i) => (
-                            <span key={i} className="inline-block bg-[#0f0f0f] border border-gray-700 rounded px-2 py-0.5 mr-1 mb-1">
-                              {p.start} → {p.end} ({p.days}d)
-                            </span>
-                          ))}
-                        </div>
-                      )
-                    ))}
-                  </div>
-                )}
               </section>
             )}
             {breakdown?.error === 'admissao_date_missing' && (
@@ -281,7 +145,7 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
               </div>
             )}
 
-            {/* 5. Histórico de alterações */}
+            {/* 3. Histórico de alterações */}
             {audit.length > 0 && (
               <section className="bg-[#1a1a1a] border border-gray-800 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-blue-300 uppercase tracking-wide mb-2 flex items-center gap-2">
@@ -295,7 +159,7 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
                         <span className="text-blue-300">{e.admin_username}</span>
                       </div>
                       <div className="text-gray-300 mt-1">
-                        {e.action}: {e.motivo ? <em>&ldquo;{e.motivo}&rdquo;</em> : <em className="text-gray-500">(sem motivo)</em>}
+                        {e.action}
                       </div>
                     </div>
                   ))}
