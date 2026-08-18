@@ -1552,22 +1552,25 @@ async def get_monthly_detailed_report(
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
-    # Buscar dados de férias — usa a MESMA lógica FIFO dinâmica do /vacations
-    # (fonte única de verdade). Import tardio para evitar ciclo com routes.vacations.
-    from routes.vacations import _fetch_user_vacation_context, _build_year_balances
-    vacation_year_breakdown = []
+    # Buscar dados de férias — usa o NOVO motor legal (vacation_engine).
+    # Fonte única de verdade partilhada com /vacations e /admin/vacations/*.
+    # Import tardio para evitar ciclos.
+    from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
+    vacation_breakdown_v2 = None  # dict com year_breakdown legal
     try:
-        csd, taken_map, approved, cancelled_set = await _fetch_user_vacation_context(target_user_id)
-        if csd:
-            vacation_year_breakdown = _build_year_balances(csd, taken_map, approved, cancelled_set)
+        cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(target_user_id)
+        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=0)
+        if not vb.get("error"):
+            vacation_breakdown_v2 = vb
     except Exception:
-        logging.exception("Erro a calcular férias dinâmicas para relatório mensal")
-        vacation_year_breakdown = []
+        logging.exception("Erro a calcular férias (novo motor) para relatório mensal")
 
-    if vacation_year_breakdown:
-        vacation_entitlement = sum(y["days_earned"] for y in vacation_year_breakdown)
-        vacation_days_used = sum(y["days_taken"] for y in vacation_year_breakdown)
-        vacation_days_available = sum(y["days_available"] for y in vacation_year_breakdown)
+    if vacation_breakdown_v2 and vacation_breakdown_v2.get("year_breakdown"):
+        yb = vacation_breakdown_v2["year_breakdown"]
+        # Totais para retrocompat de campos legacy (para não partir clientes antigos)
+        vacation_entitlement = sum(y["dias_vencidos"] for y in yb)
+        vacation_days_used = sum(y["dias_gozados"] for y in yb)
+        vacation_days_available = sum(y["dias_disponiveis"] for y in yb)
     else:
         vacation_entitlement = user.get("vacation_days_per_year", 22)
         vacation_days_used = 0
@@ -1589,10 +1592,12 @@ async def get_monthly_detailed_report(
             "days_with_travel_allowance": days_with_travel_allowance,
             "total_meal_allowance_value": days_with_meal_allowance * 10.0,
             "total_travel_allowance_value": days_with_travel_allowance * 50.0,
+            # Legacy (mantido só para clientes antigos — a tabela nova usa `vacation_breakdown_v2`)
             "vacation_days_used": vacation_days_used,
             "vacation_days_available": vacation_days_available,
             "vacation_entitlement": vacation_entitlement,
-            "vacation_year_breakdown": vacation_year_breakdown,
+            # NOVO motor — fonte única partilhada com o sistema de férias
+            "vacation_breakdown_v2": vacation_breakdown_v2,
         }
     }
 
@@ -1846,22 +1851,23 @@ async def download_monthly_pdf_report(
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
-    # Buscar dados de férias — usa a MESMA lógica FIFO dinâmica do /vacations
-    # (fonte única de verdade). Import tardio para evitar ciclo com routes.vacations.
-    from routes.vacations import _fetch_user_vacation_context, _build_year_balances
-    vacation_year_breakdown = []
+    # Buscar dados de férias — usa o NOVO motor legal (vacation_engine),
+    # partilhado com /vacations e /admin/vacations/*.
+    from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
+    vacation_breakdown_v2 = None
     try:
-        csd, taken_map, approved, cancelled_set = await _fetch_user_vacation_context(target_user_id)
-        if csd:
-            vacation_year_breakdown = _build_year_balances(csd, taken_map, approved, cancelled_set)
+        cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(target_user_id)
+        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=0)
+        if not vb.get("error"):
+            vacation_breakdown_v2 = vb
     except Exception:
-        logging.exception("Erro a calcular férias dinâmicas para relatório mensal")
-        vacation_year_breakdown = []
+        logging.exception("Erro a calcular férias (novo motor) para PDF")
 
-    if vacation_year_breakdown:
-        vacation_entitlement = sum(y["days_earned"] for y in vacation_year_breakdown)
-        vacation_days_used = sum(y["days_taken"] for y in vacation_year_breakdown)
-        vacation_days_available = sum(y["days_available"] for y in vacation_year_breakdown)
+    if vacation_breakdown_v2 and vacation_breakdown_v2.get("year_breakdown"):
+        yb = vacation_breakdown_v2["year_breakdown"]
+        vacation_entitlement = sum(y["dias_vencidos"] for y in yb)
+        vacation_days_used = sum(y["dias_gozados"] for y in yb)
+        vacation_days_available = sum(y["dias_disponiveis"] for y in yb)
     else:
         vacation_days_used = 0
         vacation_days_available = 22
@@ -1898,7 +1904,7 @@ async def download_monthly_pdf_report(
             "vacation_days_used": vacation_days_used,
             "vacation_days_available": vacation_days_available,
             "vacation_entitlement": vacation_entitlement,
-            "vacation_year_breakdown": vacation_year_breakdown,
+            "vacation_breakdown_v2": vacation_breakdown_v2,
         }
     }
     
@@ -2336,22 +2342,16 @@ async def download_excel_report(
         "status": "completed"
     }, {"_id": 0}).sort("date", 1).to_list(1000)
     
-    # Buscar dados de férias — usa lógica FIFO dinâmica (fonte única de verdade)
-    from routes.vacations import _fetch_user_vacation_context, _build_year_balances
+    # Buscar dados de férias — usa NOVO motor legal partilhado com /vacations
+    from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
     vacation_data = {}
     try:
-        csd, taken_map, approved, cancelled_set = await _fetch_user_vacation_context(target_user_id)
-        if csd:
-            year_breakdown = _build_year_balances(csd, taken_map, approved, cancelled_set)
-            vacation_data = {
-                "days_earned": sum(y["days_earned"] for y in year_breakdown),
-                "days_taken": sum(y["days_taken"] for y in year_breakdown),
-                "days_available": sum(y["days_available"] for y in year_breakdown),
-                "year_breakdown": year_breakdown,
-                "company_start_date": csd,
-            }
+        cfg, approved, cancelled_set, dga = await _fetch_saldo_ctx(target_user_id)
+        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, dga, include_after=0)
+        if not vb.get("error"):
+            vacation_data = {"vacation_breakdown_v2": vb}
     except Exception:
-        logging.exception("Erro a calcular férias dinâmicas para Excel")
+        logging.exception("Erro a calcular férias (novo motor) para Excel")
         vacation_data = {}
     
     # Determine month and year from start_date for report title

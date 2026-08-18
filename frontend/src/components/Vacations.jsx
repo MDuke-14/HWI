@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw, Users, ChevronDown, ChevronUp, History } from 'lucide-react';
+import { Calendar, Palmtree, Clock, CheckCircle, XCircle, AlertCircle, RotateCcw, Users, ChevronDown, ChevronUp, History, Settings, Map } from 'lucide-react';
 import VacationReviewModal from './VacationReviewModal';
+import VacationConfigModal from './vacations/VacationConfigModal';
+import MapaFeriasModal from './vacations/MapaFeriasModal';
 
 const Vacations = ({ user, onLogout }) => {
   const { isMobile } = useMobile();
@@ -31,6 +33,10 @@ const Vacations = ({ user, onLogout }) => {
   const [takenYears, setTakenYears] = useState([]);
   const [takenLoading, setTakenLoading] = useState(false);
   const [takenSaving, setTakenSaving] = useState(false);
+  // Novo motor de férias (v2)
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [configModalUser, setConfigModalUser] = useState(null);
+  const [showMapaModal, setShowMapaModal] = useState(false);
 
   useEffect(() => {
     fetchBalance();
@@ -251,6 +257,16 @@ const Vacations = ({ user, onLogout }) => {
                 Férias por Colaborador
               </h2>
               <Button
+                onClick={() => setShowMapaModal(true)}
+                variant="outline"
+                size="sm"
+                className="border-blue-600/50 text-blue-300 hover:bg-blue-600/10"
+                data-testid="btn-mapa-ferias"
+              >
+                <Map className="w-3.5 h-3.5 mr-1.5" />
+                Mapa de Férias
+              </Button>
+              <Button
                 onClick={() => {
                   const next = !showPastYearsAdmin;
                   setShowPastYearsAdmin(next);
@@ -332,7 +348,16 @@ const Vacations = ({ user, onLogout }) => {
                       {isExpanded && (
                         <div className="border-t border-gray-800 p-4 md:p-5 space-y-4">
                           {/* Ações admin */}
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2 flex-wrap">
+                            <Button
+                              size="sm"
+                              onClick={() => { setConfigModalUser(ub); setShowConfigModal(true); }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs"
+                              data-testid={`gerir-ferias-${ub.user_id}`}
+                            >
+                              <Settings className="w-3 h-3 mr-1" />
+                              Gerir Férias
+                            </Button>
                             <Button
                               size="sm"
                               onClick={() => openTakenDialog(ub)}
@@ -588,6 +613,18 @@ const Vacations = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Novo motor de férias — modais */}
+      <VacationConfigModal
+        open={showConfigModal}
+        onOpenChange={setShowConfigModal}
+        userTarget={configModalUser}
+        onSaved={() => fetchAllBalances(showPastYearsAdmin)}
+      />
+      <MapaFeriasModal
+        open={showMapaModal}
+        onOpenChange={setShowMapaModal}
+      />
     </div>
   );
 };

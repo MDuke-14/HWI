@@ -231,43 +231,40 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
     ws.cell(row=row, column=2).value = user_data.get('card_number', 'N/A')
     row += 2
     
-    # ===================== GESTÃO DE FÉRIAS (dados dinâmicos FIFO) =====================
-    ws.cell(row=row, column=1).value = "Gestão de Férias"
+    # ===================== GESTÃO DE FÉRIAS =====================
+    # Tabela única (Código do Trabalho arts. 237.º–246.º). Substitui as 2
+    # tabelas antigas. Fonte: vacation_engine (mesma do sistema de férias).
+    ws.cell(row=row, column=1).value = "Gestão de Férias (arts. 237.º–246.º)"
     ws.cell(row=row, column=1).font = header_font
     row += 1
     
-    ws.cell(row=row, column=1).value = "Dias de Férias Gozados"
-    ws.cell(row=row, column=2).value = f"{vacation_data.get('days_taken', 0)} dias"
-    row += 1
-    
-    ws.cell(row=row, column=1).value = "Dias de Férias Disponíveis"
-    ws.cell(row=row, column=2).value = f"{vacation_data.get('days_available', 0)} dias"
-    row += 1
-    
-    ws.cell(row=row, column=1).value = "Total Anual de Férias"
-    ws.cell(row=row, column=2).value = f"{vacation_data.get('days_earned', 22)} dias"
-    row += 1
-    
-    # Breakdown por ano (se disponível)
-    year_breakdown = vacation_data.get('year_breakdown') or []
-    if year_breakdown:
+    vb2 = vacation_data.get('vacation_breakdown_v2') if isinstance(vacation_data, dict) else None
+    year_rows = (vb2 or {}).get('year_breakdown') if vb2 else None
+    if year_rows:
+        headers_vac = ['Ano', 'Vencidos', 'Transitados', 'Gozados', 'Disponíveis', 'Marcados', 'Períodos']
+        for i, h in enumerate(headers_vac, start=1):
+            c = ws.cell(row=row, column=i, value=h)
+            c.font = header_font
+            c.border = border_thin
         row += 1
-        ws.cell(row=row, column=1).value = "Detalhe por Ano"
-        ws.cell(row=row, column=1).font = header_font
-        row += 1
-        ws.cell(row=row, column=1).value = "Ano"
-        ws.cell(row=row, column=2).value = "Ganhos"
-        ws.cell(row=row, column=3).value = "Gozados"
-        ws.cell(row=row, column=4).value = "Disponíveis"
-        for c in [1, 2, 3, 4]:
-            ws.cell(row=row, column=c).font = header_font
-        row += 1
-        for y in year_breakdown:
-            ws.cell(row=row, column=1).value = y.get('year')
-            ws.cell(row=row, column=2).value = y.get('days_earned', 0)
-            ws.cell(row=row, column=3).value = y.get('days_taken', 0)
-            ws.cell(row=row, column=4).value = y.get('days_available', 0)
+        for y in year_rows:
+            periodos = y.get('periodos') or []
+            periodos_str = ' · '.join(
+                f"{p.get('start')}→{p.get('end')} ({p.get('days')}d)" for p in periodos
+            ) if periodos else '-'
+            ws.cell(row=row, column=1, value=y.get('year'))
+            ws.cell(row=row, column=2, value=y.get('dias_vencidos', 0))
+            ws.cell(row=row, column=3, value=y.get('dias_transitados', 0))
+            ws.cell(row=row, column=4, value=y.get('dias_gozados', 0))
+            ws.cell(row=row, column=5, value=y.get('dias_disponiveis', 0))
+            ws.cell(row=row, column=6, value=y.get('dias_marcados', 0))
+            ws.cell(row=row, column=7, value=periodos_str)
+            for c_idx in range(1, 8):
+                ws.cell(row=row, column=c_idx).border = border_thin
             row += 1
+    else:
+        ws.cell(row=row, column=1).value = "Sem dados — configurar data de admissão em /admin › Férias › Gerir"
+        row += 1
     
     # Ajustar largura das colunas
     ws.column_dimensions['A'].width = 12

@@ -135,7 +135,8 @@ def generate_monthly_pdf_report(report_data):
     elements.append(Paragraph(f"Período: {start_date} - {end_date}", subtitle_style))
     elements.append(Spacer(1, 0.3*cm))
     
-    # Summary table
+    # Summary table (SEM as antigas linhas de férias — férias vão numa
+    # única tabela dedicada abaixo, alimentada pelo novo motor legal.)
     summary = report_data['summary']
     summary_data = [
         ['RESUMO MENSAL', ''],
@@ -144,11 +145,6 @@ def generate_monthly_pdf_report(report_data):
         ['Trabalho Suplementar (Sáb/Dom/Feriados)', format_hours(summary.get('total_special_hours', 0))],
         ['SA (Subsídio de Alimentação)', f"{summary['days_with_meal_allowance']} dias"],
         ['ADC (Ajuda de Custos)', f"{summary['days_with_travel_allowance']} dias"],
-        ['', ''],
-        ['GESTÃO DE FÉRIAS', ''],
-        ['Dias de Férias Gozados (até {})'.format(report_data['end_date']), f"{summary.get('vacation_days_used', 0)} dias"],
-        ['Dias de Férias Disponíveis', f"{summary.get('vacation_days_available', 0)} dias"],
-        ['Total Anual de Férias', f"{summary.get('vacation_entitlement', 22)} dias"],
     ]
     
     summary_table = Table(summary_data, colWidths=[14*cm, 8*cm])
@@ -160,43 +156,63 @@ def generate_monthly_pdf_report(report_data):
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f7fafc')),
-        ('BACKGROUND', (0, 7), (-1, 7), colors.HexColor('#6b7280')),
-        ('TEXTCOLOR', (0, 7), (-1, 7), colors.white),
-        ('FONTNAME', (0, 7), (-1, 7), 'Helvetica-Bold'),
         ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#cbd5e0')),
         ('FONTSIZE', (0, 1), (-1, -1), 10),
         ('PADDING', (0, 0), (-1, -1), 8),
     ]))
     
     elements.append(summary_table)
-    elements.append(Spacer(1, 0.4*cm))
+    elements.append(Spacer(1, 0.5*cm))
     
-    # Detalhe de férias por ano (se disponível — modelo FIFO)
-    year_breakdown = summary.get('vacation_year_breakdown') or []
-    if year_breakdown:
-        breakdown_data = [['Ano', 'Dias Ganhos', 'Dias Gozados', 'Dias Disponíveis']]
-        for y in year_breakdown:
-            breakdown_data.append([
+    # ========== ÚNICA tabela de férias (novo motor legal) ==========
+    # Substitui as 2 tabelas antigas (GESTÃO DE FÉRIAS + Detalhe FIFO).
+    # Fonte: `summary.vacation_breakdown_v2` gerado pelo vacation_engine
+    # (o mesmo usado no /vacations e em /admin/vacations/*).
+    vb2 = summary.get('vacation_breakdown_v2') or {}
+    year_rows = vb2.get('year_breakdown') or []
+    if year_rows:
+        vac_data = [[
+            'Ano', 'Vencidos', 'Transitados', 'Gozados', 'Disponíveis',
+            'Marcados (futuros)', 'Períodos'
+        ]]
+        for y in year_rows:
+            periodos = y.get('periodos') or []
+            periodos_str = ' · '.join(
+                f"{p.get('start')}→{p.get('end')} ({p.get('days')}d)"
+                for p in periodos
+            ) if periodos else '-'
+            vac_data.append([
                 str(y.get('year', '')),
-                str(y.get('days_earned', 0)),
-                str(y.get('days_taken', 0)),
-                str(y.get('days_available', 0)),
+                str(y.get('dias_vencidos', 0)),
+                str(y.get('dias_transitados', 0)),
+                str(y.get('dias_gozados', 0)),
+                str(y.get('dias_disponiveis', 0)),
+                str(y.get('dias_marcados', 0)),
+                periodos_str,
             ])
-        breakdown_table = Table(breakdown_data, colWidths=[5.5*cm, 5.5*cm, 5.5*cm, 5.5*cm])
-        breakdown_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6b7280')),
+        vac_table = Table(
+            vac_data,
+            colWidths=[1.6*cm, 2.2*cm, 2.6*cm, 2.2*cm, 2.6*cm, 3.2*cm, 8.0*cm],
+        )
+        vac_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#374151')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ALIGN', (0, 0), (5, -1), 'CENTER'),
+            ('ALIGN', (6, 0), (6, -1), 'LEFT'),
             ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f7fafc')),
             ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#cbd5e0')),
-            ('PADDING', (0, 0), (-1, -1), 6),
+            ('PADDING', (0, 0), (-1, -1), 5),
         ]))
-        elements.append(Paragraph("<b>Detalhe de Férias por Ano</b>", subtitle_style))
-        elements.append(breakdown_table)
+        elements.append(Paragraph("<b>GESTÃO DE FÉRIAS (Código do Trabalho — arts. 237.º-246.º)</b>", subtitle_style))
+        elements.append(vac_table)
         elements.append(Spacer(1, 0.5*cm))
     else:
+        elements.append(Paragraph(
+            "<b>GESTÃO DE FÉRIAS</b> — sem dados (configure a data de admissão em /admin › Férias › Gerir)",
+            subtitle_style,
+        ))
         elements.append(Spacer(1, 0.3*cm))
     
     # Daily records header

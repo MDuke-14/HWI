@@ -28,6 +28,20 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+33. ✅ **Reformulação total do sistema de Férias (Código do Trabalho — arts. 237.º–246.º, 264.º) (Feb 2026)**:
+    - **Novo motor legal** `/app/backend/vacation_engine.py`: cálculo separado e explícito de **Dias Vencidos** (Art. 239.º/240.º), **Transitados** (Art. 244.º), **Gozados**, **Marcados** (futuros) e **Disponíveis** = vencidos+transitados-gozados-marcados. Ano de admissão: 2 dias/mês, máx **20**, gozáveis só após 6 meses. Anos seguintes: 22 dias úteis a 1 Jan. Feriados excluídos: nacionais + municipais **Barreiro (22/7)**, **Setúbal (15/9)**, **Lisboa (13/6)**.
+    - **Novo modelo isolado** `vacation_configs` (1 doc/user): `admissao_date` (permanente, obrigatória, nunca em branco após set), `dias_gozados_anteriores` (dict {year:int} — histórico pré-sistema), `subsidio_ferias_valor` (meta informativa, não conta em dias). **Migração lazy** ao 1º acesso: para users com `vacation_balances.company_start_date` copia esse valor para o novo modelo + importa `vacation_taken_by_year`. **Não elimina** dados existentes.
+    - **Audit trail** `vacation_audit`: cada PUT config regista `before/after/motivo/admin_id/admin_username/created_at`. Motivo obrigatório em alterações.
+    - **Novas rotas** em `routes/vacations_v2.py`: `GET/PUT /admin/vacations/config/{user_id}`, `GET /admin/vacations/breakdown/{user_id}`, `GET /vacations/breakdown` (próprio), `GET /admin/vacations/audit/{user_id}`, `GET/POST /admin/vacations/mapa` (JSON+publicar), `GET /admin/vacations/mapa/excel`.
+    - **Mapa de Férias**: endpoint devolve todos os colaboradores × períodos aprovados que intersectam o ano; exportação Excel; botão "Publicar" cria snapshot em `vacation_mapa` e envia notification a todos os users (deadline legal 15 Abril).
+    - **Frontend**:
+      - `VacationConfigModal.jsx` — modal "Gerir Férias" com: data admissão permanente, dias gozados anteriores editáveis por ano, subsídio opcional, breakdown detalhado por ano (tabela vencidos/transitados/gozados/marcados/disponíveis/notas), lista de períodos, histórico de audit, campo motivo obrigatório em alterações.
+      - `MapaFeriasModal.jsx` — vista consolidada com selector de ano, tabela colaborador×períodos, botões Excel/Publicar.
+      - `Vacations.jsx` — botão "Gerir" por colaborador (admin) + botão "Mapa de Férias" no header.
+    - **Relatório Mensal (PDF+Excel+JSON)**: as **2 tabelas antigas** de férias foram **removidas** (GESTÃO DE FÉRIAS 3 linhas + Detalhe FIFO); substituídas por **UMA única tabela** com colunas Ano · Vencidos · Transitados · Gozados · Disponíveis · Marcados · Períodos, alimentada pelo mesmo motor legal (`vacation_breakdown_v2`). Endpoints `/monthly-detailed`, `/monthly-pdf`, `/excel` agora todos consomem a mesma fonte.
+    - Validado E2E (curl): Gichelson admissão 2025-11-13 → 2025 vencidos=2 (pró-rata 1 mês), 2026 vencidos=22 + transitados=2 = disponíveis 23. Miguel admissão 2025-02-14 → 2025 vencidos=20 (pró-rata capped) transitados=0 gozados=1 disponíveis=19, 2026 vencidos=22 transitados=19 gozados=3 disponíveis=38 + lista de períodos.
+    - PDF confirmado (via analyze): **1 tabela apenas**, todos os headers correctos, dados coerentes com /vacations.
+
 32. ✅ **Modo "Reorganizar" para fotos já guardadas (Feb 2026)** — extensão do bulk-edit para fotos existentes:
     - **Novo botão "Reorganizar"** no header da secção Fotografias (aparece quando há ≥2 fotos na FS). Localizado ao lado do "Adicionar" em cada aba de intervenção.
     - **Handler `openReorganizeFotosModal()`** carrega TODAS as fotografias da FS (`fotografias` state, já ordenadas pelo backend), popula `bulkFotosToEdit` e abre o mesmo `FotoBulkEditModal` usado no fluxo multi-upload.
