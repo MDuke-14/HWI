@@ -28,6 +28,17 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+38. ✅ **Mapa de Férias Excel — formato calendário anual com F(N-1) vs F(N) (Feb 2026)**:
+    - Reescrito `admin_get_mapa_excel` em `routes/vacations_v2.py`.
+    - Formato: 1 linha por mês × 31 colunas de dia por colaborador (12 linhas por trabalhador + linha em branco). Colunas iniciais: `Colaborador` + `Mês` + dias 1..31.
+    - **Diferenciação visual**:
+      - 🟨 amarelo (`#FFF2A8`) com etiqueta `F<YY-1>` (ex.: `F25`) — dias de férias que consomem saldo **transitado** do ano anterior
+      - 🟩 verde (`#A8E6A3`) com etiqueta `F<YY>` (ex.: `F26`) — dias de férias do ano corrente
+      - cinza claro para weekends/feriados (contraste)
+    - Distribuição FIFO: por colaborador obtém-se `dias_transitados` do `vacation_engine` para o ano; os primeiros N dias úteis das férias aprovadas do ano são marcados como F(N-1), os restantes como F(N).
+    - Legenda visível no topo. Larguras de coluna calculadas via `openpyxl.utils.get_column_letter` (fix bug inicial com coluna 'a' inválida).
+    - Validado E2E: Miguel (adm. 2025-02-14, 19 transitados) → dias em Jan/Fev/Mar marcados F25; teste@ (adm. desconhecida) → F26. Ficheiro 7999 bytes, análise visual confirmou o layout e cores.
+
 37. ✅ **Relatório Mensal — "Sem Registo" + scan semanal (Feb 2026)**:
     - **Removido "Falta registada pelo admin"**: `time_entries.py` — `justifications_map` já não injecta este texto quando existe uma `absence` (observação é feita pelo `abs_info.obs` do novo motor de faltas v2).
     - **"FALTA" → "SEM REGISTO"**: dias úteis sem qualquer registo (nem ponto, nem falta, nem férias, nem folga) passam a mostrar `SEM REGISTO` em vez de `FALTA` em ambos os pipelines (endpoint monthly-detailed + PDF). Cor de fundo cinzenta neutra (`#f3f4f6`) no PDF. Endpoint admin de override de status continua a aceitar `FALTA` (não substitui o override manual).

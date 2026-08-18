@@ -342,44 +342,167 @@ async def admin_get_mapa_excel(
     year: int = Query(...),
     current_user: dict = Depends(get_current_admin),
 ):
-    """Exporta o mapa em Excel."""
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, PatternFill
+    """Exporta o mapa em formato calendário anual (12 meses × 31 dias por
+    colaborador), com **diferença visual** entre dias de férias do ano anterior
+    (transitados — cor amarela) e do ano corrente (cor verde).
 
-    mapa = await admin_get_mapa(year=year, current_user=current_user)  # reuse
+    - Cada colaborador ocupa 12 linhas (uma por mês) + linha em branco.
+    - Colunas: MÊS, ANO, e 31 dias.
+    - Célula preenchida = dia de férias aprovado. Cor amarela = do ano N-1
+      (F<N-1>); cor verde = do ano N (F<N>).
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from datetime import date, timedelta
+    import calendar as _cal
+    from vacation_engine import (
+        feriados_do_ano, is_dia_util,
+        calcular_saldo_completo,
+    )
+
+    year_prev = year - 1
+    label_prev = f"F{str(year_prev)[-2:]}"  # ex: F25
+    label_curr = f"F{str(year)[-2:]}"       # ex: F26
+
+    users = await db.users.find(
+        {"is_active": True}, {"_id": 0, "hashed_password": 0},
+    ).to_list(1000)
 
     wb = Workbook()
     ws = wb.active
     ws.title = f"Mapa Ferias {year}"
 
-    ws["A1"] = f"Mapa de Férias — {year}"
-    ws["A1"].font = Font(bold=True, size=14)
-    ws.merge_cells("A1:E1")
+    fill_prev = PatternFill("solid", fgColor="FFF2A8")   # amarelo claro
+    fill_curr = PatternFill("solid", fgColor="A8E6A3")   # verde claro
+    fill_holiday = PatternFill("solid", fgColor="E5E7EB")
+    fill_weekend = PatternFill("solid", fgColor="F3F4F6")
+    fill_header = PatternFill("solid", fgColor="374151")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    bold_font = Font(bold=True)
+    center = Alignment(horizontal="center", vertical="center")
+    thin = Side(style="thin", color="D1D5DB")
+    box = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    headers = ["Colaborador", "Início", "Fim", "Dias Úteis", "Estado"]
-    for i, h in enumerate(headers, start=1):
-        c = ws.cell(row=3, column=i, value=h)
-        c.font = Font(bold=True, color="FFFFFF")
-        c.fill = PatternFill("solid", fgColor="333333")
-        c.alignment = Alignment(horizontal="center")
+    meses_pt = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 
-    row = 4
-    for r in mapa["rows"]:
-        if not r["periodos"]:
-            ws.cell(row=row, column=1, value=r["full_name"])
-            ws.cell(row=row, column=5, value="Sem férias marcadas")
+    # Cabeçalho global
+    ws.cell(row=1, column=1, value=f"Mapa de Férias — {year}").font = Font(bold=True, size=14)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
+
+    # Legenda
+    ws.cell(row=2, column=1, value="Legenda:").font = bold_font
+    ws.cell(row=2, column=2, value=label_prev).fill = fill_prev
+    ws.cell(row=2, column=3, value=f"Férias do ano anterior ({year_prev})")
+    ws.cell(row=2, column=4, value=label_curr).fill = fill_curr
+    ws.cell(row=2, column=5, value=f"Férias do ano corrente ({year})")
+
+    header_row = 4
+    # Cabeçalho da tabela
+    ws.cell(row=header_row, column=1, value="Colaborador").font = header_font
+    ws.cell(row=header_row, column=1).fill = fill_header
+    ws.cell(row=header_row, column=2, value="Mês").font = header_font
+    ws.cell(row=header_row, column=2).fill = fill_header
+    for d in range(1, 32):
+        c = ws.cell(row=header_row, column=2 + d, value=d)
+        c.font = header_font
+        c.fill = fill_header
+        c.alignment = center
+        c.border = box
+    for c in ws[header_row]:
+        c.alignment = center
+
+    feriados = feriados_do_ano(year)
+    row = header_row + 1
+
+    for u in users:
+        # Fetch pedidos aprovados que intersectam o ano
+        approved = await db.vacation_requests.find(
+            {"user_id": u["id"], "status": "approved"}, {"_id": 0},
+        ).to_list(None)
+        # Config para saber transitados do ano
+        cfg = await db.vacation_configs.find_one({"user_id": u["id"]}, {"_id": 0}) or {}
+        adm_str = cfg.get("admissao_date")
+        remaining_prev = 0
+        if adm_str:
+            try:
+                adm = datetime.strptime(adm_str, "%Y-%m-%d").date()
+                saldos = calcular_saldo_completo(
+                    adm, approved, set(), {}, include_years_after=0,
+                )
+                for s in saldos:
+                    if s["year"] == year:
+                        remaining_prev = int(s.get("dias_transitados") or 0)
+                        break
+            except ValueError:
+                remaining_prev = 0
+
+        # Coleccionar dias úteis de férias no ano, ordenados
+        vac_days = []
+        for req in approved:
+            try:
+                s = datetime.strptime(req["start_date"], "%Y-%m-%d").date()
+                e = datetime.strptime(req["end_date"], "%Y-%m-%d").date()
+            except (KeyError, ValueError):
+                continue
+            if e.year < year or s.year > year:
+                continue
+            cur = max(s, date(year, 1, 1))
+            end_c = min(e, date(year, 12, 31))
+            while cur <= end_c:
+                if is_dia_util(cur, feriados):
+                    vac_days.append(cur)
+                cur += timedelta(days=1)
+        vac_days.sort()
+
+        # FIFO: primeiros N dias consomem transitados (F_prev), restantes F_curr
+        day_source: dict = {}  # date → 'prev' | 'curr'
+        used_prev = 0
+        for d in vac_days:
+            if used_prev < remaining_prev:
+                day_source[d] = 'prev'
+                used_prev += 1
+            else:
+                day_source[d] = 'curr'
+
+        # Escrever 12 linhas — 1 por mês
+        for month_i in range(1, 13):
+            ws.cell(row=row, column=1, value=(u.get('full_name') or u.get('username')) if month_i == 1 else '')
+            if month_i == 1:
+                ws.cell(row=row, column=1).font = bold_font
+            ws.cell(row=row, column=2, value=meses_pt[month_i - 1])
+            ws.cell(row=row, column=2).font = bold_font
+            _, ndays = _cal.monthrange(year, month_i)
+            for d in range(1, 32):
+                col = 2 + d
+                cell = ws.cell(row=row, column=col)
+                if d > ndays:
+                    cell.value = ''
+                    continue
+                the_date = date(year, month_i, d)
+                src = day_source.get(the_date)
+                if src == 'prev':
+                    cell.value = label_prev
+                    cell.fill = fill_prev
+                elif src == 'curr':
+                    cell.value = label_curr
+                    cell.fill = fill_curr
+                elif the_date in feriados:
+                    cell.fill = fill_holiday
+                elif the_date.weekday() >= 5:
+                    cell.fill = fill_weekend
+                cell.border = box
+                cell.alignment = center
             row += 1
-            continue
-        for p in r["periodos"]:
-            ws.cell(row=row, column=1, value=r["full_name"])
-            ws.cell(row=row, column=2, value=p["start"])
-            ws.cell(row=row, column=3, value=p["end"])
-            ws.cell(row=row, column=4, value=p["days_uteis"])
-            ws.cell(row=row, column=5, value=p["status"])
-            row += 1
+        # Linha em branco entre colaboradores
+        row += 1
 
-    for col_letter, w in zip("ABCDE", (28, 14, 14, 12, 14)):
-        ws.column_dimensions[col_letter].width = w
+    # Larguras
+    from openpyxl.utils import get_column_letter
+    ws.column_dimensions['A'].width = 26
+    ws.column_dimensions['B'].width = 12
+    for i in range(1, 32):
+        ws.column_dimensions[get_column_letter(2 + i)].width = 4
 
     buf = io.BytesIO()
     wb.save(buf)
