@@ -2565,7 +2565,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                   {(() => {
                     // Consolidar: SEMPRE mostrar todos os utilizadores activos, mesmo sem registos
                     const withData = reports.users || [];
-                    const byId = new Map(withData.map((u) => [u.user_id, u]));
+                    const byId = new window.Map(withData.map((u) => [u.user_id, u]));
                     const merged = (users || [])
                       .filter((u) => u.is_active !== false)
                       .map((u) => {
@@ -2583,7 +2583,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         };
                       });
                     // Utilizadores com registos mas já inactivos (mantém no fim)
-                    const activeIds = new Set((users || []).map((u) => u.id));
+                    const activeIds = new window.Set((users || []).map((u) => u.id));
                     for (const u of withData) {
                       if (!activeIds.has(u.user_id)) merged.push(u);
                     }
