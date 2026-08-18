@@ -28,6 +28,27 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+35. ✅ **Reformulação do sistema de Faltas (Código do Trabalho arts. 248.º–257.º) (Feb 2026)**:
+    - **Backend** — `routes/absences_v2.py` (mantém coleção `absences` e retrocompat com `/absences/*` antigos):
+      - Estados separados do tipo: **Pendente | Aprovada | Rejeitada | Pendente de Documento | Injustificada**. Rejeitada ≠ Injustificada.
+      - Novo modelo com `is_partial`, `start_time`, `end_time` — sistema nunca assume 8h em faltas parciais; horas calculadas do intervalo (ou introduzidas manualmente).
+      - `absence_audit` regista **cada** mudança de estado (before/after/motivo/admin_id/created_at) — nunca elimina histórico. Motivo obrigatório em Rejeitada/Injustificada.
+      - `normalize_state()` migra automaticamente docs legacy (`status`/`is_justified`) para o novo modelo — 0 perda de dados.
+      - Endpoints: `POST /absences/v2/create`, `POST /absences/v2/{id}/upload` (ao carregar documento, sai automaticamente de "Pendente Documento" → "Pendente"), `PUT /admin/absences/v2/{id}/state`, `GET /admin/absences/v2/list` (filtros ano/mês/user/tipo/estado), `GET /admin/absences/v2/{id}/audit`.
+      - Helper `fetch_absences_for_month()` — fonte partilhada com o Relatório Mensal.
+    - **Relatório Mensal (PDF+Excel+JSON)** — sem tabela extra, integração por dia:
+      - `time_entries.py` agora carrega faltas via `fetch_absences_for_month()` e injecta em cada `day_data`: `absence` (objecto completo), altera `status` do dia se falta de 8h, acumula label em `observations`.
+      - `pdf_report.py` — 3 cores novas nas linhas: **vermelho** (INJUSTIFICADA), **azul** (JUSTIFICADA=aprovada), **laranja** (REJEITADA / PENDENTE DOCUMENTO). Texto no campo Observações conforme spec: `"2h Falta Justificada"`, `"FALTA INJUSTIFICADA"`, `"2h Justificação Rejeitada"`, `"2h Pendente de Documento"`. Faltas parciais NÃO substituem os registos do dia — só marcam observações.
+    - **Frontend**:
+      - `Absences.jsx` — form actualizado: seleção de tipo com valores literais, campos **Hora Início/Fim** para parcial + cálculo automático de horas (nunca 8h por defeito), envio via `/absences/v2/create` e upload via `/absences/v2/{id}/upload`.
+      - `AdminDashboard.jsx` — 4 botões por falta (**Aprovar / Rejeitar / Pendente Doc. / Injustificada**), prompt de motivo obrigatório em Rejeitar/Injustificada, badge com cor por estado.
+    - **Validado E2E**:
+      - Falta parcial 2h aprovada → dia mostra `2h Falta Justificada` (azul). ✓
+      - Falta 8h injustificada → dia mostra `FALTA INJUSTIFICADA` (vermelho). ✓
+      - Falta 2h rejeitada → dia mostra `2h Justificação Rejeitada` (laranja). ✓
+      - Audit trail regista `pendente → aprovada/rejeitada/injustificada` com admin_id e timestamp. ✓
+      - Filtros v2/list por ano/mês/estado retornam correctamente.
+
 34. ✅ **Ajustes UX ao sistema de Férias (Feb 2026)**:
     - **PDF - Períodos horizontais**: coluna Períodos no relatório mensal passou a usar `Paragraph` (com `wordWrap='CJK'`) + coluna alargada de 8cm→13cm. Formato compactado (`dd/mm/yyyy (Nd)` para 1 dia, `dd/mm/yyyy→dd/mm/yyyy (Nd)` para intervalos). Textos deixam de ser truncados e fluem em linha (com quebra natural quando necessário) em vez de amontoados verticalmente.
     - **"Gerir Férias" movido para `/admin` › aba Férias**: criada nova secção "Colaboradores" na aba, com lista de users activos e botão "Gerir Férias" por linha. Botão "Mapa de Férias" também nessa mesma secção (header). `AdminDashboard.jsx` importa `VacationConfigModal` + `MapaFeriasModal` e renderiza no fim. Removido o botão "Gerir Férias" da página `/vacations` (o Mapa foi mantido também lá para acesso rápido).

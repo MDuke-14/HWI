@@ -4541,6 +4541,7 @@ from routes.tabelas_tarifas import router as tabelas_tarifas_router
 from routes.time_entries import router as time_entries_router
 from routes.vacations import router as vacations_router
 from routes.vacations_v2 import router as vacations_v2_router
+from routes.absences_v2 import router as absences_v2_router
 from routes.cronometros import router as cronometros_router
 from routes.relatorios import router as relatorios_router
 from routes.services import router as services_router
@@ -4561,6 +4562,7 @@ api_router.include_router(tabelas_tarifas_router)
 api_router.include_router(time_entries_router)
 api_router.include_router(vacations_router)
 api_router.include_router(vacations_v2_router)
+api_router.include_router(absences_v2_router)
 api_router.include_router(cronometros_router)
 api_router.include_router(relatorios_router)
 api_router.include_router(services_router)

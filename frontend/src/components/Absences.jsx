@@ -20,8 +20,11 @@ const Absences = ({ user, onLogout }) => {
   const [uploadingFile, setUploadingFile] = useState(null);
   const [formData, setFormData] = useState({
     date: '',
-    absence_type: 'full_justified',
+    absence_type: 'Falta 8h Justificada',
+    is_partial: false,
     hours: 8,
+    start_time: '',
+    end_time: '',
     is_justified: true,
     reason: ''
   });
@@ -55,21 +58,53 @@ const Absences = ({ user, onLogout }) => {
   };
 
   const handleAbsenceTypeChange = (value) => {
+    const isPartial = value === 'Falta Parcial';
     setFormData({
       ...formData,
       absence_type: value,
-      hours: value.includes('full') ? 8 : formData.hours,
-      is_justified: value === 'full_justified' || value === 'partial'
+      is_partial: isPartial,
+      hours: isPartial ? formData.hours : 8,
+      start_time: isPartial ? formData.start_time : '',
+      end_time: isPartial ? formData.end_time : '',
+      is_justified: value !== 'Falta 8h Injustificada',
     });
   };
 
+  // Recalcular horas quando o intervalo muda em falta parcial
+  const handleTimeChange = (field, value) => {
+    const next = { ...formData, [field]: value };
+    if (next.is_partial && next.start_time && next.end_time) {
+      try {
+        const [sh, sm] = next.start_time.split(':').map(Number);
+        const [eh, em] = next.end_time.split(':').map(Number);
+        const mins = (eh * 60 + em) - (sh * 60 + sm);
+        if (mins > 0) next.hours = Math.round((mins / 60) * 100) / 100;
+      } catch { /* noop */ }
+    }
+    setFormData(next);
+  };
+
   const handleSubmit = async () => {
+    if (!formData.date) { toast.error('Indique a data'); return; }
+    if (formData.is_partial && (!formData.start_time || !formData.end_time)) {
+      toast.error('Falta parcial requer hora de início e fim');
+      return;
+    }
     setLoading(true);
     try {
-      await axios.post(`${API}/absences/create`, formData);
+      await axios.post(`${API}/absences/v2/create`, {
+        date: formData.date,
+        absence_type: formData.absence_type,
+        is_partial: formData.is_partial,
+        start_time: formData.is_partial ? formData.start_time : null,
+        end_time: formData.is_partial ? formData.end_time : null,
+        hours: formData.hours,
+        is_justified: formData.is_justified,
+        reason: formData.reason,
+      });
       toast.success('Falta registada com sucesso!');
       setShowDialog(false);
-      setFormData({ date: '', absence_type: 'full_justified', hours: 8, is_justified: true, reason: '' });
+      setFormData({ date: '', absence_type: 'Falta 8h Justificada', is_partial: false, hours: 8, start_time: '', end_time: '', is_justified: true, reason: '' });
       fetchAbsences();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao registar falta');
@@ -84,7 +119,7 @@ const Absences = ({ user, onLogout }) => {
     formData.append('file', file);
 
     try {
-      await axios.post(`${API}/absences/${absenceId}/upload`, formData, {
+      await axios.post(`${API}/absences/v2/${absenceId}/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Ficheiro carregado!');
@@ -124,9 +159,12 @@ const Absences = ({ user, onLogout }) => {
   };
 
   const getAbsenceTypeText = (type, hours) => {
+    // Retro-compat: mapear valores antigos
     if (type === 'full_justified') return 'Falta 8h Justificada';
     if (type === 'full_unjustified') return 'Falta 8h Injustificada';
-    return `Falta ${hours}h`;
+    if (type === 'partial') return `Falta ${hours}h`;
+    // Novo modelo: já é texto legível
+    return type || `Falta ${hours}h`;
   };
 
   return (
@@ -166,42 +204,49 @@ const Absences = ({ user, onLogout }) => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                      <SelectItem value="full_justified">Falta 8h Justificada</SelectItem>
-                      <SelectItem value="full_unjustified">Falta 8h Injustificada</SelectItem>
-                      <SelectItem value="partial">Falta Parcial (X horas)</SelectItem>
+                      <SelectItem value="Falta 8h Justificada">Falta 8h Justificada</SelectItem>
+                      <SelectItem value="Falta 8h Injustificada">Falta 8h Injustificada</SelectItem>
+                      <SelectItem value="Falta Parcial">Falta Parcial (indicar horas)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {formData.absence_type === 'partial' && (
+                {formData.is_partial && (
                   <>
-                    <div>
-                      <Label>Número de Horas</Label>
-                      <Input
-                        type="number"
-                        min="0.5"
-                        max="8"
-                        step="0.5"
-                        value={formData.hours}
-                        onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) })}
-                        className="bg-[#0a0a0a] border-gray-700 text-white"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Hora Início</Label>
+                        <Input
+                          type="time"
+                          value={formData.start_time}
+                          onChange={(e) => handleTimeChange('start_time', e.target.value)}
+                          className="bg-[#0a0a0a] border-gray-700 text-white"
+                          data-testid="absence-start-time"
+                        />
+                      </div>
+                      <div>
+                        <Label>Hora Fim</Label>
+                        <Input
+                          type="time"
+                          value={formData.end_time}
+                          onChange={(e) => handleTimeChange('end_time', e.target.value)}
+                          className="bg-[#0a0a0a] border-gray-700 text-white"
+                          data-testid="absence-end-time"
+                        />
+                      </div>
                     </div>
-
                     <div>
-                      <Label>Estado</Label>
-                      <Select
-                        value={formData.is_justified ? 'justified' : 'unjustified'}
-                        onValueChange={(v) => setFormData({ ...formData, is_justified: v === 'justified' })}
-                      >
-                        <SelectTrigger className="bg-[#0a0a0a] border-gray-700 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
-                          <SelectItem value="justified">Justificada</SelectItem>
-                          <SelectItem value="unjustified">Injustificada</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Horas de ausência (calculado)</Label>
+                      <Input
+                        type="number" step="0.25" min="0.25" max="8"
+                        value={formData.hours}
+                        onChange={(e) => setFormData({ ...formData, hours: parseFloat(e.target.value) || 0 })}
+                        className="bg-[#0a0a0a] border-gray-700 text-white"
+                        data-testid="absence-hours"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Calculado do intervalo — pode ajustar se necessário. O sistema não assume 8h automaticamente.
+                      </p>
                     </div>
                   </>
                 )}

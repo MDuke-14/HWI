@@ -1323,6 +1323,29 @@ async def get_custom_range_report(
             day_data["payment_type"] = None
             day_data["payment_value"] = 0
         
+        # Injectar informação de falta (novo sistema v2). Fonte partilhada
+        # com /admin/absences/v2/* — mesma lógica de cor/observações.
+        abs_info = absences_by_date.get(date_str)
+        if abs_info:
+            day_data["absence"] = abs_info
+            if not abs_info.get("is_partial") and float(abs_info.get("hours") or 0) >= 7.5:
+                if abs_info["state"] == "injustificada":
+                    day_data["status"] = "FALTA INJUSTIFICADA"
+                elif abs_info["state"] == "aprovada":
+                    day_data["status"] = "FALTA JUSTIFICADA"
+                elif abs_info["state"] == "rejeitada":
+                    day_data["status"] = "JUSTIFICAÇÃO REJEITADA"
+                elif abs_info["state"] == "pendente_documento":
+                    day_data["status"] = "PENDENTE DOCUMENTO"
+                elif abs_info["state"] == "pendente":
+                    day_data["status"] = "FALTA PENDENTE"
+            prev_obs = (day_data.get("observations") or "").strip()
+            new_obs = abs_info.get("obs") or ""
+            if prev_obs and new_obs and new_obs not in prev_obs:
+                day_data["observations"] = f"{prev_obs} · {new_obs}"
+            elif new_obs:
+                day_data["observations"] = new_obs
+        
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
@@ -1457,6 +1480,14 @@ async def get_monthly_detailed_report(
     
     dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
     
+    # Faltas v2 — carregar do novo helper (fonte partilhada com /admin/absences/v2/*)
+    from routes.absences_v2 import fetch_absences_for_month
+    absences_by_date = await fetch_absences_for_month(
+        target_user_id,
+        start_date.strftime("%Y-%m-%d"),
+        end_date.strftime("%Y-%m-%d"),
+    )
+    
     while current_date <= end_date:
         date_str = current_date.strftime("%Y-%m-%d")
         day_of_week = dias_semana[current_date.weekday()]
@@ -1548,6 +1579,29 @@ async def get_monthly_detailed_report(
             day_data["special_hours"] = 0
             day_data["payment_type"] = None
             day_data["payment_value"] = 0
+        
+        # Injectar informação de falta (novo sistema v2). Fonte partilhada
+        # com /admin/absences/v2/* — mesma lógica de cor/observações.
+        abs_info = absences_by_date.get(date_str)
+        if abs_info:
+            day_data["absence"] = abs_info
+            if not abs_info.get("is_partial") and float(abs_info.get("hours") or 0) >= 7.5:
+                if abs_info["state"] == "injustificada":
+                    day_data["status"] = "FALTA INJUSTIFICADA"
+                elif abs_info["state"] == "aprovada":
+                    day_data["status"] = "FALTA JUSTIFICADA"
+                elif abs_info["state"] == "rejeitada":
+                    day_data["status"] = "JUSTIFICAÇÃO REJEITADA"
+                elif abs_info["state"] == "pendente_documento":
+                    day_data["status"] = "PENDENTE DOCUMENTO"
+                elif abs_info["state"] == "pendente":
+                    day_data["status"] = "FALTA PENDENTE"
+            prev_obs = (day_data.get("observations") or "").strip()
+            new_obs = abs_info.get("obs") or ""
+            if prev_obs and new_obs and new_obs not in prev_obs:
+                day_data["observations"] = f"{prev_obs} · {new_obs}"
+            elif new_obs:
+                day_data["observations"] = new_obs
         
         daily_records.append(day_data)
         current_date += timedelta(days=1)
@@ -1741,6 +1795,14 @@ async def download_monthly_pdf_report(
     
     dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
     
+    # Faltas v2 — mesma fonte usada pelo endpoint JSON
+    from routes.absences_v2 import fetch_absences_for_month
+    absences_by_date = await fetch_absences_for_month(
+        target_user_id,
+        start_date.strftime("%Y-%m-%d"),
+        end_date.strftime("%Y-%m-%d"),
+    )
+    
     while current_date <= end_date:
         date_str = current_date.strftime("%Y-%m-%d")
         day_of_week = dias_semana[current_date.weekday()]
@@ -1847,6 +1909,29 @@ async def download_monthly_pdf_report(
             day_data["special_hours"] = 0
             day_data["payment_type"] = None
             day_data["payment_value"] = 0
+        
+        # Injectar informação de falta (novo sistema v2). Fonte partilhada
+        # com /admin/absences/v2/* — mesma lógica de cor/observações.
+        abs_info = absences_by_date.get(date_str)
+        if abs_info:
+            day_data["absence"] = abs_info
+            if not abs_info.get("is_partial") and float(abs_info.get("hours") or 0) >= 7.5:
+                if abs_info["state"] == "injustificada":
+                    day_data["status"] = "FALTA INJUSTIFICADA"
+                elif abs_info["state"] == "aprovada":
+                    day_data["status"] = "FALTA JUSTIFICADA"
+                elif abs_info["state"] == "rejeitada":
+                    day_data["status"] = "JUSTIFICAÇÃO REJEITADA"
+                elif abs_info["state"] == "pendente_documento":
+                    day_data["status"] = "PENDENTE DOCUMENTO"
+                elif abs_info["state"] == "pendente":
+                    day_data["status"] = "FALTA PENDENTE"
+            prev_obs = (day_data.get("observations") or "").strip()
+            new_obs = abs_info.get("obs") or ""
+            if prev_obs and new_obs and new_obs not in prev_obs:
+                day_data["observations"] = f"{prev_obs} · {new_obs}"
+            elif new_obs:
+                day_data["observations"] = new_obs
         
         daily_records.append(day_data)
         current_date += timedelta(days=1)

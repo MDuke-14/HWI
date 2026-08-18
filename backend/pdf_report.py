@@ -265,6 +265,16 @@ def generate_monthly_pdf_report(report_data):
             entries_text = 'FÉRIAS'
         elif day['status'] == 'FALTA':
             entries_text = 'FALTA'
+        elif day['status'] == 'FALTA INJUSTIFICADA':
+            entries_text = 'FALTA INJUSTIFICADA'
+        elif day['status'] == 'FALTA JUSTIFICADA':
+            entries_text = 'FALTA JUSTIFICADA'
+        elif day['status'] == 'JUSTIFICAÇÃO REJEITADA':
+            entries_text = 'JUSTIFICAÇÃO REJEITADA'
+        elif day['status'] == 'PENDENTE DOCUMENTO':
+            entries_text = 'PENDENTE DOCUMENTO'
+        elif day['status'] == 'FALTA PENDENTE':
+            entries_text = 'FALTA PENDENTE'
         elif day['status'] == 'NÃO TRABALHADO':
             entries_text = 'N/T'
         elif day['status'] == 'TRABALHADO' and day.get('entries'):
@@ -295,6 +305,16 @@ def generate_monthly_pdf_report(report_data):
             # Extrair localização das obs e limpar observações
             extracted_location, clean_obs = _extrair_localizacao_e_limpar_obs(day['entries'])
             observations_text = clean_obs
+        
+        # Faltas v2 — se o dia tem uma falta associada, injectar o label nas
+        # observações (para faltas parciais, mantém-se o resto do dia normal).
+        abs_info = day.get('absence')
+        if abs_info and abs_info.get('obs'):
+            obs_txt = abs_info['obs']
+            if observations_text and observations_text != '-' and obs_txt not in observations_text:
+                observations_text = f"{observations_text} · {obs_txt}"
+            else:
+                observations_text = obs_txt
         
         # Total / Overtime
         total_text = format_hours(day['total_hours']) if day.get('total_hours', 0) > 0 else '-'
@@ -351,8 +371,26 @@ def generate_monthly_pdf_report(report_data):
         ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
     ]
     
-    # Color rows by status
+    # Color rows by status (inclui novos estados de falta v2)
+    # Cores da spec:
+    #   RED  = FALTA INJUSTIFICADA
+    #   BLUE = FALTA JUSTIFICADA (aprovada)
+    #   ORANGE = JUSTIFICAÇÃO REJEITADA / PENDENTE DOCUMENTO
+    COLOR_ABS_RED = colors.HexColor('#fecaca')     # bg vermelho suave
+    COLOR_ABS_BLUE = colors.HexColor('#bfdbfe')    # bg azul suave
+    COLOR_ABS_ORANGE = colors.HexColor('#fed7aa')  # bg laranja suave
     for idx, day in enumerate(report_data['daily_records'], start=1):
+        abs_info = day.get('absence') or {}
+        abs_color = abs_info.get('color')
+        if abs_color == 'red' or day['status'] == 'FALTA INJUSTIFICADA':
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), COLOR_ABS_RED))
+            continue
+        if abs_color == 'blue' or day['status'] == 'FALTA JUSTIFICADA':
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), COLOR_ABS_BLUE))
+            continue
+        if abs_color == 'orange' or day['status'] in ('JUSTIFICAÇÃO REJEITADA', 'PENDENTE DOCUMENTO'):
+            table_style.append(('BACKGROUND', (0, idx), (-1, idx), COLOR_ABS_ORANGE))
+            continue
         if day['status'] == 'FOLGA':
             table_style.append(('BACKGROUND', (0, idx), (-1, idx), colors.HexColor('#e2e8f0')))
         elif day['status'] == 'FERIADO':

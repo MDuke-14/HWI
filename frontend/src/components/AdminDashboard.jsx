@@ -523,6 +523,30 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Novo (v2): 4 estados + motivo obrigatório em rejeitada/injustificada
+  const handleAbsenceState = async (absenceId, newState) => {
+    let motivo = '';
+    if (newState === 'rejeitada' || newState === 'injustificada') {
+      motivo = window.prompt('Motivo (obrigatório em Rejeitada/Injustificada):') || '';
+      if (!motivo.trim()) { toast.error('Motivo obrigatório.'); return; }
+    } else if (newState === 'pendente_documento') {
+      motivo = window.prompt('Observação para o trabalhador (opcional):') || '';
+    }
+    try {
+      await axios.put(`${API}/admin/absences/v2/${absenceId}/state`, {
+        state: newState, motivo,
+      });
+      const labels = {
+        aprovada: 'Aprovada', rejeitada: 'Rejeitada',
+        pendente_documento: 'Pendente de Documento', injustificada: 'Injustificada',
+      };
+      toast.success(`Falta marcada como ${labels[newState]}.`);
+      fetchAllAbsences();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao processar');
+    }
+  };
+
   const handleCreateUser = async () => {
     setLoading(true);
     try {
@@ -1035,31 +1059,43 @@ const AdminDashboard = ({ user, onLogout }) => {
                           )}
                         </div>
                         <div className={`flex ${isMobile ? 'flex-row items-center justify-between w-full' : 'flex-col'} gap-2`}>
-                          <span className={`${isMobile ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} rounded-full font-semibold ${
-                            absence.status === 'approved' ? 'bg-green-700 text-green-200' :
-                            absence.status === 'rejected' ? 'bg-red-700 text-red-200' :
-                            'bg-amber-700 text-amber-200'
-                          }`}>
-                            {absence.status === 'approved' ? 'Aprovado' : absence.status === 'rejected' ? 'Rejeitado' : 'Pendente'}
-                          </span>
-                          {absence.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <Button 
-                                onClick={() => handleAbsenceReview(absence.id, true)} 
-                                className={`bg-green-600 hover:bg-green-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
-                                size="sm"
-                              >
-                                <CheckCircle className="w-3 h-3 mr-1" />{isMobile ? 'OK' : 'Aprovar'}
-                              </Button>
-                              <Button 
-                                onClick={() => handleAbsenceReview(absence.id, false)} 
-                                className={`bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
-                                size="sm"
-                              >
-                                <XCircle className="w-3 h-3 mr-1" />{isMobile ? 'Não' : 'Rejeitar'}
-                              </Button>
-                            </div>
-                          )}
+                          {(() => {
+                            const s = absence.state || (absence.status === 'approved' ? (absence.is_justified === false ? 'injustificada' : 'aprovada') : absence.status === 'rejected' ? 'rejeitada' : 'pendente');
+                            const badge = {
+                              aprovada: ['bg-green-700 text-green-200', 'Aprovada'],
+                              rejeitada: ['bg-orange-700 text-orange-200', 'Rejeitada'],
+                              injustificada: ['bg-red-700 text-red-200', 'Injustificada'],
+                              pendente_documento: ['bg-orange-700 text-orange-200', 'Pendente Doc.'],
+                              pendente: ['bg-amber-700 text-amber-200', 'Pendente'],
+                            }[s] || ['bg-gray-700 text-gray-200', s];
+                            return (
+                              <span className={`${isMobile ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'} rounded-full font-semibold ${badge[0]}`} data-testid={`absence-state-${absence.id}`}>
+                                {badge[1]}
+                              </span>
+                            );
+                          })()}
+                          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-1 min-w-0`}>
+                            <Button
+                              onClick={() => handleAbsenceState(absence.id, 'aprovada')}
+                              className={`bg-blue-600 hover:bg-blue-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                              size="sm" data-testid={`btn-abs-aprovar-${absence.id}`}
+                            >Aprovar</Button>
+                            <Button
+                              onClick={() => handleAbsenceState(absence.id, 'rejeitada')}
+                              className={`bg-orange-600 hover:bg-orange-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                              size="sm" data-testid={`btn-abs-rejeitar-${absence.id}`}
+                            >Rejeitar</Button>
+                            <Button
+                              onClick={() => handleAbsenceState(absence.id, 'pendente_documento')}
+                              className={`bg-amber-600 hover:bg-amber-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                              size="sm" data-testid={`btn-abs-pdoc-${absence.id}`}
+                            >Pendente Doc.</Button>
+                            <Button
+                              onClick={() => handleAbsenceState(absence.id, 'injustificada')}
+                              className={`bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                              size="sm" data-testid={`btn-abs-injust-${absence.id}`}
+                            >Injustificada</Button>
+                          </div>
                         </div>
                       </div>
                       {absence.reviewed_by && !isMobile && <div className="text-gray-500 text-xs mt-2 pt-2 border-t border-gray-700">Revisto por: {absence.reviewed_by}</div>}
