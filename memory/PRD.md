@@ -28,6 +28,17 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+
+40. ✅ **AdminTimeEntries — botões limpos (Feb 2026)**:
+    - Removido botão amarelo "8h" (Ajustar para 8h) + `handleAdjustTo8Hours` + import `Zap` de `AdminTimeEntries.jsx`. (Endpoint `POST /admin/time-entries/{id}/adjust-to-8h` mantido no backend — continua a ser usado pelo `Reports.jsx`.)
+    - Botão "Justificar" agora só aparece quando o dia é útil (`!day.isWeekend`) **e** não tem registos (`!day.hasEntries`) **e** não tem justificação (`!day.justification`). Deixa de aparecer em dias com registos ou fins-de-semana.
+
+41. ✅ **Popup "Gerir Férias" simplificado (Feb 2026)**:
+    - **UI (`VacationConfigModal.jsx`)**: removidos os campos Subsídio de Férias, Dias Gozados Anteriormente, Motivo de Alteração e a lista "Períodos de férias:". Mantém-se apenas a Data de Admissão, tabela informativa "Saldo detalhado por ano" e Histórico de alterações.
+    - **Backend (`routes/vacations_v2.py`)**: `PUT /admin/vacations/config/{user_id}` agora só aceita `admissao_date`. Campos `subsidio_ferias_valor` e `dias_gozados_anteriores` removidos do modelo e feito `$unset` na colecção. Motivo deixou de ser obrigatório em updates. Callers de `_fetch_saldo_ctx` em `time_entries.py` (3 sítios) actualizados para a nova assinatura (3-tuplo).
+    - **Novo endpoint** `POST /api/admin/vacations/cleanup-configs`: desduplica documentos por `user_id` (mantém o com `admissao_date` + `updated_at` mais recente) e faz `$unset` dos campos legados em todos os docs. Corrida em preview: 2 documentos limpos, 0 duplicados.
+
+## Sessão Anterior (Feb 2026) — Resumo
 39. ✅ **Aprovação de férias por email (one-click) — igual às horas extras (Feb 2026)**:
     - **Backend**:
       - `routes/vacations.py` — ao criar um pedido `POST /vacations/request` passa a gerar `approval_token` (UUID) + `token_expires_at` (7 dias). Envia `approval_token` + `reason` para o email helper.

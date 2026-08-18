@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { 
   Users, Calendar, Clock, Edit, Trash2, Plus, Save, X, 
-  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, Zap, MapPin, Map, ExternalLink, Download 
+  ChevronLeft, ChevronRight, User, FileText, AlertTriangle, MapPin, Map, ExternalLink, Download 
 } from 'lucide-react';
 import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
@@ -333,24 +333,6 @@ const AdminTimeEntries = ({ user, onLogout }) => {
       fetchUserEntries();
     } catch (error) {
       toast.error('Erro ao eliminar entrada');
-    }
-  };
-
-  const handleAdjustTo8Hours = async (entryId, dayDate) => {
-    if (!window.confirm('Ajustar automaticamente este dia para 8 horas totais?')) {
-      return;
-    }
-
-    try {
-      await axios.post(`${API}/admin/time-entries/${entryId}/adjust-to-8h`, {
-        register_observation: true,
-        user_id: selectedUser?.id,
-        date: dayDate
-      });
-      toast.success('Dia ajustado para 8 horas com sucesso!');
-      fetchUserEntries();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erro ao ajustar horas');
     }
   };
 
@@ -749,26 +731,17 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                           </div>
                           <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-3'}`}>
                             <div className="flex gap-1.5">
-                              {day.entries.length > 0 && (
+                              {!day.justification && !day.hasEntries && !day.isWeekend && (
                                 <Button
-                                  onClick={() => handleAdjustTo8Hours(day.entries[0].id, day.date)}
-                                  className={`bg-yellow-600 hover:bg-yellow-700 text-white ${isMobile ? 'text-[10px] px-2 py-1 h-7' : 'text-sm'}`}
+                                  onClick={() => openJustifyModal(day)}
+                                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'text-[10px] px-2 py-1 h-7' : 'text-sm'}`}
                                   size={isMobile ? 'sm' : 'default'}
-                                  title="Ajustar para 8h"
+                                  data-testid={`justify-day-btn-${day.date}`}
                                 >
-                                  <Zap className={isMobile ? 'w-3 h-3' : 'w-4 h-4 mr-1'} />
-                                  {!isMobile && '8h'}
+                                  <FileText className={isMobile ? 'w-3 h-3' : 'w-4 h-4 mr-1'} />
+                                  {!isMobile && 'Justificar'}
                                 </Button>
                               )}
-                              <Button
-                                onClick={() => openJustifyModal(day)}
-                                className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'text-[10px] px-2 py-1 h-7' : 'text-sm'}`}
-                                size={isMobile ? 'sm' : 'default'}
-                                data-testid={`justify-day-btn-${day.date}`}
-                              >
-                                <FileText className={isMobile ? 'w-3 h-3' : 'w-4 h-4 mr-1'} />
-                                {!isMobile && 'Justificar'}
-                              </Button>
                             </div>
                             <div className={`font-bold ${isMobile ? 'text-base' : 'text-xl'} ${day.totalHours > 0 ? 'text-green-400' : 'text-gray-500'}`}>
                               {formatHours(day.totalHours)}
