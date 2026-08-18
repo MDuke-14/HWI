@@ -114,12 +114,11 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
                     <thead>
                       <tr className="text-gray-400 text-left border-b border-gray-800">
                         <th className="py-2 px-2">Ano</th>
-                        <th className="py-2 px-2 text-right">Vencidos</th>
+                        <th className="py-2 px-2 text-right">Atribuídos</th>
                         <th className="py-2 px-2 text-right">Transitados</th>
-                        <th className="py-2 px-2 text-right">Gozados</th>
+                        <th className="py-2 px-2 text-right">Vencidos</th>
                         <th className="py-2 px-2 text-right">Marcados</th>
                         <th className="py-2 px-2 text-right">Disponíveis</th>
-                        <th className="py-2 px-2">Regra / Notas</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -131,7 +130,6 @@ export default function VacationConfigModal({ open, onOpenChange, userTarget, on
                           <td className="py-2 px-2 text-right text-amber-400">{y.dias_gozados}</td>
                           <td className="py-2 px-2 text-right text-purple-400">{y.dias_marcados}</td>
                           <td className={`py-2 px-2 text-right font-bold ${y.dias_disponiveis < 0 ? 'text-red-400' : 'text-green-400'}`}>{y.dias_disponiveis}</td>
-                          <td className="py-2 px-2 text-gray-500 max-w-xs">{y.notas}</td>
                         </tr>
                       ))}
                     </tbody>
