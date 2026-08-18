@@ -2562,45 +2562,73 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
                 
                 <div className="space-y-4">
-                  {reports.users && reports.users.length > 0 ? (
-                    reports.users.map((u, idx) => (
-                      <div key={u.user_id || u.username || idx} className="bg-[#1a1a1a] p-5 rounded-lg">
+                  {(() => {
+                    // Consolidar: SEMPRE mostrar todos os utilizadores activos, mesmo sem registos
+                    const withData = reports.users || [];
+                    const byId = new Map(withData.map((u) => [u.user_id, u]));
+                    const merged = (users || [])
+                      .filter((u) => u.is_active !== false)
+                      .map((u) => {
+                        const found = byId.get(u.id);
+                        if (found) return found;
+                        return {
+                          user_id: u.id,
+                          username: u.username,
+                          full_name: u.full_name,
+                          total_hours: 0,
+                          regular_hours: 0,
+                          overtime_hours: 0,
+                          days_worked: 0,
+                          no_data: true,
+                        };
+                      });
+                    // Utilizadores com registos mas já inactivos (mantém no fim)
+                    const activeIds = new Set((users || []).map((u) => u.id));
+                    for (const u of withData) {
+                      if (!activeIds.has(u.user_id)) merged.push(u);
+                    }
+                    if (merged.length === 0) {
+                      return (
+                        <div className="text-center text-gray-400 py-8">
+                          Nenhum utilizador activo
+                        </div>
+                      );
+                    }
+                    return merged.map((u, idx) => (
+                      <div
+                        key={u.user_id || u.username || idx}
+                        className={`bg-[#1a1a1a] p-5 rounded-lg ${u.no_data ? 'opacity-70' : ''}`}
+                        data-testid={`report-user-${u.user_id || idx}`}
+                      >
                         <div className="flex justify-between items-center mb-3">
-                          <div className="text-white font-semibold text-lg">{u.username}</div>
+                          <div className="text-white font-semibold text-lg">
+                            {u.full_name || u.username}
+                            {u.no_data && <span className="ml-2 text-xs text-gray-500 font-normal">(sem registos neste período)</span>}
+                          </div>
                           <div className="flex items-center gap-3">
-                            <div className="text-green-400 font-bold text-2xl">{u.total_hours.toFixed(2)}h</div>
+                            <div className={`font-bold text-2xl ${u.total_hours > 0 ? 'text-green-400' : 'text-gray-500'}`}>{u.total_hours.toFixed(2)}h</div>
                             <Button
                               onClick={async () => {
                                 try {
                                   const response = await axios.get(
                                     `${API}/time-entries/reports/monthly-pdf?user_id=${u.user_id}&month=${reportMonth}&year=${reportYear}`,
-                                    {
-                                      responseType: 'blob'
-                                    }
+                                    { responseType: 'blob' }
                                   );
-                                  
-                                  // Criar URL do blob e fazer download
                                   const blob = new Blob([response.data], { type: 'application/pdf' });
                                   const downloadUrl = window.URL.createObjectURL(blob);
                                   const link = document.createElement('a');
                                   link.href = downloadUrl;
-                                  
-                                  // Extrair nome do arquivo do header ou usar padrão
                                   const contentDisposition = response.headers['content-disposition'];
                                   let filename = `Relatorio_${u.username}_${reportMonth}_${reportYear}.pdf`;
                                   if (contentDisposition) {
                                     const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-                                    if (filenameMatch) {
-                                      filename = filenameMatch[1];
-                                    }
+                                    if (filenameMatch) filename = filenameMatch[1];
                                   }
-                                  
                                   link.download = filename;
                                   document.body.appendChild(link);
                                   link.click();
                                   document.body.removeChild(link);
                                   window.URL.revokeObjectURL(downloadUrl);
-                                  
                                   toast.success('PDF baixado com sucesso!');
                                 } catch (error) {
                                   toast.error('Erro ao baixar PDF: ' + (error.response?.data?.detail || error.message));
@@ -2609,6 +2637,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                               className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
                               size="sm"
                               title={`Download Relatório de ${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][reportMonth-1]} ${reportYear}`}
+                              data-testid={`report-pdf-${u.user_id || idx}`}
                             >
                               <Download className="w-4 h-4 mr-1" />
                               PDF
@@ -2616,17 +2645,13 @@ const AdminDashboard = ({ user, onLogout }) => {
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div><div className="text-gray-400">Horas Normais</div><div className="text-blue-400 font-semibold">{u.regular_hours.toFixed(2)}h</div></div>
-                          <div><div className="text-gray-400">Horas Extras</div><div className="text-amber-400 font-semibold">{u.overtime_hours.toFixed(2)}h</div></div>
-                          <div><div className="text-gray-400">Dias Trabalhados</div><div className="text-white font-semibold">{u.days_worked}</div></div>
+                          <div><div className="text-gray-400">Horas Normais</div><div className={`font-semibold ${u.regular_hours > 0 ? 'text-blue-400' : 'text-gray-500'}`}>{u.regular_hours.toFixed(2)}h</div></div>
+                          <div><div className="text-gray-400">Horas Extras</div><div className={`font-semibold ${u.overtime_hours > 0 ? 'text-amber-400' : 'text-gray-500'}`}>{u.overtime_hours.toFixed(2)}h</div></div>
+                          <div><div className="text-gray-400">Dias Trabalhados</div><div className={`font-semibold ${u.days_worked > 0 ? 'text-white' : 'text-gray-500'}`}>{u.days_worked}</div></div>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-400 py-8">
-                      Nenhum registo encontrado para este período
-                    </div>
-                  )}
+                    ));
+                  })()}
                 </div>
               </div>
             )}

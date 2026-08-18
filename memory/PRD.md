@@ -28,6 +28,8 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - Folha de Horas (Timesheet) com cálculo detalhado por código (1/2/S/D), tipo (trabalho/viagem) e função (junior/tecnico/senior)
 
 ## Sessão Atual (Feb 2026) — Resumo
+36. ✅ **`/admin` aba Relatórios — mostrar todos os utilizadores (Feb 2026)**: antes só apareciam users com registos no período. Agora a lista é sempre construída a partir de `users` (todos activos), fundida com `reports.users`. Users sem registos mostram `0h` a cinzento + label "(sem registos neste período)" e o botão PDF continua acessível para gerar mesmo assim. Users inactivos que tiveram registos mantêm-se no fim da lista. Sem alteração ao backend.
+
 35. ✅ **Reformulação do sistema de Faltas (Código do Trabalho arts. 248.º–257.º) (Feb 2026)**:
     - **Backend** — `routes/absences_v2.py` (mantém coleção `absences` e retrocompat com `/absences/*` antigos):
       - Estados separados do tipo: **Pendente | Aprovada | Rejeitada | Pendente de Documento | Injustificada**. Rejeitada ≠ Injustificada.
