@@ -870,14 +870,14 @@ async def startup_event():
     
     async def scheduled_clock_out_check():
         """Verificação periódica — dispara pedido de horas extra assim que
-        qualquer utilizador ultrapassa 8h15 trabalhadas no dia."""
-        logging.info("🕐 Executando verificação de limite 8h15...")
+        qualquer utilizador ultrapassa 8h01 trabalhadas no dia."""
+        logging.info("🕐 Executando verificação de limite 8h01...")
         try:
             result = await check_clock_out_status(db, base_url)
             if result.get('notified_count', 0) > 0:
-                logging.info(f"Verificação 8h15: {result.get('notified_count', 0)} pedidos criados")
+                logging.info(f"Verificação 8h01: {result.get('notified_count', 0)} pedidos criados")
         except Exception as e:
-            logging.error(f"Erro na verificação 8h15: {str(e)}")
+            logging.error(f"Erro na verificação 8h01: {str(e)}")
     
     # Agendar verificação das 09:30 (dias úteis)
     scheduler.add_job(
@@ -887,7 +887,7 @@ async def startup_event():
         replace_existing=True
     )
     
-    # Verificação de limite 8h15 — a cada 15 min, dias úteis, 08h-22h
+    # Verificação de limite 8h01 — a cada 15 min, dias úteis, 08h-22h
     scheduler.add_job(
         scheduled_clock_out_check,
         CronTrigger(minute='0,15,30,45', hour='8-22', day_of_week='mon-fri'),
@@ -1100,7 +1100,7 @@ async def startup_event():
     )
 
     scheduler.start()
-    logging.info("📅 Scheduler de verificações de ponto iniciado (clock-in 09:30, overtime 8h15 a cada 15min)")
+    logging.info("📅 Scheduler de verificações de ponto iniciado (clock-in 09:30, overtime 8h01 a cada 15min)")
     logging.info("   + Lembretes de serviço a cada 15 min (07:00-20:00)")
     logging.info("   Timezone: Europe/Lisbon")
     logging.info(f"   Base URL: {base_url}")
