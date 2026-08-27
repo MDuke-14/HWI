@@ -92,7 +92,7 @@ const Absences = ({ user, onLogout }) => {
     }
     setLoading(true);
     try {
-      await axios.post(`${API}/absences/v2/create`, {
+      const res = await axios.post(`${API}/absences/v2/create`, {
         date: formData.date,
         absence_type: formData.absence_type,
         is_partial: formData.is_partial,
@@ -103,6 +103,10 @@ const Absences = ({ user, onLogout }) => {
         reason: formData.reason,
       });
       toast.success('Falta registada com sucesso!');
+      const trim = res?.data?.absence?.trim_result;
+      if (trim && trim.entries_before > 0 && !trim.overlapped) {
+        toast.warning('Atenção: esta falta não coincide com nenhum registo de ponto do dia — os registos existentes não foram alterados.');
+      }
       setShowDialog(false);
       setFormData({ date: '', absence_type: 'Falta 8h Justificada', is_partial: false, hours: 8, start_time: '', end_time: '', is_justified: true, reason: '' });
       fetchAbsences();

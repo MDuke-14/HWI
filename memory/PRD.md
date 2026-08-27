@@ -29,6 +29,12 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Sessão Atual (Feb 2026) — Resumo
 
+44. ✅ **Editar Falta existente + Aviso de não-sobreposição (Feb 2026)**:
+    - **Backend `PUT /admin/absences/v2/{id}/edit`**: reverte o trim atual (restaura registos originais), atualiza os campos (tipo, is_partial, start/end, hours, reason), regista audit e re-aplica trim com os novos valores (a menos que o estado seja `rejeitada`).
+    - **Aviso de não-sobreposição**: o backend devolve `trim_result: {overlapped, entries_before, ...}` em create e edit. Frontend mostra `toast.warning(...)` quando a falta tem `entries_before > 0` e `overlapped=false` — significa que existiam registos no dia mas nenhum intersecta a janela da falta (útil para o admin corrigir horas).
+    - **UI Admin (`AdminDashboard.jsx`)**: novo botão **Editar** por falta com modal (tipo · parcial/dia inteiro · start/end · horas · motivo).
+    - Testado E2E: criar 10-12 (2h → cortou) → editar para 14-16 (revert + re-cut: 08-12 mantido, 13-14 + 16-17) → editar para 05-06 (`overlapped:false`, registos originais intactos).
+
 43. ✅ **Faltas parciais cortam registos de ponto automaticamente + Eliminar Falta (Feb 2026)**:
     - **Backend (`routes/absences_v2.py`)** — novos helpers `_apply_absence_trim` / `_revert_absence_trim` (com snapshot `original_entries` na falta):
       - `POST /absences/v2/create` — ao criar, os registos de ponto do dia são cortados no intervalo da falta. Ex.: entries 08-12 + 13-17, falta 10-12 → resultado 08-10 + 13-17. Sem sobreposição, nada muda.

@@ -537,6 +537,104 @@ async def admin_set_state(
     return {"success": True, "state": new_state}
 
 
+@router.put("/admin/absences/v2/{absence_id}/edit")
+async def admin_edit_absence(
+    absence_id: str, data: dict, current_user: dict = Depends(get_current_admin),
+):
+    """Edita campos de uma falta existente (tipo, is_partial, horas, motivo).
+    Repõe os registos originais e re-aplica trim com os novos valores.
+
+    Body opcional:
+      absence_type: str
+      is_partial: bool
+      start_time: "HH:MM"
+      end_time: "HH:MM"
+      hours: float (para dias inteiros; ignorado se is_partial)
+      reason: str
+    """
+    absence = await db.absences.find_one({"id": absence_id}, {"_id": 0})
+    if not absence:
+        raise HTTPException(404, "Falta não encontrada")
+
+    # Sanitizar novos valores (com defaults dos existentes)
+    absence_type = (data.get("absence_type") or absence.get("absence_type") or "").strip()
+    is_partial = bool(data.get("is_partial")) if "is_partial" in data else bool(absence.get("is_partial"))
+    start_time = data.get("start_time") if is_partial else None
+    end_time = data.get("end_time") if is_partial else None
+    if is_partial:
+        if not start_time or not end_time:
+            raise HTTPException(400, "start_time e end_time obrigatórios em falta parcial")
+        try:
+            sh, sm = map(int, str(start_time).split(":")[:2])
+            eh, em = map(int, str(end_time).split(":")[:2])
+            mins = (eh * 60 + em) - (sh * 60 + sm)
+            if mins <= 0:
+                raise ValueError
+            hours = round(mins / 60, 2)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "start_time/end_time inválidos")
+    else:
+        try:
+            hours = float(data.get("hours") if data.get("hours") is not None else absence.get("hours") or 8.0)
+        except (TypeError, ValueError):
+            raise HTTPException(400, "hours inválido")
+
+    reason = data.get("reason") if "reason" in data else absence.get("reason")
+
+    # 1) Reverter trim actual (restaura originais, limpa snapshot)
+    try:
+        await _revert_absence_trim(absence)
+    except Exception as ex:
+        logging.exception(f"Falha ao reverter trim antes da edição {absence_id}: {ex}")
+
+    # 2) Actualizar documento da falta
+    before = {
+        "absence_type": absence.get("absence_type"),
+        "is_partial": absence.get("is_partial"),
+        "start_time": absence.get("start_time"),
+        "end_time": absence.get("end_time"),
+        "hours": absence.get("hours"),
+        "reason": absence.get("reason"),
+    }
+    after = {
+        "absence_type": absence_type,
+        "is_partial": is_partial,
+        "start_time": start_time,
+        "end_time": end_time,
+        "hours": hours,
+        "reason": reason,
+    }
+    await db.absences.update_one(
+        {"id": absence_id},
+        {"$set": {**after, "updated_at": datetime.now(timezone.utc).isoformat(),
+                  "updated_by": current_user.get("username")}},
+    )
+    await _audit(
+        absence_id, absence["user_id"], "edited",
+        normalize_state(absence), normalize_state(absence),
+        f"before={before} after={after}", current_user,
+    )
+
+    # 3) Re-aplicar trim com novos valores (se não for rejeitada)
+    current = await db.absences.find_one({"id": absence_id}, {"_id": 0})
+    trim = {"overlapped": False}
+    if current and normalize_state(current) != STATE_REJECTED:
+        try:
+            trim = await _apply_absence_trim(current)
+        except Exception as ex:
+            logging.exception(f"Falha a re-aplicar trim após edição {absence_id}: {ex}")
+
+    # 4) Notificar trabalhador
+    await create_notification(
+        absence["user_id"], "absence_edited",
+        f"A sua falta de {absence['date']} foi editada pelo admin.",
+        absence_id,
+    )
+    return {"success": True, "trim_result": trim, "absence": current}
+
+
+
+
 @router.delete("/admin/absences/v2/{absence_id}")
 async def admin_delete_absence(
     absence_id: str, current_user: dict = Depends(get_current_admin),

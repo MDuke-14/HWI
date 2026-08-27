@@ -52,6 +52,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [showVacConfig, setShowVacConfig] = useState(false);
   const [vacConfigUser, setVacConfigUser] = useState(null);
   const [showMapaFerias, setShowMapaFerias] = useState(false);
+  const [editAbsence, setEditAbsence] = useState(null); // absence a editar
+  const [editAbsenceForm, setEditAbsenceForm] = useState(null);
   
   // Estados para seleção de mês no Relatório Consolidado
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
@@ -555,6 +557,46 @@ const AdminDashboard = ({ user, onLogout }) => {
       fetchAllAbsences();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao eliminar falta');
+    }
+  };
+
+  const openEditAbsence = (absence) => {
+    setEditAbsence(absence);
+    setEditAbsenceForm({
+      absence_type: absence.absence_type || 'Falta Parcial',
+      is_partial: !!absence.is_partial,
+      start_time: absence.start_time || '',
+      end_time: absence.end_time || '',
+      hours: absence.hours || 8,
+      reason: absence.reason || '',
+    });
+  };
+
+  const saveEditAbsence = async () => {
+    if (!editAbsence || !editAbsenceForm) return;
+    if (editAbsenceForm.is_partial && (!editAbsenceForm.start_time || !editAbsenceForm.end_time)) {
+      toast.error('Falta parcial requer hora de início e fim');
+      return;
+    }
+    try {
+      const res = await axios.put(`${API}/admin/absences/v2/${editAbsence.id}/edit`, {
+        absence_type: editAbsenceForm.absence_type,
+        is_partial: editAbsenceForm.is_partial,
+        start_time: editAbsenceForm.is_partial ? editAbsenceForm.start_time : null,
+        end_time: editAbsenceForm.is_partial ? editAbsenceForm.end_time : null,
+        hours: editAbsenceForm.is_partial ? undefined : editAbsenceForm.hours,
+        reason: editAbsenceForm.reason,
+      });
+      toast.success('Falta atualizada.');
+      const trim = res?.data?.trim_result;
+      if (trim && trim.entries_before > 0 && !trim.overlapped) {
+        toast.warning('Aviso: a nova janela desta falta não coincide com nenhum registo de ponto do dia.');
+      }
+      setEditAbsence(null);
+      setEditAbsenceForm(null);
+      fetchAllAbsences();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar falta');
     }
   };
 
@@ -1107,6 +1149,11 @@ const AdminDashboard = ({ user, onLogout }) => {
                               className={`bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
                               size="sm" data-testid={`btn-abs-injust-${absence.id}`}
                             >Injustificada</Button>
+                            <Button
+                              onClick={() => openEditAbsence(absence)}
+                              className={`bg-purple-600 hover:bg-purple-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
+                              size="sm" data-testid={`btn-abs-editar-${absence.id}`}
+                            >Editar</Button>
                             <Button
                               onClick={() => handleDeleteAbsence(absence.id)}
                               className={`bg-gray-700 hover:bg-gray-600 text-white rounded-full ${isMobile ? 'text-[10px] px-2 col-span-2' : 'text-xs'}`}
@@ -2811,6 +2858,95 @@ const AdminDashboard = ({ user, onLogout }) => {
           onSaved={() => { fetchUsers(); fetchPendingVacations(); }}
         />
         <MapaFeriasModal open={showMapaFerias} onOpenChange={setShowMapaFerias} />
+
+        {/* Editar Falta */}
+        <Dialog open={!!editAbsence} onOpenChange={(o) => { if (!o) { setEditAbsence(null); setEditAbsenceForm(null); } }}>
+          <DialogContent className="bg-[#0f0f0f] border-gray-700 text-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">
+                Editar Falta — {editAbsence?.username} · {editAbsence?.date}
+              </DialogTitle>
+            </DialogHeader>
+            {editAbsenceForm && (
+              <div className="space-y-3 mt-2">
+                <div>
+                  <Label className="text-gray-300 text-sm">Tipo</Label>
+                  <Input
+                    value={editAbsenceForm.absence_type}
+                    onChange={(e) => setEditAbsenceForm({ ...editAbsenceForm, absence_type: e.target.value })}
+                    className="bg-[#1a1a1a] border-gray-700 mt-1"
+                    placeholder="Ex.: Falta Parcial / Falta 8h Justificada"
+                    data-testid="edit-abs-type"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={editAbsenceForm.is_partial}
+                    onCheckedChange={(v) => setEditAbsenceForm({ ...editAbsenceForm, is_partial: v })}
+                    data-testid="edit-abs-partial"
+                  />
+                  <Label className="text-gray-300 text-sm">Falta parcial (com hora início/fim)</Label>
+                </div>
+                {editAbsenceForm.is_partial ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-gray-300 text-sm">Início</Label>
+                      <Input
+                        type="time"
+                        value={editAbsenceForm.start_time}
+                        onChange={(e) => setEditAbsenceForm({ ...editAbsenceForm, start_time: e.target.value })}
+                        className="bg-[#1a1a1a] border-gray-700 mt-1"
+                        data-testid="edit-abs-start"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-sm">Fim</Label>
+                      <Input
+                        type="time"
+                        value={editAbsenceForm.end_time}
+                        onChange={(e) => setEditAbsenceForm({ ...editAbsenceForm, end_time: e.target.value })}
+                        className="bg-[#1a1a1a] border-gray-700 mt-1"
+                        data-testid="edit-abs-end"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-gray-300 text-sm">Horas (dia inteiro)</Label>
+                    <Input
+                      type="number" step="0.25" min="0"
+                      value={editAbsenceForm.hours}
+                      onChange={(e) => setEditAbsenceForm({ ...editAbsenceForm, hours: parseFloat(e.target.value) || 0 })}
+                      className="bg-[#1a1a1a] border-gray-700 mt-1 max-w-[8rem]"
+                      data-testid="edit-abs-hours"
+                    />
+                  </div>
+                )}
+                <div>
+                  <Label className="text-gray-300 text-sm">Motivo</Label>
+                  <Input
+                    value={editAbsenceForm.reason}
+                    onChange={(e) => setEditAbsenceForm({ ...editAbsenceForm, reason: e.target.value })}
+                    className="bg-[#1a1a1a] border-gray-700 mt-1"
+                    data-testid="edit-abs-reason"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-gray-800">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setEditAbsence(null); setEditAbsenceForm(null); }}
+                    className="flex-1 border-gray-600"
+                  >Cancelar</Button>
+                  <Button
+                    onClick={saveEditAbsence}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    data-testid="edit-abs-save"
+                  >Guardar</Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
