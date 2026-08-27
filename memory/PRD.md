@@ -29,6 +29,18 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Sessão Atual (Feb 2026) — Resumo
 
+43. ✅ **Faltas parciais cortam registos de ponto automaticamente + Eliminar Falta (Feb 2026)**:
+    - **Backend (`routes/absences_v2.py`)** — novos helpers `_apply_absence_trim` / `_revert_absence_trim` (com snapshot `original_entries` na falta):
+      - `POST /absences/v2/create` — ao criar, os registos de ponto do dia são cortados no intervalo da falta. Ex.: entries 08-12 + 13-17, falta 10-12 → resultado 08-10 + 13-17. Sem sobreposição, nada muda.
+      - `PUT /admin/absences/v2/{id}/state` — se transição para `rejeitada`, restaura registos originais; se sair de `rejeitada` para outro estado, volta a cortar.
+      - `DELETE /admin/absences/v2/{id}` — novo endpoint: restaura registos originais (se houve corte) e apaga a falta + audit + notificação ao trabalhador.
+      - Falta de dia inteiro (is_partial=False) → remove todos os registos do dia.
+      - Snapshot idempotente em `absence.original_entries`; entries cortados marcados com `justified_by_absence`.
+    - **Frontend**:
+      - `AdminTimeEntries.jsx` — badge "Falta" e estilos vermelhos só aparecem em dias sem registos (falta de dia inteiro). Se houver registos, o dia apresenta-se normalmente com as horas efectivas.
+      - `AdminDashboard.jsx` (aba Faltas) — novo botão **Eliminar** por falta, com confirmação simples e restauro automático.
+    - Testado E2E: criar → cortar (2 entries), rejeitar → restaurar (2 entries originais), re-aprovar → cortar novamente, eliminar → restaurar + apagar. 100% OK.
+
 42. ✅ **Calendário — férias ocultas em fim-de-semana/feriados + feriado municipal Barreiro (Feb 2026)**:
     - **`/calendar`**: `getVacationsForDate` em `Calendar.jsx` agora devolve `[]` se a data for sábado, domingo ou feriado — as barras de férias deixam de aparecer nesses dias no grid.
     - **Feriado municipal do Barreiro (28 de Junho — Dia da Cidade)** adicionado em 3 fontes: `backend/holidays.py:FIXED_HOLIDAYS`, `backend/cronometro_logic.py:FERIADOS_PORTUGAL` (2025/2026/2027) e `frontend/Calendar.jsx:getHolidays`. Verificado via `is_holiday`, `is_feriado` e `vacation_engine.feriados_do_ano(2026)` — tudo devolve `True/incluído`.

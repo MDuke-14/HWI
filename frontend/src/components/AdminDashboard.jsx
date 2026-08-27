@@ -547,6 +547,18 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleDeleteAbsence = async (absenceId) => {
+    if (!window.confirm('Eliminar esta falta? Os registos de ponto originais (se cortados por esta falta) serão restaurados.')) return;
+    try {
+      await axios.delete(`${API}/admin/absences/v2/${absenceId}`);
+      toast.success('Falta eliminada.');
+      fetchAllAbsences();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao eliminar falta');
+    }
+  };
+
+
   const handleCreateUser = async () => {
     setLoading(true);
     try {
@@ -1095,6 +1107,11 @@ const AdminDashboard = ({ user, onLogout }) => {
                               className={`bg-red-600 hover:bg-red-700 text-white rounded-full ${isMobile ? 'text-[10px] px-2' : 'text-xs'}`}
                               size="sm" data-testid={`btn-abs-injust-${absence.id}`}
                             >Injustificada</Button>
+                            <Button
+                              onClick={() => handleDeleteAbsence(absence.id)}
+                              className={`bg-gray-700 hover:bg-gray-600 text-white rounded-full ${isMobile ? 'text-[10px] px-2 col-span-2' : 'text-xs'}`}
+                              size="sm" data-testid={`btn-abs-delete-${absence.id}`}
+                            >Eliminar</Button>
                           </div>
                         </div>
                       </div>

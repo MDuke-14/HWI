@@ -655,7 +655,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                             ? 'bg-blue-950/40 border-blue-700/50'
                             : day.justification?.type === 'folga'
                               ? 'bg-amber-950/40 border-amber-700/50'
-                              : day.justification?.type === 'falta'
+                              : (day.justification?.type === 'falta' && !day.hasEntries)
                                 ? 'bg-red-950/40 border-red-700/50'
                                 : day.justification?.type === 'cancelamento_ferias'
                                   ? 'bg-cyan-950/40 border-cyan-700/50'
@@ -674,7 +674,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 ? 'text-blue-300'
                                 : day.justification?.type === 'folga'
                                   ? 'text-amber-300'
-                                  : day.justification?.type === 'falta'
+                                  : (day.justification?.type === 'falta' && !day.hasEntries)
                                     ? 'text-red-300'
                                     : day.justification?.type === 'cancelamento_ferias'
                                       ? 'text-cyan-300'
@@ -702,7 +702,7 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                                 {isMobile ? 'Folga' : day.justification.label}
                               </span>
                             )}
-                            {day.justification?.type === 'falta' && (
+                            {day.justification?.type === 'falta' && !day.hasEntries && (
                               <span className={`${isMobile ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2 py-1'} bg-red-600/30 text-red-300 rounded-full font-medium`}>
                                 Falta
                               </span>

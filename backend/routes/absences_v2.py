@@ -155,6 +155,193 @@ async def _audit(
 
 
 # ---------------------------------------------------------------------------
+# Trim automático de time_entries com base numa falta
+# ---------------------------------------------------------------------------
+# Regra: quando uma falta é criada (ou reactivada) e há registos de ponto no
+# mesmo dia que se sobrepõem à janela [start_time..end_time] da falta, os
+# registos são "cortados" para excluir o intervalo da falta. O estado
+# original dos registos é preservado em `absence.original_entries` para
+# permitir reversão (rejeição / eliminação da falta).
+#   - Falta parcial: usa `start_time`/`end_time` HH:MM da falta.
+#   - Falta de dia inteiro (is_partial=False): remove todos os registos do dia.
+# ---------------------------------------------------------------------------
+
+def _hhmm_to_min(s):
+    if not s or ":" not in str(s):
+        return None
+    try:
+        h, m = map(int, str(s).split(":")[:2])
+        return h * 60 + m
+    except (TypeError, ValueError):
+        return None
+
+
+def _entry_range_min(entry: dict):
+    """Devolve (start_min, end_min) do entry, em minutos, no fuso Europe/Lisbon.
+    None se não tiver ambos os limites."""
+    from server import parse_stored_datetime, LISBON_TZ
+    st = entry.get("start_time")
+    en = entry.get("end_time")
+    if not st or not en:
+        return None
+    try:
+        s = parse_stored_datetime(st) if isinstance(st, str) else st
+        e = parse_stored_datetime(en) if isinstance(en, str) else en
+    except Exception:
+        return None
+    if s.tzinfo:
+        s = s.astimezone(LISBON_TZ)
+    if e.tzinfo:
+        e = e.astimezone(LISBON_TZ)
+    return (s.hour * 60 + s.minute, e.hour * 60 + e.minute)
+
+
+def _mk_dt_local(date_str: str, minutes: int):
+    """Cria datetime aware (Europe/Lisbon) no dia `date_str` a `minutes` do início."""
+    from server import LISBON_TZ
+    d = datetime.strptime(date_str, "%Y-%m-%d")
+    h, m = divmod(minutes, 60)
+    return LISBON_TZ.localize(datetime(d.year, d.month, d.day, h, m, 0))
+
+
+def _clone_entry_trimmed(orig: dict, date_str: str, new_start_min=None,
+                          new_end_min=None, new_hours: float = 0.0,
+                          absence_id: Optional[str] = None) -> dict:
+    """Clona `orig` com novo intervalo e id. Reset breakdown para regular."""
+    new = {**orig}
+    new.pop("_id", None)
+    new["id"] = str(uuid.uuid4())
+    if new_start_min is not None:
+        new["start_time"] = _mk_dt_local(date_str, new_start_min).isoformat()
+    if new_end_min is not None:
+        new["end_time"] = _mk_dt_local(date_str, new_end_min).isoformat()
+    new["total_hours"] = round(max(0.0, new_hours), 4)
+    # Simplificação: repõe breakdown para regular. Não recalcula OT/SAT/DOM
+    # (o trim aplica-se tipicamente em dia útil sem OT).
+    new["regular_hours"] = new["total_hours"]
+    new["overtime_hours"] = 0
+    new["special_hours"] = 0
+    if absence_id:
+        new["justified_by_absence"] = absence_id
+    return new
+
+
+def _split_entry(entry: dict, date_str: str, abs_s: int, abs_e: int,
+                 absence_id: Optional[str] = None):
+    """Devolve lista de entries que substituem `entry` (0..2 elementos)."""
+    rng = _entry_range_min(entry)
+    if rng is None:
+        return [entry]  # sem info, mantém original
+    e_s, e_e = rng
+    # sem interseção → mantém
+    if abs_e <= e_s or abs_s >= e_e:
+        return [entry]
+    out = []
+    if e_s < abs_s:
+        out.append(_clone_entry_trimmed(
+            entry, date_str, new_start_min=e_s, new_end_min=abs_s,
+            new_hours=(abs_s - e_s) / 60, absence_id=absence_id,
+        ))
+    if e_e > abs_e:
+        out.append(_clone_entry_trimmed(
+            entry, date_str, new_start_min=abs_e, new_end_min=e_e,
+            new_hours=(e_e - abs_e) / 60, absence_id=absence_id,
+        ))
+    # Se ambos "acima" falharam → falta cobre entry por completo → devolve []
+    return out
+
+
+async def _apply_absence_trim(absence: dict) -> dict:
+    """Corta registos de ponto do dia da falta. Guarda snapshot `original_entries`.
+
+    Devolve estatística: `{ overlapped, kept, removed, inserted, entries_before }`.
+    """
+    user_id = absence["user_id"]
+    date_str = absence["date"]
+    entries = await db.time_entries.find(
+        {"user_id": user_id, "date": date_str}, {"_id": 0},
+    ).to_list(500)
+    if not entries:
+        return {"overlapped": False, "kept": 0, "removed": 0, "inserted": 0, "entries_before": 0}
+
+    is_partial = bool(absence.get("is_partial"))
+    if is_partial:
+        abs_s = _hhmm_to_min(absence.get("start_time"))
+        abs_e = _hhmm_to_min(absence.get("end_time"))
+        if abs_s is None or abs_e is None or abs_e <= abs_s:
+            return {"overlapped": False, "kept": len(entries), "removed": 0, "inserted": 0, "entries_before": len(entries)}
+    else:
+        abs_s, abs_e = 0, 24 * 60
+
+    # Detectar se há efectivamente interseção
+    new_entries: list = []
+    overlapped = False
+    for e in entries:
+        rng = _entry_range_min(e)
+        if rng is None:
+            new_entries.append(e)
+            continue
+        e_s, e_e = rng
+        if abs_e <= e_s or abs_s >= e_e:
+            new_entries.append(e)
+            continue
+        overlapped = True
+        new_entries.extend(_split_entry(e, date_str, abs_s, abs_e, absence["id"]))
+
+    if not overlapped:
+        return {"overlapped": False, "kept": len(entries), "removed": 0, "inserted": 0, "entries_before": len(entries)}
+
+    # Guardar snapshot dos registos originais (apenas 1ª vez — idempotente)
+    if not absence.get("original_entries"):
+        await db.absences.update_one(
+            {"id": absence["id"]},
+            {"$set": {"original_entries": entries}},
+        )
+
+    # Substituir registos do dia
+    await db.time_entries.delete_many({"user_id": user_id, "date": date_str})
+    inserted = 0
+    for ne in new_entries:
+        doc = {**ne}
+        doc.pop("_id", None)
+        doc.setdefault("id", str(uuid.uuid4()))
+        await db.time_entries.insert_one(doc)
+        inserted += 1
+
+    return {
+        "overlapped": True,
+        "kept": 0,
+        "removed": len(entries),
+        "inserted": inserted,
+        "entries_before": len(entries),
+    }
+
+
+async def _revert_absence_trim(absence: dict) -> dict:
+    """Repõe registos originais guardados no snapshot da falta."""
+    orig = absence.get("original_entries") or []
+    user_id = absence["user_id"]
+    date_str = absence["date"]
+    if not orig:
+        return {"restored": 0}
+    await db.time_entries.delete_many({"user_id": user_id, "date": date_str})
+    restored = 0
+    for e in orig:
+        doc = {**e}
+        doc.pop("_id", None)
+        doc.pop("justified_by_absence", None)
+        await db.time_entries.insert_one(doc)
+        restored += 1
+    await db.absences.update_one(
+        {"id": absence["id"]},
+        {"$unset": {"original_entries": ""}},
+    )
+    return {"restored": restored}
+
+
+
+
+# ---------------------------------------------------------------------------
 # Registo pelo utilizador (v2 — com faltas parciais reais)
 # ---------------------------------------------------------------------------
 
@@ -234,6 +421,13 @@ async def create_absence_v2(
     }
     await db.absences.insert_one(doc)
     await _audit(absence_id, current_user["sub"], "created", None, STATE_PENDING, "", current_user)
+
+    # Aplicar corte de time_entries (falta activa desde a criação, mesmo pendente)
+    try:
+        trim = await _apply_absence_trim(doc)
+        doc["trim_result"] = trim
+    except Exception as ex:
+        logging.exception(f"Falha ao aplicar trim de falta {absence_id}: {ex}")
 
     # Notify admins
     admins = await db.users.find({"is_admin": True}, {"_id": 0, "id": 1}).to_list(100)
@@ -319,6 +513,20 @@ async def admin_set_state(
     )
     await _audit(absence_id, absence["user_id"], "state_change", prev_state, new_state, motivo, current_user)
 
+    # Aplicar/reverter trim de time_entries em função do estado
+    try:
+        current_absence = await db.absences.find_one({"id": absence_id}, {"_id": 0})
+        if current_absence:
+            if prev_state != STATE_REJECTED and new_state == STATE_REJECTED:
+                # Rejeitou → repor registos originais
+                await _revert_absence_trim(current_absence)
+            elif prev_state == STATE_REJECTED and new_state != STATE_REJECTED:
+                # Reactivou uma falta anteriormente rejeitada → cortar de novo
+                await _apply_absence_trim(current_absence)
+            # Restantes transições (pendente↔aprovada, etc.): trim já aplicado
+    except Exception as ex:
+        logging.exception(f"Falha ao actualizar trim da falta {absence_id}: {ex}")
+
     # Notify user
     await create_notification(
         absence["user_id"], f"absence_state_{new_state}",
@@ -327,6 +535,40 @@ async def admin_set_state(
         absence_id,
     )
     return {"success": True, "state": new_state}
+
+
+@router.delete("/admin/absences/v2/{absence_id}")
+async def admin_delete_absence(
+    absence_id: str, current_user: dict = Depends(get_current_admin),
+):
+    """Elimina uma falta e restaura eventuais registos de ponto que tenham
+    sido cortados por ela."""
+    absence = await db.absences.find_one({"id": absence_id}, {"_id": 0})
+    if not absence:
+        raise HTTPException(404, "Falta não encontrada")
+
+    # Restaurar registos se houve trim (idempotente se não houver snapshot)
+    try:
+        await _revert_absence_trim(absence)
+    except Exception as ex:
+        logging.exception(f"Falha ao reverter trim ao eliminar falta {absence_id}: {ex}")
+
+    prev_state = normalize_state(absence)
+    await _audit(
+        absence_id, absence["user_id"], "deleted",
+        prev_state, "deleted", "eliminada pelo admin", current_user,
+    )
+    await db.absences.delete_one({"id": absence_id})
+
+    # Notify user
+    await create_notification(
+        absence["user_id"], "absence_deleted",
+        f"A sua falta de {absence['date']} foi eliminada pelo admin.",
+        None,
+    )
+    return {"success": True}
+
+
 
 
 # ---------------------------------------------------------------------------
