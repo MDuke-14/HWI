@@ -29,6 +29,11 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Sessão Atual (Feb 2026) — Resumo
 
+45. ✅ **Relatório Mensal — sem FÉRIAS em FS/feriados (Feb 2026)**:
+    - `routes/time_entries.py` (3 blocos + endpoint real-time): reordenada a prioridade de status. Antes: `manual_statuses → vacation → weekend → holiday`. Agora: **weekend/holiday têm precedência**. `manual_statuses` continua a ser respeitado exceto quando é "FÉRIAS" e o dia é fim-de-semana ou feriado — nesses casos é ignorado e vence FOLGA/FERIADO.
+    - Impacto: PDF, Excel e endpoints `/time-entries/reports/monthly-*` deixam de mostrar "FÉRIAS" em sábados, domingos e feriados nacionais/municipais (Barreiro incluído).
+    - Testado: 14/02 (Sáb) FOLGA · 15/02 (Dom) FOLGA · 17/02 (Feriado Carnaval) FERIADO — mesmo com override manual `FÉRIAS` no dia · 18/02 (dia útil) FÉRIAS preserva-se.
+
 44. ✅ **Editar Falta existente + Aviso de não-sobreposição (Feb 2026)**:
     - **Backend `PUT /admin/absences/v2/{id}/edit`**: reverte o trim atual (restaura registos originais), atualiza os campos (tipo, is_partial, start/end, hours, reason), regista audit e re-aplica trim com os novos valores (a menos que o estado seja `rejeitada`).
     - **Aviso de não-sobreposição**: o backend devolve `trim_result: {overlapped, entries_before, ...}` em create e edit. Frontend mostra `toast.warning(...)` quando a falta tem `entries_before > 0` e `overlapped=false` — significa que existiam registos no dia mas nenhum intersecta a janela da falta (útil para o admin corrigir horas).

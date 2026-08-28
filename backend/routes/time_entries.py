@@ -749,10 +749,6 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
                         "timestamp": geo.get("timestamp"),
                         "address": geo.get("address", {})
                     }
-        elif user_id in vacation_users:
-            # On vacation
-            status_info["status"] = "FÉRIAS"
-            status_info["status_color"] = "purple"
         elif is_weekend:
             # Weekend
             status_info["status"] = "FOLGA"
@@ -762,6 +758,10 @@ async def get_realtime_status(current_user: dict = Depends(get_current_user)):
             status_info["status"] = "FERIADO"
             status_info["status_color"] = "amber"
             status_info["holiday_name"] = ot_reason
+        elif user_id in vacation_users:
+            # On vacation
+            status_info["status"] = "FÉRIAS"
+            status_info["status_color"] = "purple"
         else:
             # Absence on workday
             status_info["status"] = "FALTA"
@@ -1229,6 +1229,14 @@ async def get_custom_range_report(
     for override in status_overrides:
         manual_statuses[override["date"]] = override["status"]
     
+    # Faltas v2 — carregar do novo helper (fonte partilhada com /admin/absences/v2/*)
+    from routes.absences_v2 import fetch_absences_for_month
+    absences_by_date = await fetch_absences_for_month(
+        target_user_id,
+        start_date.strftime("%Y-%m-%d"),
+        end_date.strftime("%Y-%m-%d"),
+    )
+
     # Build daily records for entire period
     daily_records = []
     current_date = start_date
@@ -1305,14 +1313,18 @@ async def get_custom_range_report(
             total_special_minutes += breakdown_min["horas_especial"]
         else:
             # Not worked - determine status
-            if date_str in manual_statuses:
-                day_data["status"] = manual_statuses[date_str]
-            elif date_str in vacation_dates:
-                day_data["status"] = "FÉRIAS"
+            manual = manual_statuses.get(date_str)
+            # Regra: nunca marcar FÉRIAS em fim-de-semana ou feriado
+            if manual == "FÉRIAS" and (is_weekend or is_holiday):
+                manual = None
+            if manual:
+                day_data["status"] = manual
             elif is_weekend:
                 day_data["status"] = "FOLGA"
             elif is_holiday:
                 day_data["status"] = "FERIADO"
+            elif date_str in vacation_dates:
+                day_data["status"] = "FÉRIAS"
             else:
                 day_data["status"] = "SEM REGISTO"
             
@@ -1561,14 +1573,18 @@ async def get_monthly_detailed_report(
         else:
             # Not worked - determine status
             # First check if admin set a manual status
-            if date_str in manual_statuses:
-                day_data["status"] = manual_statuses[date_str]
-            elif date_str in vacation_dates:
-                day_data["status"] = "FÉRIAS"
+            manual = manual_statuses.get(date_str)
+            # Regra: nunca marcar FÉRIAS em fim-de-semana ou feriado
+            if manual == "FÉRIAS" and (is_weekend or is_holiday):
+                manual = None
+            if manual:
+                day_data["status"] = manual
             elif is_weekend:
                 day_data["status"] = "FOLGA"
             elif is_holiday:
                 day_data["status"] = "FERIADO"
+            elif date_str in vacation_dates:
+                day_data["status"] = "FÉRIAS"
             else:
                 # Dia útil sem registo — mostra "Sem Registo" (só passa a FALTA
                 # quando o admin/utilizador criar um pedido em /absences).
@@ -1893,14 +1909,18 @@ async def download_monthly_pdf_report(
         else:
             # Not worked - determine status
             # First check if admin set a manual status
-            if date_str in manual_statuses:
-                day_data["status"] = manual_statuses[date_str]
-            elif date_str in vacation_dates:
-                day_data["status"] = "FÉRIAS"
+            manual = manual_statuses.get(date_str)
+            # Regra: nunca marcar FÉRIAS em fim-de-semana ou feriado
+            if manual == "FÉRIAS" and (is_weekend or is_holiday):
+                manual = None
+            if manual:
+                day_data["status"] = manual
             elif is_weekend:
                 day_data["status"] = "FOLGA"
             elif is_holiday:
                 day_data["status"] = "FERIADO"
+            elif date_str in vacation_dates:
+                day_data["status"] = "FÉRIAS"
             else:
                 # Dia útil sem registo — mostra "Sem Registo" (só passa a FALTA
                 # quando o admin/utilizador criar um pedido em /absences).
