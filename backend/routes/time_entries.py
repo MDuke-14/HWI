@@ -1774,7 +1774,7 @@ async def download_monthly_pdf_report(
                         else:
                             justifications_map[date_str] = "Férias"
                     current_dt += timedelta(days=1)
-            except:
+            except (ValueError, KeyError):
                 pass
     
     # Buscar faltas (absences)
@@ -3601,7 +3601,7 @@ async def get_user_time_entries_by_month(
                         else:
                             justifications[date_str] = {"type": "ferias", "label": "Dia de Férias"}
                     current_dt += timedelta(days=1)
-            except:
+            except (ValueError, KeyError):
                 pass
     
     # Processar faltas
