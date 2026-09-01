@@ -12,15 +12,7 @@ const IntervencaoModal = ({
   setFormData,
   onSubmit,
   onCancel,
-  equipamentosOT = []
 }) => {
-  const groupedEquipments = equipamentosOT.reduce((groups, eq) => {
-    const marca = eq.marca || 'Sem Marca';
-    if (!groups[marca]) groups[marca] = [];
-    groups[marca].push(eq);
-    return groups;
-  }, {});
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl">
@@ -45,33 +37,6 @@ const IntervencaoModal = ({
               required
               data-testid="intervencao-date-input"
             />
-          </div>
-
-          <div>
-            <Label htmlFor="equipamento_intervencao" className="text-gray-300">
-              Equipamento Relacionado
-            </Label>
-            <select
-              id="equipamento_intervencao"
-              value={formData.equipamento_id || ''}
-              onChange={(e) => setFormData({ ...formData, equipamento_id: e.target.value })}
-              className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-3"
-              data-testid="intervencao-equipment-select"
-            >
-              <option value="">-- Selecionar Equipamento (opcional) --</option>
-              {Object.entries(groupedEquipments).sort(([a], [b]) => a.localeCompare(b)).map(([marca, equips]) => (
-                <optgroup key={marca} label={`--- ${marca} ---`}>
-                  {equips.map((eq) => (
-                    <option key={eq.id} value={eq.id}>
-                      {eq.modelo} {eq.numero_serie ? `(S/N: ${eq.numero_serie})` : ''} {eq.tipologia ? `[${eq.tipologia}]` : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Selecione o equipamento ao qual esta intervenção se refere
-            </p>
           </div>
 
           <div>
