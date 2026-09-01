@@ -4077,6 +4077,39 @@ async def delete_despesa_ot(
     return {"message": "Despesa removida"}
 
 
+@api_router.patch("/relatorios-tecnicos/{relatorio_id}/despesas/{despesa_id}/status")
+async def set_despesa_status(
+    relatorio_id: str,
+    despesa_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """Alterna o estado da despesa entre 'pendente' e 'pago'.
+    Apenas admins podem alterar."""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Apenas admin pode alterar estado de despesas")
+    novo = (data.get("status") or "").strip().lower()
+    if novo not in ("pendente", "pago"):
+        raise HTTPException(status_code=400, detail="status inválido (use 'pendente' ou 'pago')")
+
+    update: dict = {"status": novo}
+    if novo == "pago":
+        update["paid_at"] = datetime.now(timezone.utc).isoformat()
+        update["paid_by"] = current_user.get("username")
+    else:
+        update["paid_at"] = None
+        update["paid_by"] = None
+
+    result = await db.despesas_ot.update_one(
+        {"id": despesa_id, "relatorio_id": relatorio_id},
+        {"$set": update},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Despesa não encontrada")
+    return {"success": True, "status": novo}
+
+
+
 
 # ============ Pedidos de Cotacao Routes (movido para routes/) ============
 

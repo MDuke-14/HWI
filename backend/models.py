@@ -252,6 +252,9 @@ class DespesaOT(BaseModel):
     factura_data: Optional[str] = None
     factura_filename: Optional[str] = None
     factura_mimetype: Optional[str] = None
+    status: str = "pendente"           # "pendente" | "pago"
+    paid_at: Optional[str] = None
+    paid_by: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: str
 

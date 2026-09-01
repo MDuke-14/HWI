@@ -6290,10 +6290,12 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                 {despesas.length > 0 ? (
                   <div className="space-y-2">
-                    {despesas.map((despesa) => (
+                    {despesas.map((despesa) => {
+                      const isPago = (despesa.status || 'pendente') === 'pago';
+                      return (
                       <div
                         key={despesa.id}
-                        className="flex flex-col gap-2 p-3 bg-gray-800 rounded-lg border border-gray-700"
+                        className={`flex flex-col gap-2 p-3 rounded-lg border ${isPago ? 'bg-emerald-900/10 border-emerald-800/50' : 'bg-gray-800 border-gray-700'}`}
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -6306,6 +6308,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                             }`}>
                               {tiposDespesa.find(t => t.value === despesa.tipo)?.label || 'Outras'}
                             </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${isPago ? 'bg-emerald-600/25 text-emerald-300' : 'bg-amber-600/25 text-amber-300'}`} data-testid={`despesa-status-${despesa.id}`}>
+                              {isPago ? '✓ Pago' : 'Pendente'}
+                            </span>
                             {despesa.factura_data && (
                               <span className="text-emerald-400 text-xs flex-shrink-0">📎 Factura</span>
                             )}
@@ -6317,9 +6322,32 @@ const TechnicalReports = ({ user, onLogout }) => {
                             )}
                             <span>Pago por: {despesa.tecnico_nome}</span>
                             <span>{new Date(despesa.data).toLocaleDateString('pt-PT')}</span>
+                            {isPago && despesa.paid_at && (
+                              <span className="text-emerald-300">Marcado pago em {new Date(despesa.paid_at).toLocaleDateString('pt-PT')}{despesa.paid_by ? ` por ${despesa.paid_by}` : ''}</span>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2 justify-end">
+                          {user?.is_admin && (
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  const target = isPago ? 'pendente' : 'pago';
+                                  await axios.patch(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas/${despesa.id}/status`, { status: target });
+                                  toast.success(`Despesa marcada como ${target === 'pago' ? 'Paga' : 'Pendente'}`);
+                                  fetchDespesas(selectedRelatorio.id);
+                                } catch (err) {
+                                  toast.error(formatErrorMessage(err));
+                                }
+                              }}
+                              size="sm"
+                              className={isPago ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                              data-testid={`btn-toggle-status-despesa-${despesa.id}`}
+                              title={isPago ? 'Marcar como Pendente' : 'Marcar como Pago'}
+                            >
+                              {isPago ? 'Marcar Pendente' : 'Marcar Pago'}
+                            </Button>
+                          )}
                           {despesa.factura_data && (
                             <Button
                               onClick={() => downloadFactura(despesa)}
@@ -6353,7 +6381,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                           )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-gray-400 text-sm text-center py-4">
