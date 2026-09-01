@@ -6039,6 +6039,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   setAddMaterialIntervencaoId(activeInterv.id);
                                   setSelectedPCIdForMaterial(null);
                                   if (selectedRelatorio) fetchPedidosCotacao(selectedRelatorio.id);
+                                  setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: new Date().toISOString().split('T')[0] });
                                   setShowAddMaterialModal(true);
                                 }}
                                 size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
