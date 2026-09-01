@@ -7,8 +7,14 @@ import FaturaScanner from './FaturaScanner';
 
 const DespesaForm = ({
   formData, setFormData, tiposDespesa, allSystemUsers,
-  children, onCancel, onSubmit, submitLabel = 'Adicionar', isEditing = false
-}) => (
+  children, onCancel, onSubmit, submitLabel = 'Adicionar', isEditing = false,
+  isAdmin = false,
+}) => {
+  const valor = parseFloat(formData.valor) || 0;
+  const pct = parseFloat(formData.percentagem) || 0;
+  const valorFinalComputed = valor > 0 ? +(valor * (1 + pct / 100)).toFixed(2) : 0;
+
+  return (
   <form onSubmit={onSubmit} className="space-y-4 mt-4">
     <div className="grid grid-cols-2 gap-3">
       <div>
@@ -40,9 +46,40 @@ const DespesaForm = ({
       </div>
       <div>
         <Label className="text-gray-300">Valor (€) *</Label>
-        <Input type="number" step="0.01" min="0.01" value={formData.valor} onChange={(e) => setFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))} placeholder="0.00" className="bg-[#0f0f0f] border-gray-700 text-white mt-1" required />
+        <Input type="number" step="0.01" min="0.01" value={formData.valor} onChange={(e) => {
+          const v = parseFloat(e.target.value) || '';
+          setFormData(prev => {
+            const pctLocal = parseFloat(prev.percentagem) || 0;
+            const vf = v ? +(v * (1 + pctLocal / 100)).toFixed(2) : '';
+            return { ...prev, valor: v, valor_final: vf };
+          });
+        }} placeholder="0.00" className="bg-[#0f0f0f] border-gray-700 text-white mt-1" required />
       </div>
     </div>
+
+    {isAdmin && (
+      <div className="grid grid-cols-2 gap-3 bg-amber-900/10 border border-amber-800/40 rounded-lg p-3">
+        <div>
+          <Label className="text-gray-300 flex items-center gap-1">Percentagem <span className="text-amber-400 text-xs">(admin)</span></Label>
+          <div className="flex items-center gap-2 mt-1">
+            <Input type="number" step="0.01" min="0" value={formData.percentagem ?? ''} onChange={(e) => {
+              const p = parseFloat(e.target.value) || 0;
+              setFormData(prev => {
+                const v = parseFloat(prev.valor) || 0;
+                const vf = v > 0 ? +(v * (1 + p / 100)).toFixed(2) : '';
+                return { ...prev, percentagem: e.target.value, valor_final: vf };
+              });
+            }} placeholder="Ex: 20" className="bg-[#0f0f0f] border-gray-700 text-white" data-testid="despesa-percentagem" />
+            <span className="text-gray-400">%</span>
+          </div>
+        </div>
+        <div>
+          <Label className="text-gray-300 flex items-center gap-1">Valor Final (€) <span className="text-amber-400 text-xs">(admin)</span></Label>
+          <Input type="number" step="0.01" value={formData.valor_final ?? valorFinalComputed} readOnly className="bg-[#0f0f0f] border-gray-700 text-emerald-300 font-semibold mt-1 cursor-not-allowed" data-testid="despesa-valor-final" />
+        </div>
+      </div>
+    )}
+
     <div className="grid grid-cols-2 gap-3">
       <div>
         <Label className="text-gray-300">N.º Fatura</Label>
@@ -66,18 +103,19 @@ const DespesaForm = ({
       <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700"><Receipt className="w-4 h-4 mr-1" />{submitLabel}</Button>
     </div>
   </form>
-);
+  );
+};
 
 export const AddDespesaModal = ({
   open, onOpenChange, formData, setFormData, onSubmit, onCancel,
-  tiposDespesa, allSystemUsers, showScanner, setShowScanner
+  tiposDespesa, allSystemUsers, showScanner, setShowScanner, isAdmin = false
 }) => (
   <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setShowScanner(false); }}>
     <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-white"><Receipt className="w-5 h-5 text-emerald-400" />Nova Despesa</DialogTitle>
       </DialogHeader>
-      <DespesaForm formData={formData} setFormData={setFormData} tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers} onCancel={onCancel} onSubmit={onSubmit} submitLabel="Gerar Despesa">
+      <DespesaForm formData={formData} setFormData={setFormData} tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers} onCancel={onCancel} onSubmit={onSubmit} submitLabel="Gerar Despesa" isAdmin={isAdmin}>
         <div>
           <Label className="text-gray-300 flex items-center gap-2"><ScanLine className="w-4 h-4 text-emerald-400" />Fatura Digitalizada</Label>
           <div className="mt-2">
@@ -110,14 +148,14 @@ export const AddDespesaModal = ({
 export const EditDespesaModal = ({
   open, onOpenChange, formData, setFormData, onSubmit, onCancel,
   tiposDespesa, allSystemUsers, editCameraInputRef, editFileInputRef,
-  handleFacturaUpload, uploadingFactura
+  handleFacturaUpload, uploadingFactura, isAdmin = false
 }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-white"><Receipt className="w-5 h-5 text-emerald-400" />Editar Despesa</DialogTitle>
       </DialogHeader>
-      <DespesaForm formData={formData} setFormData={setFormData} tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers} onCancel={onCancel} onSubmit={onSubmit} submitLabel="Guardar Alterações" isEditing>
+      <DespesaForm formData={formData} setFormData={setFormData} tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers} onCancel={onCancel} onSubmit={onSubmit} submitLabel="Guardar Alterações" isEditing isAdmin={isAdmin}>
         <div>
           <Label className="text-gray-300 flex items-center gap-2"><ScanLine className="w-4 h-4 text-emerald-400" />Fatura Digitalizada</Label>
           <div className="mt-2">

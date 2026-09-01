@@ -3951,6 +3951,8 @@ async def create_despesa_ot(
         data=despesa_data["data"],
         quantidade=despesa_data.get("quantidade"),
         unidade=despesa_data.get("unidade"),
+        percentagem=despesa_data.get("percentagem") or 0,
+        valor_final=despesa_data.get("valor_final"),
         numero_fatura=despesa_data.get("numero_fatura"),
         data_fatura=despesa_data.get("data_fatura"),
         factura_data=despesa_data.get("factura_data"),

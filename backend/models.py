@@ -247,6 +247,8 @@ class DespesaOT(BaseModel):
     data: str
     quantidade: Optional[float] = None
     unidade: Optional[str] = None
+    percentagem: Optional[float] = 0
+    valor_final: Optional[float] = None
     numero_fatura: Optional[str] = None
     data_fatura: Optional[str] = None
     factura_data: Optional[str] = None

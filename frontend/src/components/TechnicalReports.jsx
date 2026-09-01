@@ -441,6 +441,8 @@ const TechnicalReports = ({ user, onLogout }) => {
     quantidade: '',
     unidade: 'Un',
     valor: '',
+    percentagem: '',
+    valor_final: '',
     tecnico_id: '',
     data: new Date().toISOString().split('T')[0],
     numero_fatura: '',
@@ -2456,6 +2458,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         quantidade: '',
         unidade: 'Un',
         valor: '',
+        percentagem: '',
+        valor_final: '',
         tecnico_id: '',
         data: new Date().toISOString().split('T')[0],
         numero_fatura: '',
@@ -2507,7 +2511,11 @@ const TechnicalReports = ({ user, onLogout }) => {
     setDespesaFormData({
       tipo: despesa.tipo || 'outras',
       descricao: despesa.descricao,
+      quantidade: despesa.quantidade ?? '',
+      unidade: despesa.unidade || 'Un',
       valor: despesa.valor,
+      percentagem: despesa.percentagem ?? '',
+      valor_final: despesa.valor_final ?? '',
       tecnico_id: despesa.tecnico_id,
       data: despesa.data,
       numero_fatura: despesa.numero_fatura || '',
@@ -6906,6 +6914,8 @@ const TechnicalReports = ({ user, onLogout }) => {
             quantidade: mat.quantidade || '',
             unidade: mat.unidade || 'Un',
             valor: '',
+            percentagem: '',
+            valor_final: '',
             tecnico_id: '',
             data: mat.data_utilizacao || today,
             numero_fatura: '',
@@ -6955,9 +6965,10 @@ const TechnicalReports = ({ user, onLogout }) => {
         open={showAddDespesaModal} onOpenChange={setShowAddDespesaModal}
         formData={despesaFormData} setFormData={setDespesaFormData}
         onSubmit={handleAddDespesa}
-        onCancel={() => { setShowAddDespesaModal(false); setShowScanner(false); setDespesaFormData({ tipo: 'outras', descricao: '', quantidade: '', unidade: 'Un', valor: '', tecnico_id: '', data: new Date().toISOString().split('T')[0], numero_fatura: '', data_fatura: '', factura_data: null, factura_filename: null, factura_mimetype: null }); }}
+        onCancel={() => { setShowAddDespesaModal(false); setShowScanner(false); setDespesaFormData({ tipo: 'outras', descricao: '', quantidade: '', unidade: 'Un', valor: '', percentagem: '', valor_final: '', tecnico_id: '', data: new Date().toISOString().split('T')[0], numero_fatura: '', data_fatura: '', factura_data: null, factura_filename: null, factura_mimetype: null }); }}
         tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers}
         showScanner={showScanner} setShowScanner={setShowScanner}
+        isAdmin={user?.is_admin}
       />
       <EditDespesaModal
         open={showEditDespesaModal} onOpenChange={setShowEditDespesaModal}
@@ -6967,6 +6978,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers}
         editCameraInputRef={editCameraInputRef} editFileInputRef={editFileInputRef}
         handleFacturaUpload={handleFacturaUpload} uploadingFactura={uploadingFactura}
+        isAdmin={user?.is_admin}
       />
 
     <>
