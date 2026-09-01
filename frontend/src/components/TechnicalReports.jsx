@@ -6856,8 +6856,18 @@ const TechnicalReports = ({ user, onLogout }) => {
         equipamentosOT={equipamentosOT}
         selectedEquipOTIds={selectedEquipOTIdsForPC}
         onEquipOTIdsChange={setSelectedEquipOTIdsForPC}
-        onOpenDespesa={(mat) => {
-          // Material fornecido por HWI → converter em Despesa
+        onOpenDespesa={async (mat) => {
+          // Material fornecido por HWI → gravar o material E abrir popup de Despesa
+          try {
+            await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, {
+              ...mat,
+              intervencao_id: addMaterialIntervencaoId || null,
+            });
+            fetchMateriais(selectedRelatorio.id);
+          } catch (error) {
+            toast.error(formatErrorMessage(error));
+            return;
+          }
           setShowAddMaterialModal(false);
           const today = new Date().toISOString().split('T')[0];
           setDespesaFormData({

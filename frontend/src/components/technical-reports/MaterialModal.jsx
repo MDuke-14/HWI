@@ -299,7 +299,7 @@ const MaterialModal = ({
           {/* Aviso HWI */}
           {isHWI && !isEditing && onOpenDespesa && (
             <div className="bg-emerald-900/20 border border-emerald-600/50 rounded-lg p-3 text-emerald-300 text-xs">
-              Material fornecido pela HWI: converta esta linha diretamente numa despesa (com nº de fatura opcional).
+              Material fornecido pela HWI: ao adicionar, o material fica registado no relatório do cliente e abre o popup de Despesa para lançar o custo interno.
             </div>
           )}
 
