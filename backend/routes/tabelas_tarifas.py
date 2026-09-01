@@ -134,7 +134,6 @@ async def upload_tabela_preco_imagem(
         raise HTTPException(status_code=404, detail="Tabela de preço não encontrada")
     
     content = await file.read()
-    import base64
     img_b64 = base64.b64encode(content).decode('utf-8')
     
     await db.tabelas_preco.update_one(
@@ -159,7 +158,6 @@ async def get_tabela_preco_imagem(
     if not existing or not existing.get("imagem_data"):
         raise HTTPException(status_code=404, detail="Imagem não encontrada")
     
-    import base64
     img_bytes = base64.b64decode(existing["imagem_data"])
     return Response(
         content=img_bytes,

@@ -149,7 +149,6 @@ async def get_push_status(current_user: dict = Depends(get_current_user)):
 async def send_push_to_user(user_id: str, title: str, message: str, notification_type: str = "info", priority: str = "medium"):
     """Função utilitária para enviar push notification para um usuário"""
     from pywebpush import webpush, WebPushException
-    import json
     
     vapid_private = os.environ.get('VAPID_PRIVATE_KEY')
     vapid_public = os.environ.get('VAPID_PUBLIC_KEY')
@@ -228,13 +227,12 @@ async def test_clock_in_reminder(
     if not user or not user.get("is_admin"):
         raise HTTPException(status_code=403, detail="Apenas administradores podem testar esta funcionalidade")
     
-    from notifications_scheduler import send_push_notification
     from datetime import date
     
     today_formatted = date.today().strftime("%d/%m/%Y")
     
-    send_push_notification, _, _ = _get_push_helpers()
-    success = await send_push_notification(
+    _send_push, _, _ = _get_push_helpers()
+    success = await _send_push(
         db,
         current_user["sub"],
         "⚠️ Não Iniciou o Ponto",
@@ -258,10 +256,8 @@ async def test_clock_out_reminder(
     if not user or not user.get("is_admin"):
         raise HTTPException(status_code=403, detail="Apenas administradores podem testar esta funcionalidade")
     
-    from notifications_scheduler import send_push_notification
-    
-    send_push_notification, _, _ = _get_push_helpers()
-    success = await send_push_notification(
+    _send_push, _, _ = _get_push_helpers()
+    success = await _send_push(
         db,
         current_user["sub"],
         "🕐 Não Parou o Ponto",
@@ -284,8 +280,6 @@ async def test_overtime_admin_notification(
     user = await db.users.find_one({"id": current_user["sub"]})
     if not user or not user.get("is_admin"):
         raise HTTPException(status_code=403, detail="Apenas administradores podem testar esta funcionalidade")
-    
-    from notifications_scheduler import send_push_to_admins
     
     _, send_push_to_admins, _ = _get_push_helpers()
     count = await send_push_to_admins(

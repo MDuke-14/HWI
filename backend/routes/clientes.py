@@ -160,7 +160,7 @@ async def export_clientes_emails_pdf(current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=403, detail="Apenas administradores podem exportar")
     
     clientes = await db.clientes.find(
-        {"ativo": True, "email": {"$ne": None, "$ne": ""}},
+        {"ativo": True, "email": {"$nin": [None, ""]}},
         {"_id": 0, "nome": 1, "email": 1, "emails_adicionais": 1}
     ).sort("nome", 1).to_list(length=None)
     

@@ -2122,7 +2122,9 @@ async def _enviar_pdf_worker(
                     {"relatorio_id": relatorio_id}, {"_id": 0}
                 ).to_list(length=None)
                 
-                # Aplicar despesa_adjustments do frontend (exclusões + percentuais)
+                # Aplicar despesa_adjustments do frontend (LEGADO — mantido por compat).
+                # A regra atual: cada despesa já traz `valor_final` (Valor × (1 + Percentagem/100))
+                # gravado pelo admin no popup da FS. Se ausente, cai em `valor`.
                 _adjustments = request.despesa_adjustments or {}
                 dados_extras = {}
                 despesas_ajustadas_email = []
@@ -2132,8 +2134,16 @@ async def _enviar_pdf_worker(
                     if adj.get("excluida", False):
                         continue
                     valor_original = desp.get("valor", 0) or 0
-                    percentual = adj.get("percentual", 0) or 0
-                    valor_final = valor_original * (1 + percentual / 100)
+                    # Prioridade: adjustment do frontend → valor_final persistido → valor
+                    if "percentual" in adj and adj.get("percentual") is not None:
+                        percentual = adj.get("percentual") or 0
+                        valor_final = valor_original * (1 + percentual / 100)
+                    elif desp.get("valor_final") is not None:
+                        valor_final = float(desp.get("valor_final") or 0)
+                        percentual = float(desp.get("percentagem") or 0)
+                    else:
+                        valor_final = valor_original
+                        percentual = 0
                     desp["valor_original"] = valor_original
                     desp["valor_ajustado"] = valor_final
                     desp["percentual_aplicado"] = percentual
@@ -3676,22 +3686,22 @@ async def criar_fs_continuidade(
     origem_numero = origem.get("numero_assistencia")
     # Mapa intervencao origem -> nova intervencao
     map_intervs = {}
-    for io in intervs_origem:
+    for io_orig in intervs_origem:
         nova_interv_id = str(uuid.uuid4())
-        map_intervs[io["id"]] = nova_interv_id
+        map_intervs[io_orig["id"]] = nova_interv_id
         novo_intervs_count += 1
         ni = {
             "id": nova_interv_id,
             "relatorio_id": nova_id,
-            "data_intervencao": io.get("data_intervencao"),
-            "motivo_assistencia": io.get("motivo_assistencia", ""),
-            "relatorio_assistencia": io.get("relatorio_assistencia"),
-            "equipamento_id": io.get("equipamento_id"),
-            "ordem": io.get("ordem", 0),
+            "data_intervencao": io_orig.get("data_intervencao"),
+            "motivo_assistencia": io_orig.get("motivo_assistencia", ""),
+            "relatorio_assistencia": io_orig.get("relatorio_assistencia"),
+            "equipamento_id": io_orig.get("equipamento_id"),
+            "ordem": io_orig.get("ordem", 0),
             "facturada": False,
             "facturada_at": None,
             "facturada_by": None,
-            "herdada_de_intervencao_id": io["id"],
+            "herdada_de_intervencao_id": io_orig["id"],
             "herdada_de_fs_id": origem["id"],
             "herdada_de_fs_numero": origem_numero,
             "created_at": datetime.now(timezone.utc).isoformat(),

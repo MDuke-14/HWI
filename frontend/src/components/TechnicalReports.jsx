@@ -90,7 +90,6 @@ import {
 // Componentes extraídos
 import { 
   FolhaHorasModal,
-  DespesasEmailModal,
   PDFPreviewModal,
   DeleteConfirmModal,
   AssinaturaModal,
@@ -354,9 +353,6 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [emailsCliente, setEmailsCliente] = useState([]);
   const [emailsAdicionais, setEmailsAdicionais] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
-  // Ajustes de despesas (percentagens/exclusões) configurados no popup do envio por email
-  const [emailDespesaAdjustments, setEmailDespesaAdjustments] = useState({});
-  const [showDespesasEmailModal, setShowDespesasEmailModal] = useState(false);
   const [emailDestinatario, setEmailDestinatario] = useState('');
   const [emailCC, setEmailCC] = useState('');
 
@@ -3551,8 +3547,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  const handleGenerateFolhaHoras = async (tableId = 1, despesaAdjustments = {}) => {
+  const handleGenerateFolhaHoras = async (tableId = 1) => {
     if (!selectedRelatorio || !folhaHorasData) return;
+
+    // Aviso: despesas sem valor_final gravado (usa valor como fallback)
+    const semValorFinal = (despesas || []).filter(d => d.valor_final === null || d.valor_final === undefined);
+    if (semValorFinal.length > 0) {
+      toast.warning(`${semValorFinal.length} despesa(s) sem "Valor Final" gravado — o PDF usa o valor original (0% de margem).`);
+    }
     
     // Preparar dados - converter tarifa IDs para valores
     const tarifasPorTecnico = {};
@@ -3588,7 +3590,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           tarifas_por_tecnico: tarifasPorTecnico,
           dados_extras: dadosExtras,
           table_id: tableId,
-          despesa_adjustments: despesaAdjustments
+          despesa_adjustments: {}
         },
         { responseType: 'blob', timeout: PDF_DOWNLOAD_TIMEOUT }
       );
@@ -4054,8 +4056,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       });
     }
     setDocsSelecionados(docsIniciais);
-    // Reset ajustes de despesas para email (utilizador configura novamente se quiser)
-    setEmailDespesaAdjustments({});
     setShowFolhaHorasConfirm(true);
   };
 
@@ -4113,7 +4113,7 @@ const TechnicalReports = ({ user, onLogout }) => {
           table_id: null,
           tarifas_por_tecnico: tarifasPorTecnico,
           dados_extras: dadosExtras,
-          despesa_adjustments: emailDespesaAdjustments || {}
+          despesa_adjustments: {}
         },
         { timeout: 30000 }  // resposta imediata (background) — 30s é seguro
       );
@@ -6675,29 +6675,8 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
             </label>
 
-            {/* Botão para configurar despesas (só aparece se Folha de Horas estiver selecionada e existirem despesas) */}
-            {docsSelecionados.folha_horas && despesas && despesas.length > 0 && (
-              <div className="ml-7 -mt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDespesasEmailModal(true)}
-                  className="w-full text-left px-3 py-2 bg-[#0f0f0f] border border-amber-700/50 rounded-lg hover:border-amber-500 transition-all flex items-center justify-between gap-2"
-                  data-testid="btn-configurar-despesas-email"
-                >
-                  <div className="flex items-center gap-2">
-                    <Receipt className="w-4 h-4 text-amber-400" />
-                    <span className="text-amber-300 text-xs">
-                      Configurar despesas ({despesas.length})
-                    </span>
-                  </div>
-                  {Object.keys(emailDespesaAdjustments).length > 0 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-700/30 text-emerald-300 border border-emerald-600/50">
-                      {Object.values(emailDespesaAdjustments).filter(a => a.percentual > 0 || a.excluida).length} ajuste(s)
-                    </span>
-                  )}
-                </button>
-              </div>
-            )}
+            {/* Card "Configurar despesas" removido — cada despesa já tem `valor_final`
+                gravado no popup da FS (Valor × (1 + Percentagem/100)). */}
 
             {/* PCs */}
             {pedidosCotacao && pedidosCotacao.length > 0 && (
@@ -9855,17 +9834,8 @@ const TechnicalReports = ({ user, onLogout }) => {
         despesas={despesas}
       />
 
-      {/* Modal de configuração de despesas para envio por email */}
-      <DespesasEmailModal
-        open={showDespesasEmailModal}
-        onOpenChange={setShowDespesasEmailModal}
-        despesas={despesas}
-        initialAdjustments={emailDespesaAdjustments}
-        onConfirm={(adjustments) => {
-          setEmailDespesaAdjustments(adjustments);
-          toast.success('Configuração de despesas guardada para o email');
-        }}
-      />
+      {/* DespesasEmailModal removido — despesas agora gravam `valor_final` no
+          popup da FS (não há mais popup de ajuste na geração de folha). */}
 
       {/* Modal de Criar FS de Continuidade */}
       <CriarContinuidadeModal
