@@ -438,6 +438,8 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [despesaFormData, setDespesaFormData] = useState({
     tipo: 'outras',
     descricao: '',
+    quantidade: '',
+    unidade: 'Un',
     valor: '',
     tecnico_id: '',
     data: new Date().toISOString().split('T')[0],
@@ -2441,14 +2443,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.error('Descrição é obrigatória para despesas do tipo "Outras"');
       return;
     }
-    if (!despesaFormData.numero_fatura) {
-      toast.error('Número da fatura é obrigatório');
-      return;
-    }
-    if (!despesaFormData.factura_data) {
-      toast.error('Fatura digitalizada é obrigatória. Use o scanner para anexar.');
-      return;
-    }
     
     try {
       await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/despesas`, despesaFormData);
@@ -2459,6 +2453,8 @@ const TechnicalReports = ({ user, onLogout }) => {
       setDespesaFormData({
         tipo: 'outras',
         descricao: '',
+        quantidade: '',
+        unidade: 'Un',
         valor: '',
         tecnico_id: '',
         data: new Date().toISOString().split('T')[0],
@@ -6860,6 +6856,28 @@ const TechnicalReports = ({ user, onLogout }) => {
         equipamentosOT={equipamentosOT}
         selectedEquipOTIds={selectedEquipOTIdsForPC}
         onEquipOTIdsChange={setSelectedEquipOTIdsForPC}
+        onOpenDespesa={(mat) => {
+          // Material fornecido por HWI → converter em Despesa
+          setShowAddMaterialModal(false);
+          const today = new Date().toISOString().split('T')[0];
+          setDespesaFormData({
+            tipo: 'outras',
+            descricao: mat.descricao || '',
+            quantidade: mat.quantidade || '',
+            unidade: mat.unidade || 'Un',
+            valor: '',
+            tecnico_id: '',
+            data: mat.data_utilizacao || today,
+            numero_fatura: '',
+            data_fatura: '',
+            factura_data: null,
+            factura_filename: null,
+            factura_mimetype: null,
+          });
+          // Reset material form
+          setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
+          setShowAddDespesaModal(true);
+        }}
       />
 
       {/* Edit Material Modal - Componente Extraído */}
@@ -6897,7 +6915,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         open={showAddDespesaModal} onOpenChange={setShowAddDespesaModal}
         formData={despesaFormData} setFormData={setDespesaFormData}
         onSubmit={handleAddDespesa}
-        onCancel={() => { setShowAddDespesaModal(false); setShowScanner(false); setDespesaFormData({ tipo: 'outras', descricao: '', valor: '', tecnico_id: '', data: new Date().toISOString().split('T')[0], numero_fatura: '', data_fatura: '', factura_data: null, factura_filename: null, factura_mimetype: null }); }}
+        onCancel={() => { setShowAddDespesaModal(false); setShowScanner(false); setDespesaFormData({ tipo: 'outras', descricao: '', quantidade: '', unidade: 'Un', valor: '', tecnico_id: '', data: new Date().toISOString().split('T')[0], numero_fatura: '', data_fatura: '', factura_data: null, factura_filename: null, factura_mimetype: null }); }}
         tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers}
         showScanner={showScanner} setShowScanner={setShowScanner}
       />

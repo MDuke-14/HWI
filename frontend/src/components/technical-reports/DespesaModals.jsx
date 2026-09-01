@@ -28,27 +28,37 @@ const DespesaForm = ({
     </div>
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <Label className="text-gray-300">Valor (€) *</Label>
-        <Input type="number" step="0.01" min="0.01" value={formData.valor} onChange={(e) => setFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))} placeholder="0.00" className="bg-[#0f0f0f] border-gray-700 text-white mt-1" required />
+        <Label className="text-gray-300">Quantidade</Label>
+        <div className="flex gap-2 mt-1">
+          <Input type="number" step="any" min="0" value={formData.quantidade ?? ''} onChange={(e) => setFormData(prev => ({ ...prev, quantidade: e.target.value }))} placeholder="Ex: 5" className="bg-[#0f0f0f] border-gray-700 text-white flex-1" data-testid="despesa-quantidade" />
+          <select value={formData.unidade || 'Un'} onChange={(e) => setFormData(prev => ({ ...prev, unidade: e.target.value }))} className="bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-2 py-2 w-20" data-testid="despesa-unidade">
+            <option value="Un">Un</option>
+            <option value="L">L</option>
+            <option value="M">M</option>
+          </select>
+        </div>
       </div>
       <div>
-        <Label className="text-gray-300">N.º Fatura *</Label>
-        <Input value={formData.numero_fatura || ''} onChange={(e) => setFormData(prev => ({ ...prev, numero_fatura: e.target.value }))} placeholder="Ex: FT 2026/001" className="bg-[#0f0f0f] border-gray-700 text-white mt-1" required={!isEditing} data-testid="despesa-numero-fatura" />
+        <Label className="text-gray-300">Valor (€) *</Label>
+        <Input type="number" step="0.01" min="0.01" value={formData.valor} onChange={(e) => setFormData(prev => ({ ...prev, valor: parseFloat(e.target.value) || '' }))} placeholder="0.00" className="bg-[#0f0f0f] border-gray-700 text-white mt-1" required />
       </div>
     </div>
     <div className="grid grid-cols-2 gap-3">
       <div>
-        <Label className="text-gray-300">Pago por *</Label>
-        <select value={formData.tecnico_id} onChange={(e) => setFormData(prev => ({ ...prev, tecnico_id: e.target.value }))} className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1" required>
-          <option value="">Selecionar...</option>
-          {allSystemUsers.map(user => <option key={user.id} value={user.id}>{user.full_name || user.username}</option>)}
-        </select>
+        <Label className="text-gray-300">N.º Fatura</Label>
+        <Input value={formData.numero_fatura || ''} onChange={(e) => setFormData(prev => ({ ...prev, numero_fatura: e.target.value }))} placeholder="Opcional" className="bg-[#0f0f0f] border-gray-700 text-white mt-1" data-testid="despesa-numero-fatura" />
       </div>
       <div>
         <Label className="text-gray-300">Data Fatura</Label>
         <Input type="date" value={formData.data_fatura || ''} onChange={(e) => setFormData(prev => ({ ...prev, data_fatura: e.target.value }))} className="bg-[#0f0f0f] border-gray-700 text-white mt-1" />
-        <p className="text-xs text-gray-500 mt-0.5">Recomendado</p>
       </div>
+    </div>
+    <div>
+      <Label className="text-gray-300">Pago por *</Label>
+      <select value={formData.tecnico_id} onChange={(e) => setFormData(prev => ({ ...prev, tecnico_id: e.target.value }))} className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1" required>
+        <option value="">Selecionar...</option>
+        {allSystemUsers.map(user => <option key={user.id} value={user.id}>{user.full_name || user.username}</option>)}
+      </select>
     </div>
     {children}
     <div className="flex justify-end gap-2 pt-2">
@@ -69,7 +79,7 @@ export const AddDespesaModal = ({
       </DialogHeader>
       <DespesaForm formData={formData} setFormData={setFormData} tiposDespesa={tiposDespesa} allSystemUsers={allSystemUsers} onCancel={onCancel} onSubmit={onSubmit} submitLabel="Gerar Despesa">
         <div>
-          <Label className="text-gray-300 flex items-center gap-2"><ScanLine className="w-4 h-4 text-emerald-400" />Fatura Digitalizada *</Label>
+          <Label className="text-gray-300 flex items-center gap-2"><ScanLine className="w-4 h-4 text-emerald-400" />Fatura Digitalizada</Label>
           <div className="mt-2">
             {formData.factura_filename ? (
               <div className="flex items-center gap-2 p-3 bg-emerald-900/20 border border-emerald-700 rounded-lg">

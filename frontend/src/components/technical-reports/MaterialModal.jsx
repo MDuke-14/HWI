@@ -19,7 +19,8 @@ const MaterialModal = ({
   onPCIdChange,
   equipamentosOT = [],
   selectedEquipOTIds = [],
-  onEquipOTIdsChange
+  onEquipOTIdsChange,
+  onOpenDespesa
 }) => {
   const [pcChoice, setPcChoice] = useState('new'); // 'new' or 'existing'
 
@@ -29,6 +30,7 @@ const MaterialModal = ({
   };
 
   const isCotacao = materialFormData.fornecido_por === 'Cotação';
+  const isHWI = materialFormData.fornecido_por === 'HWI';
   const hasPCs = existingPCs.length > 0;
 
   return (
@@ -294,6 +296,13 @@ const MaterialModal = ({
             />
           </div>
 
+          {/* Aviso HWI */}
+          {isHWI && !isEditing && onOpenDespesa && (
+            <div className="bg-emerald-900/20 border border-emerald-600/50 rounded-lg p-3 text-emerald-300 text-xs">
+              Material fornecido pela HWI: converta esta linha diretamente numa despesa (com nº de fatura opcional).
+            </div>
+          )}
+
           {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <Button
@@ -304,14 +313,27 @@ const MaterialModal = ({
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              data-testid="material-submit-btn"
-              disabled={loading || (isCotacao && !isEditing && pcChoice === 'existing' && hasPCs && !selectedPCId)}
-              className={`flex-1 ${isEditing ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
-            >
-              {loading ? 'A guardar...' : (isEditing ? 'Guardar' : 'Adicionar')}
-            </Button>
+            {isHWI && !isEditing && onOpenDespesa ? (
+              <Button
+                type="button"
+                onClick={() => onOpenDespesa(materialFormData)}
+                data-testid="material-open-despesa-btn"
+                disabled={!materialFormData.descricao || !materialFormData.quantidade}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Despesa
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                data-testid="material-submit-btn"
+                disabled={loading || (isCotacao && !isEditing && pcChoice === 'existing' && hasPCs && !selectedPCId)}
+                className={`flex-1 ${isEditing ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+              >
+                {loading ? 'A guardar...' : (isEditing ? 'Guardar' : 'Adicionar')}
+              </Button>
+            )}
           </div>
         </form>
       </DialogContent>

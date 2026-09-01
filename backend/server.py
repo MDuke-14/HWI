@@ -3949,6 +3949,8 @@ async def create_despesa_ot(
         tecnico_id=despesa_data["tecnico_id"],
         tecnico_nome=tecnico_nome,
         data=despesa_data["data"],
+        quantidade=despesa_data.get("quantidade"),
+        unidade=despesa_data.get("unidade"),
         numero_fatura=despesa_data.get("numero_fatura"),
         data_fatura=despesa_data.get("data_fatura"),
         factura_data=despesa_data.get("factura_data"),

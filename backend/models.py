@@ -245,6 +245,8 @@ class DespesaOT(BaseModel):
     tecnico_id: str
     tecnico_nome: str
     data: str
+    quantidade: Optional[float] = None
+    unidade: Optional[str] = None
     numero_fatura: Optional[str] = None
     data_fatura: Optional[str] = None
     factura_data: Optional[str] = None
