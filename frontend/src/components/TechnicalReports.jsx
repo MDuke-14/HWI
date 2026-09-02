@@ -455,9 +455,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Tipos de despesa disponíveis
   const tiposDespesa = [
     { value: 'outras', label: 'Outras' },
-    { value: 'combustivel', label: 'Combustível' },
-    { value: 'ferramentas', label: 'Ferramentas' },
-    { value: 'portagens', label: 'Portagens' }
+    { value: 'ferramentas', label: 'Ferramentas' }
   ];
 
   // Pedidos de Cotação
