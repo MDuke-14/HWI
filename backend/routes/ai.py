@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from database import db
 from auth_utils import get_current_user, get_current_admin
-from services.ai_service import analyze_error, review_fs
+from services.ai_service import analyze_error, review_fs, improve_relatorio_assistencia
 
 router = APIRouter(tags=["ai"])
 
@@ -316,3 +316,42 @@ async def ai_apply_rewrite(
         }},
     )
     return {"ok": True, "id": payload.relatorio_assistencia_id}
+
+
+
+# ============================================================
+#  Melhorar texto de UM único Relatório de Assistência
+# ============================================================
+
+class ImproveTextRequest(BaseModel):
+    texto: str
+    equipamento: str | None = None
+    cliente: str | None = None
+    data_intervencao: str | None = None
+
+
+@router.post("/ai/improve-relatorio-assistencia")
+async def ai_improve_relatorio_assistencia(
+    payload: ImproveTextRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Reescreve o texto dum Relatório de Assistência com tom técnico-profissional
+    (sem markdown/asteriscos). Não persiste — o frontend recebe a sugestão e
+    decide se substitui o campo antes de o utilizador guardar.
+    """
+    try:
+        result = await improve_relatorio_assistencia(
+            texto=payload.texto,
+            contexto={
+                "equipamento": payload.equipamento,
+                "cliente": payload.cliente,
+                "data_intervencao": payload.data_intervencao,
+            },
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logging.error(f"Falha a melhorar Relatório de Assistência: {e}")
+        raise HTTPException(status_code=500, detail="Falha a chamar a IA")
+
+    return result

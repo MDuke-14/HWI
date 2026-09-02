@@ -219,3 +219,106 @@ async def review_fs(fs_payload: Dict[str, Any]) -> Dict[str, Any]:
     parsed.setdefault("relatorios_melhorados", [])
     parsed.setdefault("score_qualidade", 0)
     return parsed
+
+
+# ============================================================
+#  3) Melhoria de UM único Relatório de Assistência
+# ============================================================
+
+REL_ASSIST_SYSTEM = (
+    "És um técnico industrial experiente a escrever um Relatório de Assistência para "
+    "arquivo interno e envio ao cliente. Reescreves textos técnicos mantendo TODOS os "
+    "factos originais, com tom natural, profissional, direto e em PORTUGUÊS de "
+    "Portugal. Escreves como se fosses tu, o técnico, a redigir — não como um "
+    "assistente. NUNCA inventes factos. NUNCA uses markdown, asteriscos, hashtags, "
+    "sublinhados de ênfase, emojis nem qualquer caractere decorativo. Apenas texto "
+    "corrido, com pontuação normal. Devolves SEMPRE um único objecto JSON válido, "
+    "sem texto fora do JSON."
+)
+
+
+def _strip_markdown(text: str) -> str:
+    """Remove formatação markdown residual (*, _, #, `, >, listas) preservando o conteúdo."""
+    if not text:
+        return ""
+    # negritos/itálicos: **x**, *x*, __x__, _x_
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"__([^_]+)__", r"\1", text)
+    text = re.sub(r"\*([^*\n]+)\*", r"\1", text)
+    text = re.sub(r"(?<!\w)_([^_\n]+)_(?!\w)", r"\1", text)
+    # cabeçalhos # em início de linha
+    text = re.sub(r"^\s{0,3}#{1,6}\s+", "", text, flags=re.MULTILINE)
+    # bullets " - " / " * " / " + " no início de linha → "- "
+    text = re.sub(r"^\s*[*+]\s+", "- ", text, flags=re.MULTILINE)
+    # blockquote ">"
+    text = re.sub(r"^\s*>\s?", "", text, flags=re.MULTILINE)
+    # crases de código inline `x`
+    text = re.sub(r"`([^`]+)`", r"\1", text)
+    # múltiplas linhas em branco → 2
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+async def improve_relatorio_assistencia(texto: str, contexto: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Recebe o texto atual dum Relatório de Assistência e devolve uma versão
+    profissional em texto corrido (sem markdown/asteriscos).
+
+    Output:
+      { "texto_melhorado": str, "alteracoes_principais": str }
+    """
+    if not texto or not texto.strip():
+        return {"texto_melhorado": "", "alteracoes_principais": "Texto vazio — nada a melhorar."}
+
+    contexto_str = ""
+    if contexto:
+        # Só incluímos pistas relevantes: equipamento, cliente, data
+        pistas = {k: v for k, v in contexto.items() if v}
+        if pistas:
+            contexto_str = "\nCONTEXTO (apenas para referência, não citar):\n" + json.dumps(pistas, ensure_ascii=False, indent=2) + "\n"
+
+    user_text = (
+        "Reescreve o TEXTO abaixo de um Relatório de Assistência com tom técnico-"
+        "profissional, claro, direto e em PT-PT. Estrutura implícita: problema/"
+        "situação encontrada, intervenção realizada, resultado. Mantém todos os "
+        "factos, medidas e nomes originais. Não inventes.\n\n"
+        "REGRAS OBRIGATÓRIAS:\n"
+        "- Texto corrido em parágrafos normais.\n"
+        "- NÃO usar asteriscos (*, **), hashtags (#), sublinhados de ênfase (_), "
+        "  emojis, ou qualquer caractere de formatação markdown.\n"
+        "- Podes usar listas simples com hífen ('- ') no início da linha se ajudar "
+        "  a leitura, mas nunca com negrito ou itálico.\n"
+        "- Deve parecer escrito pelo técnico, não por uma IA (evita frases como "
+        "  'foi realizada uma intervenção pela equipa técnica'; prefere 'realizei/"
+        "  procedi a...' quando aplicável). Se o original estiver na 3ª pessoa, "
+        "  mantém a 3ª pessoa.\n"
+        "- Se o texto já estiver bem, devolve-o quase igual ao original em "
+        "  'texto_melhorado' e escreve 'Sem alterações significativas' em "
+        "  'alteracoes_principais'.\n\n"
+        "Devolve APENAS este JSON:\n"
+        "{\n"
+        '  "texto_melhorado": "string",\n'
+        '  "alteracoes_principais": "string curta (1-2 frases)"\n'
+        "}\n\n"
+        f"{contexto_str}"
+        f"TEXTO ORIGINAL:\n{texto}"
+    )
+
+    chat = _build_chat(REL_ASSIST_SYSTEM)
+    response = await chat.send_message(UserMessage(text=user_text))
+    parsed = _extract_json(response or "")
+
+    melhorado = _strip_markdown(parsed.get("texto_melhorado") or "")
+    alteracoes = _strip_markdown(parsed.get("alteracoes_principais") or "")
+
+    # Se a IA devolveu vazio, mantém o original
+    if not melhorado:
+        return {
+            "texto_melhorado": texto,
+            "alteracoes_principais": "A IA não devolveu conteúdo válido; texto original mantido.",
+        }
+
+    return {
+        "texto_melhorado": melhorado,
+        "alteracoes_principais": alteracoes or "Reescrita profissional aplicada.",
+    }
