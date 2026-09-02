@@ -275,11 +275,11 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             try:
                 dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
                 return dt.strftime('%Y-%m-%d')
-            except:
+            except Exception:
                 try:
                     dt = datetime.strptime(date_str, '%d/%m/%Y')
                     return dt.strftime('%Y-%m-%d')
-                except:
+                except Exception:
                     return date_str[:10] if len(date_str) >= 10 else date_str
         return None
     
@@ -290,7 +290,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
         try:
             dt = datetime.strptime(date_str, '%Y-%m-%d')
             return dt.strftime('%d/%m/%Y')
-        except:
+        except Exception:
             return date_str
     
     def create_section_box(content_elements, title=None, allow_split=True):
@@ -343,7 +343,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                 try:
                     logo_element = RLImage(logo_path, width=5*cm, height=1.44*cm)
                     break
-                except:
+                except Exception:
                     continue
     
     # Formatar data de serviço
@@ -351,7 +351,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
     if isinstance(data_servico, str) and data_servico:
         try:
             data_servico = datetime.fromisoformat(data_servico).strftime('%d/%m/%Y')
-        except:
+        except Exception:
             pass
     
     status_labels = {
@@ -831,7 +831,7 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                     try:
                         dt = datetime.fromisoformat(str(assinatura['data_assinatura']).replace('Z', '+00:00'))
                         data_assinatura_display = dt.strftime('%d/%m/%Y %H:%M')
-                    except:
+                    except Exception:
                         data_assinatura_display = str(assinatura['data_assinatura'])
                 
                 if nome_completo:

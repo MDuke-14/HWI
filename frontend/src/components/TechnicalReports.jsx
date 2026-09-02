@@ -3713,84 +3713,49 @@ const TechnicalReports = ({ user, onLogout }) => {
     if (!selectedRelatorio) return;
     
     setLoadingHTMLPreview(true);
+    const toastId = toast.loading('A carregar visualização...');
     try {
-      // Buscar todos os dados necessários (incluindo registos manuais)
-      const [intervRes, fotosRes, equipRes, materiaisRes, registosRes, tecnicosRes] = await Promise.all([
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes`),
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`),
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/equipamentos`),
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`),
+      // Fetch registos + técnicos para calcular horas por técnico
+      const [registosRes, tecnicosRes] = await Promise.all([
         axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`),
         axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos`)
       ]);
-      
-      // Combinar registos de cronómetro e manuais
-      const allRegistos = [
-        // Registos de cronómetro
-        ...registosRes.data.map(reg => ({
-          ...reg,
-          _tipo: reg.tipo,
-          _hora_sort: reg.hora_inicio_segmento || ''
-        })),
-        // Registos manuais
-        ...tecnicosRes.data.map(tec => ({
-          id: tec.id,
-          tecnico_nome: tec.tecnico_nome,
-          tipo: tec.tipo_registo || 'manual',
-          data: tec.data_trabalho,
-          hora_inicio_segmento: tec.hora_inicio,
-          hora_fim_segmento: tec.hora_fim,
-          minutos_trabalhados: tec.minutos_cliente,
-          km: tec.kms_deslocacao || (Math.max(0, (tec.kms_final || 0) - (tec.kms_inicial || 0))),
-          codigo: tec.tipo_horario,
-          _tipo: tec.tipo_registo || 'manual',
-          _hora_sort: tec.hora_inicio || ''
-        }))
-      ].sort((a, b) => {
-        // Normalizar datas para YYYY-MM-DD
-        const dataAStr = (a.data || '1970-01-01').substring(0, 10);
-        const dataBStr = (b.data || '1970-01-01').substring(0, 10);
-        if (dataAStr !== dataBStr) return dataAStr.localeCompare(dataBStr);
-        // Normalizar horas para HH:MM
-        const extractTime = (item) => {
-          const h = item._hora_sort || '';
-          if (h.length > 10) return h.substring(11, 16);
-          return h || '99:99';
-        };
-        return extractTime(a).localeCompare(extractTime(b));
+
+      // Agregar minutos por técnico (registos cronómetro + manuais)
+      const minsPorTecnico = {};
+      (registosRes.data || []).forEach(reg => {
+        const nome = reg.tecnico_nome || 'Sem nome';
+        minsPorTecnico[nome] = (minsPorTecnico[nome] || 0) + (reg.minutos_trabalhados || 0);
       });
-      
+      (tecnicosRes.data || []).forEach(tec => {
+        const nome = tec.tecnico_nome || 'Sem nome';
+        minsPorTecnico[nome] = (minsPorTecnico[nome] || 0) + (tec.minutos_cliente || 0);
+      });
+      const horasPorTecnico = Object.entries(minsPorTecnico)
+        .map(([nome, mins]) => ({ nome, horas: mins / 60 }))
+        .sort((a, b) => b.horas - a.horas);
+
+      // Gerar PDF (mesmo endpoint do download, para paridade absoluta)
+      const { blob } = await downloadFSPdfAsync({
+        api: API,
+        relatorioId: selectedRelatorio.id,
+        axios,
+        onProgress: (elapsed) => {
+          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+        },
+      });
+      const url = URL.createObjectURL(blob);
+
       setHtmlPreviewData({
         relatorio: selectedRelatorio,
-        intervencoes: intervRes.data,
-        fotografias: fotosRes.data,
-        equipamentos: equipRes.data,
-        materiais: materiaisRes.data,
-        registos: allRegistos,
-        relatoriosAssistencia: relatoriosAssistencia
+        horasPorTecnico,
+        pdfUrl: url,
       });
-      
-      // Buscar assinaturas existentes
-      try {
-        const assRes = await axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/assinaturas`);
-        setHtmlPreviewData(prev => ({
-          ...prev,
-          assinaturas: assRes.data
-        }));
-      } catch (err) {
-        console.log('Sem assinaturas ou erro ao buscar');
-      }
-      
       setShowHTMLPreviewModal(true);
-      
-      // Inicializar canvas de assinatura após modal abrir
-      setTimeout(() => {
-        initSignatureCanvas();
-      }, 100);
-      
+      toast.success('Visualização pronta!', { id: toastId, duration: 1500 });
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados para visualização');
+      console.error('Erro ao carregar visualização:', error);
+      toast.error(error?.message || 'Erro ao carregar visualização', { id: toastId, duration: 6000 });
     } finally {
       setLoadingHTMLPreview(false);
     }
@@ -7333,489 +7298,90 @@ const TechnicalReports = ({ user, onLogout }) => {
         }}
       />
 
-      {/* HTML Preview Modal - Visualização estilo PDF para Cliente - ORGANIZADO POR DATA DE INTERVENÇÃO */}
-      <Dialog open={showHTMLPreviewModal} onOpenChange={setShowHTMLPreviewModal}>
-        <DialogContent className="bg-white text-black max-w-4xl max-h-[95vh] overflow-y-auto p-0">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Pré-visualização da FS em formato PDF</DialogTitle>
-            <DialogDescription>Visualização do relatório técnico organizada por data de intervenção.</DialogDescription>
+      {/* HTML Preview Modal — iframe do PDF final + horas por técnico (só visualização) */}
+      <Dialog open={showHTMLPreviewModal} onOpenChange={(o) => {
+        if (!o) {
+          if (htmlPreviewData?.pdfUrl) URL.revokeObjectURL(htmlPreviewData.pdfUrl);
+          setHtmlPreviewData(null);
+        }
+        setShowHTMLPreviewModal(o);
+      }}>
+        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-5xl h-[95vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="p-4 border-b border-gray-700 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Eye className="w-5 h-5 text-emerald-400" />
+              Visualizar Relatório — FS #{selectedRelatorio?.numero_assistencia}
+            </DialogTitle>
+            <DialogDescription className="sr-only">Visualização do relatório com PDF e horas por técnico.</DialogDescription>
           </DialogHeader>
-          {htmlPreviewData && (() => {
-            // Agrupar dados por data de intervenção
-            const intervencoesPorData = {};
-            
-            // Helper para criar estrutura de dados por data
-            const criarGrupoPorData = (dataKey) => {
-              if (!intervencoesPorData[dataKey]) {
-                intervencoesPorData[dataKey] = {
-                  intervencoes: [],
-                  registos: [],
-                  materiais: [],
-                  fotografias: [],
-                  assinaturas: [],
-                  relatoriosAssistencia: []
-                };
-              }
-            };
-            
-            // Primeiro, criar blocos para cada intervenção (pela data_intervencao)
-            htmlPreviewData.intervencoes?.forEach((int, idx) => {
-              const dataKey = int.data_intervencao ? int.data_intervencao.split('T')[0] : 'sem_data';
-              criarGrupoPorData(dataKey);
-              intervencoesPorData[dataKey].intervencoes.push({ ...int, numero: idx + 1 });
-            });
-            
-            // Adicionar registos de mão de obra pela data
-            htmlPreviewData.registos?.forEach(reg => {
-              const dataKey = reg.data ? reg.data.split('T')[0] : 'sem_data';
-              criarGrupoPorData(dataKey);
-              intervencoesPorData[dataKey].registos.push(reg);
-            });
-            
-            // Adicionar materiais pela data_utilizacao
-            htmlPreviewData.materiais?.forEach(mat => {
-              const dataKey = mat.data_utilizacao ? mat.data_utilizacao.split('T')[0] : 'sem_data';
-              criarGrupoPorData(dataKey);
-              intervencoesPorData[dataKey].materiais.push(mat);
-            });
-            
-            // Adicionar fotografias pela data de upload (uploaded_at)
-            htmlPreviewData.fotografias?.forEach(foto => {
-              const dataKey = foto.uploaded_at ? foto.uploaded_at.split('T')[0] : 'sem_data';
-              criarGrupoPorData(dataKey);
-              intervencoesPorData[dataKey].fotografias.push(foto);
-            });
-            
-            // Adicionar assinaturas pela DATA DE ASSINATURA (data_assinatura)
-            htmlPreviewData.assinaturas?.forEach(ass => {
-              const dataKey = ass.data_assinatura ? ass.data_assinatura.split('T')[0] : 'sem_data';
-              criarGrupoPorData(dataKey);
-              intervencoesPorData[dataKey].assinaturas.push(ass);
-            });
-            
-            // Adicionar relatórios de assistência pela data_intervencao
-            htmlPreviewData.relatoriosAssistencia?.forEach(ra => {
-              const dataKey = ra.data_intervencao ? ra.data_intervencao.split('T')[0] : 'sem_data';
-              criarGrupoPorData(dataKey);
-              intervencoesPorData[dataKey].relatoriosAssistencia.push(ra);
-            });
-            
-            // Ordenar datas cronologicamente
-            const datasOrdenadas = Object.keys(intervencoesPorData)
-              .filter(d => d !== 'sem_data')
-              .sort((a, b) => new Date(a) - new Date(b));
-            
-            // Adicionar 'sem_data' no final se existir com conteúdo
-            if (intervencoesPorData['sem_data'] && (
-              intervencoesPorData['sem_data'].intervencoes.length > 0 ||
-              intervencoesPorData['sem_data'].registos.length > 0 ||
-              intervencoesPorData['sem_data'].materiais.length > 0 ||
-              intervencoesPorData['sem_data'].fotografias.length > 0 ||
-              intervencoesPorData['sem_data'].assinaturas.length > 0
-            )) {
-              datasOrdenadas.push('sem_data');
-            }
-            
-            return (
-            <div className="pdf-preview-container">
-              {/* Header */}
-              <div className="bg-gray-800 text-white p-6 print:bg-gray-800">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h1 className="text-2xl font-bold">RELATÓRIO TÉCNICO</h1>
-                    <p className="text-gray-300 mt-1">Folha de Serviço #{htmlPreviewData.relatorio.numero_assistencia}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-300">Data: {new Date(htmlPreviewData.relatorio.data_servico).toLocaleDateString('pt-PT')}</p>
-                    <p className="text-sm text-gray-300">Estado: {getStatusLabel(htmlPreviewData.relatorio.status)}</p>
-                  </div>
-                </div>
+
+          {/* Sumário de horas por técnico (só nesta vista, não vai no PDF) */}
+          {htmlPreviewData?.horasPorTecnico?.length > 0 && (
+            <div className="bg-[#0f0f0f] border-b border-gray-700 px-4 py-3 shrink-0">
+              <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+                Horas por técnico <span className="text-gray-500 normal-case">(só nesta visualização)</span>
               </div>
-
-              <div className="p-6 space-y-6">
-                {/* Informações do Cliente */}
-                <section className="border border-gray-300 rounded-lg p-4">
-                  <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">INFORMAÇÕES DO CLIENTE</h2>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-semibold text-gray-600">Cliente:</span>
-                      <p className="text-gray-800">{htmlPreviewData.relatorio.cliente_nome}</p>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">Pedido por:</span>
-                      <p className="text-gray-800">{htmlPreviewData.relatorio.pedido_por || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-600">Local:</span>
-                      <p className="text-gray-800">{htmlPreviewData.relatorio.local_intervencao || '-'}</p>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Equipamentos - Secção global (não têm data específica) */}
-                {(htmlPreviewData.equipamentos?.length > 0 || 
-                  htmlPreviewData.relatorio?.equipamento_marca || 
-                  htmlPreviewData.relatorio?.equipamento_tipologia ||
-                  htmlPreviewData.relatorio?.equipamento_modelo ||
-                  htmlPreviewData.relatorio?.equipamento_numero_serie) && (
-                  <section className="border border-gray-300 rounded-lg p-4">
-                    <h2 className="text-lg font-bold text-gray-800 border-b border-gray-300 pb-2 mb-3">EQUIPAMENTOS</h2>
-                    <div className="space-y-3">
-                      {/* Equipamento principal */}
-                      {(htmlPreviewData.relatorio?.equipamento_marca || 
-                        htmlPreviewData.relatorio?.equipamento_tipologia || 
-                        htmlPreviewData.relatorio?.equipamento_modelo ||
-                        htmlPreviewData.relatorio?.equipamento_numero_serie) && (
-                        <div className="bg-gray-50 p-3 rounded">
-                          <div className="space-y-1.5 text-sm">
-                            {htmlPreviewData.relatorio.equipamento_tipologia && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Tipo:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_tipologia}</span>
-                              </div>
-                            )}
-                            {htmlPreviewData.relatorio.equipamento_marca && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Marca:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_marca}</span>
-                              </div>
-                            )}
-                            {htmlPreviewData.relatorio.equipamento_modelo && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Modelo:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_modelo}</span>
-                              </div>
-                            )}
-                            {htmlPreviewData.relatorio.equipamento_numero_serie && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Nº Série:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_numero_serie}</span>
-                              </div>
-                            )}
-                            {htmlPreviewData.relatorio.equipamento_ano_fabrico && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Ano:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_ano_fabrico}</span>
-                              </div>
-                            )}
-                            {htmlPreviewData.relatorio.equipamento_horas_funcionamento && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Horas:</span>
-                                <span className="text-gray-800">{htmlPreviewData.relatorio.equipamento_horas_funcionamento}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {/* Equipamentos adicionais */}
-                      {htmlPreviewData.equipamentos?.map((eq, idx) => (
-                        <div key={eq.id || `${eq.tipologia || 'eq'}-${idx}`} className="bg-gray-50 p-3 rounded">
-                          <div className="space-y-1.5 text-sm">
-                            {eq.tipologia && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Tipo:</span>
-                                <span className="text-gray-800">{eq.tipologia}</span>
-                              </div>
-                            )}
-                            {eq.marca && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Marca:</span>
-                                <span className="text-gray-800">{eq.marca}</span>
-                              </div>
-                            )}
-                            {eq.modelo && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Modelo:</span>
-                                <span className="text-gray-800">{eq.modelo}</span>
-                              </div>
-                            )}
-                            {eq.numero_serie && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Nº Série:</span>
-                                <span className="text-gray-800">{eq.numero_serie}</span>
-                              </div>
-                            )}
-                            {eq.ano_fabrico && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Ano:</span>
-                                <span className="text-gray-800">{eq.ano_fabrico}</span>
-                              </div>
-                            )}
-                            {eq.horas_funcionamento && (
-                              <div className="flex flex-col sm:flex-row sm:gap-2">
-                                <span className="font-semibold text-gray-600 shrink-0">Horas:</span>
-                                <span className="text-gray-800">{eq.horas_funcionamento}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* BLOCOS POR DATA DE INTERVENÇÃO */}
-                {datasOrdenadas.map((dataKey, blocoIdx) => {
-                  const dados = intervencoesPorData[dataKey];
-                  const dataFormatada = dataKey === 'sem_data' 
-                    ? 'Data não especificada' 
-                    : new Date(dataKey).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                  
-                  const temConteudo = dados.intervencoes.length > 0 || 
-                                      dados.registos.length > 0 || 
-                                      dados.materiais.length > 0 || 
-                                      dados.fotografias.length > 0 ||
-                                      dados.assinaturas.length > 0;
-                  
-                  if (!temConteudo) return null;
-                  
-                  return (
-                    <section key={dataKey} className="border-2 border-blue-400 rounded-lg overflow-hidden">
-                      {/* Cabeçalho do Bloco de Data */}
-                      <div className="bg-blue-600 text-white px-4 py-3">
-                        <h2 className="text-lg font-bold flex items-center gap-2">
-                          <Calendar className="w-5 h-5" />
-                          {blocoIdx + 1}ª INTERVENÇÃO - {dataFormatada}
-                        </h2>
-                      </div>
-                      
-                      <div className="p-4 space-y-4 bg-blue-50/30">
-                        {/* Intervenções desta data */}
-                        {dados.intervencoes.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-gray-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-blue-500" />
-                              Descrição da Intervenção
-                            </h3>
-                            {dados.intervencoes.map((int, idx) => (
-                              <div key={int.id || `${int.tecnico_nome || 'ti'}-${idx}`} className="space-y-2">
-                                {int.tecnico_nome && (
-                                  <div>
-                                    <span className="font-medium text-gray-600">Técnico: </span>
-                                    <span className="text-gray-800">{int.tecnico_nome}</span>
-                                  </div>
-                                )}
-                                {int.motivo_assistencia && (
-                                  <div>
-                                    <span className="font-medium text-gray-600">Motivo: </span>
-                                    <span className="text-gray-700">{int.motivo_assistencia}</span>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Mão de Obra / Horas desta data */}
-                        {dados.registos.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-gray-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-green-500" />
-                              Mão de Obra / Deslocação
-                            </h3>
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-gray-100">
-                                  <th className="p-2 text-left">Colaborador</th>
-                                  <th className="p-2 text-left">Tipo</th>
-                                  <th className="p-2 text-left">Início</th>
-                                  <th className="p-2 text-left">Fim</th>
-                                  <th className="p-2 text-left">Horas</th>
-                                  <th className="p-2 text-left">KM</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {dados.registos.map((reg, idx) => {
-                                  const tipoR = reg._tipo || reg.tipo || 'trabalho';
-                                  const tipoLabel = tipoR === 'trabalho' ? 'T' : tipoR === 'oficina' ? 'O' : tipoR === 'viagem' ? 'V' : 'M';
-                                  const tipoColor = tipoR === 'trabalho' ? 'text-green-700 bg-green-100' : tipoR === 'oficina' ? 'text-orange-700 bg-orange-100' : tipoR === 'viagem' ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100';
-                                  return (
-                                  <tr key={reg.id || `${reg.tecnico_nome || 'r'}-${reg.hora_inicio || 'hi'}-${idx}`} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                                    <td className="p-2">
-                                      {reg.tecnico_nome}
-                                      <span className={`ml-1 text-xs ${reg.funcao_ot === 'senior' ? 'text-purple-600' : reg.funcao_ot === 'junior' ? 'text-yellow-600' : reg.funcao_ot === 'ajudante' ? 'text-emerald-600' : 'text-cyan-600'}`}>
-                                        ({reg.funcao_ot === 'senior' ? 'Téc. Sénior' : reg.funcao_ot === 'junior' ? 'Téc. Júnior' : reg.funcao_ot === 'ajudante' ? 'Ajudante' : 'Técnico'})
-                                      </span>
-                                    </td>
-                                    <td className="p-2"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${tipoColor}`}>{tipoLabel}</span></td>
-                                    <td className="p-2">{reg.hora_inicio_segmento ? new Date(reg.hora_inicio_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon'}) : '-'}</td>
-                                    <td className="p-2">{reg.hora_fim_segmento ? new Date(reg.hora_fim_segmento).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon'}) : '-'}</td>
-                                    <td className="p-2">{(() => { const h = reg.horas_arredondadas || 0; const hi = Math.floor(h); const mi = Math.round((h - hi) * 60); return `${hi}h${String(mi).padStart(2, '0')}`; })()}</td>
-                                    <td className="p-2">{reg.km != null && reg.km > 0 ? reg.km : '-'}</td>
-                                  </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                        
-                        {/* Materiais desta data */}
-                        {dados.materiais.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-gray-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                              <Package className="w-4 h-4 text-orange-500" />
-                              Materiais Utilizados
-                            </h3>
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-gray-100">
-                                  <th className="p-2 text-left">Descrição</th>
-                                  <th className="p-2 text-left">Quantidade</th>
-                                  <th className="p-2 text-left">Fornecido por</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {dados.materiais.map((mat, idx) => (
-                                  <tr key={mat.id || `${mat.descricao || 'mat'}-${idx}`} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                                    <td className="p-2">{mat.descricao}</td>
-                                    <td className="p-2">{mat.quantidade} {mat.unidade || 'Un'}</td>
-                                    <td className="p-2">{mat.fornecido_por}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                        
-                        {/* Relatórios de Assistência desta data */}
-                        {dados.relatoriosAssistencia?.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-orange-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-orange-500" />
-                              Relatório de Assistência
-                            </h3>
-                            {dados.relatoriosAssistencia.map((ra, raIdx) => (
-                              <div key={raIdx} className="mb-3 last:mb-0">
-                                {ra.equipamento_ids?.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mb-1">
-                                    {ra.equipamento_ids.map(eqId => {
-                                      const eq = htmlPreviewData.equipamentos?.find(e => e.id === eqId);
-                                      const eqPrincipal = eqId === 'principal' ? {
-                                        tipologia: htmlPreviewData.relatorio?.equipamento_tipologia,
-                                        marca: htmlPreviewData.relatorio?.equipamento_marca,
-                                        modelo: htmlPreviewData.relatorio?.equipamento_modelo
-                                      } : null;
-                                      const eqData = eq || eqPrincipal;
-                                      if (!eqData) return null;
-                                      return (
-                                        <span key={eqId} className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
-                                          {eqData.tipologia ? `${eqData.tipologia} - ` : ''}{eqData.marca} {eqData.modelo}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                                <p className="text-gray-700 whitespace-pre-wrap text-sm">{ra.texto}</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Fotografias desta data */}
-                        {dados.fotografias.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-gray-200">
-                            <h3 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                              <ImageIcon className="w-4 h-4 text-cyan-500" />
-                              Fotografias
-                            </h3>
-                            <div className="grid grid-cols-2 gap-3">
-                              {dados.fotografias.map((foto, idx) => (
-                                <div key={foto.id || foto.foto_url || `foto-${idx}`} className="border border-gray-200 rounded overflow-hidden">
-                                  <img 
-                                    src={`${API}${foto.foto_url}`} 
-                                    alt={foto.descricao || 'Fotografia'} 
-                                    className="w-full h-32 object-cover"
-                                  />
-                                  {foto.descricao && (
-                                    <p className="p-2 text-xs text-gray-600 bg-gray-50">{foto.descricao}</p>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Assinaturas desta data (pela data_assinatura) - Layout melhorado */}
-                        {dados.assinaturas.length > 0 && (
-                          <div className="bg-white rounded-lg p-3 border border-gray-200">
-                            <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
-                              <PenTool className="w-4 h-4 text-purple-500" />
-                              Assinaturas
-                            </h3>
-                            <div className="space-y-4">
-                              {dados.assinaturas.map((ass, idx) => (
-                                <div key={ass.id || ass.assinatura_url || `ass-${idx}`} className="border border-gray-200 rounded-lg p-4 bg-white text-center">
-                                  {/* Imagem da assinatura - maior e centrada */}
-                                  {ass.assinatura_url && (
-                                    <img 
-                                      src={`${API}${ass.assinatura_url}`} 
-                                      alt="Assinatura" 
-                                      className="max-h-24 mx-auto mb-3"
-                                    />
-                                  )}
-                                  {/* Linha separadora */}
-                                  <div className="border-t border-gray-300 w-2/3 mx-auto mb-2"></div>
-                                  {/* Nome - abaixo e centrado */}
-                                  <p className="text-sm font-semibold text-gray-800">
-                                    {ass.assinado_por || `${ass.primeiro_nome || ''} ${ass.ultimo_nome || ''}`.trim() || 'Assinatura'}
-                                  </p>
-                                  {/* Data - abaixo do nome */}
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {ass.data_assinatura ? new Date(ass.data_assinatura).toLocaleString('pt-PT') : ''}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  );
-                })}
-
-                {/* Rodapé */}
-                <div className="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
-                  <p>Documento gerado em {new Date().toLocaleString('pt-PT')}</p>
-                </div>
-              </div>
-
-              {/* Botões de Ação */}
-              <div className="sticky bottom-0 bg-gray-100 border-t border-gray-300 p-4 flex justify-end gap-3 print:hidden">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowHTMLPreviewModal(false)}
-                  className="border-gray-400"
-                >
-                  Fechar
-                </Button>
-                <Button
-                  onClick={async () => {
-                    const toastId = toast.loading('A gerar PDF... 0s');
-                    try {
-                      await downloadFSPdfToFile({
-                        api: API,
-                        relatorioId: selectedRelatorio.id,
-                        axios,
-                        fallbackFilename: `FS_${selectedRelatorio.numero_assistencia}.pdf`,
-                        onProgress: (elapsed) => {
-                          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
-                        },
-                      });
-                      toast.success('PDF descarregado com sucesso!', { id: toastId, duration: 2500 });
-                    } catch (error) {
-                      toast.error(`Erro ao descarregar PDF: ${error?.message || 'desconhecido'}`, { id: toastId, duration: 8000 });
-                    }
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
-                </Button>
+              <div className="flex flex-wrap gap-2">
+                {htmlPreviewData.horasPorTecnico.map((t) => (
+                  <span
+                    key={t.nome}
+                    className="inline-flex items-center gap-2 bg-emerald-900/20 border border-emerald-700/40 rounded-full px-3 py-1 text-sm"
+                    data-testid={`preview-horas-${t.nome}`}
+                  >
+                    <User className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-white">{t.nome}</span>
+                    <span className="text-emerald-300 font-semibold">{t.horas.toFixed(2)}h</span>
+                  </span>
+                ))}
               </div>
             </div>
-            );
-          })()}
+          )}
+
+          {/* PDF em iframe (idêntico ao PDF final) */}
+          <div className="flex-1 min-h-0 bg-neutral-800">
+            {htmlPreviewData?.pdfUrl ? (
+              <iframe
+                src={htmlPreviewData.pdfUrl}
+                className="w-full h-full border-0"
+                title="Visualização do PDF"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">A carregar…</div>
+            )}
+          </div>
+
+          {/* Rodapé */}
+          <div className="border-t border-gray-700 p-4 flex justify-end gap-3 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowHTMLPreviewModal(false)}
+              className="border-gray-600"
+            >
+              Fechar
+            </Button>
+            <Button
+              onClick={openSignatureFromPreview}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              data-testid="assine-aqui-btn"
+            >
+              <PenTool className="w-4 h-4 mr-2" />
+              Assine Aqui
+            </Button>
+            {htmlPreviewData?.pdfUrl && (
+              <Button
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = htmlPreviewData.pdfUrl;
+                  link.download = `FS_${selectedRelatorio?.numero_assistencia || 'relatorio'}.pdf`;
+                  link.click();
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

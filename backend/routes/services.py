@@ -338,7 +338,7 @@ async def get_calendar_data(
                         ots_com_intervencoes_mes[rel_id].add(data_interv[:10])
                     else:
                         ots_com_intervencoes_mes[rel_id].add(data_interv.strftime("%Y-%m-%d"))
-                except:
+                except Exception:
                     pass
     
     # Buscar OTs adicionais que têm intervenções neste mês mas data_servico de outro mês
@@ -367,12 +367,12 @@ async def get_calendar_data(
         # Converter datas para objetos date
         try:
             data_inicio_obj = datetime.strptime(data_servico[:10], "%Y-%m-%d").date() if data_servico else None
-        except:
+        except Exception:
             data_inicio_obj = None
         
         try:
             data_fim_obj = datetime.strptime(data_fim[:10], "%Y-%m-%d").date() if data_fim else None
-        except:
+        except Exception:
             data_fim_obj = None
         
         # Se tem data_fim, gerar entrada para cada dia do intervalo
@@ -414,7 +414,7 @@ async def get_calendar_data(
                                 datas_intervencoes.add(data_interv[:10])
                             else:
                                 datas_intervencoes.add(data_interv.strftime("%Y-%m-%d"))
-                        except:
+                        except Exception:
                             pass
             
             # Adicionar a data de início se não tiver intervenções
