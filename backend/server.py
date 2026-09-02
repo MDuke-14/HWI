@@ -4493,17 +4493,25 @@ async def generate_folha_horas(
         {"_id": 0}
     ).to_list(length=None)
     
-    # Aplicar ajustes de despesas (percentual e exclusões)
+    # Aplicar ajustes de despesas (usa valor_final persistido da despesa por defeito)
     despesas_ajustadas = []
     adjustments = request.despesa_adjustments or {}
     for despesa in despesas_ot:
         desp_id = despesa.get("id", "")
         adj = adjustments.get(desp_id, {})
         if adj.get("excluida", False):
-            continue  # Excluída da folha de horas
+            continue  # Excluída da folha de horas (compat legado)
         valor_original = despesa.get("valor", 0) or 0
-        percentual = adj.get("percentual", 0) or 0
-        valor_final = valor_original * (1 + percentual / 100)
+        # Prioridade: adjustment do frontend → valor_final persistido → valor original
+        if "percentual" in adj and adj.get("percentual") is not None:
+            percentual = adj.get("percentual") or 0
+            valor_final = valor_original * (1 + percentual / 100)
+        elif despesa.get("valor_final") is not None:
+            valor_final = float(despesa.get("valor_final") or 0)
+            percentual = float(despesa.get("percentagem") or 0)
+        else:
+            valor_final = valor_original
+            percentual = 0
         despesa["valor_original"] = valor_original
         despesa["valor_ajustado"] = valor_final
         despesa["percentual_aplicado"] = percentual

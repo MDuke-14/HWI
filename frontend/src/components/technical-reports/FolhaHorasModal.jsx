@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileSpreadsheet, DollarSign, User, Calendar, Download, Settings, Receipt, Eye, EyeOff, X, Save, Percent } from 'lucide-react';
+import { FileSpreadsheet, DollarSign, User, Calendar, Download, Settings } from 'lucide-react';
 import axios from 'axios';
 import { API } from '@/App';
 
@@ -16,36 +16,16 @@ const FolhaHorasModal = ({
   updateFolhaHorasTarifa,
   onGeneratePDF,
   generatingFolhaHoras,
-  despesas = [],
 }) => {
   const [tabelasPreco, setTabelasPreco] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(1);
   const [tarifasDaTabela, setTarifasDaTabela] = useState([]);
   
-  // Despesas state
-  const [showDespesasListPopup, setShowDespesasListPopup] = useState(false);
-  const [showDespesaDetailPopup, setShowDespesaDetailPopup] = useState(false);
-  const [selectedDespesaDetail, setSelectedDespesaDetail] = useState(null);
-  const [despesaPercentual, setDespesaPercentual] = useState('');
-  // Track adjustments: { despesaId: { percentual: number, excluida: boolean } }
-  const [despesaAdjustments, setDespesaAdjustments] = useState({});
-  
   const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
-  const tiposDespesa = [
-    { value: 'outras', label: 'Outras' },
-    { value: 'combustivel', label: 'Combustível' },
-    { value: 'ferramentas', label: 'Ferramentas' },
-    { value: 'portagens', label: 'Portagens' }
-  ];
-
-  // Reset adjustments when modal opens
   useEffect(() => {
     if (open) {
       fetchTabelasPreco();
-      setDespesaAdjustments({});
-      setShowDespesasListPopup(false);
-      setShowDespesaDetailPopup(false);
     }
   }, [open]);
 
@@ -167,7 +147,7 @@ const FolhaHorasModal = ({
   };
 
   const handleGeneratePDF = () => {
-    onGeneratePDF(selectedTableId, despesaAdjustments);
+    onGeneratePDF(selectedTableId);
   };
 
   const getDataInfo = (dataStr) => {
@@ -210,63 +190,6 @@ const FolhaHorasModal = ({
       const tipoOrdem = { 'trabalho': 0, 'viagem': 1, 'oficina': 2, 'manual': 3 };
       return (tipoOrdem[a.tipo] || 99) - (tipoOrdem[b.tipo] || 99);
     });
-  };
-
-  // Despesas helpers
-  const despesasVisiveis = despesas.filter(d => !despesaAdjustments[d.id]?.excluida);
-  const despesasExcluidas = despesas.filter(d => despesaAdjustments[d.id]?.excluida);
-  const totalDespesasOriginal = despesasVisiveis.reduce((sum, d) => sum + (d.valor || 0), 0);
-  const totalDespesasAjustado = despesasVisiveis.reduce((sum, d) => {
-    const adj = despesaAdjustments[d.id];
-    const pct = adj?.percentual || 0;
-    return sum + (d.valor || 0) * (1 + pct / 100);
-  }, 0);
-
-  const openDespesaDetail = (despesa) => {
-    setSelectedDespesaDetail(despesa);
-    const adj = despesaAdjustments[despesa.id];
-    setDespesaPercentual(adj?.percentual?.toString() || '');
-    setShowDespesaDetailPopup(true);
-  };
-
-  const handleDespesaGravar = () => {
-    if (!selectedDespesaDetail) return;
-    setDespesaAdjustments(prev => ({
-      ...prev,
-      [selectedDespesaDetail.id]: {
-        ...prev[selectedDespesaDetail.id],
-        percentual: parseFloat(despesaPercentual) || 0,
-        excluida: false
-      }
-    }));
-    setShowDespesaDetailPopup(false);
-    setSelectedDespesaDetail(null);
-  };
-
-  const handleDespesaNaoVisualizar = () => {
-    if (!selectedDespesaDetail) return;
-    setDespesaAdjustments(prev => ({
-      ...prev,
-      [selectedDespesaDetail.id]: {
-        ...prev[selectedDespesaDetail.id],
-        excluida: true
-      }
-    }));
-    setShowDespesaDetailPopup(false);
-    setSelectedDespesaDetail(null);
-  };
-
-  const handleRestaurarDespesa = (despesaId) => {
-    setDespesaAdjustments(prev => ({
-      ...prev,
-      [despesaId]: { ...prev[despesaId], excluida: false }
-    }));
-  };
-
-  const getValorFinal = (despesa) => {
-    const adj = despesaAdjustments[despesa.id];
-    const pct = adj?.percentual || 0;
-    return (despesa.valor || 0) * (1 + pct / 100);
   };
 
   return (
@@ -323,53 +246,9 @@ const FolhaHorasModal = ({
               )}
             </div>
 
-            {/* Card de Despesas */}
-            <div className="bg-gradient-to-r from-emerald-900/30 to-teal-900/30 p-4 rounded-lg border border-emerald-500/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-                    <Receipt className="w-5 h-5" />
-                    Despesas
-                  </h3>
-                  <p className="text-gray-400 text-sm mt-1">
-                    {despesas.length > 0 ? (
-                      <>
-                        <span className="text-emerald-400 font-medium">{despesasVisiveis.length}</span> despesa(s) incluída(s)
-                        {despesasExcluidas.length > 0 && (
-                          <span className="text-red-400 ml-2">({despesasExcluidas.length} excluída(s))</span>
-                        )}
-                        {totalDespesasAjustado > 0 && (
-                          <span className="ml-2">
-                            - Total: {totalDespesasOriginal !== totalDespesasAjustado ? (
-                              <>
-                                <span className="line-through text-gray-500">{totalDespesasOriginal.toFixed(2)}€</span>
-                                {' '}
-                                <span className="text-emerald-400 font-semibold">{totalDespesasAjustado.toFixed(2)}€</span>
-                              </>
-                            ) : (
-                              <span className="text-emerald-400 font-semibold">{totalDespesasOriginal.toFixed(2)}€</span>
-                            )}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-gray-500">Sem despesas registadas nesta OT</span>
-                    )}
-                  </p>
-                </div>
-                {despesas.length > 0 && (
-                  <Button
-                    onClick={() => setShowDespesasListPopup(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    size="sm"
-                    data-testid="btn-ver-despesas"
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    VER
-                  </Button>
-                )}
-              </div>
-            </div>
+            {/* Card de Despesas removido — despesas usam agora o `valor_final`
+                persistido no popup da FS. Se alguma não tiver valor_final gravado,
+                o backend cai automaticamente no `valor` original. */}
 
             {/* Tarifas por Técnico */}
             <div>
@@ -527,248 +406,6 @@ const FolhaHorasModal = ({
           </div>
         )}
       </DialogContent>
-
-      {/* Popup Lista de Despesas */}
-      <Dialog open={showDespesasListPopup} onOpenChange={setShowDespesasListPopup}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Receipt className="w-5 h-5 text-emerald-400" />
-              Despesas - FS #{selectedRelatorio?.numero_assistencia}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-3 mt-4">
-            {/* Despesas incluídas */}
-            {despesas.filter(d => !despesaAdjustments[d.id]?.excluida).map((despesa) => {
-              const adj = despesaAdjustments[despesa.id];
-              const pct = adj?.percentual || 0;
-              const valorFinal = getValorFinal(despesa);
-              
-              return (
-                <div
-                  key={despesa.id}
-                  onClick={() => openDespesaDetail(despesa)}
-                  className="p-4 bg-[#0f0f0f] rounded-lg border border-gray-700 hover:border-emerald-500/50 cursor-pointer transition-all"
-                  data-testid={`despesa-card-${despesa.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-white font-medium">{despesa.descricao}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          despesa.tipo === 'portagens' ? 'bg-orange-600/20 text-orange-400' :
-                          despesa.tipo === 'combustivel' ? 'bg-red-600/20 text-red-400' :
-                          despesa.tipo === 'ferramentas' ? 'bg-blue-600/20 text-blue-400' :
-                          'bg-gray-600/20 text-gray-400'
-                        }`}>
-                          {tiposDespesa.find(t => t.value === despesa.tipo)?.label || 'Outras'}
-                        </span>
-                        {pct > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-purple-600/20 text-purple-400">
-                            +{pct}%
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-4 text-sm text-gray-400">
-                        {pct > 0 ? (
-                          <span>
-                            <span className="line-through text-gray-500">{despesa.valor?.toFixed(2)}€</span>
-                            {' '}
-                            <span className="text-emerald-400 font-semibold">{valorFinal.toFixed(2)}€</span>
-                          </span>
-                        ) : (
-                          <span className="text-emerald-400 font-semibold">{despesa.valor?.toFixed(2)}€</span>
-                        )}
-                        {despesa.numero_fatura && <span>Fatura: {despesa.numero_fatura}</span>}
-                        <span>Pago por: {despesa.tecnico_nome}</span>
-                        <span>{new Date(despesa.data).toLocaleDateString('pt-PT')}</span>
-                      </div>
-                    </div>
-                    <Eye className="w-4 h-4 text-gray-500" />
-                  </div>
-                </div>
-              );
-            })}
-            
-            {/* Despesas excluídas */}
-            {despesasExcluidas.length > 0 && (
-              <>
-                <div className="border-t border-gray-700 pt-3 mt-3">
-                  <p className="text-red-400 text-sm font-medium mb-2 flex items-center gap-1">
-                    <EyeOff className="w-4 h-4" />
-                    Excluídas da Folha de Horas ({despesasExcluidas.length})
-                  </p>
-                </div>
-                {despesasExcluidas.map((despesa) => (
-                  <div
-                    key={despesa.id}
-                    className="p-3 bg-[#0f0f0f] rounded-lg border border-red-500/20 opacity-60"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-400 line-through">{despesa.descricao} - {despesa.valor?.toFixed(2)}€</p>
-                      </div>
-                      <Button
-                        onClick={() => handleRestaurarDespesa(despesa.id)}
-                        size="sm"
-                        variant="outline"
-                        className="border-emerald-500/50 text-emerald-400 text-xs h-7"
-                      >
-                        Restaurar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {despesas.length === 0 && (
-              <p className="text-gray-500 text-center py-6">Sem despesas registadas</p>
-            )}
-
-            {/* Resumo total */}
-            {despesasVisiveis.length > 0 && (
-              <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-lg mt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 text-sm">Total para Folha de Horas:</span>
-                  <span className="text-emerald-400 font-bold text-lg">{totalDespesasAjustado.toFixed(2)}€</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Popup Detalhe de Despesa */}
-      <Dialog open={showDespesaDetailPopup} onOpenChange={setShowDespesaDetailPopup}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
-              <Receipt className="w-5 h-5 text-emerald-400" />
-              Detalhe da Despesa
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedDespesaDetail && (
-            <div className="space-y-4 mt-4">
-              {/* Detalhes da despesa (read-only, layout similar ao Adicionar Despesa) */}
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-gray-400 text-sm">Tipo</Label>
-                  <div className="mt-1 px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded-md text-white">
-                    {tiposDespesa.find(t => t.value === selectedDespesaDetail.tipo)?.label || 'Outras'}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-gray-400 text-sm">Descrição</Label>
-                  <div className="mt-1 px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded-md text-white">
-                    {selectedDespesaDetail.descricao}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-gray-400 text-sm">Valor Original</Label>
-                    <div className="mt-1 px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded-md text-emerald-400 font-semibold">
-                      {selectedDespesaDetail.valor?.toFixed(2)}€
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-gray-400 text-sm">Data</Label>
-                    <div className="mt-1 px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded-md text-white">
-                      {new Date(selectedDespesaDetail.data).toLocaleDateString('pt-PT')}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-gray-400 text-sm">Pago por</Label>
-                    <div className="mt-1 px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded-md text-white">
-                      {selectedDespesaDetail.tecnico_nome}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-gray-400 text-sm">Nº Fatura</Label>
-                    <div className="mt-1 px-3 py-2 bg-[#0f0f0f] border border-gray-700 rounded-md text-white">
-                      {selectedDespesaDetail.numero_fatura || '-'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Separador */}
-              <div className="border-t border-gray-700" />
-
-              {/* Adicionar Valor Percentual */}
-              <div className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-lg">
-                <Label className="text-purple-400 font-medium flex items-center gap-2">
-                  <Percent className="w-4 h-4" />
-                  Adicionar Valor Percentual
-                </Label>
-                <p className="text-gray-400 text-xs mt-1 mb-3">
-                  O percentual será aplicado ao valor original da despesa.
-                </p>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="number"
-                    step="1"
-                    min="0"
-                    placeholder="Ex: 5, 10, 20"
-                    value={despesaPercentual}
-                    onChange={(e) => setDespesaPercentual(e.target.value)}
-                    className="bg-[#0f0f0f] border-purple-500/50 text-white flex-1"
-                    data-testid="input-percentual-despesa"
-                  />
-                  <span className="text-purple-400 font-bold text-lg">%</span>
-                </div>
-                
-                {/* Preview do valor final */}
-                {despesaPercentual && parseFloat(despesaPercentual) > 0 && (
-                  <div className="mt-3 p-2 bg-[#0f0f0f] rounded flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">Valor final:</span>
-                    <span className="text-emerald-400 font-bold">
-                      {(selectedDespesaDetail.valor * (1 + parseFloat(despesaPercentual) / 100)).toFixed(2)}€
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* 3 Botões */}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  onClick={() => {
-                    setShowDespesaDetailPopup(false);
-                    setSelectedDespesaDetail(null);
-                  }}
-                  variant="outline"
-                  className="flex-1 border-gray-600"
-                  data-testid="btn-fechar-despesa"
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Fechar
-                </Button>
-                <Button
-                  onClick={handleDespesaNaoVisualizar}
-                  variant="outline"
-                  className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10"
-                  data-testid="btn-nao-visualizar-despesa"
-                >
-                  <EyeOff className="w-4 h-4 mr-1" />
-                  Não Visualizar
-                </Button>
-                <Button
-                  onClick={handleDespesaGravar}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                  data-testid="btn-gravar-despesa"
-                >
-                  <Save className="w-4 h-4 mr-1" />
-                  Gravar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 };
