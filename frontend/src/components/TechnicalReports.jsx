@@ -122,6 +122,11 @@ import FaturaScanner from './technical-reports/FaturaScanner';
 import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal, FotoBulkEditModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
+import OneDrivePickerModal from './onedrive/OneDrivePickerModal';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from './ui/dropdown-menu';
+import { FolderOpen, Cloud as CloudIcon } from 'lucide-react';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
 import { downloadFSPdfAsync, downloadFSPdfToFile } from './technical-reports/utils/pdfJobs';
 import PdfCanvasViewer from './technical-reports/PdfCanvasViewer';
@@ -550,6 +555,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Edição de registos de cronómetro
   const [showEditRegistoModal, setShowEditRegistoModal] = useState(false);
   const [editingRegisto, setEditingRegisto] = useState(null);
+
+  // OneDrive picker (por-utilizador)
+  const [showOneDrivePicker, setShowOneDrivePicker] = useState(false);
   const [editRegistoForm, setEditRegistoForm] = useState({
     minutos_trabalhados: 0,
     km: 0,
@@ -1937,6 +1945,48 @@ const TechnicalReports = ({ user, onLogout }) => {
     } catch (error) {
       console.error('Erro ao deletar foto:', error);
       toast.error(formatErrorMessage(error));
+    }
+  };
+
+  // Upload helper — usado pelo input hidden e pelo picker OneDrive
+  const handleUploadPhotos = async (files) => {
+    if (!files || files.length === 0 || !selectedRelatorio) return;
+    const uploaded = [];
+    let failed = 0;
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('descricao', '');
+        formData.append('intervencao_id', uploadIntervencaoId || '');
+        const response = await axios.post(
+          `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
+          formData
+        );
+        uploaded.push({
+          id: response.data.id,
+          foto_url: response.data.foto_url,
+          descricao: response.data.descricao || '',
+          uploaded_at: response.data.uploaded_at,
+        });
+      } catch (err) {
+        console.error('Erro no upload:', err);
+        failed++;
+      }
+    }
+    if (uploaded.length === 0) {
+      toast.error('Erro ao fazer upload das fotografias');
+    } else if (failed > 0) {
+      toast.warning(`${uploaded.length} enviada(s), ${failed} falhou/falharam.`);
+    } else {
+      toast.success(`${uploaded.length} fotografia(s) adicionada(s)!`);
+    }
+    await fetchFotografiasRelatorio(selectedRelatorio.id);
+    if (uploaded.length === 1) {
+      openEditFotoModal(uploaded[0]);
+    } else if (uploaded.length > 1) {
+      setBulkFotosToEdit(uploaded);
+      setShowBulkEditFotoModal(true);
     }
   };
 
@@ -6018,9 +6068,54 @@ const TechnicalReports = ({ user, onLogout }) => {
                                       document.getElementById('foto-upload-input')?.click();
                                     }}
                                     size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                                    id="foto-add-btn-hidden-trigger"
+                                    style={{ display: 'none' }}
                                   >
                                     <Plus className="w-3 h-3 mr-0.5" /> Adicionar
                                   </Button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                                        data-testid="btn-add-foto-menu"
+                                      >
+                                        <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="bg-[#1a1a1a] border-gray-700 text-white">
+                                      <DropdownMenuItem
+                                        className="cursor-pointer focus:bg-blue-500/20"
+                                        onClick={() => {
+                                          setUploadIntervencaoId(activeInterv.id);
+                                          const input = document.getElementById('foto-upload-input');
+                                          if (input) { input.setAttribute('capture', 'environment'); input.click(); setTimeout(() => input.removeAttribute('capture'), 500); }
+                                        }}
+                                        data-testid="btn-add-foto-camera"
+                                      >
+                                        <Camera className="w-3.5 h-3.5 mr-2 text-blue-400" /> Câmara
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="cursor-pointer focus:bg-blue-500/20"
+                                        onClick={() => {
+                                          setUploadIntervencaoId(activeInterv.id);
+                                          document.getElementById('foto-upload-input')?.click();
+                                        }}
+                                        data-testid="btn-add-foto-files"
+                                      >
+                                        <FolderOpen className="w-3.5 h-3.5 mr-2 text-blue-400" /> Ficheiros
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="cursor-pointer focus:bg-blue-500/20"
+                                        onClick={() => {
+                                          setUploadIntervencaoId(activeInterv.id);
+                                          setShowOneDrivePicker(true);
+                                        }}
+                                        data-testid="btn-add-foto-onedrive"
+                                      >
+                                        <CloudIcon className="w-3.5 h-3.5 mr-2 text-blue-400" /> OneDrive
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                               )}
                             </div>
@@ -6260,46 +6355,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="hidden"
                 onChange={async (e) => {
                   const files = Array.from(e.target.files || []);
-                  if (files.length === 0 || !selectedRelatorio) return;
-                  const uploaded = [];
-                  let failed = 0;
-                  for (const file of files) {
-                    try {
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      formData.append('descricao', '');
-                      formData.append('intervencao_id', uploadIntervencaoId || '');
-                      const response = await axios.post(
-                        `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
-                        formData
-                      );
-                      uploaded.push({
-                        id: response.data.id,
-                        foto_url: response.data.foto_url,
-                        descricao: response.data.descricao || '',
-                        uploaded_at: response.data.uploaded_at,
-                      });
-                    } catch (err) {
-                      console.error('Erro no upload:', err);
-                      failed++;
-                    }
-                  }
-                  if (uploaded.length === 0) {
-                    toast.error('Erro ao fazer upload das fotografias');
-                  } else if (failed > 0) {
-                    toast.warning(`${uploaded.length} enviada(s), ${failed} falhou/falharam.`);
-                  } else {
-                    toast.success(`${uploaded.length} fotografia(s) adicionada(s)!`);
-                  }
-                  await fetchFotografiasRelatorio(selectedRelatorio.id);
-                  if (uploaded.length === 1) {
-                    openEditFotoModal(uploaded[0]);
-                  } else if (uploaded.length > 1) {
-                    setBulkFotosToEdit(uploaded);
-                    setShowBulkEditFotoModal(true);
-                  }
+                  await handleUploadPhotos(files);
                   e.target.value = '';
                 }}
+              />
+
+              {/* OneDrive picker modal */}
+              <OneDrivePickerModal
+                open={showOneDrivePicker}
+                onOpenChange={setShowOneDrivePicker}
+                onPick={async (files) => { await handleUploadPhotos(files); }}
               />
 
               {/* Despesas */}

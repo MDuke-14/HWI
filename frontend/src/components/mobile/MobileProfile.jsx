@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { ArrowLeft, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import OneDriveConnectButton from '@/components/onedrive/OneDriveConnectButton';
 
 const MobileProfile = () => {
   const navigate = useNavigate();
@@ -95,6 +96,13 @@ const MobileProfile = () => {
               <div className="bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm">{profile?.full_name || '-'}</div>
             </div>
           </div>
+        </div>
+
+        {/* OneDrive integration */}
+        <div className="bg-[#111] rounded-xl border border-white/5 p-4 space-y-3" data-testid="onedrive-section">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Integrações</h2>
+          <OneDriveConnectButton variant="card" />
+          <p className="text-[11px] text-gray-500">Liga a tua conta Microsoft para importar fotografias diretamente do teu OneDrive nas FS. Cada utilizador liga a sua própria conta — ninguém acede aos ficheiros dos outros.</p>
         </div>
 
         {/* Change Password */}
