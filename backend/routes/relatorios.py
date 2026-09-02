@@ -864,11 +864,11 @@ async def get_intervencoes(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar intervenções de um relatório"""
+    """Listar intervenções de um relatório (herdadas de continuidade sempre primeiro)."""
     intervencoes = await db.intervencoes_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("ordem", 1).to_list(length=None)
+    ).sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
     
     return intervencoes
 
@@ -2523,11 +2523,11 @@ async def preview_pdf_ot(
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    # Buscar intervenções
+    # Buscar intervenções (herdadas de continuidade sempre primeiro)
     intervencoes = await db.intervencoes_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort("ordem", 1).to_list(length=None)
+    ).sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
     
     # Buscar técnicos (registos manuais) - ordenados cronologicamente
     tecnicos = await db.tecnicos_relatorio.find(
@@ -2929,7 +2929,7 @@ async def start_pdf_generation_job(
 
     intervencoes = await db.intervencoes_relatorio.find(
         {"relatorio_id": relatorio_id}, {"_id": 0}
-    ).sort("ordem", 1).to_list(length=None)
+    ).sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
 
     tecnicos = await db.tecnicos_relatorio.find(
         {"relatorio_id": relatorio_id}, {"_id": 0}
