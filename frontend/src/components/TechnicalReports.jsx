@@ -5967,24 +5967,28 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <p className="text-xs text-orange-400 font-medium flex items-center gap-1">
                                 <FileText className="w-3 h-3" /> Relatório de Assistência ({intervRelAssist.length})
                               </p>
-                              <Button
-                                onClick={() => {
-                                  setRelAssistFormData({ texto: '', intervencao_id: activeInterv.id, equipamento_ids: activeInterv.equipamento_id ? [activeInterv.equipamento_id] : [], data_intervencao: intervDate || new Date().toISOString().split('T')[0] });
-                                  setShowAddRelAssistModal(true);
-                                }}
-                                size="sm" variant="ghost" className="text-orange-400 hover:text-orange-300 h-6 text-xs px-2"
-                              >
-                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
-                              </Button>
+                              {!isHerdadaAtiva && (
+                                <Button
+                                  onClick={() => {
+                                    setRelAssistFormData({ texto: '', intervencao_id: activeInterv.id, equipamento_ids: activeInterv.equipamento_id ? [activeInterv.equipamento_id] : [], data_intervencao: intervDate || new Date().toISOString().split('T')[0] });
+                                    setShowAddRelAssistModal(true);
+                                  }}
+                                  size="sm" variant="ghost" className="text-orange-400 hover:text-orange-300 h-6 text-xs px-2"
+                                >
+                                  <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                                </Button>
+                              )}
                             </div>
                             {intervRelAssist.length > 0 ? intervRelAssist.map(item => (
                               <div key={item.id} className={`${bgCardAlt} p-2 rounded border ${borderColor} mb-2`}>
                                 <div className="flex justify-between items-start">
                                   <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap flex-1`}>{item.texto}</p>
-                                  <div className="flex gap-1 ml-2 shrink-0">
-                                    <Button onClick={() => openEditRelAssist(item)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
-                                    <Button onClick={() => handleDeleteRelAssist(item.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
-                                  </div>
+                                  {!isHerdadaAtiva && (
+                                    <div className="flex gap-1 ml-2 shrink-0">
+                                      <Button onClick={() => openEditRelAssist(item)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                      <Button onClick={() => handleDeleteRelAssist(item.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )) : <p className="text-gray-500 text-xs text-center py-2">Sem relatório</p>}
@@ -5996,27 +6000,29 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
                                 <Camera className="w-3 h-3" /> Fotografias ({intervFotos.length})
                               </p>
-                              <div className="flex items-center gap-1">
-                                {fotografias.length > 1 && (
+                              {!isHerdadaAtiva && (
+                                <div className="flex items-center gap-1">
+                                  {fotografias.length > 1 && (
+                                    <Button
+                                      onClick={openReorganizeFotosModal}
+                                      size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
+                                      title="Reorganizar todas as fotografias da FS (arrastar)"
+                                      data-testid="btn-reorganizar-fotos"
+                                    >
+                                      <ArrowUpDown className="w-3 h-3 mr-0.5" /> Reorganizar
+                                    </Button>
+                                  )}
                                   <Button
-                                    onClick={openReorganizeFotosModal}
-                                    size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
-                                    title="Reorganizar todas as fotografias da FS (arrastar)"
-                                    data-testid="btn-reorganizar-fotos"
+                                    onClick={() => {
+                                      setUploadIntervencaoId(activeInterv.id);
+                                      document.getElementById('foto-upload-input')?.click();
+                                    }}
+                                    size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
                                   >
-                                    <ArrowUpDown className="w-3 h-3 mr-0.5" /> Reorganizar
+                                    <Plus className="w-3 h-3 mr-0.5" /> Adicionar
                                   </Button>
-                                )}
-                                <Button
-                                  onClick={() => {
-                                    setUploadIntervencaoId(activeInterv.id);
-                                    document.getElementById('foto-upload-input')?.click();
-                                  }}
-                                  size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
-                                >
-                                  <Plus className="w-3 h-3 mr-0.5" /> Adicionar
-                                </Button>
-                              </div>
+                                </div>
+                              )}
                             </div>
                             {intervFotos.length > 0 ? (
                               <div className="grid grid-cols-3 gap-2">
@@ -6032,28 +6038,30 @@ const TechnicalReports = ({ user, onLogout }) => {
                                         setShowFotoPreviewModal(true);
                                       }}
                                     />
-                                    <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                                      <Button onClick={() => openEditFotoModal(foto)} size="sm" className="bg-blue-600/80 hover:bg-blue-700 p-0.5 h-5 w-5" data-testid={`edit-foto-${foto.id}`}><Edit className="w-3 h-3" /></Button>
-                                      {intervencoes.length > 1 && (
-                                        <select
-                                          className="bg-gray-800/90 text-white text-[9px] h-5 rounded border border-gray-600 px-0.5 cursor-pointer"
-                                          value=""
-                                          onChange={(e) => {
-                                            if (e.target.value) handleMoveItemToIntervention('foto', foto.id, e.target.value);
-                                          }}
-                                          title="Mover para outra intervenção"
-                                          data-testid={`move-foto-${foto.id}`}
-                                        >
-                                          <option value="">↔</option>
-                                          {intervencoes.filter(i => i.id !== activeInterv.id).map(i => (
-                                            <option key={i.id} value={i.id}>
-                                              {new Date(i.data_intervencao).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'})}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      )}
-                                      <Button onClick={() => handleDeleteFoto(foto.id)} size="sm" className="bg-red-600/80 hover:bg-red-700 p-0.5 h-5 w-5" data-testid={`delete-foto-${foto.id}`}><Trash2 className="w-3 h-3" /></Button>
-                                    </div>
+                                    {!isHerdadaAtiva && (
+                                      <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                                        <Button onClick={() => openEditFotoModal(foto)} size="sm" className="bg-blue-600/80 hover:bg-blue-700 p-0.5 h-5 w-5" data-testid={`edit-foto-${foto.id}`}><Edit className="w-3 h-3" /></Button>
+                                        {intervencoes.length > 1 && (
+                                          <select
+                                            className="bg-gray-800/90 text-white text-[9px] h-5 rounded border border-gray-600 px-0.5 cursor-pointer"
+                                            value=""
+                                            onChange={(e) => {
+                                              if (e.target.value) handleMoveItemToIntervention('foto', foto.id, e.target.value);
+                                            }}
+                                            title="Mover para outra intervenção"
+                                            data-testid={`move-foto-${foto.id}`}
+                                          >
+                                            <option value="">↔</option>
+                                            {intervencoes.filter(i => i.id !== activeInterv.id).map(i => (
+                                              <option key={i.id} value={i.id}>
+                                                {new Date(i.data_intervencao).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'})}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        )}
+                                        <Button onClick={() => handleDeleteFoto(foto.id)} size="sm" className="bg-red-600/80 hover:bg-red-700 p-0.5 h-5 w-5" data-testid={`delete-foto-${foto.id}`}><Trash2 className="w-3 h-3" /></Button>
+                                      </div>
+                                    )}
                                     {foto.descricao && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{foto.descricao}</p>}
                                   </div>
                                 ))}
@@ -6067,18 +6075,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
                                 <Package className="w-3 h-3" /> Material ({intervMateriais.length})
                               </p>
-                              <Button
-                                onClick={() => {
-                                  setAddMaterialIntervencaoId(activeInterv.id);
-                                  setSelectedPCIdForMaterial(null);
-                                  if (selectedRelatorio) fetchPedidosCotacao(selectedRelatorio.id);
-                                  setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: new Date().toISOString().split('T')[0] });
-                                  setShowAddMaterialModal(true);
-                                }}
-                                size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
-                              >
-                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
-                              </Button>
+                              {!isHerdadaAtiva && (
+                                <Button
+                                  onClick={() => {
+                                    setAddMaterialIntervencaoId(activeInterv.id);
+                                    setSelectedPCIdForMaterial(null);
+                                    if (selectedRelatorio) fetchPedidosCotacao(selectedRelatorio.id);
+                                    setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: new Date().toISOString().split('T')[0] });
+                                    setShowAddMaterialModal(true);
+                                  }}
+                                  size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                                >
+                                  <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                                </Button>
+                              )}
                             </div>
                             {intervMateriais.length > 0 ? (
                               <div className="space-y-1.5">
@@ -6093,18 +6103,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                                         {material.codigo && <span className="text-yellow-400">Código: {material.codigo}</span>}
                                       </div>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
-                                      <Button onClick={() => openEditMaterialModal(material)} size="sm" variant="ghost" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
-                                      {intervencoes.length > 1 && (
-                                        <select
-                                          className="bg-gray-800 text-white text-[9px] h-6 rounded border border-gray-600 px-0.5 cursor-pointer"
-                                          value=""
-                                          onChange={(e) => {
-                                            if (e.target.value) handleMoveItemToIntervention('material', material.id, e.target.value);
-                                          }}
-                                          title="Mover para outra intervenção"
-                                          data-testid={`move-material-${material.id}`}
-                                        >
+                                    {!isHerdadaAtiva && (
+                                      <div className="flex gap-1 ml-2">
+                                        <Button onClick={() => openEditMaterialModal(material)} size="sm" variant="ghost" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                        {intervencoes.length > 1 && (
+                                          <select
+                                            className="bg-gray-800 text-white text-[9px] h-6 rounded border border-gray-600 px-0.5 cursor-pointer"
+                                            value=""
+                                            onChange={(e) => {
+                                              if (e.target.value) handleMoveItemToIntervention('material', material.id, e.target.value);
+                                            }}
+                                            title="Mover para outra intervenção"
+                                            data-testid={`move-material-${material.id}`}
+                                          >
                                           <option value="">↔</option>
                                           {intervencoes.filter(i => i.id !== activeInterv.id).map(i => (
                                             <option key={i.id} value={i.id}>
@@ -6112,9 +6123,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                                             </option>
                                           ))}
                                         </select>
-                                      )}
-                                      <Button onClick={() => handleDeleteMaterial(material.id)} size="sm" variant="ghost" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
-                                    </div>
+                                        )}
+                                        <Button onClick={() => handleDeleteMaterial(material.id)} size="sm" variant="ghost" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -6127,12 +6139,14 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <p className="text-xs text-blue-400 font-medium flex items-center gap-1">
                                 <PenTool className="w-3 h-3" /> Assinaturas ({intervAssinaturas.length})
                               </p>
-                              <Button
-                                onClick={() => setShowAssinaturaModal(true)}
-                                size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
-                              >
-                                <Plus className="w-3 h-3 mr-0.5" /> Assinar
-                              </Button>
+                              {!isHerdadaAtiva && (
+                                <Button
+                                  onClick={() => setShowAssinaturaModal(true)}
+                                  size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300 h-6 text-xs px-2"
+                                >
+                                  <Plus className="w-3 h-3 mr-0.5" /> Assinar
+                                </Button>
+                              )}
                             </div>
                             {intervAssinaturas.length > 0 ? (
                               <div className="space-y-2">
@@ -6211,10 +6225,12 @@ const TechnicalReports = ({ user, onLogout }) => {
                                           <p className="text-white text-sm font-medium truncate">{assinatura.assinado_por}</p>
                                           <p className="text-gray-400 text-xs">{new Date(assinatura.data_assinatura).toLocaleString('pt-PT')}</p>
                                         </div>
-                                        <div className="flex gap-1">
-                                          <Button onClick={() => handleEditAssinatura(assinatura)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6" data-testid={`edit-sig-${assinatura.id}`}><Edit className="w-3 h-3" /></Button>
-                                          <Button onClick={() => handleDeleteAssinatura(assinatura.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
-                                        </div>
+                                        {!isHerdadaAtiva && (
+                                          <div className="flex gap-1">
+                                            <Button onClick={() => handleEditAssinatura(assinatura)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6" data-testid={`edit-sig-${assinatura.id}`}><Edit className="w-3 h-3" /></Button>
+                                            <Button onClick={() => handleDeleteAssinatura(assinatura.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                   </div>
