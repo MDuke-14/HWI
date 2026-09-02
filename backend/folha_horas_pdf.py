@@ -661,7 +661,7 @@ def generate_folha_horas_pdf(
 
         despesas_sorted = sorted(despesas_para_pdf, key=lambda d: (d.get('data', ''), d.get('tecnico_nome', '')))
 
-        desp_header = ['Tipo de Despesa', 'Valor', 'Data', 'Descrição', 'Qtd.']
+        desp_header = ['Tipo de Custo', 'Valor', 'Data', 'Descrição', 'Qtd.']
         desp_table_data = [desp_header]
         total_despesas = 0
 
@@ -703,7 +703,7 @@ def generate_folha_horas_pdf(
             ])
 
         desp_table_data.append([
-            'TOTAL DESPESAS:', f'{total_despesas:.2f}€', '', '', ''
+            'TOTAL CUSTOS:', f'{total_despesas:.2f}€', '', '', ''
         ])
 
         desp_col_widths = [4.0*cm, 2.5*cm, 3.0*cm, 12.3*cm, 2.0*cm]
@@ -726,7 +726,7 @@ def generate_folha_horas_pdf(
          'Subtotal Viagem:', f'{total_valor_viagem:.2f}€'],
         ['Subtotal KM:', f'{total_km_valor_geral:.2f}€',
          'Subtotal Dietas:', f'{total_dieta_geral:.2f}€'],
-        ['Subtotal Despesas:', f'{total_despesas:.2f}€',
+        ['Subtotal Custos:', f'{total_despesas:.2f}€',
          'TOTAL GERAL:', f'{grande_total:.2f}€'],
     ]
     gt_widths = [4.0*cm, 3.0*cm, 4.0*cm, 3.0*cm]
