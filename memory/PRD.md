@@ -11,6 +11,21 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - **AI:** Claude Sonnet 4.5 via emergentintegrations (revisão de FSs e análise de erros)
 - **Email:** aiosmtplib (SMTP)
 
+
+## Recent Changes (Feb 2026)
+
+20. ✅ **Preview do relatório com renderização real via pdfjs-dist + tabela detalhada + Object Storage (Feb 2026)** — Substituição do `<iframe>`/`<object>` (que renderizavam preto dentro do `DialogContent` Radix transformado) por renderização em `<canvas>` com pdfjs-dist@4.10.38 (legacy build; worker copiado para `public/pdf.worker.min.mjs`). Novo componente `frontend/src/components/technical-reports/PdfCanvasViewer.jsx` desenha cada página do PDF diretamente em canvas — igual ao PDF final, funciona em qualquer modal.
+    - Chips agregadas "Horas por técnico" substituídas por **tabela** com colunas Nome/Tipo/Data/Início/Fim/Horas/Km/Código (uma linha por registo de `registos_tecnico_ot`, ordenados cronologicamente).
+    - "Assine Aqui" **não fecha** o preview — o modal de assinatura abre sobreposto, mantendo o relatório visível.
+    - **Migração para Emergent Object Storage**: 3 endpoints migrados de disco pod-local (que se perdia em re-deploys) para object storage persistente via novo helper `backend/utils/object_storage.py`:
+      - `POST /api/absences/{id}/upload` (justificações de faltas) + `GET /api/absences/file/{filename}` (com fallback para disco legado)
+      - `POST /api/relatorios-tecnicos/{id}/assinatura` (assinatura FS — já tinha base64 no MongoDB; agora também no object storage)
+      - `POST /api/absences/v2/{id}/upload` (justificações v2)
+    - Campo novo no schema: `absences.justification_storage_path` (str, opcional) — indica quando o ficheiro está em object storage.
+    - Files: `PdfCanvasViewer.jsx` (novo), `TechnicalReports.jsx` (handleHTMLPreview + modal), `backend/utils/object_storage.py` (novo), `backend/server.py`, `backend/routes/relatorios.py`, `backend/routes/absences_v2.py`.
+
+19. ✅ **Visualizar Relatório — tabela detalhada + `<object>` para PDF (Feb 2026)** — Substituiu chips agregadas "Horas por técnico" por tabela com colunas **Nome, Tipo, Data, Início, Fim, Horas, Km, Código**. (Superseded por #20 — PDF `<object>` também tinha limitação; passou a pdfjs em canvas.)
+
 ## Core Features Implemented
 - FS creation, management, and lifecycle
 - Time tracking with chronometer (batch start/stop)

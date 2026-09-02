@@ -948,44 +948,8 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             add_section_to_elements(elements, foto_section)
             elements.append(Spacer(1, 0.3*cm))
     
-    # ========== LEGENDA ==========
-    
-    legenda_content = []
-    
-    legenda_data = [
-        ['Tipo de Registo', 'Código Horário'],
-        ['T = Trabalho', '1 = Dias úteis (07h-19h)'],
-        ['V = Viagem/Deslocação', '2 = Dias úteis (19h-07h)'],
-        ['O = Oficina', 'S = Sábado'],
-        ['', 'D = Domingos/Feriados'],
-    ]
-    
-    legenda_table = Table(legenda_data, colWidths=[6*cm, 8*cm])
-    legenda_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e8e8e8')),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    legenda_content.append(legenda_table)
-    
-    nota_style = ParagraphStyle(
-        'NotaStyle',
-        parent=normal_style,
-        fontSize=7,
-        textColor=colors.HexColor('#666666'),
-        fontName='Helvetica-Oblique'
-    )
-    legenda_content.append(Spacer(1, 0.1*cm))
-    legenda_content.append(Paragraph("Nota: Aos quilómetros de ida já contabilizados, serão adicionados os quilómetros de volta após assinatura deste relatório.", nota_style))
-    
-    legenda_section = create_section_box(legenda_content, "LEGENDA")
-    add_section_to_elements(elements, legenda_section)
-    
+    # (Secção LEGENDA removida a pedido do cliente — Feb 2026)
+
     # ========== RODAPÉ ==========
     
     elements.append(Spacer(1, 0.3*cm))

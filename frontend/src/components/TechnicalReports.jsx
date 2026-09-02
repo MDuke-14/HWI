@@ -124,6 +124,7 @@ import { FotoUploadModal, FotoEditModal, FotoPreviewModal, FotoBulkEditModal } f
 import RelAssistModal from './technical-reports/RelAssistModal';
 import { AddDespesaModal, EditDespesaModal } from './technical-reports/DespesaModals';
 import { downloadFSPdfAsync, downloadFSPdfToFile } from './technical-reports/utils/pdfJobs';
+import PdfCanvasViewer from './technical-reports/PdfCanvasViewer';
 
 // Timeout para download/geração de PDFs no cliente.
 // PDFs de FS com muitas fotos podem demorar bastante a gerar no servidor.
@@ -3715,25 +3716,44 @@ const TechnicalReports = ({ user, onLogout }) => {
     setLoadingHTMLPreview(true);
     const toastId = toast.loading('A carregar visualização...');
     try {
-      // Fetch registos + técnicos para calcular horas por técnico
-      const [registosRes, tecnicosRes] = await Promise.all([
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`),
-        axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/tecnicos`)
-      ]);
+      // Fetch registos detalhados
+      const registosRes = await axios.get(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/registos-tecnicos`);
 
-      // Agregar minutos por técnico (registos cronómetro + manuais)
-      const minsPorTecnico = {};
-      (registosRes.data || []).forEach(reg => {
-        const nome = reg.tecnico_nome || 'Sem nome';
-        minsPorTecnico[nome] = (minsPorTecnico[nome] || 0) + (reg.minutos_trabalhados || 0);
-      });
-      (tecnicosRes.data || []).forEach(tec => {
-        const nome = tec.tecnico_nome || 'Sem nome';
-        minsPorTecnico[nome] = (minsPorTecnico[nome] || 0) + (tec.minutos_cliente || 0);
-      });
-      const horasPorTecnico = Object.entries(minsPorTecnico)
-        .map(([nome, mins]) => ({ nome, horas: mins / 60 }))
-        .sort((a, b) => b.horas - a.horas);
+      // Preparar linhas detalhadas por registo (uma linha por segmento cronométrico ou registo manual)
+      const fmtHora = (iso) => {
+        if (!iso) return '—';
+        try {
+          const d = new Date(iso);
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          return `${hh}:${mm}`;
+        } catch { return '—'; }
+      };
+      const fmtData = (iso) => {
+        if (!iso) return '—';
+        const parts = String(iso).split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return iso;
+      };
+      const registosDetalhados = (registosRes.data || [])
+        .slice()
+        .sort((a, b) => {
+          const da = (a.data || '') + (a.hora_inicio_segmento || '');
+          const db_ = (b.data || '') + (b.hora_inicio_segmento || '');
+          return da.localeCompare(db_);
+        })
+        .map((reg) => ({
+          nome: reg.tecnico_nome || '—',
+          tipo: reg.tipo || '—',
+          data: fmtData(reg.data),
+          inicio: fmtHora(reg.hora_inicio_segmento),
+          fim: fmtHora(reg.hora_fim_segmento),
+          horas: (reg.horas_arredondadas != null
+            ? Number(reg.horas_arredondadas)
+            : (reg.minutos_trabalhados || 0) / 60),
+          km: reg.km || 0,
+          codigo: reg.codigo || '—',
+        }));
 
       // Gerar PDF (mesmo endpoint do download, para paridade absoluta)
       const { blob } = await downloadFSPdfAsync({
@@ -3748,7 +3768,7 @@ const TechnicalReports = ({ user, onLogout }) => {
 
       setHtmlPreviewData({
         relatorio: selectedRelatorio,
-        horasPorTecnico,
+        registosDetalhados,
         pdfUrl: url,
       });
       setShowHTMLPreviewModal(true);
@@ -3762,8 +3782,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const openSignatureFromPreview = () => {
-    // Fechar preview e abrir modal de assinaturas
-    setShowHTMLPreviewModal(false);
+    // Abrir modal de assinatura em cima do preview (não fechar preview)
     setShowAssinaturaModal(true);
   };
   
@@ -7315,36 +7334,63 @@ const TechnicalReports = ({ user, onLogout }) => {
             <DialogDescription className="sr-only">Visualização do relatório com PDF e horas por técnico.</DialogDescription>
           </DialogHeader>
 
-          {/* Sumário de horas por técnico (só nesta vista, não vai no PDF) */}
-          {htmlPreviewData?.horasPorTecnico?.length > 0 && (
-            <div className="bg-[#0f0f0f] border-b border-gray-700 px-4 py-3 shrink-0">
+          {/* Detalhe de registos por técnico (só nesta vista, não vai no PDF) */}
+          {htmlPreviewData?.registosDetalhados?.length > 0 && (
+            <div className="bg-[#0f0f0f] border-b border-gray-700 px-4 py-3 shrink-0 max-h-[35vh] overflow-auto">
               <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-                Horas por técnico <span className="text-gray-500 normal-case">(só nesta visualização)</span>
+                Registos de trabalho <span className="text-gray-500 normal-case">(só nesta visualização — {htmlPreviewData.registosDetalhados.length})</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {htmlPreviewData.horasPorTecnico.map((t) => (
-                  <span
-                    key={t.nome}
-                    className="inline-flex items-center gap-2 bg-emerald-900/20 border border-emerald-700/40 rounded-full px-3 py-1 text-sm"
-                    data-testid={`preview-horas-${t.nome}`}
-                  >
-                    <User className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-white">{t.nome}</span>
-                    <span className="text-emerald-300 font-semibold">{t.horas.toFixed(2)}h</span>
-                  </span>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm" data-testid="preview-registos-table">
+                  <thead>
+                    <tr className="text-left text-gray-400 border-b border-gray-700">
+                      <th className="py-2 pr-3 font-medium">Nome</th>
+                      <th className="py-2 pr-3 font-medium">Tipo</th>
+                      <th className="py-2 pr-3 font-medium">Data</th>
+                      <th className="py-2 pr-3 font-medium">Início</th>
+                      <th className="py-2 pr-3 font-medium">Fim</th>
+                      <th className="py-2 pr-3 font-medium text-right">Horas</th>
+                      <th className="py-2 pr-3 font-medium text-right">Km</th>
+                      <th className="py-2 pr-3 font-medium">Código</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {htmlPreviewData.registosDetalhados.map((r, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-gray-800/60 hover:bg-white/[0.02]"
+                        data-testid={`preview-registo-row-${i}`}
+                      >
+                        <td className="py-1.5 pr-3 text-white">{r.nome}</td>
+                        <td className="py-1.5 pr-3">
+                          <span className={
+                            r.tipo === 'viagem'
+                              ? 'inline-block px-2 py-0.5 rounded-full text-xs bg-blue-900/30 text-blue-300 border border-blue-700/40'
+                              : r.tipo === 'manual'
+                              ? 'inline-block px-2 py-0.5 rounded-full text-xs bg-amber-900/30 text-amber-300 border border-amber-700/40'
+                              : 'inline-block px-2 py-0.5 rounded-full text-xs bg-emerald-900/30 text-emerald-300 border border-emerald-700/40'
+                          }>
+                            {r.tipo}
+                          </span>
+                        </td>
+                        <td className="py-1.5 pr-3 text-gray-300">{r.data}</td>
+                        <td className="py-1.5 pr-3 text-gray-300">{r.inicio}</td>
+                        <td className="py-1.5 pr-3 text-gray-300">{r.fim}</td>
+                        <td className="py-1.5 pr-3 text-emerald-300 text-right font-semibold">{Number(r.horas).toFixed(2)}h</td>
+                        <td className="py-1.5 pr-3 text-gray-300 text-right">{r.km}</td>
+                        <td className="py-1.5 pr-3 text-gray-400 font-mono text-xs">{r.codigo}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
-          {/* PDF em iframe (idêntico ao PDF final) */}
-          <div className="flex-1 min-h-0 bg-neutral-800">
+          {/* PDF renderizado via pdfjs em <canvas> — fiável dentro de Dialog Radix */}
+          <div className="flex-1 min-h-0 bg-neutral-100">
             {htmlPreviewData?.pdfUrl ? (
-              <iframe
-                src={htmlPreviewData.pdfUrl}
-                className="w-full h-full border-0"
-                title="Visualização do PDF"
-              />
+              <PdfCanvasViewer url={htmlPreviewData.pdfUrl} scale={1.4} />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-400">A carregar…</div>
             )}

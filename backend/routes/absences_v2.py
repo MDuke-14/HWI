@@ -455,12 +455,20 @@ async def upload_v2(
     if ext not in allowed:
         raise HTTPException(400, "Apenas PDF/JPG/PNG/WEBP")
     fname = f"{absence_id}_{file.filename}"
-    fpath = UPLOAD_DIR / fname
-    with open(fpath, "wb") as buf:
-        shutil.copyfileobj(file.file, buf)
+    file_content = await file.read()
+    from utils.object_storage import put_object, guess_content_type
+    storage_path = f"hwi-fs/absences/{fname}"
+    content_type = file.content_type or guess_content_type(file.filename)
+    try:
+        put_object(storage_path, file_content, content_type)
+    except Exception as e:
+        import logging
+        logging.error(f"Object storage upload falhou para {storage_path}: {e}")
+        raise HTTPException(500, "Erro ao guardar ficheiro")
+
     # Se estava "pendente_documento", volta a "pendente" (documento agora existe)
     prev_state = normalize_state(absence)
-    updates = {"justification_file": fname}
+    updates = {"justification_file": fname, "justification_storage_path": storage_path}
     if prev_state == STATE_PENDING_DOC:
         updates["state"] = STATE_PENDING
         updates["status"] = "pending"

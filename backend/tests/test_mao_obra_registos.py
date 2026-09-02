@@ -364,7 +364,7 @@ class TestCleanup:
                         )
                         if del_response.status_code in [200, 204]:
                             deleted_count += 1
-                except:
+                except Exception:
                     pass
                     
         print(f"Cleaned up {deleted_count} test registos")

@@ -63,7 +63,7 @@ class TestOficinaFeature:
                             "tipo": crono['tipo']
                         }
                     )
-        except:
+        except Exception:
             pass
     
     # ========== CRONÓMETRO TESTS ==========

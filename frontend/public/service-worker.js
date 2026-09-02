@@ -1,3 +1,4 @@
+/* global clients */
 const CACHE_NAME = 'hwi-ponto-v3';
 const STATIC_CACHE = 'hwi-static-v3';
 const DATA_CACHE = 'hwi-data-v3';

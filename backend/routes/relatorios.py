@@ -1499,27 +1499,29 @@ async def salvar_assinatura_digital(
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
     
-    # Criar diretório de uploads se não existir
+    # Criar diretório de uploads se não existir (para retrocompatibilidade dos legados)
     upload_dir = Path("/app/backend/uploads/assinaturas")
     upload_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Gerar nome único para o arquivo
     unique_filename = f"{uuid.uuid4()}.png"
     file_path = upload_dir / unique_filename
-    
+
     # Ler conteúdo do arquivo
     file_content = await file.read()
-    
-    # Converter para base64 para MongoDB
+
+    # Converter para base64 para MongoDB (fonte de verdade — persistente)
     import base64
     assinatura_base64 = base64.b64encode(file_content).decode('utf-8')
-    
-    # Salvar também em arquivo local
+
+    # Guardar também em Emergent Object Storage (para persistência de blobs binários grandes se necessário)
     try:
-        with open(file_path, "wb") as buffer:
-            buffer.write(file_content)
+        from utils.object_storage import put_object
+        storage_path = f"hwi-fs/assinaturas/{unique_filename}"
+        put_object(storage_path, file_content, "image/png")
     except Exception as e:
-        logging.warning(f"Não foi possível salvar arquivo localmente: {e}")
+        logging.warning(f"Object storage indisponível para assinatura ({e}) — assinatura fica só no MongoDB via base64")
+        storage_path = None
     
     # NÃO remover assinaturas anteriores - permitir múltiplas
     

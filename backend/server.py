@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -3016,17 +3016,22 @@ async def upload_justification(
     if file_ext not in allowed_extensions:
         raise HTTPException(status_code=400, detail="Apenas PDF, JPG e PNG são permitidos")
     
-    # Save file
+    # Ler bytes e guardar em Emergent Object Storage (persistente entre re-deploys)
+    file_content = await file.read()
+    from utils.object_storage import put_object, guess_content_type
     file_name = f"{absence_id}_{file.filename}"
-    file_path = UPLOAD_DIR / file_name
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Update absence with filename
+    storage_path = f"hwi-fs/absences/{file_name}"
+    content_type = file.content_type or guess_content_type(file.filename)
+    try:
+        put_object(storage_path, file_content, content_type)
+    except Exception as e:
+        logging.error(f"Object storage upload falhou para {storage_path}: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao guardar ficheiro")
+
+    # Update absence with filename + storage path
     await db.absences.update_one(
         {"id": absence_id},
-        {"$set": {"justification_file": file_name}}
+        {"$set": {"justification_file": file_name, "justification_storage_path": storage_path}}
     )
     
     # Get user details for email
@@ -3047,25 +3052,32 @@ async def upload_justification(
 
 @api_router.get("/absences/file/{filename}")
 async def get_justification_file(filename: str, current_user: dict = Depends(get_current_user)):
-    """Download justification file"""
-    file_path = UPLOAD_DIR / filename
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
-    
+    """Download justification file (do Emergent Object Storage, com fallback para disco legado)."""
     # Extract absence_id from filename
     absence_id = filename.split("_")[0]
-    
-    # Check if user owns this absence or is admin
+
+    # Check permissions
     user = await db.users.find_one({"id": current_user["sub"]})
     absence = await db.absences.find_one({"id": absence_id})
-    
     if not absence:
         raise HTTPException(status_code=404, detail="Falta não encontrada")
-    
     if absence["user_id"] != current_user["sub"] and not user.get("is_admin", False):
         raise HTTPException(status_code=403, detail="Sem permissão para aceder a este ficheiro")
-    
+
+    # Preferir object storage se disponível
+    storage_path = absence.get("justification_storage_path")
+    if storage_path:
+        try:
+            from utils.object_storage import get_object
+            content, content_type = get_object(storage_path)
+            return Response(content=content, media_type=content_type)
+        except Exception as e:
+            logging.warning(f"Falha a ler object storage {storage_path}: {e} — a tentar fallback local")
+
+    # Fallback: disco legado (para ficheiros antigos)
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Ficheiro não encontrado")
     return FileResponse(file_path)
 
 @api_router.get("/absences/my-absences")
