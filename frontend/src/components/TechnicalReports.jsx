@@ -1417,6 +1417,10 @@ const TechnicalReports = ({ user, onLogout }) => {
         status: newStatus
       });
       toast.success('Status atualizado com sucesso!');
+      // Se o modal de visualização está aberto sobre a mesma FS, refletir localmente
+      if (selectedRelatorio && selectedRelatorio.id === selectedStatusRelatorio.id) {
+        setSelectedRelatorio({ ...selectedRelatorio, status: newStatus });
+      }
       setShowStatusModal(false);
       setSelectedStatusRelatorio(null);
       fetchRelatorios();
@@ -5068,6 +5072,17 @@ const TechnicalReports = ({ user, onLogout }) => {
               <DialogTitle className={`flex items-center gap-2 ${textPrimary} ${isMobile ? 'text-base' : ''}`}>
                 <FileText className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'} text-blue-400 flex-shrink-0`} />
                 <span className="truncate">FS #{selectedRelatorio?.numero_assistencia}</span>
+                {selectedRelatorio?.status && (
+                  <button
+                    type="button"
+                    onClick={(e) => openStatusModal(selectedRelatorio, e)}
+                    title="Clique para alterar estado da FS"
+                    data-testid="fs-view-status-badge"
+                    className={`text-xs px-2 py-0.5 rounded hover:opacity-80 transition ${getStatusColor(selectedRelatorio.status)}`}
+                  >
+                    {getStatusLabel(selectedRelatorio.status)}
+                  </button>
+                )}
               </DialogTitle>
               {!isMobile && (
                 <div className="flex items-center gap-2">
@@ -5837,6 +5852,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <p className="text-gray-500 text-sm text-center py-4">Selecione uma intervenção acima</p>
                       );
 
+                      const isHerdadaAtiva = !!activeInterv.herdada_de_intervencao_id;
                       const activeEq = equipamentosOT.find(e => e.id === activeInterv.equipamento_id);
                       // Equipamentos associados a esta intervenção via intervencao_id
                       const intervEqs = equipamentosOT.filter(e => e.intervencao_id === activeInterv.id && e.id !== activeInterv.equipamento_id);
@@ -5870,6 +5886,19 @@ const TechnicalReports = ({ user, onLogout }) => {
 
                       return (
                         <div className="space-y-4">
+                          {/* Banner de aba herdada (read-only) */}
+                          {isHerdadaAtiva && (
+                            <div
+                              className="p-2.5 rounded-md bg-red-900/20 border border-red-500/40 flex items-center gap-2 text-xs"
+                              data-testid="intervencao-herdada-readonly-banner"
+                            >
+                              <Link2 className="w-4 h-4 text-red-400 flex-shrink-0" />
+                              <span className="text-red-300">
+                                Esta intervenção foi <span className="font-semibold">herdada da FS #{activeInterv.herdada_de_fs_numero || '—'}</span> — visualização apenas, não é editável.
+                              </span>
+                            </div>
+                          )}
+
                           {/* Header da intervenção ativa com ações */}
                           <div className={`flex items-center justify-between p-2 ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'} rounded border ${isDark ? 'border-blue-800/30' : 'border-blue-200'}`}>
                             <div className="flex items-center gap-2">
@@ -5877,14 +5906,16 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 {new Date(activeInterv.data_intervencao).toLocaleDateString('pt-PT')}
                               </span>
                             </div>
-                            <div className="flex gap-1">
-                              <Button onClick={() => openEditIntervencaoModal(activeInterv)} variant="outline" size="sm" className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}>
-                                <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
-                              </Button>
-                              <Button onClick={() => setIntervencaoToDelete(activeInterv)} variant="outline" size="sm" className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2" data-testid="btn-delete-intervencao">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
+                            {!isHerdadaAtiva && (
+                              <div className="flex gap-1">
+                                <Button onClick={() => openEditIntervencaoModal(activeInterv)} variant="outline" size="sm" className={`${isDark ? 'border-gray-600 hover:border-blue-500' : 'border-gray-300'} hover:bg-blue-500/10 ${isMobile ? 'p-1 h-6 w-6' : 'p-2'}`}>
+                                  <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'}`} />
+                                </Button>
+                                <Button onClick={() => setIntervencaoToDelete(activeInterv)} variant="outline" size="sm" className="border-gray-600 hover:border-red-500 hover:bg-red-500/10 p-2" data-testid="btn-delete-intervencao">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
 
                           {/* 1. Motivo */}
@@ -5899,13 +5930,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                               <p className="text-xs text-purple-400 flex items-center gap-1 font-medium">
                                 <Settings className="w-3 h-3" /> Equipamento {!activeEq && intervEqs.length === 0 && unassignedEqs.length === 0 ? '(Nenhum)' : ''}
                               </p>
-                              <Button
-                                onClick={() => openAddEquipamentoModal(activeInterv.id)}
-                                size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
-                                data-testid="btn-add-equipamento"
-                              >
-                                <Plus className="w-3 h-3 mr-0.5" /> Adicionar
-                              </Button>
+                              {!isHerdadaAtiva && (
+                                <Button
+                                  onClick={() => openAddEquipamentoModal(activeInterv.id)}
+                                  size="sm" variant="ghost" className="text-purple-400 hover:text-purple-300 h-6 text-xs px-2"
+                                  data-testid="btn-add-equipamento"
+                                >
+                                  <Plus className="w-3 h-3 mr-0.5" /> Adicionar
+                                </Button>
+                              )}
                             </div>
                             {activeEq && (
                               <p className="text-sm text-purple-300">
@@ -5919,9 +5952,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                                   {eq.tipologia && `${eq.tipologia} - `}{eq.marca} {eq.modelo}
                                   {eq.numero_serie && <span className="text-purple-400/60 ml-2 text-xs">S/N: {eq.numero_serie}</span>}
                                 </p>
-                                <Button onClick={() => handleDeleteEquipamento(eq.id)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300 h-5 w-5 p-0">
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                                {!isHerdadaAtiva && (
+                                  <Button onClick={() => handleDeleteEquipamento(eq.id)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300 h-5 w-5 p-0">
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>
