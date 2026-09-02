@@ -657,7 +657,7 @@ def generate_folha_horas_pdf(
     if despesas_para_pdf:
         elements.append(PageBreak())
         add_header(elements)
-        elements.append(Paragraph("DESPESAS", heading_style))
+        elements.append(Paragraph("CUSTOS ADICIONAIS", heading_style))
 
         despesas_sorted = sorted(despesas_para_pdf, key=lambda d: (d.get('data', ''), d.get('tecnico_nome', '')))
 
