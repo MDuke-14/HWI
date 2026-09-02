@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Clock, TrendingUp, LogOut, User, Palmtree, Shield, FileText, CalendarDays, Menu, ChevronDown, AlertTriangle } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import CompanyInfoCard from './CompanyInfoCard';
+import DesktopProfileModal from './DesktopProfileModal';
 
 const Navigation = ({ user, onLogout, activePage }) => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const baseNavItems = [
     { name: 'Dashboard', path: '/', icon: Clock, key: 'dashboard' },
@@ -95,9 +97,17 @@ const Navigation = ({ user, onLogout, activePage }) => {
           <div className="flex items-center gap-1 sm:gap-4">
             <CompanyInfoCard user={user} />
             <NotificationBell user={user} />
-            <div className="hidden sm:flex items-center gap-2 text-gray-300">
-              <User className="w-4 h-4" />
-              <span className="hidden md:inline" data-testid="user-name">{user?.username}</span>
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowProfile(true)}
+                className="flex items-center gap-2 text-gray-300 hover:text-white transition px-2 py-1 rounded hover:bg-white/5"
+                data-testid="open-profile-btn"
+                title="O meu perfil"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden md:inline" data-testid="user-name">{user?.username}</span>
+              </button>
             </div>
             <Button
               data-testid="logout-button"
@@ -110,6 +120,7 @@ const Navigation = ({ user, onLogout, activePage }) => {
           </div>
         </div>
       </div>
+      <DesktopProfileModal open={showProfile} onOpenChange={setShowProfile} user={user} />
     </nav>
   );
 };
