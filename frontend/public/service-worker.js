@@ -1,4 +1,3 @@
-/* global clients */
 const CACHE_NAME = 'hwi-ponto-v3';
 const STATIC_CACHE = 'hwi-static-v3';
 const DATA_CACHE = 'hwi-data-v3';
@@ -390,7 +389,7 @@ self.addEventListener('notificationclick', function(event) {
     const urlToOpen = event.notification.data?.url || '/';
     
     event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true })
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true })
         .then(function(clientList) {
           // Try to focus existing window
           for (const client of clientList) {
@@ -400,8 +399,8 @@ self.addEventListener('notificationclick', function(event) {
             }
           }
           // Open new window
-          if (clients.openWindow) {
-            return clients.openWindow(urlToOpen);
+          if (self.clients.openWindow) {
+            return self.clients.openWindow(urlToOpen);
           }
         })
     );

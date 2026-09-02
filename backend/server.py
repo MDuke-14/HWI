@@ -3548,6 +3548,40 @@ async def update_registo_tecnico(
             update_data["horas_arredondadas"] = mins / 60 if new_tipo == "viagem" else arredondar_horas(mins)
     if "funcao_ot" in registo_data:
         update_data["funcao_ot"] = registo_data["funcao_ot"]
+
+    # Permitir editar técnico atribuído ao registo
+    if "tecnico_id" in registo_data and registo_data["tecnico_id"]:
+        update_data["tecnico_id"] = registo_data["tecnico_id"]
+    if "tecnico_nome" in registo_data and registo_data["tecnico_nome"]:
+        update_data["tecnico_nome"] = registo_data["tecnico_nome"]
+
+    # Permitir editar apenas a data (sem horas — deslocar o segmento para outra data)
+    if "data" in registo_data and "hora_inicio" not in registo_data:
+        try:
+            new_data = datetime.strptime(registo_data["data"], "%Y-%m-%d").date().isoformat()
+            update_data["data"] = new_data
+            # Atualizar também os campos hora_inicio_segmento e hora_fim_segmento (para o mesmo horário mas nova data)
+            for iso_field in ("hora_inicio_segmento", "hora_fim_segmento"):
+                iso_val = existing.get(iso_field)
+                if iso_val:
+                    try:
+                        dt_old = datetime.fromisoformat(iso_val)
+                        dt_new = datetime.combine(
+                            datetime.strptime(registo_data["data"], "%Y-%m-%d").date(),
+                            dt_old.time(),
+                        )
+                        update_data[iso_field] = dt_new.isoformat()
+                    except Exception:
+                        pass
+            # Recalcular código horário para a nova data
+            hi = update_data.get("hora_inicio_segmento") or existing.get("hora_inicio_segmento")
+            if hi:
+                try:
+                    update_data["codigo"] = get_codigo_horario(datetime.fromisoformat(hi))
+                except Exception:
+                    pass
+        except Exception as e:
+            logging.warning(f"Data inválida no update ({registo_data.get('data')}): {e}")
     
     # Novos campos de Km's Ida e Volta
     if "kms_inicial" in registo_data:
@@ -3594,6 +3628,10 @@ async def update_registo_tecnico(
             audit_changes.append(f"tipo: {existing.get('tipo','?')} → {update_data['tipo']}")
         if "funcao_ot" in update_data and update_data["funcao_ot"] != existing.get("funcao_ot"):
             audit_changes.append(f"funcao_ot: {existing.get('funcao_ot','?')} → {update_data['funcao_ot']}")
+        if "tecnico_nome" in update_data and update_data["tecnico_nome"] != existing.get("tecnico_nome"):
+            audit_changes.append(f"tecnico: {existing.get('tecnico_nome','?')} → {update_data['tecnico_nome']}")
+        if "data" in update_data and update_data["data"] != existing.get("data"):
+            audit_changes.append(f"data: {existing.get('data','?')} → {update_data['data']}")
         if audit_changes:
             audit_entry = {
                 "id": str(uuid.uuid4()),

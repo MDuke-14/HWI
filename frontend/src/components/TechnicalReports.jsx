@@ -3299,7 +3299,10 @@ const TechnicalReports = ({ user, onLogout }) => {
       hora_fim: horaFim,
       incluir_pausa: registo.incluir_pausa || false,
       funcao_ot: registo.funcao_ot || 'tecnico',
-      entry_type: registo.tipo || registo._tipo_registo || 'trabalho'
+      entry_type: registo.tipo || registo._tipo_registo || 'trabalho',
+      tecnico_id: registo.tecnico_id || '',
+      tecnico_nome: registo.tecnico_nome || '',
+      data: typeof registo.data === 'string' ? registo.data.substring(0, 10) : (registo.data ? new Date(registo.data).toISOString().substring(0, 10) : '')
     });
     setShowEditRegistoModal(true);
   };
@@ -3321,24 +3324,29 @@ const TechnicalReports = ({ user, onLogout }) => {
       kms_final_volta: parseFloat(editRegistoForm.kms_final_volta || 0),
       incluir_pausa: editRegistoForm.incluir_pausa,
       funcao_ot: editRegistoForm.funcao_ot,
-      tipo: editRegistoForm.entry_type
+      tipo: editRegistoForm.entry_type,
+      tecnico_id: editRegistoForm.tecnico_id || undefined,
+      tecnico_nome: editRegistoForm.tecnico_nome || undefined,
     };
-    
+
     // Se temos hora início e fim, enviar para recalcular duração e código
     if (editRegistoForm.hora_inicio && editRegistoForm.hora_fim) {
       updatePayload.hora_inicio = editRegistoForm.hora_inicio;
       updatePayload.hora_fim = editRegistoForm.hora_fim;
-      // Obter data do registo para enviar ao backend
-      if (editingRegisto.data) {
-        const dataStr = typeof editingRegisto.data === 'string' 
-          ? editingRegisto.data.substring(0, 10) 
-          : new Date(editingRegisto.data).toISOString().substring(0, 10);
-        updatePayload.data = dataStr;
-      }
+      // Usar a data editada (fallback para a do registo original)
+      const dataStr = editRegistoForm.data
+        || (editingRegisto.data
+          ? (typeof editingRegisto.data === 'string'
+              ? editingRegisto.data.substring(0, 10)
+              : new Date(editingRegisto.data).toISOString().substring(0, 10))
+          : null);
+      if (dataStr) updatePayload.data = dataStr;
     } else {
       // Sem horas, usar minutos_trabalhados e codigo existentes
       updatePayload.minutos_trabalhados = parseInt(editRegistoForm.minutos_trabalhados);
       updatePayload.codigo = editRegistoForm.codigo;
+      // Ainda assim, permitir mudar a data mesmo sem alterar horas
+      if (editRegistoForm.data) updatePayload.data = editRegistoForm.data;
     }
     
     try {
@@ -6911,14 +6919,12 @@ const TechnicalReports = ({ user, onLogout }) => {
         isEditing={false} formData={relAssistFormData} setFormData={setRelAssistFormData}
         onSubmit={handleAddRelAssist}
         onCancel={() => setShowAddRelAssistModal(false)}
-        selectedRelatorio={selectedRelatorio} equipamentosOT={equipamentosOT}
       />
       <RelAssistModal
         open={showEditRelAssistModal} onOpenChange={setShowEditRelAssistModal}
         isEditing={true} formData={relAssistFormData} setFormData={setRelAssistFormData}
         onSubmit={handleUpdateRelAssist}
         onCancel={() => { setShowEditRelAssistModal(false); setSelectedRelAssist(null); }}
-        selectedRelatorio={selectedRelatorio} equipamentosOT={equipamentosOT}
       />
 
       {/* Despesa Modals - Componentes Extraídos */}
@@ -9028,19 +9034,42 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           {editingRegisto && (
             <div className="space-y-4 mt-4">
-              {/* Info do Registo */}
-              <div className="bg-[#0f0f0f] p-3 rounded-lg border border-gray-700">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-gray-400">Técnico:</span>
-                    <span className="text-white ml-2">{editingRegisto.tecnico_nome}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Data:</span>
-                    <span className="text-white ml-2">
-                      {new Date(editingRegisto.data).toLocaleDateString('pt-PT')}
-                    </span>
-                  </div>
+              {/* Técnico e Data - agora editáveis */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-gray-300 text-xs">Técnico</Label>
+                  <Select
+                    value={editRegistoForm.tecnico_id}
+                    onValueChange={(val) => {
+                      const u = allSystemUsers.find((x) => x.id === val);
+                      setEditRegistoForm((prev) => ({
+                        ...prev,
+                        tecnico_id: val,
+                        tecnico_nome: u?.full_name || u?.username || prev.tecnico_nome,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger data-testid="edit-registo-tecnico-select" className="bg-gray-800 border-gray-700 text-white mt-1">
+                      <SelectValue placeholder={editRegistoForm.tecnico_nome || 'Selecionar técnico'} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      {(Array.isArray(allSystemUsers) ? allSystemUsers : []).map((u) => (
+                        <SelectItem key={u.id} value={u.id} className="text-white">
+                          {u.full_name || u.username || 'Sem nome'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-gray-300 text-xs">Data</Label>
+                  <Input
+                    type="date"
+                    value={editRegistoForm.data}
+                    onChange={(e) => setEditRegistoForm((prev) => ({ ...prev, data: e.target.value }))}
+                    className="bg-gray-800 border-gray-700 text-white mt-1"
+                    data-testid="edit-registo-data-input"
+                  />
                 </div>
               </div>
 
