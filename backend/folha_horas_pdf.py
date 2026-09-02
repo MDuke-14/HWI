@@ -661,7 +661,7 @@ def generate_folha_horas_pdf(
 
         despesas_sorted = sorted(despesas_para_pdf, key=lambda d: (d.get('data', ''), d.get('tecnico_nome', '')))
 
-        desp_header = ['Tipo de Despesa', 'Valor', 'Data', 'Descrição']
+        desp_header = ['Tipo de Despesa', 'Valor', 'Data', 'Descrição', 'Qtd.']
         desp_table_data = [desp_header]
         total_despesas = 0
 
@@ -681,18 +681,32 @@ def generate_folha_horas_pdf(
             if len(descricao) > 100:
                 descricao = descricao[:97] + '...'
 
+            # Quantidade + Unidade (ex.: "5 Un", "12.5 L")
+            qtd_raw = desp.get('quantidade')
+            if qtd_raw is None or qtd_raw == '':
+                qtd_str = ''
+            else:
+                try:
+                    qtd_num = float(qtd_raw)
+                    qtd_fmt = f'{qtd_num:g}'  # remove trailing zeros
+                except (TypeError, ValueError):
+                    qtd_fmt = str(qtd_raw)
+                unidade = desp.get('unidade') or ''
+                qtd_str = f'{qtd_fmt} {unidade}'.strip()
+
             desp_table_data.append([
                 tipo_label,
                 f'{valor:.2f}€',
                 data_formatada,
-                descricao
+                descricao,
+                qtd_str
             ])
 
         desp_table_data.append([
-            'TOTAL DESPESAS:', f'{total_despesas:.2f}€', '', ''
+            'TOTAL DESPESAS:', f'{total_despesas:.2f}€', '', '', ''
         ])
 
-        desp_col_widths = [4.0*cm, 2.5*cm, 3.0*cm, 14.3*cm]
+        desp_col_widths = [4.0*cm, 2.5*cm, 3.0*cm, 12.3*cm, 2.0*cm]
         desp_table = Table(desp_table_data, colWidths=desp_col_widths, repeatRows=1)
         desp_table.setStyle(TableStyle(make_table_style()))
         elements.append(desp_table)
