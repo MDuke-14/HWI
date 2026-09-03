@@ -53,13 +53,17 @@ DEFAULT_TEMPLATES: List[dict] = [
         "descricao": "Email enviado ao fornecedor quando se envia um pedido de cotação (Fase 4/5).",
         "assunto": "Pedido de Cotação - PC {numero_pc}",
         "corpo_html": (
-            "Bom dia,\n\n"
-            "Solicito cotação para os seguintes materiais:\n\n"
-            "{lista_materiais}\n\n"
-            "Agradeço o vosso melhor preço e prazo de entrega.\n\n"
-            "Com os melhores cumprimentos,\nHWI Unipessoal, Lda"
+            "<p>Bom dia,</p>"
+            "<p>Solicito cotação para os seguintes materiais:</p>"
+            "<pre style='font-family:inherit;white-space:pre-wrap;background:#f5f5f5;padding:10px;border-radius:6px;'>{lista_materiais}</pre>"
+            "<p>Agradeço o vosso melhor preço e prazo de entrega.</p>"
+            "<p style='margin:20px 0;'>"
+            "<a href='{link_pc}' style='display:inline-block;background:#1e40af;color:#ffffff;"
+            "text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;'>Ver Pedido de Cotação</a>"
+            "</p>"
+            "<p>Com os melhores cumprimentos,<br/>HWI Unipessoal, Lda</p>"
         ),
-        "variaveis": ["numero_pc", "numero_fs", "cliente_nome", "lista_materiais", "fornecedor_nome"],
+        "variaveis": ["numero_pc", "numero_fs", "cliente_nome", "lista_materiais", "fornecedor_nome", "link_pc"],
     },
     {
         "key": "pc_pdf_email",
@@ -122,11 +126,22 @@ DEFAULT_TEMPLATES: List[dict] = [
 
 
 async def ensure_default_templates() -> None:
-    """Cria os templates default que ainda não existam. Nunca sobrescreve."""
+    """Cria os templates default que ainda não existam. Nunca sobrescreve
+    templates existentes, MAS adiciona variáveis novas ao array `variaveis`
+    para o Admin ver os placeholders disponíveis."""
     now = datetime.now(timezone.utc).isoformat()
     for tpl in DEFAULT_TEMPLATES:
-        exists = await db.email_templates.find_one({"key": tpl["key"]}, {"_id": 0, "key": 1})
+        exists = await db.email_templates.find_one({"key": tpl["key"]}, {"_id": 0})
         if exists:
+            # Merge de variáveis novas sem tocar no corpo/assunto editado pelo admin
+            missing_vars = [v for v in tpl.get("variaveis", []) if v not in (exists.get("variaveis") or [])]
+            if missing_vars:
+                merged = list(exists.get("variaveis") or []) + missing_vars
+                await db.email_templates.update_one(
+                    {"key": tpl["key"]},
+                    {"$set": {"variaveis": merged}},
+                )
+                logger.info(f"[email_templates] Novas variáveis adicionadas a '{tpl['key']}': {missing_vars}")
             continue
         doc = {**tpl, "editavel": True, "updated_at": now, "updated_by": "system"}
         await db.email_templates.insert_one(doc)

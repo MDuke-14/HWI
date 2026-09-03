@@ -752,6 +752,32 @@ const TechnicalReports = ({ user, onLogout }) => {
       openOtFromUrl();
     }
   }, [searchParams, urlOtProcessed, loading]);
+
+  // Fase 8: Deep-link para uma PC específica via ?pc={id}
+  const [urlPcProcessed, setUrlPcProcessed] = useState(false);
+  useEffect(() => {
+    const pcId = searchParams.get('pc');
+    if (pcId && !urlPcProcessed && !loading) {
+      setUrlPcProcessed(true);
+      setActiveTab('pedidos-cotacao');
+      (async () => {
+        try {
+          setPcActiveTab('resumo');
+          await fetchPCDetalhes(pcId);
+          setShowPCModal(true);
+          const next = new URLSearchParams(searchParams);
+          next.delete('pc');
+          setSearchParams(next);
+        } catch (error) {
+          console.error('Erro ao abrir PC da URL:', error);
+          toast.error('PC não encontrada');
+          const next = new URLSearchParams(searchParams);
+          next.delete('pc');
+          setSearchParams(next);
+        }
+      })();
+    }
+  }, [searchParams, urlPcProcessed, loading]);
   
   // Buscar clientes quando abre modal de criar relatório
   useEffect(() => {

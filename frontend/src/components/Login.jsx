@@ -78,30 +78,7 @@ const Login = ({ onLogin }) => {
         </div>
 
         <div className="glass-effect p-8">
-          <div className="flex gap-2 mb-6">
-            <Button
-              data-testid="login-tab-button"
-              onClick={() => setIsRegister(false)}
-              className={`flex-1 rounded-full ${
-                !isRegister
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-transparent border border-gray-700 text-gray-400 hover:bg-gray-800'
-              }`}
-            >
-              Entrar
-            </Button>
-            <Button
-              data-testid="register-tab-button"
-              onClick={() => setIsRegister(true)}
-              className={`flex-1 rounded-full ${
-                isRegister
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-transparent border border-gray-700 text-gray-400 hover:bg-gray-800'
-              }`}
-            >
-              Registar
-            </Button>
-          </div>
+          {/* Botões Entrar/Registar removidos (Fase 8) — só admin pode criar contas */}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

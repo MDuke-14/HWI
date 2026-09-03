@@ -610,6 +610,10 @@ async def enviar_pedido_cotacao(
     ot_num = ot.get("numero_assistencia", "N/A")
     cliente = ot.get("cliente_nome", "")
 
+    # Deep-link para abrir a PC directamente na app (usável em botão do email)
+    frontend_url = os.environ.get("FRONTEND_URL", "").rstrip("/")
+    link_pc = f"{frontend_url}/technical-reports?pc={pc_id}" if frontend_url else ""
+
     # --- Assunto / Mensagem ---
     # Fase 7B: usar template `pc_cotacao_request` (admin pode editar via UI).
     tpl = await get_template("pc_cotacao_request")
@@ -651,6 +655,7 @@ async def enviar_pedido_cotacao(
             "numero_fs": ot.get("numero_assistencia", "N/A"),
             "cliente_nome": ot.get("cliente_nome", ""),
             "lista_materiais": lista_materiais_str,
+            "link_pc": link_pc,
         })
     else:
         corpo = (
