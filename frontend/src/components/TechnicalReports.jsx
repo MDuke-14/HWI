@@ -104,6 +104,7 @@ import {
   EmailPCModal,
   HideClientPopup,
   EditMaterialPCModal,
+  EnviarPedidoCotacaoModal,
   ChangeTipoModal,
   DeleteClienteModal,
   ReferenciaInternaModal,
@@ -499,6 +500,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showEditMaterialPCModal, setShowEditMaterialPCModal] = useState(false);
   const [editMaterialPC, setEditMaterialPC] = useState(null);
   const [editMaterialPCForm, setEditMaterialPCForm] = useState({ descricao: '', quantidade: '' });
+
+  // Enviar Pedido de Cotação (Fase 4)
+  const [showEnviarCotacaoModal, setShowEnviarCotacaoModal] = useState(false);
+  const [enviarCotacaoMatIds, setEnviarCotacaoMatIds] = useState([]);
   
   // Faturas PC
   const [faturasPC, setFaturasPC] = useState([]);
@@ -2720,7 +2725,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       }
 
       // Fase 3 — buscar documentos, histórico e observação em paralelo (fire-and-forget)
-      setPcActiveTab('resumo');
       axios.get(`${API}/pedidos-cotacao/${pcId}/documentos`)
         .then((r) => setPcDocumentos(r.data || []))
         .catch(() => setPcDocumentos([]));
@@ -3115,6 +3119,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   const openPCFromList = async (pc) => {
+    setPcActiveTab('resumo');
     await fetchPCDetalhes(pc.id);
     setShowPCModal(true);
   };
@@ -6767,6 +6772,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       <div
                         key={pc.id}
                         onClick={() => {
+                          setPcActiveTab('resumo');
                           fetchPCDetalhes(pc.id);
                           setShowPCModal(true);
                         }}
@@ -7473,16 +7479,30 @@ const TechnicalReports = ({ user, onLogout }) => {
                 <h4 className="text-blue-400 font-semibold mb-3 flex items-center justify-between">
                   <span>Material para Cotação</span>
                   {pcActiveTab === 'materiais' && (
-                    <Button size="sm" variant="ghost" onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }} className="text-blue-400 h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> Adicionar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setEnviarCotacaoMatIds([]); // vazio => global
+                          setShowEnviarCotacaoModal(true);
+                        }}
+                        disabled={!(selectedPC.materiais?.length > 0)}
+                        className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                        data-testid="pc-enviar-cotacao-global"
+                      >
+                        <Send className="w-3 h-3 mr-1" /> Enviar Pedido Global
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }} className="text-blue-400 h-7 text-xs" data-testid="pc-material-add">
+                        <Plus className="w-3 h-3 mr-1" /> Adicionar
+                      </Button>
+                    </div>
                   )}
                 </h4>
                 {selectedPC.materiais?.length > 0 ? (
                   <div className="space-y-2">
                     {selectedPC.materiais.map((mat) => (
-                      <div key={mat.id} className="flex justify-between items-center p-2 bg-gray-800 rounded">
-                        <div className="flex-1">
+                      <div key={mat.id} className="flex justify-between items-center p-2 bg-gray-800 rounded" data-testid={`pc-material-row-${mat.id}`}>
+                        <div className="flex-1 min-w-0">
                           <span className="text-white">{mat.descricao}</span>
                           <span className="text-gray-400 ml-3">Qtd: {mat.quantidade} {mat.unidade || 'Un'}</span>
                           {(mat.posicao || mat.codigo) && (
@@ -7491,15 +7511,38 @@ const TechnicalReports = ({ user, onLogout }) => {
                               {mat.codigo && <span className="text-white text-sm">Código: {mat.codigo}</span>}
                             </div>
                           )}
+                          {(mat.fornecedor_nome || mat.fornecedor_email) && (
+                            <div className="text-[11px] text-yellow-400 mt-0.5" data-testid={`pc-material-fornecedor-${mat.id}`}>
+                              Fornecedor: {mat.fornecedor_nome || mat.fornecedor_email}
+                              {mat.cotacao_status && ` · ${mat.cotacao_status}`}
+                            </div>
+                          )}
                         </div>
-                        <Button
-                          onClick={() => openEditMaterialPCModal(mat)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1 shrink-0">
+                          {pcActiveTab === 'materiais' && (
+                            <Button
+                              onClick={() => {
+                                setEnviarCotacaoMatIds([mat.id]);
+                                setShowEnviarCotacaoModal(true);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-400 hover:text-green-300 hover:bg-green-900/20 h-7 px-2"
+                              title="Enviar pedido de cotação"
+                              data-testid={`pc-material-enviar-${mat.id}`}
+                            >
+                              <Send className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => openEditMaterialPCModal(mat)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 h-7 px-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -7819,6 +7862,23 @@ const TechnicalReports = ({ user, onLogout }) => {
         form={editMaterialPCForm}
         setForm={setEditMaterialPCForm}
         onSave={handleUpdateMaterialPC}
+      />
+
+      {/* Enviar Pedido de Cotação Modal (Fase 4) */}
+      <EnviarPedidoCotacaoModal
+        open={showEnviarCotacaoModal}
+        onOpenChange={setShowEnviarCotacaoModal}
+        pc={selectedPC}
+        initialMaterialIds={enviarCotacaoMatIds}
+        documentos={pcDocumentos}
+        onSent={() => {
+          if (selectedPC?.id) fetchPCDetalhes(selectedPC.id);
+          if (selectedRelatorio?.id) {
+            fetchMateriais(selectedRelatorio.id);
+            fetchPedidosCotacao(selectedRelatorio.id);
+          }
+          fetchAllPCs();
+        }}
       />
 
 

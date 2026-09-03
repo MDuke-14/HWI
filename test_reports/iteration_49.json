@@ -1,0 +1,44 @@
+{
+  "summary": "Fase 4 PC (envio de pedido de cotação por email) testada end-to-end. Backend: novo ficheiro pytest com 13 testes (validações 401/404/400, envio individual, envio global+CC, sobrescrita de fornecedor, anexos, fornecedor da DB) — 13/13 PASS, com envio SMTP real para geral@hwi.pt e para domínio de fornecedor da DB. Frontend: fluxo completo validado via Playwright (aba Materiais, botão global + botão por linha, pré-seleção de materiais, dropdown fornecedor + opção E-Mail manual, regras de disabled do botão Enviar, toast de sucesso PT, toast de erro PT em CC inválido com modal a manter-se aberto, atualização da coluna Fornecedor e registo no Histórico). Regressão FS: aba Folhas de Serviço carrega e lista FS; testes backend de cronómetro/FS passam (10 pass, 15 skip por falta de dados). Encontrado 1 bug de UX (modal salta para aba Resumo após envio) + observações menores.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao", "issue": "O histórico grava metadata.tipo (não metadata.envio_tipo) para o tipo de envio — divergência face ao contrato descrito na spec; qualquer consumidor futuro que leia 'envio_tipo' falha."},
+      {"endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao", "issue": "envio_tipo é inferido por contagem: se o utilizador enviar por linha mas a PC só tiver 1 material (ou selecionar manualmente todos), o evento fica registado como 'global'. Considerar receber o tipo do cliente ou basear-se em material_ids != []."},
+      {"endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao", "issue": "Em falha SMTP devolve 500 com a exceção crua no detail (f'Erro ao enviar email: {e}') — pode expor host/credenciais/erros internos ao cliente. Devolver mensagem genérica PT e manter detalhe apenas no log."},
+      {"endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao", "issue": "anexos_doc_ids: se o base64 de um documento estiver corrompido a exceção é apenas logada e o email segue sem esse anexo, mas metadata.anexos reflete só os anexados — comportamento silencioso (aceitável mas sem feedback ao utilizador)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "TechnicalReports.jsx / fetchPCDetalhes", "issue": "Após envio bem-sucedido (onSent -> fetchPCDetalhes) o modal salta de volta à aba 'Resumo' porque fetchPCDetalhes faz sempre setPcActiveTab('resumo') (linha ~2728). O utilizador perde o contexto da aba Materiais e tem de voltar a clicar para enviar outro material. Mesmo efeito ao guardar observações/documentos. Sugestão: mover o reset de aba para o abrir da PC (openPCFromList/openPCModal) e não para o refresh.", "selector": "pc-tab-materiais", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "EnviarPedidoCotacaoModal", "issues": ["Fornecedores sem email aparecem como <option disabled> com sufixo '(sem email)' — correto, mas sem qualquer aviso visível ao utilizador de que não pode ser escolhido.", "Aviso amarelo 'Já tem fornecedor: X' está legível (amber-400 sobre #1a1a1a); contraste e espaçamento OK. Sem outros problemas de layout detetados a 1920x1080."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pc_enviar_cotacao.py",
+    "/app/test_reports/pytest/pc_enviar_cotacao.xml",
+    "/app/test_reports/pytest/regression_fs.xml"
+  ],
+  "action_items": [
+    "Corrigir salto para aba 'Resumo' após envio: não fazer setPcActiveTab('resumo') dentro de fetchPCDetalhes (usar apenas ao abrir a PC).",
+    "Alinhar chave de metadata do histórico (metadata.tipo vs envio_tipo) com o contrato pretendido.",
+    "Não devolver a exceção SMTP crua no detail do 500 (mensagem genérica PT + log)."
+  ],
+  "critical_code_review_comments": [
+    "/app/frontend/src/components/TechnicalReports.jsx tem ~10.100 linhas — muito acima do limite recomendado (700). O wiring da Fase 4 é pequeno, mas o ficheiro devia ser dividido (lista de PCs, modal de PC, materiais) para reduzir risco de regressão.",
+    "pc_extended.py: o envio SMTP ocorre antes das escritas na DB (correto — não marca 'em_cotacao' se o email falhar). Manter este padrão em fases futuras.",
+    "Testes legacy /app/backend/tests/test_fs_edit_features.py e test_cronometro_bug_fix.py só funcionam se REACT_APP_BACKEND_URL estiver no ambiente do processo (erram com MissingSchema caso contrário). Deviam ler /app/frontend/.env via dotenv_values como o novo test_pc_enviar_cotacao.py."
+  ],
+  "updated_files": ["/app/backend/tests/test_pc_enviar_cotacao.py"],
+  "success_rate": {"backend": "100% (13/13 novos + 10/10 regressão executada)", "frontend": "95% (todos os fluxos OK; 1 bug de UX de reset de aba)"},
+  "seed_data_creation": "Criados e removidos no fim: PC de teste PC_002#373 (id 41f8e5ba-...) com 3 materiais UITEST_MAT_0..2 na FS #373, e PCs/materiais TEST_MAT_* criados/apagados pelas fixtures pytest. Documento TEST_anexo.txt criado e apagado. Emails reais enviados para geral@hwi.pt (destinatário do domínio HWI) e para orcamentos@fornecedorA.pt (aceite pelo relay).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "miguel / Miguel123! (login com campo 'username')",
+  "context_for_next_testing_agent": "Novo ficheiro de regressão: /app/backend/tests/test_pc_enviar_cotacao.py (auto-cria PC via POST /relatorios-tecnicos/{id}/materiais com fornecido_por='Cotação' e limpa no fim). Nota: o histórico da PC usa o campo 'action' (não 'tipo'/'evento'). No Playwright, o login falha se se usar page.fill imediatamente após o load — usar page.type com delay e esperar ~4s pela hidratação. Envio real de email funciona (SMTP configurado); usar geral@hwi.pt.",
+  "rca_of_the_issue": "Reset de aba: EnviarPedidoCotacaoModal.onSent chama fetchPCDetalhes(selectedPC.id) e essa função executa sempre setPcActiveTab('resumo') (TechnicalReports.jsx ~linha 2728), pensada para o momento de abertura da PC. Como é reutilizada como 'refresh', qualquer atualização (envio de cotação, observações, documentos) devolve o utilizador à aba Resumo. Reprodução: abrir PC > aba Materiais > Enviar (individual ou global) > após o toast o conteúdo mostrado é o da Resumo. Mitigação: extrair o setPcActiveTab('resumo') para o handler de abertura da PC."
+}

@@ -14,6 +14,7 @@ export { default as AddFotoPCModal } from './AddFotoPCModal';
 export { default as EmailPCModal } from './EmailPCModal';
 export { default as HideClientPopup } from './HideClientPopup';
 export { default as EditMaterialPCModal } from './EditMaterialPCModal';
+export { default as EnviarPedidoCotacaoModal } from './EnviarPedidoCotacaoModal';
 export { default as ChangeTipoModal } from './ChangeTipoModal';
 export { default as DeleteClienteModal } from './DeleteClienteModal';
 export { default as ReferenciaInternaModal } from './ReferenciaInternaModal';

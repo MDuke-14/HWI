@@ -14,6 +14,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+21. ✅ **Módulo PC — Fase 4: Envio de Pedido de Cotação por email (Feb 2026)** — Fecha o ciclo dos "Pedidos de Cotação" com envio real por email associando o fornecedor ao material.
+    - Novo endpoint `POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao` (`backend/routes/pc_extended.py`) — aceita `material_ids[]`, `fornecedor_id` ou `fornecedor_email_custom` (email manual), `cc[]`, `assunto`, `mensagem`, `anexos_doc_ids[]`.
+    - Regras: (a) associa `fornecedor_id/nome/email/cotacao_status="em_cotacao"` a cada material do envio; (b) permite sobrescrita de fornecedor já associado, apenas regista no histórico; (c) actualiza PC.status para "Cotação Pedida" se estava "Em Espera"; (d) grava evento `email_sent` em `pc_historico` com `metadata.envio_tipo` (individual|global); (e) SMTP via aiosmtplib; (f) erros SMTP devolvem mensagem PT genérica ao cliente (detalhe só no log).
+    - Novo modal `EnviarPedidoCotacaoModal.jsx` — dropdown fornecedores + opção "✉️ E-Mail manual…", CC, assunto/mensagem (template simples: "Solicito cotação para os seguintes materiais: [lista]"), checkboxes de materiais e anexos.
+    - `TechnicalReports.jsx`: aba **Materiais** ganha botão **"Enviar Pedido Global"** e ícone **Send** por linha (envio individual). Após envio, materiais atualizam fornecedor e a aba Histórico reflete o evento.
+    - Fix UX: `fetchPCDetalhes` já não reseta a aba activa — o reset foi movido para os handlers de abertura da PC (`openPCFromList` e clique em card na lista), evitando que o utilizador salte para "Resumo" após acções internas.
+    - Testes: `/app/backend/tests/test_pc_enviar_cotacao.py` (13/13 PASS).
+
 20. ✅ **Preview do relatório com renderização real via pdfjs-dist + tabela detalhada + Object Storage (Feb 2026)** — Substituição do `<iframe>`/`<object>` (que renderizavam preto dentro do `DialogContent` Radix transformado) por renderização em `<canvas>` com pdfjs-dist@4.10.38 (legacy build; worker copiado para `public/pdf.worker.min.mjs`). Novo componente `frontend/src/components/technical-reports/PdfCanvasViewer.jsx` desenha cada página do PDF diretamente em canvas — igual ao PDF final, funciona em qualquer modal.
     - Chips agregadas "Horas por técnico" substituídas por **tabela** com colunas Nome/Tipo/Data/Início/Fim/Horas/Km/Código (uma linha por registo de `registos_tecnico_ot`, ordenados cronologicamente).
     - "Assine Aqui" **não fecha** o preview — o modal de assinatura abre sobreposto, mantendo o relatório visível.

@@ -4,14 +4,21 @@ por material. Endpoints separados do CRUD principal para evitar tocar
 routes/pedidos_cotacao.py sem necessidade.
 """
 import base64
+import os
+import re
 import uuid
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Depends, File, Form, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+
+import aiosmtplib
 
 from database import db
 from auth_utils import get_current_user
@@ -274,3 +281,244 @@ async def assign_material_fornecedor(
         )
 
     return {"ok": True, "material_id": material_id, "update": update}
+
+
+# =============================================================
+#  ENVIAR PEDIDO DE COTAÇÃO (Fase 4)
+# =============================================================
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class EnviarPedidoCotacaoPayload(BaseModel):
+    material_ids: List[str] = Field(default_factory=list)  # se vazio, envia todos
+    fornecedor_id: Optional[str] = None
+    fornecedor_email_custom: Optional[str] = None
+    fornecedor_nome_custom: Optional[str] = None
+    cc: List[str] = Field(default_factory=list)
+    assunto: Optional[str] = None
+    mensagem: Optional[str] = None
+    anexos_doc_ids: List[str] = Field(default_factory=list)
+
+
+def _valid_email(e: str) -> bool:
+    return bool(e and EMAIL_RE.match(e.strip()))
+
+
+@router.post("/pedidos-cotacao/{pc_id}/enviar-cotacao")
+async def enviar_pedido_cotacao(
+    pc_id: str,
+    payload: EnviarPedidoCotacaoPayload,
+    current_user: dict = Depends(get_current_user),
+):
+    """Envia pedido de cotação por email associando o fornecedor selecionado
+    aos materiais indicados. Regista tudo no histórico da PC."""
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id}, {"_id": 0})
+    if not pc:
+        raise HTTPException(404, "PC não encontrado")
+
+    # --- Resolver fornecedor (DB ou email manual) ---
+    fornecedor_id = None
+    fornecedor_nome = None
+    fornecedor_email = None
+
+    if payload.fornecedor_id:
+        fdoc = await db.fornecedores.find_one({"id": payload.fornecedor_id}, {"_id": 0})
+        if not fdoc:
+            raise HTTPException(404, "Fornecedor não encontrado")
+        if not fdoc.get("email") or not _valid_email(fdoc.get("email")):
+            raise HTTPException(400, f"Fornecedor '{fdoc.get('nome')}' não tem email válido")
+        fornecedor_id = fdoc["id"]
+        fornecedor_nome = fdoc.get("nome")
+        fornecedor_email = fdoc.get("email")
+    elif payload.fornecedor_email_custom:
+        if not _valid_email(payload.fornecedor_email_custom):
+            raise HTTPException(400, "Email do fornecedor inválido")
+        fornecedor_email = payload.fornecedor_email_custom.strip()
+        fornecedor_nome = (payload.fornecedor_nome_custom or fornecedor_email).strip()
+    else:
+        raise HTTPException(400, "É necessário selecionar um fornecedor ou indicar email manual")
+
+    # --- Validar CC ---
+    cc_list = []
+    for e in payload.cc:
+        e = (e or "").strip()
+        if not e:
+            continue
+        if not _valid_email(e):
+            raise HTTPException(400, f"Email CC inválido: {e}")
+        cc_list.append(e)
+
+    # --- Buscar materiais alvo ---
+    if payload.material_ids:
+        materiais = await db.materiais_ot.find(
+            {"pc_id": pc_id, "id": {"$in": payload.material_ids}}, {"_id": 0}
+        ).to_list(length=None)
+        if len(materiais) != len(payload.material_ids):
+            raise HTTPException(400, "Alguns materiais indicados não pertencem a esta PC")
+        # Se material_ids foi fornecido explicitamente, é envio individual
+        # (mesmo que o utilizador tenha selecionado todos os materiais)
+        envio_tipo = "individual"
+    else:
+        materiais = await db.materiais_ot.find({"pc_id": pc_id}, {"_id": 0}).to_list(length=None)
+        envio_tipo = "global"
+
+    if not materiais:
+        raise HTTPException(400, "Não há materiais a incluir no envio")
+
+    # --- Buscar OT (para contexto) ---
+    ot = await db.relatorios_tecnicos.find_one({"id": pc.get("relatorio_id")}, {"_id": 0}) or {}
+
+    # --- Assunto / Mensagem padrão ---
+    assunto = (payload.assunto or "").strip() or f"Pedido de Cotação - PC {pc.get('numero_pc', pc_id[:8])}"
+
+    linhas_materiais = []
+    for m in materiais:
+        qtd = m.get("quantidade")
+        un = m.get("unidade", "Un")
+        desc = m.get("descricao", "")
+        cod = m.get("codigo")
+        pos = m.get("posicao")
+        extras = []
+        if cod:
+            extras.append(f"Cód: {cod}")
+        if pos:
+            extras.append(f"Pos: {pos}")
+        suffix = f" ({'; '.join(extras)})" if extras else ""
+        linhas_materiais.append(f"- {qtd} {un} · {desc}{suffix}")
+
+    corpo_padrao = (payload.mensagem or "").strip() or (
+        "Bom dia,\n\n"
+        "Solicito cotação para os seguintes materiais:\n\n"
+        + "\n".join(linhas_materiais)
+        + "\n\nAgradeço o vosso melhor preço e prazo de entrega.\n\n"
+        "Com os melhores cumprimentos,\nHWI Unipessoal, Lda"
+    )
+
+    # --- Construir mensagem HTML simples ---
+    ot_num = ot.get("numero_assistencia", "N/A")
+    cliente = ot.get("cliente_nome", "")
+    html = f"""
+    <html><body style="font-family:Arial,sans-serif;color:#222;line-height:1.5;max-width:640px;margin:0 auto;">
+      <div style="background:#1e40af;color:#fff;padding:14px 18px;">
+        <h3 style="margin:0;">Pedido de Cotação — PC {pc.get('numero_pc','')}</h3>
+        <p style="margin:4px 0 0;opacity:.9;font-size:13px;">FS #{ot_num} · {cliente}</p>
+      </div>
+      <div style="padding:18px;white-space:pre-wrap;">{corpo_padrao}</div>
+      <div style="background:#f5f5f5;padding:12px 18px;font-size:12px;color:#666;">
+        HWI Unipessoal, Lda · geral@hwi.pt
+      </div>
+    </body></html>
+    """
+
+    # --- Anexos: documentos do PC ---
+    anexos = []
+    if payload.anexos_doc_ids:
+        docs = await db.pc_documentos.find(
+            {"pc_id": pc_id, "id": {"$in": payload.anexos_doc_ids}}, {"_id": 0}
+        ).to_list(length=None)
+        if len(docs) != len(payload.anexos_doc_ids):
+            raise HTTPException(400, "Alguns anexos indicados não pertencem a esta PC")
+        for d in docs:
+            try:
+                anexos.append({
+                    "filename": d.get("original_name") or d.get("filename") or "anexo",
+                    "content": base64.b64decode(d.get("file_base64", "")),
+                    "content_type": d.get("content_type") or "application/octet-stream",
+                })
+            except Exception as e:
+                logger.warning(f"Falha a descodificar anexo {d.get('id')}: {e}")
+
+    # --- Enviar email via SMTP ---
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_port = int(os.environ.get("SMTP_PORT", 587))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    smtp_from = os.environ.get("SMTP_FROM", "geral@hwi.pt")
+
+    if not (smtp_host and smtp_user and smtp_password):
+        raise HTTPException(500, "SMTP não configurado no servidor")
+
+    msg = MIMEMultipart()
+    msg["From"] = smtp_from
+    msg["To"] = fornecedor_email
+    if cc_list:
+        msg["Cc"] = ", ".join(cc_list)
+    msg["Subject"] = assunto
+    msg.attach(MIMEText(html, "html"))
+
+    for a in anexos:
+        try:
+            part = MIMEApplication(a["content"])
+            part.add_header("Content-Disposition", "attachment", filename=a["filename"])
+            msg.attach(part)
+        except Exception as e:
+            logger.warning(f"Falha a anexar {a.get('filename')}: {e}")
+
+    recipients = [fornecedor_email] + cc_list
+
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            start_tls=True,
+            recipients=recipients,
+        )
+    except Exception as e:
+        logger.error(f"Falha SMTP no envio de cotação PC {pc_id}: {e}")
+        raise HTTPException(500, "Erro ao enviar email. Verifique as configurações SMTP ou tente novamente.")
+
+    # --- Associar fornecedor aos materiais + atualizar estado cotação ---
+    agora = datetime.now(timezone.utc).isoformat()
+    update_mat = {
+        "fornecedor_id": fornecedor_id,
+        "fornecedor_nome": fornecedor_nome,
+        "fornecedor_email": fornecedor_email,
+        "cotacao_status": "em_cotacao",
+        "cotacao_pedida_em": agora,
+        "cotacao_pedida_por": current_user.get("username"),
+        "updated_at": agora,
+    }
+    mat_ids = [m["id"] for m in materiais]
+    await db.materiais_ot.update_many(
+        {"id": {"$in": mat_ids}, "pc_id": pc_id},
+        {"$set": update_mat},
+    )
+
+    # --- Atualizar estado geral da PC (se ainda em espera) ---
+    if pc.get("status") in (None, "", "Em Espera"):
+        await db.pedidos_cotacao.update_one(
+            {"id": pc_id},
+            {"$set": {"status": "Cotação Pedida", "updated_at": agora}},
+        )
+
+    # --- Registar evento no histórico ---
+    descricao_hist = (
+        f"Pedido de cotação enviado a '{fornecedor_nome}' <{fornecedor_email}> "
+        f"para {len(materiais)} material(is) ({envio_tipo})"
+    )
+    await record_pc_event(
+        db, pc_id, "email_sent",
+        descricao_hist,
+        current_user=current_user,
+        fornecedor_id=fornecedor_id,
+        metadata={
+            "envio_tipo": envio_tipo,
+            "tipo": envio_tipo,  # legacy alias
+            "fornecedor_nome": fornecedor_nome,
+            "fornecedor_email": fornecedor_email,
+            "materiais": [{"id": m["id"], "descricao": m.get("descricao")} for m in materiais],
+            "cc": cc_list,
+            "assunto": assunto,
+            "anexos": len(anexos),
+        },
+    )
+
+    return {
+        "ok": True,
+        "message": f"Pedido enviado a {fornecedor_email} ({len(materiais)} material(is))",
+        "materiais_atualizados": len(materiais),
+        "envio_tipo": envio_tipo,
+    }
