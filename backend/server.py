@@ -4688,6 +4688,8 @@ from routes.ai import router as ai_router
 from routes.public_authorizations import router as public_authorizations_router
 from routes.relatorios_simples import router as relatorios_simples_router
 from routes.onedrive import router as onedrive_router
+from routes.fornecedores import router as fornecedores_router
+from routes.pc_extended import router as pc_extended_router
 api_router.include_router(references_router)
 api_router.include_router(clientes_router)
 api_router.include_router(auth_router)
@@ -4710,6 +4712,8 @@ api_router.include_router(ai_router)
 api_router.include_router(public_authorizations_router)
 api_router.include_router(relatorios_simples_router)
 api_router.include_router(onedrive_router)
+api_router.include_router(fornecedores_router)
+api_router.include_router(pc_extended_router)
 
 # Expor db no app.state para os routers que precisam (ex: onedrive)
 app.state.db = db

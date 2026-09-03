@@ -863,3 +863,89 @@ class IndisponibilidadeUpdate(BaseModel):
     regressa_servico: Optional[bool] = None
     observacoes: Optional[str] = None
     aviso_minutos_antes: Optional[int] = None
+
+
+
+# ============================================================
+# Módulo PC — Fase 1: Fornecedores + histórico + documentos + observações
+# ============================================================
+
+class Fornecedor(BaseModel):
+    """Fornecedor da HWI para pedidos de cotação."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome: str
+    email: Optional[str] = None
+    contacto: Optional[str] = None  # telefone / pessoa de contacto
+    nif: Optional[str] = None
+    morada: Optional[str] = None
+    observacoes: Optional[str] = None
+    ativo: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    updated_by: Optional[str] = None
+
+
+class FornecedorUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    contacto: Optional[str] = None
+    nif: Optional[str] = None
+    morada: Optional[str] = None
+    observacoes: Optional[str] = None
+    ativo: Optional[bool] = None
+
+
+class PCHistoricoEvent(BaseModel):
+    """Entrada de histórico/timeline duma PC."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    pc_id: str
+    action: str  # "pc_created", "material_added", "fornecedor_assigned", "email_sent_individual", ...
+    description: str  # texto humano-legível em PT-PT
+    material_id: Optional[str] = None
+    fornecedor_id: Optional[str] = None
+    metadata: dict = Field(default_factory=dict)
+    user_id: Optional[str] = None
+    username: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class PCDocumento(BaseModel):
+    """Documento anexado a uma PC (contratos, esquemas, etc.)."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    pc_id: str
+    tipo: Optional[str] = None  # "esquema" | "manual" | "orcamento" | "outro"
+    filename: str
+    original_name: Optional[str] = None
+    content_type: Optional[str] = None
+    size: Optional[int] = None
+    descricao: Optional[str] = None
+    file_base64: Optional[str] = None  # bytes em base64 (fonte de verdade)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    uploaded_by: Optional[str] = None
+    uploaded_by_name: Optional[str] = None
+
+
+class PCObservacao(BaseModel):
+    """Bloco de observações editável da PC — histórico de versões."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    pc_id: str
+    texto: str
+    edited_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    edited_by: Optional[str] = None
+    edited_by_name: Optional[str] = None
+
+
+# Extensão dos campos de MaterialOT — SEM alterar a classe original (compatível).
+# Estes campos são gravados diretamente na coleção `materiais_ot` mas por serem
+# opcionais não quebram documentos antigos.
+# Documentação dos novos campos:
+#   fornecedor_id: str | None           — id do fornecedor associado (se veio da DB)
+#   fornecedor_nome: str | None         — snapshot do nome (mostrado nos cards)
+#   fornecedor_email: str | None        — snapshot do email (se veio da DB) ou email manual
+#   cotacao_status: str                 — "sem_pedido" | "em_cotacao" | "cotacao_recebida" | "cancelada"
+#   cotacao_enviada_at: datetime | None — timestamp do último envio de email
