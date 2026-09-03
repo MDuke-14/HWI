@@ -205,12 +205,34 @@ async def update_pedido_cotacao(
     
     update_data = {k: v for k, v in pc_data.items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-    
+
+    # Se o status mudou, registar no histórico (mas não permitir "Cancelado"
+    # por aqui — usar o endpoint dedicado /cancelar que exige motivo).
+    status_antigo = pc.get("status")
+    status_novo = update_data.get("status")
+    if status_novo and status_novo == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="Para cancelar uma PC use o endpoint dedicado /cancelar (motivo obrigatório)",
+        )
+
     await db.pedidos_cotacao.update_one(
         {"id": pc_id},
         {"$set": update_data}
     )
-    
+
+    if status_novo and status_novo != status_antigo:
+        try:
+            from services.pc_history import record_pc_event
+            await record_pc_event(
+                db, pc_id, "status_changed",
+                f"Estado alterado de '{status_antigo or '—'}' para '{status_novo}'",
+                current_user=current_user,
+                metadata={"from": status_antigo, "to": status_novo},
+            )
+        except Exception as e:
+            logging.warning(f"Falha a registar mudança de status da PC {pc_id}: {e}")
+
     return {"message": "PC atualizado"}
 
 @router.delete("/pedidos-cotacao/{pc_id}")

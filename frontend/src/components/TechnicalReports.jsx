@@ -3072,6 +3072,20 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Mudar estado da PC via badge clicável no header (Fase 8)
+  const handleChangePCStatus = async (novoStatus) => {
+    if (!selectedPC || novoStatus === selectedPC.status) return;
+    try {
+      await axios.put(`${API}/pedidos-cotacao/${selectedPC.id}`, { status: novoStatus });
+      toast.success(`Estado alterado para ${novoStatus === 'Cotação Pedida' ? 'Em Cotação' : novoStatus}`);
+      await fetchPCDetalhes(selectedPC.id);
+      if (selectedRelatorio?.id) fetchPedidosCotacao(selectedRelatorio.id);
+      fetchAllPCs();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro a alterar estado');
+    }
+  };
+
   const fetchAllPCs = async () => {
     setLoadingPCs(true);
     try {
@@ -7360,20 +7374,48 @@ const TechnicalReports = ({ user, onLogout }) => {
                   {selectedPC?.numero_pc}
                 </span>
                 {selectedPC?.status && (
-                  <span
-                    className={`text-[11px] font-bold px-2 py-1 rounded uppercase tracking-wide ${
-                      selectedPC.status === 'Cancelado'
-                        ? 'bg-red-500/15 text-red-300 border border-red-500/40'
-                        : selectedPC.status === 'Terminado'
-                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40'
-                        : selectedPC.status === 'Cotação Pedida' || selectedPC.status === 'Em Cotação'
-                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/40'
-                    }`}
-                    data-testid="pc-modal-status-badge"
-                  >
-                    {selectedPC.status === 'Cotação Pedida' ? 'Em Cotação' : selectedPC.status}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={`text-[11px] font-bold px-2 py-1 rounded uppercase tracking-wide flex items-center gap-1 hover:brightness-125 transition ${
+                          selectedPC.status === 'Cancelado'
+                            ? 'bg-red-500/15 text-red-300 border border-red-500/40'
+                            : selectedPC.status === 'Terminado'
+                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40'
+                            : selectedPC.status === 'Cotação Pedida' || selectedPC.status === 'Em Cotação'
+                            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40'
+                            : 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/40'
+                        }`}
+                        data-testid="pc-modal-status-badge"
+                        title="Clica para alterar o estado"
+                      >
+                        {selectedPC.status === 'Cotação Pedida' ? 'Em Cotação' : selectedPC.status}
+                        <ChevronDown className="w-3 h-3 opacity-70" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-gray-700 text-white">
+                      {['Em Espera', 'Cotação Pedida', 'A Caminho', 'Em Armazém', 'Terminado'].map((st) => (
+                        <DropdownMenuItem
+                          key={st}
+                          onClick={() => handleChangePCStatus(st)}
+                          disabled={st === selectedPC.status}
+                          className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300 disabled:opacity-40"
+                          data-testid={`pc-status-option-${st.replace(/\s+/g, '-').toLowerCase()}`}
+                        >
+                          {st === selectedPC.status && <CheckCircle className="w-3.5 h-3.5 mr-2 text-emerald-400" />}
+                          {st === 'Cotação Pedida' ? 'Em Cotação' : st}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuItem
+                        onClick={() => setShowCancelarPCModal(true)}
+                        disabled={selectedPC.status === 'Cancelado'}
+                        className="cursor-pointer text-red-300 focus:bg-red-500/10 focus:text-red-200 border-t border-gray-800 mt-1 pt-1"
+                        data-testid="pc-status-option-cancelado"
+                      >
+                        <X className="w-3.5 h-3.5 mr-2" /> Cancelar PC
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {selectedPC?.numero_ot && (
                   <span className="text-sm text-gray-400" data-testid="pc-modal-origem">
