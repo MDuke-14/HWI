@@ -469,6 +469,13 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Pedidos de Cotação
   const [pedidosCotacao, setPedidosCotacao] = useState([]);
   const [showPCModal, setShowPCModal] = useState(false);
+  const [pcActiveTab, setPcActiveTab] = useState('resumo');
+  const [pcDocumentos, setPcDocumentos] = useState([]);
+  const [pcHistorico, setPcHistorico] = useState([]);
+  const [pcObservacao, setPcObservacao] = useState(null);
+  const [pcObsEditing, setPcObsEditing] = useState(false);
+  const [pcObsDraft, setPcObsDraft] = useState('');
+  const [pcDocUploading, setPcDocUploading] = useState(false);
   const [selectedPC, setSelectedPC] = useState(null);
   const [pcFormData, setPCFormData] = useState({
     status: 'Em Espera',
@@ -2702,7 +2709,7 @@ const TechnicalReports = ({ user, onLogout }) => {
         observacoes: response.data.observacoes || ''
       });
       setFotografiasPC(response.data.fotografias || []);
-      
+
       // Buscar faturas do PC
       try {
         const faturasResponse = await axios.get(`${API}/pedidos-cotacao/${pcId}/faturas`);
@@ -2711,9 +2718,97 @@ const TechnicalReports = ({ user, onLogout }) => {
         console.error('Erro ao buscar faturas:', err);
         setFaturasPC([]);
       }
+
+      // Fase 3 — buscar documentos, histórico e observação em paralelo (fire-and-forget)
+      setPcActiveTab('resumo');
+      axios.get(`${API}/pedidos-cotacao/${pcId}/documentos`)
+        .then((r) => setPcDocumentos(r.data || []))
+        .catch(() => setPcDocumentos([]));
+      axios.get(`${API}/pedidos-cotacao/${pcId}/historico`)
+        .then((r) => setPcHistorico(r.data || []))
+        .catch(() => setPcHistorico([]));
+      axios.get(`${API}/pedidos-cotacao/${pcId}/observacoes`)
+        .then((r) => { setPcObservacao(r.data || null); setPcObsDraft(r.data?.texto || ''); })
+        .catch(() => { setPcObservacao(null); setPcObsDraft(''); });
     } catch (error) {
       console.error('Erro ao buscar detalhes do PC:', error);
       toast.error('Erro ao carregar detalhes do PC');
+    }
+  };
+
+  // Fase 3 — handlers
+  const handleSavePcObservacao = async () => {
+    if (!selectedPC) return;
+    try {
+      await axios.put(`${API}/pedidos-cotacao/${selectedPC.id}/observacoes`, { texto: pcObsDraft });
+      toast.success('Observações atualizadas');
+      setPcObsEditing(false);
+      const [obsRes, histRes] = await Promise.all([
+        axios.get(`${API}/pedidos-cotacao/${selectedPC.id}/observacoes`),
+        axios.get(`${API}/pedidos-cotacao/${selectedPC.id}/historico`),
+      ]);
+      setPcObservacao(obsRes.data || null);
+      setPcHistorico(histRes.data || []);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro a guardar observações');
+    }
+  };
+
+  const handleUploadPcDoc = async (file, tipo, descricao) => {
+    if (!selectedPC || !file) return;
+    setPcDocUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      if (tipo) fd.append('tipo', tipo);
+      if (descricao) fd.append('descricao', descricao);
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/documentos`, fd);
+      toast.success('Documento adicionado');
+      const [docsRes, histRes] = await Promise.all([
+        axios.get(`${API}/pedidos-cotacao/${selectedPC.id}/documentos`),
+        axios.get(`${API}/pedidos-cotacao/${selectedPC.id}/historico`),
+      ]);
+      setPcDocumentos(docsRes.data || []);
+      setPcHistorico(histRes.data || []);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro a fazer upload');
+    } finally {
+      setPcDocUploading(false);
+    }
+  };
+
+  const handleDeletePcDoc = async (docId, name) => {
+    if (!selectedPC) return;
+    if (!window.confirm(`Eliminar o documento "${name}"?`)) return;
+    try {
+      await axios.delete(`${API}/pedidos-cotacao/${selectedPC.id}/documentos/${docId}`);
+      toast.success('Documento eliminado');
+      const [docsRes, histRes] = await Promise.all([
+        axios.get(`${API}/pedidos-cotacao/${selectedPC.id}/documentos`),
+        axios.get(`${API}/pedidos-cotacao/${selectedPC.id}/historico`),
+      ]);
+      setPcDocumentos(docsRes.data || []);
+      setPcHistorico(histRes.data || []);
+    } catch (e) {
+      toast.error('Erro ao eliminar');
+    }
+  };
+
+  const handleDownloadPcDoc = async (doc) => {
+    if (!selectedPC) return;
+    try {
+      const resp = await axios.get(
+        `${API}/pedidos-cotacao/${selectedPC.id}/documentos/${doc.id}/download`,
+        { responseType: 'blob' },
+      );
+      const url = URL.createObjectURL(resp.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.original_name || doc.filename || 'documento';
+      document.body.appendChild(link); link.click(); link.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error('Erro ao descarregar');
     }
   };
 
@@ -7256,7 +7351,58 @@ const TechnicalReports = ({ user, onLogout }) => {
 
           {selectedPC && (
             <div className="space-y-4 mt-4">
+              {/* Fase 3 — Barra de abas + card Ações Rápidas */}
+              <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between border-b border-gray-800 pb-2">
+                <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+                  {[
+                    { key: 'resumo', label: 'Resumo' },
+                    { key: 'materiais', label: 'Materiais' },
+                    { key: 'fotografias', label: 'Fotografias' },
+                    { key: 'documentos', label: `Documentos (${pcDocumentos.length})` },
+                    { key: 'historico', label: `Histórico (${pcHistorico.length})` },
+                  ].map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => setPcActiveTab(t.key)}
+                      data-testid={`pc-tab-${t.key}`}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap ${
+                        pcActiveTab === t.key
+                          ? 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/40'
+                          : 'text-gray-400 hover:text-white hover:bg-white/[0.03] border border-transparent'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Card "Ações Rápidas" (só em Resumo) */}
+              {pcActiveTab === 'resumo' && (
+                <div className="bg-[#0f0f0f] p-3 rounded-lg border border-yellow-500/30" data-testid="pc-acoes-rapidas">
+                  <h4 className="text-yellow-400 font-semibold text-sm mb-2">Ações Rápidas</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-add-material">
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar Material
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowAddFotoPCModal(true)} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-add-foto">
+                      <Camera className="w-3.5 h-3.5 mr-1" /> Adicionar Fotografia
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setPcActiveTab('documentos'); document.getElementById('pc-doc-input')?.click(); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-add-doc">
+                      <FileText className="w-3.5 h-3.5 mr-1" /> Adicionar Documento
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setPcObsEditing(true); setPcActiveTab('resumo'); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-obs">
+                      <Edit className="w-3.5 h-3.5 mr-1" /> Editar Observação
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setPCFormData({ ...pcFormData, status: 'Cancelado' }); }} className="border-red-600/60 text-red-300 hover:bg-red-500/10" data-testid="pc-quick-cancel">
+                      <X className="w-3.5 h-3.5 mr-1" /> Cancelar PC
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Informações da FS */}
+              {pcActiveTab === 'resumo' && (
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-blue-700">
                 <h4 className="text-blue-400 font-semibold mb-3">Informações da Folha de Serviço</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -7270,9 +7416,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Dados da Máquina */}
-              {(selectedPC.equipamento_tipologia || selectedPC.equipamento_marca || selectedPC.equipamento_modelo) && (
+              {pcActiveTab === 'resumo' && (selectedPC.equipamento_tipologia || selectedPC.equipamento_marca || selectedPC.equipamento_modelo) && (
                 <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                   <h4 className="text-yellow-400 font-semibold mb-3">Dados da Máquina</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -7303,6 +7450,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               )}
 
               {/* Status */}
+              {pcActiveTab === 'resumo' && (
               <div>
                 <Label className="text-gray-300">Status do PC</Label>
                 <select
@@ -7317,10 +7465,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <option value="Terminado">Terminado</option>
                 </select>
               </div>
+              )}
 
               {/* Materiais */}
+              {(pcActiveTab === 'materiais' || pcActiveTab === 'resumo') && (
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                <h4 className="text-blue-400 font-semibold mb-3">Material para Cotação</h4>
+                <h4 className="text-blue-400 font-semibold mb-3 flex items-center justify-between">
+                  <span>Material para Cotação</span>
+                  {pcActiveTab === 'materiais' && (
+                    <Button size="sm" variant="ghost" onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }} className="text-blue-400 h-7 text-xs">
+                      <Plus className="w-3 h-3 mr-1" /> Adicionar
+                    </Button>
+                  )}
+                </h4>
                 {selectedPC.materiais?.length > 0 ? (
                   <div className="space-y-2">
                     {selectedPC.materiais.map((mat) => (
@@ -7350,8 +7507,10 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <p className="text-gray-400 text-sm">Nenhum material associado</p>
                 )}
               </div>
+              )}
 
               {/* Fotografias */}
+              {(pcActiveTab === 'fotografias' || pcActiveTab === 'resumo') && (
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-blue-400 font-semibold">Fotografias</h4>
@@ -7391,19 +7550,119 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <p className="text-gray-400 text-sm text-center py-4">Nenhuma fotografia</p>
                 )}
               </div>
+              )}
 
-              {/* Observações */}
-              <div>
-                <Label className="text-gray-300">Observações</Label>
-                <textarea
-                  value={pcFormData.observacoes}
-                  onChange={(e) => setPCFormData({ ...pcFormData, observacoes: e.target.value })}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1 min-h-[100px]"
-                  placeholder="Adicione observações sobre este pedido de cotação..."
-                />
+              {/* Observações Card (Fase 3 — versionadas) */}
+              {pcActiveTab === 'resumo' && (
+              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700" data-testid="pc-observacoes-card">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-blue-400 font-semibold">Observações</h4>
+                  {!pcObsEditing ? (
+                    <Button size="sm" variant="ghost" onClick={() => { setPcObsDraft(pcObservacao?.texto || ''); setPcObsEditing(true); }} className="text-blue-300 h-7 text-xs">
+                      <Edit className="w-3 h-3 mr-1" /> Editar
+                    </Button>
+                  ) : (
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => setPcObsEditing(false)} className="text-gray-400 h-7 text-xs">Cancelar</Button>
+                      <Button size="sm" onClick={handleSavePcObservacao} className="bg-blue-600 hover:bg-blue-700 h-7 text-xs">Guardar</Button>
+                    </div>
+                  )}
+                </div>
+                {pcObsEditing ? (
+                  <textarea
+                    value={pcObsDraft}
+                    onChange={(e) => setPcObsDraft(e.target.value)}
+                    className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2 min-h-[100px] text-sm"
+                    placeholder="Escreve aqui as observações da PC…"
+                    data-testid="pc-observacoes-textarea"
+                  />
+                ) : (
+                  pcObservacao?.texto
+                    ? <p className="text-gray-200 text-sm whitespace-pre-wrap">{pcObservacao.texto}</p>
+                    : <p className="text-gray-500 text-sm italic">Sem observações. Clica em "Editar" para adicionar.</p>
+                )}
+                {pcObservacao?.edited_by_name && !pcObsEditing && (
+                  <p className="text-[10px] text-gray-500 mt-2">
+                    Última edição por {pcObservacao.edited_by_name} · {new Date(pcObservacao.edited_at).toLocaleString('pt-PT')}
+                  </p>
+                )}
               </div>
+              )}
+
+              {/* Aba Documentos — Fase 3 */}
+              {pcActiveTab === 'documentos' && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700" data-testid="pc-documentos-tab">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-blue-400 font-semibold">Documentos Associados</h4>
+                    <label className="cursor-pointer">
+                      <input
+                        id="pc-doc-input"
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp,.txt,.csv,.zip"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (f) await handleUploadPcDoc(f, null, null);
+                          e.target.value = '';
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-md text-white text-xs font-medium">
+                        {pcDocUploading ? 'A enviar…' : <><Plus className="w-3 h-3" /> Adicionar Documento</>}
+                      </span>
+                    </label>
+                  </div>
+                  {pcDocumentos.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8 text-sm">Sem documentos anexados. Formatos aceites: PDF, DOCX, XLSX, imagens, TXT, CSV, ZIP (até 20 MB).</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {pcDocumentos.map((doc) => (
+                        <div key={doc.id} className="flex items-center gap-3 p-2 bg-gray-800/50 rounded border border-gray-700" data-testid={`pc-doc-${doc.id}`}>
+                          <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm truncate">{doc.original_name || doc.filename}</p>
+                            <p className="text-[11px] text-gray-500">
+                              {(doc.size ? (doc.size/1024).toFixed(0)+' KB · ' : '')}
+                              {doc.uploaded_by_name || '—'} · {new Date(doc.uploaded_at).toLocaleString('pt-PT')}
+                            </p>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => handleDownloadPcDoc(doc)} className="text-blue-300 h-7 text-xs">
+                            <Download className="w-3 h-3 mr-1" /> Descarregar
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeletePcDoc(doc.id, doc.original_name)} className="text-red-300 h-7 text-xs">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Aba Histórico — Fase 3 */}
+              {pcActiveTab === 'historico' && (
+                <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700" data-testid="pc-historico-tab">
+                  <h4 className="text-blue-400 font-semibold mb-3">Histórico de Ações</h4>
+                  {pcHistorico.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8 text-sm">Sem eventos registados nesta PC.</p>
+                  ) : (
+                    <div className="relative pl-6 space-y-4">
+                      <div className="absolute left-2 top-1 bottom-1 w-px bg-gray-700" />
+                      {pcHistorico.map((ev) => (
+                        <div key={ev.id} className="relative" data-testid={`pc-hist-${ev.id}`}>
+                          <span className="absolute -left-5 top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-[#0f0f0f]" />
+                          <p className="text-sm text-white">{ev.description}</p>
+                          <p className="text-[11px] text-gray-500">
+                            {new Date(ev.created_at).toLocaleString('pt-PT')} · {ev.username || 'sistema'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Faturas */}
+              {pcActiveTab === 'documentos' && (
               <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-amber-400 font-semibold flex items-center gap-2">
@@ -7495,6 +7754,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   <p className="text-gray-400 text-sm text-center py-4">Nenhuma fatura carregada</p>
                 )}
               </div>
+              )}
 
               {/* Botões */}
               <div className="flex gap-3 pt-4">
