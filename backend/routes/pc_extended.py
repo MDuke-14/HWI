@@ -23,6 +23,7 @@ import aiosmtplib
 from database import db
 from auth_utils import get_current_user
 from services.pc_history import record_pc_event
+from routes.email_templates import get_template, render as render_template
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["PC extras"])
@@ -575,7 +576,8 @@ async def enviar_pedido_cotacao(
     cliente = ot.get("cliente_nome", "")
 
     # --- Assunto / Mensagem ---
-    assunto = (payload.assunto or "").strip() or f"Pedido de Cotação - PC {pc.get('numero_pc', pc_id[:8])}"
+    # Fase 7B: usar template `pc_cotacao_request` (admin pode editar via UI).
+    tpl = await get_template("pc_cotacao_request")
 
     linhas_materiais = []
     for m in materiais:
@@ -591,14 +593,38 @@ async def enviar_pedido_cotacao(
             extras.append(f"Pos: {pos}")
         suffix = f" ({'; '.join(extras)})" if extras else ""
         linhas_materiais.append(f"- {qtd} {un} · {desc}{suffix}")
+    lista_materiais_str = "\n".join(linhas_materiais)
 
-    corpo = (payload.mensagem or "").strip() or (
-        "Bom dia,\n\n"
-        "Solicito cotação para os seguintes materiais:\n\n"
-        + "\n".join(linhas_materiais)
-        + "\n\nAgradeço o vosso melhor preço e prazo de entrega.\n\n"
-        "Com os melhores cumprimentos,\nHWI Unipessoal, Lda"
-    )
+    # Assunto: user override > template > fallback
+    if (payload.assunto or "").strip():
+        assunto = payload.assunto.strip()
+    elif tpl and tpl.get("assunto"):
+        assunto, _ = render_template(tpl, {
+            "numero_pc": pc.get("numero_pc", pc_id[:8]),
+            "numero_fs": ot.get("numero_assistencia", "N/A"),
+            "cliente_nome": ot.get("cliente_nome", ""),
+        })
+    else:
+        assunto = f"Pedido de Cotação - PC {pc.get('numero_pc', pc_id[:8])}"
+
+    # Corpo: user override > template > fallback
+    if (payload.mensagem or "").strip():
+        corpo = payload.mensagem.strip()
+    elif tpl and tpl.get("corpo_html"):
+        _, corpo = render_template(tpl, {
+            "numero_pc": pc.get("numero_pc", pc_id[:8]),
+            "numero_fs": ot.get("numero_assistencia", "N/A"),
+            "cliente_nome": ot.get("cliente_nome", ""),
+            "lista_materiais": lista_materiais_str,
+        })
+    else:
+        corpo = (
+            "Bom dia,\n\n"
+            "Solicito cotação para os seguintes materiais:\n\n"
+            + lista_materiais_str
+            + "\n\nAgradeço o vosso melhor preço e prazo de entrega.\n\n"
+            "Com os melhores cumprimentos,\nHWI Unipessoal, Lda"
+        )
     html = _build_email_html(pc, ot_num, cliente, corpo)
 
     # --- Anexos: documentos do PC ---
@@ -654,45 +680,18 @@ async def enviar_pedido_cotacao(
         raise HTTPException(500, "Erro ao enviar email. Verifique as configurações SMTP ou tente novamente.")
 
     # --- Atualizar materiais ---
+    # Fase 7A: fornecedor já NÃO é associado ao material. O material só tem
+    # descrição/qtd. Marcamos apenas o `cotacao_status` para reflectir que há
+    # um pedido em curso — o registo completo de quem recebeu o quê está no
+    # histórico da PC (eventos email_sent).
     mat_ids = [m["id"] for m in materiais]
-
-    if is_single:
-        # Fase 4: sobrescreve fornecedor único do material
-        d = enviados[0]
-        await db.materiais_ot.update_many(
-            {"id": {"$in": mat_ids}, "pc_id": pc_id},
-            {"$set": {
-                "fornecedor_id": d["fornecedor_id"],
-                "fornecedor_nome": d["nome"],
-                "fornecedor_email": d["email"],
-                "cotacao_status": "em_cotacao",
-                "cotacao_pedida_em": agora,
-                "cotacao_pedida_por": current_user.get("username"),
-                "updated_at": agora,
-            }},
-        )
-    else:
-        # Fase 5: apenas acrescenta em `cotacoes_solicitadas[]` (não sobrescreve fornecedor)
-        entries = [
-            {
-                "fornecedor_id": d["fornecedor_id"],
-                "fornecedor_nome": d["nome"],
-                "fornecedor_email": d["email"],
-                "requested_at": agora,
-                "requested_by": current_user.get("username"),
-            }
-            for d in enviados
-        ]
-        await db.materiais_ot.update_many(
-            {"id": {"$in": mat_ids}, "pc_id": pc_id},
-            {
-                "$push": {"cotacoes_solicitadas": {"$each": entries}},
-                "$set": {
-                    "cotacao_status": "em_cotacao",
-                    "updated_at": agora,
-                },
-            },
-        )
+    await db.materiais_ot.update_many(
+        {"id": {"$in": mat_ids}, "pc_id": pc_id},
+        {"$set": {
+            "cotacao_status": "em_cotacao",
+            "updated_at": agora,
+        }},
+    )
 
     # --- Atualizar estado geral da PC (se ainda em espera) ---
     if pc.get("status") in (None, "", "Em Espera"):

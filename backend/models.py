@@ -880,6 +880,7 @@ class Fornecedor(BaseModel):
     nif: Optional[str] = None
     morada: Optional[str] = None
     observacoes: Optional[str] = None
+    observacoes_materiais: Optional[str] = None  # Fase 7A: material que fornece
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: Optional[str] = None
@@ -894,6 +895,7 @@ class FornecedorUpdate(BaseModel):
     nif: Optional[str] = None
     morada: Optional[str] = None
     observacoes: Optional[str] = None
+    observacoes_materiais: Optional[str] = None  # Fase 7A
     ativo: Optional[bool] = None
 
 

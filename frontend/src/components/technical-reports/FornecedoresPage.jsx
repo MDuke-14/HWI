@@ -24,7 +24,7 @@ export default function FornecedoresPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null); // fornecedor a editar (ou null p/ criar)
   const [form, setForm] = useState({
-    nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '',
+    nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '', observacoes_materiais: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +45,7 @@ export default function FornecedoresPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '' });
+    setForm({ nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '', observacoes_materiais: '' });
     setShowModal(true);
   };
   const openEdit = (f) => {
@@ -53,6 +53,7 @@ export default function FornecedoresPage() {
     setForm({
       nome: f.nome || '', email: f.email || '', contacto: f.contacto || '',
       nif: f.nif || '', morada: f.morada || '', observacoes: f.observacoes || '',
+      observacoes_materiais: f.observacoes_materiais || '',
     });
     setShowModal(true);
   };
@@ -152,6 +153,11 @@ export default function FornecedoresPage() {
                 </div>
               )}
               {f.morada && <p className="text-xs text-gray-500 truncate">{f.morada}</p>}
+              {f.observacoes_materiais && (
+                <div className="text-xs text-emerald-300/80 border-l-2 border-emerald-500/40 pl-2 py-0.5 mt-1" data-testid={`fornecedor-obs-materiais-${f.id}`}>
+                  <span className="text-emerald-400 font-medium">Fornece:</span> {f.observacoes_materiais}
+                </div>
+              )}
               <div className="flex gap-2 mt-1 pt-2 border-t border-gray-800">
                 <Button size="sm" variant="ghost" onClick={() => openEdit(f)} className="text-blue-300 h-7 px-2 text-xs">
                   <Edit2 className="w-3 h-3 mr-1" /> Editar
@@ -219,6 +225,16 @@ export default function FornecedoresPage() {
                 value={form.morada}
                 onChange={(e) => setForm((p) => ({ ...p, morada: e.target.value }))}
                 className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300 text-xs">Materiais que fornece</Label>
+              <textarea
+                value={form.observacoes_materiais}
+                onChange={(e) => setForm((p) => ({ ...p, observacoes_materiais: e.target.value }))}
+                placeholder="Ex.: rolamentos SKF, motores trifásicos, correias industriais…"
+                className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 mt-1 text-sm min-h-[70px]"
+                data-testid="fornecedor-obs-materiais-input"
               />
             </div>
             <div>

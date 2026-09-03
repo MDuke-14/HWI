@@ -56,7 +56,9 @@ import {
   Link2,
   ArrowRightCircle,
   ArrowUpDown,
-  Sparkles
+  Sparkles,
+  MoreVertical,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7342,7 +7344,7 @@ const TechnicalReports = ({ user, onLogout }) => {
       />
 
     <>
-      {/* PC Modal */}
+      {/* PC Modal — Fase 6 layout */}
       <Dialog open={showPCModal} onOpenChange={(open) => {
         setShowPCModal(open);
         if (!open) {
@@ -7350,176 +7352,390 @@ const TechnicalReports = ({ user, onLogout }) => {
           setFotografiasPC([]);
         }
       }}>
-        <DialogContent className="bg-[#1a1a1a] border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between text-white">
-              <span className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-yellow-400" />
-                {selectedPC?.numero_pc} - Pedido de Cotação
-              </span>
+        <DialogContent className="bg-[#0f0f0f] border-gray-800 text-white max-w-6xl max-h-[92vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-3 border-b border-gray-800">
+            <DialogTitle className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-white">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl font-semibold" data-testid="pc-modal-title-numero">
+                  {selectedPC?.numero_pc}
+                </span>
+                {selectedPC?.status && (
+                  <span
+                    className={`text-[11px] font-bold px-2 py-1 rounded uppercase tracking-wide ${
+                      selectedPC.status === 'Cancelado'
+                        ? 'bg-red-500/15 text-red-300 border border-red-500/40'
+                        : selectedPC.status === 'Terminado'
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40'
+                        : selectedPC.status === 'Cotação Pedida' || selectedPC.status === 'Em Cotação'
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/40'
+                    }`}
+                    data-testid="pc-modal-status-badge"
+                  >
+                    {selectedPC.status === 'Cotação Pedida' ? 'Em Cotação' : selectedPC.status}
+                  </span>
+                )}
+                {selectedPC?.numero_ot && (
+                  <span className="text-sm text-gray-400" data-testid="pc-modal-origem">
+                    Origem: FS_{selectedPC.numero_ot}
+                  </span>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Button
                   onClick={() => triggerPCDownload(selectedPC?.id)}
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
+                  variant="outline"
+                  className="border-gray-700 text-white hover:bg-white/[0.03]"
+                  data-testid="pc-modal-btn-pdf"
                 >
-                  <Download className="w-4 h-4 mr-1" />
-                  Download PDF
+                  <Download className="w-4 h-4 mr-1" /> PDF
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-700 text-white hover:bg-white/[0.03]"
+                      data-testid="pc-modal-btn-mais-acoes"
+                    >
+                      Mais ações <ChevronDown className="w-4 h-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-gray-700 text-white">
+                    <DropdownMenuItem
+                      onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }}
+                      className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300"
+                      data-testid="pc-menu-add-material"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Adicionar material
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setShowAddFotoPCModal(true)}
+                      className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300"
+                      data-testid="pc-menu-add-foto"
+                    >
+                      <Camera className="w-4 h-4 mr-2" /> Adicionar fotografia
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => { setPcActiveTab('documentos'); setTimeout(() => document.getElementById('pc-doc-input')?.click(), 50); }}
+                      className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300"
+                      data-testid="pc-menu-add-doc"
+                    >
+                      <FileText className="w-4 h-4 mr-2" /> Adicionar documento
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setShowEmailPCModal(true)}
+                      className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300"
+                      data-testid="pc-menu-email-pc-pdf"
+                    >
+                      <Mail className="w-4 h-4 mr-2" /> Enviar PDF por email
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setShowCancelarPCModal(true)}
+                      disabled={selectedPC?.status === 'Cancelado'}
+                      className="cursor-pointer text-red-300 focus:bg-red-500/10 focus:text-red-200"
+                      data-testid="pc-menu-cancelar"
+                    >
+                      <X className="w-4 h-4 mr-2" /> {selectedPC?.status === 'Cancelado' ? 'PC Cancelada' : 'Cancelar PC'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
-                  onClick={() => setShowEmailPCModal(true)}
+                  onClick={() => { setEnviarCotacaoMatIds([]); setShowEnviarCotacaoModal(true); }}
+                  disabled={!(selectedPC?.materiais?.length > 0)}
                   size="sm"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  data-testid="pc-modal-btn-enviar-global"
                 >
-                  <Send className="w-4 h-4 mr-1" />
-                  Enviar Email
+                  <Send className="w-4 h-4 mr-1" /> Enviar Email Global
                 </Button>
               </div>
             </DialogTitle>
-            <DialogDescription className="sr-only">Detalhes do diálogo.</DialogDescription>
+            <DialogDescription className="sr-only">Detalhes do Pedido de Cotação.</DialogDescription>
           </DialogHeader>
 
           {selectedPC && (
-            <div className="space-y-4 mt-4">
-              {/* Fase 3 — Barra de abas + card Ações Rápidas */}
-              <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between border-b border-gray-800 pb-2">
-                <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            <div className="px-6 pt-4 pb-6">
+              {/* Barra de abas — Fase 6 layout com contagens */}
+              <div className="border-b-2 border-yellow-500/40 mb-5">
+                <div className="flex gap-6 overflow-x-auto scrollbar-hide">
                   {[
-                    { key: 'resumo', label: 'Resumo' },
-                    { key: 'materiais', label: 'Materiais' },
-                    { key: 'fotografias', label: 'Fotografias' },
-                    { key: 'documentos', label: `Documentos (${pcDocumentos.length})` },
-                    { key: 'historico', label: `Histórico (${pcHistorico.length})` },
+                    { key: 'resumo', label: 'Resumo', count: null },
+                    { key: 'materiais', label: 'Materiais', count: selectedPC.materiais?.length || 0 },
+                    { key: 'fotografias', label: 'Fotografias', count: fotografiasPC?.length || 0 },
+                    { key: 'documentos', label: 'Documentos', count: pcDocumentos.length },
+                    { key: 'historico', label: 'Histórico', count: pcHistorico.length },
                   ].map((t) => (
                     <button
                       key={t.key}
                       onClick={() => setPcActiveTab(t.key)}
                       data-testid={`pc-tab-${t.key}`}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap ${
+                      className={`pb-2 -mb-[2px] text-sm font-medium transition whitespace-nowrap flex items-center gap-2 border-b-2 ${
                         pcActiveTab === t.key
-                          ? 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/40'
-                          : 'text-gray-400 hover:text-white hover:bg-white/[0.03] border border-transparent'
+                          ? 'text-yellow-300 border-yellow-400'
+                          : 'text-gray-400 hover:text-white border-transparent'
                       }`}
                     >
                       {t.label}
+                      {t.count !== null && t.count > 0 && (
+                        <span className="text-[11px] bg-gray-700/60 text-gray-300 rounded-full px-2 py-0.5">
+                          {t.count}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Card "Ações Rápidas" (só em Resumo) */}
+              {/* =================================================================
+                  ABA RESUMO — Layout Fase 6 (2 colunas)
+                  ================================================================= */}
               {pcActiveTab === 'resumo' && (
-                <div className="bg-[#0f0f0f] p-3 rounded-lg border border-yellow-500/30" data-testid="pc-acoes-rapidas">
-                  <h4 className="text-yellow-400 font-semibold text-sm mb-2">Ações Rápidas</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-add-material">
-                      <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar Material
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setShowAddFotoPCModal(true)} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-add-foto">
-                      <Camera className="w-3.5 h-3.5 mr-1" /> Adicionar Fotografia
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setPcActiveTab('documentos'); document.getElementById('pc-doc-input')?.click(); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-add-doc">
-                      <FileText className="w-3.5 h-3.5 mr-1" /> Adicionar Documento
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setPcObsEditing(true); setPcActiveTab('resumo'); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-obs">
-                      <Edit className="w-3.5 h-3.5 mr-1" /> Editar Observação
-                    </Button>
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr] gap-5">
+                  {/* Coluna esquerda: Informações principais */}
+                  <div className="bg-[#161616] border border-gray-800 rounded-lg p-4 h-fit" data-testid="pc-resumo-info-principais">
+                    <h4 className="text-white font-semibold mb-4">Informações principais</h4>
+                    <dl className="space-y-2.5 text-sm">
+                      {[
+                        ['Cliente', selectedPC.cliente_nome],
+                        ['Contacto', selectedPC.cliente_email],
+                        ['Telefone', selectedPC.cliente_telefone],
+                        ['Equipamento', selectedPC.equipamento_tipologia],
+                        ['Marca / Modelo', [selectedPC.equipamento_marca, selectedPC.equipamento_modelo].filter(Boolean).join(' / ')],
+                        ['Nº Série', selectedPC.equipamento_numero_serie],
+                        ['Ano', selectedPC.equipamento_ano_fabrico],
+                        ['Nº FS', selectedPC.numero_ot ? `FS_${selectedPC.numero_ot}` : null],
+                        ['Data de FS', selectedPC.data_fs ? new Date(selectedPC.data_fs).toLocaleDateString('pt-PT') : null],
+                        ['Criada em', selectedPC.created_at ? new Date(selectedPC.created_at).toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : null],
+                        ['Responsável', selectedPC.criado_por_nome],
+                      ].filter(([, v]) => v).map(([label, value]) => (
+                        <div key={label} className="grid grid-cols-[110px_1fr] gap-2">
+                          <dt className="text-gray-500 text-xs pt-0.5">{label}</dt>
+                          <dd className="text-white text-sm break-words">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
                     <Button
-                      size="sm"
                       variant="outline"
-                      onClick={() => setShowCancelarPCModal(true)}
-                      disabled={selectedPC?.status === 'Cancelado'}
-                      className="border-red-600/60 text-red-300 hover:bg-red-500/10 disabled:opacity-50"
-                      data-testid="pc-quick-cancel"
+                      size="sm"
+                      onClick={() => setPcActiveTab('materiais')}
+                      className="w-full mt-4 border-gray-700 text-gray-300 hover:bg-white/[0.03]"
+                      data-testid="pc-resumo-editar-informacoes"
                     >
-                      <X className="w-3.5 h-3.5 mr-1" /> {selectedPC?.status === 'Cancelado' ? 'PC Cancelada' : 'Cancelar PC'}
+                      <Edit className="w-3.5 h-3.5 mr-1" /> Editar informações
                     </Button>
                   </div>
-                </div>
-              )}
 
-              {/* Informações da FS */}
-              {pcActiveTab === 'resumo' && (
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-blue-700">
-                <h4 className="text-blue-400 font-semibold mb-3">Informações da Folha de Serviço</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-400">Número FS:</span>
-                    <span className="text-white ml-2 font-medium">#{selectedPC.numero_ot || selectedPC.ot_numero || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Cliente:</span>
-                    <span className="text-white ml-2">{selectedPC.cliente_nome || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-              )}
-
-              {/* Dados da Máquina */}
-              {pcActiveTab === 'resumo' && (selectedPC.equipamento_tipologia || selectedPC.equipamento_marca || selectedPC.equipamento_modelo) && (
-                <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
-                  <h4 className="text-yellow-400 font-semibold mb-3">Dados da Máquina</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-400">Tipologia:</span>
-                      <span className="text-white ml-2">{selectedPC.equipamento_tipologia || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Marca:</span>
-                      <span className="text-white ml-2">{selectedPC.equipamento_marca || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Modelo:</span>
-                      <span className="text-white ml-2">{selectedPC.equipamento_modelo || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Nº Série:</span>
-                      <span className="text-white ml-2">{selectedPC.equipamento_numero_serie || 'N/A'}</span>
-                    </div>
-                    {selectedPC.equipamento_ano_fabrico && (
-                      <div>
-                        <span className="text-gray-400">Ano:</span>
-                        <span className="text-white ml-2">{selectedPC.equipamento_ano_fabrico}</span>
+                  {/* Coluna direita: Materiais + 3 sub-cards */}
+                  <div className="space-y-5 min-w-0">
+                    {/* Materiais do Pedido de Cotação (tabela) */}
+                    <div className="bg-[#161616] border border-gray-800 rounded-lg p-4" data-testid="pc-resumo-materiais-table">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-white font-semibold">Materiais do Pedido de Cotação</h4>
+                        <Button
+                          size="sm"
+                          onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white h-8"
+                          data-testid="pc-resumo-add-material"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar Material
+                        </Button>
                       </div>
-                    )}
+                      {selectedPC.materiais?.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-gray-400 text-[11px] uppercase tracking-wide border-b border-gray-800">
+                                <th className="text-left py-2 pl-2 font-medium">#</th>
+                                <th className="text-left py-2 font-medium">Material</th>
+                                <th className="text-center py-2 font-medium">Qtd.</th>
+                                <th className="text-left py-2 font-medium">Posição</th>
+                                <th className="text-left py-2 font-medium">Código</th>
+                                <th className="text-left py-2 font-medium">Estado</th>
+                                <th className="text-center py-2 pr-2 font-medium">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedPC.materiais.map((mat, idx) => {
+                                const estado = mat.cotacao_status === 'em_cotacao'
+                                  ? { label: 'EM COTAÇÃO', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' }
+                                  : mat.cotacao_status === 'cotacao_recebida'
+                                  ? { label: 'RECEBIDA', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/40' }
+                                  : mat.cotacao_status === 'cancelada'
+                                  ? { label: 'CANCELADA', cls: 'bg-red-500/15 text-red-300 border-red-500/40' }
+                                  : { label: 'SEM PEDIDO', cls: 'bg-gray-600/20 text-gray-400 border-gray-600/40' };
+                                return (
+                                  <tr key={mat.id} className="border-b border-gray-800/70" data-testid={`pc-resumo-mat-row-${mat.id}`}>
+                                    <td className="py-2 pl-2 text-gray-500">{idx + 1}</td>
+                                    <td className="py-2 text-white">{mat.descricao}</td>
+                                    <td className="py-2 text-center text-white">{mat.quantidade}{mat.unidade ? ` ${mat.unidade}` : ''}</td>
+                                    <td className="py-2 text-gray-300">{mat.posicao || '—'}</td>
+                                    <td className="py-2 text-gray-300">{mat.codigo || '—'}</td>
+                                    <td className="py-2">
+                                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${estado.cls}`}>
+                                        {estado.label}
+                                      </span>
+                                    </td>
+                                    <td className="py-2 pr-2">
+                                      <div className="flex justify-center gap-1">
+                                        <button
+                                          onClick={() => { setEnviarCotacaoMatIds([mat.id]); setShowEnviarCotacaoModal(true); }}
+                                          className="p-1.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400"
+                                          title="Enviar pedido de cotação"
+                                          data-testid={`pc-resumo-mat-enviar-${mat.id}`}
+                                        >
+                                          <Send className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => openEditMaterialPCModal(mat)}
+                                          className="p-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
+                                          title="Editar"
+                                          data-testid={`pc-resumo-mat-editar-${mat.id}`}
+                                        >
+                                          <Edit className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm text-center py-4 italic">Nenhum material associado.</p>
+                      )}
+                    </div>
+
+                    {/* Sub-cards: Observações + Fotografias + Documentos */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Observações */}
+                      <div className="bg-[#161616] border border-gray-800 rounded-lg p-4" data-testid="pc-resumo-observacoes-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-white font-semibold text-sm">Observações</h5>
+                        </div>
+                        {pcObsEditing ? (
+                          <>
+                            <textarea
+                              value={pcObsDraft}
+                              onChange={(e) => setPcObsDraft(e.target.value)}
+                              className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded p-2 min-h-[80px] text-xs"
+                              placeholder="Escreve aqui as observações…"
+                              data-testid="pc-observacoes-textarea"
+                            />
+                            <div className="flex gap-1 mt-2">
+                              <Button size="sm" variant="ghost" onClick={() => setPcObsEditing(false)} className="text-gray-400 h-7 text-xs flex-1">Cancelar</Button>
+                              <Button size="sm" onClick={handleSavePcObservacao} className="bg-blue-600 hover:bg-blue-700 h-7 text-xs flex-1">Guardar</Button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {pcObservacao?.texto
+                              ? <p className="text-gray-300 text-xs whitespace-pre-wrap min-h-[60px] max-h-[100px] overflow-y-auto">{pcObservacao.texto}</p>
+                              : <p className="text-gray-500 text-xs italic min-h-[60px]">Sem observações.</p>
+                            }
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => { setPcObsDraft(pcObservacao?.texto || ''); setPcObsEditing(true); }}
+                              className="w-full mt-3 border-gray-700 text-gray-300 hover:bg-white/[0.03] h-7 text-xs"
+                              data-testid="pc-quick-obs"
+                            >
+                              <Edit className="w-3 h-3 mr-1" /> Editar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Fotografias */}
+                      <div className="bg-[#161616] border border-gray-800 rounded-lg p-4" data-testid="pc-resumo-fotos-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-white font-semibold text-sm">Fotografias ({fotografiasPC.length})</h5>
+                        </div>
+                        {fotografiasPC.length > 0 ? (
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {fotografiasPC.slice(0, 3).map((f) => (
+                              <img
+                                key={f.id}
+                                src={`${API}${f.foto_url}?thumb=true`}
+                                alt={f.descricao || ''}
+                                className="w-full h-16 object-cover rounded border border-gray-800"
+                                loading="lazy"
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-xs italic min-h-[64px]">Sem fotografias.</p>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPcActiveTab('fotografias')}
+                          className="w-full mt-3 border-gray-700 text-gray-300 hover:bg-white/[0.03] h-7 text-xs"
+                          data-testid="pc-resumo-fotos-ver-todas"
+                        >
+                          Ver todas
+                        </Button>
+                      </div>
+
+                      {/* Documentos */}
+                      <div className="bg-[#161616] border border-gray-800 rounded-lg p-4" data-testid="pc-resumo-docs-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-white font-semibold text-sm">Documentos ({pcDocumentos.length})</h5>
+                        </div>
+                        {pcDocumentos.length > 0 ? (
+                          <div className="space-y-1.5 max-h-[100px] overflow-y-auto">
+                            {pcDocumentos.slice(0, 3).map((d) => (
+                              <div key={d.id} className="flex items-center gap-1.5 text-xs">
+                                <FileText className="w-3 h-3 text-red-400 shrink-0" />
+                                <span className="text-white truncate flex-1" title={d.original_name || d.filename}>
+                                  {d.original_name || d.filename}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-xs italic min-h-[60px]">Sem documentos.</p>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPcActiveTab('documentos')}
+                          className="w-full mt-3 border-gray-700 text-gray-300 hover:bg-white/[0.03] h-7 text-xs"
+                          data-testid="pc-resumo-docs-ver-todas"
+                        >
+                          Ver todas
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Status */}
-              {pcActiveTab === 'resumo' && (
-              <div>
-                <Label className="text-gray-300">Status do PC</Label>
-                <select
-                  value={pcFormData.status}
-                  onChange={(e) => setPCFormData({ ...pcFormData, status: e.target.value })}
-                  className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md p-2 mt-1"
-                >
-                  <option value="Em Espera">Em Espera</option>
-                  <option value="Cotação Pedida">Cotação Pedida</option>
-                  <option value="A Caminho">A Caminho</option>
-                  <option value="Em Armazém">Em Armazém</option>
-                  <option value="Terminado">Terminado</option>
-                </select>
-              </div>
-              )}
+              {/* Card "Ações Rápidas" (só em Resumo) — REMOVIDO Fase 6 (Mais ações menu substitui) */}
 
-              {/* Materiais */}
-              {(pcActiveTab === 'materiais' || pcActiveTab === 'resumo') && (
+              {/* Informações da FS — REMOVIDO Fase 6 (movido para Informações Principais) */}
+
+              {/* Dados da Máquina — REMOVIDO Fase 6 (movido para Informações Principais) */}
+
+              {/* Status dropdown — REMOVIDO Fase 6 (badge no header + Cancelar via Mais ações) */}
+
+              {/* Materiais (só na aba Materiais — Fase 6, na aba Resumo já é tabela dedicada) */}
+              {pcActiveTab === 'materiais' && (
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <h4 className="text-blue-400 font-semibold mb-3 flex items-center justify-between">
                   <span>Material para Cotação</span>
-                  {pcActiveTab === 'materiais' && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setEnviarCotacaoMatIds([]); // vazio => global
-                          setShowEnviarCotacaoModal(true);
-                        }}
-                        disabled={!(selectedPC.materiais?.length > 0)}
-                        className="bg-green-600 hover:bg-green-700 h-7 text-xs"
-                        data-testid="pc-enviar-cotacao-global"
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEnviarCotacaoMatIds([]); // vazio => global
+                        setShowEnviarCotacaoModal(true);
+                      }}
+                      disabled={!(selectedPC.materiais?.length > 0)}
+                      className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                      data-testid="pc-enviar-cotacao-global"
                       >
                         <Send className="w-3 h-3 mr-1" /> Enviar Pedido Global
                       </Button>
@@ -7527,7 +7743,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <Plus className="w-3 h-3 mr-1" /> Adicionar
                       </Button>
                     </div>
-                  )}
                 </h4>
                 {selectedPC.materiais?.length > 0 ? (
                   <div className="space-y-2">
@@ -7540,17 +7755,6 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <div className="flex gap-3 mt-0.5">
                               {mat.posicao && <span className="text-white text-sm">Posição: {mat.posicao}</span>}
                               {mat.codigo && <span className="text-white text-sm">Código: {mat.codigo}</span>}
-                            </div>
-                          )}
-                          {(mat.fornecedor_nome || mat.fornecedor_email) && (
-                            <div className="text-[11px] text-yellow-400 mt-0.5" data-testid={`pc-material-fornecedor-${mat.id}`}>
-                              Fornecedor: {mat.fornecedor_nome || mat.fornecedor_email}
-                              {mat.cotacao_status && ` · ${mat.cotacao_status}`}
-                            </div>
-                          )}
-                          {(mat.cotacoes_solicitadas?.length || 0) > 0 && (
-                            <div className="text-[11px] text-blue-400 mt-0.5" data-testid={`pc-material-cotacoes-solicitadas-${mat.id}`}>
-                              {mat.cotacoes_solicitadas.length} pedido(s) em curso
                             </div>
                           )}
                         </div>
@@ -7588,8 +7792,8 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
               )}
 
-              {/* Fotografias */}
-              {(pcActiveTab === 'fotografias' || pcActiveTab === 'resumo') && (
+              {/* Fotografias (só na aba Fotografias — Fase 6, no Resumo é sub-card) */}
+              {pcActiveTab === 'fotografias' && (
               <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-blue-400 font-semibold">Fotografias</h4>
@@ -7631,42 +7835,7 @@ const TechnicalReports = ({ user, onLogout }) => {
               </div>
               )}
 
-              {/* Observações Card (Fase 3 — versionadas) */}
-              {pcActiveTab === 'resumo' && (
-              <div className="bg-[#0f0f0f] p-4 rounded-lg border border-gray-700" data-testid="pc-observacoes-card">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-blue-400 font-semibold">Observações</h4>
-                  {!pcObsEditing ? (
-                    <Button size="sm" variant="ghost" onClick={() => { setPcObsDraft(pcObservacao?.texto || ''); setPcObsEditing(true); }} className="text-blue-300 h-7 text-xs">
-                      <Edit className="w-3 h-3 mr-1" /> Editar
-                    </Button>
-                  ) : (
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => setPcObsEditing(false)} className="text-gray-400 h-7 text-xs">Cancelar</Button>
-                      <Button size="sm" onClick={handleSavePcObservacao} className="bg-blue-600 hover:bg-blue-700 h-7 text-xs">Guardar</Button>
-                    </div>
-                  )}
-                </div>
-                {pcObsEditing ? (
-                  <textarea
-                    value={pcObsDraft}
-                    onChange={(e) => setPcObsDraft(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-gray-700 text-white rounded-md p-2 min-h-[100px] text-sm"
-                    placeholder="Escreve aqui as observações da PC…"
-                    data-testid="pc-observacoes-textarea"
-                  />
-                ) : (
-                  pcObservacao?.texto
-                    ? <p className="text-gray-200 text-sm whitespace-pre-wrap">{pcObservacao.texto}</p>
-                    : <p className="text-gray-500 text-sm italic">Sem observações. Clica em "Editar" para adicionar.</p>
-                )}
-                {pcObservacao?.edited_by_name && !pcObsEditing && (
-                  <p className="text-[10px] text-gray-500 mt-2">
-                    Última edição por {pcObservacao.edited_by_name} · {new Date(pcObservacao.edited_at).toLocaleString('pt-PT')}
-                  </p>
-                )}
-              </div>
-              )}
+              {/* Observações Card — REMOVIDO Fase 6 (movido para sub-card no Resumo) */}
 
               {/* Aba Documentos — Fase 3 */}
               {pcActiveTab === 'documentos' && (

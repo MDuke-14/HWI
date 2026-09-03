@@ -1,0 +1,96 @@
+{
+  "summary": "Fase 6 (parte 2) — redesign do modal PC testado end-to-end. Backend: novo test_pc_fase6_modal.py (17 testes) → 15 pass, 1 skip, 1 FAIL real (data_fs sempre null). Frontend: layout do Resumo bate com o mockup (header PC_XXX + badge + Origem, tabs sublinhadas a amarelo com contagens, 2 colunas: Informações principais + tabela de Materiais + 3 sub-cards). Todos os 23 data-testids da Fase 6 existem e estão visíveis. Dropdown 'Mais ações' abre com as 5 opções; 'Cancelar PC' fica aria-disabled=true numa PC Cancelado e o badge fica vermelho. Smoke Fase 4/5/6-4a OK (modal Individual com 1 material, modal Global multi-fornecedor + FS PDF, CancelarPCModal, EditMaterialPCModal, AddMaterialModal). 3 problemas encontrados (1 funcional no botão 'Guardar Alterações', 1 backend data_fs, 1 de regra de negócio em PC cancelada) + design issue mobile.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/pedidos-cotacao/{id}",
+        "issue": "data_fs devolve SEMPRE null → o campo 'Data de FS' nunca aparece em 'Informações principais'. O código faz ot.get('data_intervencao') or ot.get('created_at'), mas nenhum destes campos existe em relatorios_tecnicos (verificado em Mongo: os campos de data existentes são data_criacao, data_servico, data_conclusao, data_fim; data_intervencao/created_at = None). Corrigir para data_servico or data_criacao. Teste que documenta: tests/test_pc_fase6_modal.py::test_data_fs_is_parseable_iso",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "GET /api/pedidos-cotacao/{id}",
+        "issue": "cliente_email/cliente_telefone existem na resposta mas vêm null para o cliente de teste (560Lab) porque o doc de clientes não tem email/telefone → 'Contacto'/'Telefone' ficam ocultos (comportamento pretendido, mas o enriquecimento nunca foi validado com dados reais). Sugestão: fallback para ot.cliente_email/ot.cliente_telefone se existirem na FS."
+      },
+      {
+        "endpoint": "GET /api/relatorios-tecnicos/{id}/pedidos-cotacao e GET /api/pedidos-cotacao",
+        "issue": "Testes legacy /app/backend/tests/test_pc_management.py::TestPCGrouping falham: os endpoints de lista já não devolvem o array 'sub_pcs' esperado (PC_001#363 / PC_003#363). Pré-existente (não Fase 6) — decidir se o agrupamento sub_pcs foi removido de propósito e actualizar/eliminar esses testes."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TechnicalReports.jsx — footer do PC modal (linhas 8020-8035)",
+        "issue": "Botão 'Guardar Alterações' está funcionalmente quebrado e obsoleto no novo layout: (a) já não existe nenhum campo editável ligado a pcFormData (o dropdown de status foi removido na Fase 6, pcFormData só é preenchido em fetchPCDetalhes), logo o PUT envia sempre os mesmos dados; (b) quando a PC é aberta a partir da lista 'Pedidos de Cotação' (openPCFromList não define selectedRelatorio), handleUpdatePC faz fetchPedidosCotacao(selectedRelatorio.id) → TypeError. Reproduzido na UI: aparecem 2 toasts simultâneos — 'PC atualizado!' (verde) e 'Cannot read properties of null (reading id)' (vermelho) — e o modal fica aberto. Remover o botão ou proteger com selectedRelatorio?.id.",
+        "selector": "button:has-text('Guardar Alterações') no [role=dialog] do PC",
+        "priority": "HIGH"
+      },
+      {
+        "component": "PC modal — PC com status 'Cancelado' (PC_001.2)",
+        "issue": "Regra de negócio: numa PC Cancelado o botão verde 'Enviar Email Global' (pc-modal-btn-enviar-global) continua activo (sem attr disabled) e o ícone Send de cada material (pc-resumo-mat-enviar-*) também. Só a opção 'Cancelar PC' do dropdown é desactivada. Deveria bloquear envios de cotação numa PC cancelada.",
+        "selector": "[data-testid=\"pc-modal-btn-enviar-global\"], [data-testid^=\"pc-resumo-mat-enviar-\"]",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "PC modal — Resumo, botão 'Editar informações'",
+        "issue": "pc-resumo-editar-informacoes navega para a aba 'Materiais', que só contém a lista de materiais — não há forma de editar Cliente/Contacto/Equipamento/Nº Série. Label enganador (ou funcionalidade em falta).",
+        "selector": "[data-testid=\"pc-resumo-editar-informacoes\"]",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "PC modal @390x844 (mobile)",
+        "issues": [
+          "O DialogContent (max-w-6xl) não se ajusta ao viewport mobile: o conteúdo é cortado horizontalmente à direita (tabela de materiais e sub-cards Fotografias/Documentos ficam fora do ecrã) e não há scroll horizontal visível no container. Adicionar w-[95vw] / overflow-x-auto ou colapsar a tabela em cards no mobile."
+        ]
+      },
+      {
+        "screen": "PC modal @1920 (desktop) — Resumo",
+        "issues": [
+          "Layout corresponde ao mockup (2 colunas, tabs amarelas, badges de estado, 3 sub-cards). Único desvio: falta a linha 'Data de FS' (bug backend data_fs) e 'Contacto'/'Telefone' (cliente sem dados)."
+        ]
+      },
+      {
+        "screen": "Consola do browser (todas as páginas)",
+        "issues": [
+          "Erros recorrentes pré-existentes: 'Erro ao guardar cache clientes: NotFoundError: Failed to execute transaction on IDBDatabase: One of the specified object stores was not found' (versão do schema IndexedDB desactualizada) + 2 pedidos com 403 e 404 no load inicial."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pc_fase6_modal.py",
+    "/app/test_reports/pytest/fase6_results.xml",
+    "/app/backend/tests/test_pc_management.py"
+  ],
+  "action_items": [
+    "HIGH backend: corrigir data_fs em GET /api/pedidos-cotacao/{id} → usar ot.data_servico or ot.data_criacao (data_intervencao/created_at não existem).",
+    "HIGH frontend: remover (ou proteger) o botão 'Guardar Alterações' do footer do PC modal — provoca TypeError 'Cannot read properties of null (reading id)' quando a PC é aberta da lista e já não guarda nada de editável.",
+    "MEDIUM: desactivar 'Enviar Email Global' e os ícones Send dos materiais quando status === 'Cancelado'.",
+    "MEDIUM: 'Editar informações' deve abrir um formulário real de edição (cliente/equipamento) em vez de navegar para a aba Materiais.",
+    "MEDIUM: tornar o PC modal responsivo em mobile (390px) — conteúdo cortado à direita.",
+    "MINOR: fallback de cliente_email/cliente_telefone a partir da FS; decidir destino dos testes legacy sub_pcs em test_pc_management.py."
+  ],
+  "critical_code_review_comments": [
+    "handleUpdatePC (linha ~2870) assume selectedRelatorio não-nulo; openPCFromList nunca o define → toda a acção que refresque via selectedRelatorio.id falha quando o modal é aberto da lista de PCs. Aplicar guard: if (selectedRelatorio?.id) fetchPedidosCotacao(...) else fetchAllPCs().",
+    "pcFormData tornou-se estado morto após a Fase 6 (nenhum input o altera) — remover junto com o botão Guardar Alterações para evitar PUTs desnecessários.",
+    "O enriquecimento de data_fs devia ser coberto por um teste que valide o nome real do campo na coleção relatorios_tecnicos; o fallback silencioso (None) esconde o bug porque a UI filtra valores vazios ([, v] => v).",
+    "TechnicalReports.jsx continua com 10.328 linhas (>700) — o PC modal (≈700 linhas, 7346-8039) devia ser extraído para /components/technical-reports/PCDetailModal.jsx.",
+    "Bom: nenhum _id do Mongo exposto, foto_base64 excluído do GET, fotografias servidas por URL, e todos os testids da Fase 6 presentes e funcionais."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pc_fase6_modal.py (novo)",
+    "/app/backend/tests/test_pc_management.py (fix de scope de teste: BASE_URL a partir de /app/frontend/.env e credenciais lidas de /app/memory/test_credentials.md em vez do utilizador inexistente 'pedro')"
+  ],
+  "success_rate": {"backend": "94% (15/16 executados, 1 skip)", "frontend": "85% (layout + tabs + header + dropdown + smoke Fase 4/5/6-4a OK; 3 defeitos)"},
+  "seed_data_creation": "Nenhum dado criado — usadas as PCs existentes 03d82cdc-af6a-4141-a3d7-ee6f72e5d20a (PC_001#356, 3 materiais, 'Cotação Pedida') e 1743a23d-7bf4-40d9-b6e3-f6999393877e (PC_001.2, 'Cancelado').",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "miguel / Miguel123! (campo 'Nome de utilizador'); login OK",
+  "context_for_next_testing_agent": "Fluxo UI: login → /technical-reports → [data-testid=tab-pedidos-cotacao] → [data-testid=pc-card-{id}]. O footer do modal tem 'Fechar' + 'Guardar Alterações' (este último bugado). Verificado nesta iteração: header (title/badge/origem/PDF/Mais ações/Enviar Global), tabs com contagens (Materiais 3, Histórico 17, Fotografias/Documentos sem contagem por serem 0), aba Resumo 2 colunas com todos os sub-cards, 'Ver todas' navega para as abas certas, envio individual abre modal com Materiais (1/3), envio global abre modal '(Global)' com Materiais (3/3) + fornecedores BD + emails manuais + checkbox FS PDF, CancelarPCModal abre com textarea de motivo (não foi confirmado o cancelamento para não alterar dados), EditMaterialPCModal e AddMaterialModal abrem. NÃO reexecutei os testes de envio de email real (test_pc_enviar_cotacao*.py) para não gerar emails; o bug HIGH da iteration_50 (subset global classificado como individual) NÃO foi reverificado.",
+  "rca_of_the_issue": "1) data_fs: o endpoint lê chaves inexistentes ('data_intervencao'/'created_at') no doc relatorios_tecnicos; as chaves reais são data_servico/data_criacao → valor None e linha oculta na UI. 2) 'Guardar Alterações': handleUpdatePC chama fetchPedidosCotacao(selectedRelatorio.id) mas openPCFromList não define selectedRelatorio (só selectedPC), pelo que após o PUT bem-sucedido é lançado TypeError capturado pelo catch → toast de erro em simultâneo com o de sucesso."
+}

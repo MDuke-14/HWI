@@ -107,6 +107,19 @@ async def get_pedido_cotacao(
     if ot:
         pc["numero_ot"] = ot.get("numero_assistencia", "N/A")
         pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
+        pc["data_fs"] = ot.get("data_intervencao") or ot.get("created_at")
+
+        # Contactos do cliente (email, telefone) — enriquecer para o modal Fase 6
+        if ot.get("cliente_id"):
+            cli = await db.clientes.find_one(
+                {"id": ot["cliente_id"]},
+                {"_id": 0, "email": 1, "telefone": 1, "morada": 1, "nif": 1},
+            )
+            if cli:
+                pc["cliente_email"] = cli.get("email")
+                pc["cliente_telefone"] = cli.get("telefone")
+                pc["cliente_morada"] = cli.get("morada")
+                pc["cliente_nif"] = cli.get("nif")
         
         # Buscar equipamentos associados à PC via equipamento_ot_ids
         eq_ot_ids = pc.get("equipamento_ot_ids", [])
@@ -166,6 +179,15 @@ async def get_pedido_cotacao(
         foto["foto_url"] = f"/pedidos-cotacao/{pc_id}/fotografias/{foto['id']}/image"
     
     pc["fotografias"] = fotos
+    
+    # Nome do responsável (utilizador que criou a PC) — Fase 6 modal
+    if pc.get("created_by") and not pc.get("criado_por_nome"):
+        user_doc = await db.users.find_one(
+            {"id": pc["created_by"]},
+            {"_id": 0, "full_name": 1, "username": 1},
+        )
+        if user_doc:
+            pc["criado_por_nome"] = user_doc.get("full_name") or user_doc.get("username")
     
     return pc
 

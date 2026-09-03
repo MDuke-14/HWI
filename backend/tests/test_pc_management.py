@@ -13,7 +13,13 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+from dotenv import dotenv_values
+
+_frontend_env = dotenv_values("/app/frontend/.env")
+_base = os.environ.get('REACT_APP_BACKEND_URL') or _frontend_env.get('REACT_APP_BACKEND_URL')
+if not _base:
+    raise RuntimeError("REACT_APP_BACKEND_URL missing from env and /app/frontend/.env")
+BASE_URL = _base.rstrip('/')
 
 # Test FS ID from agent context
 FS_ID = "b5f7c19a-5b3d-43b2-9783-af090df28f8f"
@@ -22,9 +28,16 @@ FS_NUMBER = "363"
 @pytest.fixture(scope="module")
 def auth_token():
     """Get authentication token using admin credentials"""
+    import re
+    from pathlib import Path
+    content = Path("/app/memory/test_credentials.md").read_text(encoding="utf-8")
+    u = re.search(r"(?im)^\s*-\s*\*\*Username\*\*\s*:\s*`([^`]+)`", content)
+    p = re.search(r"(?im)^\s*-\s*\*\*Password\*\*\s*:\s*`([^`]+)`", content)
+    if not u or not p:
+        pytest.skip("credentials not parseable")
     response = requests.post(f"{BASE_URL}/api/auth/login", json={
-        "username": "pedro",
-        "password": "password"
+        "username": u.group(1),
+        "password": p.group(1)
     })
     assert response.status_code == 200, f"Login failed: {response.text}"
     return response.json()["access_token"]

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '@/App';
 import Navigation from '@/components/Navigation';
+import EmailTemplatesAdmin from '@/components/admin/EmailTemplatesAdmin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map, Receipt, Star } from 'lucide-react';
+import { Shield, Users, Calendar, TrendingUp, CheckCircle, XCircle, Plus, Edit, Trash2, Download, Clock, Minus, FileText, History as HistoryIcon, RefreshCw, ChevronLeft, ChevronRight, DollarSign, Bell, AlertTriangle, Play, BellRing, MapPin, Map, Receipt, Star, Mail, RotateCcw, Loader2, X } from 'lucide-react';
 import HelpTooltip from '@/components/HelpTooltip';
 import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
@@ -837,7 +838,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className={`overflow-x-auto ${isMobile ? 'pb-2 mb-4 -mx-3 px-3' : 'pb-2 mb-6 -mx-4 px-4 md:mx-0 md:px-0'}`}>
-            <TabsList className={`inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg ${isMobile ? '' : 'md:grid md:grid-cols-6 md:w-full md:max-w-5xl md:mx-auto'}`}>
+            <TabsList className={`inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg ${isMobile ? '' : 'md:grid md:grid-cols-7 md:w-full md:max-w-6xl md:mx-auto'}`}>
               <TabsTrigger value="vacations" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400 relative`}>
                 <Calendar className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
                 <span>{isMobile ? 'Férias' : 'Férias'}</span>
@@ -873,6 +874,10 @@ const AdminDashboard = ({ user, onLogout }) => {
               <TabsTrigger value="reports" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
                 <TrendingUp className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
                 <span>{isMobile ? 'Relat.' : 'Relatórios'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="emails" data-testid="admin-tab-emails" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
+                <Mail className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>Emails</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -2719,6 +2724,10 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="emails">
+            <EmailTemplatesAdmin />
           </TabsContent>
         </Tabs>
 

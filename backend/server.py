@@ -656,6 +656,12 @@ async def startup_event():
         await run_migrations(db)
     except Exception as e:
         logging.error(f"❌ Erro ao executar migrações: {str(e)}")
+
+    # Seed dos templates de email (só cria os que faltam)
+    try:
+        await ensure_default_templates()
+    except Exception as e:
+        logging.error(f"❌ Erro ao criar templates default de email: {str(e)}")
     
     # Migração: Garantir que todos os registos têm minutos_trabalhados e horas_arredondadas consistentes
     try:
@@ -3727,49 +3733,64 @@ async def add_material_ot(
                     )
                 logging.info(f"Material agregado ao PC existente {pc_existente['numero_pc']}")
         else:
-            # Criar novo PC — numeração global sequencial
-            # Buscar o maior número de PC existente globalmente
-            last_pc = await db.pedidos_cotacao.find_one(
-                {},
-                {"_id": 0, "numero_pc": 1},
-                sort=[("created_at", -1)]
+            # Fase 7A: uma FS = uma PC. Se já existe uma PC (não cancelada)
+            # para esta FS, reutiliza-a em vez de criar outra.
+            pc_existente = await db.pedidos_cotacao.find_one(
+                {"relatorio_id": relatorio_id, "status": {"$ne": "Cancelado"}},
+                {"_id": 0},
+                sort=[("created_at", 1)],
             )
-            novo_num = 1
-            if last_pc and last_pc.get("numero_pc"):
-                # Extrair número do formato "PC_XXX#YYY" ou "PC_XXX.N"
-                try:
-                    num_part = last_pc["numero_pc"].split("#")[0].replace("PC_", "").split(".")[0]
-                    novo_num = int(num_part) + 1
-                except (ValueError, IndexError):
-                    # Fallback: contar total de PCs
-                    total_pcs = await db.pedidos_cotacao.count_documents({})
-                    novo_num = total_pcs + 1
-            
-            numero_pc = f"PC_{novo_num:03d}#{fs_numero}"
-            
-            novo_pc = PedidoCotacao(
-                numero_pc=numero_pc,
-                relatorio_id=relatorio_id,
-                parent_pc_id=None,
-                sub_numero=None,
-                status="Em Espera",
-                equipamento_ot_ids=equipamento_ot_ids,
-                created_by=current_user["sub"]
-            )
-            pc_dict = novo_pc.dict()
-            pc_dict["created_at"] = pc_dict["created_at"].isoformat()
-            await db.pedidos_cotacao.insert_one(pc_dict)
-            material_dict["pc_id"] = novo_pc.id
-            logging.info(f"PC criado: {numero_pc} para FS #{fs_numero}")
-            
-            # Notificar admins
-            await send_push_to_admins(
-                db,
-                "Novo Pedido de Cotação",
-                f"{numero_pc} criado para FS #{fs_numero}\nMaterial: {material_data.get('descricao', 'N/A')[:50]}",
-                "pc_created",
-                "medium"
-            )
+            if pc_existente:
+                material_dict["pc_id"] = pc_existente["id"]
+                logging.info(f"Material agregado à PC existente da FS {fs_numero}: {pc_existente['numero_pc']}")
+                # Se ainda não tinha equipamentos e o novo material tem, atribui
+                if not pc_existente.get("equipamento_ot_ids") and equipamento_ot_ids:
+                    await db.pedidos_cotacao.update_one(
+                        {"id": pc_existente["id"]},
+                        {"$set": {"equipamento_ot_ids": list(set(equipamento_ot_ids))}}
+                    )
+            else:
+                # Criar nova PC — Fase 7A: numeração global sequencial SEM sufixo #FS ou .N
+                # Novos PCs ficam apenas com "PC_NNN". Existentes mantêm nome antigo.
+                last_pc = await db.pedidos_cotacao.find_one(
+                    {},
+                    {"_id": 0, "numero_pc": 1},
+                    sort=[("created_at", -1)]
+                )
+                novo_num = 1
+                if last_pc and last_pc.get("numero_pc"):
+                    try:
+                        num_part = last_pc["numero_pc"].split("#")[0].replace("PC_", "").split(".")[0]
+                        novo_num = int(num_part) + 1
+                    except (ValueError, IndexError):
+                        total_pcs = await db.pedidos_cotacao.count_documents({})
+                        novo_num = total_pcs + 1
+
+                numero_pc = f"PC_{novo_num:03d}"
+
+                novo_pc = PedidoCotacao(
+                    numero_pc=numero_pc,
+                    relatorio_id=relatorio_id,
+                    parent_pc_id=None,
+                    sub_numero=None,
+                    status="Em Espera",
+                    equipamento_ot_ids=equipamento_ot_ids,
+                    created_by=current_user["sub"]
+                )
+                pc_dict = novo_pc.dict()
+                pc_dict["created_at"] = pc_dict["created_at"].isoformat()
+                await db.pedidos_cotacao.insert_one(pc_dict)
+                material_dict["pc_id"] = novo_pc.id
+                logging.info(f"PC criado: {numero_pc} para FS #{fs_numero}")
+
+                # Notificar admins
+                await send_push_to_admins(
+                    db,
+                    "Novo Pedido de Cotação",
+                    f"{numero_pc} criado para FS #{fs_numero}\nMaterial: {material_data.get('descricao', 'N/A')[:50]}",
+                    "pc_created",
+                    "medium"
+                )
     
     await db.materiais_ot.insert_one(material_dict)
     
@@ -3823,34 +3844,43 @@ async def update_material_ot(
             if pc_existente:
                 material_data["pc_id"] = pc_id_escolhido
         else:
-            # Criar novo PC — numeração global sequencial
-            last_pc = await db.pedidos_cotacao.find_one(
-                {},
-                {"_id": 0, "numero_pc": 1},
-                sort=[("created_at", -1)]
+            # Fase 7A: uma FS = uma PC. Reutilizar se já existe uma PC não cancelada
+            pc_existente = await db.pedidos_cotacao.find_one(
+                {"relatorio_id": relatorio_id, "status": {"$ne": "Cancelado"}},
+                {"_id": 0},
+                sort=[("created_at", 1)],
             )
-            novo_num = 1
-            if last_pc and last_pc.get("numero_pc"):
-                try:
-                    num_part = last_pc["numero_pc"].split("#")[0].replace("PC_", "").split(".")[0]
-                    novo_num = int(num_part) + 1
-                except (ValueError, IndexError):
-                    total_pcs = await db.pedidos_cotacao.count_documents({})
-                    novo_num = total_pcs + 1
-            
-            numero_pc = f"PC_{novo_num:03d}#{fs_numero}"
-            novo_pc = PedidoCotacao(
-                numero_pc=numero_pc,
-                relatorio_id=relatorio_id,
-                parent_pc_id=None,
-                sub_numero=None,
-                status="Em Espera",
-                created_by=current_user["sub"]
-            )
-            pc_dict = novo_pc.dict()
-            pc_dict["created_at"] = pc_dict["created_at"].isoformat()
-            await db.pedidos_cotacao.insert_one(pc_dict)
-            material_data["pc_id"] = novo_pc.id
+            if pc_existente:
+                material_data["pc_id"] = pc_existente["id"]
+            else:
+                # Criar novo PC — Fase 7A: apenas PC_NNN (sem #FS ou .N)
+                last_pc = await db.pedidos_cotacao.find_one(
+                    {},
+                    {"_id": 0, "numero_pc": 1},
+                    sort=[("created_at", -1)]
+                )
+                novo_num = 1
+                if last_pc and last_pc.get("numero_pc"):
+                    try:
+                        num_part = last_pc["numero_pc"].split("#")[0].replace("PC_", "").split(".")[0]
+                        novo_num = int(num_part) + 1
+                    except (ValueError, IndexError):
+                        total_pcs = await db.pedidos_cotacao.count_documents({})
+                        novo_num = total_pcs + 1
+
+                numero_pc = f"PC_{novo_num:03d}"
+                novo_pc = PedidoCotacao(
+                    numero_pc=numero_pc,
+                    relatorio_id=relatorio_id,
+                    parent_pc_id=None,
+                    sub_numero=None,
+                    status="Em Espera",
+                    created_by=current_user["sub"]
+                )
+                pc_dict = novo_pc.dict()
+                pc_dict["created_at"] = pc_dict["created_at"].isoformat()
+                await db.pedidos_cotacao.insert_one(pc_dict)
+                material_data["pc_id"] = novo_pc.id
     
     await db.materiais_ot.update_one(
         {"id": material_id},
@@ -4690,6 +4720,7 @@ from routes.relatorios_simples import router as relatorios_simples_router
 from routes.onedrive import router as onedrive_router
 from routes.fornecedores import router as fornecedores_router
 from routes.pc_extended import router as pc_extended_router
+from routes.email_templates import router as email_templates_router, ensure_default_templates
 api_router.include_router(references_router)
 api_router.include_router(clientes_router)
 api_router.include_router(auth_router)
@@ -4714,6 +4745,7 @@ api_router.include_router(relatorios_simples_router)
 api_router.include_router(onedrive_router)
 api_router.include_router(fornecedores_router)
 api_router.include_router(pc_extended_router)
+api_router.include_router(email_templates_router)
 
 # Expor db no app.state para os routers que precisam (ex: onedrive)
 app.state.db = db

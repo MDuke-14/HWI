@@ -14,6 +14,15 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+24. ✅ **Fase 7A + 7B: Fornecedor desligado do material, PC único por FS, Templates de Email (Feb 2026)**
+    - **7A — Fornecedores/Materiais**: Envio de cotação já **não** escreve `fornecedor_id/nome/email` nem `cotacoes_solicitadas[]` nos materiais. O material fica só com descrição/qtd + `cotacao_status`. Quem recebeu o quê está registado no histórico da PC.
+    - **7A — Uma FS = uma PC**: ao criar material `fornecido_por='Cotação'` numa FS que já tem PC não cancelada, o material é **atribuído à PC existente** (primeira por created_at). Sem criar nova.
+    - **7A — Numeração**: novos PCs criados apenas como `PC_NNN` (sem `#FS` nem `.N`). PCs antigos mantêm o nome atual (sem migração destrutiva).
+    - **7A — Fornecedores**: adicionado campo `observacoes_materiais` (materiais que fornece) ao modelo Fornecedor + input no form/card da página Fornecedores.
+    - **7B — Email Templates**: nova coleção `email_templates` + endpoints `GET/PUT /api/email-templates[/{key}]` + `POST .../reset`. Seed automático de 5 templates: `pc_cotacao_request`, `pc_pdf_email`, `password_reset`, `vacation_decision`, `service_notification`. Suportam placeholders `{variavel}` renderizados em runtime.
+    - **7B — Wire-up**: `pc_extended.enviar-cotacao` já usa o template `pc_cotacao_request` (admin pode alterar assunto/corpo). Outros pontos de envio (PC PDF, password reset, férias, serviço) serão migrados progressivamente.
+    - **7B — Admin UI**: nova aba **Emails** em `/admin` (`EmailTemplatesAdmin.jsx`) com lista, edição em modal e botão "Repor" para restaurar defaults.
+
 23. ✅ **Módulo PC — Fase 6: Botão "Cancelar PC" funcional (Feb 2026)** — Correção de bug: antes o botão só mudava `pcFormData.status='Cancelado'` em memória e nunca guardava. Agora:
     - Novo endpoint `POST /api/pedidos-cotacao/{pc_id}/cancelar` com payload `{motivo: str}` (obrigatório, 1-500 chars). Guarda `status='Cancelado'`, `cancelado_em`, `cancelado_por`, `motivo_cancelamento`. Regista evento `pc_cancelled` no histórico. Bloqueia segundo cancelamento (400).
     - Novo modal `CancelarPCModal.jsx` — confirmação com campo motivo obrigatório e contador de caracteres.

@@ -477,8 +477,6 @@ const EnviarPedidoCotacaoModal = ({
                 </p>
               )}
               {materiais.map((m) => {
-                const jaTemForn = !!(m.fornecedor_nome || m.fornecedor_email);
-                const nSolicitadas = (m.cotacoes_solicitadas || []).length;
                 return (
                   <label
                     key={m.id}
@@ -501,16 +499,6 @@ const EnviarPedidoCotacaoModal = ({
                           {m.codigo ? `Cód: ${m.codigo}` : ''}
                           {m.codigo && m.posicao ? ' · ' : ''}
                           {m.posicao ? `Pos: ${m.posicao}` : ''}
-                        </div>
-                      )}
-                      {jaTemForn && (
-                        <div className="text-[11px] text-amber-400 mt-0.5">
-                          ⚠ Já tem fornecedor: {m.fornecedor_nome || m.fornecedor_email}
-                        </div>
-                      )}
-                      {nSolicitadas > 0 && (
-                        <div className="text-[11px] text-blue-400 mt-0.5">
-                          {nSolicitadas} pedido(s) já em curso
                         </div>
                       )}
                     </div>
