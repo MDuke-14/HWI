@@ -105,6 +105,7 @@ import {
   HideClientPopup,
   EditMaterialPCModal,
   EnviarPedidoCotacaoModal,
+  CancelarPCModal,
   ChangeTipoModal,
   DeleteClienteModal,
   ReferenciaInternaModal,
@@ -504,6 +505,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Enviar Pedido de Cotação (Fase 4)
   const [showEnviarCotacaoModal, setShowEnviarCotacaoModal] = useState(false);
   const [enviarCotacaoMatIds, setEnviarCotacaoMatIds] = useState([]);
+
+  // Cancelar PC (Fase 6)
+  const [showCancelarPCModal, setShowCancelarPCModal] = useState(false);
+  const [cancelarPCSending, setCancelarPCSending] = useState(false);
   
   // Faturas PC
   const [faturasPC, setFaturasPC] = useState([]);
@@ -3043,6 +3048,25 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.error(formatErrorMessage(error));
     } finally {
       setSendingEmailPC(false);
+    }
+  };
+
+  // Cancelar PC (Fase 6) — guarda status + motivo no servidor e regista no histórico
+  const handleConfirmCancelarPC = async (motivo) => {
+    if (!selectedPC) return;
+    setCancelarPCSending(true);
+    try {
+      await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/cancelar`, { motivo });
+      toast.success('PC cancelada');
+      setShowCancelarPCModal(false);
+      // Refresh — mantém o modal aberto para o utilizador ver o novo estado + histórico
+      await fetchPCDetalhes(selectedPC.id);
+      if (selectedRelatorio?.id) fetchPedidosCotacao(selectedRelatorio.id);
+      fetchAllPCs();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro ao cancelar PC');
+    } finally {
+      setCancelarPCSending(false);
     }
   };
 
@@ -7400,8 +7424,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <Button size="sm" variant="outline" onClick={() => { setPcObsEditing(true); setPcActiveTab('resumo'); }} className="border-gray-600 text-blue-300 hover:bg-blue-500/10" data-testid="pc-quick-obs">
                       <Edit className="w-3.5 h-3.5 mr-1" /> Editar Observação
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setPCFormData({ ...pcFormData, status: 'Cancelado' }); }} className="border-red-600/60 text-red-300 hover:bg-red-500/10" data-testid="pc-quick-cancel">
-                      <X className="w-3.5 h-3.5 mr-1" /> Cancelar PC
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowCancelarPCModal(true)}
+                      disabled={selectedPC?.status === 'Cancelado'}
+                      className="border-red-600/60 text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+                      data-testid="pc-quick-cancel"
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" /> {selectedPC?.status === 'Cancelado' ? 'PC Cancelada' : 'Cancelar PC'}
                     </Button>
                   </div>
                 </div>
@@ -7884,6 +7915,15 @@ const TechnicalReports = ({ user, onLogout }) => {
           }
           fetchAllPCs();
         }}
+      />
+
+      {/* Cancelar PC Modal (Fase 6) */}
+      <CancelarPCModal
+        open={showCancelarPCModal}
+        onOpenChange={setShowCancelarPCModal}
+        pc={selectedPC}
+        onConfirm={handleConfirmCancelarPC}
+        sending={cancelarPCSending}
       />
 
 

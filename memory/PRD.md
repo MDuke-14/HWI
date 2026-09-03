@@ -14,6 +14,12 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+23. ✅ **Módulo PC — Fase 6: Botão "Cancelar PC" funcional (Feb 2026)** — Correção de bug: antes o botão só mudava `pcFormData.status='Cancelado'` em memória e nunca guardava. Agora:
+    - Novo endpoint `POST /api/pedidos-cotacao/{pc_id}/cancelar` com payload `{motivo: str}` (obrigatório, 1-500 chars). Guarda `status='Cancelado'`, `cancelado_em`, `cancelado_por`, `motivo_cancelamento`. Regista evento `pc_cancelled` no histórico. Bloqueia segundo cancelamento (400).
+    - Novo modal `CancelarPCModal.jsx` — confirmação com campo motivo obrigatório e contador de caracteres.
+    - Botão "Cancelar PC" (Ações Rápidas) fica disabled quando PC já cancelada e passa a mostrar "PC Cancelada".
+    - Após cancelamento, refresh dos detalhes da PC e da lista.
+
 22. ✅ **Módulo PC — Fase 5: Envio Global multi-fornecedor + anexo FS.pdf (Feb 2026)** — Refactor do endpoint `POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao` para suportar envio a múltiplos fornecedores em paralelo (1 email separado por destinatário).
     - Payload novo: `fornecedor_ids: []` (multi-select da DB), `emails_manuais: [{email,nome}]` (emails avulsos), `incluir_fs_pdf: bool`, `envio_modo: 'global'|'individual'` (explícito).
     - Materiais em modo Global NÃO ficam com `fornecedor_id/nome` sobrescritos — acrescenta-se antes um item em `cotacoes_solicitadas: [{fornecedor_id, fornecedor_nome, fornecedor_email, requested_at, requested_by}]`. `cotacao_status='em_cotacao'`. Modo Individual (Fase 4) mantém a sobrescrita.

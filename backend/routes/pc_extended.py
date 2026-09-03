@@ -284,6 +284,51 @@ async def assign_material_fornecedor(
 
 
 # =============================================================
+#  CANCELAR PC (Fase 6)
+# =============================================================
+class CancelarPCPayload(BaseModel):
+    motivo: str = Field(min_length=1, max_length=500)
+
+
+@router.post("/pedidos-cotacao/{pc_id}/cancelar")
+async def cancelar_pc(
+    pc_id: str,
+    payload: CancelarPCPayload,
+    current_user: dict = Depends(get_current_user),
+):
+    """Cancela a PC: muda status para 'Cancelado' e regista motivo no histórico."""
+    pc = await db.pedidos_cotacao.find_one({"id": pc_id}, {"_id": 0})
+    if not pc:
+        raise HTTPException(404, "PC não encontrado")
+
+    if pc.get("status") == "Cancelado":
+        raise HTTPException(400, "PC já está cancelado")
+
+    agora = datetime.now(timezone.utc).isoformat()
+    motivo = payload.motivo.strip()
+
+    await db.pedidos_cotacao.update_one(
+        {"id": pc_id},
+        {"$set": {
+            "status": "Cancelado",
+            "cancelado_em": agora,
+            "cancelado_por": current_user.get("username"),
+            "motivo_cancelamento": motivo,
+            "updated_at": agora,
+        }},
+    )
+
+    await record_pc_event(
+        db, pc_id, "pc_cancelled",
+        f"PC cancelada — motivo: {motivo}",
+        current_user=current_user,
+        metadata={"motivo": motivo},
+    )
+
+    return {"ok": True, "message": "PC cancelada", "cancelado_em": agora, "motivo": motivo}
+
+
+# =============================================================
 #  ENVIAR PEDIDO DE COTAÇÃO (Fase 4 + Fase 5 multi-fornecedor)
 # =============================================================
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
