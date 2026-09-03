@@ -271,6 +271,31 @@ async def assign_material_fornecedor(
     update["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.materiais_ot.update_one({"id": material_id}, {"$set": update})
 
+    # Fase 8: Se TODOS os materiais da PC estão "Em Armazém", auto-terminar a PC.
+    pc_auto_terminada = False
+    if update.get("cotacao_status"):
+        try:
+            todos_mats = await db.materiais_ot.find(
+                {"pc_id": pc_id}, {"_id": 0, "cotacao_status": 1}
+            ).to_list(length=None)
+            if todos_mats and all(m.get("cotacao_status") == "Em Armazém" for m in todos_mats):
+                pc_doc = await db.pedidos_cotacao.find_one({"id": pc_id}, {"_id": 0, "status": 1})
+                if pc_doc and pc_doc.get("status") not in ("Terminado", "Cancelado"):
+                    agora_iso = datetime.now(timezone.utc).isoformat()
+                    await db.pedidos_cotacao.update_one(
+                        {"id": pc_id},
+                        {"$set": {"status": "Terminado", "updated_at": agora_iso}},
+                    )
+                    pc_auto_terminada = True
+                    await record_pc_event(
+                        db, pc_id, "status_changed",
+                        f"PC auto-terminada — todos os materiais estão em armazém",
+                        current_user=current_user,
+                        metadata={"from": pc_doc.get("status"), "to": "Terminado", "auto": True},
+                    )
+        except Exception as e:
+            logger.warning(f"Falha na auto-terminação da PC {pc_id}: {e}")
+
     # Regista no histórico
     desc_parts = []
     if update.get("fornecedor_nome"):
@@ -286,7 +311,12 @@ async def assign_material_fornecedor(
             fornecedor_id=update.get("fornecedor_id"),
         )
 
-    return {"ok": True, "material_id": material_id, "update": update}
+    return {
+        "ok": True,
+        "material_id": material_id,
+        "update": update,
+        "pc_auto_terminada": pc_auto_terminada,
+    }
 
 
 # =============================================================

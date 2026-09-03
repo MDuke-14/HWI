@@ -3119,11 +3119,16 @@ const TechnicalReports = ({ user, onLogout }) => {
   const handleChangeMaterialStatus = async (materialId, novoStatus) => {
     if (!selectedPC) return;
     try {
-      await axios.patch(
+      const r = await axios.patch(
         `${API}/pedidos-cotacao/${selectedPC.id}/materiais/${materialId}/fornecedor`,
         { cotacao_status: novoStatus },
       );
       toast.success(`Material → ${novoStatus === 'Cotação Pedida' ? 'Em Cotação' : novoStatus}`);
+      if (r.data?.pc_auto_terminada) {
+        toast.success('PC terminada automaticamente — todos os materiais em armazém 🎉');
+        if (selectedRelatorio?.id) fetchPedidosCotacao(selectedRelatorio.id);
+        fetchAllPCs();
+      }
       await fetchPCDetalhes(selectedPC.id);
     } catch (e) {
       toast.error(e?.response?.data?.detail || 'Erro a alterar estado do material');
