@@ -350,26 +350,48 @@ from fastapi import File, UploadFile, Form
 ONEDRIVE_ROOT_FOLDER = "HWI - FS"
 
 
-async def _ensure_folder(client: httpx.AsyncClient, token: str, folder_name: str) -> str:
-    """Cria (ou obtém) uma pasta no root do OneDrive. Devolve o item_id."""
+async def _ensure_folder_path(client: httpx.AsyncClient, token: str, path: str) -> str:
+    """Cria (idempotente) uma cadeia de pastas separadas por '/'.
+    Devolve o item_id da pasta final.
+    Ex: `HWI - FS/FS-373/Fotografias`.
+    """
+    parts = [p for p in path.split("/") if p]
+    if not parts:
+        raise ValueError("path vazio")
     headers = {"Authorization": f"Bearer {token}"}
-    # Tenta ler
-    r = await client.get(
-        f"{GRAPH}/me/drive/root:/{folder_name}",
-        headers=headers,
-    )
-    if r.status_code == 200:
-        return r.json()["id"]
-    if r.status_code != 404:
-        r.raise_for_status()
-    # Cria
-    create = await client.post(
-        f"{GRAPH}/me/drive/root/children",
-        headers={**headers, "Content-Type": "application/json"},
-        json={"name": folder_name, "folder": {}, "@microsoft.graph.conflictBehavior": "rename"},
-    )
-    create.raise_for_status()
-    return create.json()["id"]
+    current_id = None  # None = root
+    for i, part in enumerate(parts):
+        rel = "/".join(parts[: i + 1])
+        r = await client.get(f"{GRAPH}/me/drive/root:/{rel}", headers=headers)
+        if r.status_code == 200:
+            current_id = r.json()["id"]
+            continue
+        if r.status_code != 404:
+            r.raise_for_status()
+        # cria dentro do pai
+        if current_id is None:
+            create_url = f"{GRAPH}/me/drive/root/children"
+        else:
+            create_url = f"{GRAPH}/me/drive/items/{current_id}/children"
+        create = await client.post(
+            create_url,
+            headers={**headers, "Content-Type": "application/json"},
+            json={"name": part, "folder": {}, "@microsoft.graph.conflictBehavior": "fail"},
+        )
+        if create.status_code == 409:
+            # Race: outra chamada criou primeiro — lê de novo
+            r2 = await client.get(f"{GRAPH}/me/drive/root:/{rel}", headers=headers)
+            r2.raise_for_status()
+            current_id = r2.json()["id"]
+        else:
+            create.raise_for_status()
+            current_id = create.json()["id"]
+    return current_id
+
+
+async def _ensure_folder(client: httpx.AsyncClient, token: str, folder_name: str) -> str:
+    """Compat wrapper — usa a nova função com path plano."""
+    return await _ensure_folder_path(client, token, folder_name)
 
 
 @router.post("/onedrive/upload")
@@ -377,31 +399,37 @@ async def onedrive_upload(
     request: Request,
     file: UploadFile = File(...),
     filename_override: Optional[str] = Form(None),
+    subfolder_path: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user),
 ):
-    """Envia bytes para a pasta `HWI - FS` no root do OneDrive do utilizador logado.
-    Faz *simple upload* (até 4 MB via `PUT :/content`; para maiores usaríamos
-    upload session — não crítico para fotos de FS).
-    Devolve `{ok, id, web_url, name}`.
+    """Envia bytes para OneDrive na pasta `HWI - FS/{subfolder_path}` (ou `HWI - FS` se vazio).
+    Retorna `{ok, id, web_url, name, path}`.
     """
     token = await _graph_token(request, current_user["sub"])
     content = await file.read()
     if not content:
         raise HTTPException(400, "Ficheiro vazio")
-    # Nome final: usa override (ex: FS-373_2026-02-15T14-05-22.jpg) ou o do upload
     name = (filename_override or file.filename or "foto.jpg").strip().replace("/", "_")
     ct = file.content_type or "application/octet-stream"
 
+    # Pasta destino: sempre relativa a "HWI - FS"
+    parent = ONEDRIVE_ROOT_FOLDER
+    if subfolder_path:
+        sub = subfolder_path.strip().strip("/")
+        # sanitizar nomes de pasta
+        safe_parts = [p.replace("\\", "_").replace(":", "_")[:120] for p in sub.split("/") if p]
+        if safe_parts:
+            parent = f"{ONEDRIVE_ROOT_FOLDER}/" + "/".join(safe_parts)
+
     async with httpx.AsyncClient(timeout=120) as client:
         try:
-            await _ensure_folder(client, token, ONEDRIVE_ROOT_FOLDER)
+            await _ensure_folder_path(client, token, parent)
         except Exception as e:
-            logger.error(f"OneDrive upload — falha a criar/obter pasta: {e}")
-            raise HTTPException(502, "Não foi possível preparar a pasta HWI - FS no OneDrive")
+            logger.error(f"OneDrive upload — falha a criar pasta '{parent}': {e}")
+            raise HTTPException(502, f"Não foi possível preparar a pasta '{parent}' no OneDrive")
 
-        # `@microsoft.graph.conflictBehavior=rename` no querystring para nunca sobrescrever
         upload_url = (
-            f"{GRAPH}/me/drive/root:/{ONEDRIVE_ROOT_FOLDER}/{name}:/content"
+            f"{GRAPH}/me/drive/root:/{parent}/{name}:/content"
             f"?@microsoft.graph.conflictBehavior=rename"
         )
         r = await client.put(
@@ -421,4 +449,136 @@ async def onedrive_upload(
         "name": data.get("name"),
         "web_url": data.get("webUrl"),
         "size": data.get("size"),
+        "path": f"{parent}/{data.get('name')}",
     }
+
+
+# ================================================================
+#  8) Ligar foto FS ao item OneDrive (guarda referência)
+# ================================================================
+class LinkPayload(BaseModel):
+    onedrive_item_id: Optional[str] = None
+    onedrive_web_url: Optional[str] = None
+    onedrive_path: Optional[str] = None
+    sync_status: str = "synced"  # synced | pending | failed
+
+
+@router.patch("/relatorios-tecnicos/{relatorio_id}/fotografias/{foto_id}/onedrive-link")
+async def link_photo_to_onedrive(
+    relatorio_id: str,
+    foto_id: str,
+    payload: LinkPayload,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    db = _db(request)
+    foto = await db.fotos_relatorio.find_one({"id": foto_id, "relatorio_id": relatorio_id}, {"_id": 0, "id": 1})
+    if not foto:
+        raise HTTPException(404, "Fotografia não encontrada")
+    update = {
+        "onedrive_sync_status": payload.sync_status,
+        "onedrive_synced_at": datetime.now(timezone.utc).isoformat() if payload.sync_status == "synced" else None,
+        "onedrive_synced_by_user_id": current_user["sub"] if payload.sync_status == "synced" else None,
+    }
+    if payload.onedrive_item_id:
+        update["onedrive_item_id"] = payload.onedrive_item_id
+    if payload.onedrive_web_url:
+        update["onedrive_web_url"] = payload.onedrive_web_url
+    if payload.onedrive_path:
+        update["onedrive_path"] = payload.onedrive_path
+    await db.fotos_relatorio.update_one({"id": foto_id}, {"$set": update})
+    return {"ok": True}
+
+
+# ================================================================
+#  9) Retry das fotos pendentes do utilizador
+# ================================================================
+import base64 as _b64
+
+
+@router.post("/onedrive/sync-pending")
+async def sync_pending_photos(request: Request, current_user: dict = Depends(get_current_user)):
+    """Re-tenta upload para OneDrive de todas as fotografias marcadas como
+    `onedrive_sync_status in ("pending","failed")` que este utilizador criou.
+    """
+    db = _db(request)
+    user_id = current_user["sub"]
+
+    # Só re-tentar fotos que este utilizador tirou (evita disparar tokens de outros)
+    cursor = db.fotos_relatorio.find(
+        {
+            "uploaded_by": user_id,
+            "onedrive_sync_status": {"$in": ["pending", "failed"]},
+        },
+        {"_id": 0, "id": 1, "relatorio_id": 1, "intervencao_id": 1, "filename": 1,
+         "content_type": 1, "foto_base64": 1, "uploaded_at": 1},
+    )
+    to_retry = await cursor.to_list(length=200)
+    if not to_retry:
+        return {"retried": 0, "synced": 0, "failed": 0}
+
+    token = await _graph_token(request, user_id)
+    synced = 0
+    failed = 0
+    for foto in to_retry:
+        try:
+            # Descobrir número FS + folder path
+            relatorio = await db.relatorios_tecnicos.find_one(
+                {"id": foto["relatorio_id"]}, {"_id": 0, "numero_assistencia": 1}
+            )
+            fs_num = (relatorio or {}).get("numero_assistencia", "X")
+            subfolder = f"FS-{fs_num}/Fotografias"
+            parent = f"{ONEDRIVE_ROOT_FOLDER}/{subfolder}"
+
+            content = _b64.b64decode(foto.get("foto_base64", ""))
+            if not content:
+                failed += 1
+                continue
+            name = foto.get("filename") or f"foto_{foto['id']}.jpg"
+            ct = foto.get("content_type") or "image/jpeg"
+
+            async with httpx.AsyncClient(timeout=120) as client:
+                await _ensure_folder_path(client, token, parent)
+                upload_url = (
+                    f"{GRAPH}/me/drive/root:/{parent}/{name}:/content"
+                    f"?@microsoft.graph.conflictBehavior=rename"
+                )
+                r = await client.put(
+                    upload_url,
+                    headers={"Authorization": f"Bearer {token}", "Content-Type": ct},
+                    content=content,
+                )
+            if r.status_code >= 400:
+                failed += 1
+                await db.fotos_relatorio.update_one(
+                    {"id": foto["id"]},
+                    {"$set": {
+                        "onedrive_sync_status": "failed",
+                        "onedrive_last_error": r.text[:500],
+                    }},
+                )
+                continue
+
+            data = r.json()
+            await db.fotos_relatorio.update_one(
+                {"id": foto["id"]},
+                {"$set": {
+                    "onedrive_sync_status": "synced",
+                    "onedrive_item_id": data.get("id"),
+                    "onedrive_web_url": data.get("webUrl"),
+                    "onedrive_path": f"{parent}/{data.get('name')}",
+                    "onedrive_synced_at": datetime.now(timezone.utc).isoformat(),
+                    "onedrive_last_error": None,
+                }},
+            )
+            synced += 1
+        except Exception as e:
+            logger.warning(f"sync-pending falhou para foto {foto.get('id')}: {e}")
+            failed += 1
+            await db.fotos_relatorio.update_one(
+                {"id": foto["id"]},
+                {"$set": {"onedrive_sync_status": "failed", "onedrive_last_error": str(e)[:500]}},
+            )
+
+    return {"retried": len(to_retry), "synced": synced, "failed": failed}
+

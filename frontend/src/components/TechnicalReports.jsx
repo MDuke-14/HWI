@@ -123,6 +123,7 @@ import IntervencaoModal from './technical-reports/IntervencaoModal';
 import { FotoUploadModal, FotoEditModal, FotoPreviewModal, FotoBulkEditModal } from './technical-reports/FotoModals';
 import RelAssistModal from './technical-reports/RelAssistModal';
 import OneDrivePickerModal from './onedrive/OneDrivePickerModal';
+import CameraCaptureModal from './onedrive/CameraCaptureModal';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from './ui/dropdown-menu';
@@ -560,6 +561,7 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [showOneDrivePicker, setShowOneDrivePicker] = useState(false);
   const [oneDriveConnected, setOneDriveConnected] = useState(false);
   const [cameraToOneDrive, setCameraToOneDrive] = useState(false);
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
   const [editRegistoForm, setEditRegistoForm] = useState({
     minutos_trabalhados: 0,
     km: 0,
@@ -1337,7 +1339,13 @@ const TechnicalReports = ({ user, onLogout }) => {
     setActiveIntervencaoId(null);
     // Verificar estado OneDrive do utilizador atual (para mostrar "↳ cópia no OneDrive" no menu Câmara)
     axios.get(`${API}/onedrive/status`)
-      .then(({ data }) => setOneDriveConnected(!!data.connected))
+      .then(({ data }) => {
+        setOneDriveConnected(!!data.connected);
+        // Se ligado, tentar retry de fotos pendentes deste utilizador (best-effort silencioso)
+        if (data.connected) {
+          axios.post(`${API}/onedrive/sync-pending`).catch(() => { /* silencioso */ });
+        }
+      })
       .catch(() => setOneDriveConnected(false));
     // Buscar todos os dados em paralelo
     await Promise.all([
@@ -1954,8 +1962,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
-  // Upload helper — usado pelo input hidden e pelo picker OneDrive
-  // Se opts.mirrorToOneDrive === true, tenta guardar cópia no OneDrive do utilizador (best-effort)
+  // Upload helper — usado pelo input hidden e pelo picker/câmara OneDrive
+  // Se opts.mirrorToOneDrive === true, tenta guardar cópia no OneDrive do utilizador (best-effort).
+  //   Path OneDrive: HWI - FS / FS-{numero} / Fotografias / {filename}
+  //   Marca a foto com sync_status='synced|pending|failed' conforme resultado.
   const handleUploadPhotos = async (files, opts = {}) => {
     if (!files || files.length === 0 || !selectedRelatorio) return;
     const uploaded = [];
@@ -1963,26 +1973,11 @@ const TechnicalReports = ({ user, onLogout }) => {
     let onedriveOk = 0;
     let onedriveFail = 0;
     const fsNum = selectedRelatorio?.numero_assistencia;
+    const subfolder = `FS-${fsNum || 'X'}/Fotografias`;
     for (const file of files) {
+      let fotoId = null;
       try {
-        // 1. Mirror para OneDrive (não bloqueia se falhar)
-        if (opts.mirrorToOneDrive) {
-          try {
-            const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-            const overrideName = `FS-${fsNum || 'X'}_${ts}.${ext}`;
-            const odForm = new FormData();
-            odForm.append('file', file, overrideName);
-            odForm.append('filename_override', overrideName);
-            await axios.post(`${API}/onedrive/upload`, odForm);
-            onedriveOk++;
-          } catch (odErr) {
-            console.warn('Falha a enviar cópia para OneDrive:', odErr?.response?.data || odErr);
-            onedriveFail++;
-          }
-        }
-
-        // 2. Upload normal para a FS
+        // 1. Upload principal para a FS (fonte da verdade — sempre visível)
         const formData = new FormData();
         formData.append('file', file);
         formData.append('descricao', '');
@@ -1991,12 +1986,47 @@ const TechnicalReports = ({ user, onLogout }) => {
           `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias`,
           formData
         );
+        fotoId = response.data.id;
         uploaded.push({
-          id: response.data.id,
+          id: fotoId,
           foto_url: response.data.foto_url,
           descricao: response.data.descricao || '',
           uploaded_at: response.data.uploaded_at,
         });
+
+        // 2. Mirror para OneDrive (best-effort)
+        if (opts.mirrorToOneDrive && fotoId) {
+          try {
+            const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+            const overrideName = `FS-${fsNum || 'X'}_${ts}.${ext}`;
+            const odForm = new FormData();
+            odForm.append('file', file, overrideName);
+            odForm.append('filename_override', overrideName);
+            odForm.append('subfolder_path', subfolder);
+            const odResp = await axios.post(`${API}/onedrive/upload`, odForm);
+            await axios.patch(
+              `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${fotoId}/onedrive-link`,
+              {
+                onedrive_item_id: odResp.data.id,
+                onedrive_web_url: odResp.data.web_url,
+                onedrive_path: odResp.data.path,
+                sync_status: 'synced',
+              }
+            );
+            onedriveOk++;
+          } catch (odErr) {
+            console.warn('Falha a enviar cópia para OneDrive:', odErr?.response?.data || odErr);
+            onedriveFail++;
+            // Marca como pendente — retry automático mais tarde
+            try {
+              await axios.patch(
+                `${API}/relatorios-tecnicos/${selectedRelatorio.id}/fotografias/${fotoId}/onedrive-link`,
+                { sync_status: 'pending' }
+              );
+            } catch { /* ignore */ }
+          }
+        }
       } catch (err) {
         console.error('Erro no upload:', err);
         failed++;
@@ -2011,11 +2041,11 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
     if (opts.mirrorToOneDrive) {
       if (onedriveOk > 0 && onedriveFail === 0) {
-        toast.success(`${onedriveOk} cópia(s) guardadas no OneDrive → HWI - FS`);
+        toast.success(`${onedriveOk} guardadas em OneDrive/HWI - FS/FS-${fsNum}/Fotografias`);
       } else if (onedriveFail > 0 && onedriveOk === 0) {
-        toast.warning('Não foi possível guardar no OneDrive — verifica se ainda está ligado no perfil.');
+        toast.warning('OneDrive indisponível — fotos marcadas como "a aguardar sincronização". Vamos tentar novamente automaticamente.');
       } else if (onedriveFail > 0) {
-        toast.warning(`OneDrive: ${onedriveOk} guardadas, ${onedriveFail} falharam.`);
+        toast.warning(`OneDrive: ${onedriveOk} guardadas, ${onedriveFail} pendentes (retry automático).`);
       }
     }
     await fetchFotografiasRelatorio(selectedRelatorio.id);
@@ -6132,8 +6162,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                             setOneDriveConnected(connected);
                                           } catch (_) { /* ignore */ }
                                           setCameraToOneDrive(connected);
-                                          const input = document.getElementById('foto-upload-input');
-                                          if (input) { input.setAttribute('capture', 'environment'); input.click(); setTimeout(() => input.removeAttribute('capture'), 500); }
+                                          setShowCameraCapture(true);
                                         }}
                                         data-testid="btn-add-foto-camera"
                                       >
@@ -6184,6 +6213,25 @@ const TechnicalReports = ({ user, onLogout }) => {
                                         setShowFotoPreviewModal(true);
                                       }}
                                     />
+                                    {/* Badge de estado OneDrive */}
+                                    {foto.onedrive_sync_status === 'synced' && (
+                                      <span
+                                        className="absolute bottom-0.5 left-0.5 bg-emerald-600/90 text-white rounded-full p-0.5 shadow"
+                                        title={`Sincronizado com OneDrive: ${foto.onedrive_path || ''}`}
+                                        data-testid={`foto-synced-${foto.id}`}
+                                      >
+                                        <CloudIcon className="w-3 h-3" />
+                                      </span>
+                                    )}
+                                    {(foto.onedrive_sync_status === 'pending' || foto.onedrive_sync_status === 'failed') && (
+                                      <span
+                                        className="absolute bottom-0.5 left-0.5 bg-amber-500/90 text-white rounded-full px-1 py-0.5 shadow text-[9px] font-semibold"
+                                        title="A aguardar sincronização com OneDrive"
+                                        data-testid={`foto-pending-${foto.id}`}
+                                      >
+                                        ⏳
+                                      </span>
+                                    )}
                                     {!isHerdadaAtiva && (
                                       <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
                                         <Button onClick={() => openEditFotoModal(foto)} size="sm" className="bg-blue-600/80 hover:bg-blue-700 p-0.5 h-5 w-5" data-testid={`edit-foto-${foto.id}`}><Edit className="w-3 h-3" /></Button>
@@ -6417,6 +6465,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                 open={showOneDrivePicker}
                 onOpenChange={setShowOneDrivePicker}
                 onPick={async (files) => { await handleUploadPhotos(files); }}
+              />
+
+              {/* Câmara in-app (grava direto para FS + OneDrive, sem passar pela galeria do telemóvel) */}
+              <CameraCaptureModal
+                open={showCameraCapture}
+                onOpenChange={setShowCameraCapture}
+                onCapture={async (files) => {
+                  await handleUploadPhotos(files, { mirrorToOneDrive: cameraToOneDrive });
+                }}
               />
 
               {/* Despesas */}
