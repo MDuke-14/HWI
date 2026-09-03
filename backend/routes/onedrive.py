@@ -41,7 +41,7 @@ if not (MS_CLIENT_ID and MS_CLIENT_SECRET and TOKEN_KEY):
 AUTH_URL = f"https://login.microsoftonline.com/{MS_TENANT}/oauth2/v2.0/authorize"
 TOKEN_URL = f"https://login.microsoftonline.com/{MS_TENANT}/oauth2/v2.0/token"
 GRAPH = "https://graph.microsoft.com/v1.0"
-SCOPES = "openid profile User.Read Files.Read.All offline_access"
+SCOPES = "openid profile User.Read Files.ReadWrite offline_access"
 
 _fernet = Fernet(TOKEN_KEY.encode()) if TOKEN_KEY else None
 _state_signer = URLSafeSerializer(TOKEN_KEY, salt="onedrive-oauth-state") if TOKEN_KEY else None
@@ -339,3 +339,86 @@ async def onedrive_download(item_id: str, request: Request, current_user: dict =
     if not ct.startswith("image/"):
         raise HTTPException(415, "O ficheiro selecionado não é uma imagem")
     return StreamingResponse(iter([r.content]), media_type=ct)
+
+
+
+# ================================================================
+#  7) Upload de ficheiro para o OneDrive (pasta HWI - FS na raiz)
+# ================================================================
+from fastapi import File, UploadFile, Form
+
+ONEDRIVE_ROOT_FOLDER = "HWI - FS"
+
+
+async def _ensure_folder(client: httpx.AsyncClient, token: str, folder_name: str) -> str:
+    """Cria (ou obtém) uma pasta no root do OneDrive. Devolve o item_id."""
+    headers = {"Authorization": f"Bearer {token}"}
+    # Tenta ler
+    r = await client.get(
+        f"{GRAPH}/me/drive/root:/{folder_name}",
+        headers=headers,
+    )
+    if r.status_code == 200:
+        return r.json()["id"]
+    if r.status_code != 404:
+        r.raise_for_status()
+    # Cria
+    create = await client.post(
+        f"{GRAPH}/me/drive/root/children",
+        headers={**headers, "Content-Type": "application/json"},
+        json={"name": folder_name, "folder": {}, "@microsoft.graph.conflictBehavior": "rename"},
+    )
+    create.raise_for_status()
+    return create.json()["id"]
+
+
+@router.post("/onedrive/upload")
+async def onedrive_upload(
+    request: Request,
+    file: UploadFile = File(...),
+    filename_override: Optional[str] = Form(None),
+    current_user: dict = Depends(get_current_user),
+):
+    """Envia bytes para a pasta `HWI - FS` no root do OneDrive do utilizador logado.
+    Faz *simple upload* (até 4 MB via `PUT :/content`; para maiores usaríamos
+    upload session — não crítico para fotos de FS).
+    Devolve `{ok, id, web_url, name}`.
+    """
+    token = await _graph_token(request, current_user["sub"])
+    content = await file.read()
+    if not content:
+        raise HTTPException(400, "Ficheiro vazio")
+    # Nome final: usa override (ex: FS-373_2026-02-15T14-05-22.jpg) ou o do upload
+    name = (filename_override or file.filename or "foto.jpg").strip().replace("/", "_")
+    ct = file.content_type or "application/octet-stream"
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        try:
+            await _ensure_folder(client, token, ONEDRIVE_ROOT_FOLDER)
+        except Exception as e:
+            logger.error(f"OneDrive upload — falha a criar/obter pasta: {e}")
+            raise HTTPException(502, "Não foi possível preparar a pasta HWI - FS no OneDrive")
+
+        # `@microsoft.graph.conflictBehavior=rename` no querystring para nunca sobrescrever
+        upload_url = (
+            f"{GRAPH}/me/drive/root:/{ONEDRIVE_ROOT_FOLDER}/{name}:/content"
+            f"?@microsoft.graph.conflictBehavior=rename"
+        )
+        r = await client.put(
+            upload_url,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": ct},
+            content=content,
+        )
+    if r.status_code in (401, 403):
+        raise HTTPException(r.status_code, "Sem permissão para escrever no OneDrive — reconfirma o acesso no perfil")
+    if r.status_code >= 400:
+        logger.error(f"OneDrive upload falhou: {r.status_code} {r.text}")
+        raise HTTPException(502, f"OneDrive rejeitou o upload ({r.status_code})")
+    data = r.json()
+    return {
+        "ok": True,
+        "id": data.get("id"),
+        "name": data.get("name"),
+        "web_url": data.get("webUrl"),
+        "size": data.get("size"),
+    }

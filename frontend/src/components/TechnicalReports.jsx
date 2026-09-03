@@ -558,6 +558,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // OneDrive picker (por-utilizador)
   const [showOneDrivePicker, setShowOneDrivePicker] = useState(false);
+  const [oneDriveConnected, setOneDriveConnected] = useState(false);
+  const [cameraToOneDrive, setCameraToOneDrive] = useState(false);
   const [editRegistoForm, setEditRegistoForm] = useState({
     minutos_trabalhados: 0,
     km: 0,
@@ -1333,6 +1335,10 @@ const TechnicalReports = ({ user, onLogout }) => {
     setSelectedRelatorio(relatorio);
     setShowViewRelatorioModal(true);
     setActiveIntervencaoId(null);
+    // Verificar estado OneDrive do utilizador atual (para mostrar "↳ cópia no OneDrive" no menu Câmara)
+    axios.get(`${API}/onedrive/status`)
+      .then(({ data }) => setOneDriveConnected(!!data.connected))
+      .catch(() => setOneDriveConnected(false));
     // Buscar todos os dados em paralelo
     await Promise.all([
       fetchTecnicosRelatorio(relatorio.id),
@@ -1949,12 +1955,34 @@ const TechnicalReports = ({ user, onLogout }) => {
   };
 
   // Upload helper — usado pelo input hidden e pelo picker OneDrive
-  const handleUploadPhotos = async (files) => {
+  // Se opts.mirrorToOneDrive === true, tenta guardar cópia no OneDrive do utilizador (best-effort)
+  const handleUploadPhotos = async (files, opts = {}) => {
     if (!files || files.length === 0 || !selectedRelatorio) return;
     const uploaded = [];
     let failed = 0;
+    let onedriveOk = 0;
+    let onedriveFail = 0;
+    const fsNum = selectedRelatorio?.numero_assistencia;
     for (const file of files) {
       try {
+        // 1. Mirror para OneDrive (não bloqueia se falhar)
+        if (opts.mirrorToOneDrive) {
+          try {
+            const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+            const overrideName = `FS-${fsNum || 'X'}_${ts}.${ext}`;
+            const odForm = new FormData();
+            odForm.append('file', file, overrideName);
+            odForm.append('filename_override', overrideName);
+            await axios.post(`${API}/onedrive/upload`, odForm);
+            onedriveOk++;
+          } catch (odErr) {
+            console.warn('Falha a enviar cópia para OneDrive:', odErr?.response?.data || odErr);
+            onedriveFail++;
+          }
+        }
+
+        // 2. Upload normal para a FS
         const formData = new FormData();
         formData.append('file', file);
         formData.append('descricao', '');
@@ -1980,6 +2008,15 @@ const TechnicalReports = ({ user, onLogout }) => {
       toast.warning(`${uploaded.length} enviada(s), ${failed} falhou/falharam.`);
     } else {
       toast.success(`${uploaded.length} fotografia(s) adicionada(s)!`);
+    }
+    if (opts.mirrorToOneDrive) {
+      if (onedriveOk > 0 && onedriveFail === 0) {
+        toast.success(`${onedriveOk} cópia(s) guardadas no OneDrive → HWI - FS`);
+      } else if (onedriveFail > 0 && onedriveOk === 0) {
+        toast.warning('Não foi possível guardar no OneDrive — verifica se ainda está ligado no perfil.');
+      } else if (onedriveFail > 0) {
+        toast.warning(`OneDrive: ${onedriveOk} guardadas, ${onedriveFail} falharam.`);
+      }
     }
     await fetchFotografiasRelatorio(selectedRelatorio.id);
     if (uploaded.length === 1) {
@@ -6085,14 +6122,28 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     <DropdownMenuContent className="bg-[#1a1a1a] border-gray-700 text-white">
                                       <DropdownMenuItem
                                         className="cursor-pointer focus:bg-blue-500/20"
-                                        onClick={() => {
+                                        onClick={async () => {
                                           setUploadIntervencaoId(activeInterv.id);
+                                          // Verifica ligação OneDrive on-demand
+                                          let connected = oneDriveConnected;
+                                          try {
+                                            const { data } = await axios.get(`${API}/onedrive/status`);
+                                            connected = !!data.connected;
+                                            setOneDriveConnected(connected);
+                                          } catch (_) { /* ignore */ }
+                                          setCameraToOneDrive(connected);
                                           const input = document.getElementById('foto-upload-input');
                                           if (input) { input.setAttribute('capture', 'environment'); input.click(); setTimeout(() => input.removeAttribute('capture'), 500); }
                                         }}
                                         data-testid="btn-add-foto-camera"
                                       >
-                                        <Camera className="w-3.5 h-3.5 mr-2 text-blue-400" /> Câmara
+                                        <Camera className="w-3.5 h-3.5 mr-2 text-blue-400" />
+                                        <div className="flex flex-col">
+                                          <span>Câmara</span>
+                                          {oneDriveConnected && (
+                                            <span className="text-[10px] text-blue-300/70">↳ cópia no OneDrive</span>
+                                          )}
+                                        </div>
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         className="cursor-pointer focus:bg-blue-500/20"
@@ -6355,7 +6406,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                 className="hidden"
                 onChange={async (e) => {
                   const files = Array.from(e.target.files || []);
-                  await handleUploadPhotos(files);
+                  await handleUploadPhotos(files, { mirrorToOneDrive: cameraToOneDrive });
+                  setCameraToOneDrive(false);
                   e.target.value = '';
                 }}
               />
