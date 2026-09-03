@@ -4358,18 +4358,36 @@ const TechnicalReports = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Tabs/Sections */}
-        <TechnicalReportsTabs
-          activeTab={activeTab}
-          isMobile={isMobile}
-          user={user}
-          borderColor={borderColor}
-          textPrimary={textPrimary}
-          textSecondary={textSecondary}
-          setActiveTab={setActiveTab}
-          fetchAllPCs={fetchAllPCs}
-          fetchRefTokens={fetchRefTokens}
-        />
+        {/* Tabs/Sections — sidebar em desktop, tabs horizontais em mobile */}
+        {isMobile ? (
+          <TechnicalReportsTabs
+            activeTab={activeTab}
+            isMobile={isMobile}
+            user={user}
+            borderColor={borderColor}
+            textPrimary={textPrimary}
+            textSecondary={textSecondary}
+            setActiveTab={setActiveTab}
+            fetchAllPCs={fetchAllPCs}
+            fetchRefTokens={fetchRefTokens}
+          />
+        ) : null}
+
+        <div className={isMobile ? '' : 'flex gap-4 items-start'}>
+          {!isMobile && (
+            <TechnicalReportsTabs
+              activeTab={activeTab}
+              isMobile={false}
+              user={user}
+              borderColor={borderColor}
+              textPrimary={textPrimary}
+              textSecondary={textSecondary}
+              setActiveTab={setActiveTab}
+              fetchAllPCs={fetchAllPCs}
+              fetchRefTokens={fetchRefTokens}
+            />
+          )}
+          <div className={isMobile ? '' : 'flex-1 min-w-0'}>
 
         {/* Clientes Section */}
         {activeTab === 'clientes' && (
@@ -4982,6 +5000,8 @@ const TechnicalReports = ({ user, onLogout }) => {
           )}
         </div>
         )}
+          </div>
+        </div>
       </div>
 
       {/* Add Relatório Modal */}
