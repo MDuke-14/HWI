@@ -124,6 +124,7 @@ import { FotoUploadModal, FotoEditModal, FotoPreviewModal, FotoBulkEditModal } f
 import RelAssistModal from './technical-reports/RelAssistModal';
 import OneDrivePickerModal from './onedrive/OneDrivePickerModal';
 import CameraCaptureModal from './onedrive/CameraCaptureModal';
+import FornecedoresPage from './technical-reports/FornecedoresPage';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from './ui/dropdown-menu';
@@ -4823,6 +4824,21 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <span className={`${textPrimary} truncate`}>{pc.cliente_nome}</span>
                       </div>
 
+                      {/* Equipamento (Marca + Modelo) — Fase 2 */}
+                      {(pc.equipamento_marca || pc.equipamento_modelo) && (
+                        <div className={`flex items-start gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                          <Settings className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0 mt-0.5`} />
+                          <div className="flex flex-col min-w-0 leading-tight">
+                            {pc.equipamento_marca && (
+                              <span className={`${textPrimary} truncate font-medium`}>{pc.equipamento_marca}</span>
+                            )}
+                            {pc.equipamento_modelo && (
+                              <span className={`${textSecondary} truncate text-xs`}>{pc.equipamento_modelo}</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       <div className={`flex items-center gap-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                         <Package className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'} text-gray-500 flex-shrink-0`} />
                         <span className={textSecondary}>Materiais:</span>
@@ -4869,6 +4885,13 @@ const TechnicalReports = ({ user, onLogout }) => {
             </div>
           )}
         </div>
+        )}
+
+        {/* Fornecedores Section (Admin only) — Fase 2 */}
+        {activeTab === 'fornecedores' && user?.is_admin && (
+          <div className={`${isDark ? 'glass-effect' : 'bg-white shadow-lg border ' + borderColor} ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
+            <FornecedoresPage />
+          </div>
         )}
 
         {/* Referências Internas Section (Admin only) */}

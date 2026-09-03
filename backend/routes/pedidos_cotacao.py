@@ -44,11 +44,23 @@ async def get_all_pedidos_cotacao(
         if ot:
             pc["ot_numero"] = ot.get("numero_assistencia", "N/A")
             pc["cliente_nome"] = ot.get("cliente_nome", "N/A")
-        
+
+        # Equipamento — marca + modelo (Fase 2 UI)
+        eq_ot_ids = pc.get("equipamento_ot_ids", [])
+        equip_ot = None
+        if eq_ot_ids:
+            equip_ot = await db.equipamentos_ot.find_one({"id": eq_ot_ids[0]}, {"_id": 0})
+        if not equip_ot:
+            equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc.get("relatorio_id")}, {"_id": 0})
+        if equip_ot:
+            pc["equipamento_marca"] = equip_ot.get("marca") or ""
+            pc["equipamento_modelo"] = equip_ot.get("modelo") or ""
+            pc["equipamento_tipologia"] = equip_ot.get("tipologia") or ""
+
         # Contar materiais associados
         materiais_count = await db.materiais_ot.count_documents({"pc_id": pc["id"]})
         pc["materiais_count"] = materiais_count
-        
+
         primeiro = await db.materiais_ot.find_one({"pc_id": pc["id"]}, {"_id": 0, "descricao": 1, "posicao": 1, "codigo": 1})
         pc["primeiro_material"] = primeiro["descricao"] if primeiro else None
         pc["primeiro_material_posicao"] = primeiro.get("posicao") if primeiro else None

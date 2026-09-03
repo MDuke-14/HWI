@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, FileText, Link2, Search } from 'lucide-react';
+import { Building2, FileText, Link2, Search, Users } from 'lucide-react';
 
 const TechnicalReportsTabs = ({
   activeTab,
@@ -19,6 +19,7 @@ const TechnicalReportsTabs = ({
     ...(user?.is_admin ? [{ key: 'facturados', label: 'Facturados', icon: FileText, color: 'purple' }] : []),
     { key: 'pesquisa', label: isMobile ? 'Estados' : 'Pesquisa por Estado', icon: Search, color: 'blue' },
     { key: 'pedidos-cotacao', label: isMobile ? 'PCs' : 'Pedidos de Cotação', icon: FileText, color: 'yellow', preload: fetchAllPCs },
+    ...(user?.is_admin ? [{ key: 'fornecedores', label: 'Fornecedores', icon: Users, color: 'yellow' }] : []),
     ...(user?.is_admin ? [{ key: 'referencias', label: isMobile ? 'Refs' : 'Ref. Internas', icon: Link2, color: 'indigo', preload: fetchRefTokens }] : []),
   ];
 
