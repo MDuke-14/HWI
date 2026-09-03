@@ -1,0 +1,69 @@
+{
+  "summary": "Fase 5 PC (envio multi-fornecedor) testada end-to-end. Backend: 14/15 testes novos passaram (1 skip) + 13/13 regressão Fase 4 + 1 edge case FALHOU (bug real). Frontend: modal Global (multi-select fornecedores, emails manuais, FS.pdf), modal Individual (Fase 4), validações de email, dedup, toasts success/warning e re-fetch pós-envio todos verificados na UI real com SMTP real. 2 problemas encontrados (1 funcional HIGH, 1 UI médio).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao",
+        "issue": "BUG FUNCIONAL: no modo GLOBAL, se o utilizador desmarcar 1 ou mais materiais, o frontend envia material_ids != [] e o backend classifica o envio como 'individual' (envio_tipo é derivado apenas de material_ids). A regra 'Envio individual (1 material) suporta apenas 1 fornecedor' rejeita então o envio com 400, mesmo com 2/3 materiais selecionados e 2 destinatários. Reproduzido: material_ids=[m1,m2] + emails_manuais=[a,b] → 400 'Envio individual (1 material) suporta apenas 1 fornecedor'. Teste: /app/backend/tests/test_pc_fase5_edge_subset.py. Sugestão: aplicar a restrição só quando len(material_ids)==1, ou receber um campo explícito de modo (ex. envio_modo: 'global'|'individual') do frontend.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao",
+        "issue": "fornecedor_ids com ids repetidos devolve 404 ('Um ou mais fornecedores não encontrados') porque a verificação compara len(fdocs) != len(payload.fornecedor_ids). Deduplicar a lista antes da query."
+      },
+      {
+        "endpoint": "POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao",
+        "issue": "Falha na geração do FS.pdf (incluir_fs_pdf=true) é silenciosamente engolida (logger.warning) e o email segue sem anexo; a resposta devolve fs_pdf_incluido:false mas o frontend não distingue isso de 'não pedido' — o utilizador não é avisado. Sugestão: campo fs_pdf_erro na resposta + toast.warning no frontend."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TechnicalReports.jsx — aba Materiais da PC",
+        "issue": "As linhas de material NÃO mostram a contagem de cotacoes_solicitadas (esperado 'N pedido(s) em curso' em azul). O campo só é lido dentro de EnviarPedidoCotacaoModal.jsx (linha 478); grep de 'cotacoes_solicitadas' em /app/frontend/src/components não devolve nada em TechnicalReports.jsx. Após envio multi com 2 destinatários, a linha continua a mostrar apenas 'Fornecedor: geral@hwi.pt · em_cotacao' (amarelo), sem sinal dos pedidos multi.",
+        "selector": "[data-testid^=\"pc-material-enviar-\"] (linha do material na aba pc-tab-materiais)",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Envio Global com subset de materiais + >1 destinatário",
+        "issue": "O modal permite desmarcar materiais e manter 2+ destinatários (botão 'Enviar (N destinatários)' fica ativo), mas o POST devolve 400 — dead end para o utilizador (ver backend_issues.critical).",
+        "affected_selectors": ["pc-envio-mat-cb-{id}", "pc-envio-enviar"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_pc_enviar_cotacao_fase5.py",
+    "/app/backend/tests/test_pc_fase5_edge_subset.py",
+    "/app/backend/tests/test_pc_enviar_cotacao.py",
+    "/app/test_reports/pytest/fase5_results.xml"
+  ],
+  "action_items": [
+    "HIGH: corrigir a classificação global/individual no endpoint enviar-cotacao — global com subset de materiais + multi destinatários deve ser aceite (ou bloquear no frontend antes do POST).",
+    "MEDIUM: mostrar N cotacoes_solicitadas (azul) nas linhas de material da aba Materiais da PC em TechnicalReports.jsx.",
+    "MINOR: deduplicar fornecedor_ids antes da validação 404.",
+    "MINOR: expor erro de geração do FS.pdf na resposta/toast em vez de falhar em silêncio."
+  ],
+  "critical_code_review_comments": [
+    "envio_tipo é inferido apenas de payload.material_ids; o modo (global vs individual) devia ser explícito para não acoplar semântica de UI à forma do payload.",
+    "TechnicalReports.jsx tem ~10.100 linhas (>700) — a aba PC/Materiais devia ser extraída para componentes próprios (dívida técnica já existente).",
+    "cotacoes_solicitadas[] cresce sem limite ($push por envio) — 6+ entradas já no PC de teste. Considerar deduplicar por email ou limitar histórico por material.",
+    "Bom: dedup por email (case-insensitive), envio 1-email-por-destinatário, 1 evento email_sent por destinatário e email_send_failed em envio parcial, todos verificados."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pc_enviar_cotacao_fase5.py (novo)",
+    "/app/backend/tests/test_pc_fase5_edge_subset.py (novo — falha propositada que documenta o bug HIGH)"
+  ],
+  "success_rate": {"backend": "97% (27/28 asserções de teste; 1 falha = bug HIGH reproduzido)", "frontend": "92% (todos os elementos/fluxos Fase 5 OK; falta display de cotacoes_solicitadas na aba Materiais)"},
+  "seed_data_creation": "Criadas/apagadas PCs temporárias com materiais TEST_F5_* (cleanup automático nas fixtures). Criado e desativado fornecedor 'TEST_Forn_Sem_Email' (soft delete → continua na coleção com ativo=false; não aparece em ?ativo=true). Envios SMTP reais para geral@hwi.pt e miguel.moreira@hwi.pt. PC de trabalho 03d82cdc-... acumulou cotacoes_solicitadas (7 entradas/material) e histórico (14 eventos) por causa dos testes de UI.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "miguel / Miguel123! (login usa o primeiro input; campo não tem name='username')",
+  "context_for_next_testing_agent": "URL pública correta: https://field-clock.preview.emergentagent.com (o /app/frontend/.env é a fonte). Login: preencher input nth(0)/nth(1) e clicar 'Entrar' (last). Navegar direto para /technical-reports, clicar no texto 'Pedidos de Cotação' na sidebar, depois [data-testid=pc-card-03d82cdc-af6a-4141-a3d7-ee6f72e5d20a] → [data-testid=pc-tab-materiais]. Toasts sonner desaparecem rápido: fazer polling a [data-sonner-toast] a cada 500ms (não esperar 25s). Fornecedores DB: Fornecedor A (23061465-...) e B (a9b78ad5-...) — ambos com email de domínio fictício mas o relay aceita-os; para forçar falha SMTP usar domínio .invalid (RFC2606 → 501 recusado). Testes: pytest /app/backend/tests/test_pc_enviar_cotacao_fase5.py e test_pc_fase5_edge_subset.py (este último só passa depois do fix HIGH).",
+  "rca_of_the_issue": "O endpoint deriva envio_tipo de `payload.material_ids` (vazio→global, não vazio→individual) e depois bloqueia multi-destinatário sempre que envio_tipo=='individual'. O frontend, no modo Global, envia material_ids=[] só quando TODOS os materiais estão selecionados (sendGlobalPayload = isGlobal && allSelected, EnviarPedidoCotacaoModal.jsx ~L162). Basta o utilizador desmarcar 1 material para o payload passar a 'individual' e o backend rejeitar 2+ destinatários com 400, apesar de o modal ainda estar em modo Global."
+}

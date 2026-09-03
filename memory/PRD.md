@@ -14,6 +14,15 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+22. ✅ **Módulo PC — Fase 5: Envio Global multi-fornecedor + anexo FS.pdf (Feb 2026)** — Refactor do endpoint `POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao` para suportar envio a múltiplos fornecedores em paralelo (1 email separado por destinatário).
+    - Payload novo: `fornecedor_ids: []` (multi-select da DB), `emails_manuais: [{email,nome}]` (emails avulsos), `incluir_fs_pdf: bool`, `envio_modo: 'global'|'individual'` (explícito).
+    - Materiais em modo Global NÃO ficam com `fornecedor_id/nome` sobrescritos — acrescenta-se antes um item em `cotacoes_solicitadas: [{fornecedor_id, fornecedor_nome, fornecedor_email, requested_at, requested_by}]`. `cotacao_status='em_cotacao'`. Modo Individual (Fase 4) mantém a sobrescrita.
+    - Anexo automático do PDF completo da FS gerado on-demand via `generate_ot_pdf` (thread pool) quando `incluir_fs_pdf=true`.
+    - Envio parcial suportado: se um destinatário falhar, os outros seguem; resposta traz `enviados`, `falhas`, `detalhes_falhas`, e regista evento `email_send_failed` no histórico.
+    - Frontend (`EnviarPedidoCotacaoModal.jsx`) bifurca UI: modo Global mostra multi-select de fornecedores + lista dinâmica de emails manuais + checkbox "Anexar FS.pdf"; modo Individual mantém dropdown Fase 4. Aba Materiais mostra também "N pedido(s) em curso" quando `cotacoes_solicitadas.length > 0`.
+    - Correções pós-testing agent: `envio_modo` explícito evita rejeição de global com subset de materiais; dedup de `fornecedor_ids`; mensagem de erro individual clarificada.
+    - Testes: `/app/backend/tests/test_pc_enviar_cotacao_fase5.py` (14/15) + regressão Fase 4 (13/13).
+
 21. ✅ **Módulo PC — Fase 4: Envio de Pedido de Cotação por email (Feb 2026)** — Fecha o ciclo dos "Pedidos de Cotação" com envio real por email associando o fornecedor ao material.
     - Novo endpoint `POST /api/pedidos-cotacao/{pc_id}/enviar-cotacao` (`backend/routes/pc_extended.py`) — aceita `material_ids[]`, `fornecedor_id` ou `fornecedor_email_custom` (email manual), `cc[]`, `assunto`, `mensagem`, `anexos_doc_ids[]`.
     - Regras: (a) associa `fornecedor_id/nome/email/cotacao_status="em_cotacao"` a cada material do envio; (b) permite sobrescrita de fornecedor já associado, apenas regista no histórico; (c) actualiza PC.status para "Cotação Pedida" se estava "Em Espera"; (d) grava evento `email_sent` em `pc_historico` com `metadata.envio_tipo` (individual|global); (e) SMTP via aiosmtplib; (f) erros SMTP devolvem mensagem PT genérica ao cliente (detalhe só no log).

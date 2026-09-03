@@ -7517,6 +7517,11 @@ const TechnicalReports = ({ user, onLogout }) => {
                               {mat.cotacao_status && ` · ${mat.cotacao_status}`}
                             </div>
                           )}
+                          {(mat.cotacoes_solicitadas?.length || 0) > 0 && (
+                            <div className="text-[11px] text-blue-400 mt-0.5" data-testid={`pc-material-cotacoes-solicitadas-${mat.id}`}>
+                              {mat.cotacoes_solicitadas.length} pedido(s) em curso
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-1 shrink-0">
                           {pcActiveTab === 'materiais' && (
