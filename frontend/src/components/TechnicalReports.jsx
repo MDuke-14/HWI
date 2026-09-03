@@ -3086,6 +3086,50 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Estado dos materiais (Fase 8) — badges na tabela do Resumo
+  const materialStatusEquals = (current, target) => {
+    // Compara considerando os valores legados (snake_case) contra os novos
+    if (!current) return target === 'Em Espera';
+    if (current === target) return true;
+    const legacyMap = {
+      sem_pedido: 'Em Espera',
+      em_cotacao: 'Cotação Pedida',
+      cotacao_recebida: 'A Caminho',
+      cancelada: 'Cancelado',
+    };
+    return legacyMap[current] === target;
+  };
+
+  const getMaterialEstadoInfo = (status) => {
+    const map = {
+      'Em Espera': { label: 'EM ESPERA', cls: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/40' },
+      'Cotação Pedida': { label: 'EM COTAÇÃO', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' },
+      'A Caminho': { label: 'A CAMINHO', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/40' },
+      'Em Armazém': { label: 'EM ARMAZÉM', cls: 'bg-purple-500/15 text-purple-300 border-purple-500/40' },
+      'Terminado': { label: 'TERMINADO', cls: 'bg-emerald-600/20 text-emerald-200 border-emerald-500/60' },
+      'Cancelado': { label: 'CANCELADO', cls: 'bg-red-500/15 text-red-300 border-red-500/40' },
+      // legados
+      'em_cotacao': { label: 'EM COTAÇÃO', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' },
+      'cotacao_recebida': { label: 'A CAMINHO', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/40' },
+      'cancelada': { label: 'CANCELADO', cls: 'bg-red-500/15 text-red-300 border-red-500/40' },
+    };
+    return map[status] || { label: 'SEM PEDIDO', cls: 'bg-gray-600/20 text-gray-400 border-gray-600/40' };
+  };
+
+  const handleChangeMaterialStatus = async (materialId, novoStatus) => {
+    if (!selectedPC) return;
+    try {
+      await axios.patch(
+        `${API}/pedidos-cotacao/${selectedPC.id}/materiais/${materialId}/fornecedor`,
+        { cotacao_status: novoStatus },
+      );
+      toast.success(`Material → ${novoStatus === 'Cotação Pedida' ? 'Em Cotação' : novoStatus}`);
+      await fetchPCDetalhes(selectedPC.id);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro a alterar estado do material');
+    }
+  };
+
   const fetchAllPCs = async () => {
     setLoadingPCs(true);
     try {
@@ -7600,13 +7644,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                             </thead>
                             <tbody>
                               {selectedPC.materiais.map((mat, idx) => {
-                                const estado = mat.cotacao_status === 'em_cotacao'
-                                  ? { label: 'EM COTAÇÃO', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' }
-                                  : mat.cotacao_status === 'cotacao_recebida'
-                                  ? { label: 'RECEBIDA', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/40' }
-                                  : mat.cotacao_status === 'cancelada'
-                                  ? { label: 'CANCELADA', cls: 'bg-red-500/15 text-red-300 border-red-500/40' }
-                                  : { label: 'SEM PEDIDO', cls: 'bg-gray-600/20 text-gray-400 border-gray-600/40' };
+                                const estado = getMaterialEstadoInfo(mat.cotacao_status);
                                 return (
                                   <tr key={mat.id} className="border-b border-gray-800/70" data-testid={`pc-resumo-mat-row-${mat.id}`}>
                                     <td className="py-2 pl-2 text-gray-500">{idx + 1}</td>
@@ -7615,9 +7653,32 @@ const TechnicalReports = ({ user, onLogout }) => {
                                     <td className="py-2 text-gray-300">{mat.posicao || '—'}</td>
                                     <td className="py-2 text-gray-300">{mat.codigo || '—'}</td>
                                     <td className="py-2">
-                                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${estado.cls}`}>
-                                        {estado.label}
-                                      </span>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button
+                                            className={`text-[10px] font-semibold px-2 py-0.5 rounded border inline-flex items-center gap-1 hover:brightness-125 transition ${estado.cls}`}
+                                            title="Clica para alterar o estado"
+                                            data-testid={`pc-resumo-mat-estado-${mat.id}`}
+                                          >
+                                            {estado.label}
+                                            <ChevronDown className="w-3 h-3 opacity-70" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="bg-[#1a1a1a] border-gray-700 text-white">
+                                          {['Em Espera', 'Cotação Pedida', 'A Caminho', 'Em Armazém', 'Terminado', 'Cancelado'].map((st) => (
+                                            <DropdownMenuItem
+                                              key={st}
+                                              onClick={() => handleChangeMaterialStatus(mat.id, st)}
+                                              disabled={materialStatusEquals(mat.cotacao_status, st)}
+                                              className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300 disabled:opacity-40"
+                                              data-testid={`pc-resumo-mat-estado-option-${mat.id}-${st.replace(/\s+/g, '-').toLowerCase()}`}
+                                            >
+                                              {materialStatusEquals(mat.cotacao_status, st) && <CheckCircle className="w-3.5 h-3.5 mr-2 text-emerald-400" />}
+                                              {st === 'Cotação Pedida' ? 'Em Cotação' : st}
+                                            </DropdownMenuItem>
+                                          ))}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
                                     </td>
                                     <td className="py-2 pr-2">
                                       <div className="flex justify-center gap-1">

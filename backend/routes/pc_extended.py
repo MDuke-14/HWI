@@ -217,7 +217,12 @@ class MaterialSupplierPayload(BaseModel):
     cotacao_status: Optional[str] = None  # sem_pedido|em_cotacao|cotacao_recebida|cancelada
 
 
-VALID_COTACAO_STATUS = {"sem_pedido", "em_cotacao", "cotacao_recebida", "cancelada"}
+VALID_COTACAO_STATUS = {
+    # Novos (Fase 8) — alinhados com estados da PC
+    "Em Espera", "Cotação Pedida", "A Caminho", "Em Armazém", "Terminado", "Cancelado",
+    # Legados (mantidos por retro-compat com dados antigos)
+    "sem_pedido", "em_cotacao", "cotacao_recebida", "cancelada",
+}
 
 
 @router.patch("/pedidos-cotacao/{pc_id}/materiais/{material_id}/fornecedor")
