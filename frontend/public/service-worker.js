@@ -1,6 +1,6 @@
-const CACHE_NAME = 'hwi-ponto-v3';
-const STATIC_CACHE = 'hwi-static-v3';
-const DATA_CACHE = 'hwi-data-v3';
+const CACHE_NAME = 'hwi-ponto-v4';
+const STATIC_CACHE = 'hwi-static-v4';
+const DATA_CACHE = 'hwi-data-v4';
 const OFFLINE_QUEUE_NAME = 'hwi-offline-queue';
 
 // Recursos estáticos para cache
@@ -34,7 +34,7 @@ const OFFLINE_QUEUE_APIS = [
 
 // ============ Install Event ============
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v3...');
+  console.log('[SW] Installing service worker v4...');
   event.waitUntil(
     Promise.all([
       caches.open(STATIC_CACHE).then((cache) => {
@@ -52,7 +52,7 @@ self.addEventListener('install', (event) => {
 
 // ============ Activate Event ============
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v3...');
+  console.log('[SW] Activating service worker v4...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -67,7 +67,7 @@ self.addEventListener('activate', (event) => {
     .then(() => {
       // Avisar todos os clientes que há novo SW activo — o App.js pode mostrar toast
       return self.clients.matchAll().then(clients => {
-        clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED', version: 'v3' }));
+        clients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED', version: 'v4' }));
       });
     })
     .then(() => syncOfflineQueue())
@@ -132,12 +132,35 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ============ API Request Handler ============
+// Endpoints de download de ficheiros (PDFs, exports) NUNCA devem ser interceptados
+// pelo offline queue nem cacheados — qualquer resposta simulada JSON iria corromper
+// o ficheiro descarregado.
+function isFileDownloadEndpoint(pathname) {
+  return (
+    pathname.endsWith('-pdf') ||
+    pathname.includes('/pdf/') ||
+    pathname.endsWith('/pdf') ||
+    pathname.includes('/export/') ||
+    pathname.includes('-excel') ||
+    pathname.endsWith('.pdf') ||
+    pathname.endsWith('.xlsx') ||
+    pathname.endsWith('.xls') ||
+    pathname.endsWith('.csv')
+  );
+}
+
 async function handleApiRequest(request) {
   const url = new URL(request.url);
   
   // Auth endpoints NUNCA usam cache nem queue offline.
   // Se a network falha, propagamos o erro real para o app gerir.
   if (url.pathname.startsWith('/api/auth/')) {
+    return fetch(request);
+  }
+
+  // Downloads de ficheiros (PDFs, Excel, CSV) — sempre network-only, nunca queue.
+  // Uma resposta JSON simulada corromperia o ficheiro descarregado.
+  if (isFileDownloadEndpoint(url.pathname)) {
     return fetch(request);
   }
   
@@ -407,4 +430,4 @@ self.addEventListener('notificationclick', function(event) {
   }
 });
 
-console.log('[SW] Service Worker loaded - v3 with offline support');
+console.log('[SW] Service Worker loaded - v4 with offline support');
