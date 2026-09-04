@@ -3678,6 +3678,7 @@ async def add_material_ot(
     material_dict["created_at"] = material_dict["created_at"].isoformat()
     
     # Se fornecido_por = "Cotação", criar/atualizar PC
+    pc_info_for_response = None  # {"numero_pc": str, "created": bool} para o frontend
     if material_data["fornecido_por"] == "Cotação":
         pc_id_escolhido = material_data.get("pc_id")
         equipamento_ot_ids = material_data.get("equipamento_ot_ids", [])
@@ -3707,6 +3708,7 @@ async def add_material_ot(
                         {"$set": {"equipamento_ot_ids": list(new_eq_ids)}}
                     )
                 logging.info(f"Material agregado ao PC existente {pc_existente['numero_pc']}")
+                pc_info_for_response = {"pc_id": pc_id_escolhido, "numero_pc": pc_existente["numero_pc"], "created": False}
         else:
             # Fase 7A: uma FS = uma PC. Se já existe uma PC (não cancelada)
             # para esta FS, reutiliza-a em vez de criar outra.
@@ -3724,6 +3726,7 @@ async def add_material_ot(
                         {"id": pc_existente["id"]},
                         {"$set": {"equipamento_ot_ids": list(set(equipamento_ot_ids))}}
                     )
+                pc_info_for_response = {"pc_id": pc_existente["id"], "numero_pc": pc_existente["numero_pc"], "created": False}
             else:
                 # Criar nova PC — Fase 7A: numeração global sequencial SEM sufixo #FS ou .N
                 # Novos PCs ficam apenas com "PC_NNN". Existentes mantêm nome antigo.
@@ -3757,6 +3760,7 @@ async def add_material_ot(
                 await db.pedidos_cotacao.insert_one(pc_dict)
                 material_dict["pc_id"] = novo_pc.id
                 logging.info(f"PC criado: {numero_pc} para FS #{fs_numero}")
+                pc_info_for_response = {"pc_id": novo_pc.id, "numero_pc": numero_pc, "created": True}
 
                 # Notificar admins
                 await send_push_to_admins(
@@ -3771,6 +3775,8 @@ async def add_material_ot(
     
     # Return full dict (material model doesn't have pc_id set by the PC logic above)
     response_dict = {k: v for k, v in material_dict.items() if k != '_id'}
+    if pc_info_for_response:
+        response_dict["_pc_info"] = pc_info_for_response
     return response_dict
 
 @api_router.get("/relatorios-tecnicos/{relatorio_id}/materiais")

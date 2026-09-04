@@ -2440,13 +2440,39 @@ const TechnicalReports = ({ user, onLogout }) => {
         payload.equipamento_ot_ids = selectedEquipOTIdsForPC;
       }
       
-      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, payload);
-      toast.success('Material adicionado!');
+      const resp = await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/materiais`, payload);
+      const pcInfo = resp.data?._pc_info;
+
+      if (pcInfo?.numero_pc) {
+        const isNew = !!pcInfo.created;
+        const message = isNew
+          ? `Material adicionado — novo PC ${pcInfo.numero_pc} criado`
+          : `Material agregado ao PC ${pcInfo.numero_pc}`;
+        toast.success(message, {
+          duration: 6000,
+          action: {
+            label: 'Abrir PC',
+            onClick: async () => {
+              try {
+                setActiveTab('pedidos-cotacao');
+                setPcActiveTab('resumo');
+                await fetchPCDetalhes(pcInfo.pc_id);
+                setShowPCModal(true);
+              } catch (e) {
+                toast.error('Não foi possível abrir o PC');
+              }
+            },
+          },
+        });
+      } else {
+        toast.success('Material adicionado!');
+      }
+
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
       setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
       setSelectedEquipOTIdsForPC([]);
-      
+
       // Se foi marcado como "Cotação", atualizar lista de PCs
       if (materialFormData.fornecido_por === 'Cotação') {
         fetchPedidosCotacao(selectedRelatorio.id);
