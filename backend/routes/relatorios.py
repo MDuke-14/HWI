@@ -1783,6 +1783,79 @@ async def update_assinatura_put(
     
     return {"message": "Assinatura atualizada com sucesso"}
 
+@router.post("/relatorios-tecnicos/assinaturas/{assinatura_id}/copy")
+async def copiar_assinatura(
+    assinatura_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Copia uma assinatura existente para outra FS (relatório técnico) e associa
+    à data de uma intervenção alvo. Mantém o nome do signatário, a imagem
+    (base64) e a data de assinatura original — só muda `relatorio_id` e
+    `data_intervencao` (data da intervenção alvo).
+
+    Payload: { target_relatorio_id: str, target_data_intervencao: 'YYYY-MM-DD' }
+    """
+    import uuid as _uuid
+
+    target_relatorio_id = data.get("target_relatorio_id")
+    target_data_intervencao = data.get("target_data_intervencao")
+
+    if not target_relatorio_id or not target_data_intervencao:
+        raise HTTPException(status_code=400, detail="target_relatorio_id e target_data_intervencao são obrigatórios")
+
+    # Buscar assinatura origem
+    origem = await db.assinaturas_relatorio.find_one({"id": assinatura_id}, {"_id": 0})
+    if not origem:
+        raise HTTPException(status_code=404, detail="Assinatura de origem não encontrada")
+
+    # Verificar FS alvo existe
+    target_fs = await db.relatorios_tecnicos.find_one({"id": target_relatorio_id}, {"_id": 0, "id": 1, "numero_assistencia": 1})
+    if not target_fs:
+        raise HTTPException(status_code=404, detail="FS alvo não encontrada")
+
+    # Verificar se já existe uma assinatura idêntica (mesmo nome + mesma data)
+    # na FS alvo — evita duplicados acidentais
+    exists = await db.assinaturas_relatorio.find_one({
+        "relatorio_id": target_relatorio_id,
+        "data_intervencao": target_data_intervencao,
+        "primeiro_nome": origem.get("primeiro_nome", ""),
+        "ultimo_nome": origem.get("ultimo_nome", ""),
+    }, {"_id": 0, "id": 1})
+    if exists:
+        raise HTTPException(status_code=409, detail="Já existe uma assinatura desse signatário para esta intervenção")
+
+    # Criar cópia — novo id, mesmo conteúdo, nova FS e nova data de intervenção
+    nova = dict(origem)
+    nova.pop("_id", None)
+    nova["id"] = str(_uuid.uuid4())
+    nova["relatorio_id"] = target_relatorio_id
+    nova["data_intervencao"] = target_data_intervencao
+    # data_assinatura mantém-se (a assinatura foi feita na hora original)
+    # assinatura_url apontava para a origem — actualizar para nova
+    nova["assinatura_url"] = f"/relatorios-tecnicos/{target_relatorio_id}/assinaturas/{nova['id']}/imagem"
+    # Marcar como copiada — para eventual auditoria
+    nova["copiada_de_assinatura_id"] = assinatura_id
+    nova["copiada_de_relatorio_id"] = origem.get("relatorio_id")
+    nova["copiada_por"] = current_user.get("username")
+    nova["copiada_em"] = datetime.now(timezone.utc).isoformat()
+
+    await db.assinaturas_relatorio.insert_one(nova)
+    logging.info(
+        f"Assinatura {assinatura_id} copiada para FS {target_relatorio_id} "
+        f"(intervenção {target_data_intervencao}) por {current_user.get('username')}"
+    )
+
+    # Devolver a assinatura criada (sem _id)
+    nova.pop("_id", None)
+    return {
+        "message": "Assinatura copiada com sucesso",
+        "assinatura": nova,
+        "target_fs_numero": target_fs.get("numero_assistencia"),
+    }
+
+
 @router.get("/relatorios-tecnicos/{relatorio_id}/assinaturas/{assinatura_id}/imagem")
 async def get_assinatura_imagem_by_id(
     relatorio_id: str,

@@ -58,7 +58,8 @@ import {
   ArrowUpDown,
   Sparkles,
   MoreVertical,
-  ChevronDown
+  ChevronDown,
+  Copy as CopyIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,7 @@ import {
   PDFPreviewModal,
   DeleteConfirmModal,
   AssinaturaModal,
+  CopySignatureModal,
   TecnicoModal,
   EquipamentoModal,
   MaterialModal,
@@ -371,6 +373,8 @@ const TechnicalReports = ({ user, onLogout }) => {
 
   // Assinaturas (múltiplas)
   const [assinaturas, setAssinaturas] = useState([]);
+  const [copySignatureModalOpen, setCopySignatureModalOpen] = useState(false);
+  const [signatureToCopy, setSignatureToCopy] = useState(null);
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false);
   const [editingAssinaturaDesktop, setEditingAssinaturaDesktop] = useState(null);
   const [editingAssinaturaData, setEditingAssinaturaData] = useState({ date: '', time: '' });
@@ -6733,6 +6737,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                                         </div>
                                         {!isHerdadaAtiva && (
                                           <div className="flex gap-1">
+                                            <Button onClick={() => { setSignatureToCopy(assinatura); setCopySignatureModalOpen(true); }} variant="ghost" size="sm" className="text-emerald-400 p-1 h-6 w-6" data-testid={`copy-sig-${assinatura.id}`} title="Copiar para outra FS"><CopyIcon className="w-3 h-3" /></Button>
                                             <Button onClick={() => handleEditAssinatura(assinatura)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6" data-testid={`edit-sig-${assinatura.id}`}><Edit className="w-3 h-3" /></Button>
                                             <Button onClick={() => handleDeleteAssinatura(assinatura.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
                                           </div>
@@ -8314,6 +8319,22 @@ const TechnicalReports = ({ user, onLogout }) => {
         assinaturas={assinaturas}
         onAssinaturaSaved={() => {
           fetchAssinaturas(selectedRelatorio?.id);
+        }}
+      />
+
+      {/* Copy Signature Modal — copia assinatura para outra FS */}
+      <CopySignatureModal
+        open={copySignatureModalOpen}
+        onOpenChange={(o) => {
+          setCopySignatureModalOpen(o);
+          if (!o) setSignatureToCopy(null);
+        }}
+        signature={signatureToCopy}
+        currentRelatorioId={selectedRelatorio?.id}
+        onCopied={() => {
+          // Se por acaso o utilizador copiou para a FS actual (não é possível — a UI exclui),
+          // ou queremos apenas refrescar dados. Aqui nada específico é preciso já que a FS actual
+          // não é afectada. Mantemos vazio para simplicidade.
         }}
       />
 
