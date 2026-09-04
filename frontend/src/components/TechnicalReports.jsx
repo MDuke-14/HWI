@@ -108,6 +108,7 @@ import {
   EditMaterialPCModal,
   EnviarPedidoCotacaoModal,
   CancelarPCModal,
+  AddMaterialToPCModal,
   ChangeTipoModal,
   DeleteClienteModal,
   ReferenciaInternaModal,
@@ -511,6 +512,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   // Cancelar PC (Fase 6)
   const [showCancelarPCModal, setShowCancelarPCModal] = useState(false);
   const [cancelarPCSending, setCancelarPCSending] = useState(false);
+
+  // Adicionar material à PC (Fase 8 — modal simples, apenas nesta PC)
+  const [showAddMaterialToPCModal, setShowAddMaterialToPCModal] = useState(false);
   
   // Faturas PC
   const [faturasPC, setFaturasPC] = useState([]);
@@ -7521,7 +7525,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-gray-700 text-white">
                     <DropdownMenuItem
-                      onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }}
+                      onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialToPCModal(true); }}
                       className="cursor-pointer focus:bg-blue-500/10 focus:text-blue-300"
                       data-testid="pc-menu-add-material"
                     >
@@ -7652,7 +7656,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <h4 className="text-white font-semibold">Materiais do Pedido de Cotação</h4>
                         <Button
                           size="sm"
-                          onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }}
+                          onClick={() => setShowAddMaterialToPCModal(true)}
                           className="bg-blue-600 hover:bg-blue-700 text-white h-8"
                           data-testid="pc-resumo-add-material"
                         >
@@ -7873,7 +7877,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                       >
                         <Send className="w-3 h-3 mr-1" /> Enviar Pedido Global
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => { setSelectedPCIdForMaterial(selectedPC.id); setShowAddMaterialModal(true); }} className="text-blue-400 h-7 text-xs" data-testid="pc-material-add">
+                      <Button size="sm" variant="ghost" onClick={() => setShowAddMaterialToPCModal(true)} className="text-blue-400 h-7 text-xs" data-testid="pc-material-add">
                         <Plus className="w-3 h-3 mr-1" /> Adicionar
                       </Button>
                     </div>
@@ -8227,6 +8231,22 @@ const TechnicalReports = ({ user, onLogout }) => {
         pc={selectedPC}
         onConfirm={handleConfirmCancelarPC}
         sending={cancelarPCSending}
+      />
+
+      {/* Adicionar material à PC (Fase 8) — modal simples só para PC */}
+      <AddMaterialToPCModal
+        open={showAddMaterialToPCModal}
+        onOpenChange={setShowAddMaterialToPCModal}
+        pc={selectedPC}
+        relatorioId={selectedPC?.relatorio_id}
+        onAdded={() => {
+          if (selectedPC?.id) fetchPCDetalhes(selectedPC.id);
+          if (selectedRelatorio?.id) {
+            fetchMateriais(selectedRelatorio.id);
+            fetchPedidosCotacao(selectedRelatorio.id);
+          }
+          fetchAllPCs();
+        }}
       />
 
 

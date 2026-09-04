@@ -16,6 +16,7 @@ export { default as HideClientPopup } from './HideClientPopup';
 export { default as EditMaterialPCModal } from './EditMaterialPCModal';
 export { default as EnviarPedidoCotacaoModal } from './EnviarPedidoCotacaoModal';
 export { default as CancelarPCModal } from './CancelarPCModal';
+export { default as AddMaterialToPCModal } from './AddMaterialToPCModal';
 export { default as ChangeTipoModal } from './ChangeTipoModal';
 export { default as DeleteClienteModal } from './DeleteClienteModal';
 export { default as ReferenciaInternaModal } from './ReferenciaInternaModal';
