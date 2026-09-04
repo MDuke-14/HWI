@@ -7640,9 +7640,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                   ABA RESUMO — Layout Fase 6 (2 colunas)
                   ================================================================= */}
               {pcActiveTab === 'resumo' && (
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr] gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_1fr] gap-5">
                   {/* Coluna esquerda: Informações principais */}
-                  <div className="bg-[#161616] border border-gray-800 rounded-lg p-4 h-fit" data-testid="pc-resumo-info-principais">
+                  <div className="bg-[#161616] border border-gray-800 rounded-lg p-4 h-fit min-w-0" data-testid="pc-resumo-info-principais">
                     <h4 className="text-white font-semibold mb-4">Informações principais</h4>
                     <dl className="space-y-2.5 text-sm">
                       {[
@@ -7658,9 +7658,9 @@ const TechnicalReports = ({ user, onLogout }) => {
                         ['Criada em', selectedPC.created_at ? new Date(selectedPC.created_at).toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : null],
                         ['Responsável', selectedPC.criado_por_nome],
                       ].filter(([, v]) => v).map(([label, value]) => (
-                        <div key={label} className="grid grid-cols-[110px_1fr] gap-2">
+                        <div key={label} className="grid grid-cols-[90px_1fr] gap-2 min-w-0">
                           <dt className="text-gray-500 text-xs pt-0.5">{label}</dt>
-                          <dd className="text-white text-sm break-words">{value}</dd>
+                          <dd className="text-white text-sm min-w-0" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{value}</dd>
                         </div>
                       ))}
                     </dl>
