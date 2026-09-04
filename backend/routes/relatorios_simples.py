@@ -201,8 +201,15 @@ async def download_relatorio_simples_pdf(
         raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {exc}") from exc
 
     filename = f"Relatorio_FS_{fs.get('numero_assistencia', relatorio_id)}.pdf"
-    return StreamingResponse(
-        io.BytesIO(pdf_bytes),
+    # Response com Content-Length fixo — evita truncamento em Cloudflare
+    from fastapi.responses import Response
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(pdf_bytes)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
     )

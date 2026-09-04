@@ -13,7 +13,7 @@ from datetime import datetime, timezone, timedelta, date, time
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 
 from database import db
 from models import TimeEntry, TimeEntryStart, TimeEntryEnd, TimeEntryUpdate, ManualTimeEntryCreate
@@ -2038,13 +2038,21 @@ async def download_monthly_pdf_report(
         logging.error(f"Erro PDF: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
-    # Return PDF
+    # Return PDF — usar Response com Content-Length fixo em vez de StreamingResponse
+    # com Transfer-Encoding: chunked. Em produção o Cloudflare Worker trunca/re-encoda
+    # a resposta chunked e o PDF chega corrompido ("Falha ao carregar o documento PDF").
     filename = f"Relatorio_Mensal_{username}_{month:02d}_{year}.pdf"
-    
-    return StreamingResponse(
-        pdf_buffer,
+    pdf_bytes = pdf_buffer.getvalue()
+
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Length": str(len(pdf_bytes)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
     )
 
 
@@ -2612,12 +2620,18 @@ async def download_custom_range_pdf(
     start_formatted = start_date_str.replace("-", "")
     end_formatted = end_date_str.replace("-", "")
     filename = f"Relatorio_{username}_{start_formatted}_a_{end_formatted}.pdf"
-    
-    # Return as streaming response
-    return StreamingResponse(
-        pdf_buffer,
+
+    # Return Response com Content-Length fixo — evita truncamento em Cloudflare
+    pdf_bytes = pdf_buffer.getvalue()
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Length": str(len(pdf_bytes)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
     )
 
 @router.get("/time-entries/reports/excel")
@@ -2683,12 +2697,18 @@ async def download_excel_report(
     
     # Generate filename
     filename = f"Folha_Ponto_{user_data.get('username', 'user')}_{month}_{year}.xlsx"
-    
-    # Return as streaming response
-    return StreamingResponse(
-        output,
+
+    # Return Response com Content-Length fixo (mesma razão do PDF)
+    xlsx_bytes = output.getvalue()
+    return Response(
+        content=xlsx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Length": str(len(xlsx_bytes)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
     )
 
 @router.put("/time-entries/{entry_id}")

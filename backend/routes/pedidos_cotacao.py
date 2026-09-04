@@ -2,7 +2,7 @@
 Rotas de Pedidos de Cotação (PC) + Faturas.
 """
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form, Body
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from typing import Optional
 from datetime import datetime, timezone
 import uuid
@@ -354,7 +354,7 @@ async def get_fotografia_pc_image(
     from fastapi.concurrency import run_in_threadpool
     foto_bytes = await run_in_threadpool(base64.b64decode, image_data)
     
-    from fastapi.responses import Response
+    
     return Response(
         content=foto_bytes,
         media_type=foto.get("content_type", "image/jpeg"),
@@ -453,7 +453,7 @@ async def get_fatura_file(
         raise HTTPException(status_code=404, detail="Fatura não encontrada")
     
     import base64
-    from fastapi.responses import Response
+    
     
     file_bytes = base64.b64decode(fatura["file_base64"])
     
@@ -523,11 +523,18 @@ async def preview_pdf_pc(
     
     # Gerar PDF
     pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client)
-    
-    return StreamingResponse(
-        pdf_buffer,
+
+    # Response com Content-Length fixo — evita truncamento em Cloudflare
+    pdf_bytes = pdf_buffer.getvalue() if hasattr(pdf_buffer, 'getvalue') else pdf_buffer
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"inline; filename=PC_{pc['numero_pc']}.pdf"}
+        headers={
+            "Content-Disposition": f"inline; filename=PC_{pc['numero_pc']}.pdf",
+            "Content-Length": str(len(pdf_bytes)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
     )
 
 @router.post("/pedidos-cotacao/{pc_id}/send-email")

@@ -4608,12 +4608,18 @@ async def generate_folha_horas(
     
     numero_ot = relatorio.get('numero_assistencia', 'N/A')
     cliente_nome = cliente.get('nome', 'Cliente').replace(' ', '_')
-    
-    return StreamingResponse(
-        pdf_buffer,
+
+    # Response com Content-Length fixo — StreamingResponse com chunked é truncado
+    # pelo Cloudflare em produção e o PDF chega corrompido.
+    pdf_bytes = pdf_buffer.getvalue()
+    return Response(
+        content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=FolhaHoras_FS{numero_ot}_{cliente_nome}.pdf"
+            "Content-Disposition": f"attachment; filename=FolhaHoras_FS{numero_ot}_{cliente_nome}.pdf",
+            "Content-Length": str(len(pdf_bytes)),
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
         }
     )
 
