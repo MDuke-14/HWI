@@ -757,9 +757,11 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
 async def check_clock_out_status(db, base_url: str) -> Dict:
     """
     Verificação de horas extra por limite trabalhado.
-    Regra: assim que qualquer utilizador (incluindo admins) ultrapassa **8h10**
-    (490 minutos) somando todas as picagens de hoje (com ponto ainda activo),
-    dispara um pedido de autorização de horas extra ao admin (`SMTP_FROM`).
+    Regra: assim que qualquer utilizador (incluindo admins) ultrapassa **8h01**
+    (481 minutos) somando todas as picagens de hoje, dispara um pedido de
+    autorização de horas extra ao admin (`SMTP_FROM`). Cobre dois cenários:
+      • Ponto ainda activo — mede horas trabalhadas + tempo em curso;
+      • Ponto já encerrado — soma apenas os intervalos fechados.
     Ignora fins-de-semana e feriados.
     Só um pedido por dia por utilizador (não duplica se já `pending`).
     """
@@ -789,10 +791,9 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         by_user.setdefault(uid, []).append(e)
 
     for user_id, user_entries in by_user.items():
-        # Só considera utilizadores com pelo menos uma picagem activa neste dia.
+        # Detectar picagem activa (opcional). Se todas fecharam, usar dados da
+        # primeira picagem do dia como referência de clock-in.
         active_entry = next((e for e in user_entries if not e.get("end_time")), None)
-        if not active_entry:
-            continue
 
         # Somar minutos: sessões fechadas (end - start) + activa (now - start)
         total_minutes = 0
@@ -826,10 +827,21 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
 
         user_name = user.get("full_name") or user.get("username")
         user_email = user.get("email")
+
+        # Determinar clock_in_time e reference_entry (ponto activo, se existir;
+        # caso contrário a primeira picagem do dia).
+        reference_entry = active_entry
+        if not reference_entry:
+            reference_entry = min(
+                user_entries,
+                key=lambda x: x.get("start_time") or "9999",
+                default=None,
+            )
+
         clock_in_time = "N/A"
-        if active_entry.get("start_time"):
+        if reference_entry and reference_entry.get("start_time"):
             try:
-                clock_in_time = datetime.fromisoformat(active_entry["start_time"]).strftime("%H:%M")
+                clock_in_time = datetime.fromisoformat(reference_entry["start_time"]).strftime("%H:%M")
             except Exception:
                 pass
 
@@ -849,7 +861,11 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         
         # Gerar token de autorização
         token = generate_authorization_token()
-        
+
+        # Referência ao entry_id: ponto activo se existir, senão a última picagem do dia
+        ref_entry_for_id = active_entry or reference_entry or {}
+        entry_id_ref = ref_entry_for_id.get("id")
+
         # Guardar pedido de autorização
         approval_token = str(uuid.uuid4())
         auth_request = {
@@ -857,7 +873,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "user_id": user_id,
             "user_name": user_name,
             "user_email": user_email,
-            "entry_id": active_entry.get("id"),
+            "entry_id": entry_id_ref,
             "date": today_str,
             "request_type": "overtime_end",
             "clock_in_time": clock_in_time,
@@ -876,22 +892,28 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
         # Email ao admin
         hours = total_minutes // 60
         minutes = total_minutes % 60
+        # Texto adaptado: se ainda tem picagem activa, mencionar; senão, informar que já fechou
+        if active_entry:
+            info_txt = f"O utilizador já trabalhou {hours}h{minutes:02d} hoje (entrada às {clock_in_time}) e o ponto continua activo."
+        else:
+            info_txt = f"O utilizador trabalhou {hours}h{minutes:02d} hoje (entrada às {clock_in_time}) — o ponto já foi encerrado. Aprove ou rejeite as horas extra registadas."
         await send_authorization_request_email(
             db, user_id, "overtime", today_str,
-            extra_info=f"O utilizador já trabalhou {hours}h{minutes:02d} hoje (entrada às {clock_in_time}) e o ponto continua activo.",
+            extra_info=info_txt,
             approval_token=approval_token,
-            entry_id=active_entry.get("id"),
+            entry_id=entry_id_ref,
         )
 
-        # Push ao próprio utilizador (lembrete pessoal)
-        await send_push_notification(
-            db,
-            user_id,
-            "⏱️ Limite de 8h01 atingido",
-            f"Já trabalhou {hours}h{minutes:02d}. Aguarde autorização de horas extra para continuar.",
-            "clock_out_reminder",
-            "high"
-        )
+        # Push ao próprio utilizador (lembrete pessoal) — só quando o ponto está activo
+        if active_entry:
+            await send_push_notification(
+                db,
+                user_id,
+                "⏱️ Limite de 8h01 atingido",
+                f"Já trabalhou {hours}h{minutes:02d}. Aguarde autorização de horas extra para continuar.",
+                "clock_out_reminder",
+                "high"
+            )
         
         notified_users.append({
             "user_id": user_id,

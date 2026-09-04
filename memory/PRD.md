@@ -361,5 +361,9 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - `/app/frontend/src/components/ErrorLog.jsx` — admin error log com botão Limpar STARTED órfãos
 
 ## Recent Fixes (Feb 2026)
+- **Bug email admin horas extra >8h (Feb 2026)**: A verificação `check_clock_out_status` só criava pedido se o utilizador tivesse ponto **activo**. Dias fechados com 8h04/8h17 eram ignorados (utilizador finalizava entre ciclos do scheduler de 15 min → nunca notificado). Fix:
+  1. `notifications_scheduler.py` — remoção da exigência de `active_entry`; agora considera todas as picagens do dia (fechadas + activas), com fallback para primeira picagem como referência de clock-in. Email adaptado ao contexto (ponto activo vs. já encerrado). Push só quando ainda está a picar.
+  2. `routes/time_entries.py` — no `end_time_entry`, chamada imediata a `check_clock_out_status` após fechar o ponto, garantindo que picagens que ultrapassam o limite entre ciclos do scheduler disparam o pedido no momento do clock-out (idempotente).
+  Testado: 8h00 não dispara, 8h01/8h04/8h17 disparam correctamente.
 - **Visualizador FS — Refresh automático após assinar (Feb 2026)**: Ao fechar o `AssinaturaModal` com o visualizador HTML aberto, o PDF é regenerado (via `downloadFSPdfAsync`) e o `pdfUrl` de `htmlPreviewData` é atualizado (blob anterior é revogado). Utilizador vê a assinatura imediatamente sem re-abrir o visualizador. Alterações em `TechnicalReports.jsx`: adicionada função `refreshPreviewPdf` e handler `onOpenChange` do `AssinaturaModal` invoca refresh quando o preview está aberto.
 

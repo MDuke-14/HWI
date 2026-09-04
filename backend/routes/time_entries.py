@@ -555,6 +555,20 @@ async def end_time_entry(
         except Exception as exc:
             logging.warning(f"[early_leave] falha não-bloqueante: {exc}")
 
+        # === Verificação imediata de horas extras (>8h01) ao encerrar o ponto ===
+        # O scheduler corre de 15 em 15 min e só via utilizadores com ponto activo.
+        # Para picagens que fecham entre ciclos (ex.: 18:04, 18:17), garantimos aqui
+        # que o pedido de autorização é criado no momento em que o utilizador fecha.
+        try:
+            from notifications_scheduler import check_clock_out_status
+            import os as _os
+            _base_url = _os.environ.get('FRONTEND_URL', '').rstrip('/')
+            # Reutiliza a função global — cobre o próprio utilizador (e outros
+            # eventuais em atraso). Idempotente: só cria pedido se ainda não existir.
+            await check_clock_out_status(db, _base_url)
+        except Exception as exc:
+            logging.warning(f"[overtime_check] falha não-bloqueante ao verificar horas extras no clock-out: {exc}")
+
         return {
             "message": "Relógio finalizado",
             "total_hours": total_hours,
