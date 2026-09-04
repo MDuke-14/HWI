@@ -235,7 +235,7 @@ const MaterialModal = ({
               <Button
                 type="submit"
                 data-testid="material-submit-btn"
-                disabled={loading || (isCotacao && !isEditing && pcChoice === 'existing' && hasPCs && !selectedPCId)}
+                disabled={loading}
                 className={`flex-1 ${isEditing ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
               >
                 {loading ? 'A guardar...' : (isEditing ? 'Guardar' : 'Adicionar')}
