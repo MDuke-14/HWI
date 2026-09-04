@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Mail, Edit, RotateCcw, Loader2, X, Save } from 'lucide-react';
+import { Mail, Edit, RotateCcw, Loader2, X, Save, Eye } from 'lucide-react';
 
 /**
  * Gestor de templates de email (aba Admin > Emails).
@@ -20,6 +20,8 @@ export default function EmailTemplatesAdmin() {
   const [form, setForm] = useState({ assunto: '', corpo_html: '' });
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(null);
+  const [preview, setPreview] = useState(null); // {assunto, corpo_html, variaveis_usadas}
+  const [previewing, setPreviewing] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -38,6 +40,23 @@ export default function EmailTemplatesAdmin() {
   const openEdit = (tpl) => {
     setEditing(tpl);
     setForm({ assunto: tpl.assunto || '', corpo_html: tpl.corpo_html || '' });
+    setPreview(null);
+  };
+
+  const handlePreview = async () => {
+    if (!editing) return;
+    setPreviewing(true);
+    try {
+      const { data } = await axios.post(`${API}/email-templates/${editing.key}/preview`, {
+        assunto: form.assunto,
+        corpo_html: form.corpo_html,
+      });
+      setPreview(data);
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro a gerar preview');
+    } finally {
+      setPreviewing(false);
+    }
   };
 
   const handleSave = async () => {
@@ -189,15 +208,59 @@ export default function EmailTemplatesAdmin() {
                 Suporta HTML e placeholders <code>{'{nome_variavel}'}</code>. Placeholders desconhecidos ficam como estão.
               </p>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
-              <Button variant="outline" onClick={() => setEditing(null)} disabled={saving} className="border-gray-600 text-gray-300" data-testid="email-template-cancelar">
-                <X className="w-4 h-4 mr-1" /> Cancelar
+            <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePreview}
+                disabled={previewing || !form.corpo_html.trim()}
+                className="border-blue-600/60 text-blue-300 hover:bg-blue-500/10"
+                data-testid="email-template-preview"
+              >
+                {previewing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
+                Ver exemplo
               </Button>
-              <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700" data-testid="email-template-guardar">
-                {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-                Guardar
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setEditing(null)} disabled={saving} className="border-gray-600 text-gray-300" data-testid="email-template-cancelar">
+                  <X className="w-4 h-4 mr-1" /> Cancelar
+                </Button>
+                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700" data-testid="email-template-guardar">
+                  {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                  Guardar
+                </Button>
+              </div>
             </div>
+
+            {/* Painel de preview */}
+            {preview && (
+              <div className="mt-3 border border-blue-700/40 rounded-md overflow-hidden" data-testid="email-template-preview-panel">
+                <div className="flex items-center justify-between bg-blue-500/10 px-3 py-2 border-b border-blue-700/40">
+                  <div className="text-xs text-blue-200 flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5" />
+                    Pré-visualização com dados fictícios
+                  </div>
+                  <button
+                    onClick={() => setPreview(null)}
+                    className="text-blue-300 hover:text-white p-0.5"
+                    aria-label="Fechar preview"
+                    data-testid="email-template-preview-close"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="bg-white text-gray-900 p-4">
+                  <div className="pb-3 mb-3 border-b border-gray-200 text-xs">
+                    <span className="text-gray-500">Assunto:</span>{' '}
+                    <span className="font-medium">{preview.assunto}</span>
+                  </div>
+                  <div
+                    className="text-sm"
+                    // preview vem da própria app, admin-only endpoint
+                    dangerouslySetInnerHTML={{ __html: preview.corpo_html }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -241,3 +241,84 @@ async def reset_email_template(key: str, current_user: dict = Depends(get_curren
         upsert=True,
     )
     return await db.email_templates.find_one({"key": key}, {"_id": 0})
+
+
+# ---------------------------------------------------------------
+#  PREVIEW — renderiza o corpo com dados fictícios (sem enviar)
+# ---------------------------------------------------------------
+SAMPLE_VARIABLES: dict = {
+    "pc_cotacao_request": {
+        "numero_pc": "PC_010",
+        "numero_fs": "533",
+        "cliente_nome": "Vijusa Portugal, Lda",
+        "lista_materiais": "- 2 Un · Rolamento SKF 6205 (Cód: 6205-2RS; Pos: P1)\n- 1 m · Correia industrial B41",
+        "fornecedor_nome": "Fornecedor Exemplo",
+        "link_pc": "https://timesync-app-2.emergent.host/technical-reports?pc=demo-id",
+    },
+    "pc_pdf_email": {
+        "numero_pc": "PC_010",
+        "numero_fs": "533",
+        "cliente_nome": "Vijusa Portugal, Lda",
+        "cliente_html": "<p>Cliente: <b>Vijusa Portugal, Lda</b></p>",
+        "status": "Cotação Pedida",
+        "link_pc": "https://timesync-app-2.emergent.host/technical-reports?pc=demo-id",
+    },
+    "password_reset": {
+        "user_name": "João Silva",
+        "temporary_password": "TempPass123!",
+    },
+    "vacation_decision": {
+        "user_name": "Maria Costa",
+        "data_inicio": "12/08/2026",
+        "data_fim": "23/08/2026",
+        "estado": "Aprovada",
+        "estado_upper": "APROVADA",
+        "cor": "#28a745",
+        "observacao": "Aprovado com o resto da equipa.",
+        "observacao_html": (
+            "<div style='background:#f8f9fa;padding:15px;border-left:4px solid #28a745;margin:20px 0;'>"
+            "<strong>Observações:</strong><br/>Aprovado com o resto da equipa."
+            "</div>"
+        ),
+    },
+    "service_notification": {
+        "subject": "Novo Serviço Agendado",
+        "intro": "Foi agendado um novo serviço para o qual foi atribuído como técnico:",
+        "client_name": "Vijusa Portugal, Lda",
+        "location": "Aveiro",
+        "service_reason": "Manutenção preventiva anual",
+        "date_time": "15/10/2026 às 09:00",
+        "status": "scheduled",
+        "observations": "Confirmar acesso ao edifício com o cliente.",
+    },
+}
+
+
+class TemplatePreviewPayload(BaseModel):
+    assunto: Optional[str] = None
+    corpo_html: Optional[str] = None
+    variaveis_sample: Optional[dict] = None  # opcional, para forçar valores
+
+
+@router.post("/email-templates/{key}/preview")
+async def preview_email_template(
+    key: str,
+    payload: TemplatePreviewPayload,
+    current_user: dict = Depends(get_current_user),
+):
+    """Renderiza um template (com valores atuais do draft ou do guardado) usando
+    dados fictícios — nunca envia email."""
+    _require_admin(current_user)
+
+    saved = await db.email_templates.find_one({"key": key}, {"_id": 0})
+    tpl = {
+        "assunto": payload.assunto if payload.assunto is not None else (saved or {}).get("assunto", ""),
+        "corpo_html": payload.corpo_html if payload.corpo_html is not None else (saved or {}).get("corpo_html", ""),
+    }
+    sample = {**SAMPLE_VARIABLES.get(key, {}), **(payload.variaveis_sample or {})}
+    subject, body = render(tpl, sample)
+    return {
+        "assunto": subject,
+        "corpo_html": body,
+        "variaveis_usadas": sample,
+    }
