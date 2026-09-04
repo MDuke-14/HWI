@@ -2396,6 +2396,196 @@ async def justify_day(
         logging.error(f"Erro ao justificar dia: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/admin/time-entries/fill-empty-days")
+async def fill_empty_days(
+    data: dict,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Preenche automaticamente todos os dias sem qualquer registo (nem picagens,
+    nem férias, nem folga, nem falta) dentro do intervalo indicado com duas
+    entradas: 08:00-12:00 e 13:00-17:00 (8 horas totais).
+
+    - Ignora fins de semana e feriados.
+    - Ignora dias que já tenham `time_entries` (mesmo que a 0h).
+    - Ignora dias marcados em `vacation_requests` (férias, folga, cancelamento).
+    - Ignora dias com falta registada (sistema absences v2).
+    - Idempotente: correr duas vezes seguidas não cria duplicados.
+
+    Payload: { user_id, date_from (YYYY-MM-DD), date_to (YYYY-MM-DD) }
+    """
+    import uuid
+    from holidays import is_holiday, is_weekend
+
+    user_id = data.get("user_id")
+    date_from = data.get("date_from")
+    date_to = data.get("date_to")
+
+    if not user_id or not date_from or not date_to:
+        raise HTTPException(status_code=400, detail="user_id, date_from e date_to são obrigatórios")
+
+    try:
+        start_date = datetime.strptime(date_from, "%Y-%m-%d").date()
+        end_date = datetime.strptime(date_to, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de data inválido (YYYY-MM-DD)")
+
+    if end_date < start_date:
+        raise HTTPException(status_code=400, detail="date_to não pode ser anterior a date_from")
+
+    # Limite de segurança: 366 dias
+    if (end_date - start_date).days > 366:
+        raise HTTPException(status_code=400, detail="Intervalo máximo permitido: 366 dias")
+
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    admin_name = current_user.get("username", "admin")
+    user_name = user.get("full_name") or user.get("username")
+
+    # 1) Datas com time_entries no intervalo
+    existing_entries = await db.time_entries.find(
+        {"user_id": user_id, "date": {"$gte": date_from, "$lte": date_to}},
+        {"_id": 0, "date": 1},
+    ).to_list(length=None)
+    dates_with_entries = {e["date"] for e in existing_entries if e.get("date")}
+
+    # 2) Datas com pedidos em vacation_requests (férias, folga, cancelamento, falta)
+    vacation_docs = await db.vacation_requests.find(
+        {
+            "user_id": user_id,
+            "$or": [
+                {"start_date": {"$lte": date_to}, "end_date": {"$gte": date_from}},
+                {"date": {"$gte": date_from, "$lte": date_to}},
+            ],
+        },
+        {"_id": 0, "start_date": 1, "end_date": 1, "date": 1, "status": 1, "type": 1},
+    ).to_list(length=None)
+    dates_with_absence: set = set()
+    for v in vacation_docs:
+        # Ignorar registos rejeitados
+        if v.get("status") in ("rejected", "cancelled_by_user"):
+            continue
+        sd = v.get("start_date") or v.get("date")
+        ed = v.get("end_date") or v.get("date")
+        if not sd or not ed:
+            continue
+        try:
+            d = datetime.strptime(sd, "%Y-%m-%d").date()
+            dd = datetime.strptime(ed, "%Y-%m-%d").date()
+        except Exception:
+            continue
+        while d <= dd:
+            dates_with_absence.add(d.strftime("%Y-%m-%d"))
+            d += timedelta(days=1)
+
+    # 3) Faltas v2 (sistema absences_v2)
+    try:
+        from routes.absences_v2 import fetch_absences_for_month
+        absences_v2 = await fetch_absences_for_month(user_id, date_from, date_to)
+        for ds in absences_v2.keys():
+            dates_with_absence.add(ds)
+    except Exception as e:
+        logging.warning(f"[fill-empty-days] falha ao carregar absences_v2: {e}")
+
+    filled_days: list = []
+    skipped_weekend = 0
+    skipped_holiday = 0
+    skipped_has_entries = 0
+    skipped_has_absence = 0
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    current = start_date
+    while current <= end_date:
+        date_str = current.strftime("%Y-%m-%d")
+
+        if is_weekend(current):
+            skipped_weekend += 1
+            current += timedelta(days=1)
+            continue
+
+        is_hol, _ = is_holiday(current)
+        if is_hol:
+            skipped_holiday += 1
+            current += timedelta(days=1)
+            continue
+
+        if date_str in dates_with_entries:
+            skipped_has_entries += 1
+            current += timedelta(days=1)
+            continue
+
+        if date_str in dates_with_absence:
+            skipped_has_absence += 1
+            current += timedelta(days=1)
+            continue
+
+        # Criar duas entradas: 08:00-12:00 e 13:00-17:00
+        morning_start = datetime.strptime(f"{date_str} 08:00:00", "%Y-%m-%d %H:%M:%S")
+        morning_end = datetime.strptime(f"{date_str} 12:00:00", "%Y-%m-%d %H:%M:%S")
+        afternoon_start = datetime.strptime(f"{date_str} 13:00:00", "%Y-%m-%d %H:%M:%S")
+        afternoon_end = datetime.strptime(f"{date_str} 17:00:00", "%Y-%m-%d %H:%M:%S")
+
+        obs = f"[Preenchido pelo admin {admin_name}] Dia sem registos preenchido automaticamente"
+
+        base_entry_common = {
+            "user_id": user_id,
+            "username": user.get("username"),
+            "date": date_str,
+            "status": "completed",
+            "total_hours": 4.0,
+            "regular_hours": 4.0,
+            "overtime_hours": 0.0,
+            "special_hours": 0.0,
+            "observations": obs,
+            "created_by_admin": True,
+            "created_at": now_iso,
+            "is_overtime_day": False,
+            "overtime_reason": None,
+        }
+
+        morning_entry = {
+            "id": str(uuid.uuid4()),
+            **base_entry_common,
+            "start_time": morning_start.isoformat(),
+            "end_time": morning_end.isoformat(),
+        }
+        afternoon_entry = {
+            "id": str(uuid.uuid4()),
+            **base_entry_common,
+            "start_time": afternoon_start.isoformat(),
+            "end_time": afternoon_end.isoformat(),
+        }
+        await db.time_entries.insert_many([morning_entry, afternoon_entry])
+
+        filled_days.append(date_str)
+        current += timedelta(days=1)
+
+    logging.info(
+        f"[fill-empty-days] Utilizador={user_name} ({user_id}) "
+        f"Preenchidos={len(filled_days)} FDS={skipped_weekend} Feriados={skipped_holiday} "
+        f"C/registos={skipped_has_entries} C/ausência={skipped_has_absence} por admin={admin_name}"
+    )
+
+    return {
+        "message": f"{len(filled_days)} dia(s) preenchido(s) com sucesso",
+        "user_id": user_id,
+        "user_name": user_name,
+        "date_from": date_from,
+        "date_to": date_to,
+        "filled_days": filled_days,
+        "filled_count": len(filled_days),
+        "skipped": {
+            "weekend": skipped_weekend,
+            "holiday": skipped_holiday,
+            "has_entries": skipped_has_entries,
+            "has_absence": skipped_has_absence,
+        },
+    }
+
+
 @router.get("/time-entries/reports/custom-range-pdf")
 async def download_custom_range_pdf(
     start_date_str: str,

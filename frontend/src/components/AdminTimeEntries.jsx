@@ -365,6 +365,41 @@ const AdminTimeEntries = ({ user, onLogout }) => {
     }
   };
 
+  // Preencher dias vazios do período com 8h (08:00-12:00 + 13:00-17:00)
+  const [fillLoading, setFillLoading] = useState(false);
+  const [showFillConfirm, setShowFillConfirm] = useState(false);
+  const handleFillEmptyDays = async () => {
+    if (!selectedUser || !billingPeriod.from || !billingPeriod.to) {
+      toast.error('Selecione um utilizador e um período válido');
+      return;
+    }
+    setFillLoading(true);
+    try {
+      const response = await axios.post(`${API}/admin/time-entries/fill-empty-days`, {
+        user_id: selectedUser.id,
+        date_from: billingPeriod.from,
+        date_to: billingPeriod.to,
+      });
+      const { filled_count, skipped } = response.data || {};
+      if (filled_count > 0) {
+        toast.success(`${filled_count} dia(s) preenchido(s) com 8h (08:00-12:00 + 13:00-17:00)`);
+      } else {
+        const parts = [];
+        if (skipped?.weekend) parts.push(`${skipped.weekend} FDS`);
+        if (skipped?.holiday) parts.push(`${skipped.holiday} feriado(s)`);
+        if (skipped?.has_entries) parts.push(`${skipped.has_entries} já com registos`);
+        if (skipped?.has_absence) parts.push(`${skipped.has_absence} com ausência`);
+        toast.info(`Nenhum dia foi preenchido${parts.length ? ` — ignorados: ${parts.join(', ')}` : ''}`);
+      }
+      setShowFillConfirm(false);
+      fetchUserEntries();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao preencher dias vazios');
+    } finally {
+      setFillLoading(false);
+    }
+  };
+
   // Download PDF do relatório mensal
   const handleDownloadPDF = async () => {
     if (!selectedUser) {
@@ -612,6 +647,16 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                     >
                       <Download className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-5 h-5 mr-2'}`} />
                       {isMobile ? 'PDF' : 'Download PDF'}
+                    </Button>
+                    <Button
+                      onClick={() => setShowFillConfirm(true)}
+                      className={`bg-amber-600 hover:bg-amber-700 text-white ${isMobile ? 'flex-1 text-xs py-2' : ''}`}
+                      size={isMobile ? 'sm' : 'default'}
+                      data-testid="fill-empty-days-btn"
+                      title="Preencher dias sem registos com 8h (08:00-12:00 + 13:00-17:00)"
+                    >
+                      <Clock className={`${isMobile ? 'w-3.5 h-3.5 mr-1' : 'w-5 h-5 mr-2'}`} />
+                      {isMobile ? 'Preencher' : 'Preencher Dias Vazios'}
                     </Button>
                   </div>
                 </div>
@@ -1209,6 +1254,63 @@ const AdminTimeEntries = ({ user, onLogout }) => {
                 size={isMobile ? 'sm' : 'default'}
               >
                 Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação: Preencher Dias Vazios */}
+      <Dialog open={showFillConfirm} onOpenChange={setShowFillConfirm}>
+        <DialogContent className={`bg-[#1a1a1a] border-gray-700 text-white ${isMobile ? 'max-w-[95vw] p-4' : 'max-w-md'}`} data-testid="fill-empty-days-dialog">
+          <DialogHeader>
+            <DialogTitle className={`text-white flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+              <Clock className={isMobile ? 'w-4 h-4' : 'w-5 h-5'} />
+              Preencher Dias Vazios
+            </DialogTitle>
+          </DialogHeader>
+          <div className={`space-y-4 ${isMobile ? 'pt-2' : 'pt-4'}`}>
+            <div className={`bg-gray-800/50 rounded-lg ${isMobile ? 'p-3' : 'p-4'}`}>
+              <p className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'} mb-1`}>Utilizador</p>
+              <p className={`text-white font-semibold ${isMobile ? 'text-sm' : ''}`}>
+                {selectedUser?.full_name || selectedUser?.username}
+              </p>
+              <p className={`text-gray-400 ${isMobile ? 'text-[10px]' : 'text-xs'} mt-2 mb-1`}>Período</p>
+              <p className={`text-white ${isMobile ? 'text-sm' : ''}`}>
+                {billingPeriod.from && new Date(billingPeriod.from + 'T00:00:00').toLocaleDateString('pt-PT')}
+                {' → '}
+                {billingPeriod.to && new Date(billingPeriod.to + 'T00:00:00').toLocaleDateString('pt-PT')}
+              </p>
+            </div>
+            <div className={`bg-amber-950/40 border border-amber-700/40 rounded-lg ${isMobile ? 'p-3 text-xs' : 'p-4 text-sm'} text-amber-200`}>
+              <p className="font-semibold mb-2">Vai preencher automaticamente todos os dias sem registos com:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-amber-100/90">
+                <li>Manhã: <b>08:00 – 12:00</b> (4h)</li>
+                <li>Tarde: <b>13:00 – 17:00</b> (4h)</li>
+              </ul>
+              <p className={`mt-3 ${isMobile ? 'text-[11px]' : 'text-xs'} text-amber-300/80`}>
+                Serão ignorados: fins de semana, feriados, dias com picagens existentes e dias com férias/folga/falta.
+              </p>
+            </div>
+            <div className={`flex ${isMobile ? 'flex-col' : 'justify-end'} gap-2 pt-2 border-t border-gray-700`}>
+              <Button
+                onClick={() => setShowFillConfirm(false)}
+                variant="outline"
+                className="border-gray-600 text-gray-300"
+                disabled={fillLoading}
+                size={isMobile ? 'sm' : 'default'}
+                data-testid="fill-empty-days-cancel-btn"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleFillEmptyDays}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={fillLoading}
+                size={isMobile ? 'sm' : 'default'}
+                data-testid="fill-empty-days-confirm-btn"
+              >
+                {fillLoading ? 'A preencher...' : 'Confirmar Preenchimento'}
               </Button>
             </div>
           </div>
