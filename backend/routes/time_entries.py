@@ -2528,7 +2528,9 @@ async def fill_empty_days(
         afternoon_start = datetime.strptime(f"{date_str} 13:00:00", "%Y-%m-%d %H:%M:%S")
         afternoon_end = datetime.strptime(f"{date_str} 17:00:00", "%Y-%m-%d %H:%M:%S")
 
-        obs = f"[Preenchido pelo admin {admin_name}] Dia sem registos preenchido automaticamente"
+        # Observações vazias — o utilizador pediu que este preenchimento
+        # não deixe qualquer texto no campo observações do relatório mensal.
+        obs = ""
 
         base_entry_common = {
             "user_id": user_id,
