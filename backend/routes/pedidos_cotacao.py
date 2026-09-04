@@ -595,23 +595,46 @@ async def send_email_pc(
         msg = MIMEMultipart()
         msg['From'] = smtp_from
         msg['To'] = email_destinatario
-        msg['Subject'] = f"Pedido de Cotação {pc['numero_pc']} - FS #{ot.get('numero_assistencia', 'N/A')}"
-        
+
         # URL do frontend para link direto
-        frontend_url = os.environ.get('FRONTEND_URL', '')
-        pc_status_link = f"{frontend_url}/pc/{pc_id}/status"
-        
-        from email_templates import get_pc_email_body
-        body = get_pc_email_body(
-            idioma=idioma,
-            numero_pc=pc['numero_pc'],
-            numero_fs=ot.get('numero_assistencia', 'N/A'),
-            cliente_nome=ot.get('cliente_nome', 'N/A'),
-            status=pc.get('status', 'Em Espera'),
-            hide_client=hide_client,
-            pc_status_link=pc_status_link
-        )
-        
+        frontend_url = os.environ.get('FRONTEND_URL', '').rstrip('/')
+        link_pc = f"{frontend_url}/technical-reports?pc={pc_id}" if frontend_url else ""
+        pc_status_link = f"{frontend_url}/pc/{pc_id}/status" if frontend_url else ""
+
+        # Fase 8: PT usa template editável da DB. Outros idiomas mantêm
+        # email_templates.py (multi-idioma). Assim o admin pode alterar o corpo PT.
+        subject = None
+        body = None
+        if idioma == 'pt':
+            from routes.email_templates import get_template, render as render_template
+            tpl = await get_template("pc_pdf_email")
+            if tpl:
+                cliente_html = "" if hide_client else f"<p>Cliente: <b>{ot.get('cliente_nome', 'N/A')}</b></p>"
+                variables = {
+                    "numero_pc": pc['numero_pc'],
+                    "numero_fs": ot.get('numero_assistencia', 'N/A'),
+                    "cliente_nome": "" if hide_client else ot.get('cliente_nome', 'N/A'),
+                    "cliente_html": cliente_html,
+                    "status": pc.get('status', 'Em Espera'),
+                    "link_pc": link_pc,
+                }
+                subject, body = render_template(tpl, variables)
+
+        if not subject:
+            # Fallback (idiomas EN/FR/etc ou template em falta)
+            subject = f"Pedido de Cotação {pc['numero_pc']} - FS #{ot.get('numero_assistencia', 'N/A')}"
+            from email_templates import get_pc_email_body
+            body = get_pc_email_body(
+                idioma=idioma,
+                numero_pc=pc['numero_pc'],
+                numero_fs=ot.get('numero_assistencia', 'N/A'),
+                cliente_nome=ot.get('cliente_nome', 'N/A'),
+                status=pc.get('status', 'Em Espera'),
+                hide_client=hide_client,
+                pc_status_link=pc_status_link
+            )
+
+        msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
         
         # Anexar PDF

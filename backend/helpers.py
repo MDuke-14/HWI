@@ -56,46 +56,29 @@ async def refund_vacation_day(user_id: str, reason: str = "Trabalho em dia de f√
 
 
 async def send_password_reset_email(user_name: str, user_email: str, temporary_password: str):
-    """Send email with temporary password for password reset"""
+    """Send email with temporary password for password reset (Fase 7B/8: usa template `password_reset` da DB)."""
     try:
         smtp_host = os.environ.get('SMTP_HOST')
         smtp_port = int(os.environ.get('SMTP_PORT', 587))
         smtp_user = os.environ.get('SMTP_USER')
         smtp_password = os.environ.get('SMTP_PASSWORD')
         smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
-        
-        subject = "Recuperacao de Senha - HWI Relogio de Ponto"
-        
-        html_body = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #2563eb;">Recuperacao de Senha</h2>
-                    <p>Ola <strong>{user_name}</strong>,</p>
-                    <p>Recebemos uma solicitacao de recuperacao de senha para sua conta.</p>
-                    <div style="background-color: #f0f9ff; padding: 20px; border-left: 4px solid #2563eb; margin: 25px 0;">
-                        <p style="margin: 0;"><strong>Sua senha temporaria e:</strong></p>
-                        <p style="font-size: 24px; font-family: 'Courier New', monospace; color: #1e40af; margin: 10px 0; font-weight: bold;">
-                            {temporary_password}
-                        </p>
-                    </div>
-                    <div style="background-color: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 25px 0;">
-                        <p style="margin: 0;"><strong>Atencao:</strong></p>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            <li>Esta senha e <strong>temporaria</strong></li>
-                            <li>Voce sera <strong>obrigado a criar uma nova senha</strong> no proximo login</li>
-                            <li>Por seguranca, nao compartilhe esta senha com ninguem</li>
-                        </ul>
-                    </div>
-                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-                    <p style="color: #666; font-size: 12px;">
-                        <strong>Equipe HWI Unipessoal, Lda</strong>
-                    </p>
-                </div>
-            </body>
-        </html>
-        """
-        
+
+        # Fase 8: usar template edit√°vel do admin (com fallback ao corpo default)
+        from routes.email_templates import get_template, render as render_template
+        tpl = await get_template("password_reset")
+        variables = {"user_name": user_name, "temporary_password": temporary_password}
+        if tpl:
+            subject, html_body = render_template(tpl, variables)
+        else:
+            subject = "Recuperacao de Senha - HWI Relogio de Ponto"
+            html_body = (
+                f"<p>Ola {user_name},</p>"
+                f"<p>A tua nova palavra-passe temporaria e:</p>"
+                f"<p style='font-family:monospace;font-size:18px;'><b>{temporary_password}</b></p>"
+                "<p>Cumprimentos,<br/>HWI Unipessoal, Lda</p>"
+            )
+
         message = MIMEMultipart('alternative')
         message['Subject'] = subject
         message['From'] = smtp_from

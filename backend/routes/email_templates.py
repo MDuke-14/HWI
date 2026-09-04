@@ -67,17 +67,22 @@ DEFAULT_TEMPLATES: List[dict] = [
     },
     {
         "key": "pc_pdf_email",
-        "nome": "Pedido de Cotação — envio do PDF ao cliente",
-        "descricao": "Email de envio do PDF gerado da PC ao cliente/comercial.",
+        "nome": "PC — Envio do PDF por email (PT)",
+        "descricao": "Corpo do email quando o PDF da PC é enviado a um destinatário interno (só idioma PT; outros idiomas usam o ficheiro `email_templates.py`).",
         "assunto": "Pedido de Cotação {numero_pc} - FS #{numero_fs}",
         "corpo_html": (
             "<p>Bom dia,</p>"
             "<p>Junto envio o Pedido de Cotação <b>{numero_pc}</b> "
             "referente à FS <b>#{numero_fs}</b>.</p>"
-            "<p>Cliente: {cliente_nome}</p>"
+            "{cliente_html}"
+            "<p>Estado actual: <b>{status}</b></p>"
+            "<p style='margin:20px 0;'>"
+            "<a href='{link_pc}' style='display:inline-block;background:#1e40af;color:#fff;"
+            "text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;'>Ver Pedido de Cotação</a>"
+            "</p>"
             "<p>Com os melhores cumprimentos,<br/>HWI Unipessoal, Lda</p>"
         ),
-        "variaveis": ["numero_pc", "numero_fs", "cliente_nome"],
+        "variaveis": ["numero_pc", "numero_fs", "cliente_nome", "cliente_html", "status", "link_pc"],
     },
     {
         "key": "password_reset",
@@ -97,30 +102,42 @@ DEFAULT_TEMPLATES: List[dict] = [
         "key": "vacation_decision",
         "nome": "Férias — decisão (aprovada/rejeitada)",
         "descricao": "Notificação ao trabalhador quando o admin decide sobre o pedido de férias.",
-        "assunto": "Decisão sobre o pedido de férias — {estado}",
+        "assunto": "Solicitação de Férias — {estado}",
         "corpo_html": (
-            "<p>Olá {user_name},</p>"
-            "<p>O teu pedido de férias de <b>{data_inicio}</b> a <b>{data_fim}</b> "
-            "foi <b>{estado}</b>.</p>"
-            "<p>{observacao}</p>"
-            "<p>Cumprimentos,<br/>HWI Unipessoal, Lda</p>"
+            "<p>Olá <b>{user_name}</b>,</p>"
+            "<p>A sua solicitação de férias para o período de <b>{data_inicio}</b> a <b>{data_fim}</b> "
+            "foi <span style='color:{cor};font-weight:bold;'>{estado_upper}</span> pela administração.</p>"
+            "{observacao_html}"
+            "<p style='margin-top:25px;'>Em caso de dúvidas, entre em contacto com o RH.</p>"
+            "<hr style='margin:30px 0;border:none;border-top:1px solid #ddd;'/>"
+            "<p style='color:#666;font-size:12px;'>Equipa HWI</p>"
         ),
-        "variaveis": ["user_name", "data_inicio", "data_fim", "estado", "observacao"],
+        "variaveis": ["user_name", "data_inicio", "data_fim", "estado", "estado_upper", "cor", "observacao_html", "observacao"],
     },
     {
         "key": "service_notification",
-        "nome": "Notificação de Serviço (FS)",
-        "descricao": "Email a técnicos ao criar/atualizar uma folha de serviço.",
-        "assunto": "Serviço {numero_fs} — {tipo_acao}",
+        "nome": "Notificação de Serviço agendado",
+        "descricao": "Email a técnicos ao criar/atualizar/cancelar um serviço agendado.",
+        "assunto": "{subject}",
         "corpo_html": (
-            "<p>Olá,</p>"
-            "<p>{mensagem}</p>"
-            "<p>Cliente: <b>{cliente_nome}</b><br/>"
-            "Local: {local_intervencao}<br/>"
-            "Data: {data_servico}</p>"
-            "<p>Cumprimentos,<br/>HWI Unipessoal, Lda</p>"
+            "<h2 style='color:#0066cc;'>{subject}</h2>"
+            "<p>{intro}</p>"
+            "<table style='border-collapse:collapse;width:100%;margin:20px 0;'>"
+            "<tr><td style='padding:10px;border:1px solid #ddd;background:#f5f5f5;font-weight:bold;'>Cliente:</td>"
+            "<td style='padding:10px;border:1px solid #ddd;'>{client_name}</td></tr>"
+            "<tr><td style='padding:10px;border:1px solid #ddd;background:#f5f5f5;font-weight:bold;'>Localidade:</td>"
+            "<td style='padding:10px;border:1px solid #ddd;'>{location}</td></tr>"
+            "<tr><td style='padding:10px;border:1px solid #ddd;background:#f5f5f5;font-weight:bold;'>Motivo:</td>"
+            "<td style='padding:10px;border:1px solid #ddd;'>{service_reason}</td></tr>"
+            "<tr><td style='padding:10px;border:1px solid #ddd;background:#f5f5f5;font-weight:bold;'>Data:</td>"
+            "<td style='padding:10px;border:1px solid #ddd;'>{date_time}</td></tr>"
+            "<tr><td style='padding:10px;border:1px solid #ddd;background:#f5f5f5;font-weight:bold;'>Estado:</td>"
+            "<td style='padding:10px;border:1px solid #ddd;'>{status}</td></tr>"
+            "</table>"
+            "<p>Aceda ao sistema para mais detalhes.</p>"
+            "<p style='color:#666;font-size:12px;'>Mensagem automática — não responda.</p>"
         ),
-        "variaveis": ["numero_fs", "tipo_acao", "mensagem", "cliente_nome", "local_intervencao", "data_servico"],
+        "variaveis": ["subject", "intro", "client_name", "location", "service_reason", "date_time", "status", "observations"],
     },
 ]
 

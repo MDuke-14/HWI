@@ -14,6 +14,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+25. ✅ **Fase 8: Migração dos restantes emails para templates editáveis (Feb 2026)** — Os 4 pontos de envio ficam ligados à coleção `email_templates` que o admin pode editar via `/admin > Emails`:
+    - `password_reset` — `helpers.py::send_password_reset_email` usa `render_template` com variáveis `user_name`, `temporary_password`.
+    - `vacation_decision` — `server.py::send_vacation_decision_email` passa `user_name`, `data_inicio`, `data_fim`, `estado`, `estado_upper`, `cor`, `observacao_html`.
+    - `service_notification` — `server.py::send_service_email` renderiza com `subject`, `intro`, `client_name`, `location`, `service_reason`, `date_time`, `status`.
+    - `pc_pdf_email` — `routes/pedidos_cotacao.py::send_email_pc` só usa o template quando `idioma=pt` (idiomas EN/FR continuam a usar `email_templates.py` legado). Inclui botão HTML `link_pc`.
+    - Todos os pontos têm fallback ao HTML antigo se o template estiver em falta.
+    - Templates existentes recebem novas variáveis automaticamente via `ensure_default_templates` sem sobrescrever conteúdo editado pelo admin.
+
 24. ✅ **Fase 7A + 7B: Fornecedor desligado do material, PC único por FS, Templates de Email (Feb 2026)**
     - **7A — Fornecedores/Materiais**: Envio de cotação já **não** escreve `fornecedor_id/nome/email` nem `cotacoes_solicitadas[]` nos materiais. O material fica só com descrição/qtd + `cotacao_status`. Quem recebeu o quê está registado no histórico da PC.
     - **7A — Uma FS = uma PC**: ao criar material `fornecido_por='Cotação'` numa FS que já tem PC não cancelada, o material é **atribuído à PC existente** (primeira por created_at). Sem criar nova.

@@ -1417,74 +1417,57 @@ def calculate_hours_breakdown(total_hours: float, is_special_day: bool) -> dict:
 
 
 async def send_service_email(technician_emails: List[str], service_data: dict, action_type: str):
-    """Send email notification about service appointment"""
+    """Send email notification about service appointment (usa template `service_notification`)"""
     try:
         smtp_host = os.environ.get('SMTP_HOST')
         smtp_port = int(os.environ.get('SMTP_PORT', 587))
         smtp_user = os.environ.get('SMTP_USER')
         smtp_password = os.environ.get('SMTP_PASSWORD')
         smtp_from = os.environ.get('SMTP_FROM')
-        
-        # Email subject based on action
+
         subjects = {
             "created": "Novo Serviço Agendado",
             "updated": "Serviço Atualizado",
             "cancelled": "Serviço Cancelado"
         }
-        subject = subjects.get(action_type, "Notificação de Serviço")
-        
-        # Build email body
+        subject_default = subjects.get(action_type, "Notificação de Serviço")
+
+        intros = {
+            "created": "Foi agendado um novo serviço para o qual foi atribuído como técnico:",
+            "updated": "Foi atualizado um serviço para o qual foi atribuído como técnico:",
+            "cancelled": "Foi cancelado um serviço para o qual foi atribuído como técnico:",
+        }
+        intro = intros.get(action_type, "Notificação de serviço:")
+
         time_info = f" às {service_data.get('time_slot', 'Dia inteiro')}" if service_data.get('time_slot') else " (Dia inteiro)"
-        
-        html_body = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; color: #333;">
-                <h2 style="color: #0066cc;">{subject}</h2>
-                <p>Foi {action_type == 'created' and 'agendado um novo serviço' or action_type == 'updated' and 'atualizado um serviço' or 'cancelado um serviço'} para o qual foi atribuído como técnico:</p>
-                
-                <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Cliente:</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('client_name', '')}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Localidade:</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('location', '')}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Motivo:</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('service_reason', '')}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Data:</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('date', '')}{time_info}</td>
-                    </tr>
-                    {f'<tr><td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Observações:</td><td style="padding: 10px; border: 1px solid #ddd;">{service_data.get("observations", "")}</td></tr>' if service_data.get('observations') else ''}
-                    <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd; background-color: #f5f5f5; font-weight: bold;">Estado:</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">{service_data.get('status', 'scheduled')}</td>
-                    </tr>
-                </table>
-                
-                <p style="margin-top: 20px;">Aceda ao sistema de gestão para mais detalhes.</p>
-                
-                <p style="color: #666; font-size: 12px; margin-top: 30px;">
-                    Esta é uma mensagem automática. Por favor não responda a este email.
-                </p>
-            </body>
-        </html>
-        """
-        
-        # Send to each technician
+        date_time = f"{service_data.get('date', '')}{time_info}"
+
+        variables = {
+            "subject": subject_default,
+            "intro": intro,
+            "client_name": service_data.get("client_name", ""),
+            "location": service_data.get("location", ""),
+            "service_reason": service_data.get("service_reason", ""),
+            "date_time": date_time,
+            "status": service_data.get("status", "scheduled"),
+            "observations": service_data.get("observations", ""),
+        }
+
+        # Fase 8: usar template editável (fallback ao HTML antigo se não existir)
+        from routes.email_templates import get_template, render as render_template
+        tpl = await get_template("service_notification")
+        if tpl:
+            subject, html_body = render_template(tpl, variables)
+        else:
+            subject = subject_default
+            html_body = f"<h2>{subject_default}</h2><p>{intro}</p>"
+
         for email in technician_emails:
             message = MIMEMultipart('alternative')
             message['Subject'] = subject
             message['From'] = smtp_from
             message['To'] = email
-            
-            html_part = MIMEText(html_body, 'html')
-            message.attach(html_part)
-            
+            message.attach(MIMEText(html_body, 'html'))
             await aiosmtplib.send(
                 message,
                 hostname=smtp_host,
@@ -1493,7 +1476,6 @@ async def send_service_email(technician_emails: List[str], service_data: dict, a
                 password=smtp_password,
                 start_tls=True
             )
-            
         logging.info(f"Service email sent to {len(technician_emails)} technicians")
     except Exception as e:
         logging.error(f"Failed to send service email: {str(e)}")
@@ -1655,58 +1637,51 @@ async def send_vacation_request_email(user_name: str, user_email: str, start_dat
         logging.error(f"Failed to send vacation request email: {str(e)}")
 
 async def send_vacation_decision_email(user_name: str, user_email: str, start_date: str, end_date: str, approved: bool, observations: str = None):
-    """Send email to user when vacation request is approved/rejected"""
+    """Send email to user when vacation request is approved/rejected (usa template `vacation_decision`)"""
     try:
         smtp_host = os.environ.get('SMTP_HOST')
         smtp_port = int(os.environ.get('SMTP_PORT', 587))
         smtp_user = os.environ.get('SMTP_USER')
         smtp_password = os.environ.get('SMTP_PASSWORD')
         smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
-        
-        # Format dates
+
         start_formatted = datetime.strptime(start_date, '%Y-%m-%d').strftime('%d/%m/%Y')
         end_formatted = datetime.strptime(end_date, '%Y-%m-%d').strftime('%d/%m/%Y')
-        
-        status_text = "Aprovada" if approved else "Recusada"
-        status_color = "#28a745" if approved else "#dc3545"
-        
-        subject = f"Solicitação de Férias — {status_text}"
-        
-        observations_html = ""
+
+        estado = "Aprovada" if approved else "Recusada"
+        cor = "#28a745" if approved else "#dc3545"
+        obs_html = ""
         if observations:
-            observations_html = f"""
-                <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid {status_color}; margin: 20px 0;">
-                    <strong>Observações:</strong><br>
-                    {observations}
-                </div>
-            """
-        
-        html_body = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                <p>Olá <strong>{user_name}</strong>,</p>
-                
-                <p>Sua solicitação de férias para o período de <strong>{start_formatted}</strong> a <strong>{end_formatted}</strong> foi <span style="color: {status_color}; font-weight: bold;">{status_text.upper()}</span> pela administração.</p>
-                
-                {observations_html}
-                
-                <p style="margin-top: 25px;">Em caso de dúvidas, entre em contato com o RH.</p>
-                
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-                <p style="color: #666; font-size: 12px;">
-                    Equipe HWI
-                </p>
-            </body>
-        </html>
-        """
-        
+            obs_html = (
+                f"<div style='background:#f8f9fa;padding:15px;border-left:4px solid {cor};margin:20px 0;'>"
+                f"<strong>Observações:</strong><br/>{observations}"
+                f"</div>"
+            )
+
+        variables = {
+            "user_name": user_name,
+            "data_inicio": start_formatted,
+            "data_fim": end_formatted,
+            "estado": estado,
+            "estado_upper": estado.upper(),
+            "cor": cor,
+            "observacao_html": obs_html,
+            "observacao": observations or "",
+        }
+
+        from routes.email_templates import get_template, render as render_template
+        tpl = await get_template("vacation_decision")
+        if tpl:
+            subject, html_body = render_template(tpl, variables)
+        else:
+            subject = f"Solicitação de Férias — {estado}"
+            html_body = f"<p>Olá {user_name}, o seu pedido de férias de {start_formatted} a {end_formatted} foi {estado.lower()}.</p>{obs_html}"
+
         message = MIMEMultipart('alternative')
         message['Subject'] = subject
         message['From'] = smtp_from
         message['To'] = user_email
-        
-        html_part = MIMEText(html_body, 'html')
-        message.attach(html_part)
+        message.attach(MIMEText(html_body, 'html'))
         
         await aiosmtplib.send(
             message,
@@ -1717,7 +1692,7 @@ async def send_vacation_decision_email(user_name: str, user_email: str, start_da
             start_tls=True
         )
         
-        logging.info(f"Vacation decision email sent to {user_email} - Status: {status_text}")
+        logging.info(f"Vacation decision email sent to {user_email} - Status: {estado}")
     except Exception as e:
         logging.error(f"Failed to send vacation decision email: {str(e)}")
 
