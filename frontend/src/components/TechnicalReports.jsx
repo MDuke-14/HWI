@@ -2431,12 +2431,10 @@ const TechnicalReports = ({ user, onLogout }) => {
         ...materialFormData,
         intervencao_id: addMaterialIntervencaoId || null
       };
-      
-      // If "Cotação" and user chose existing PC, pass pc_id
-      if (materialFormData.fornecido_por === 'Cotação' && selectedPCIdForMaterial) {
-        payload.pc_id = selectedPCIdForMaterial;
-      }
-      
+
+      // "Cotação": o backend decide sozinho — reaproveita PC existente da FS
+      // ou cria uma nova. Nunca enviamos pc_id daqui.
+
       // Pass selected equipment IDs for the PC
       if (materialFormData.fornecido_por === 'Cotação' && selectedEquipOTIdsForPC.length > 0) {
         payload.equipamento_ot_ids = selectedEquipOTIdsForPC;
@@ -2447,7 +2445,6 @@ const TechnicalReports = ({ user, onLogout }) => {
       fetchMateriais(selectedRelatorio.id);
       setShowAddMaterialModal(false);
       setMaterialFormData({ descricao: '', quantidade: '', unidade: 'Un', fornecido_por: 'Cliente', data_utilizacao: '' });
-      setSelectedPCIdForMaterial(null);
       setSelectedEquipOTIdsForPC([]);
       
       // Se foi marcado como "Cotação", atualizar lista de PCs
@@ -7372,9 +7369,6 @@ const TechnicalReports = ({ user, onLogout }) => {
           setSelectedPCIdForMaterial(null);
           setSelectedEquipOTIdsForPC([]);
         }}
-        existingPCs={pedidosCotacao}
-        selectedPCId={selectedPCIdForMaterial}
-        onPCIdChange={setSelectedPCIdForMaterial}
         equipamentosOT={equipamentosOT}
         selectedEquipOTIds={selectedEquipOTIdsForPC}
         onEquipOTIdsChange={setSelectedEquipOTIdsForPC}

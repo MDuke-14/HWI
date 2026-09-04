@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Package, Plus, Edit, Calendar, FileText } from 'lucide-react';
+import { Package, Plus, Edit, Calendar } from 'lucide-react';
 
 const MaterialModal = ({
   open,
@@ -14,16 +14,11 @@ const MaterialModal = ({
   onSubmit,
   onCancel,
   loading = false,
-  existingPCs = [],
-  selectedPCId,
-  onPCIdChange,
   equipamentosOT = [],
   selectedEquipOTIds = [],
   onEquipOTIdsChange,
   onOpenDespesa
 }) => {
-  const [pcChoice, setPcChoice] = useState('new'); // 'new' or 'existing'
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
     onSubmit(e);
@@ -31,7 +26,6 @@ const MaterialModal = ({
 
   const isCotacao = materialFormData.fornecido_por === 'Cotação';
   const isHWI = materialFormData.fornecido_por === 'HWI';
-  const hasPCs = existingPCs.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -99,10 +93,6 @@ const MaterialModal = ({
               value={materialFormData.fornecido_por}
               onChange={(e) => {
                 setMaterialFormData({ ...materialFormData, fornecido_por: e.target.value });
-                if (e.target.value !== 'Cotação') {
-                  setPcChoice('new');
-                  if (onPCIdChange) onPCIdChange(null);
-                }
               }}
               className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2"
               required
@@ -113,91 +103,8 @@ const MaterialModal = ({
             </select>
           </div>
 
-          {/* PC Choice Section - only when Cotação is selected */}
-          {isCotacao && !isEditing && (
-            <div className="bg-yellow-900/20 border border-yellow-600/50 rounded-lg p-3 space-y-3">
-              <p className="text-yellow-400 text-sm font-medium flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Pedido de Cotação
-              </p>
-
-              {hasPCs ? (
-                <div className="space-y-2">
-                  <label
-                    className={`flex items-center gap-3 p-2.5 rounded-md border cursor-pointer transition-all ${
-                      pcChoice === 'new'
-                        ? 'border-yellow-500 bg-yellow-600/10'
-                        : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
-                    }`}
-                    data-testid="pc-choice-new"
-                  >
-                    <input
-                      type="radio"
-                      name="pc_choice"
-                      value="new"
-                      checked={pcChoice === 'new'}
-                      onChange={() => {
-                        setPcChoice('new');
-                        if (onPCIdChange) onPCIdChange(null);
-                      }}
-                      className="accent-yellow-500"
-                    />
-                    <div>
-                      <span className="text-white text-sm font-medium">Criar novo PC</span>
-                      <p className="text-gray-400 text-xs">Cria um novo Pedido de Cotação</p>
-                    </div>
-                  </label>
-
-                  <label
-                    className={`flex items-center gap-3 p-2.5 rounded-md border cursor-pointer transition-all ${
-                      pcChoice === 'existing'
-                        ? 'border-yellow-500 bg-yellow-600/10'
-                        : 'border-gray-700 bg-[#0f0f0f] hover:border-gray-500'
-                    }`}
-                    data-testid="pc-choice-existing"
-                  >
-                    <input
-                      type="radio"
-                      name="pc_choice"
-                      value="existing"
-                      checked={pcChoice === 'existing'}
-                      onChange={() => setPcChoice('existing')}
-                      className="accent-yellow-500"
-                    />
-                    <div>
-                      <span className="text-white text-sm font-medium">Agregar a PC existente</span>
-                      <p className="text-gray-400 text-xs">Adiciona material a um PC já criado</p>
-                    </div>
-                  </label>
-
-                  {pcChoice === 'existing' && (
-                    <div className="mt-2">
-                      <select
-                        data-testid="pc-select-existing"
-                        value={selectedPCId || ''}
-                        onChange={(e) => {
-                          if (onPCIdChange) onPCIdChange(e.target.value || null);
-                        }}
-                        className="w-full bg-[#0f0f0f] border border-gray-700 text-white rounded-md px-3 py-2 text-sm"
-                        required={pcChoice === 'existing'}
-                      >
-                        <option value="">Selecione um PC...</option>
-                        {existingPCs.map((pc) => (
-                          <option key={pc.id} value={pc.id}>
-                            {pc.numero_pc} - {pc.status} ({pc.materiais_count || 0} materiais)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-yellow-400/70 text-xs">
-                  Um novo Pedido de Cotação será criado automaticamente
-                </p>
-              )}
-            </div>
-          )}
+          {/* PC choice removed — backend decides automatically: reuses existing
+              PC of this FS if any, else creates a new one. */}
 
           {isCotacao && isEditing && (
             <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-3">
