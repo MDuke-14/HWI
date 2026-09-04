@@ -4134,6 +4134,33 @@ const TechnicalReports = ({ user, onLogout }) => {
     // Abrir modal de assinatura em cima do preview (não fechar preview)
     setShowAssinaturaModal(true);
   };
+
+  // Regenera o PDF do visualizador (usado após assinar) para refletir alterações
+  const refreshPreviewPdf = async () => {
+    if (!selectedRelatorio || !showHTMLPreviewModal) return;
+    const toastId = toast.loading('A atualizar visualização...');
+    try {
+      const { blob } = await downloadFSPdfAsync({
+        api: API,
+        relatorioId: selectedRelatorio.id,
+        axios,
+        onProgress: (elapsed) => {
+          toast.loading(`A gerar PDF... ${Math.round(elapsed)}s`, { id: toastId });
+        },
+      });
+      const newUrl = URL.createObjectURL(blob);
+      setHtmlPreviewData((prev) => {
+        if (prev?.pdfUrl) {
+          try { URL.revokeObjectURL(prev.pdfUrl); } catch (_) {}
+        }
+        return prev ? { ...prev, pdfUrl: newUrl } : prev;
+      });
+      toast.success('Visualização atualizada!', { id: toastId, duration: 1500 });
+    } catch (error) {
+      console.error('Erro ao atualizar visualização:', error);
+      toast.error('Erro ao atualizar visualização', { id: toastId, duration: 4000 });
+    }
+  };
   
   // ========== Canvas de Assinatura no HTML Preview ==========
   
@@ -8255,7 +8282,14 @@ const TechnicalReports = ({ user, onLogout }) => {
       {/* Assinatura Modal - Componente Extraído */}
       <AssinaturaModal
         open={showAssinaturaModal}
-        onOpenChange={setShowAssinaturaModal}
+        onOpenChange={(o) => {
+          setShowAssinaturaModal(o);
+          // Ao fechar o modal de assinaturas, se o visualizador estiver aberto,
+          // regenerar o PDF para refletir a(s) assinatura(s) recém-adicionada(s)
+          if (!o && showHTMLPreviewModal) {
+            refreshPreviewPdf();
+          }
+        }}
         selectedRelatorio={selectedRelatorio}
         assinaturas={assinaturas}
         onAssinaturaSaved={() => {

@@ -359,3 +359,7 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 - `/app/backend/models.py` — Cliente model com `faturar_viagens_curtas`
 - `/app/frontend/src/components/TechnicalReports.jsx` — main UI (10k+ lines)
 - `/app/frontend/src/components/ErrorLog.jsx` — admin error log com botão Limpar STARTED órfãos
+
+## Recent Fixes (Feb 2026)
+- **Visualizador FS — Refresh automático após assinar (Feb 2026)**: Ao fechar o `AssinaturaModal` com o visualizador HTML aberto, o PDF é regenerado (via `downloadFSPdfAsync`) e o `pdfUrl` de `htmlPreviewData` é atualizado (blob anterior é revogado). Utilizador vê a assinatura imediatamente sem re-abrir o visualizador. Alterações em `TechnicalReports.jsx`: adicionada função `refreshPreviewPdf` e handler `onOpenChange` do `AssinaturaModal` invoca refresh quando o preview está aberto.
+
