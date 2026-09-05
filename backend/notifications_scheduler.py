@@ -1426,45 +1426,60 @@ async def process_authorization_decision(
             }
         else:
             # Encerrar ponto para que o total do dia (todas as picagens) fique
-            # exactamente em 8h (480 min). Se houver múltiplas picagens no dia,
-            # calcula o `end_time` da activa que respeita esse limite.
-            entry = await db.time_entries.find_one({"id": entry_id})
-            if entry:
-                start_time = datetime.fromisoformat(entry.get("start_time"))
-                # Somar minutos já trabalhados noutras picagens do mesmo dia (fechadas)
-                same_day = await db.time_entries.find({
-                    "user_id": entry.get("user_id"),
-                    "date": date_str,
-                    "id": {"$ne": entry_id},
-                }, {"_id": 0}).to_list(50)
-                minutes_other = 0
-                for oe in same_day:
-                    if oe.get("start_time") and oe.get("end_time"):
-                        try:
-                            s = datetime.fromisoformat(oe["start_time"])
-                            e = datetime.fromisoformat(oe["end_time"])
-                            minutes_other += max(0, int((e - s).total_seconds() // 60))
-                        except Exception:
-                            pass
+            # exactamente em 8h (480 min). Trimamos SEMPRE a última picagem
+            # cronologicamente (que é a que "empurrou" o total acima das 8h),
+            # independentemente da picagem referenciada no pedido de autorização.
+            user_id_for_trim = auth_request.get("user_id")
+            day_entries = await db.time_entries.find(
+                {"user_id": user_id_for_trim, "date": date_str},
+                {"_id": 0}
+            ).to_list(50)
+            # Ordenar por start_time (mais tarde é a última)
+            day_entries.sort(key=lambda x: x.get("start_time") or "")
 
-                allowed_minutes = max(0, 8 * 60 - minutes_other)  # 480 total do dia
-                end_datetime = start_time + timedelta(minutes=allowed_minutes)
-                total_minutes = allowed_minutes
-                end_str = end_datetime.strftime("%H:%M")
+            entry = day_entries[-1] if day_entries else None
+            end_str = "8h"
+            if entry and entry.get("start_time"):
+                try:
+                    start_time = datetime.fromisoformat(entry["start_time"])
+                except Exception:
+                    start_time = None
 
-                await db.time_entries.update_one(
-                    {"id": entry_id},
-                    {"$set": {
-                        "end_time": end_datetime.isoformat(),
-                        "total_minutes": total_minutes,
-                        "overtime_authorized": False,
-                        "overtime_rejected_by": decided_by,
-                        "overtime_rejected_at": datetime.now().isoformat(),
-                        "auto_closed_at_8h": True,
-                    }}
-                )
-            else:
-                end_str = "8h"
+                if start_time:
+                    # Somar minutos das outras picagens (fechadas) do mesmo dia
+                    minutes_other = 0
+                    for oe in day_entries[:-1]:
+                        if oe.get("start_time") and oe.get("end_time"):
+                            try:
+                                s = datetime.fromisoformat(oe["start_time"])
+                                e = datetime.fromisoformat(oe["end_time"])
+                                minutes_other += max(0, int((e - s).total_seconds() // 60))
+                            except Exception:
+                                pass
+
+                    allowed_minutes = max(0, 8 * 60 - minutes_other)  # 480 total do dia
+                    end_datetime = start_time + timedelta(minutes=allowed_minutes)
+                    end_str = end_datetime.strftime("%H:%M")
+
+                    # Recalcular total_hours para esta picagem — o relatório mensal
+                    # soma o `total_hours` de cada linha, é obrigatório actualizar.
+                    new_total_hours = round(allowed_minutes / 60, 4)
+
+                    await db.time_entries.update_one(
+                        {"id": entry["id"]},
+                        {"$set": {
+                            "end_time": end_datetime.isoformat(),
+                            "total_minutes": allowed_minutes,
+                            "total_hours": new_total_hours,
+                            "regular_hours": new_total_hours,
+                            "overtime_hours": 0.0,
+                            "special_hours": 0.0,
+                            "overtime_authorized": False,
+                            "overtime_rejected_by": decided_by,
+                            "overtime_rejected_at": datetime.now().isoformat(),
+                            "auto_closed_at_8h": True,
+                        }}
+                    )
             
             # Criar notificação para o utilizador
             from uuid import uuid4
