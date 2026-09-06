@@ -864,13 +864,78 @@ async def get_intervencoes(
     relatorio_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Listar intervenções de um relatório (herdadas de continuidade sempre primeiro)."""
+    """Listar intervenções de um relatório.
+    Ordem:
+      1) Herdadas de continuidade primeiro (ordem/data como fallback).
+      2) Para as restantes: usa `ordem_manual` (definida por drag-drop) se existir;
+         caso contrário, ordena cronologicamente por `data_intervencao`.
+    """
     intervencoes = await db.intervencoes_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
-    
+    ).to_list(length=None)
+
+    def _sort_key(iv):
+        herdada = 0 if iv.get("herdada_de_intervencao_id") else 1
+        manual = iv.get("ordem_manual")
+        has_manual = 0 if manual is not None else 1
+        return (
+            herdada,
+            has_manual,
+            manual if manual is not None else 0,
+            iv.get("data_intervencao") or "",
+            iv.get("ordem") or 0,
+        )
+
+    intervencoes.sort(key=_sort_key)
     return intervencoes
+
+
+@router.put("/relatorios-tecnicos/{relatorio_id}/intervencoes/reorder")
+async def reorder_intervencoes(
+    relatorio_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Persiste a ordem manual das intervenções (após drag-drop).
+    Payload: { "order": ["intervencao_id_1", "intervencao_id_2", ...] }
+    Cada id recebe `ordem_manual = índice` (0-based). Ids omitidos ficam com
+    `ordem_manual = null` (voltam para o final ordenados por data).
+    """
+    order = data.get("order")
+    if not isinstance(order, list) or not all(isinstance(x, str) for x in order):
+        raise HTTPException(status_code=400, detail="Payload inválido — esperado {order: [str, ...]}")
+
+    # Reset ordem_manual para os que não estão na lista
+    await db.intervencoes_relatorio.update_many(
+        {"relatorio_id": relatorio_id, "id": {"$nin": order}},
+        {"$set": {"ordem_manual": None}}
+    )
+    # Definir ordem_manual para cada id na lista
+    for idx, iv_id in enumerate(order):
+        await db.intervencoes_relatorio.update_one(
+            {"relatorio_id": relatorio_id, "id": iv_id},
+            {"$set": {"ordem_manual": idx}}
+        )
+
+    logging.info(f"Intervenções reordenadas em {relatorio_id} por {current_user.get('username')}: {len(order)} items")
+    return {"message": "Ordem actualizada", "count": len(order)}
+
+
+@router.post("/relatorios-tecnicos/{relatorio_id}/intervencoes/reset-order")
+async def reset_intervencoes_order(
+    relatorio_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Repõe a ordem cronológica (limpa `ordem_manual` de todas as intervenções da FS)."""
+    result = await db.intervencoes_relatorio.update_many(
+        {"relatorio_id": relatorio_id},
+        {"$set": {"ordem_manual": None}}
+    )
+    logging.info(f"Ordem cronológica reposta em {relatorio_id} por {current_user.get('username')}: {result.modified_count} items")
+    return {"message": "Ordem cronológica reposta", "modified": result.modified_count}
+
 
 @router.post("/relatorios-tecnicos/{relatorio_id}/intervencoes", response_model=IntervencaoRelatorio)
 async def add_intervencao(

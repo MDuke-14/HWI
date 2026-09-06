@@ -330,6 +330,9 @@ const TechnicalReports = ({ user, onLogout }) => {
   
   // Intervenções
   const [intervencoes, setIntervencoes] = useState([]);
+  const [dragIntervIdx, setDragIntervIdx] = useState(null);
+  const [dragOverIntervIdx, setDragOverIntervIdx] = useState(null);
+  const [reorderingIntervs, setReorderingIntervs] = useState(false);
   const [activeIntervencaoId, setActiveIntervencaoId] = useState(null);
   const [uploadIntervencaoId, setUploadIntervencaoId] = useState(null);
   const [addMaterialIntervencaoId, setAddMaterialIntervencaoId] = useState(null);
@@ -1554,6 +1557,41 @@ const TechnicalReports = ({ user, onLogout }) => {
     } catch (error) {
       console.error('Erro ao carregar intervenções:', error);
       setIntervencoes([]);
+    }
+  };
+
+  // Reordenar intervenções (drag-drop). `newList` é o array completo já
+  // reordenado (não-herdadas apenas — as herdadas mantêm-se no topo).
+  const handleReorderIntervencoes = async (newList) => {
+    if (!selectedRelatorio) return;
+    setReorderingIntervs(true);
+    // Atualização optimista da UI
+    setIntervencoes(newList);
+    try {
+      // Só enviamos as não-herdadas — o backend distingue e coloca herdadas primeiro
+      const order = newList.filter(i => !i.herdada_de_intervencao_id).map(i => i.id);
+      await axios.put(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/reorder`, { order });
+      toast.success('Ordem das intervenções guardada', { duration: 1500 });
+    } catch (error) {
+      toast.error('Erro ao guardar ordem — a recarregar');
+      await fetchIntervencoesRelatorio(selectedRelatorio.id);
+    } finally {
+      setReorderingIntervs(false);
+    }
+  };
+
+  // Repor a ordem cronológica (limpa ordem_manual no backend)
+  const handleResetIntervencoesOrder = async () => {
+    if (!selectedRelatorio) return;
+    setReorderingIntervs(true);
+    try {
+      await axios.post(`${API}/relatorios-tecnicos/${selectedRelatorio.id}/intervencoes/reset-order`);
+      await fetchIntervencoesRelatorio(selectedRelatorio.id);
+      toast.success('Ordem cronológica reposta');
+    } catch (error) {
+      toast.error('Erro ao repor ordem cronológica');
+    } finally {
+      setReorderingIntervs(false);
     }
   };
 
@@ -6183,15 +6221,31 @@ const TechnicalReports = ({ user, onLogout }) => {
                     <FileText className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                     Intervenções ({intervencoes.length})
                   </h4>
-                  <Button
-                    onClick={() => setShowAddIntervencaoModal(true)}
-                    size="sm"
-                    className={`bg-green-500 hover:bg-green-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
-                    data-testid="btn-add-intervencao"
-                  >
-                    <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
-                    {isMobile ? 'Nova' : 'Adicionar Intervenção'}
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    {intervencoes.some(i => i.ordem_manual !== null && i.ordem_manual !== undefined) && (
+                      <Button
+                        onClick={handleResetIntervencoesOrder}
+                        size="sm"
+                        variant="outline"
+                        disabled={reorderingIntervs}
+                        className={`border-gray-600 text-gray-300 hover:bg-gray-700 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
+                        data-testid="btn-reset-interv-order"
+                        title="Repor ordem cronológica"
+                      >
+                        <ArrowUpDown className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-3.5 h-3.5 mr-1'}`} />
+                        {isMobile ? 'Data' : 'Ordenar por data'}
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setShowAddIntervencaoModal(true)}
+                      size="sm"
+                      className={`bg-green-500 hover:bg-green-600 ${isMobile ? 'text-xs px-2 py-1' : ''}`}
+                      data-testid="btn-add-intervencao"
+                    >
+                      <Plus className={`${isMobile ? 'w-3 h-3 mr-0.5' : 'w-4 h-4 mr-1'}`} />
+                      {isMobile ? 'Nova' : 'Adicionar Intervenção'}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Tab Bar */}
@@ -6202,6 +6256,8 @@ const TechnicalReports = ({ user, onLogout }) => {
                         const isActive = activeIntervencaoId === interv.id;
                         const eqInterv = equipamentosOT.find(e => e.id === interv.equipamento_id);
                         const isHerdada = !!interv.herdada_de_intervencao_id;
+                        const isDragging = dragIntervIdx === idx;
+                        const isDragOver = dragOverIntervIdx === idx && dragIntervIdx !== null && dragIntervIdx !== idx;
                         const tabBg = isHerdada
                           ? (isActive
                               ? 'bg-red-600 text-white ring-2 ring-red-300'
@@ -6213,7 +6269,43 @@ const TechnicalReports = ({ user, onLogout }) => {
                           <div
                             key={interv.id}
                             data-testid={`tab-intervencao-${idx}`}
-                            className={`flex-shrink-0 rounded-t-lg text-xs font-medium transition-colors flex items-stretch ${tabBg}`}
+                            draggable={!isHerdada}
+                            onDragStart={(e) => {
+                              if (isHerdada) return;
+                              setDragIntervIdx(idx);
+                              e.dataTransfer.effectAllowed = 'move';
+                              try { e.dataTransfer.setData('text/plain', interv.id); } catch (_) {}
+                            }}
+                            onDragOver={(e) => {
+                              if (dragIntervIdx === null || isHerdada) return;
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              if (dragOverIntervIdx !== idx) setDragOverIntervIdx(idx);
+                            }}
+                            onDragLeave={() => {
+                              if (dragOverIntervIdx === idx) setDragOverIntervIdx(null);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (dragIntervIdx === null || dragIntervIdx === idx || isHerdada) {
+                                setDragIntervIdx(null);
+                                setDragOverIntervIdx(null);
+                                return;
+                              }
+                              const from = dragIntervIdx;
+                              const to = idx;
+                              const newList = [...intervencoes];
+                              const [moved] = newList.splice(from, 1);
+                              newList.splice(to, 0, moved);
+                              setDragIntervIdx(null);
+                              setDragOverIntervIdx(null);
+                              handleReorderIntervencoes(newList);
+                            }}
+                            onDragEnd={() => {
+                              setDragIntervIdx(null);
+                              setDragOverIntervIdx(null);
+                            }}
+                            className={`flex-shrink-0 rounded-t-lg text-xs font-medium transition-all flex items-stretch ${tabBg} ${!isHerdada ? 'cursor-move' : ''} ${isDragging ? 'opacity-40' : ''} ${isDragOver ? 'ring-2 ring-emerald-400' : ''}`}
                           >
                             <button
                               type="button"
