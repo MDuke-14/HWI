@@ -39,6 +39,25 @@ from folha_horas_pdf import generate_folha_horas_pdf
 router = APIRouter()
 
 
+def _intervencao_sort_key(iv: dict):
+    """Chave de ordenação usada em toda a app para listar intervenções de uma FS.
+    Prioridade:
+      1) Herdadas de continuidade primeiro.
+      2) Entradas com `ordem_manual` (drag-drop) por ordem crescente.
+      3) Restantes por `data_intervencao` cronológica; `ordem` como último desempate.
+    """
+    herdada = 0 if iv.get("herdada_de_intervencao_id") else 1
+    manual = iv.get("ordem_manual")
+    has_manual = 0 if manual is not None else 1
+    return (
+        herdada,
+        has_manual,
+        manual if manual is not None else 0,
+        iv.get("data_intervencao") or "",
+        iv.get("ordem") or 0,
+    )
+
+
 # ============================================================================
 # Streaming helper para PDFs grandes (FS com muitas fotos)
 # ----------------------------------------------------------------------------
@@ -875,19 +894,7 @@ async def get_intervencoes(
         {"_id": 0}
     ).to_list(length=None)
 
-    def _sort_key(iv):
-        herdada = 0 if iv.get("herdada_de_intervencao_id") else 1
-        manual = iv.get("ordem_manual")
-        has_manual = 0 if manual is not None else 1
-        return (
-            herdada,
-            has_manual,
-            manual if manual is not None else 0,
-            iv.get("data_intervencao") or "",
-            iv.get("ordem") or 0,
-        )
-
-    intervencoes.sort(key=_sort_key)
+    intervencoes.sort(key=_intervencao_sort_key)
     return intervencoes
 
 
@@ -2661,11 +2668,12 @@ async def preview_pdf_ot(
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    # Buscar intervenções (herdadas de continuidade sempre primeiro)
+    # Buscar intervenções (herdadas primeiro; depois ordem_manual; depois cronológica)
     intervencoes = await db.intervencoes_relatorio.find(
         {"relatorio_id": relatorio_id},
         {"_id": 0}
-    ).sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
+    ).to_list(length=None)
+    intervencoes.sort(key=_intervencao_sort_key)
     
     # Buscar técnicos (registos manuais) - ordenados cronologicamente
     tecnicos = await db.tecnicos_relatorio.find(
@@ -3067,7 +3075,8 @@ async def start_pdf_generation_job(
 
     intervencoes = await db.intervencoes_relatorio.find(
         {"relatorio_id": relatorio_id}, {"_id": 0}
-    ).sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
+    ).to_list(length=None)
+    intervencoes.sort(key=_intervencao_sort_key)
 
     tecnicos = await db.tecnicos_relatorio.find(
         {"relatorio_id": relatorio_id}, {"_id": 0}

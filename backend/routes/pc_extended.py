@@ -408,8 +408,10 @@ async def _generate_fs_pdf_bytes(relatorio_id: str) -> Optional[bytes]:
     if not relatorio:
         return None
     cliente = await db.clientes.find_one({"id": relatorio.get("cliente_id")}, {"_id": 0}) or {}
-    intervencoes = await db.intervencoes_relatorio.find({"relatorio_id": relatorio_id}, {"_id": 0}) \
-        .sort([("herdada_de_intervencao_id", -1), ("ordem", 1), ("data_intervencao", 1)]).to_list(length=None)
+    intervencoes = await db.intervencoes_relatorio.find({"relatorio_id": relatorio_id}, {"_id": 0}).to_list(length=None)
+    # Aplicar o mesmo sort helper usado no PDF principal (ordem_manual > cronológica)
+    from routes.relatorios import _intervencao_sort_key
+    intervencoes.sort(key=_intervencao_sort_key)
     tecnicos = await db.tecnicos_relatorio.find({"relatorio_id": relatorio_id}, {"_id": 0}) \
         .sort([("data_trabalho", 1), ("hora_inicio", 1)]).to_list(length=None)
     fotografias = await db.fotos_relatorio.find({"relatorio_id": relatorio_id}, {"_id": 0}) \
