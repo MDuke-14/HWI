@@ -2137,11 +2137,12 @@ async def _enviar_pdf_worker(
         if not cliente:
             raise HTTPException(status_code=404, detail="Cliente não encontrado")
         
-        # Buscar intervenções
+        # Buscar intervenções — usar sort_key que respeita `ordem_manual` (drag-drop)
         intervencoes = await db.intervencoes_relatorio.find(
             {"relatorio_id": relatorio_id},
             {"_id": 0}
-        ).sort([("data_trabalho", 1), ("hora_inicio_segmento", 1)]).to_list(length=None)
+        ).to_list(length=None)
+        intervencoes.sort(key=_intervencao_sort_key)
         
         # Buscar técnicos (registos manuais) - ordenados cronologicamente
         tecnicos = await db.tecnicos_relatorio.find(
