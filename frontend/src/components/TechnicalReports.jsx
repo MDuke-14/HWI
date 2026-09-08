@@ -9993,6 +9993,15 @@ const TechnicalReports = ({ user, onLogout }) => {
                 </p>
                 {equipamentoIntervencoes.map((interv) => {
                   const isExpanded = expandedIntervencao === interv.id;
+                  const handleOpenFS = async (e) => {
+                    e.stopPropagation();
+                    try {
+                      const { data: fullRelatorio } = await axios.get(`${API}/relatorios-tecnicos/${interv.relatorio_id}`);
+                      await openViewRelatorioModal(fullRelatorio);
+                    } catch (err) {
+                      toast.error('Erro ao abrir FS');
+                    }
+                  };
                   return (
                     <div
                       key={interv.id}
@@ -10009,7 +10018,19 @@ const TechnicalReports = ({ user, onLogout }) => {
                           </div>
                           <div className="min-w-0">
                             <p className="text-white font-medium text-sm">
-                              Intervenção — <span className="text-blue-400">FS #{interv.ot_numero}</span> — {interv.data_intervencao ? new Date(interv.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT') : '-'}
+                              Intervenção —{' '}
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={handleOpenFS}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOpenFS(e); }}
+                                className="text-blue-400 hover:text-blue-300 underline underline-offset-2 hover:no-underline cursor-pointer"
+                                title="Abrir FS num popup (esta lista mantém-se aberta ao fechar)"
+                                data-testid={`open-fs-shortcut-${interv.id}`}
+                              >
+                                FS #{interv.ot_numero}
+                              </span>
+                              {' '}— {interv.data_intervencao ? new Date(interv.data_intervencao + 'T00:00:00').toLocaleDateString('pt-PT') : '-'}
                             </p>
                             <p className="text-gray-500 text-xs truncate">{interv.ot_local}</p>
                           </div>
@@ -10024,6 +10045,17 @@ const TechnicalReports = ({ user, onLogout }) => {
                             <p className="text-sm text-gray-300 whitespace-pre-wrap">
                               {interv.motivo_assistencia || <span className="text-gray-600 italic">Sem motivo registado</span>}
                             </p>
+                          </div>
+                          <div className="pt-1">
+                            <Button
+                              onClick={handleOpenFS}
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+                              data-testid={`open-fs-btn-${interv.id}`}
+                            >
+                              <FileText className="w-3.5 h-3.5 mr-1.5" /> Abrir FS #{interv.ot_numero}
+                            </Button>
                           </div>
                         </div>
                       )}

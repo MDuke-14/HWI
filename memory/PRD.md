@@ -14,6 +14,13 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+27. ✅ **Atalho para abrir FS na lista "Intervenções do Equipamento" (Feb 2026)** — Ao consultar as intervenções de um equipamento na BD de máquinas do cliente, cada intervenção passa a servir de atalho:
+    - O número `FS #NNN` no cabeçalho da intervenção é agora clicável (link azul sublinhado) — abre o modal de detalhe da FS num popup por cima.
+    - Ao expandir a intervenção, existe também um botão "Abrir FS #NNN" com ícone.
+    - Handler: `axios.get('/api/relatorios-tecnicos/{id}')` para carregar o documento completo, seguido de `openViewRelatorioModal(relatorio)`.
+    - **Ao fechar o popup da FS, o utilizador permanece no modal "Intervenções do Equipamento"** — os dois estados (`showEquipamentoOTsModal` e `showViewRelatorioModal`) são independentes, permitindo procurar/abrir várias FSs sem sair da lista.
+    - data-testid: `open-fs-shortcut-{id}` (link) e `open-fs-btn-{id}` (botão expandido).
+
 26. ✅ **Rastreabilidade de Relatórios de Assistência (Feb 2026)** — Ao adicionar um novo Relatório de Assistência numa FS, o sistema regista automaticamente **quem** o criou:
     - Modelo `RelatorioAssistencia` (models.py) recebeu 2 campos opcionais: `created_by` (user id) e `created_by_name` (nome completo).
     - Endpoint `POST /api/relatorios-tecnicos/{id}/relatorios-assistencia` preenche automaticamente estes campos a partir do JWT do utilizador autenticado + `full_name` da coleção `users`.
