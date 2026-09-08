@@ -557,39 +557,79 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
                         date_rel_assist.append(ra)
         
         # ---- Equipamentos desta intervenção (antes de Motivo e Relatório de Assistência) ----
+        # Mesma lógica do card "Equipamento" no frontend:
+        #  1) `activeEq` — equipamento apontado por `interv.equipamento_id`.
+        #  2) `intervEqs` — restantes em `equipamentos_adicionais` com
+        #     `intervencao_id == interv.id` (excluindo o principal).
+        #  3) `unassignedEqs` — equipamentos sem `intervencao_id` são mostrados
+        #     APENAS na primeira intervenção.
         interv_equip_cards = []
         seen_equip_keys = set()
-        for ra in date_rel_assist:
-            for eq_id in (ra.get('equipamento_ids') or []):
-                if eq_id in seen_equip_keys:
+
+        def _add_card(eq_obj, is_principal=False):
+            card = create_equipment_card(
+                tipologia=eq_obj.get('tipologia'),
+                marca=eq_obj.get('marca'),
+                modelo=eq_obj.get('modelo'),
+                numero_serie=eq_obj.get('numero_serie'),
+                ano_fabrico=eq_obj.get('ano_fabrico'),
+                horas_funcionamento=eq_obj.get('horas_funcionamento'),
+                is_principal=is_principal,
+            )
+            if card:
+                interv_equip_cards.append(card)
+
+        interv_id_local = interv.get('id')
+        active_eq_id = interv.get('equipamento_id')
+
+        # 1) Equipamento principal desta intervenção
+        if active_eq_id and equipamentos_adicionais:
+            active_eq = next((e for e in equipamentos_adicionais if e.get('id') == active_eq_id), None)
+            if active_eq:
+                _add_card(active_eq)
+                seen_equip_keys.add(active_eq.get('id'))
+
+        # 2) Equipamentos associados por intervencao_id (excluindo o principal)
+        for eq in (equipamentos_adicionais or []):
+            if eq.get('id') in seen_equip_keys:
+                continue
+            if eq.get('intervencao_id') == interv_id_local and interv_id_local:
+                _add_card(eq)
+                seen_equip_keys.add(eq.get('id'))
+
+        # 3) Só na 1ª intervenção: mostrar equipamentos sem intervencao_id.
+        #    Inclui também o equipamento "principal" da FS (campos raiz) para não
+        #    perder dados de FS antigas que só o guardam aí.
+        if intervention_num == 1:
+            # Equipamento raiz (principal da FS)
+            root_serial = relatorio.get('equipamento_numero_serie')
+            root_marca = relatorio.get('equipamento_marca')
+            root_modelo = relatorio.get('equipamento_modelo')
+            root_tipologia = relatorio.get('equipamento_tipologia')
+            if any([root_serial, root_marca, root_modelo, root_tipologia]):
+                # Evita duplicado se já foi adicionado por número de série
+                already = any(
+                    (root_serial and (e.get('numero_serie') == root_serial))
+                    for e in (equipamentos_adicionais or [])
+                    if e.get('id') in seen_equip_keys
+                )
+                if not already:
+                    _add_card({
+                        'tipologia': root_tipologia,
+                        'marca': root_marca,
+                        'modelo': root_modelo,
+                        'numero_serie': root_serial,
+                        'ano_fabrico': relatorio.get('equipamento_ano_fabrico'),
+                        'horas_funcionamento': relatorio.get('equipamento_horas_funcionamento'),
+                    }, is_principal=True)
+
+            # Equipamentos_adicionais sem intervencao_id
+            for eq in (equipamentos_adicionais or []):
+                if eq.get('id') in seen_equip_keys:
                     continue
-                seen_equip_keys.add(eq_id)
-                if eq_id == 'principal':
-                    card = create_equipment_card(
-                        tipologia=relatorio.get('equipamento_tipologia'),
-                        marca=relatorio.get('equipamento_marca'),
-                        modelo=relatorio.get('equipamento_modelo'),
-                        numero_serie=relatorio.get('equipamento_numero_serie'),
-                        ano_fabrico=relatorio.get('equipamento_ano_fabrico'),
-                        horas_funcionamento=relatorio.get('equipamento_horas_funcionamento'),
-                        is_principal=True,
-                    )
-                    if card:
-                        interv_equip_cards.append(card)
-                else:
-                    eq = next((e for e in (equipamentos_adicionais or []) if e.get('id') == eq_id), None)
-                    if eq:
-                        card = create_equipment_card(
-                            tipologia=eq.get('tipologia'),
-                            marca=eq.get('marca'),
-                            modelo=eq.get('modelo'),
-                            numero_serie=eq.get('numero_serie'),
-                            ano_fabrico=eq.get('ano_fabrico'),
-                            horas_funcionamento=eq.get('horas_funcionamento'),
-                            is_principal=False,
-                        )
-                        if card:
-                            interv_equip_cards.append(card)
+                if not eq.get('intervencao_id'):
+                    _add_card(eq)
+                    seen_equip_keys.add(eq.get('id'))
         
         if interv_equip_cards:
             equip_block = []
