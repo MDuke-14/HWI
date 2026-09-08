@@ -15,7 +15,8 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
  * posição, código e data. Envia sempre `fornecido_por="Cotação"` + `pc_id`
  * da PC atual — o material fica agregado apenas nesta PC.
  */
-const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded }) => {
+const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded, editingMaterial = null }) => {
+  const isEdit = !!editingMaterial;
   const [form, setForm] = useState({
     descricao: '',
     quantidade: '',
@@ -27,7 +28,18 @@ const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded }) 
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (editingMaterial) {
+      // Pré-preencher com todos os campos do material existente
+      setForm({
+        descricao: editingMaterial.descricao || '',
+        quantidade: editingMaterial.quantidade ?? '',
+        unidade: editingMaterial.unidade || 'Un',
+        posicao: editingMaterial.posicao || '',
+        codigo: editingMaterial.codigo || '',
+        data_utilizacao: (editingMaterial.data_utilizacao || new Date().toISOString().slice(0, 10)).toString().slice(0, 10),
+      });
+    } else {
       setForm({
         descricao: '',
         quantidade: '',
@@ -37,7 +49,7 @@ const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded }) 
         data_utilizacao: new Date().toISOString().slice(0, 10),
       });
     }
-  }, [open]);
+  }, [open, editingMaterial]);
 
   const canSubmit = form.descricao.trim() && parseFloat(form.quantidade) > 0 && !saving;
 
@@ -60,15 +72,25 @@ const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded }) 
         posicao: form.posicao.trim() || null,
         codigo: form.codigo.trim() || null,
         data_utilizacao: form.data_utilizacao || null,
-        fornecido_por: 'Cotação',
-        pc_id: pc.id,  // agrega directamente a ESTA PC
       };
-      await axios.post(`${API}/relatorios-tecnicos/${relatorioId}/materiais`, payload);
-      toast.success('Material adicionado à PC');
+      if (isEdit) {
+        // PUT — só campos editáveis, não muda fornecedor nem pc_id
+        await axios.put(
+          `${API}/relatorios-tecnicos/${relatorioId}/materiais/${editingMaterial.id}`,
+          payload
+        );
+        toast.success('Material atualizado');
+      } else {
+        // POST — cria material Cotação agregado a esta PC
+        payload.fornecido_por = 'Cotação';
+        payload.pc_id = pc.id;
+        await axios.post(`${API}/relatorios-tecnicos/${relatorioId}/materiais`, payload);
+        toast.success('Material adicionado à PC');
+      }
       onOpenChange(false);
       onAdded && onAdded();
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Erro a adicionar material');
+      toast.error(err?.response?.data?.detail || (isEdit ? 'Erro a atualizar material' : 'Erro a adicionar material'));
     } finally {
       setSaving(false);
     }
@@ -80,10 +102,10 @@ const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded }) 
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
             <Package className="w-5 h-5 text-blue-400" />
-            Adicionar material à PC
+            {isEdit ? 'Editar material da PC' : 'Adicionar material à PC'}
           </DialogTitle>
           <DialogDescription className="text-gray-400 text-xs">
-            PC {pc?.numero_pc} · O material fica agregado apenas nesta PC.
+            PC {pc?.numero_pc} · {isEdit ? 'Ajusta qualquer campo — as alterações são guardadas no material actual.' : 'O material fica agregado apenas nesta PC.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -186,7 +208,7 @@ const AddMaterialToPCModal = ({ open, onOpenChange, pc, relatorioId, onAdded }) 
               className="flex-1 bg-blue-600 hover:bg-blue-700"
               data-testid="add-mat-pc-guardar"
             >
-              <Plus className="w-4 h-4 mr-1" /> {saving ? 'A guardar…' : 'Adicionar'}
+              <Plus className="w-4 h-4 mr-1" /> {saving ? 'A guardar…' : (isEdit ? 'Guardar' : 'Adicionar')}
             </Button>
           </div>
         </form>
