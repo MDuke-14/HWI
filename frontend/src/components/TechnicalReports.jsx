@@ -8030,8 +8030,13 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 key={f.id}
                                 src={`${API}${f.foto_url}?thumb=true`}
                                 alt={f.descricao || ''}
-                                className="w-full h-16 object-cover rounded border border-gray-800"
+                                className="w-full h-16 object-cover rounded border border-gray-800 cursor-zoom-in hover:opacity-80 transition-opacity"
                                 loading="lazy"
+                                onClick={() => {
+                                  setSelectedFotoUrl(`${API}${f.foto_url}`);
+                                  setShowFotoPreviewModal(true);
+                                }}
+                                data-testid={`pc-resumo-foto-thumb-${f.id}`}
                               />
                             ))}
                           </div>
@@ -8184,13 +8189,20 @@ const TechnicalReports = ({ user, onLogout }) => {
                         <img
                           src={`${API}${foto.foto_url}`}
                           alt={foto.descricao}
-                          className="w-full h-40 object-cover rounded-lg"
+                          className="w-full h-40 object-cover rounded-lg cursor-zoom-in"
+                          onClick={() => {
+                            setSelectedFotoUrl(`${API}${foto.foto_url}`);
+                            setShowFotoPreviewModal(true);
+                          }}
+                          data-testid={`pc-foto-thumb-${foto.id}`}
                         />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
                           <Button
-                            onClick={() => handleDeleteFotoPC(foto.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteFotoPC(foto.id); }}
                             size="sm"
                             variant="destructive"
+                            className="pointer-events-auto"
+                            data-testid={`pc-foto-delete-${foto.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
