@@ -593,6 +593,10 @@ const TechnicalReports = ({ user, onLogout }) => {
   const [oneDriveConnected, setOneDriveConnected] = useState(false);
   const [cameraToOneDrive, setCameraToOneDrive] = useState(false);
   const [showCameraCapture, setShowCameraCapture] = useState(false);
+
+  // OneDrive/Câmara para o modal de Adicionar Fotografia ao PC
+  const [showPCOneDrivePicker, setShowPCOneDrivePicker] = useState(false);
+  const [showPCCameraCapture, setShowPCCameraCapture] = useState(false);
   const [editRegistoForm, setEditRegistoForm] = useState({
     minutos_trabalhados: 0,
     km: 0,
@@ -3040,6 +3044,90 @@ const TechnicalReports = ({ user, onLogout }) => {
     } finally {
       setUploadingFotoPC(false);
     }
+  };
+
+  // Multi-file + OneDrive mirror upload para fotografias do PC (espelha `handleUploadPhotos` da FS)
+  const handleUploadPCPhotos = async (files, opts = {}) => {
+    if (!files || files.length === 0 || !selectedPC) return;
+    const descricao = opts.descricao || '';
+    const mirrorToOneDrive = !!opts.mirrorToOneDrive;
+    const pcNum = selectedPC?.numero_pc || 'X';
+    const subfolder = `PC-${pcNum}/Fotografias`;
+    setUploadingFotoPC(true);
+    let ok = 0, failed = 0, odOk = 0, odFail = 0;
+    try {
+      for (const file of files) {
+        let fotoId = null;
+        try {
+          const form = new FormData();
+          form.append('file', file);
+          form.append('descricao', descricao);
+          const resp = await axios.post(`${API}/pedidos-cotacao/${selectedPC.id}/fotografias`, form, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          fotoId = resp.data.id;
+          ok++;
+
+          // Mirror para OneDrive (best-effort)
+          if (mirrorToOneDrive && fotoId) {
+            try {
+              const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+              const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+              const overrideName = `PC-${pcNum}_${ts}.${ext}`;
+              const odForm = new FormData();
+              odForm.append('file', file, overrideName);
+              odForm.append('filename_override', overrideName);
+              odForm.append('subfolder_path', subfolder);
+              const odResp = await axios.post(`${API}/onedrive/upload`, odForm);
+              await axios.patch(
+                `${API}/pedidos-cotacao/${selectedPC.id}/fotografias/${fotoId}/onedrive-link`,
+                {
+                  onedrive_item_id: odResp.data.id,
+                  onedrive_web_url: odResp.data.web_url,
+                  onedrive_path: odResp.data.path,
+                  sync_status: 'synced',
+                }
+              );
+              odOk++;
+            } catch (odErr) {
+              console.warn('OneDrive mirror falhou (PC):', odErr?.response?.data || odErr);
+              odFail++;
+              try {
+                await axios.patch(
+                  `${API}/pedidos-cotacao/${selectedPC.id}/fotografias/${fotoId}/onedrive-link`,
+                  { sync_status: 'pending' }
+                );
+              } catch (_) { /* ignore */ }
+            }
+          }
+        } catch (err) {
+          console.error('Upload PC foto falhou:', err);
+          failed++;
+        }
+      }
+    } finally {
+      setUploadingFotoPC(false);
+    }
+
+    if (ok === 0) {
+      toast.error('Erro ao adicionar fotografias ao PC');
+    } else if (failed > 0) {
+      toast.warning(`${ok} adicionada(s), ${failed} falhou/falharam`);
+    } else {
+      toast.success(`${ok} fotografia(s) adicionada(s) ao PC!`);
+    }
+    if (mirrorToOneDrive) {
+      if (odOk > 0 && odFail === 0) {
+        toast.success(`${odOk} guardadas em OneDrive/HWI - PC/PC-${pcNum}/Fotografias`);
+      } else if (odFail > 0 && odOk === 0) {
+        toast.warning('OneDrive indisponível — fotos marcadas como pendentes.');
+      } else if (odFail > 0) {
+        toast.warning(`OneDrive: ${odOk} guardadas, ${odFail} pendentes.`);
+      }
+    }
+
+    fetchPCDetalhes(selectedPC.id);
+    setShowAddFotoPCModal(false);
   };
 
   const handleDeleteFotoPC = async (fotoId) => {
@@ -8307,20 +8395,33 @@ const TechnicalReports = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Foto PC Modal */}
+      {/* Add Foto PC Modal — com integração OneDrive + Câmara */}
       <AddFotoPCModal
         open={showAddFotoPCModal}
         onOpenChange={setShowAddFotoPCModal}
-        onSubmit={handleUploadFotoPC}
-        onFileChange={handleFotoPCFileChange}
-        descricao={fotoPCDescricao}
-        setDescricao={setFotoPCDescricao}
         uploading={uploadingFotoPC}
+        onUpload={handleUploadPCPhotos}
+        onOpenOneDrive={() => setShowPCOneDrivePicker(true)}
+        onOpenCamera={() => setShowPCCameraCapture(true)}
         onCancel={() => {
           setShowAddFotoPCModal(false);
           setFotoPCFile(null);
           setFotoPCDescricao('');
         }}
+      />
+
+      {/* OneDrive picker para PC (reutiliza o modal genérico) */}
+      <OneDrivePickerModal
+        open={showPCOneDrivePicker}
+        onOpenChange={setShowPCOneDrivePicker}
+        onPick={async (files) => { await handleUploadPCPhotos(files, { mirrorToOneDrive: false }); }}
+      />
+
+      {/* Câmara in-app para PC */}
+      <CameraCaptureModal
+        open={showPCCameraCapture}
+        onOpenChange={setShowPCCameraCapture}
+        onCapture={async (files) => { await handleUploadPCPhotos(files, { mirrorToOneDrive: true }); }}
       />
 
       {/* Email PC Modal */}

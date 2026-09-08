@@ -299,6 +299,30 @@ async def add_fotografia_pc(
         logging.error(f"Erro ao fazer upload de fotografia: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao fazer upload: {str(e)}")
 
+
+@router.patch("/pedidos-cotacao/{pc_id}/fotografias/{foto_id}/onedrive-link")
+async def link_pc_fotografia_onedrive(
+    pc_id: str,
+    foto_id: str,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """Guarda metadata do OneDrive na fotografia do PC (mirror best-effort).
+    Payload aceite: { onedrive_item_id, onedrive_web_url, onedrive_path, sync_status }
+    """
+    allowed = {"onedrive_item_id", "onedrive_web_url", "onedrive_path", "sync_status"}
+    update = {k: v for k, v in (payload or {}).items() if k in allowed}
+    if not update:
+        raise HTTPException(status_code=400, detail="Nada a atualizar")
+
+    result = await db.fotos_pc.update_one(
+        {"id": foto_id, "pc_id": pc_id},
+        {"$set": update}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Fotografia não encontrada")
+    return {"message": "OneDrive link actualizado", "updated": update}
+
 @router.get("/pedidos-cotacao/{pc_id}/fotografias")
 async def get_fotografias_pc(
     pc_id: str,
