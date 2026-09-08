@@ -341,7 +341,7 @@ async def migrate_early_leave_credit_times(db: AsyncIOMotorDatabase):
         # Registar migração como executada
         await db.migrations.insert_one({
             "key": MIGRATION_KEY,
-            "executed_at": datetime.now().isoformat(),
+            "executed_at": datetime.now(timezone.utc).isoformat(),
             "fixed_count": fixed,
             "skipped_count": skipped,
         })

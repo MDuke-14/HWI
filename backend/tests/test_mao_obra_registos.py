@@ -60,7 +60,7 @@ class TestMaoObraRegistos:
     def test_03_create_new_registo_without_pause(self):
         """Create a new labor record WITHOUT pause"""
         # Use tomorrow's date to avoid overlap
-        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
         
         payload = {
             "tecnico_id": self.user_id,
@@ -105,7 +105,7 @@ class TestMaoObraRegistos:
     def test_04_create_new_registo_with_pause(self):
         """Create a new labor record WITH pause (should deduct 60 min)"""
         # Use day after tomorrow to avoid overlap
-        day_after = (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d")
+        day_after = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%d")
         
         payload = {
             "tecnico_id": self.user_id,
@@ -244,7 +244,7 @@ class TestMaoObraRegistos:
         # The bug was: "can't compare offset-naive and offset-aware datetimes"
         
         # Create a registo that might trigger timezone comparison
-        test_date = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
+        test_date = (datetime.now(timezone.utc) + timedelta(days=3)).strftime("%Y-%m-%d")
         
         payload = {
             "tecnico_id": self.user_id,

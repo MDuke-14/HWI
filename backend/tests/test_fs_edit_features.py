@@ -78,7 +78,7 @@ class TestFSEditFeatures:
         original_desc = photo.get('descricao', '')
         
         # Update description
-        new_desc = f"TEST_Updated description at {datetime.now().isoformat()}"
+        new_desc = f"TEST_Updated description at {datetime.now(timezone.utc).isoformat()}"
         response = self.session.put(
             f"{BASE_URL}/api/relatorios-tecnicos/{FS_ID}/fotografias/{photo_id}",
             json={"descricao": new_desc}

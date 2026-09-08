@@ -742,7 +742,7 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
                 "user_id": user_id,
                 "user_name": user_name,
                 "date": today_str,
-                "sent_at": datetime.now().isoformat(),
+                "sent_at": datetime.now(timezone.utc).isoformat(),
                 "success": True
             })
     
@@ -878,8 +878,8 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "request_type": "overtime_end",
             "clock_in_time": clock_in_time,
             "total_minutes_at_request": total_minutes,
-            "requested_at": datetime.now().isoformat(),
-            "expires_at": (datetime.now() + timedelta(hours=TOKEN_VALIDITY_HOURS)).isoformat(),
+            "requested_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=TOKEN_VALIDITY_HOURS)).isoformat(),
             "status": "pending",
             "decided_by": None,
             "decided_at": None,
@@ -928,7 +928,7 @@ async def check_clock_out_status(db, base_url: str) -> Dict:
             "user_id": user_id,
             "user_name": user_name,
             "date": today_str,
-            "sent_at": datetime.now().isoformat(),
+            "sent_at": datetime.now(timezone.utc).isoformat(),
             "success": True,
             "authorization_token": token
         })
@@ -1012,7 +1012,7 @@ async def check_upcoming_services(db) -> Dict:
                     "message": f"Lembrete: Serviço em {service.get('client_name')} às {start_time}",
                     "read": False,
                     "related_id": service_id,
-                    "created_at": datetime.now().isoformat()
+                    "created_at": datetime.now(timezone.utc).isoformat()
                 }
                 await db.notifications.insert_one(notification)
                 
@@ -1023,7 +1023,7 @@ async def check_upcoming_services(db) -> Dict:
                 "type": "service_reminder_1h",
                 "service_id": service_id,
                 "date": today_str,
-                "sent_at": datetime.now().isoformat(),
+                "sent_at": datetime.now(timezone.utc).isoformat(),
                 "technician_ids": service.get("technician_ids", []),
                 "success": True
             })
@@ -1090,8 +1090,8 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "request_type": request_type,
         "day_type": reason,
         "start_time": current_time,
-        "requested_at": datetime.now().isoformat(),
-        "expires_at": (datetime.now() + timedelta(hours=TOKEN_VALIDITY_HOURS)).isoformat(),
+        "requested_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=TOKEN_VALIDITY_HOURS)).isoformat(),
         "status": "pending",
         "decided_by": None,
         "decided_at": None,
@@ -1131,7 +1131,7 @@ async def handle_overtime_start(db, user_id: str, user_name: str, user_email: st
         "user_name": user_name,
         "date": today_str,
         "day_type": reason,
-        "sent_at": datetime.now().isoformat(),
+        "sent_at": datetime.now(timezone.utc).isoformat(),
         "success": True,
         "authorization_token": token,
         "vacation_request_id": vacation_request_id
@@ -1193,7 +1193,7 @@ async def process_authorization_decision(
             "decision": decision,
             "decided_by": decided_by,
             "decided_by_name": decided_by,
-            "decided_at": datetime.now().isoformat()
+            "decided_at": datetime.now(timezone.utc).isoformat()
         }}
     )
     
@@ -1210,7 +1210,7 @@ async def process_authorization_decision(
                 {"$set": {
                     "overtime_authorized": True,
                     "overtime_authorized_by": decided_by,
-                    "overtime_authorized_at": datetime.now().isoformat()
+                    "overtime_authorized_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
             
@@ -1223,7 +1223,7 @@ async def process_authorization_decision(
                 "message": f"As suas horas extra de {date_str} ({day_type}) foram autorizadas por {decided_by}.",
                 "read": False,
                 "related_id": entry_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
             
@@ -1255,7 +1255,7 @@ async def process_authorization_decision(
                 "message": f"As suas horas extra de {date_str} ({day_type}) foram rejeitadas por {decided_by}. A entrada de ponto foi eliminada.",
                 "read": False,
                 "related_id": entry_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
             
@@ -1287,7 +1287,7 @@ async def process_authorization_decision(
                 {"$set": {
                     "overtime_authorized": True,
                     "overtime_authorized_by": decided_by,
-                    "overtime_authorized_at": datetime.now().isoformat(),
+                    "overtime_authorized_at": datetime.now(timezone.utc).isoformat(),
                     "vacation_work_approved": True
                 }}
             )
@@ -1309,7 +1309,7 @@ async def process_authorization_decision(
                         {"$set": {
                             "days_voided": new_voided,
                             "voided_dates": vacation_request.get("voided_dates", []) + [date_str],
-                            "last_voided_at": datetime.now().isoformat(),
+                            "last_voided_at": datetime.now(timezone.utc).isoformat(),
                             "last_voided_reason": f"Trabalho autorizado em {date_str}"
                         }}
                     )
@@ -1329,7 +1329,7 @@ async def process_authorization_decision(
                         "message": f"O seu trabalho em {date_str} foi autorizado. 1 dia de férias foi devolvido ao seu saldo.",
                         "read": False,
                         "related_id": vacation_request_id,
-                        "created_at": datetime.now().isoformat()
+                        "created_at": datetime.now(timezone.utc).isoformat()
                     }
                     await db.notifications.insert_one(notification)
                     
@@ -1361,7 +1361,7 @@ async def process_authorization_decision(
                 "message": f"O seu pedido para trabalhar em {date_str} (durante férias) foi rejeitado. A entrada de ponto foi eliminada.",
                 "read": False,
                 "related_id": vacation_request_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
             
@@ -1392,7 +1392,7 @@ async def process_authorization_decision(
                 {"$set": {
                     "overtime_authorized": True,
                     "overtime_authorized_by": decided_by,
-                    "overtime_authorized_at": datetime.now().isoformat()
+                    "overtime_authorized_at": datetime.now(timezone.utc).isoformat()
                 }}
             )
             
@@ -1405,7 +1405,7 @@ async def process_authorization_decision(
                 "message": f"As suas horas extra de {date_str} (após horário) foram autorizadas por {decided_by}.",
                 "read": False,
                 "related_id": entry_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
             
@@ -1476,7 +1476,7 @@ async def process_authorization_decision(
                             "special_hours": 0.0,
                             "overtime_authorized": False,
                             "overtime_rejected_by": decided_by,
-                            "overtime_rejected_at": datetime.now().isoformat(),
+                            "overtime_rejected_at": datetime.now(timezone.utc).isoformat(),
                             "auto_closed_at_8h": True,
                         }}
                     )
@@ -1490,7 +1490,7 @@ async def process_authorization_decision(
                 "message": f"As suas horas extra de {date_str} foram rejeitadas por {decided_by}. O ponto foi encerrado às {end_str} (limite de 8h).",
                 "read": False,
                 "related_id": entry_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
             
@@ -1528,7 +1528,7 @@ async def process_authorization_decision(
                         "early_leave_company_order": True,
                         "early_leave_authorized": True,
                         "early_leave_authorized_by": decided_by,
-                        "early_leave_authorized_at": datetime.now().isoformat(),
+                        "early_leave_authorized_at": datetime.now(timezone.utc).isoformat(),
                         "early_leave_credit_minutes": hours_short_min,
                     }}
                 )
@@ -1592,7 +1592,7 @@ async def process_authorization_decision(
                 ),
                 "read": False,
                 "related_id": entry_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
 
@@ -1621,7 +1621,7 @@ async def process_authorization_decision(
                         "early_leave_company_order": True,
                         "early_leave_authorized": False,
                         "early_leave_rejected_by": decided_by,
-                        "early_leave_rejected_at": datetime.now().isoformat(),
+                        "early_leave_rejected_at": datetime.now(timezone.utc).isoformat(),
                     }}
                 )
 
@@ -1636,7 +1636,7 @@ async def process_authorization_decision(
                 ),
                 "read": False,
                 "related_id": entry_id,
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.notifications.insert_one(notification)
 

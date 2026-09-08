@@ -137,8 +137,8 @@ def seed_overtime_auth(admin_id):
         "day_type": "Domingo",
         "entry_id": entry_id,
         "status": "pending",
-        "requested_at": datetime.now().isoformat(),
-        "expires_at": (datetime.now() + timedelta(hours=24)).isoformat(),
+        "requested_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
     }
     mongo.overtime_authorizations.insert_one(doc)
     yield {"auth_id": auth_id, "user_id": user_id, "date": date_str, "entry_id": entry_id}
@@ -348,7 +348,7 @@ def test_decide_overtime_authorization_missing_expires_at_tolerant(auth_headers,
         "day_type": "Domingo",
         "entry_id": eid,
         "status": "pending",
-        "requested_at": datetime.now().isoformat(),
+        "requested_at": datetime.now(timezone.utc).isoformat(),
         # NO expires_at -> must not 500
     })
     try:

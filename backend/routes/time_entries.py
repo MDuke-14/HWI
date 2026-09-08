@@ -3943,7 +3943,7 @@ async def admin_create_time_entry(
         "observations": entry_data.get("observations", ""),
         "outside_residence_zone": entry_data.get("outside_residence_zone", False),
         "location_description": entry_data.get("location_description", ""),
-        "created_at": datetime.now().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by_admin": current_user["sub"]
     }
     
