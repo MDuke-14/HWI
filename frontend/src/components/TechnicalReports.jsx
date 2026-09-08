@@ -6600,19 +6600,44 @@ const TechnicalReports = ({ user, onLogout }) => {
                                 </Button>
                               )}
                             </div>
-                            {intervRelAssist.length > 0 ? intervRelAssist.map(item => (
-                              <div key={item.id} className={`${bgCardAlt} p-2 rounded border ${borderColor} mb-2`}>
-                                <div className="flex justify-between items-start">
-                                  <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap flex-1`}>{item.texto}</p>
-                                  {!isHerdadaAtiva && (
-                                    <div className="flex gap-1 ml-2 shrink-0">
-                                      <Button onClick={() => openEditRelAssist(item)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
-                                      <Button onClick={() => handleDeleteRelAssist(item.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                            {intervRelAssist.length > 0 ? intervRelAssist.map(item => {
+                              // Formatar data/hora local de criação (apenas para registos novos com created_by_name)
+                              let createdInfo = null;
+                              if (item.created_by_name && item.created_at) {
+                                try {
+                                  const dt = new Date(item.created_at);
+                                  const dataStr = dt.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                                  const horaStr = dt.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+                                  createdInfo = { data: dataStr, hora: horaStr };
+                                } catch (_) { /* ignore */ }
+                              }
+                              return (
+                                <div key={item.id} className={`${bgCardAlt} p-2 rounded border ${borderColor} mb-2`}>
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1 min-w-0">
+                                      <p className={`${textPrimary} ${isMobile ? 'text-xs' : 'text-sm'} whitespace-pre-wrap`}>{item.texto}</p>
+                                      {item.created_by_name && (
+                                        <div className="mt-1.5 pt-1.5 border-t border-gray-700/50 text-[10px] text-gray-400 flex flex-wrap gap-x-3 gap-y-0.5" data-testid={`rel-assist-meta-${item.id}`}>
+                                          <span><span className="text-gray-500">Adicionado por:</span> <span className="text-orange-300 font-medium">{item.created_by_name}</span></span>
+                                          {createdInfo && (
+                                            <>
+                                              <span><span className="text-gray-500">Data:</span> {createdInfo.data}</span>
+                                              <span><span className="text-gray-500">Hora:</span> {createdInfo.hora}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
+                                    {!isHerdadaAtiva && (
+                                      <div className="flex gap-1 ml-2 shrink-0">
+                                        <Button onClick={() => openEditRelAssist(item)} variant="ghost" size="sm" className="text-blue-400 p-1 h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                                        <Button onClick={() => handleDeleteRelAssist(item.id)} variant="ghost" size="sm" className="text-red-400 p-1 h-6 w-6"><Trash2 className="w-3 h-3" /></Button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            )) : <p className="text-gray-500 text-xs text-center py-2">Sem relatório</p>}
+                              );
+                            }) : <p className="text-gray-500 text-xs text-center py-2">Sem relatório</p>}
                           </div>
 
                           {/* 4. Fotografias */}

@@ -3909,12 +3909,22 @@ async def create_relatorio_assistencia(
     if not data.get("texto"):
         raise HTTPException(status_code=400, detail="Texto é obrigatório")
     
+    # Obter nome completo do utilizador que está a criar o registo
+    user_doc = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0, "full_name": 1, "username": 1})
+    created_by_name = None
+    if user_doc:
+        created_by_name = user_doc.get("full_name") or user_doc.get("username")
+    else:
+        created_by_name = current_user.get("username")
+
     item = RelatorioAssistencia(
         relatorio_id=relatorio_id,
         texto=data["texto"],
         intervencao_id=data.get("intervencao_id"),
         equipamento_ids=data.get("equipamento_ids", []),
-        data_intervencao=data.get("data_intervencao")
+        data_intervencao=data.get("data_intervencao"),
+        created_by=current_user["sub"],
+        created_by_name=created_by_name,
     )
     item_dict = item.dict()
     item_dict["created_at"] = item_dict["created_at"].isoformat()

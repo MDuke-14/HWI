@@ -10,8 +10,11 @@ from pathlib import Path
 import base64
 import os
 import logging
+import pytz
 from collections import defaultdict
 from xml.sax.saxutils import escape as _xml_escape
+
+LISBON_TZ = pytz.timezone('Europe/Lisbon')
 
 
 def _pe(text):
@@ -725,6 +728,35 @@ def generate_ot_pdf(relatorio, cliente, intervencoes, tecnicos, fotografias, ass
             for ra in date_rel_assist:
                 ra_text = _pe_with_nl(ra.get('texto', ''))
                 ra_content.append(Paragraph(ra_text, normal_style))
+                # Assinatura do registo (apenas para registos novos com created_by_name)
+                created_by_name = ra.get('created_by_name')
+                if created_by_name:
+                    created_at_raw = ra.get('created_at')
+                    data_str = ''
+                    hora_str = ''
+                    if created_at_raw:
+                        try:
+                            from datetime import datetime as _dt
+                            if isinstance(created_at_raw, str):
+                                dt_obj = _dt.fromisoformat(created_at_raw.replace('Z', '+00:00'))
+                            else:
+                                dt_obj = created_at_raw
+                            # Converter para hora local Europe/Lisbon
+                            try:
+                                dt_local = dt_obj.astimezone(LISBON_TZ) if dt_obj.tzinfo else LISBON_TZ.localize(dt_obj)
+                            except Exception:
+                                dt_local = dt_obj
+                            data_str = dt_local.strftime('%d/%m/%Y')
+                            hora_str = dt_local.strftime('%H:%M')
+                        except Exception:
+                            pass
+                    meta_parts = [f"<b>Adicionado por:</b> {_pe(created_by_name)}"]
+                    if data_str:
+                        meta_parts.append(f"<b>Data:</b> {data_str}")
+                    if hora_str:
+                        meta_parts.append(f"<b>Hora:</b> {hora_str}")
+                    meta_html = " &nbsp;·&nbsp; ".join(meta_parts)
+                    ra_content.append(Paragraph(f"<font size='7' color='#666666'>{meta_html}</font>", normal_style))
                 ra_content.append(Spacer(1, 0.2*cm))
             if ra_content:
                 ra_section = create_section_box(ra_content, "RELATÓRIO DE ASSISTÊNCIA")

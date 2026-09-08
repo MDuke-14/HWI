@@ -20,14 +20,22 @@ export default function CameraCaptureModal({ open, onOpenChange, onCapture }) {
   const [facingMode, setFacingMode] = useState('environment');
   const [shots, setShots] = useState([]); // [{id, dataUrl, file}]
   const [busy, setBusy] = useState(false);
+  const [flashKey, setFlashKey] = useState(0); // dispara animação após cada captura
 
+  // Só reseta os shots quando o modal ABRE (não quando muda facingMode).
+  useEffect(() => {
+    if (open) {
+      setShots([]);
+      setError(null);
+    }
+  }, [open]);
+
+  // Inicializar / reinicializar o stream sempre que abrir ou mudar de câmara.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     const start = async () => {
-      setError(null);
       setReady(false);
-      setShots([]);
       try {
         if (!navigator.mediaDevices?.getUserMedia) {
           throw new Error('Câmara não suportada neste browser');
@@ -83,6 +91,8 @@ export default function CameraCaptureModal({ open, onOpenChange, onCapture }) {
     const file = new File([blob], filename, { type: 'image/jpeg' });
     const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // preview mais leve
     setShots((prev) => [...prev, { id: `${Date.now()}-${Math.random()}`, dataUrl, file }]);
+    // Feedback visual (flash branco rápido)
+    setFlashKey((k) => k + 1);
   };
 
   const removeShot = (id) => setShots((prev) => prev.filter((s) => s.id !== id));
@@ -142,6 +152,27 @@ export default function CameraCaptureModal({ open, onOpenChange, onCapture }) {
               className={`max-h-full max-w-full ${!ready ? 'hidden' : ''}`}
               data-testid="camera-live-video"
             />
+            {/* Flash overlay a cada captura */}
+            {flashKey > 0 && (
+              <div
+                key={flashKey}
+                className="absolute inset-0 pointer-events-none bg-white opacity-70 animate-camera-flash"
+                style={{ animation: 'cameraFlash 300ms ease-out forwards' }}
+              />
+            )}
+            {/* Badge com contagem de fotos tiradas — sempre visível */}
+            {ready && (
+              <div className="absolute top-2 right-2 bg-black/70 rounded-full px-2 py-1 text-[11px] text-white flex items-center gap-1 backdrop-blur-sm">
+                <ImageIcon className="w-3 h-3" />
+                {shots.length} {shots.length === 1 ? 'foto' : 'fotos'}
+              </div>
+            )}
+            <style>{`
+              @keyframes cameraFlash {
+                0% { opacity: 0.7; }
+                100% { opacity: 0; }
+              }
+            `}</style>
           </div>
 
           {/* Shot strip */}
@@ -191,9 +222,13 @@ export default function CameraCaptureModal({ open, onOpenChange, onCapture }) {
             </Button>
           </div>
 
-          {shots.length === 0 && !error && (
-            <p className="text-[11px] text-gray-500 text-center pb-2 flex items-center justify-center gap-1">
-              <ImageIcon className="w-3 h-3" /> Toca no botão redondo para capturar. Podes tirar várias fotos antes de concluir.
+          {/* Instrução — sempre visível para reforçar o multi-shot */}
+          {!error && (
+            <p className="text-[11px] text-gray-400 text-center pb-2 flex items-center justify-center gap-1 shrink-0">
+              <ImageIcon className="w-3 h-3" />
+              {shots.length === 0
+                ? 'Toca no botão redondo para tirar a 1ª foto. Podes tirar várias antes de concluir.'
+                : `${shots.length} fotografia(s) prontas — toca no botão redondo para tirar mais ou em Concluir quando terminares.`}
             </p>
           )}
         </div>

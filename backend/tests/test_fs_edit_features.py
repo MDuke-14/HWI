@@ -10,7 +10,7 @@ Target FS: FS#356 (id: 8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85)
 import pytest
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 FS_ID = "8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85"  # FS#356

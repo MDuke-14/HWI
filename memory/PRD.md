@@ -14,6 +14,13 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+26. ✅ **Rastreabilidade de Relatórios de Assistência (Feb 2026)** — Ao adicionar um novo Relatório de Assistência numa FS, o sistema regista automaticamente **quem** o criou:
+    - Modelo `RelatorioAssistencia` (models.py) recebeu 2 campos opcionais: `created_by` (user id) e `created_by_name` (nome completo).
+    - Endpoint `POST /api/relatorios-tecnicos/{id}/relatorios-assistencia` preenche automaticamente estes campos a partir do JWT do utilizador autenticado + `full_name` da coleção `users`.
+    - Frontend (`TechnicalReports.jsx` — card do Relatório de Assistência): abaixo do texto, mostra rodapé subtil com `Adicionado por: {nome} · Data: dd/mm/yyyy · Hora: hh:mm` (hora convertida ao fuso local do dispositivo).
+    - PDF FS (`ot_pdf_report.py`): a mesma linha "Adicionado por / Data / Hora" surge por baixo do texto do relatório, formatada em fonte pequena (7pt, cinza) — convertida a `Europe/Lisbon`.
+    - **Registos antigos não são alterados** — o rodapé só aparece para novos registos (com `created_by_name` preenchido). Registos legacy continuam a mostrar apenas o texto, como antes.
+
 25. ✅ **Fase 8: Migração dos restantes emails para templates editáveis (Feb 2026)** — Os 4 pontos de envio ficam ligados à coleção `email_templates` que o admin pode editar via `/admin > Emails`:
     - `password_reset` — `helpers.py::send_password_reset_email` usa `render_template` com variáveis `user_name`, `temporary_password`.
     - `vacation_decision` — `server.py::send_vacation_decision_email` passa `user_name`, `data_inicio`, `data_fim`, `estado`, `estado_upper`, `cor`, `observacao_html`.

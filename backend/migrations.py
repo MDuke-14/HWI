@@ -2,6 +2,8 @@
 Migrations - Scripts de migração que correm uma vez no startup do servidor
 """
 import logging
+from datetime import timezone
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 logging.basicConfig(level=logging.INFO)

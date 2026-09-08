@@ -10,7 +10,7 @@ Tests:
 import pytest
 import requests
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://field-clock.preview.emergentagent.com').rstrip('/')
 OT_ID = "8d3a0111-8f03-45d5-a7eb-2cbfcc96ad85"  # 560Lab OT for testing
