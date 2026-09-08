@@ -261,10 +261,15 @@ const EnviarPedidoCotacaoModal = ({
                           className="accent-yellow-400"
                           data-testid={`pc-envio-forn-cb-${f.id}`}
                         />
-                        <span className="text-white truncate flex-1">{f.nome}</span>
-                        <span className="text-xs text-gray-500 truncate">
-                          {f.email || '(sem email)'}
+                        <span className="text-white truncate flex-1">
+                          {f.nome}
+                          {f.marca_representada && (
+                            <span className="text-gray-400 font-normal"> ({f.marca_representada})</span>
+                          )}
                         </span>
+                        {!hasEmail && (
+                          <span className="text-xs text-gray-500 italic">(sem email)</span>
+                        )}
                       </label>
                     );
                   })}
@@ -376,7 +381,8 @@ const EnviarPedidoCotacaoModal = ({
                 {fornecedores.map((f) => (
                   <option key={f.id} value={f.id} disabled={!f.email}>
                     {f.nome}
-                    {f.email ? ` · ${f.email}` : ' (sem email)'}
+                    {f.marca_representada ? ` (${f.marca_representada})` : ''}
+                    {!f.email ? ' — sem email' : ''}
                   </option>
                 ))}
                 <option value={MANUAL_KEY}>✉️ E-Mail manual…</option>

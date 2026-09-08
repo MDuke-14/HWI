@@ -24,7 +24,7 @@ export default function FornecedoresPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null); // fornecedor a editar (ou null p/ criar)
   const [form, setForm] = useState({
-    nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '', observacoes_materiais: '',
+    nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '', observacoes_materiais: '', marca_representada: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +45,7 @@ export default function FornecedoresPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '', observacoes_materiais: '' });
+    setForm({ nome: '', email: '', contacto: '', nif: '', morada: '', observacoes: '', observacoes_materiais: '', marca_representada: '' });
     setShowModal(true);
   };
   const openEdit = (f) => {
@@ -54,6 +54,7 @@ export default function FornecedoresPage() {
       nome: f.nome || '', email: f.email || '', contacto: f.contacto || '',
       nif: f.nif || '', morada: f.morada || '', observacoes: f.observacoes || '',
       observacoes_materiais: f.observacoes_materiais || '',
+      marca_representada: f.marca_representada || '',
     });
     setShowModal(true);
   };
@@ -153,6 +154,11 @@ export default function FornecedoresPage() {
                 </div>
               )}
               {f.morada && <p className="text-xs text-gray-500 truncate">{f.morada}</p>}
+              {f.marca_representada && (
+                <div className="text-xs text-blue-300/90 border-l-2 border-blue-500/40 pl-2 py-0.5 mt-1" data-testid={`fornecedor-marca-${f.id}`}>
+                  <span className="text-blue-400 font-medium">Marca:</span> {f.marca_representada}
+                </div>
+              )}
               {f.observacoes_materiais && (
                 <div className="text-xs text-emerald-300/80 border-l-2 border-emerald-500/40 pl-2 py-0.5 mt-1" data-testid={`fornecedor-obs-materiais-${f.id}`}>
                   <span className="text-emerald-400 font-medium">Fornece:</span> {f.observacoes_materiais}
@@ -225,6 +231,16 @@ export default function FornecedoresPage() {
                 value={form.morada}
                 onChange={(e) => setForm((p) => ({ ...p, morada: e.target.value }))}
                 className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-gray-300 text-xs">Marca Representada</Label>
+              <Input
+                value={form.marca_representada}
+                onChange={(e) => setForm((p) => ({ ...p, marca_representada: e.target.value }))}
+                placeholder="Ex.: Kannegiesser, Bosch, SKF…"
+                className="bg-[#0f0f0f] border-gray-700 text-white mt-1"
+                data-testid="fornecedor-marca-representada-input"
               />
             </div>
             <div>

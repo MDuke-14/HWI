@@ -881,6 +881,7 @@ class Fornecedor(BaseModel):
     morada: Optional[str] = None
     observacoes: Optional[str] = None
     observacoes_materiais: Optional[str] = None  # Fase 7A: material que fornece
+    marca_representada: Optional[str] = None  # Fase 8: marca que o fornecedor representa (ex: "Kannegiesser")
     ativo: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: Optional[str] = None
@@ -896,6 +897,7 @@ class FornecedorUpdate(BaseModel):
     morada: Optional[str] = None
     observacoes: Optional[str] = None
     observacoes_materiais: Optional[str] = None  # Fase 7A
+    marca_representada: Optional[str] = None  # Fase 8
     ativo: Optional[bool] = None
 
 
