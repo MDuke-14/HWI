@@ -3140,6 +3140,14 @@ const TechnicalReports = ({ user, onLogout }) => {
     }
   };
 
+  // Confirmação antes de eliminar fotografia do PC
+  const [fotoPCToDelete, setFotoPCToDelete] = useState(null);
+  const confirmDeleteFotoPC = async () => {
+    if (!fotoPCToDelete) return;
+    await handleDeleteFotoPC(fotoPCToDelete);
+    setFotoPCToDelete(null);
+  };
+
   // Funções para editar material do PC
   const openEditMaterialPCModal = (material) => {
     setEditMaterialPC(material);
@@ -8198,7 +8206,7 @@ const TechnicalReports = ({ user, onLogout }) => {
                         />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
                           <Button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteFotoPC(foto.id); }}
+                            onClick={(e) => { e.stopPropagation(); setFotoPCToDelete(foto.id); }}
                             size="sm"
                             variant="destructive"
                             className="pointer-events-auto"
@@ -10615,6 +10623,28 @@ const TechnicalReports = ({ user, onLogout }) => {
       </Dialog>
 
       {/* Modal Confirmação Apagar Despesa */}
+      {/* Modal Confirmar Apagar Fotografia PC */}
+      <AlertDialog open={!!fotoPCToDelete} onOpenChange={(open) => { if (!open) setFotoPCToDelete(null); }}>
+        <AlertDialogContent className="bg-[#1a1a1a] border-gray-700 text-white" data-testid="modal-delete-foto-pc">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Eliminar fotografia?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              Tem a certeza que pretende eliminar esta fotografia? Esta acção não pode ser revertida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600" data-testid="btn-cancel-delete-foto-pc">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={confirmDeleteFotoPC}
+              data-testid="btn-confirm-delete-foto-pc"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!despesaToDelete} onOpenChange={(open) => { if (!open) setDespesaToDelete(null); }}>
         <AlertDialogContent className="bg-[#1a1a1a] border-gray-700 text-white" data-testid="modal-delete-despesa">
           <AlertDialogHeader>
