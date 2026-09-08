@@ -8,7 +8,7 @@ from io import BytesIO
 from pathlib import Path
 from datetime import datetime
 
-def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False):
+def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False, equipamentos=None):
     """
     Gera PDF do Pedido de Cotação
     
@@ -18,6 +18,8 @@ def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False):
         materiais: Lista de materiais para cotação
         fotografias: Lista de fotografias anexadas ao PC
         hide_client: Se True, oculta o nome do cliente com barra preta
+        equipamentos: Lista de equipamentos_ot (multi-equipamento) — se vazio,
+            usa os campos raiz `ot.equipamento_*` (retrocompatibilidade).
     """
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -122,31 +124,71 @@ def generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=False):
     elements.append(ot_table)
     elements.append(Spacer(1, 0.4*cm))
     
-    # Dados da Máquina
-    elements.append(Paragraph("DADOS DA MÁQUINA", heading_style))
-    
-    maquina_data = [
-        ['Tipologia:', ot.get('equipamento_tipologia', '') or 'N/A', 'Marca:', ot.get('equipamento_marca', '') or 'N/A'],
-        ['Modelo:', ot.get('equipamento_modelo', '') or 'N/A', 'Nº Série:', ot.get('equipamento_numero_serie', '') or 'N/A'],
-        ['Ano:', ot.get('equipamento_ano_fabrico', '') or 'N/A', '', ''],
-    ]
-    
-    maquina_table = Table(maquina_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])
-    maquina_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), BG_GREY),
-        ('BACKGROUND', (2, 0), (2, -1), BG_GREY),
-        ('TEXTCOLOR', (0, 0), (-1, -1), BLACK),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    elements.append(maquina_table)
-    elements.append(Spacer(1, 0.4*cm))
+    # Dados da Máquina (equipamentos)
+    # Se `equipamentos` foi fornecido (lista de equipamentos_ot), mostra todos
+    # numa tabela (uma linha por equipamento). Caso contrário, faz fallback ao
+    # layout antigo com os campos `ot.equipamento_*`.
+    equipamentos = equipamentos or []
+    if len(equipamentos) > 1:
+        elements.append(Paragraph(f"EQUIPAMENTOS ({len(equipamentos)})", heading_style))
+        eq_rows = [['#', 'Tipologia', 'Marca', 'Modelo', 'Nº Série', 'Ano']]
+        for idx, eq in enumerate(equipamentos, 1):
+            eq_rows.append([
+                str(idx),
+                eq.get('tipologia', '') or '-',
+                eq.get('marca', '') or '-',
+                eq.get('modelo', '') or '-',
+                eq.get('numero_serie', '') or '-',
+                str(eq.get('ano_fabrico', '') or '-'),
+            ])
+        eq_table = Table(eq_rows, colWidths=[0.8*cm, 3.5*cm, 3.5*cm, 3.5*cm, 4*cm, 2.7*cm])
+        eq_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), DARK_GREY),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (1, 1), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, ZEBRA_GREY]),
+        ]))
+        elements.append(eq_table)
+        elements.append(Spacer(1, 0.4*cm))
+    else:
+        elements.append(Paragraph("DADOS DA MÁQUINA", heading_style))
+        # Uma única fonte: equipamentos[0] se existir, senão os campos raiz da OT.
+        src = equipamentos[0] if equipamentos else {}
+        tipologia = src.get('tipologia') or ot.get('equipamento_tipologia', '') or 'N/A'
+        marca = src.get('marca') or ot.get('equipamento_marca', '') or 'N/A'
+        modelo = src.get('modelo') or ot.get('equipamento_modelo', '') or 'N/A'
+        num_serie = src.get('numero_serie') or ot.get('equipamento_numero_serie', '') or 'N/A'
+        ano = src.get('ano_fabrico') or ot.get('equipamento_ano_fabrico', '') or 'N/A'
+
+        maquina_data = [
+            ['Tipologia:', tipologia, 'Marca:', marca],
+            ['Modelo:', modelo, 'Nº Série:', num_serie],
+            ['Ano:', str(ano), '', ''],
+        ]
+
+        maquina_table = Table(maquina_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])
+        maquina_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), BG_GREY),
+            ('BACKGROUND', (2, 0), (2, -1), BG_GREY),
+            ('TEXTCOLOR', (0, 0), (-1, -1), BLACK),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        elements.append(maquina_table)
+        elements.append(Spacer(1, 0.4*cm))
     
     # Lista de Material para Cotação
     elements.append(Paragraph("MATERIAL PARA COTAÇÃO", heading_style))

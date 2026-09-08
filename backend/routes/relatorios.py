@@ -2405,19 +2405,29 @@ async def _enviar_pdf_worker(
                         "data_servico": relatorio.get("data_servico"),
                         "cliente_nome": cliente.get("nome", "N/A"),
                     }
-                    # Buscar equipamento
-                    equip = await db.equipamentos_ot.find_one({"relatorio_id": relatorio_id}, {"_id": 0})
-                    if equip:
-                        ot_para_pc["equipamento_tipologia"] = equip.get("tipologia", "")
-                        ot_para_pc["equipamento_marca"] = equip.get("marca", "")
-                        ot_para_pc["equipamento_modelo"] = equip.get("modelo", "")
-                        ot_para_pc["equipamento_numero_serie"] = equip.get("numero_serie", "")
-                        ot_para_pc["equipamento_ano_fabrico"] = equip.get("ano_fabrico", "")
-                    
+                    # Equipamentos: prefere os do PC (equipamento_ot_ids); senão todos os da FS
+                    pc_equip_ids = pc_doc.get("equipamento_ot_ids") or []
+                    equipamentos_pc = []
+                    if pc_equip_ids:
+                        equipamentos_pc = await db.equipamentos_ot.find(
+                            {"id": {"$in": pc_equip_ids}}, {"_id": 0}
+                        ).sort("ordem", 1).to_list(length=None)
+                    if not equipamentos_pc:
+                        equipamentos_pc = await db.equipamentos_ot.find(
+                            {"relatorio_id": relatorio_id}, {"_id": 0}
+                        ).sort("ordem", 1).to_list(length=None)
+                    if equipamentos_pc:
+                        first_eq = equipamentos_pc[0]
+                        ot_para_pc["equipamento_tipologia"] = first_eq.get("tipologia", "")
+                        ot_para_pc["equipamento_marca"] = first_eq.get("marca", "")
+                        ot_para_pc["equipamento_modelo"] = first_eq.get("modelo", "")
+                        ot_para_pc["equipamento_numero_serie"] = first_eq.get("numero_serie", "")
+                        ot_para_pc["equipamento_ano_fabrico"] = first_eq.get("ano_fabrico", "")
+
                     pc_buf = await _asyncio.get_event_loop().run_in_executor(
                         None,
                         generate_pc_pdf,
-                        pc_doc, ot_para_pc, pc_materiais, pc_fotos, request.hide_client_pcs,
+                        pc_doc, ot_para_pc, pc_materiais, pc_fotos, request.hide_client_pcs, equipamentos_pc,
                     )
                     pc_buffers.append({"buffer": pc_buf, "numero_pc": pc_doc.get("numero_pc", pc_id_sel)})
                 except Exception as e:

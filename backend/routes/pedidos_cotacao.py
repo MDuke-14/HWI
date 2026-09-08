@@ -521,18 +521,31 @@ async def preview_pdf_pc(
     ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
     if not ot:
         raise HTTPException(status_code=404, detail="FS não encontrada")
-    
-    # Enriquecer OT com dados do equipamento se não estiverem nos campos directos
-    if not ot.get("equipamento_marca") and not ot.get("equipamento_tipologia"):
-        # Buscar equipamento associado na coleção equipamentos_ot (dados inline)
-        equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc["relatorio_id"]}, {"_id": 0})
-        if equip_ot:
-            ot["equipamento_tipologia"] = equip_ot.get("tipologia", "")
-            ot["equipamento_marca"] = equip_ot.get("marca", "")
-            ot["equipamento_modelo"] = equip_ot.get("modelo", "")
-            ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
-            ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
-    
+
+    # Determinar quais equipamentos incluir no PDF do PC:
+    # 1) Se o PC tem equipamento_ot_ids explícitos → carrega esses.
+    # 2) Caso contrário, todos os equipamentos_ot da FS.
+    # 3) Fallback final: os campos "raiz" (retrocompatibilidade).
+    pc_equip_ids = pc.get("equipamento_ot_ids") or []
+    equipamentos = []
+    if pc_equip_ids:
+        equipamentos = await db.equipamentos_ot.find(
+            {"id": {"$in": pc_equip_ids}}, {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+    if not equipamentos:
+        equipamentos = await db.equipamentos_ot.find(
+            {"relatorio_id": pc["relatorio_id"]}, {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+
+    # Enriquecer OT com o primeiro equipamento (retrocompatibilidade para o layout antigo)
+    if equipamentos and not ot.get("equipamento_tipologia") and not ot.get("equipamento_marca"):
+        first = equipamentos[0]
+        ot["equipamento_tipologia"] = first.get("tipologia", "")
+        ot["equipamento_marca"] = first.get("marca", "")
+        ot["equipamento_modelo"] = first.get("modelo", "")
+        ot["equipamento_numero_serie"] = first.get("numero_serie", "")
+        ot["equipamento_ano_fabrico"] = first.get("ano_fabrico", "")
+
     # Buscar materiais do PC
     materiais = await db.materiais_ot.find(
         {"pc_id": pc_id},
@@ -546,7 +559,7 @@ async def preview_pdf_pc(
     ).to_list(length=None)
     
     # Gerar PDF
-    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client)
+    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client, equipamentos=equipamentos)
 
     # Response com Content-Length fixo — evita truncamento em Cloudflare
     pdf_bytes = pdf_buffer.getvalue() if hasattr(pdf_buffer, 'getvalue') else pdf_buffer
@@ -584,17 +597,26 @@ async def send_email_pc(
     ot = await db.relatorios_tecnicos.find_one({"id": pc["relatorio_id"]}, {"_id": 0})
     if not ot:
         raise HTTPException(status_code=404, detail="FS não encontrada")
-    
-    # Enriquecer OT com dados do equipamento se não estiverem nos campos directos
-    if not ot.get("equipamento_marca") and not ot.get("equipamento_tipologia"):
-        equip_ot = await db.equipamentos_ot.find_one({"relatorio_id": pc["relatorio_id"]}, {"_id": 0})
-        if equip_ot:
-            ot["equipamento_tipologia"] = equip_ot.get("tipologia", "")
-            ot["equipamento_marca"] = equip_ot.get("marca", "")
-            ot["equipamento_modelo"] = equip_ot.get("modelo", "")
-            ot["equipamento_numero_serie"] = equip_ot.get("numero_serie", "")
-            ot["equipamento_ano_fabrico"] = equip_ot.get("ano_fabrico", "")
-    
+
+    # Equipamentos: mesma regra do endpoint /pdf (equipamento_ot_ids > todos da FS > root fields)
+    pc_equip_ids = pc.get("equipamento_ot_ids") or []
+    equipamentos = []
+    if pc_equip_ids:
+        equipamentos = await db.equipamentos_ot.find(
+            {"id": {"$in": pc_equip_ids}}, {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+    if not equipamentos:
+        equipamentos = await db.equipamentos_ot.find(
+            {"relatorio_id": pc["relatorio_id"]}, {"_id": 0}
+        ).sort("ordem", 1).to_list(length=None)
+    if equipamentos and not ot.get("equipamento_tipologia") and not ot.get("equipamento_marca"):
+        first = equipamentos[0]
+        ot["equipamento_tipologia"] = first.get("tipologia", "")
+        ot["equipamento_marca"] = first.get("marca", "")
+        ot["equipamento_modelo"] = first.get("modelo", "")
+        ot["equipamento_numero_serie"] = first.get("numero_serie", "")
+        ot["equipamento_ano_fabrico"] = first.get("ano_fabrico", "")
+
     # Buscar materiais e fotografias
     materiais = await db.materiais_ot.find(
         {"pc_id": pc_id},
@@ -607,7 +629,7 @@ async def send_email_pc(
     ).to_list(length=None)
     
     # Gerar PDF
-    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client)
+    pdf_buffer = generate_pc_pdf(pc, ot, materiais, fotografias, hide_client=hide_client, equipamentos=equipamentos)
     
     # Enviar email
     try:
