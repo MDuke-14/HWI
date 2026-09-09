@@ -14,6 +14,22 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+28. ✅ **Correção do botão "Sincronizar" na barra de alterações pendentes (Feb 2026)** — O botão falhava sempre com "2 operação(ões) falharam. Serão tentadas novamente." porque:
+    - **Causa raiz #1**: incompatibilidade de formato entre quem escreve na fila (`service-worker.js` guarda `{url, method, body:string, headers}`) e quem sincroniza (`useOfflineData.js` lia `op.endpoint`, sempre `undefined`).
+    - **Causa raiz #2**: o body vindo do SW já é string mas o sync fazia `JSON.stringify(op.body)`, produzindo double-encode.
+    - **Causa raiz #3**: `apiBaseUrl` termina em `/api` mas `op.url` do SW também começa em `/api/...` — resultava em `.../api/api/...` (404).
+    - **Causa raiz #4**: sem limite de retries — 4xx permanentes ficavam presos na fila para sempre.
+    - **Fix** (`useOfflineData.js::syncPendingOperations`):
+      - Aceita ambos os formatos (`op.url` do SW ou `op.endpoint` do hook).
+      - Reconstrói a URL final removendo `/api` do `apiBaseUrl` quando o path já contém `/api/`.
+      - Preserva o body como string se já for string.
+      - Injecta `Authorization: Bearer <token>` do `localStorage` como fallback quando falta.
+      - 4xx (excepto 408/429) → descarta a operação (é permanentemente inválida).
+      - 5xx / rede → incrementa `retries`; ao 3.º descarta.
+      - Toast diferenciado para descartadas ("operações obsoletas descartadas") vs falhas transitórias.
+    - **`forceSync`** agora usa `syncRef.current()` para evitar stale closure do `useCallback([])`.
+    - **`OfflineStatusBar`**: `data-testid="offline-sync-button"` adicionado.
+
 27. ✅ **Atalho para abrir FS na lista "Intervenções do Equipamento" (Feb 2026)** — Ao consultar as intervenções de um equipamento na BD de máquinas do cliente, cada intervenção passa a servir de atalho:
     - O número `FS #NNN` no cabeçalho da intervenção é agora clicável (link azul sublinhado) — abre o modal de detalhe da FS num popup por cima.
     - Ao expandir a intervenção, existe também um botão "Abrir FS #NNN" com ícone.

@@ -70,6 +70,7 @@ const OfflineStatusBar = ({
           disabled={isSyncing}
           size="sm"
           className="bg-blue-600 hover:bg-blue-700 text-white"
+          data-testid="offline-sync-button"
         >
           <RefreshCw className={`w-4 h-4 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
           {isSyncing ? 'A sincronizar...' : 'Sincronizar'}

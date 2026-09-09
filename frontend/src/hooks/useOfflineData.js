@@ -254,7 +254,18 @@ export const useOfflineData = (apiBaseUrl) => {
 
   /**
    * Sincronizar operações pendentes
+   *
+   * Nota: A fila (IndexedDB `HWIOfflineDB/offlineQueue`) é populada por dois
+   * atores diferentes com formatos ligeiramente distintos:
+   *   1) service-worker.js (v4) — guarda { url, method, body:string, headers, timestamp }
+   *   2) useOfflineData.js::queueOperation — guarda { endpoint, method, body:objecto, headers, timestamp, retries }
+   *
+   * Este sync tem de aceitar ambos os formatos. Antes assumia `op.endpoint` e
+   * fazia `fetch(${apiBaseUrl}${op.endpoint})` — quando o item vinha do SW isso
+   * dava `${apiBaseUrl}undefined` e falhava sempre.
    */
+  const MAX_RETRIES = 3;
+
   const syncPendingOperations = async () => {
     if (isSyncing || !navigator.onLine) return;
     
@@ -262,7 +273,7 @@ export const useOfflineData = (apiBaseUrl) => {
     
     try {
       const db = await initDB();
-      const transaction = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+      const transaction = db.transaction([STORES.OFFLINE_QUEUE], 'readonly');
       const store = transaction.objectStore(STORES.OFFLINE_QUEUE);
       
       const pendingOps = await new Promise((resolve, reject) => {
@@ -273,39 +284,111 @@ export const useOfflineData = (apiBaseUrl) => {
       
       console.log(`Sincronizando ${pendingOps.length} operações pendentes...`);
       
+      // Origem base para reconstruir a URL. `apiBaseUrl` costuma ser
+      // `${REACT_APP_BACKEND_URL}/api`. Como o SW guarda `url` já com prefixo
+      // `/api/...`, temos de tirar o `/api` de `apiBaseUrl` nesse caminho para
+      // não duplicar.
+      const origin = (apiBaseUrl || '').replace(/\/api\/?$/, '');
+      const token = (() => { try { return localStorage.getItem('token'); } catch (_) { return null; } })();
+
       let successCount = 0;
       let failCount = 0;
+      let droppedCount = 0;
       
       for (const op of pendingOps) {
         try {
-          const response = await fetch(`${apiBaseUrl}${op.endpoint}`, {
-            method: op.method,
-            headers: {
-              'Content-Type': 'application/json',
-              ...op.headers
-            },
-            body: op.body ? JSON.stringify(op.body) : undefined
+          // Reconstruir a URL final. Suportamos:
+          //  - op.url = "/api/xxxx" (formato SW) → `${origin}/api/xxxx`
+          //  - op.url = "https://.../api/xxxx" (URL absoluta) → usar directamente
+          //  - op.endpoint = "/xxxx" (formato useOfflineData) → `${apiBaseUrl}${op.endpoint}`
+          let finalUrl;
+          if (op.url) {
+            finalUrl = op.url.startsWith('http') ? op.url : `${origin}${op.url}`;
+          } else if (op.endpoint) {
+            finalUrl = `${apiBaseUrl}${op.endpoint}`;
+          } else {
+            console.warn('Operação sem URL/endpoint, descartada:', op);
+            const dropTx = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+            dropTx.objectStore(STORES.OFFLINE_QUEUE).delete(op.id);
+            droppedCount++;
+            continue;
+          }
+
+          // Body: pode estar como string (SW) ou objecto (useOfflineData).
+          let bodyToSend;
+          if (op.body === undefined || op.body === null) {
+            bodyToSend = undefined;
+          } else if (typeof op.body === 'string') {
+            bodyToSend = op.body;
+          } else {
+            bodyToSend = JSON.stringify(op.body);
+          }
+
+          // Headers: preservar Authorization guardado + fallback para token actual.
+          const mergedHeaders = {
+            'Content-Type': 'application/json',
+            ...(op.headers || {}),
+          };
+          if (token && !mergedHeaders['Authorization'] && !mergedHeaders['authorization']) {
+            mergedHeaders['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(finalUrl, {
+            method: op.method || 'POST',
+            headers: mergedHeaders,
+            body: bodyToSend,
           });
-          
+
           if (response.ok) {
-            // Remover da fila
             const deleteTransaction = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
             deleteTransaction.objectStore(STORES.OFFLINE_QUEUE).delete(op.id);
             successCount++;
+          } else if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) {
+            // Erros permanentes (400 payload inválido, 401 token expirado, 404 recurso
+            // já apagado, 409 conflito, etc.) — não vale a pena voltar a tentar.
+            // Descartamos o item para não ficar preso na fila.
+            const errText = await response.text().catch(() => '');
+            console.error(`Op ${op.id} descartada (HTTP ${response.status}):`, finalUrl, errText);
+            const dropTx = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+            dropTx.objectStore(STORES.OFFLINE_QUEUE).delete(op.id);
+            droppedCount++;
           } else {
+            // 5xx / 408 / 429 → transitório, incrementar retries.
             failCount++;
-            console.error(`Falha ao sincronizar operação ${op.id}:`, await response.text());
+            const retries = (op.retries || 0) + 1;
+            if (retries >= MAX_RETRIES) {
+              console.error(`Op ${op.id} atingiu ${MAX_RETRIES} tentativas, descartada.`);
+              const dropTx = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+              dropTx.objectStore(STORES.OFFLINE_QUEUE).delete(op.id);
+              droppedCount++;
+            } else {
+              const updTx = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+              updTx.objectStore(STORES.OFFLINE_QUEUE).put({ ...op, retries });
+            }
           }
         } catch (error) {
+          // Erro de rede / CORS. Incrementar retries.
           failCount++;
-          console.error(`Erro ao sincronizar operação ${op.id}:`, error);
+          console.error(`Erro de rede ao sincronizar op ${op.id}:`, error);
+          const retries = (op.retries || 0) + 1;
+          if (retries >= MAX_RETRIES) {
+            const dropTx = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+            dropTx.objectStore(STORES.OFFLINE_QUEUE).delete(op.id);
+            droppedCount++;
+          } else {
+            const updTx = db.transaction([STORES.OFFLINE_QUEUE], 'readwrite');
+            updTx.objectStore(STORES.OFFLINE_QUEUE).put({ ...op, retries });
+          }
         }
       }
       
       if (successCount > 0) {
         toast.success(`${successCount} operação(ões) sincronizada(s) com sucesso!`);
       }
-      if (failCount > 0) {
+      if (droppedCount > 0) {
+        toast.warning(`${droppedCount} operação(ões) obsoleta(s) foram descartadas.`);
+      }
+      if (failCount > 0 && droppedCount === 0) {
         toast.error(`${failCount} operação(ões) falharam. Serão tentadas novamente.`);
       }
       
@@ -427,7 +510,9 @@ export const useOfflineData = (apiBaseUrl) => {
       toast.error('Sem conexão à internet');
       return;
     }
-    await syncPendingOperations();
+    // Usar syncRef para garantir que apanhamos sempre a versão mais recente
+    // de syncPendingOperations (evita stale closure vinda do useCallback([])).
+    await syncRef.current();
   }, []);
 
   return {
