@@ -58,6 +58,51 @@ def _intervencao_sort_key(iv: dict):
     )
 
 
+async def _purge_orphan_subrecords(relatorio_id: str) -> dict:
+    """Limpa sub-registos cujo `intervencao_id` já não corresponde a nenhuma
+    intervenção viva da FS. Defensivo — para dados históricos anteriores ao
+    cascade delete introduzido em Feb 2026. Chamado antes de gerar PDFs.
+
+    Sub-coleções afetadas (todas com campo `intervencao_id`):
+      fotos_relatorio, materiais_ot, equipamentos_ot, assinaturas_relatorio,
+      relatorios_assistencia, registos_tecnico_ot, faturacao_intervencoes.
+    """
+    intervs = await db.intervencoes_relatorio.find(
+        {"relatorio_id": relatorio_id}, {"_id": 0, "id": 1}
+    ).to_list(length=None)
+    live_ids = [i["id"] for i in intervs if i.get("id")]
+
+    # Filtro: docs deste relatório com intervencao_id NÃO nulo e NÃO na lista viva.
+    # Não tocar em registos com intervencao_id=None (legado, tratado por data).
+    orphan_filter = {
+        "relatorio_id": relatorio_id,
+        "intervencao_id": {"$nin": [None, ""] + live_ids, "$exists": True},
+    }
+
+    import asyncio
+    collections = [
+        db.fotos_relatorio,
+        db.materiais_ot,
+        db.equipamentos_ot,
+        db.assinaturas_relatorio,
+        db.relatorios_assistencia,
+        db.registos_tecnico_ot,
+        db.faturacao_intervencoes,
+    ]
+    results = await asyncio.gather(
+        *[c.delete_many(orphan_filter) for c in collections],
+        return_exceptions=True,
+    )
+    counts = {
+        c.name: getattr(r, "deleted_count", 0)
+        for c, r in zip(collections, results)
+    }
+    total = sum(v for v in counts.values() if isinstance(v, int))
+    if total:
+        logging.info("Purge órfãos FS %s: %s (total=%d)", relatorio_id, counts, total)
+    return counts
+
+
 # ============================================================================
 # Streaming helper para PDFs grandes (FS com muitas fotos)
 # ----------------------------------------------------------------------------
@@ -1012,18 +1057,65 @@ async def delete_intervencao(
     intervencao_id: str,
     current_user: dict = Depends(get_current_user)
 ):
-    """Remover intervenção de um relatório"""
-    result = await db.intervencoes_relatorio.delete_one({
-        "id": intervencao_id,
-        "relatorio_id": relatorio_id
-    })
-    
+    """Remover intervenção de um relatório.
+
+    Cascade: apaga TUDO o que estava anexado à intervenção para que nada
+    reapareça no PDF ou noutras views. Coleções afetadas (todas filtradas
+    por `relatorio_id` + `intervencao_id`):
+      - fotos_relatorio           (fotografias)
+      - materiais_ot              (materiais)
+      - equipamentos_ot           (equipamentos adicionais)
+      - assinaturas_relatorio     (assinaturas do cliente/técnico da aba)
+      - relatorios_assistencia    (texto de relatório de assistência)
+      - registos_tecnico_ot       (mão de obra alocada à intervenção)
+      - faturacao_intervencoes    (linhas de facturação)
+
+    Não removemos:
+      - cronómetros ativos (não têm intervencao_id no modelo)
+    """
+    filtro = {"id": intervencao_id, "relatorio_id": relatorio_id}
+    filtro_cascade = {"relatorio_id": relatorio_id, "intervencao_id": intervencao_id}
+
+    intervencao = await db.intervencoes_relatorio.find_one(filtro, {"_id": 0})
+    if not intervencao:
+        raise HTTPException(status_code=404, detail="Intervenção não encontrada")
+
+    # 1) Cascade das sub-coleções — todas em paralelo para minimizar latência.
+    import asyncio
+    cascade_results = await asyncio.gather(
+        db.fotos_relatorio.delete_many(filtro_cascade),
+        db.materiais_ot.delete_many(filtro_cascade),
+        db.equipamentos_ot.delete_many(filtro_cascade),
+        db.assinaturas_relatorio.delete_many(filtro_cascade),
+        db.relatorios_assistencia.delete_many(filtro_cascade),
+        db.registos_tecnico_ot.delete_many(filtro_cascade),
+        db.faturacao_intervencoes.delete_many(filtro_cascade),
+        return_exceptions=True,
+    )
+    cascade_counts = {
+        "fotos": getattr(cascade_results[0], "deleted_count", 0),
+        "materiais": getattr(cascade_results[1], "deleted_count", 0),
+        "equipamentos": getattr(cascade_results[2], "deleted_count", 0),
+        "assinaturas": getattr(cascade_results[3], "deleted_count", 0),
+        "relatorios_assistencia": getattr(cascade_results[4], "deleted_count", 0),
+        "registos_tecnicos": getattr(cascade_results[5], "deleted_count", 0),
+        "faturacao": getattr(cascade_results[6], "deleted_count", 0),
+    }
+
+    # 2) Só depois removemos a intervenção em si.
+    result = await db.intervencoes_relatorio.delete_one(filtro)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Intervenção não encontrada")
-    
-    logging.info(f"Intervenção {intervencao_id} removida do relatório {relatorio_id}")
-    
-    return {"message": "Intervenção removida com sucesso"}
+
+    logging.info(
+        "Intervenção %s removida do relatório %s. Cascade: %s",
+        intervencao_id, relatorio_id, cascade_counts,
+    )
+
+    return {
+        "message": "Intervenção removida com sucesso",
+        "cascade": cascade_counts,
+    }
 
 # ============ Fotografias Routes ============
 
@@ -2100,6 +2192,12 @@ async def _enviar_pdf_worker(
         if not relatorio:
             raise HTTPException(status_code=404, detail="Relatório não encontrado")
 
+        # Limpeza defensiva de sub-registos órfãos antes de gerar o PDF final.
+        try:
+            await _purge_orphan_subrecords(relatorio_id)
+        except Exception as _purge_err:
+            logging.warning("Falha no purge de órfãos FS %s: %s", relatorio_id, _purge_err)
+
         # LOGGING PROATIVO: regista "STARTED" ANTES de qualquer trabalho pesado.
         # Se o pod for morto por OOM durante a geração do PDF, esta entrada
         # fica em /admin/errors e indica QUE FS estava a ser processada.
@@ -2665,7 +2763,14 @@ async def preview_pdf_ot(
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
-    
+
+    # Limpeza defensiva de sub-registos órfãos (de intervenções apagadas antes do
+    # cascade delete introduzido em Feb 2026).
+    try:
+        await _purge_orphan_subrecords(relatorio_id)
+    except Exception as e:
+        logging.warning("Falha no purge de órfãos FS %s: %s", relatorio_id, e)
+
     # Enriquecer com info da OT relacionada
     if relatorio.get("ot_relacionada_id"):
         ot_rel = await db.relatorios_tecnicos.find_one(
@@ -3072,6 +3177,12 @@ async def start_pdf_generation_job(
     relatorio = await db.relatorios_tecnicos.find_one({"id": relatorio_id}, {"_id": 0})
     if not relatorio:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+    # Limpeza defensiva de sub-registos órfãos antes de gerar o PDF.
+    try:
+        await _purge_orphan_subrecords(relatorio_id)
+    except Exception as _e:
+        logging.warning("Falha no purge de órfãos FS %s: %s", relatorio_id, _e)
 
     if relatorio.get("ot_relacionada_id"):
         ot_rel = await db.relatorios_tecnicos.find_one(

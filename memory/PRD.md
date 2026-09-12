@@ -14,6 +14,14 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+29. ✅ **Cascade delete ao apagar Intervenção da FS (Feb 2026)** — Ao apagar uma intervenção, TODOS os sub-registos anexados são apagados atomicamente, evitando órfãos que reapareciam no PDF:
+    - **Causa raiz**: o endpoint `DELETE /api/relatorios-tecnicos/{id}/intervencoes/{intervencao_id}` só removia a linha em `intervencoes_relatorio`. Fotografias, materiais, equipamentos, assinaturas, relatórios de assistência, registos de mão de obra e facturação ficavam com `intervencao_id` a apontar para uma intervenção morta — reapareciam no PDF por fallback de data ou noutras views.
+    - **Fix cascade** (`routes/relatorios.py::delete_intervencao`): apaga em paralelo, no mesmo endpoint, todos os documentos com o mesmo `relatorio_id` + `intervencao_id` das coleções:
+      `fotos_relatorio`, `materiais_ot`, `equipamentos_ot`, `assinaturas_relatorio`, `relatorios_assistencia`, `registos_tecnico_ot`, `faturacao_intervencoes`.
+    - A resposta agora inclui `cascade: {fotos, materiais, equipamentos, ...}` com o count por coleção — logado no backend.
+    - **Purge defensivo para dados históricos**: nova função `_purge_orphan_subrecords(relatorio_id)` é chamada antes de cada geração de PDF (`preview-pdf`, `preview-pdf-async`, `enviar-pdf`). Remove sub-registos cujo `intervencao_id` não corresponde a nenhuma intervenção viva. FSs afetadas antes do fix ficam limpas automaticamente ao próximo PDF.
+    - **Testado**: via curl — criei intervenção temporária, adicionei `relatorio_assistencia`, apaguei intervenção → `cascade.relatorios_assistencia = 1` e count depois = 0. ✅
+
 28. ✅ **Correção do botão "Sincronizar" na barra de alterações pendentes (Feb 2026)** — O botão falhava sempre com "2 operação(ões) falharam. Serão tentadas novamente." porque:
     - **Causa raiz #1**: incompatibilidade de formato entre quem escreve na fila (`service-worker.js` guarda `{url, method, body:string, headers}`) e quem sincroniza (`useOfflineData.js` lia `op.endpoint`, sempre `undefined`).
     - **Causa raiz #2**: o body vindo do SW já é string mas o sync fazia `JSON.stringify(op.body)`, produzindo double-encode.
