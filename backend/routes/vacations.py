@@ -144,6 +144,10 @@ class DecisionReq(BaseModel):
     reason: Optional[str] = None
 
 
+class CancelReq(BaseModel):
+    reason: Optional[str] = None
+
+
 class AdjustmentReq(BaseModel):
     user_id: str
     year: int
@@ -384,7 +388,7 @@ async def admin_decide_request(
 @router.post("/admin/vacations/requests/{request_id}/cancel")
 async def admin_cancel_request(
     request_id: str,
-    payload: DecisionReq,
+    payload: CancelReq = CancelReq(),
     current_user: dict = Depends(_get_deps()[1]),
 ):
     """Admin cancela uma férias já aprovada (ex.: colaborador não gozou)."""
