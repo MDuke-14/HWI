@@ -23,6 +23,12 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from hours_calculator import feriados_portugueses
+from vacation_engine import (
+    VacationRequestLite,
+    VacationAdjustment as EngineAdj,
+    compute_history,
+    is_dia_util,
+)
 
 MONTH_NAMES_PT = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -88,13 +94,82 @@ def _iter_vacation_days(vac: dict, year: int, month: int):
         d += timedelta(days=1)
 
 
-def _build_year_sheet(ws, year: int, users: list[dict], vacs_by_user: dict[str, list], years_present: list[int]):
-    """Constrói uma folha completa para o `year`."""
+def _compute_day_source_year(
+    year: int,
+    user_id: str,
+    user_vacs: list[dict],
+    csd: date,
+    all_reqs: list,
+    adjs: list,
+) -> dict[date, int]:
+    """Devolve dict {data_util: ano_de_origem_do_saldo} para as férias
+    aprovadas do utilizador no `year`.
+
+    Alocação (regra prática): as férias gozadas no ano Y consomem primeiro
+    os `dias_transitados` (vindos do ano Y-1) — os primeiros N dias
+    (ordem cronológica) recebem a cor do ano Y-1; os restantes recebem
+    a cor do ano Y.
+    """
+    # 1) Saldo transitado para este ano
+    end_year = max(date.today().year, year, csd.year)
+    history = compute_history(csd, end_year, all_reqs, adjs)
+    yb = next((h for h in history if h.year == year), None)
+    transitados = yb.dias_transitados if yb else 0
+
+    # 2) Recolher todas as datas úteis das férias aprovadas no ano `year`
+    #    Ordenadas cronologicamente. Cada data é um dia útil (não FDS/feriado).
+    feriados = feriados_portugueses(year)
+    all_days: list[date] = []
+    for v in user_vacs:
+        if v.get("status") != "aprovada":
+            continue
+        try:
+            s = datetime.strptime(v["start_date"], "%Y-%m-%d").date()
+            e = datetime.strptime(v["end_date"], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        excluded = set(v.get("excluded_dates") or [])
+        d = s
+        while d <= e:
+            if d.year == year:
+                if d.weekday() < 5 and d not in feriados and d.strftime("%Y-%m-%d") not in excluded:
+                    all_days.append(d)
+            d += timedelta(days=1)
+    all_days.sort()
+
+    # 3) Alocar: primeiros `transitados` dias → ano-1; resto → ano
+    source: dict[date, int] = {}
+    prev_year = year - 1
+    for i, d in enumerate(all_days):
+        source[d] = prev_year if i < transitados else year
+    return source
+
+
+def _build_year_sheet(
+    ws,
+    year: int,
+    users: list[dict],
+    vacs_by_user: dict[str, list],
+    years_present: list[int],
+    day_source_by_user: dict[str, dict[date, int]],
+):
+    """Constrói uma folha completa para o `year`.
+
+    `day_source_by_user[user_id][date]` = ano de origem do saldo consumido
+    naquele dia (usado para determinar a cor).
+    """
     NAME_COL_WIDTH = 32
     DAY_COL_WIDTH = 3.5
     MAX_DAYS = 31
 
     year_bg, year_fg = year_colors(year)
+
+    # Detectar anos-fonte adicionais presentes nesta folha (transitados de anos anteriores)
+    source_years_in_sheet: set[int] = {year}
+    for u in users:
+        for src_y in day_source_by_user.get(u["id"], {}).values():
+            source_years_in_sheet.add(src_y)
+    source_years_sorted = sorted(source_years_in_sheet)
 
     # Larguras
     ws.column_dimensions["A"].width = NAME_COL_WIDTH
@@ -118,19 +193,14 @@ def _build_year_sheet(ws, year: int, users: list[dict], vacs_by_user: dict[str, 
     # ---------- Legenda (linhas 4..5) — zona própria, cabeçalho + valores ----------
     LEGEND_ROW_HDR = 4
     LEGEND_ROW_VAL = 5
-    # Cada item ocupa 5 colunas (col_start..col_start+4). Início em coluna 2 (B).
+    # Itens: uma cor por cada ano-fonte presente + FDS + Feriado
     items: list[tuple[str, str, str]] = []
-    # Cor do ano actual
-    items.append((f"Férias {year}", year_bg, year_fg))
-    # Fim de semana
+    for src_y in source_years_sorted:
+        yb, yf = year_colors(src_y)
+        label = f"Férias {src_y}" if src_y != year else f"Férias {year}"
+        items.append((label, yb, yf))
     items.append(("Fim de semana", COLOR_WEEKEND_BG, "000000"))
-    # Feriado
     items.append(("Feriado", COLOR_HOLIDAY_BG, "000000"))
-    # Se houver mais anos com registos, mostrar também as cores dos outros anos (para referência)
-    other_years = [y for y in years_present if y != year]
-    for y in other_years:
-        yb, yf = year_colors(y)
-        items.append((f"Férias {y}", yb, yf))
 
     # Cabeçalho "Legenda"
     ws.merge_cells(start_row=LEGEND_ROW_HDR, start_column=1, end_row=LEGEND_ROW_HDR, end_column=1 + MAX_DAYS)
@@ -220,6 +290,8 @@ def _build_year_sheet(ws, year: int, users: list[dict], vacs_by_user: dict[str, 
                 for d in _iter_vacation_days(v, year, month):
                     user_vac_days.add(d.day)
 
+            user_day_source = day_source_by_user.get(user["id"], {})
+
             for d in range(1, month_days + 1):
                 cell = ws.cell(row=urow, column=1 + d)
                 cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -231,9 +303,12 @@ def _build_year_sheet(ws, year: int, users: list[dict], vacs_by_user: dict[str, 
                 is_weekend = date(year, month, d).weekday() >= 5
 
                 if is_vac:
+                    day_obj = date(year, month, d)
+                    src_y = user_day_source.get(day_obj, year)
+                    d_bg, d_fg = year_colors(src_y)
                     cell.value = "F"
-                    cell.font = Font(bold=True, size=10, color=year_fg)
-                    cell.fill = PatternFill("solid", fgColor=year_bg)
+                    cell.font = Font(bold=True, size=10, color=d_fg)
+                    cell.fill = PatternFill("solid", fgColor=d_bg)
                 elif is_holiday:
                     cell.fill = PatternFill("solid", fgColor=COLOR_HOLIDAY_BG)
                 elif is_weekend:
@@ -293,9 +368,11 @@ async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
 
     O parâmetro `year` é ignorado — mantido apenas por compatibilidade.
     O ficheiro terá uma folha por cada ano com pelo menos uma férias aprovada.
+
+    Cada dia de férias é colorido de acordo com o ano de origem do saldo
+    consumido (transitados vs ano corrente).
     """
     wb = Workbook()
-    # Remover a folha default (será substituída ou removida no fim)
     default_sheet = wb.active
 
     # Utilizadores
@@ -303,13 +380,15 @@ async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
     users = [u for u in users if u.get("username")]
     users.sort(key=lambda u: (u.get("full_name") or u.get("username") or "").lower())
 
-    # Todas as férias aprovadas
-    vacs = await db.vacation_requests.find(
-        {"status": "aprovada"},
-        {"_id": 0},
-    ).to_list(None)
+    # Todas as férias (aprovadas + pendentes + canceladas — para cálculo do saldo)
+    all_vacs_raw = await db.vacation_requests.find({}, {"_id": 0}).to_list(None)
+    # Todos os ajustes admin
+    all_adjs_raw = await db.vacation_adjustments.find({}, {"_id": 0}).to_list(None)
 
-    # Descobrir anos com registos (a partir de start_date/end_date)
+    # Filtro para o mapa: apenas aprovadas
+    vacs = [v for v in all_vacs_raw if v.get("status") == "aprovada"]
+
+    # Descobrir anos com registos aprovados
     years_set: set[int] = set()
     for v in vacs:
         try:
@@ -321,7 +400,6 @@ async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
             years_set.add(y)
     years_sorted = sorted(years_set)
 
-    # Sem registos -> uma folha vazia com aviso
     if not users or not years_sorted:
         ws = default_sheet
         ws.title = "Mapa"
@@ -333,10 +411,47 @@ async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
         buf.seek(0)
         return buf.getvalue()
 
-    # Agrupar férias por utilizador
+    # Agrupar férias aprovadas por utilizador (para render)
     vacs_by_user: dict[str, list] = {}
     for v in vacs:
         vacs_by_user.setdefault(v["user_id"], []).append(v)
+
+    # Preparar contexto por utilizador (todos os pedidos + ajustes)
+    reqs_by_user: dict[str, list[VacationRequestLite]] = {}
+    for v in all_vacs_raw:
+        try:
+            r = VacationRequestLite(
+                id=v["id"],
+                start_date=datetime.strptime(v["start_date"], "%Y-%m-%d").date(),
+                end_date=datetime.strptime(v["end_date"], "%Y-%m-%d").date(),
+                dias_uteis=int(v.get("dias_uteis", 0)),
+                status=v.get("status", "pendente"),
+                source=v.get("source", "user"),
+            )
+        except Exception:
+            continue
+        reqs_by_user.setdefault(v["user_id"], []).append(r)
+
+    adjs_by_user: dict[str, list[EngineAdj]] = {}
+    for a in all_adjs_raw:
+        try:
+            adj = EngineAdj(
+                year=int(a["year"]),
+                dias=int(a["dias"]),
+                reason=a.get("reason") or "",
+            )
+        except Exception:
+            continue
+        adjs_by_user.setdefault(a["user_id"], []).append(adj)
+
+    # Data de entrada por utilizador
+    csd_by_user: dict[str, date] = {}
+    for u in users:
+        raw = u.get("company_start_date")
+        try:
+            csd_by_user[u["id"]] = datetime.strptime(raw, "%Y-%m-%d").date() if raw else date.today()
+        except Exception:
+            csd_by_user[u["id"]] = date.today()
 
     # Uma folha por ano
     for i, y in enumerate(years_sorted):
@@ -345,7 +460,23 @@ async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
             ws.title = f"Mapa {y}"
         else:
             ws = wb.create_sheet(title=f"Mapa {y}")
-        _build_year_sheet(ws, y, users, vacs_by_user, years_sorted)
+
+        # Pré-computar o mapa {data → ano-fonte} para cada utilizador neste ano
+        day_source_by_user: dict[str, dict[date, int]] = {}
+        for u in users:
+            uid = u["id"]
+            if uid not in vacs_by_user:
+                continue
+            day_source_by_user[uid] = _compute_day_source_year(
+                y,
+                uid,
+                vacs_by_user[uid],
+                csd_by_user.get(uid, date.today()),
+                reqs_by_user.get(uid, []),
+                adjs_by_user.get(uid, []),
+            )
+
+        _build_year_sheet(ws, y, users, vacs_by_user, years_sorted, day_source_by_user)
 
     buf = io.BytesIO()
     wb.save(buf)
