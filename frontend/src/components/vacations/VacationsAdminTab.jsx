@@ -59,6 +59,7 @@ export default function VacationsAdminTab({ isMobile }) {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [mapaYear, setMapaYear] = useState(new Date().getFullYear());
 
   // User detail view
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -231,34 +232,50 @@ export default function VacationsAdminTab({ isMobile }) {
           <Palmtree className="w-6 h-6 text-emerald-400" />
           <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-semibold text-white`}>Gestão de Férias</h2>
         </div>
-        <Button
-          onClick={async () => {
-            const y = new Date().getFullYear();
-            toast.info('A gerar Mapa de Férias...');
-            try {
-              const resp = await axios.get(`${API}/admin/vacations/mapa-ferias.xlsx?year=${y}`, {
-                responseType: 'blob',
-              });
-              const url = URL.createObjectURL(new Blob([resp.data], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-              }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `Mapa_Ferias_${y}.xlsx`;
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-              URL.revokeObjectURL(url);
-              toast.success('Mapa de Férias descarregado');
-            } catch (e) {
-              toast.error('Erro ao gerar Mapa de Férias');
-            }
-          }}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          data-testid="download-mapa-ferias-btn"
-        >
-          <Download className="w-4 h-4 mr-1.5" /> Download Mapa de Férias
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={String(mapaYear)} onValueChange={(v) => setMapaYear(Number(v))}>
+            <SelectTrigger className="w-24 bg-[#141414] border-gray-800 text-white" data-testid="mapa-year-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#141414] border-gray-800 text-white">
+              {(() => {
+                const cy = new Date().getFullYear();
+                return [cy - 2, cy - 1, cy, cy + 1].map(y => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ));
+              })()}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={async () => {
+              const y = mapaYear;
+              toast.info(`A gerar Mapa de Férias ${y}...`);
+              try {
+                const resp = await axios.get(`${API}/admin/vacations/mapa-ferias.xlsx?year=${y}&_ts=${Date.now()}`, {
+                  responseType: 'blob',
+                  headers: { 'Cache-Control': 'no-cache' },
+                });
+                const url = URL.createObjectURL(new Blob([resp.data], {
+                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                }));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Mapa_Ferias_${y}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                toast.success(`Mapa de Férias ${y} descarregado`);
+              } catch (e) {
+                toast.error('Erro ao gerar Mapa de Férias');
+              }
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            data-testid="download-mapa-ferias-btn"
+          >
+            <Download className="w-4 h-4 mr-1.5" /> Download Mapa de Férias
+          </Button>
+        </div>
       </div>
 
       {/* Pedidos pendentes */}
