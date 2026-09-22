@@ -274,19 +274,8 @@ async def get_calendar_data(
                 tech_details.append({"id": tech_id, "username": tech["username"]})
         service["technicians"] = tech_details
     
-    # Get approved vacations
-    vacations = await db.vacation_requests.find({
-        "status": "approved",
-        "$or": [
-            {"start_date": {"$lte": end_date}, "end_date": {"$gte": start_date}}
-        ]
-    }, {"_id": 0}).to_list(1000)
-    
-    # Enrich with user info
-    for vacation in vacations:
-        user = await db.users.find_one({"id": vacation["user_id"]}, {"_id": 0, "username": 1})
-        if user:
-            vacation["username"] = user["username"]
+    # Módulo de férias removido (Feb 2026) — sem férias no calendário.
+    vacations = []
     
     # Get OTs that should appear in this month
     # 1. OTs with data_servico in this month

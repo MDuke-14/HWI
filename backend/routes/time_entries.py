@@ -116,7 +116,7 @@ from server import (
     get_special_day_info, log_app_error,
     send_time_entry_edit_notification_email,
     get_day_authorization, create_day_authorization_request,
-    reverse_geocode, calculate_vacation_days,
+    reverse_geocode,
 )
 from notifications_scheduler import send_push_to_admins, send_push_notification
 
@@ -1637,29 +1637,12 @@ async def get_monthly_detailed_report(
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
-    # Buscar dados de férias — usa o NOVO motor legal (vacation_engine).
-    # Fonte única de verdade partilhada com /vacations e /admin/vacations/*.
-    # Import tardio para evitar ciclos.
-    from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
-    vacation_breakdown_v2 = None  # dict com year_breakdown legal
-    try:
-        cfg, approved, cancelled_set = await _fetch_saldo_ctx(target_user_id)
-        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=0)
-        if not vb.get("error"):
-            vacation_breakdown_v2 = vb
-    except Exception:
-        logging.exception("Erro a calcular férias (novo motor) para relatório mensal")
-
-    if vacation_breakdown_v2 and vacation_breakdown_v2.get("year_breakdown"):
-        yb = vacation_breakdown_v2["year_breakdown"]
-        # Totais para retrocompat de campos legacy (para não partir clientes antigos)
-        vacation_entitlement = sum(y["dias_vencidos"] for y in yb)
-        vacation_days_used = sum(y["dias_gozados"] for y in yb)
-        vacation_days_available = sum(y["dias_disponiveis"] for y in yb)
-    else:
-        vacation_entitlement = user.get("vacation_days_per_year", 22)
-        vacation_days_used = 0
-        vacation_days_available = vacation_entitlement
+    # Módulo de férias removido (Feb 2026) — devolvemos valores neutros
+    # para manter a shape do JSON de resposta.
+    vacation_breakdown_v2 = None
+    vacation_entitlement = 0
+    vacation_days_used = 0
+    vacation_days_available = 0
     
     return {
         "username": username,
@@ -1973,27 +1956,11 @@ async def download_monthly_pdf_report(
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
-    # Buscar dados de férias — usa o NOVO motor legal (vacation_engine),
-    # partilhado com /vacations e /admin/vacations/*.
-    from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
+    # Módulo de férias removido (Feb 2026) — valores neutros.
     vacation_breakdown_v2 = None
-    try:
-        cfg, approved, cancelled_set = await _fetch_saldo_ctx(target_user_id)
-        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=0)
-        if not vb.get("error"):
-            vacation_breakdown_v2 = vb
-    except Exception:
-        logging.exception("Erro a calcular férias (novo motor) para PDF")
-
-    if vacation_breakdown_v2 and vacation_breakdown_v2.get("year_breakdown"):
-        yb = vacation_breakdown_v2["year_breakdown"]
-        vacation_entitlement = sum(y["dias_vencidos"] for y in yb)
-        vacation_days_used = sum(y["dias_gozados"] for y in yb)
-        vacation_days_available = sum(y["dias_disponiveis"] for y in yb)
-    else:
-        vacation_days_used = 0
-        vacation_days_available = 22
-        vacation_entitlement = 22
+    vacation_days_used = 0
+    vacation_days_available = 0
+    vacation_entitlement = 0
     
     # Buscar observações do relatório mensal (justificações de dias, etc.)
     monthly_report = await db.monthly_reports.find_one({
@@ -2250,24 +2217,9 @@ async def justify_day(
         observation_text = ""
         
         if justification_type == "ferias":
-            # Marcar dia como férias
-            import uuid
-            vacation_entry = {
-                "id": str(uuid.uuid4()),
-                "user_id": user_id,
-                "type": "vacation",
-                "start_date": date_str,
-                "end_date": date_str,
-                "status": "approved",
-                "approved_by": current_user.get("sub"),
-                "approved_at": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "reason": f"Justificado pelo admin {admin_name}"
-            }
-            await db.vacation_requests.insert_one(vacation_entry)
-            message = f"Dia {date_formatted} marcado como Férias"
-            observation_text = f"FÉRIAS: {date_formatted} - Justificado pelo admin {admin_name}"
-            
+            # Módulo de férias removido (Feb 2026)
+            raise HTTPException(status_code=400, detail="Módulo de férias foi removido. Use 'falta' para registar ausência.")
+
         elif justification_type == "dar_dia":
             # Criar duas entradas: 09:00-13:00 e 14:00-18:00
             import uuid
@@ -2313,24 +2265,9 @@ async def justify_day(
             observation_text = f"DAR DIA: {date_formatted} - 8h criadas automaticamente (09:00-13:00 + 14:00-18:00) pelo admin {admin_name}"
             
         elif justification_type == "folga":
-            # Marcar dia como folga (tipo especial)
-            import uuid
-            folga_entry = {
-                "id": str(uuid.uuid4()),
-                "user_id": user_id,
-                "type": "folga",
-                "start_date": date_str,
-                "end_date": date_str,
-                "status": "approved",
-                "approved_by": current_user.get("sub"),
-                "approved_at": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "reason": f"Folga justificada pelo admin {admin_name}"
-            }
-            await db.vacation_requests.insert_one(folga_entry)
-            message = f"Dia {date_formatted} marcado como Folga"
-            observation_text = f"FOLGA: {date_formatted} - Justificado pelo admin {admin_name}"
-            
+            # Módulo de férias removido (Feb 2026)
+            raise HTTPException(status_code=400, detail="Módulo de férias/folgas foi removido.")
+
         elif justification_type == "falta":
             # Marcar dia como falta
             import uuid
@@ -2349,37 +2286,8 @@ async def justify_day(
             observation_text = f"FALTA: {date_formatted} - Registada pelo admin {admin_name}"
             
         elif justification_type == "cancelamento_ferias":
-            # Cancelar férias desse dia
-            result = await db.vacation_requests.delete_many({
-                "user_id": user_id,
-                "$or": [
-                    {"start_date": date_str, "end_date": date_str},
-                    {"start_date": {"$lte": date_str}, "end_date": {"$gte": date_str}}
-                ]
-            })
-            
-            # Criar registo de cancelamento para mostrar no UI
-            import uuid
-            cancel_entry = {
-                "id": str(uuid.uuid4()),
-                "user_id": user_id,
-                "type": "cancelamento_ferias",
-                "date": date_str,
-                "start_date": date_str,
-                "end_date": date_str,
-                "status": "cancelled",
-                "cancelled_by": current_user.get("sub"),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "reason": f"Férias canceladas pelo admin {admin_name}"
-            }
-            await db.vacation_requests.insert_one(cancel_entry)
-            
-            if result.deleted_count > 0:
-                message = f"Férias canceladas para o dia {date_formatted}"
-                observation_text = f"CANCELAMENTO FÉRIAS: {date_formatted} - Cancelado pelo admin {admin_name}"
-            else:
-                message = f"Dia {date_formatted} marcado como cancelamento de férias"
-                observation_text = f"CANCELAMENTO FÉRIAS: {date_formatted} - Registado pelo admin {admin_name}"
+            # Módulo de férias removido (Feb 2026)
+            raise HTTPException(status_code=400, detail="Módulo de férias foi removido.")
         
         # Registar observação no relatório mensal
         await register_admin_observation(
@@ -2670,17 +2578,8 @@ async def download_excel_report(
         "status": "completed"
     }, {"_id": 0}).sort("date", 1).to_list(1000)
     
-    # Buscar dados de férias — usa NOVO motor legal partilhado com /vacations
-    from routes.vacations_v2 import _fetch_saldo_ctx, _breakdown_from_ctx
+    # Módulo de férias removido (Feb 2026) — dados vazios.
     vacation_data = {}
-    try:
-        cfg, approved, cancelled_set = await _fetch_saldo_ctx(target_user_id)
-        vb = _breakdown_from_ctx(cfg, approved, cancelled_set, include_after=0)
-        if not vb.get("error"):
-            vacation_data = {"vacation_breakdown_v2": vb}
-    except Exception:
-        logging.exception("Erro a calcular férias (novo motor) para Excel")
-        vacation_data = {}
     
     # Determine month and year from start_date for report title
     start_dt_obj = datetime.fromisoformat(start_date)

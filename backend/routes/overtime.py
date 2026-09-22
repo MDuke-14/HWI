@@ -113,16 +113,7 @@ async def list_overtime_authorizations(
                 except Exception:
                     pass
             
-            # Verificar se é dia de férias (independente do day_type já guardado)
-            if not auth.get("is_vacation"):
-                vac = await db.vacation_requests.find_one({
-                    "user_id": user_id,
-                    "start_date": {"$lte": date_str},
-                    "end_date": {"$gte": date_str},
-                    "status": "approved"
-                }, {"_id": 0, "id": 1})
-                if vac:
-                    auth["is_vacation"] = True
+            # Módulo de férias removido (Feb 2026) — is_vacation nunca aplica.
         except Exception as e:
             logging.warning(f"Erro ao enriquecer autorização {auth.get('id')}: {e}")
             auth.setdefault("periodos", [])

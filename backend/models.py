@@ -29,7 +29,6 @@ class UserCreate(BaseModel):
     phone: str
     full_name: Optional[str] = None
     company_start_date: Optional[str] = None
-    vacation_days_taken: int = 0
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
@@ -520,36 +519,7 @@ class ManualTimeEntryCreate(BaseModel):
     location_description: Optional[str] = None
 
 
-# ============ Férias & Faltas ============
-
-class VacationRequest(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    username: str
-    start_date: str
-    end_date: str
-    days_requested: int
-    reason: Optional[str] = None
-    status: str = "pending"
-    reviewed_by: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class VacationRequestCreate(BaseModel):
-    start_date: str
-    end_date: str
-    reason: Optional[str] = None
-
-class VacationBalance(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    user_id: str
-    year: int = Field(default_factory=lambda: datetime.now().year)
-    company_start_date: str
-    days_earned: float = 22
-    days_taken: int = 0
-    days_available: float = 22
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# ============ Faltas ============
 
 class Absence(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -722,7 +692,6 @@ class OvertimeAuthorization(BaseModel):
     decided_by: Optional[str] = None
     decided_at: Optional[str] = None
     decision: Optional[str] = None
-    vacation_request_id: Optional[str] = None
 
 class DayAuthorization(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -735,7 +704,6 @@ class DayAuthorization(BaseModel):
     status: str = "pending"
     first_entry_id: str
     first_entry_time: str
-    vacation_request_id: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     decided_by: Optional[str] = None
     decided_at: Optional[str] = None

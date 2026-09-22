@@ -8,8 +8,8 @@ import logging
 
 from database import db
 from auth_utils import get_current_user, create_access_token, verify_password, get_password_hash, pwd_context
-from models import User, UserCreate, UserLogin, Token, ForgotPasswordRequest, ChangePasswordRequest, VacationBalance
-from helpers import generate_temporary_password, send_password_reset_email, create_notification, calculate_vacation_days
+from models import User, UserCreate, UserLogin, Token, ForgotPasswordRequest, ChangePasswordRequest
+from helpers import generate_temporary_password, send_password_reset_email, create_notification
 
 router = APIRouter(tags=["Auth"])
 
@@ -41,20 +41,7 @@ async def register(user: UserCreate, current_user: dict = Depends(get_current_us
     user_dict["created_at"] = user_dict["created_at"].isoformat()
     
     await db.users.insert_one(user_dict)
-    
-    if user.company_start_date:
-        vacation_info = calculate_vacation_days(user.company_start_date, user.vacation_days_taken)
-        balance = VacationBalance(
-            user_id=new_user.id,
-            company_start_date=user.company_start_date,
-            days_earned=vacation_info["days_earned"],
-            days_taken=user.vacation_days_taken,
-            days_available=vacation_info["days_available"]
-        )
-        balance_dict = balance.dict()
-        balance_dict["updated_at"] = balance_dict["updated_at"].isoformat()
-        await db.vacation_balances.insert_one(balance_dict)
-    
+
     logging.info(f"Novo utilizador registado: {user.username} por {current_user.get('username')}")
     return {"message": "Utilizador registado com sucesso", "user_id": new_user.id}
 

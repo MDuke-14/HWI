@@ -413,74 +413,9 @@ async def migrate_items_intervencao_ids(database):
 
 
 async def check_annual_vacation_reset(database):
-    """DEPRECATED (Feb 2026): O rollover anual destrutivo foi desativado.
-
-    O saldo de férias é agora derivado on-the-fly em `routes/vacations.py`
-    (fonte única: `company_start_date` + `vacation_requests` +
-    `cancelled_vacation_days` + `vacation_taken_by_year`). Esta função ficava a
-    somar 22 dias cegos e a resetar `days_taken=0` no arranque, corrompendo o
-    carry-over para quem entrou a meio de ano. Passa a ser um no-op.
-    """
-    logging.info("✅ Férias anuais: rollover destrutivo desativado (cálculo é dinâmico)")
+    """Removido (Feb 2026): módulo de férias foi eliminado. Mantido como no-op
+    para compatibilidade com o call site em startup."""
     return None
-    # -------------------- CÓDIGO ORIGINAL (desativado) --------------------
-    from datetime import date
-    current_year = date.today().year
-    
-    # Iterar pelos balances existentes (cada técnico com férias configuradas)
-    balances = await database.vacation_balances.find({}, {"_id": 0}).to_list(None)
-    
-    # Mapear usernames para logs
-    users_map = {}
-    users = await database.users.find({}, {"_id": 0, "id": 1, "username": 1}).to_list(None)
-    for u in users:
-        users_map[u["id"]] = u.get("username", u["id"][:8])
-    
-    updated_count = 0
-    
-    for balance in balances:
-        user_id = balance["user_id"]
-        balance_year = balance.get("year", 0)
-        
-        if balance_year >= current_year:
-            continue
-        
-        # Ano anterior — transitar saldo + 22 novos dias
-        old_available = balance.get("days_available", 0)
-        new_available = old_available + 22
-        username = users_map.get(user_id, user_id[:8])
-        
-        await database.vacation_balances.update_one(
-            {"user_id": user_id},
-            {"$set": {
-                "year": current_year,
-                "days_earned": 22,
-                "days_taken": 0,
-                "days_available": new_available,
-                "updated_at": get_now_local().isoformat()
-            }}
-        )
-        
-        # Guardar log da transição para histórico
-        await database.vacation_annual_log.insert_one({
-            "user_id": user_id,
-            "username": username,
-            "from_year": balance_year if balance_year else current_year - 1,
-            "to_year": current_year,
-            "previous_available": old_available,
-            "previous_taken": balance.get("days_taken", 0),
-            "previous_earned": balance.get("days_earned", 0),
-            "new_available": new_available,
-            "transition_date": get_now_local().isoformat()
-        })
-        
-        updated_count += 1
-        logging.info(f"  Férias {current_year}: {username} — saldo anterior: {old_available}, novo: {new_available}")
-    
-    if updated_count > 0:
-        logging.info(f"✅ Férias anuais: {updated_count} utilizador(es) atualizados para {current_year}")
-    else:
-        logging.info(f"✅ Férias anuais: todos já atualizados para {current_year}")
 
 
 # ============ Startup Event ============
@@ -1115,7 +1050,7 @@ async def startup_event():
 
 from models import (
     User, UserCreate, UserUpdate, MaterialOT, DespesaOT, PedidoCotacao,
-    RelatorioAssistencia, Notification, VacationBalance,
+    RelatorioAssistencia, Notification,
     Absence, AbsenceCreate,
     FolhaHorasRequest,
 )
@@ -1540,162 +1475,6 @@ async def send_reference_link_email(client_email: str, client_name: str, fs_numb
         logging.error(f"Failed to send reference link email: {e}")
 
 
-async def send_vacation_request_email(user_name: str, user_email: str, start_date: str, end_date: str, days_requested: int, approval_token: str = None, reason: str = ""):
-    """Send email to team when vacation is requested.
-
-    Quando `approval_token` é fornecido, inclui 2 botões one-click
-    (Aprovar / Rejeitar) que apontam para `/vac-decide/{token}?action=…`.
-    """
-    try:
-        smtp_host = os.environ.get('SMTP_HOST')
-        smtp_port = int(os.environ.get('SMTP_PORT', 587))
-        smtp_user = os.environ.get('SMTP_USER')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
-        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
-        
-        # Format dates
-        start_formatted = datetime.strptime(start_date, '%Y-%m-%d').strftime('%d/%m/%Y')
-        end_formatted = datetime.strptime(end_date, '%Y-%m-%d').strftime('%d/%m/%Y')
-        
-        subject = f"Nova Solicitação de Férias — {user_name}"
-        
-        # Botões one-click de aprovar/rejeitar (mesmo padrão das horas extras)
-        buttons_html = ""
-        if approval_token:
-            base = os.environ.get('PUBLIC_BASE_URL', 'https://timesync-app-2.emergent.host')
-            approve_url = f"{base}/auth-decide/{approval_token}?action=approve"
-            reject_url = f"{base}/auth-decide/{approval_token}?action=reject"
-            buttons_html = f"""
-            <div style="margin: 25px 0; text-align: center;">
-                <a href="{approve_url}" style="background:#16a34a;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;margin-right:10px;display:inline-block;">✅ APROVAR</a>
-                <a href="{reject_url}" style="background:#dc2626;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">❌ REJEITAR</a>
-            </div>
-            <p style="text-align:center;color:#666;font-size:12px;">Link válido por 7 dias. Também pode decidir no painel admin.</p>
-            """
-        
-        reason_html = ""
-        if reason:
-            safe_reason = reason.replace('<', '&lt;').replace('>', '&gt;')
-            reason_html = f"""
-                    <tr>
-                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Motivo:</td>
-                        <td style="padding: 8px 15px;">{safe_reason}</td>
-                    </tr>"""
-
-        html_body = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                <p>Olá,</p>
-                
-                <p>O(a) colaborador(a) <strong>{user_name}</strong> solicitou férias pelo sistema.</p>
-                
-                <h3 style="color: #0066cc; margin-top: 20px;">Período solicitado:</h3>
-                <table style="border-collapse: collapse; margin: 15px 0;">
-                    <tr>
-                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Início:</td>
-                        <td style="padding: 8px 15px;">{start_formatted}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Fim:</td>
-                        <td style="padding: 8px 15px;">{end_formatted}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 15px; background-color: #f5f5f5; font-weight: bold;">Dias úteis:</td>
-                        <td style="padding: 8px 15px;"><strong>{days_requested}</strong> dias</td>
-                    </tr>{reason_html}
-                </table>
-                
-                {buttons_html}
-                
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-                <p style="color: #666; font-size: 12px;">
-                    Sistema de Gestão de Ponto | HWI
-                </p>
-            </body>
-        </html>
-        """
-        
-        message = MIMEMultipart('alternative')
-        message['Subject'] = subject
-        message['From'] = smtp_from
-        message['To'] = smtp_from  # Send to geral@hwi.pt
-        
-        html_part = MIMEText(html_body, 'html')
-        message.attach(html_part)
-        
-        await aiosmtplib.send(
-            message,
-            hostname=smtp_host,
-            port=smtp_port,
-            username=smtp_user,
-            password=smtp_password,
-            start_tls=True
-        )
-        
-        logging.info(f"Vacation request email sent to {smtp_from} for {user_name}")
-    except Exception as e:
-        logging.error(f"Failed to send vacation request email: {str(e)}")
-
-async def send_vacation_decision_email(user_name: str, user_email: str, start_date: str, end_date: str, approved: bool, observations: str = None):
-    """Send email to user when vacation request is approved/rejected (usa template `vacation_decision`)"""
-    try:
-        smtp_host = os.environ.get('SMTP_HOST')
-        smtp_port = int(os.environ.get('SMTP_PORT', 587))
-        smtp_user = os.environ.get('SMTP_USER')
-        smtp_password = os.environ.get('SMTP_PASSWORD')
-        smtp_from = os.environ.get('SMTP_FROM', 'geral@hwi.pt')
-
-        start_formatted = datetime.strptime(start_date, '%Y-%m-%d').strftime('%d/%m/%Y')
-        end_formatted = datetime.strptime(end_date, '%Y-%m-%d').strftime('%d/%m/%Y')
-
-        estado = "Aprovada" if approved else "Recusada"
-        cor = "#28a745" if approved else "#dc3545"
-        obs_html = ""
-        if observations:
-            obs_html = (
-                f"<div style='background:#f8f9fa;padding:15px;border-left:4px solid {cor};margin:20px 0;'>"
-                f"<strong>Observações:</strong><br/>{observations}"
-                f"</div>"
-            )
-
-        variables = {
-            "user_name": user_name,
-            "data_inicio": start_formatted,
-            "data_fim": end_formatted,
-            "estado": estado,
-            "estado_upper": estado.upper(),
-            "cor": cor,
-            "observacao_html": obs_html,
-            "observacao": observations or "",
-        }
-
-        from routes.email_templates import get_template, render as render_template
-        tpl = await get_template("vacation_decision")
-        if tpl:
-            subject, html_body = render_template(tpl, variables)
-        else:
-            subject = f"Solicitação de Férias — {estado}"
-            html_body = f"<p>Olá {user_name}, o seu pedido de férias de {start_formatted} a {end_formatted} foi {estado.lower()}.</p>{obs_html}"
-
-        message = MIMEMultipart('alternative')
-        message['Subject'] = subject
-        message['From'] = smtp_from
-        message['To'] = user_email
-        message.attach(MIMEText(html_body, 'html'))
-        
-        await aiosmtplib.send(
-            message,
-            hostname=smtp_host,
-            port=smtp_port,
-            username=smtp_user,
-            password=smtp_password,
-            start_tls=True
-        )
-        
-        logging.info(f"Vacation decision email sent to {user_email} - Status: {estado}")
-    except Exception as e:
-        logging.error(f"Failed to send vacation decision email: {str(e)}")
-
 async def send_absence_justification_email(user_name: str, user_email: str, absence_date: str, filename: str):
     """Send email to team when justification document is uploaded"""
     try:
@@ -2059,25 +1838,10 @@ async def send_password_reset_email(user_name: str, user_email: str, temporary_p
         raise HTTPException(status_code=500, detail="Falha ao enviar email de recuperação")
 
 def calculate_vacation_days(start_date_str: str, days_taken: int = 0) -> dict:
-    """Calculate vacation days based on company start date"""
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-    today = date.today()
-    
-    # Calculate months worked
-    months_worked = (today.year - start_date.year) * 12 + (today.month - start_date.month)
-    if today.day < start_date.day:
-        months_worked -= 1
-    
-    # 2 days per month, max 22 days per year
-    days_earned = min(months_worked * 2, 22)
-    days_available = days_earned - days_taken
-    
-    return {
-        "days_earned": days_earned,
-        "days_taken": days_taken,
-        "days_available": days_available,
-        "months_worked": months_worked
-    }
+    """Removido (Feb 2026): módulo de férias foi eliminado. Stub para
+    compatibilidade com call sites remanescentes — devolve sempre zero.
+    """
+    return {"days_earned": 0, "days_taken": 0, "days_available": 0, "months_worked": 0}
 
 async def create_notification(user_id: str, notification_type: str, message: str, related_id: str = None):
     """Create a notification for a user"""
@@ -2211,36 +1975,14 @@ async def health_check():
 
 async def get_special_day_info(check_date: date, user_id: str):
     """
-    Verifica se um dia é especial (férias, feriado, sábado, domingo)
-    e retorna informações sobre o tipo de dia
-    
-    Returns:
-        dict: {
-            "is_special": bool,
-            "day_type": str (ferias/feriado/sabado/domingo/normal),
-            "day_type_display": str,
-            "vacation_request_id": str or None
-        }
+    Verifica se um dia é especial (feriado, sábado, domingo)
+    e retorna informações sobre o tipo de dia.
+
+    Nota (Feb 2026): o módulo de férias foi eliminado; deixámos de olhar para
+    `vacation_requests` para determinar se o dia é de férias. Retorna sempre
+    `vacation_request_id: None` para manter a shape do dict.
     """
-    today_str = check_date.strftime("%Y-%m-%d")
-    
-    # 1. Verificar se está de férias
-    vacation_request = await db.vacation_requests.find_one({
-        "user_id": user_id,
-        "status": "approved",
-        "start_date": {"$lte": today_str},
-        "end_date": {"$gte": today_str}
-    }, {"_id": 0})
-    
-    if vacation_request:
-        return {
-            "is_special": True,
-            "day_type": "ferias",
-            "day_type_display": "Férias",
-            "vacation_request_id": vacation_request.get("id")
-        }
-    
-    # 2. Verificar se é feriado
+    # 1. Feriado
     is_hol, hol_name = is_holiday(check_date)
     if is_hol:
         return {
@@ -2249,8 +1991,8 @@ async def get_special_day_info(check_date: date, user_id: str):
             "day_type_display": f"Feriado: {hol_name}",
             "vacation_request_id": None
         }
-    
-    # 3. Verificar se é sábado
+
+    # 2. Sábado
     if check_date.weekday() == 5:
         return {
             "is_special": True,
@@ -2258,8 +2000,8 @@ async def get_special_day_info(check_date: date, user_id: str):
             "day_type_display": "Sábado",
             "vacation_request_id": None
         }
-    
-    # 4. Verificar se é domingo
+
+    # 3. Domingo
     if check_date.weekday() == 6:
         return {
             "is_special": True,
@@ -2267,7 +2009,7 @@ async def get_special_day_info(check_date: date, user_id: str):
             "day_type_display": "Domingo",
             "vacation_request_id": None
         }
-    
+
     # Dia normal
     return {
         "is_special": False,
@@ -2497,18 +2239,7 @@ async def decide_day_authorization(
         if first_entry_id:
             await db.time_entries.delete_one({"id": first_entry_id})
             logging.info(f"Entrada de ponto {first_entry_id} eliminada após rejeição")
-    
-    # Se aprovado E é dia de férias, devolver 1 dia ao saldo
-    vacation_day_returned = False
-    if action == "approve" and auth.get("day_type") == "ferias":
-        from helpers import refund_vacation_day
-        vacation_day_returned = await refund_vacation_day(
-            auth.get("user_id"),
-            reason=f"Trabalho em dia de férias autorizado por {auth.get('decided_by_name') or 'admin'}",
-        )
-        if vacation_day_returned:
-            logging.info(f"1 dia de férias devolvido ao utilizador {auth.get('user_name')}")
-    
+
     # Atualizar status nas entradas de ponto deste utilizador/dia
     await db.time_entries.update_many(
         {
@@ -2526,10 +2257,7 @@ async def decide_day_authorization(
     date_formatted = datetime.strptime(auth["date"], "%Y-%m-%d").strftime("%d/%m/%Y")
     
     if action == "approve":
-        if auth.get("day_type") == "ferias":
-            notif_message = f"Trabalho em dia de férias ({date_formatted}) autorizado. 1 dia de férias foi devolvido ao seu saldo."
-        else:
-            notif_message = f"Trabalho em {day_type_display} ({date_formatted}) autorizado."
+        notif_message = f"Trabalho em {day_type_display} ({date_formatted}) autorizado."
         
         await send_push_notification(
             db, user_id,
@@ -2569,11 +2297,7 @@ async def decide_day_authorization(
         "date": auth.get("date"),
         "day_type": auth.get("day_type_display")
     }
-    
-    if vacation_day_returned:
-        response["vacation_day_returned"] = True
-        response["vacation_message"] = "1 dia de férias devolvido ao saldo"
-    
+
     return response
 
 
@@ -2654,14 +2378,8 @@ async def get_my_day_authorization_status(
 
 @api_router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_admin)):
-    """Get all users (admin only) — includes company_start_date from vacation_balances."""
+    """Get all users (admin only)."""
     users = await db.users.find({}, {"_id": 0, "hashed_password": 0, "password": 0}).to_list(1000)
-    # Enriquecer com company_start_date de vacation_balances
-    balances = await db.vacation_balances.find({}, {"_id": 0, "user_id": 1, "company_start_date": 1}).to_list(1000)
-    csd_by_user = {b["user_id"]: b.get("company_start_date") for b in balances}
-    for u in users:
-        if not u.get("company_start_date"):
-            u["company_start_date"] = csd_by_user.get(u["id"])
     return users
 
 
@@ -2707,20 +2425,7 @@ async def admin_create_user(user_data: UserCreate, current_user: dict = Depends(
     user_dict['created_at'] = user_dict['created_at'].isoformat()
     user_dict['plain_password'] = user_data.password
     await db.users.insert_one(user_dict)
-    
-    # Create vacation balance — company_start_date obrigatório (default: hoje)
-    company_start_date = user_data.company_start_date or date.today().strftime("%Y-%m-%d")
-    vacation_balance = VacationBalance(
-        user_id=user.id,
-        company_start_date=company_start_date,
-        days_earned=0,
-        days_taken=user_data.vacation_days_taken or 0,
-        days_available=0
-    )
-    vac_dict = vacation_balance.model_dump()
-    vac_dict['updated_at'] = vac_dict['updated_at'].isoformat()
-    await db.vacation_balances.insert_one(vac_dict)
-    
+
     return {"message": "Utilizador criado com sucesso", "user_id": user.id}
 
 @api_router.put("/admin/users/{user_id}")
@@ -2768,18 +2473,6 @@ async def admin_update_user(
     if update_dict:
         await db.users.update_one({"id": user_id}, {"$set": update_dict})
 
-    # Atualizar company_start_date em vacation_balances (fonte de verdade)
-    if update_data.company_start_date is not None:
-        from datetime import datetime as _dt
-        await db.vacation_balances.update_one(
-            {"user_id": user_id},
-            {"$set": {
-                "company_start_date": update_data.company_start_date,
-                "updated_at": _dt.now().isoformat(),
-            }},
-            upsert=True,
-        )
-
     return {"message": "Utilizador atualizado com sucesso"}
 
 @api_router.delete("/admin/users/{user_id}")
@@ -2792,8 +2485,6 @@ async def admin_delete_user(user_id: str, current_user: dict = Depends(get_curre
     
     # Delete all user data
     await db.time_entries.delete_many({"user_id": user_id})
-    await db.vacation_requests.delete_many({"user_id": user_id})
-    await db.vacation_balances.delete_many({"user_id": user_id})
     await db.absences.delete_many({"user_id": user_id})
     await db.notifications.delete_many({"user_id": user_id})
     
@@ -4702,8 +4393,6 @@ from routes.pedidos_cotacao import router as pedidos_cotacao_router
 from routes.company_info import router as company_info_router
 from routes.tabelas_tarifas import router as tabelas_tarifas_router
 from routes.time_entries import router as time_entries_router
-from routes.vacations import router as vacations_router
-from routes.vacations_v2 import router as vacations_v2_router
 from routes.absences_v2 import router as absences_v2_router
 from routes.cronometros import router as cronometros_router
 from routes.relatorios import router as relatorios_router
@@ -4727,8 +4416,6 @@ api_router.include_router(pedidos_cotacao_router)
 api_router.include_router(company_info_router)
 api_router.include_router(tabelas_tarifas_router)
 api_router.include_router(time_entries_router)
-api_router.include_router(vacations_router)
-api_router.include_router(vacations_v2_router)
 api_router.include_router(absences_v2_router)
 api_router.include_router(cronometros_router)
 api_router.include_router(relatorios_router)

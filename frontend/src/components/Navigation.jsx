@@ -14,7 +14,6 @@ const Navigation = ({ user, onLogout, activePage }) => {
   const baseNavItems = [
     { name: 'Dashboard', path: '/', icon: Clock, key: 'dashboard' },
     { name: 'Relatórios', path: '/reports', icon: TrendingUp, key: 'reports' },
-    { name: 'Férias', path: '/vacations', icon: Palmtree, key: 'vacations' },
     { name: 'Faltas', path: '/absences', icon: FileText, key: 'absences' },
     { name: 'Calendário', path: '/calendar', icon: CalendarDays, key: 'calendar' }
   ];

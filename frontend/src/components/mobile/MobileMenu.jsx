@@ -51,7 +51,6 @@ const MobileMenu = ({ user, onLogout, isOnline, pendingSync, onForceSync }) => {
       title: 'Gestão Pessoal',
       items: [
         { name: 'Relatórios', path: '/reports', icon: TrendingUp, description: 'Consultar horas' },
-        { name: 'Férias', path: '/vacations', icon: Palmtree, description: 'Marcação de férias' },
         { name: 'Faltas', path: '/absences', icon: FileText, description: 'Registo de ausências' },
       ]
     },

@@ -774,7 +774,7 @@ async def weekly_missing_records_scan(db_, base_url: str = "") -> int:
     import logging
     from datetime import date, timedelta
     from server import send_notification_email
-    from vacation_engine import feriados_do_ano
+    from hours_calculator import feriados_portugueses as feriados_do_ano
 
     today = date.today()
     # Semana que terminou hoje (assumimos correr ao Domingo 23:59) —
@@ -817,14 +817,8 @@ async def weekly_missing_records_scan(db_, base_url: str = "") -> int:
                     {"user_id": u["id"], "date": ds}, {"_id": 1}):
                     found = True
                 if not found:
-                    # Verificar férias aprovadas que abrangem esse dia
-                    vac = await db_.vacation_requests.find_one({
-                        "user_id": u["id"], "status": "approved",
-                        "start_date": {"$lte": ds},
-                        "end_date": {"$gte": ds},
-                    }, {"_id": 1})
-                    if vac:
-                        found = True
+                    # Módulo de férias removido (Feb 2026) — não há verificação de férias.
+                    pass
                 if not found:
                     missing.append(ds)
             d += timedelta(days=1)

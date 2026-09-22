@@ -690,16 +690,7 @@ async def check_clock_in_status(db, base_url: str) -> Dict:
         if has_entry:
             continue  # Já tem ponto, não notificar
         
-        # Verificar se tem férias aprovadas
-        has_vacation = await db.vacation_requests.find_one({
-            "user_id": user_id,
-            "status": "approved",
-            "start_date": {"$lte": today_str},
-            "end_date": {"$gte": today_str}
-        })
-        
-        if has_vacation:
-            continue  # Está de férias
+        # Módulo de férias removido (Feb 2026) — sem verificação de férias.
         
         # Verificar se tem falta justificada
         has_absence = await db.absences.find_one({

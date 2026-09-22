@@ -14,6 +14,23 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
+30. ✅ **Módulo de Férias eliminado por completo (Feb 2026)** — A pedido do utilizador, todo o código relacionado com férias foi removido para permitir reconstruir do zero:
+    - **MongoDB**: `drop_collection` de `vacation_requests` (21 docs) e `vacation_balances` (5 docs). Faltas (`absences`) MANTIDAS intactas.
+    - **Backend ficheiros apagados**: `routes/vacations.py`, `routes/vacations_v2.py`, `vacation_engine.py`, `tests/test_vacation_carry_over.py`, `tests/test_vacation_include_past_toggle.py`, `tests/test_vacation_year_filter.py`, `tests/test_admin_taken_by_year.py`, `tests/test_justify_day.py`.
+    - **Backend refactor** (`server.py`, `helpers.py`, `models.py`, `migrations.py`, `notifications_scheduler.py`, `routes/auth_routes.py`, `routes/time_entries.py`, `routes/overtime.py`, `routes/services.py`, `routes/absences_v2.py`, `routes/public_authorizations.py`):
+      - Removidas classes `VacationRequest`, `VacationRequestCreate`, `VacationBalance`.
+      - Removidos campos `vacation_days_taken` em `UserCreate` e `vacation_request_id` em `OvertimeAuthorization`/`DayAuthorization`.
+      - `refund_vacation_day`, `calculate_vacation_days`, `calculate_vacation_days_by_year` → stubs no-op para compatibilidade com call sites remanescentes.
+      - `check_annual_vacation_reset` → no-op.
+      - `get_special_day_info` já não olha para `vacation_requests` (feriado/sábado/domingo/normal).
+      - `justify-day` admin: "ferias", "folga", "cancelamento_ferias" → devolvem 400 "Módulo removido".
+      - Todas as agregações que buscavam férias em relatórios/PDFs/Excel/calendário → valores neutros/vazios.
+      - Import `from vacation_engine import feriados_do_ano` → `from hours_calculator import feriados_portugueses` em `absences_v2.py`.
+    - **Frontend ficheiros apagados**: `components/Vacations.jsx`, `components/VacationReviewModal.jsx`, `components/vacations/MapaFeriasModal.jsx`, `components/vacations/VacationConfigModal.jsx`, e a pasta `vacations/`.
+    - **Frontend UI**: rota `/vacations` e imports removidos em `App.js`; item "Férias" removido do menu Desktop (`Navigation.jsx`) e Mobile (`MobileMenu.jsx`); aba "Férias" + todo o `TabsContent value="vacations"` (205 linhas) removidos de `AdminDashboard.jsx`; `initialTab` default agora é "users".
+    - **Preservado** para futuro re-uso: template email `vacation_decision` na coleção `email_templates` (a pedido do utilizador).
+    - **Testado**: backend arranca sem erros, frontend compila sem erros, login funcional, Admin abre em "Utilizadores" sem menção a Férias.
+
 29. ✅ **Cascade delete ao apagar Intervenção da FS (Feb 2026)** — Ao apagar uma intervenção, TODOS os sub-registos anexados são apagados atomicamente, evitando órfãos que reapareciam no PDF:
     - **Causa raiz**: o endpoint `DELETE /api/relatorios-tecnicos/{id}/intervencoes/{intervencao_id}` só removia a linha em `intervencoes_relatorio`. Fotografias, materiais, equipamentos, assinaturas, relatórios de assistência, registos de mão de obra e facturação ficavam com `intervencao_id` a apontar para uma intervenção morta — reapareciam no PDF por fallback de data ou noutras views.
     - **Fix cascade** (`routes/relatorios.py::delete_intervencao`): apaga em paralelo, no mesmo endpoint, todos os documentos com o mesmo `relatorio_id` + `intervencao_id` das coleções:
