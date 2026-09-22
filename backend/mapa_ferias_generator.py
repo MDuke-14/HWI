@@ -1,16 +1,16 @@
 """
-Gerador do Mapa de Férias — layout próprio, simples e completo.
+Gerador do Mapa de Férias — uma folha por ano com registos.
 
-Estrutura:
-  - 1 folha por ano ("Mapa {year}")
-  - 12 tabelas empilhadas verticalmente (uma por mês)
-  - Cada tabela: cabeçalho com dias 1..31, uma linha por utilizador com
-    o nome na 1ª coluna e "F" nos dias de férias aprovada.
+Regras:
+- Uma folha por cada ano que tenha férias aprovadas na BD.
+- Cada folha tem 12 tabelas mensais (Jan..Dez).
+- Dias de férias marcados com "F" na cor do respectivo ano.
+- Título "MAPA DE FÉRIAS" (sem ano).
+- Legenda numa zona própria — não sobrepõe nomes/dias.
 
-Cores:
-  - Verde: dia de férias
-  - Cinza claro: sábado/domingo
-  - Amarelo suave: feriado nacional PT
+Paleta por ano (rolagem para anos futuros):
+- 2025 → Laranja | 2026 → Verde | 2027 → Azul | 2028 → Roxo
+- 2029 → Amarelo | 2030 → Rosa   | 2031 → Ciano| 2032 → Vermelho
 """
 from __future__ import annotations
 
@@ -30,16 +30,36 @@ MONTH_NAMES_PT = [
 ]
 WEEKDAY_LABELS_PT = ["S", "T", "Q", "Q", "S", "S", "D"]  # Mon..Sun
 
-# Paleta
-COLOR_HEADER_BG = "1F4E78"       # azul escuro
+# Paleta neutra da estrutura
+COLOR_HEADER_BG = "1F4E78"
 COLOR_HEADER_FG = "FFFFFF"
-COLOR_MONTH_BG = "305496"        # azul mais escuro para linha do mês
-COLOR_WEEKEND_BG = "E7E6E6"      # cinza claro
-COLOR_HOLIDAY_BG = "FFF2CC"      # amarelo suave
-COLOR_VACATION_BG = "C6EFCE"     # verde
-COLOR_VACATION_FG = "006100"
+COLOR_MONTH_BG = "305496"
+COLOR_WEEKEND_BG = "E7E6E6"
+COLOR_HOLIDAY_BG = "FFF2CC"
 COLOR_BORDER = "BFBFBF"
-COLOR_ROW_ALT = "F5F5F5"         # zebra rows para melhor leitura
+COLOR_ROW_ALT = "F5F5F5"
+
+# Paleta de cor por ano (BG, FG para o "F")
+YEAR_COLOR_PALETTE = [
+    ("FFD8A8", "8A4B00"),  # 2025 Laranja
+    ("C6EFCE", "006100"),  # 2026 Verde
+    ("BDD7EE", "1F3864"),  # 2027 Azul
+    ("E4B8F3", "5B2C7A"),  # 2028 Roxo
+    ("FFF2A8", "7A5C00"),  # 2029 Amarelo
+    ("F8CBD9", "8A2751"),  # 2030 Rosa
+    ("B7E3E4", "0E5C60"),  # 2031 Ciano
+    ("F4B7B7", "8A1D1D"),  # 2032 Vermelho
+]
+
+# Ano de referência para começar a paleta
+YEAR_PALETTE_ANCHOR = 2025
+
+
+def year_colors(year: int) -> tuple[str, str]:
+    """Devolve (BG, FG) para o `year` respeitando a rotação da paleta."""
+    idx = (year - YEAR_PALETTE_ANCHOR) % len(YEAR_COLOR_PALETTE)
+    return YEAR_COLOR_PALETTE[idx]
+
 
 thin_border = Border(
     left=Side(style="thin", color=COLOR_BORDER),
@@ -68,101 +88,106 @@ def _iter_vacation_days(vac: dict, year: int, month: int):
         d += timedelta(days=1)
 
 
-def _apply_border(ws, row_start, col_start, row_end, col_end):
-    for r in range(row_start, row_end + 1):
-        for c in range(col_start, col_end + 1):
-            ws.cell(row=r, column=c).border = thin_border
-
-
-async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
-    """Gera o Mapa de Férias do `year` para todos os utilizadores do sistema."""
-    wb = Workbook()
-    ws = wb.active
-    ws.title = f"Mapa {year}"
-
-    # Buscar utilizadores ordenados por full_name (ou username)
-    users = await db.users.find({}, {"_id": 0}).to_list(None)
-    users = [u for u in users if u.get("username")]
-    users.sort(key=lambda u: (u.get("full_name") or u.get("username") or "").lower())
-
-    if not users:
-        ws["A1"] = "Nenhum utilizador no sistema."
-        buf = io.BytesIO(); wb.save(buf); buf.seek(0)
-        return buf.getvalue()
-
-    # Buscar todas as férias aprovadas do ano
-    vacs = await db.vacation_requests.find(
-        {"status": "aprovada",
-         "start_date": {"$lte": f"{year}-12-31"},
-         "end_date": {"$gte": f"{year}-01-01"}},
-        {"_id": 0},
-    ).to_list(None)
-    vacs_by_user: dict[str, list] = {}
-    for v in vacs:
-        vacs_by_user.setdefault(v["user_id"], []).append(v)
-
-    # Título global
-    ws["A1"] = f"MAPA DE FÉRIAS — {year}"
-    ws["A1"].font = Font(bold=True, size=16, color="1F4E78")
-    ws["A1"].alignment = Alignment(vertical="center")
-    ws.row_dimensions[1].height = 28
-
-    # Legenda (linha 2)
-    ws["A2"] = "Legenda:"
-    ws["A2"].font = Font(bold=True, size=10)
-    legenda = [
-        ("F  — Férias", COLOR_VACATION_BG, COLOR_VACATION_FG),
-        ("Fim de semana", COLOR_WEEKEND_BG, "000000"),
-        ("Feriado", COLOR_HOLIDAY_BG, "000000"),
-    ]
-    col = 2
-    for text, bg, fg in legenda:
-        c = ws.cell(row=2, column=col, value=text)
-        c.fill = PatternFill("solid", fgColor=bg)
-        c.font = Font(color=fg, size=10)
-        c.alignment = Alignment(horizontal="center", vertical="center")
-        c.border = thin_border
-        col += 2
-
+def _build_year_sheet(ws, year: int, users: list[dict], vacs_by_user: dict[str, list], years_present: list[int]):
+    """Constrói uma folha completa para o `year`."""
     NAME_COL_WIDTH = 32
     DAY_COL_WIDTH = 3.5
     MAX_DAYS = 31
 
-    # Coluna A = nome (largura 32); B..AF = dias 1..31
+    year_bg, year_fg = year_colors(year)
+
+    # Larguras
     ws.column_dimensions["A"].width = NAME_COL_WIDTH
     for i in range(1, MAX_DAYS + 1):
         ws.column_dimensions[get_column_letter(1 + i)].width = DAY_COL_WIDTH
 
-    current_row = 4  # começar depois de título+legenda+espaço
+    # ---------- Título global (linha 1) ----------
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=1 + MAX_DAYS)
+    t = ws.cell(row=1, column=1, value="MAPA DE FÉRIAS")
+    t.font = Font(bold=True, size=18, color=COLOR_HEADER_BG)
+    t.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 32
+
+    # ---------- Subtítulo do ano (linha 2) ----------
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=1 + MAX_DAYS)
+    sub = ws.cell(row=2, column=1, value=f"Ano {year}")
+    sub.font = Font(bold=True, size=12, color="595959")
+    sub.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[2].height = 20
+
+    # ---------- Legenda (linhas 4..5) — zona própria, cabeçalho + valores ----------
+    LEGEND_ROW_HDR = 4
+    LEGEND_ROW_VAL = 5
+    # Cada item ocupa 5 colunas (col_start..col_start+4). Início em coluna 2 (B).
+    items: list[tuple[str, str, str]] = []
+    # Cor do ano actual
+    items.append((f"Férias {year}", year_bg, year_fg))
+    # Fim de semana
+    items.append(("Fim de semana", COLOR_WEEKEND_BG, "000000"))
+    # Feriado
+    items.append(("Feriado", COLOR_HOLIDAY_BG, "000000"))
+    # Se houver mais anos com registos, mostrar também as cores dos outros anos (para referência)
+    other_years = [y for y in years_present if y != year]
+    for y in other_years:
+        yb, yf = year_colors(y)
+        items.append((f"Férias {y}", yb, yf))
+
+    # Cabeçalho "Legenda"
+    ws.merge_cells(start_row=LEGEND_ROW_HDR, start_column=1, end_row=LEGEND_ROW_HDR, end_column=1 + MAX_DAYS)
+    lh = ws.cell(row=LEGEND_ROW_HDR, column=1, value="Legenda")
+    lh.font = Font(bold=True, size=11, color=COLOR_HEADER_FG)
+    lh.fill = PatternFill("solid", fgColor=COLOR_HEADER_BG)
+    lh.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+    ws.row_dimensions[LEGEND_ROW_HDR].height = 18
+
+    # Cada item ocupa 5 dias/colunas com merge
+    ITEM_SPAN = 5
+    col = 2
+    for text, bg, fg in items:
+        end_col = min(col + ITEM_SPAN - 1, 1 + MAX_DAYS)
+        ws.merge_cells(start_row=LEGEND_ROW_VAL, start_column=col, end_row=LEGEND_ROW_VAL, end_column=end_col)
+        c = ws.cell(row=LEGEND_ROW_VAL, column=col, value=text)
+        c.fill = PatternFill("solid", fgColor=bg)
+        c.font = Font(color=fg, size=10, bold=True)
+        c.alignment = Alignment(horizontal="center", vertical="center")
+        c.border = thin_border
+        # Preencher fill nas células mescladas
+        for cc in range(col, end_col + 1):
+            ws.cell(row=LEGEND_ROW_VAL, column=cc).fill = PatternFill("solid", fgColor=bg)
+            ws.cell(row=LEGEND_ROW_VAL, column=cc).border = thin_border
+        col = end_col + 2  # espaço entre itens
+        if col > 1 + MAX_DAYS:
+            break
+    ws.row_dimensions[LEGEND_ROW_VAL].height = 22
+
+    # ---------- Tabelas mensais (a partir da linha 7 — deixa 1 linha branca) ----------
+    current_row = 7
+    feriados = feriados_portugueses(year)
 
     for month in range(1, 13):
         month_days = calendar.monthrange(year, month)[1]
-        feriados = feriados_portugueses(year)
 
-        # -------- Linha do nome do mês (banda azul) --------
+        # Linha do nome do mês
         month_row = current_row
         cell = ws.cell(row=month_row, column=1, value=f"{MONTH_NAMES_PT[month-1]} {year}")
         cell.font = Font(bold=True, color="FFFFFF", size=12)
         cell.fill = PatternFill("solid", fgColor=COLOR_MONTH_BG)
         cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
-        # merge sobre os dias do mês
         ws.merge_cells(start_row=month_row, start_column=1, end_row=month_row, end_column=1 + month_days)
-        # Preencher a merge com a mesma cor (openpyxl exige)
         for c in range(2, 1 + month_days + 1):
             ws.cell(row=month_row, column=c).fill = PatternFill("solid", fgColor=COLOR_MONTH_BG)
         ws.row_dimensions[month_row].height = 22
 
-        # -------- Linha de weekday (S T Q Q S S D) --------
+        # Linha de weekday
         wd_row = month_row + 1
-        ws.cell(row=wd_row, column=1, value="").font = Font(bold=True)
         for d in range(1, month_days + 1):
-            weekday = date(year, month, d).weekday()  # 0=Mon..6=Sun
+            weekday = date(year, month, d).weekday()
             wd_cell = ws.cell(row=wd_row, column=1 + d, value=WEEKDAY_LABELS_PT[weekday])
             wd_cell.font = Font(bold=True, size=8, color="595959")
             wd_cell.alignment = Alignment(horizontal="center")
         ws.row_dimensions[wd_row].height = 14
 
-        # -------- Cabeçalho de dias (1..N) --------
+        # Cabeçalho dos dias
         header_row = month_row + 2
         name_hdr = ws.cell(row=header_row, column=1, value="Colaborador")
         name_hdr.font = Font(bold=True, color=COLOR_HEADER_FG)
@@ -177,7 +202,7 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
             c.border = thin_border
         ws.row_dimensions[header_row].height = 18
 
-        # -------- Linhas por utilizador --------
+        # Linhas por utilizador
         for idx, user in enumerate(users):
             urow = header_row + 1 + idx
             display = user.get("full_name") or user.get("username", "")
@@ -190,7 +215,6 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
             if zebra:
                 name_cell.fill = PatternFill("solid", fgColor=COLOR_ROW_ALT)
 
-            # Marcar dias de férias para este utilizador
             user_vac_days: set[int] = set()
             for v in vacs_by_user.get(user["id"], []):
                 for d in _iter_vacation_days(v, year, month):
@@ -208,8 +232,8 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
 
                 if is_vac:
                     cell.value = "F"
-                    cell.font = Font(bold=True, size=10, color=COLOR_VACATION_FG)
-                    cell.fill = PatternFill("solid", fgColor=COLOR_VACATION_BG)
+                    cell.font = Font(bold=True, size=10, color=year_fg)
+                    cell.fill = PatternFill("solid", fgColor=year_bg)
                 elif is_holiday:
                     cell.fill = PatternFill("solid", fgColor=COLOR_HOLIDAY_BG)
                 elif is_weekend:
@@ -218,7 +242,7 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
                     cell.fill = PatternFill("solid", fgColor=COLOR_ROW_ALT)
             ws.row_dimensions[urow].height = 18
 
-        # -------- Linha total --------
+        # Linha total
         total_row = header_row + 1 + len(users)
         total_cell = ws.cell(row=total_row, column=1, value="TOTAL / dia")
         total_cell.font = Font(bold=True, italic=True, size=9, color="595959")
@@ -237,10 +261,10 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
 
         current_row = total_row + 2  # espaço entre meses
 
-    # Congelar primeira linha e primeira coluna
-    ws.freeze_panes = "B4"
+    # Congelar cabeçalho
+    ws.freeze_panes = "B7"
 
-    # Print area por página (paisagem, ajustar ao papel)
+    # Impressão
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
@@ -250,7 +274,7 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
     ws.page_margins.top = 0.5
     ws.page_margins.bottom = 0.5
 
-    # Total geral no fim
+    # Total geral do ano no fim
     grand_row = current_row + 1
     ws.cell(row=grand_row, column=1, value=f"Total de dias de férias aprovadas em {year}:")
     ws.cell(row=grand_row, column=1).font = Font(bold=True)
@@ -260,7 +284,68 @@ async def generate_mapa_ferias_xlsx(db, year: int) -> bytes:
         for u in users
         for v in vacs_by_user.get(u["id"], [])
     )
-    ws.cell(row=grand_row, column=6, value=total_all).font = Font(bold=True, color=COLOR_VACATION_FG, size=12)
+    tot_cell = ws.cell(row=grand_row, column=6, value=total_all)
+    tot_cell.font = Font(bold=True, color=year_fg, size=12)
+
+
+async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
+    """Gera o Mapa de Férias com uma folha por cada ano existente na BD.
+
+    O parâmetro `year` é ignorado — mantido apenas por compatibilidade.
+    O ficheiro terá uma folha por cada ano com pelo menos uma férias aprovada.
+    """
+    wb = Workbook()
+    # Remover a folha default (será substituída ou removida no fim)
+    default_sheet = wb.active
+
+    # Utilizadores
+    users = await db.users.find({}, {"_id": 0}).to_list(None)
+    users = [u for u in users if u.get("username")]
+    users.sort(key=lambda u: (u.get("full_name") or u.get("username") or "").lower())
+
+    # Todas as férias aprovadas
+    vacs = await db.vacation_requests.find(
+        {"status": "aprovada"},
+        {"_id": 0},
+    ).to_list(None)
+
+    # Descobrir anos com registos (a partir de start_date/end_date)
+    years_set: set[int] = set()
+    for v in vacs:
+        try:
+            s = datetime.strptime(v["start_date"], "%Y-%m-%d").date()
+            e = datetime.strptime(v["end_date"], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        for y in range(s.year, e.year + 1):
+            years_set.add(y)
+    years_sorted = sorted(years_set)
+
+    # Sem registos -> uma folha vazia com aviso
+    if not users or not years_sorted:
+        ws = default_sheet
+        ws.title = "Mapa"
+        ws["A1"] = "MAPA DE FÉRIAS"
+        ws["A1"].font = Font(bold=True, size=18, color=COLOR_HEADER_BG)
+        ws["A3"] = "Sem registos de férias aprovadas."
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return buf.getvalue()
+
+    # Agrupar férias por utilizador
+    vacs_by_user: dict[str, list] = {}
+    for v in vacs:
+        vacs_by_user.setdefault(v["user_id"], []).append(v)
+
+    # Uma folha por ano
+    for i, y in enumerate(years_sorted):
+        if i == 0:
+            ws = default_sheet
+            ws.title = f"Mapa {y}"
+        else:
+            ws = wb.create_sheet(title=f"Mapa {y}")
+        _build_year_sheet(ws, y, users, vacs_by_user, years_sorted)
 
     buf = io.BytesIO()
     wb.save(buf)

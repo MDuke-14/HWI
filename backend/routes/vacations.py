@@ -509,24 +509,20 @@ async def admin_get_user_adjustments(user_id: str, current_user: dict = Depends(
 
 @router.get("/admin/vacations/mapa-ferias.xlsx")
 async def admin_download_mapa_ferias(
-    year: int | None = None,
+    year: int | None = None,  # noqa: ARG001 — mantido por compatibilidade; ignorado
     current_user: dict = Depends(_get_deps()[1]),
 ):
-    """Gera e devolve o Mapa de Férias em XLSX (formato conforme template
-    oficial da empresa). Todos os dados são obtidos da base de dados no
-    momento do click.
+    """Gera o Mapa de Férias em XLSX com uma folha por cada ano existente na BD.
+
+    Os anos são detectados automaticamente a partir dos pedidos aprovados.
     """
-    from datetime import date as _date
-    year = year or _date.today().year
     try:
-        xlsx_bytes = await generate_mapa_ferias_xlsx(db, year)
-    except FileNotFoundError:
-        raise HTTPException(500, "Template do Mapa de Férias não encontrado no servidor")
+        xlsx_bytes = await generate_mapa_ferias_xlsx(db, None)
     except Exception as e:
         logging.exception("Erro a gerar Mapa de Férias")
         raise HTTPException(500, f"Erro a gerar Mapa: {e}")
 
-    filename = f"Mapa_Ferias_{year}.xlsx"
+    filename = "Mapa_Ferias.xlsx"
     return Response(
         content=xlsx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
