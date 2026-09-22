@@ -6,6 +6,7 @@ import Login from '@/components/Login';
 import ChangePassword from '@/components/ChangePassword';
 import Dashboard from '@/components/Dashboard';
 import Reports from '@/components/Reports';
+import Vacations from '@/components/Vacations';
 import Absences from '@/components/Absences';
 import AdminDashboard from '@/components/AdminDashboard';
 import AdminTimeEntries from '@/components/AdminTimeEntries';
@@ -265,6 +266,18 @@ function App() {
                   isAuthenticated ? (
                     <MobileLayout user={user} onLogout={handleLogout}>
                       <Reports user={user} onLogout={handleLogout} />
+                    </MobileLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/vacations"
+                element={
+                  isAuthenticated ? (
+                    <MobileLayout user={user} onLogout={handleLogout}>
+                      <Vacations user={user} onLogout={handleLogout} />
                     </MobileLayout>
                   ) : (
                     <Navigate to="/login" replace />
