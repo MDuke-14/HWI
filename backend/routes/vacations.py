@@ -226,7 +226,7 @@ async def create_my_request(
         actor_id=user_id, actor_name=user.get("full_name") or user.get("username"),
         after=req.model_dump(),
     )
-    # Notificar admin(s) — email one-click será tratado por handler dedicado (Fase 4)
+    # Notificar admin(s) — in-app + email one-click
     try:
         from helpers import create_notification
         admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(None)
@@ -239,6 +239,19 @@ async def create_my_request(
             )
     except Exception as e:
         logging.warning("Falha ao notificar admins de novo pedido de férias: %s", e)
+
+    # Email one-click ao admin (geral@hwi.pt) — não bloqueia se falhar
+    try:
+        await _send_vacation_request_email(
+            user_name=user.get("full_name") or user.get("username", ""),
+            start_date=s.strftime("%d/%m/%Y"),
+            end_date=e.strftime("%d/%m/%Y"),
+            dias=dias,
+            observacao=payload.observacao or "",
+            approval_token=req.approval_token,
+        )
+    except Exception as ex:
+        logging.warning("Falha a enviar email de novo pedido de férias: %s", ex)
 
     return req.model_dump()
 
@@ -547,3 +560,66 @@ async def _saldo_response(user_id: str) -> dict:
         "current": current.to_dict() if current else None,
         "history": [yb.to_dict() for yb in history],
     }
+
+
+async def _send_vacation_request_email(
+    user_name: str, start_date: str, end_date: str,
+    dias: int, observacao: str, approval_token: str,
+):
+    """Envia email one-click ao admin (geral@hwi.pt) com botões Aprovar/Rejeitar."""
+    import aiosmtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_port = int(os.environ.get("SMTP_PORT", 587))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    smtp_from = os.environ.get("SMTP_FROM", "geral@hwi.pt")
+    if not all([smtp_host, smtp_user, smtp_password]):
+        logging.info("SMTP não configurado — a saltar envio de email de férias")
+        return
+
+    base = os.environ.get("PUBLIC_BASE_URL", "https://timesync-app-2.emergent.host")
+    approve_url = f"{base}/auth-decide/{approval_token}?action=approve"
+    reject_url = f"{base}/auth-decide/{approval_token}?action=reject"
+
+    obs_html = ""
+    if observacao:
+        safe = (observacao or "").replace("<", "&lt;").replace(">", "&gt;")
+        obs_html = (
+            f"<tr><td style='padding:8px 15px;background:#f5f5f5;font-weight:bold;'>Observação:</td>"
+            f"<td style='padding:8px 15px;'>{safe}</td></tr>"
+        )
+
+    html = f"""
+    <html><body style="font-family:Arial,sans-serif;color:#333;line-height:1.6;">
+      <p>Olá,</p>
+      <p>O(a) colaborador(a) <strong>{user_name}</strong> submeteu um pedido de férias.</p>
+      <table style="border-collapse:collapse;margin:15px 0;">
+        <tr><td style='padding:8px 15px;background:#f5f5f5;font-weight:bold;'>Início:</td><td style='padding:8px 15px;'>{start_date}</td></tr>
+        <tr><td style='padding:8px 15px;background:#f5f5f5;font-weight:bold;'>Fim:</td><td style='padding:8px 15px;'>{end_date}</td></tr>
+        <tr><td style='padding:8px 15px;background:#f5f5f5;font-weight:bold;'>Dias úteis:</td><td style='padding:8px 15px;'><strong>{dias}</strong></td></tr>
+        {obs_html}
+      </table>
+      <div style="margin:25px 0;text-align:center;">
+        <a href="{approve_url}" style="background:#16a34a;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;margin-right:10px;display:inline-block;">✅ APROVAR</a>
+        <a href="{reject_url}" style="background:#dc2626;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;">❌ REJEITAR</a>
+      </div>
+      <p style="text-align:center;color:#666;font-size:12px;">Link válido enquanto o pedido estiver pendente.</p>
+      <hr style="margin:30px 0;border:none;border-top:1px solid #ddd;">
+      <p style="color:#666;font-size:12px;">Sistema HWI — Gestão de Férias</p>
+    </body></html>
+    """
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = f"Novo pedido de férias — {user_name}"
+    message["From"] = smtp_from
+    message["To"] = smtp_from
+    message.attach(MIMEText(html, "html"))
+
+    await aiosmtplib.send(
+        message, hostname=smtp_host, port=smtp_port,
+        username=smtp_user, password=smtp_password, start_tls=True,
+    )
+    logging.info(f"Email de novo pedido de férias enviado para {smtp_from} ({user_name})")

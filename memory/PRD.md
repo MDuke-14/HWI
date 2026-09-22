@@ -14,7 +14,32 @@ Aplicação de gestão de Folhas de Serviço (FS / Ordens de Trabalho) para a HW
 
 ## Recent Changes (Feb 2026)
 
-30. ✅ **Módulo de Férias eliminado por completo (Feb 2026)** — A pedido do utilizador, todo o código relacionado com férias foi removido para permitir reconstruir do zero:
+31. ✅ **Módulo de Férias reconstruído (Fases 1–4, Feb 2026)** — Reconstrução completa após a eliminação do módulo anterior. Estrutura em 4 fases:
+
+    **Fase 1 — Backend (motor + rotas + auditoria)**
+    - `backend/vacation_engine.py`: motor puro com `dias_uteis_no_periodo` (inclusivo, exclui sáb/dom/feriados PT), `dias_vencidos_no_ano` (art. 239.º CT — pro-rata máx 20 no ano de admissão, 22 nos anos seguintes), `compute_history` com carry-over automático encadeado.
+    - Modelos: `VacationRequest` (pendente/aprovada/rejeitada/cancelada + source user|historic), `VacationAdjustment` (transitados manuais), `VacationAudit` (log imutável).
+    - `routes/vacations.py`: 15 endpoints (utilizador + admin).
+
+    **Fase 2 — Frontend Utilizador**
+    - Página `components/Vacations.jsx`: 6 cards de saldo (Totais/Transitados/Gozados/Pendentes/Disponíveis/Cancelados), lista de pedidos por ano, modal de criação com cálculo automático em tempo real, cancelamento pelo próprio.
+
+    **Fase 3 — Frontend Admin**
+    - `components/vacations/VacationsAdminTab.jsx`: aba "Férias" com secção Pedidos Pendentes (aprovar/rejeitar com motivo) e ficha do colaborador (4 sub-tabs: Histórico anual, Pedidos, Ajustes, Auditoria).
+    - Botões contextuais: editar Data de Entrada, Adicionar Histórico manual (com override de dias), Ajuste de transitados.
+
+    **Fase 4 — Integrações**
+    - **Ponto em férias**: `get_special_day_info` volta a detetar férias aprovadas; ao aceitar o pedido de autorização (dia_type=ferias), `refund_vacation_day` adiciona a data a `excluded_dates` e decrementa `dias_uteis` — o dia é devolvido ao saldo e deixa de contar como férias.
+    - **Calendário** (`routes/services.py`): mostra novamente as férias aprovadas, respeitando `excluded_dates`.
+    - **Relatório Mensal** (`routes/time_entries.py`): status "FÉRIAS" inline no dia (nas 3 funções: get_monthly_report, get_monthly_detailed_report e a variante Excel). Novo bloco "Férias {ano}" no `summary` com 5 métricas (Totais, Transitados, Gozados, Pendentes, Disponíveis) — fonte única do motor central, exibido em `Reports.jsx`.
+    - **Emails one-click**: ao criar um pedido, envia email a `geral@hwi.pt` com botões `APROVAR`/`REJEITAR` que apontam para `/auth-decide/{token}?action=…`. Handler em `routes/public_authorizations.py` foi reintroduzido para `kind=vacation` (regista auditoria + notificação in-app).
+    - **Auditoria completa** em todas as ações (create, approve, reject, cancel, day_excluded, adjustment create/delete, config update).
+
+    **Regra fundamental respeitada**: única fonte de verdade — `vacation_requests` + `vacation_adjustments` alimentam Utilizador → Admin → Calendário → Ponto → Relatório Mensal → Emails → Notificações.
+
+    **Testado via curl**: cálculo inclusivo (15-19/09/2025 = 5 dias, 2026 = 4 por 19/9 ser sábado), regra CT (01/03/2020 = 20 dias no 1º ano), carry-over, histórico manual (05-23/08/2024 = 14 úteis contando 15/08 feriado), criação/aprovação, refund por trabalho em férias, saldo no relatório mensal, calendário.
+
+30. ✅ **Módulo de Férias eliminado por completo (Feb 2026)** — [ver detalhes acima; este item foi substituído pela reconstrução no ponto 31]
     - **MongoDB**: `drop_collection` de `vacation_requests` (21 docs) e `vacation_balances` (5 docs). Faltas (`absences`) MANTIDAS intactas.
     - **Backend ficheiros apagados**: `routes/vacations.py`, `routes/vacations_v2.py`, `vacation_engine.py`, `tests/test_vacation_carry_over.py`, `tests/test_vacation_include_past_toggle.py`, `tests/test_vacation_year_filter.py`, `tests/test_admin_taken_by_year.py`, `tests/test_justify_day.py`.
     - **Backend refactor** (`server.py`, `helpers.py`, `models.py`, `migrations.py`, `notifications_scheduler.py`, `routes/auth_routes.py`, `routes/time_entries.py`, `routes/overtime.py`, `routes/services.py`, `routes/absences_v2.py`, `routes/public_authorizations.py`):

@@ -961,6 +961,37 @@ const Reports = ({ user, onLogout }) => {
                       </div>
                     </div>
 
+                    {/* Resumo de Férias (fonte única: motor central) */}
+                    {detailedMonthlyReport.summary.vacation_entitlement !== undefined && (
+                      <div className="glass-effect p-4 md:p-6 rounded-xl" data-testid="monthly-vacation-summary">
+                        <div className="text-sm text-emerald-400 uppercase tracking-wider font-semibold mb-3">
+                          Férias {detailedMonthlyReport.year}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                          <div className="bg-[#0f0f0f] rounded-lg p-3 text-center border border-gray-800">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-500">Totais</div>
+                            <div className="text-2xl font-bold text-white">{detailedMonthlyReport.summary.vacation_entitlement}</div>
+                          </div>
+                          <div className="bg-[#0f0f0f] rounded-lg p-3 text-center border border-gray-800">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-500">Transitados</div>
+                            <div className="text-2xl font-bold text-gray-400">{detailedMonthlyReport.summary.vacation_days_transitados || 0}</div>
+                          </div>
+                          <div className="bg-[#0f0f0f] rounded-lg p-3 text-center border border-gray-800">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-500">Gozados</div>
+                            <div className="text-2xl font-bold text-yellow-400">{detailedMonthlyReport.summary.vacation_days_used}</div>
+                          </div>
+                          <div className="bg-[#0f0f0f] rounded-lg p-3 text-center border border-gray-800">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-500">Pendentes</div>
+                            <div className="text-2xl font-bold text-yellow-400">{detailedMonthlyReport.summary.vacation_days_pending || 0}</div>
+                          </div>
+                          <div className="bg-[#0f0f0f] rounded-lg p-3 text-center border border-gray-800">
+                            <div className="text-[10px] uppercase tracking-wider text-gray-500">Disponíveis</div>
+                            <div className="text-2xl font-bold text-green-400">{detailedMonthlyReport.summary.vacation_days_available}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Daily Records Table - Responsive */}
                     <div className="glass-effect p-3 md:p-6">
                       <h3 className="text-lg md:text-xl font-bold text-white mb-4">

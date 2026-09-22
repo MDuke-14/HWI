@@ -28,10 +28,51 @@ def generate_temporary_password() -> str:
     return generate_temporary_password()
 
 
-async def refund_vacation_day(user_id: str, reason: str = "Trabalho em dia de férias autorizado") -> bool:
-    """Removido (Feb 2026): módulo de férias eliminado. No-op para
-    compatibilidade com call sites remanescentes."""
-    return False
+async def refund_vacation_day(user_id: str, worked_date: str = None, reason: str = "Trabalho em dia de férias autorizado") -> bool:
+    """Cancela o dia `worked_date` de uma férias aprovada e devolve-o ao saldo.
+
+    Implementação: adiciona `worked_date` a `vacation_requests.excluded_dates`
+    e decrementa `dias_uteis` em 1. O saldo do motor recalcula automaticamente.
+
+    Retorna True se encontrou e atualizou uma férias que cobria essa data.
+    """
+    if not worked_date:
+        return False
+    vac = await db.vacation_requests.find_one({
+        "user_id": user_id,
+        "status": "aprovada",
+        "start_date": {"$lte": worked_date},
+        "end_date": {"$gte": worked_date},
+    }, {"_id": 0})
+    if not vac:
+        return False
+    excluded = list(vac.get("excluded_dates") or [])
+    if worked_date in excluded:
+        return False
+    excluded.append(worked_date)
+    new_dias = max(0, int(vac.get("dias_uteis", 0)) - 1)
+    await db.vacation_requests.update_one(
+        {"id": vac["id"]},
+        {"$set": {"excluded_dates": excluded, "dias_uteis": new_dias}},
+    )
+    # Audit
+    try:
+        from datetime import datetime, timezone
+        import uuid
+        await db.vacation_audit.insert_one({
+            "id": str(uuid.uuid4()),
+            "entity_type": "request", "entity_id": vac["id"],
+            "user_id": user_id, "action": "day_excluded",
+            "actor_id": "system", "actor_name": "sistema",
+            "before": {"excluded_dates": vac.get("excluded_dates") or [], "dias_uteis": vac.get("dias_uteis")},
+            "after": {"excluded_dates": excluded, "dias_uteis": new_dias},
+            "reason": reason,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception as e:
+        logging.warning(f"Falha a registar audit refund_vacation_day: {e}")
+    logging.info(f"1 dia de férias devolvido a {user_id} ({worked_date}) — motivo: {reason}")
+    return True
 
 
 async def send_password_reset_email(user_name: str, user_email: str, temporary_password: str):

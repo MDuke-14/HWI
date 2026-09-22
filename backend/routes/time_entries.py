@@ -1214,20 +1214,22 @@ async def get_custom_range_report(
             entries_by_date[date_key] = []
         entries_by_date[date_key].append(entry)
     
-    # Get approved vacation requests for the period
+    # Get approved vacation requests for the period (nova fonte: status=aprovada, respeita excluded_dates)
     vacation_dates = set()
     vacation_requests = await db.vacation_requests.find({
         "user_id": target_user_id,
-        "status": "approved"
+        "status": "aprovada"
     }, {"_id": 0}).to_list(1000)
-    
+
     for vac in vacation_requests:
+        excluded = set(vac.get("excluded_dates") or [])
         vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
         vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
         current_vac_date = vac_start
         while current_vac_date <= vac_end:
-            if start_date <= current_vac_date <= end_date:
-                vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
+            ds = current_vac_date.strftime("%Y-%m-%d")
+            if start_date <= current_vac_date <= end_date and ds not in excluded:
+                vacation_dates.add(ds)
             current_vac_date += timedelta(days=1)
     
     # Get manual day status overrides
@@ -1274,7 +1276,8 @@ async def get_custom_range_report(
             "day_number": current_date.day,
             "is_weekend": is_weekend,
             "is_holiday": is_holiday,
-            "holiday_name": ot_reason if is_holiday else None
+            "holiday_name": ot_reason if is_holiday else None,
+            "is_vacation": date_str in vacation_dates,
         }
         
         if day_entries:
@@ -1465,21 +1468,22 @@ async def get_monthly_detailed_report(
             entries_by_date[date_key] = []
         entries_by_date[date_key].append(entry)
     
-    # Get approved vacation requests for the period
+    # Get approved vacation requests for the period (fonte única: aprovada + excluded_dates)
     vacation_dates = set()
     vacation_requests = await db.vacation_requests.find({
         "user_id": target_user_id,
-        "status": "approved"
+        "status": "aprovada"
     }, {"_id": 0}).to_list(1000)
-    
+
     for vac in vacation_requests:
+        excluded = set(vac.get("excluded_dates") or [])
         vac_start = datetime.strptime(vac["start_date"], "%Y-%m-%d").date()
         vac_end = datetime.strptime(vac["end_date"], "%Y-%m-%d").date()
         current_vac_date = vac_start
         while current_vac_date <= vac_end:
-            # Only add if within our reporting period
-            if start_date <= current_vac_date <= end_date:
-                vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
+            ds = current_vac_date.strftime("%Y-%m-%d")
+            if start_date <= current_vac_date <= end_date and ds not in excluded:
+                vacation_dates.add(ds)
             current_vac_date += timedelta(days=1)
     
     # Get manual day status overrides (admin-set statuses)
@@ -1637,12 +1641,31 @@ async def get_monthly_detailed_report(
         daily_records.append(day_data)
         current_date += timedelta(days=1)
     
-    # Módulo de férias removido (Feb 2026) — devolvemos valores neutros
-    # para manter a shape do JSON de resposta.
+    # Novo motor de férias (Feb 2026) — fonte única partilhada com /vacations
     vacation_breakdown_v2 = None
     vacation_entitlement = 0
     vacation_days_used = 0
     vacation_days_available = 0
+    vacation_days_pending = 0
+    vacation_days_transitados = 0
+    try:
+        from routes.vacations import _fetch_saldo_context
+        from vacation_engine import compute_history
+        csd, reqs, adjs = await _fetch_saldo_context(target_user_id)
+        history = compute_history(csd, max(date.today().year, csd.year), reqs, adjs)
+        current = next((h for h in history if h.year == year), None)
+        if current:
+            vacation_entitlement = current.dias_totais
+            vacation_days_used = current.dias_gozados
+            vacation_days_available = current.dias_disponiveis
+            vacation_days_pending = current.dias_pendentes
+            vacation_days_transitados = current.dias_transitados
+            vacation_breakdown_v2 = {
+                "year_breakdown": [h.to_dict() for h in history],
+                "current": current.to_dict(),
+            }
+    except Exception:
+        logging.exception("Erro a calcular férias (novo motor) para relatório mensal")
     
     return {
         "username": username,
@@ -1660,11 +1683,11 @@ async def get_monthly_detailed_report(
             "days_with_travel_allowance": days_with_travel_allowance,
             "total_meal_allowance_value": days_with_meal_allowance * 10.0,
             "total_travel_allowance_value": days_with_travel_allowance * 50.0,
-            # Legacy (mantido só para clientes antigos — a tabela nova usa `vacation_breakdown_v2`)
             "vacation_days_used": vacation_days_used,
             "vacation_days_available": vacation_days_available,
             "vacation_entitlement": vacation_entitlement,
-            # NOVO motor — fonte única partilhada com o sistema de férias
+            "vacation_days_pending": vacation_days_pending,
+            "vacation_days_transitados": vacation_days_transitados,
             "vacation_breakdown_v2": vacation_breakdown_v2,
         }
     }
@@ -1720,21 +1743,22 @@ async def download_monthly_pdf_report(
             entries_by_date[date_key] = []
         entries_by_date[date_key].append(entry)
     
-    # Get approved vacation requests for the period
+    # Get approved vacation requests for the period (fonte única: aprovada + excluded_dates)
     vacation_dates = set()
     vacation_requests = await db.vacation_requests.find({
         "user_id": target_user_id,
-        "status": "approved"
+        "status": "aprovada"
     }, {"_id": 0}).to_list(1000)
-    
+
     for vac_req in vacation_requests:
+        excluded = set(vac_req.get("excluded_dates") or [])
         vac_start = datetime.strptime(vac_req["start_date"], "%Y-%m-%d").date()
         vac_end = datetime.strptime(vac_req["end_date"], "%Y-%m-%d").date()
         current_vac_date = vac_start
         while current_vac_date <= vac_end:
-            # Only add if within our reporting period
-            if start_date <= current_vac_date <= end_date:
-                vacation_dates.add(current_vac_date.strftime("%Y-%m-%d"))
+            ds = current_vac_date.strftime("%Y-%m-%d")
+            if start_date <= current_vac_date <= end_date and ds not in excluded:
+                vacation_dates.add(ds)
             current_vac_date += timedelta(days=1)
     
     # Buscar TODAS as justificações para incluir nas observações do dia

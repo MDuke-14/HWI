@@ -274,8 +274,25 @@ async def get_calendar_data(
                 tech_details.append({"id": tech_id, "username": tech["username"]})
         service["technicians"] = tech_details
     
-    # Módulo de férias removido (Feb 2026) — sem férias no calendário.
+    # Férias aprovadas (fonte única: nova coleção vacation_requests)
+    vac_docs = await db.vacation_requests.find({
+        "status": "aprovada",
+        "start_date": {"$lte": end_date},
+        "end_date": {"$gte": start_date},
+    }, {"_id": 0}).to_list(1000)
     vacations = []
+    for v in vac_docs:
+        # Excluir dias marcados manualmente (utilizador começou ponto)
+        excluded = set(v.get("excluded_dates") or [])
+        vacations.append({
+            "id": v.get("id"),
+            "user_id": v.get("user_id"),
+            "username": v.get("username"),
+            "start_date": v.get("start_date"),
+            "end_date": v.get("end_date"),
+            "excluded_dates": list(excluded),
+            "type": "ferias",
+        })
     
     # Get OTs that should appear in this month
     # 1. OTs with data_servico in this month

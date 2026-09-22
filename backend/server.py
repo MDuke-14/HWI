@@ -1987,7 +1987,7 @@ async def get_special_day_info(check_date: date, user_id: str):
         "start_date": {"$lte": today_str},
         "end_date": {"$gte": today_str},
     }, {"_id": 0})
-    if vac:
+    if vac and today_str not in (vac.get("excluded_dates") or []):
         return {
             "is_special": True,
             "day_type": "ferias",
@@ -2253,6 +2253,18 @@ async def decide_day_authorization(
             await db.time_entries.delete_one({"id": first_entry_id})
             logging.info(f"Entrada de ponto {first_entry_id} eliminada após rejeição")
 
+    # Se aprovado E é dia de férias, devolver esse dia ao saldo
+    vacation_day_returned = False
+    if action == "approve" and auth.get("day_type") == "ferias":
+        from helpers import refund_vacation_day
+        vacation_day_returned = await refund_vacation_day(
+            auth.get("user_id"),
+            worked_date=auth.get("date"),
+            reason=f"Trabalho em dia de férias autorizado por {auth.get('decided_by_name') or 'admin'}",
+        )
+        if vacation_day_returned:
+            logging.info(f"1 dia de férias devolvido a {auth.get('user_name')}")
+
     # Atualizar status nas entradas de ponto deste utilizador/dia
     await db.time_entries.update_many(
         {
@@ -2270,8 +2282,11 @@ async def decide_day_authorization(
     date_formatted = datetime.strptime(auth["date"], "%Y-%m-%d").strftime("%d/%m/%Y")
     
     if action == "approve":
-        notif_message = f"Trabalho em {day_type_display} ({date_formatted}) autorizado."
-        
+        if vacation_day_returned:
+            notif_message = f"Trabalho em dia de férias ({date_formatted}) autorizado. 1 dia devolvido ao saldo."
+        else:
+            notif_message = f"Trabalho em {day_type_display} ({date_formatted}) autorizado."
+
         await send_push_notification(
             db, user_id,
             "✅ Trabalho Autorizado",
@@ -2308,7 +2323,8 @@ async def decide_day_authorization(
         "status": new_status,
         "user_name": auth.get("user_name"),
         "date": auth.get("date"),
-        "day_type": auth.get("day_type_display")
+        "day_type": auth.get("day_type_display"),
+        "vacation_day_returned": vacation_day_returned,
     }
 
     return response

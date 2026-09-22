@@ -19,8 +19,7 @@ router = APIRouter()
 async def _find_auth_by_token(token: str):
     """Procura o pedido pelo approval_token em collections suportadas.
 
-    Retorna (auth_doc, kind) onde kind ∈ {'day', 'overtime'}.
-    Módulo de férias removido em Feb 2026.
+    Retorna (auth_doc, kind) onde kind ∈ {'day', 'overtime', 'vacation'}.
     """
     doc = await db.day_authorizations.find_one({"approval_token": token}, {"_id": 0})
     if doc:
@@ -28,6 +27,9 @@ async def _find_auth_by_token(token: str):
     doc = await db.overtime_authorizations.find_one({"approval_token": token}, {"_id": 0})
     if doc:
         return doc, "overtime"
+    doc = await db.vacation_requests.find_one({"approval_token": token}, {"_id": 0})
+    if doc:
+        return doc, "vacation"
     return None, None
 
 
@@ -106,6 +108,13 @@ async def get_public_authorization(token: str):
         "decided_by_name": auth.get("decided_by_name"),
         "decided_at": auth.get("decided_at"),
     }
+    if kind == "vacation":
+        result.update({
+            "start_date": auth.get("start_date"),
+            "end_date": auth.get("end_date"),
+            "days_requested": auth.get("dias_uteis"),
+            "reason": auth.get("observacao"),
+        })
     return result
 
 
@@ -140,6 +149,50 @@ async def decide_public_authorization(
     client_ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent", "")[:200]
     decided_at = datetime.now(timezone.utc).isoformat()
+
+    if kind == "vacation":
+        # Novo módulo de férias (Feb 2026): status pt=aprovada|rejeitada
+        new_status = "aprovada" if action == "approve" else "rejeitada"
+        await db.vacation_requests.update_one(
+            {"approval_token": token},
+            {"$set": {
+                "status": new_status,
+                "decided_at": decided_at,
+                "decided_by": "email-link",
+                "decided_by_name": "geral@hwi.pt (via email)",
+                "decision_reason": None,
+            }},
+        )
+        # Auditoria + notificação
+        try:
+            import uuid as _uuid
+            await db.vacation_audit.insert_one({
+                "id": str(_uuid.uuid4()),
+                "entity_type": "request", "entity_id": auth.get("id"),
+                "user_id": auth.get("user_id"), "action": new_status,
+                "actor_id": "email-link", "actor_name": "geral@hwi.pt (via email)",
+                "before": auth, "after": {"status": new_status, "decided_at": decided_at},
+                "reason": "Decisão via email one-click",
+                "timestamp": decided_at,
+            })
+            from helpers import create_notification
+            s_fmt = auth["start_date"]
+            e_fmt = auth["end_date"]
+            msg = (
+                f"Férias {s_fmt} → {e_fmt} "
+                f"{'aprovadas' if new_status == 'aprovada' else 'rejeitadas'} via email."
+            )
+            await create_notification(
+                auth["user_id"], f"vacation_{new_status}", msg, auth.get("id")
+            )
+        except Exception as _e:
+            logging.warning(f"[public-auth-vacation] notification/audit falhou: {_e}")
+        return {
+            "status": new_status,
+            "message": "Férias aprovadas" if new_status == "aprovada" else "Pedido de férias rejeitado",
+            "decided_by_name": "geral@hwi.pt (via email)",
+            "decided_at": decided_at,
+        }
 
     if kind == "day":
         # Day authorization tem o seu próprio fluxo (server.py decide_day_authorization)
