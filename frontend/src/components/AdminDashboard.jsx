@@ -17,7 +17,8 @@ import HelpTooltip from '@/components/HelpTooltip';
 import LocationMap from '@/components/ui/location-map';
 import { useMobile } from '@/contexts/MobileContext';
 import Reports from '@/components/Reports';
-// Módulo de férias removido (Feb 2026) — imports de VacationConfigModal e MapaFeriasModal eliminados.
+import VacationsAdminTab from '@/components/vacations/VacationsAdminTab';
+// Módulo de férias reconstruído (Feb 2026).
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -838,7 +839,11 @@ const AdminDashboard = ({ user, onLogout }) => {
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className={`overflow-x-auto ${isMobile ? 'pb-2 mb-4 -mx-3 px-3' : 'pb-2 mb-6 -mx-4 px-4 md:mx-0 md:px-0'}`}>
-            <TabsList className={`inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg ${isMobile ? '' : 'md:grid md:grid-cols-6 md:w-full md:max-w-6xl md:mx-auto'}`}>
+            <TabsList className={`inline-flex min-w-max gap-1 bg-[#1a1a1a] p-1 rounded-lg ${isMobile ? '' : 'md:grid md:grid-cols-7 md:w-full md:max-w-6xl md:mx-auto'}`}>
+              <TabsTrigger value="vacations" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
+                <Calendar className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
+                <span>Férias</span>
+              </TabsTrigger>
               <TabsTrigger value="absences" className={`whitespace-nowrap ${isMobile ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm'} data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-400`}>
                 <Users className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1.5'} flex-shrink-0`} />
                 <span>Faltas</span>
@@ -871,7 +876,9 @@ const AdminDashboard = ({ user, onLogout }) => {
             </TabsList>
           </div>
 
-          {/* TabsContent value="vacations" removido em Feb 2026 */}
+          <TabsContent value="vacations">
+            <VacationsAdminTab isMobile={isMobile} />
+          </TabsContent>
 
           <TabsContent value="absences">
             <div className={`glass-effect ${isMobile ? 'p-4' : 'p-6'} rounded-xl`}>
