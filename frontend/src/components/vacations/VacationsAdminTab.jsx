@@ -3,7 +3,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
   Palmtree, Check, X, Plus, Calendar as CalIcon, User as UserIcon,
-  History, Settings, RefreshCw, Edit3, Trash2, AlertCircle,
+  History, Settings, RefreshCw, Edit3, Trash2, AlertCircle, Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -226,9 +226,39 @@ export default function VacationsAdminTab({ isMobile }) {
   return (
     <div className="space-y-6" data-testid="admin-vacations-tab">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Palmtree className="w-6 h-6 text-emerald-400" />
-        <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-semibold text-white`}>Gestão de Férias</h2>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Palmtree className="w-6 h-6 text-emerald-400" />
+          <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-semibold text-white`}>Gestão de Férias</h2>
+        </div>
+        <Button
+          onClick={async () => {
+            const y = new Date().getFullYear();
+            toast.info('A gerar Mapa de Férias...');
+            try {
+              const resp = await axios.get(`${API}/admin/vacations/mapa-ferias.xlsx?year=${y}`, {
+                responseType: 'blob',
+              });
+              const url = URL.createObjectURL(new Blob([resp.data], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              }));
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `Mapa_Ferias_${y}.xlsx`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+              toast.success('Mapa de Férias descarregado');
+            } catch (e) {
+              toast.error('Erro ao gerar Mapa de Férias');
+            }
+          }}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          data-testid="download-mapa-ferias-btn"
+        >
+          <Download className="w-4 h-4 mr-1.5" /> Download Mapa de Férias
+        </Button>
       </div>
 
       {/* Pedidos pendentes */}

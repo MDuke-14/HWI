@@ -17,6 +17,7 @@ from datetime import datetime, date, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import Response
 from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -27,6 +28,7 @@ from vacation_engine import (
     VacationRequestLite,
     VacationAdjustment as EngineAdj,
 )
+from mapa_ferias_generator import generate_mapa_ferias_xlsx
 
 # ============ DB / Auth ============
 mongo_client = AsyncIOMotorClient(os.environ["MONGO_URL"])
@@ -503,6 +505,36 @@ async def admin_get_user_adjustments(user_id: str, current_user: dict = Depends(
         {"user_id": user_id}, {"_id": 0}
     ).sort("year", -1).to_list(length=None)
     return docs
+
+
+@router.get("/admin/vacations/mapa-ferias.xlsx")
+async def admin_download_mapa_ferias(
+    year: int | None = None,
+    current_user: dict = Depends(_get_deps()[1]),
+):
+    """Gera e devolve o Mapa de Férias em XLSX (formato conforme template
+    oficial da empresa). Todos os dados são obtidos da base de dados no
+    momento do click.
+    """
+    from datetime import date as _date
+    year = year or _date.today().year
+    try:
+        xlsx_bytes = await generate_mapa_ferias_xlsx(db, year)
+    except FileNotFoundError:
+        raise HTTPException(500, "Template do Mapa de Férias não encontrado no servidor")
+    except Exception as e:
+        logging.exception("Erro a gerar Mapa de Férias")
+        raise HTTPException(500, f"Erro a gerar Mapa: {e}")
+
+    filename = f"Mapa_Ferias_{year}.xlsx"
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(xlsx_bytes)),
+        },
+    )
 
 
 @router.delete("/admin/vacations/adjustments/{adj_id}")
