@@ -262,9 +262,6 @@ def generate_monthly_report(user_data: dict, entries: List[Dict], vacation_data:
             for c_idx in range(1, 8):
                 ws.cell(row=row, column=c_idx).border = border_thin
             row += 1
-    else:
-        ws.cell(row=row, column=1).value = "Sem dados — configurar data de admissão em /admin › Férias › Gerir"
-        row += 1
     
     # Ajustar largura das colunas
     ws.column_dimensions['A'].width = 12

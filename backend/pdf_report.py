@@ -231,12 +231,6 @@ def generate_monthly_pdf_report(report_data):
         elements.append(Paragraph("<b>GESTÃO DE FÉRIAS (Código do Trabalho — arts. 237.º-246.º)</b>", subtitle_style))
         elements.append(vac_table)
         elements.append(Spacer(1, 0.5*cm))
-    else:
-        elements.append(Paragraph(
-            "<b>GESTÃO DE FÉRIAS</b> — sem dados (configure a data de admissão em /admin › Férias › Gerir)",
-            subtitle_style,
-        ))
-        elements.append(Spacer(1, 0.3*cm))
     
     # Daily records header
     elements.append(Paragraph("REGISTO DIÁRIO DETALHADO", title_style))
