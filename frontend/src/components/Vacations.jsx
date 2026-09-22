@@ -13,6 +13,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import Navigation from '@/components/Navigation';
+import { useMobile } from '@/contexts/MobileContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const STATUS_COLORS = {
@@ -48,7 +50,8 @@ const Metric = ({ label, value, tone = 'default' }) => {
   );
 };
 
-export default function Vacations({ user }) {
+export default function Vacations({ user, onLogout }) {
+  const { isMobile } = useMobile();
   const [saldo, setSaldo] = useState(null);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,8 +147,11 @@ export default function Vacations({ user }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] text-gray-400" data-testid="vacations-loading">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2" /> A carregar...
+      <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
+        {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="vacations" />}
+        <div className="flex items-center justify-center min-h-[60vh] text-gray-400" data-testid="vacations-loading">
+          <RefreshCw className="w-5 h-5 animate-spin mr-2" /> A carregar...
+        </div>
       </div>
     );
   }
@@ -153,7 +159,9 @@ export default function Vacations({ user }) {
   const yearsAvailable = saldo?.history?.map(h => h.year) || [];
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6" data-testid="vacations-page">
+    <div className="min-h-screen bg-[#0a0a0a] mobile-safe-top">
+      {!isMobile && <Navigation user={user} onLogout={onLogout} activePage="vacations" />}
+      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6" data-testid="vacations-page">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -352,7 +360,7 @@ export default function Vacations({ user }) {
             <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancelar</Button>
             <Button
               onClick={handleSubmit}
-              disabled={submitting || !calcDays}
+              disabled={submitting || !form.start_date || !form.end_date}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
               data-testid="vacations-submit-btn"
             >
@@ -362,6 +370,7 @@ export default function Vacations({ user }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
