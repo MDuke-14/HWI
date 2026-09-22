@@ -45,6 +45,23 @@ COLOR_HOLIDAY_BG = "FFF2CC"
 COLOR_BORDER = "BFBFBF"
 COLOR_ROW_ALT = "F5F5F5"
 
+# Paleta muito ténue para as linhas dos utilizadores — só o suficiente para
+# ajudar visualmente a seguir horizontalmente uma linha inteira.
+USER_ROW_PALETTE = [
+    "FFF4F4",  # rosa muito claro
+    "FFF9F0",  # pêssego muito claro
+    "FFFDEB",  # amarelo muito claro
+    "F1FBF1",  # menta muito claro
+    "EEF7FF",  # azul-céu muito claro
+    "F3F0FF",  # lavanda muito claro
+    "FFF0F8",  # rosa quente muito claro
+    "F5FCEE",  # lima muito claro
+    "EEF3FA",  # azul acinzentado muito claro
+    "FBEFFB",  # magenta muito claro
+    "FEF6EE",  # areia muito claro
+    "EFFBFA",  # ciano muito claro
+]
+
 # Paleta de cor por ano (BG, FG para o "F")
 YEAR_COLOR_PALETTE = [
     ("FFD8A8", "8A4B00"),  # 2025 Laranja
@@ -276,14 +293,13 @@ def _build_year_sheet(
         for idx, user in enumerate(users):
             urow = header_row + 1 + idx
             display = user.get("full_name") or user.get("username", "")
-            zebra = idx % 2 == 1
+            row_bg = USER_ROW_PALETTE[idx % len(USER_ROW_PALETTE)]
 
             name_cell = ws.cell(row=urow, column=1, value=display)
             name_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
             name_cell.font = Font(size=10)
             name_cell.border = thin_border
-            if zebra:
-                name_cell.fill = PatternFill("solid", fgColor=COLOR_ROW_ALT)
+            name_cell.fill = PatternFill("solid", fgColor=row_bg)
 
             user_vac_days: set[int] = set()
             for v in vacs_by_user.get(user["id"], []):
@@ -315,8 +331,8 @@ def _build_year_sheet(
                     cell.fill = PatternFill("solid", fgColor=COLOR_HOLIDAY_BG)
                 elif is_weekend:
                     cell.fill = PatternFill("solid", fgColor=COLOR_WEEKEND_BG)
-                elif zebra:
-                    cell.fill = PatternFill("solid", fgColor=COLOR_ROW_ALT)
+                else:
+                    cell.fill = PatternFill("solid", fgColor=row_bg)
             ws.row_dimensions[urow].height = 18
 
         # Linha total
