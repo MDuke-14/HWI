@@ -351,19 +351,6 @@ def _build_year_sheet(
     ws.page_margins.top = 0.5
     ws.page_margins.bottom = 0.5
 
-    # Total geral do ano no fim
-    grand_row = current_row + 1
-    ws.cell(row=grand_row, column=1, value=f"Total de dias de férias aprovadas em {year}:")
-    ws.cell(row=grand_row, column=1).font = Font(bold=True)
-    total_all = sum(
-        sum(1 for _ in _iter_vacation_days(v, year, m))
-        for m in range(1, 13)
-        for u in users
-        for v in vacs_by_user.get(u["id"], [])
-    )
-    tot_cell = ws.cell(row=grand_row, column=6, value=total_all)
-    tot_cell.font = Font(bold=True, color=year_fg, size=12)
-
 
 async def generate_mapa_ferias_xlsx(db, year: int | None = None) -> bytes:
     """Gera o Mapa de Férias com uma folha por cada ano existente na BD.
