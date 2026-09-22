@@ -298,12 +298,14 @@ def _build_year_sheet(
                 cell.font = Font(size=9)
                 cell.border = thin_border
 
-                is_vac = d in user_vac_days
-                is_holiday = date(year, month, d) in feriados
-                is_weekend = date(year, month, d).weekday() >= 5
+                day_obj = date(year, month, d)
+                is_holiday = day_obj in feriados
+                is_weekend = day_obj.weekday() >= 5
+                # Só marca "F" em dias úteis dentro de férias — FDS e feriados
+                # não são consumidos e ficam com a sua cor própria.
+                is_vac = d in user_vac_days and not is_weekend and not is_holiday
 
                 if is_vac:
-                    day_obj = date(year, month, d)
                     src_y = user_day_source.get(day_obj, year)
                     d_bg, d_fg = year_colors(src_y)
                     cell.value = "F"
