@@ -521,6 +521,72 @@ class ManualTimeEntryCreate(BaseModel):
 
 # ============ Faltas ============
 
+class VacationRequest(BaseModel):
+    """Pedido de férias (fonte única para o motor de saldos).
+
+    Campos:
+    - `source='user'`: pedido submetido por um colaborador.
+    - `source='historic'`: entrada manual criada pelo admin para reconstruir
+      histórico anterior à entrada do novo sistema. Fica sempre com `status='aprovada'`.
+    - `status`: pendente | aprovada | rejeitada | cancelada.
+    - `dias_uteis`: calculado no momento da criação/edição. É a fonte de
+      verdade — o motor não recalcula.
+    """
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: str
+    start_date: str  # ISO YYYY-MM-DD
+    end_date: str    # ISO YYYY-MM-DD
+    dias_uteis: int
+    status: str = "pendente"  # pendente | aprovada | rejeitada | cancelada
+    source: str = "user"      # user | historic
+    year: int                 # ano contabilístico (=start_date.year salvo override)
+    reason: Optional[str] = None
+    observacao: Optional[str] = None
+    approval_token: Optional[str] = None
+    approval_token_expires: Optional[str] = None
+    decided_by: Optional[str] = None
+    decided_by_name: Optional[str] = None
+    decided_at: Optional[str] = None
+    decision_reason: Optional[str] = None
+    created_by: Optional[str] = None       # user_id do criador (para histórico admin)
+    created_by_name: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class VacationAdjustment(BaseModel):
+    """Ajuste administrativo de dias transitados (inicialização/correção manual).
+
+    Não altera pedidos. É somado aos `dias_transitados` do `year` indicado.
+    """
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    year: int
+    dias: int                # positivo=adicionar; negativo=subtrair
+    reason: Optional[str] = None
+    created_by: Optional[str] = None
+    created_by_name: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class VacationAudit(BaseModel):
+    """Log imutável de todas as alterações no módulo de férias."""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    entity_type: str         # 'request' | 'adjustment' | 'config'
+    entity_id: str
+    user_id: str             # utilizador dono do registo afetado
+    action: str              # create | update | delete | approve | reject | cancel
+    actor_id: str            # quem fez a alteração
+    actor_name: Optional[str] = None
+    before: Optional[dict] = None
+    after: Optional[dict] = None
+    reason: Optional[str] = None
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
 class Absence(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

@@ -1975,14 +1975,27 @@ async def health_check():
 
 async def get_special_day_info(check_date: date, user_id: str):
     """
-    Verifica se um dia é especial (feriado, sábado, domingo)
+    Verifica se um dia é especial (férias aprovadas, feriado, sábado, domingo)
     e retorna informações sobre o tipo de dia.
-
-    Nota (Feb 2026): o módulo de férias foi eliminado; deixámos de olhar para
-    `vacation_requests` para determinar se o dia é de férias. Retorna sempre
-    `vacation_request_id: None` para manter a shape do dict.
     """
-    # 1. Feriado
+    today_str = check_date.strftime("%Y-%m-%d")
+
+    # 1. Férias aprovadas que cobrem este dia (fonte: novo módulo)
+    vac = await db.vacation_requests.find_one({
+        "user_id": user_id,
+        "status": "aprovada",
+        "start_date": {"$lte": today_str},
+        "end_date": {"$gte": today_str},
+    }, {"_id": 0})
+    if vac:
+        return {
+            "is_special": True,
+            "day_type": "ferias",
+            "day_type_display": "Férias",
+            "vacation_request_id": vac.get("id"),
+        }
+
+    # 2. Feriado
     is_hol, hol_name = is_holiday(check_date)
     if is_hol:
         return {
@@ -1992,7 +2005,7 @@ async def get_special_day_info(check_date: date, user_id: str):
             "vacation_request_id": None
         }
 
-    # 2. Sábado
+    # 3. Sábado
     if check_date.weekday() == 5:
         return {
             "is_special": True,
@@ -2001,7 +2014,7 @@ async def get_special_day_info(check_date: date, user_id: str):
             "vacation_request_id": None
         }
 
-    # 3. Domingo
+    # 4. Domingo
     if check_date.weekday() == 6:
         return {
             "is_special": True,
@@ -4393,6 +4406,7 @@ from routes.pedidos_cotacao import router as pedidos_cotacao_router
 from routes.company_info import router as company_info_router
 from routes.tabelas_tarifas import router as tabelas_tarifas_router
 from routes.time_entries import router as time_entries_router
+from routes.vacations import router as vacations_router
 from routes.absences_v2 import router as absences_v2_router
 from routes.cronometros import router as cronometros_router
 from routes.relatorios import router as relatorios_router
@@ -4416,6 +4430,7 @@ api_router.include_router(pedidos_cotacao_router)
 api_router.include_router(company_info_router)
 api_router.include_router(tabelas_tarifas_router)
 api_router.include_router(time_entries_router)
+api_router.include_router(vacations_router)
 api_router.include_router(absences_v2_router)
 api_router.include_router(cronometros_router)
 api_router.include_router(relatorios_router)
